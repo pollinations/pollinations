@@ -20,8 +20,8 @@ client.onConnect = function (frame) {
     // Do something, all subscribes must be done is this callback
     // This is needed because this will be executed after a (re)connect
     console.log("Connect", frame);
-    client.subscribe('/queue/test', (...args) => console.log("received",...args));
-    // client.publish({ destination: '/topic/general', body: 'Hello world' });
+    client.subscribe('/topic/colabOut', (...args) => console.log("received",...args));
+    client.publish({ destination: '/topic/colabOut', body: 'Hello world' });
 
   };
   

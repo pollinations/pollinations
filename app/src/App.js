@@ -13,7 +13,7 @@ function App() {
     return (
       <div>
         <h1>{latestConsole}</h1>
-        <img src={latestMedia} />
+        <img style={{width:"100%",height:"auto"}} src={latestMedia} />
       </div>
     );
 }

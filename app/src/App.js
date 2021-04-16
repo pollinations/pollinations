@@ -4,12 +4,17 @@ import openStomp from './network/stompClient';
 
 
 function App() {
-  const [latestMessage, setLatestMessage] = useState("");
+  const [latestConsole, setLatestConsole] = useState("");
+  const [latestMedia, setLatestMedia] = useState([]);
+
   useMemo(() => {
-    openStomp(setLatestMessage)
+    openStomp(setLatestConsole, setLatestMedia)
   },[]);
     return (
-      <h1>{JSON.stringify(latestMessage)}</h1>
+      <div>
+        <h1>{latestConsole}</h1>
+        <img src={latestMedia} />
+      </div>
     );
 }
 

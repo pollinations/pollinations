@@ -3,13 +3,13 @@ import { Client } from '@stomp/stompjs';
 export default function open(onReceivedConsole, onReceivedMedia) {
 
     const client = new Client({
-            brokerURL: 'wss://b-4e89df1f-8226-4cc4-a518-4e1ac0023c97-1.mq.eu-central-1.amazonaws.com:61619',
-            connectHeaders: {
-            login: 'guest',
-            passcode: 'iamcolabguest',
+        brokerURL: 'wss://b-4e89df1f-8226-4cc4-a518-4e1ac0023c97-1.mq.eu-central-1.amazonaws.com:61619',
+        connectHeaders: {
+        login: 'guest',
+        passcode: 'iamcolabguest',
         },
         debug: function (str) {
-            console.debug(str);
+        console.log(str);
         }
     });
 
@@ -20,8 +20,8 @@ export default function open(onReceivedConsole, onReceivedMedia) {
         // Do something, all subscribes must be done is this callback
         // This is needed because this will be executed after a (re)connect
         console.log("Connect", frame);
-        client.subscribe('/topic/colabOut', m => onReceivedConsole(m));
-        client.subscribe('/topic/colabMediaOut', m => onReceivedMedia(m));
+        client.subscribe('/topic/colabOut', ({body}) => onReceivedConsole(body));
+        client.subscribe('/topic/colabMediaOut', ({body}) => onReceivedMedia(body));
         // client.publish({ destination: '/topic/general', body: 'Hello world' });
 
     };

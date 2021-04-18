@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import openStomp from './network/stompClient';
-import { TextField } from "@material-ui/core"
-
+import { Button,  TextField , Fab} from "@material-ui/core"
+import {PlayArrow, Stop} from '@material-ui/icons';
 
 function App() {
     const [latestConsole, setLatestConsole] = useState({headers:{}});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
+    const [isRunning, setRunning] = useState(false);
     const [text, setText] = useState("Petite and futuristic")
     // console.log("latest",latestConsole);
     useMemo(() => {
@@ -17,8 +18,10 @@ function App() {
     return (
       <div style={{margin:"auto", maxWidth:"800px"}}>
       <center>
+        <h1>Text to Image (CLIP+SIREN)</h1>
         <form>
-        <TextField style={{align:"center"}} id="standard-basic" label="Prompt" variant="filled"  multiline fullWidth value={text} onChange={({value}) => setText(value)}/>
+        <TextField style={{align:"center"}} id="standard-basic" label="Prompt" variant="filled"  multiline  value={text} disabled={isRunning}/>
+        <Fab onClick={() => setRunning(value => !value)}>{isRunning ? <Stop />:<PlayArrow />}</Fab>
         </form>
         <br />
         { latestMedia.headers.type.startsWith("image") ?

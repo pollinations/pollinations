@@ -4,12 +4,16 @@
   "version": "0.2.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.11.3",
+    "@material-ui/icons": "^4.11.2",
+    "@stomp/stompjs": "^6.1.0",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
+    "react-use": "^17.2.3",
     "web-vitals": "^0.2.4",
     "workbox-background-sync": "^5.1.3",
     "workbox-broadcast-update": "^5.1.3",
@@ -22,9 +26,7 @@
     "workbox-range-requests": "^5.1.3",
     "workbox-routing": "^5.1.3",
     "workbox-strategies": "^5.1.3",
-    "workbox-streams": "^5.1.3",
-    "@stomp/stompjs": "^6.1.0",
-    "@material-ui/core": "^4.11.3"
+    "workbox-streams": "^5.1.3"
   },
   "devDependencies": {
     "gh-pages": "^3.1.0"

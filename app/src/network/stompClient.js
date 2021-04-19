@@ -22,6 +22,7 @@ export default function open(onReceivedConsole, onReceivedMedia) {
         console.log("Connect", frame);
         client.subscribe('/topic/colabOut', m => onReceivedConsole(m));
         client.subscribe('/topic/colabMediaOut', m => onReceivedMedia(m));
+        
         // client.publish({ destination: '/topic/general', body: 'Hello world' });
 
     };
@@ -36,5 +37,10 @@ export default function open(onReceivedConsole, onReceivedMedia) {
     };
     
     client.activate();
-
+    console.log(client)
+    const publishToQueue = (body,headers={}) => {
+        console.log("publishing",body,headers)
+        client.publish({destination:"/queue/deep-daze",headers,body});
+    }
+    return publishToQueue;
 };

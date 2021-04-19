@@ -8,7 +8,7 @@ import { useSearchParam } from 'react-use';
 
 // images
 import runAllImg from "./help/Runtime-RunAll.png"; 
-import colabLogoImage from "./help/colab_icon.png";
+
 import { Box } from '@material-ui/core';
 const useIsInColab = () => 
   useSearchParam('insidecolab');
@@ -24,10 +24,11 @@ const useColab = () => {
     if (inColab) {
       console.log("Announcing that we are in Colab.");
       channel.postMessage("local_colab")
-      window.parent.postMessage("roger_from_inside");
-      window.onmessage = ({data}) => {
-        console.log("innerOnMessage",data);
-      }      
+      // setInterval(()=>
+      //   window.parent.postMessage("roger_from_inside"),3000);
+      // window.onmessage = ({data}) => {
+      //   console.log("innerOnMessage",data);
+      // }      
     } else
       channel.onmessage = ({data}) => {
         if (data === "local_colab") {

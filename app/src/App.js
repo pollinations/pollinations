@@ -2,20 +2,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import openStomp from './network/stompClient';
 import {TextField , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
 import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
-
+import colabLogoImage from "./help/colab_icon.png";
 import "./network/connectToLocalColab";
 
 function App() {
-    const [latestConsole, setLatestConsole] = useState({headers: {text:"Connecting..."}, body:"Loading..."});
+    const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
     const [isRunning, setRunning] = useState(false);
-    const [text, setText] = useState("Petite and futuristic")
+    const [text, setText] = useState("")
     // console.log("latest",latestConsole);
-    useMemo(() => {
-      openStomp(setLatestConsole, setLatestMedia)
+    const queueMessage = new useMemo(() => {
+      return openStomp(setLatestConsole, setLatestMedia)
     },[]);
+
     useEffect(() => setText(latestConsole.headers.text),[latestConsole.headers.text])
-    
+
     const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
     return (
       <Container maxWidth="sm">
@@ -26,6 +27,7 @@ function App() {
           action={(
 
             <Box marginTop="25px" marginRight="0px" paddingRight="0px" marginBottom="0px" paddingBottom="0px">
+            <img src={colabLogoImage} width="70" height="auto" />
             </Box>)
           }
           title="Text to Image "
@@ -42,7 +44,11 @@ function App() {
           value={text} 
           disabled={isRunning}
           onChange={({target}) => setText(target.value)} /> 
-        <IconButton onClick={() => setRunning(value => !value)}>{isRunning ? <Stop />:<PlayArrow />}</IconButton>
+        <IconButton onClick={() => {
+          if (!isRunning)
+            queueMessage(text);
+          setRunning(value => !value);
+          }}>{isRunning ? <Stop />:<PlayArrow />}</IconButton>
 
         </CardContent>
         <CardMedia

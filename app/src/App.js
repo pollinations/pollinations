@@ -27,7 +27,7 @@ function App() {
           action={(
 
             <Box marginTop="25px" marginRight="0px" paddingRight="0px" marginBottom="0px" paddingBottom="0px">
-            <img src={colabLogoImage} width="70" height="auto" />
+            <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
             </Box>)
           }
           title="Text to Image "
@@ -52,7 +52,7 @@ function App() {
 
         </CardContent>
         <CardMedia
-          component={latestMedia.headers.type.startsWith("image") ? "img":"video"}
+          component={latestMedia.headers.type.startsWith("image") || true ? "img":"video"}
           src={latestMedia.body}
           title={text}
           style={{minHeight:"500px"}}
@@ -61,7 +61,7 @@ function App() {
         <CardContent>
 
         <Typography variant="body2" color="textPrimary" component="p" style={{fontWeight:"bold"}}>
-          {latestConsole.body.replace(/\].*/g,"")}
+          <pre>{latestConsole.body.replace(/\].*/g,"")}</pre>
         </Typography>
         </CardContent>
         </CardActionArea>

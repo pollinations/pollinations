@@ -9,5 +9,6 @@ Frontend: https://voodoohop.github.io/colabasaservice/
 - [ ] determine if its possible to programatically run a colab notebook from the start (if its possible we dont have to change the colab notebooks. we could just rerun the whole notebook when a parameter is changed)
 - [ ] finish a minimal implementation in the deep-daze colab notebook which allows adjusting parameters and triggering the training
 - [ ] extract the python code from the notebook to the python package
+- [ ] test IPFS persistence and distributiuon of results (use pinning for results that are a finished run)
 - [ ] convert a few colab notebooks
 - [ ] github action to autodeploy

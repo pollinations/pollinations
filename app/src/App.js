@@ -52,10 +52,11 @@ function App() {
 
         </CardContent>
         <CardMedia
-          component={latestMedia.headers.type.startsWith("image") || true ? "img":"video"}
+          component={latestMedia.headers.type.startsWith("image") ? "img":"video"}
           src={latestMedia.body}
           title={text}
           style={{minHeight:"500px"}}
+          controls
         />
 
         <CardContent>

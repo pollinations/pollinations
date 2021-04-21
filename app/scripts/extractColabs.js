@@ -30,4 +30,4 @@ const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s'(.*)'\s\s#@
 
 const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default:defaultVal, title: name}];
 
-console.log(JSON.stringify(readJSONS()[0], null, 2))
+fs.writeFileSync("./src/data/notebooks.json",JSON.stringify(readJSONS(), null, 2));

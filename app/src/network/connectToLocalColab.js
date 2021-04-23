@@ -1,4 +1,3 @@
-const b = new BroadcastChannel("colabservice")
-b.postMessage("hello from incognito")
-b.onmessage = (...args) => console.error(...args)
+const b = new BroadcastChannel("colabconnection")
+b.onmessage = (...args) => console.warn("FROM COLAB",...args)
 

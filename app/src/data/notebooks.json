@@ -1,7 +1,6 @@
 [
   {
     "form": {
-      "title": "Deep Daze",
       "properties": {
         "text": {
           "type": "string",

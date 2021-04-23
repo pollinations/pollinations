@@ -6,11 +6,12 @@ import {Container} from "@material-ui/core"
 import "./network/connectToLocalColab";
 import notebooks from "./data/notebooks.json";
 
+import "./network/ipfsClient"
+
 function App() {
 
-
    return (
-      <Container maxWidth="sm">
+      <Container>
         {
           notebooks.map((notebook,i) => (
           <Model key={i} notebook={notebook} />

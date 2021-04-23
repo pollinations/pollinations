@@ -5,70 +5,24 @@ import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
 import { useSearchParam } from 'react-use';
-
+import CssBaseline from '@material-ui/core/CssBaseline';
 // images
 import runAllImg from "./help/Runtime-RunAll.png"; 
 
-import { Box } from '@material-ui/core';
-const useIsInColab = () => 
-  useSearchParam('insidecolab');
+import { Box, createMuiTheme, ThemeProvider } from '@material-ui/core';
 
-const useColab = () => {
-  const inColab = useIsInColab(); 
-  console.log("Which Colab notebook is open?", inColab);
-
-  // handshake with the browser when we are running in an iframe in colab
-  useEffect(() => {
-
-    const channel = new BroadcastChannel("colabservice")
-    if (inColab) {
-      console.log("Announcing that we are in Colab.");
-      channel.postMessage("local_colab")
-      // setInterval(()=>
-      //   window.parent.postMessage("roger_from_inside"),3000);
-      // window.onmessage = ({data}) => {
-      //   console.log("innerOnMessage",data);
-      // }      
-    } else
-      channel.onmessage = ({data}) => {
-        if (data === "local_colab") {
-          console.log("Connected to local Colab...");
-          channel.postMessage("local_frontend");
-        }
-
-    }
-    
-  },[inColab]);
-
-  return inColab; 
-}
-
-const AppOnlyOutsideColab = ({children}) => {
-
-  const inColab = useColab();
-  
-  return inColab ? 
-                  (<><Box m={2}>
-                    <h3>Welcome to <i>Better name? CaaS? Blatant Pollinations?</i></h3>
-                      <h4>Please click <i>Runtime->Run all</i> to start the backend.</h4> 
-                   
-                        <img src={runAllImg} width="300" height="auto" />     <br/>
-                        <br/>
-                        Although the preview frontend is also shown from inside of Google Colab, it is usually preferable to open it in a separate browser window.   Please follow <a href="https://voodoohop.github.io/colabasaservice/" target="_blank">this</a> link.
-                        </Box>
-                        <br/>
-                        <br/>
-                        {children}
-                        </>) : (<div>
-
-                    {children}
-                    </div>
-                    );
-}
+const darkTheme = createMuiTheme({
+  // palette: {
+  //   type: 'light',
+  // },
+});
 
 ReactDOM.render(
   <React.StrictMode>
-    <AppOnlyOutsideColab><App /></AppOnlyOutsideColab>
+    <ThemeProvider theme={darkTheme}>
+     <CssBaseline />
+     <App />
+    </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')
 );

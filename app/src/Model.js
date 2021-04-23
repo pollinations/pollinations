@@ -3,9 +3,12 @@ import colabLogoImage from "./help/colab_icon.png";
 import openStomp from './network/stompClient';
 import {TextField , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
 import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
+import Markdown from 'markdown-to-jsx';
+import Form from "@rjsf/material-ui";
 
-export function Model() {
-
+export function Model({notebook}) {
+    console.log("notebook",notebook)
+    const {description,form} = notebook;
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
     const queueMessage = new useMemo(() => {
@@ -23,10 +26,13 @@ export function Model() {
  
   return <Card variant="outlined">
         <CardActionArea>
-        <CardHeader action={<Box marginTop="25px" marginRight="0px" paddingRight="0px" marginBottom="0px" paddingBottom="0px">
-            <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
-            </Box>} title="Text to Image " subheader="(CLIP+SIREN)" /> 
-      
+            <CardContent>
+          <Markdown>{description}</Markdown>
+          <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
+        </CardContent> 
+        <CardContent>
+        <Form schema={form} />
+          </CardContent>      
       <CardContent>
 
       <TextField style={{
@@ -52,6 +58,7 @@ export function Model() {
           <pre>{latestConsole.body.replace(/\].*/g, "")}</pre>
         </Typography>
         </CardContent>
+
         </CardActionArea>
         <CardActions>
         

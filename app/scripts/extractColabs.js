@@ -10,13 +10,16 @@ function readJSONS(path="../colabs") {
     const parameterCell = cells[3];
     const description = descriptionCell["cell_type"] === "markdown" ? descriptionCell["source"].join("\n") : null;
     const parameterTexts = parameterCell["cell_type"] === "code" ? parameterCell["source"] : null;
-    const allParameters = parameterTexts.map(extractParameters).map(mapToJSONFormField);
+    const allParameters = parameterTexts
+          .map(extractParameters)
+          .filter(param => param)
+          .map(mapToJSONFormField);
     const properties = Object.fromEntries(allParameters);
 
     return {
         form: {
-          "title": name,
-          //description,
+          // "title": name,
+          // description,
           // type, 
           properties
         },

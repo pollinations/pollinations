@@ -20,13 +20,12 @@
     <script>
         const c = new BroadcastChannel("colabconnection")
         
-        const connect = async () => {
-          const search = window.location.search;
-          const link = search.split("=")[1];
-          c.postMessage(link);
+        
+        window.onmessage = link => {
+          console.log("Link from earth", link);
+          c.postMessage("link")
         }
-        connect();
-        c.onmessage = (...args) => console.log("message",...args)
+
         // setInterval(() => c.postMessage("helloo"+Math.random()),3000)
       console.log("heeeyyy")
     </script>

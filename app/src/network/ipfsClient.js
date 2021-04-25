@@ -11,10 +11,11 @@ const connect =  (onConnect) => {
 
     const colabChannel = new BroadcastChannel("colabconnection");
     let nodeID = null;
+    let contentID = null;
     colabChannel.onmessage = ({data}) => {
-        nodeID = data;
+        [nodeID, contentID] = data.split(",");
 
-        console.warn("nodeID from colab", nodeID);
+        console.warn("nodeID from colab", nodeID, "contentId", contentID);
         
         if (onConnect)
             onConnect(nodeID);
@@ -24,7 +25,9 @@ const connect =  (onConnect) => {
     // sending any message will trigger a reply with the nodeID
     colabChannel.postMessage("get_nodeid");
     // client.pubsub.subscribe(nodeID, dispa)
-    const dispatch = data => {
+    const dispatch = async data => {
+
+        // client.object.patch.addLink();
         client.pubsub.publish(nodeID, JSON.stringify(data));
     };
 

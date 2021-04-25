@@ -6,9 +6,14 @@ import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
 import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
 
-export function Model({notebook}) {
+
+
+import useColab from "./network/ipfsClient"
+export default function Model({notebook}) {
     console.log("notebook",notebook)
     const {description,form} = notebook;
+
+    const {nodeID: colabNodeID, dispatch:dispatchColab} = useColab();
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
     const queueMessage = new useMemo(() => {
@@ -29,23 +34,11 @@ export function Model({notebook}) {
             <CardContent>
           <Markdown>{description}</Markdown>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
+          NodeID: <b>{colabNodeID ? colabNodeID.slice(-4)  : "Not connected..."}</b>
         </CardContent> 
         <CardContent>
-        <Form schema={form} />
+        <Form schema={form} onSubmit={({formData}) => dispatchColab(formData)}/>
           </CardContent>      
-      <CardContent>
-
-      <TextField style={{
-          width: "90%"
-        }} label="Prompt" multiline fullWidth value={text} disabled={isRunning} onChange={({
-          target
-        }) => setText(target.value)} /> 
-        <IconButton onClick={() => {
-          if (!isRunning) queueMessage(text);
-          setRunning(value => !value);
-        }}>{isRunning ? <Stop /> : <PlayArrow />}</IconButton>
-
-        </CardContent>
         <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"
       }} controls />
@@ -71,5 +64,5 @@ export function Model({notebook}) {
         </IconButton>
         </CardActions>
         </Card>;
-}
+};
   

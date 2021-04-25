@@ -13,7 +13,7 @@ export default function Model({notebook}) {
     console.log("notebook",notebook)
     const {description,form} = notebook;
 
-    const {nodeID: colabNodeID, dispatch:dispatchColab} = useColab();
+    const {nodeID: colabNodeID, add:dispatchColab} = useColab();
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
     const queueMessage = new useMemo(() => {

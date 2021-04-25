@@ -1,12 +1,10 @@
-import { Model } from './Model';
+import Model from './Model';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import {Container} from "@material-ui/core"
 
 import "./network/connectToLocalColab";
 import notebooks from "./data/notebooks.json";
-
-import "./network/ipfsClient"
 
 function App() {
 

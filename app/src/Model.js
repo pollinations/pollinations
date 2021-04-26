@@ -13,7 +13,7 @@ export default function Model({notebook}) {
     console.log("notebook",notebook)
     const {description,form} = notebook;
 
-    const {nodeID: colabNodeID, add:dispatchColab} = useColab();
+    const {nodeID, contentID, add:dispatchColab} = useColab();
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
     const queueMessage = new useMemo(() => {
@@ -34,7 +34,10 @@ export default function Model({notebook}) {
             <CardContent>
           <Markdown>{description}</Markdown>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
-          NodeID: <b>{colabNodeID ? colabNodeID.slice(-4)  : "Not connected..."}</b>
+          <br/>
+          NodeID: <b>{nodeID ? nodeID.slice(-4)  : "Not connected..."}</b>
+         <br />
+          ContentID: <b>{contentID ? contentID.slice(-4)  : "Not connected..."}</b>
         </CardContent> 
         <CardContent>
         <Form schema={form} onSubmit={({formData}) => dispatchColab(formData)}/>

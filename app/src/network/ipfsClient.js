@@ -8,14 +8,14 @@ const connect =  (onConnect) => {
 
     const colabChannel = new BroadcastChannel("colabconnection");
     let nodeID = null;
-    let rootContentID = null;
+    let contentID = null;
     colabChannel.onmessage = ({data}) => {
-        [nodeID, rootContentID] = data.split(",");
+        [nodeID, contentID] = data.split(",");
 
-        console.warn("nodeID from colab", nodeID, "contentId", rootContentID);
+        console.warn("nodeID from colab", nodeID, "contentId", contentID);
         
         if (onConnect)
-            onConnect(nodeID);
+            onConnect({nodeID,contentID});
 
     }
 
@@ -28,7 +28,7 @@ const connect =  (onConnect) => {
         
         const { path: contentID } = await client.add(JSON.stringify(data));
         console.log("Added contentID", contentID);
-        const patchRes = await client.object.patch.addLink(rootContentID, {Hash: contentID,name:"metadata.json"});
+        const patchRes = await client.object.patch.addLink(contentID, {Hash: contentID,name: "metadata.json"});
         console.log({patchRes});
         for await (const getRes of client.ls(patchRes)) {
             console.log("file:",getRes.name);
@@ -43,12 +43,12 @@ const connect =  (onConnect) => {
 
 // connect();
 const useColab= () => {
-    const [nodeID, setNodeID] = useState(null);
+    const [ids, setIds] = useState({nodeID:null, contentID:null});
 
     const add = useMemo(() => {
-        return connect(setNodeID);
+        return connect(setIds);
     }, []);
-    return {nodeID, add};
+    return {...ids, add};
 };
 
 export default useColab;

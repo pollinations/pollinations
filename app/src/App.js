@@ -6,7 +6,6 @@ import {Container} from "@material-ui/core"
 import notebooks from "./data/notebooks.json";
 
 function App() {
-
    return (
       <Container>
         {

@@ -24,7 +24,7 @@
         const frontendChannel = new BroadcastChannel("colabconnection")
         
         const sendNodeIDToFrontent = () => {
-          console.log("Sending nodeID",link,"to frontend.");
+          console.log("Sending nodeID", link, "to frontend.");
           frontendChannel.postMessage(link);
         }
     

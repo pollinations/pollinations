@@ -1,6 +1,6 @@
 {
-  "name": "colabasaservice",
-  "homepage": "https://voodoohop.github.io/colabasaservice/",
+  "name": "pollinations",
+  "homepage": "https://pollinations.ai",
   "version": "0.2.0",
   "private": true,
   "dependencies": {
@@ -12,8 +12,11 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "async-each": "^1.0.3",
+    "fasy": "^9.0.0",
     "ipfs-http-client": "^49.0.4",
     "markdown-to-jsx": "^7.1.2",
+    "once": "^1.4.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",

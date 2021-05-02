@@ -13,7 +13,10 @@ export default React.memo(function Model({notebook}) {
     const {description,form} = notebook;
 
     const {nodeID, contentID, add:dispatchColab, publish: publishColab} = useColab();
+
+   
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
+
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
 
     const [text, setText] = useState("")
@@ -41,17 +44,19 @@ export default React.memo(function Model({notebook}) {
           ContentID: <b>{contentID ? displayContentID(contentID) : "Not connected..."}</b>
         </CardContent> 
         <CardContent>
-        <Form schema={form} onSubmit={dispatchForm}/>
-          </CardContent>      
-        <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
+          <Form schema={form} onSubmit={dispatchForm}/>
+        </CardContent>      
+        {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"
-      }} controls />
+      }} controls /> */}
 
         <CardContent>
           <Typography variant="body2" color="textPrimary" style={{
             fontWeight: "bold"
           }}>
-            {latestConsole.body.replace(/\].*/g, "")}
+            { 
+            //latestConsole.body.replace(/\].*/g, "")
+            } 
           </Typography>
         </CardContent>
 

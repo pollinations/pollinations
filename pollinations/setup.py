@@ -9,12 +9,12 @@ README = (HERE / "README.md").read_text()
 
 # This call to setup() does all the work
 setup(
-    name="colabservice",
+    name="pollinations",
     version="1.0.0",
     description="Make Google Colab Notebooks available as a Servbice",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/voodoohop/colabasaservice",
+    url="https://github.com/voodoohop/pollinations",
     author="Pollination in Blatant Space (thomash)",
     author_email="t.haferlach@gmail.com",
     license="MIT",
@@ -23,9 +23,9 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["colabservice"],
+    packages=["pollinations"],
     include_package_data=True,
-    install_requires=["stomp-py"],
+    install_requires=[],
     # entry_points={
     #     "console_scripts": [
     #         "colabservice=reader.__main__:main",

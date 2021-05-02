@@ -1,26 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
 import colabLogoImage from "./help/colab_icon.png";
-import openStomp from './network/stompClient';
 import {TextField , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
 import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
 import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
+import each from "async-each";
 
 
-
-import useColab from "./network/ipfsClient"
-export default function Model({notebook}) {
+import useColab, {displayContentID} from "./network/ipfsClient"
+export default React.memo(function Model({notebook}) {
     console.log("notebook",notebook)
     const {description,form} = notebook;
 
-    const {nodeID, contentID, add:dispatchColab} = useColab();
+    const {nodeID, contentID, add:dispatchColab, publish: publishColab} = useColab();
     const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
     const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
-    const queueMessage = new useMemo(() => {
-      return openStomp(setLatestConsole, setLatestMedia)
-    },[]);
 
-    const [isRunning, setRunning] = useState(false);
     const [text, setText] = useState("")
     // console.log("latest",latestConsole);
 
@@ -29,33 +24,38 @@ export default function Model({notebook}) {
 
     const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
  
+    const dispatchForm = async ({formData}) => {
+      for (const keyVal of Object.entries(formData)) {
+        await dispatchColab(...keyVal);
+      }
+      await publishColab();
+    }
   return <Card variant="outlined">
-        <CardActionArea>
+   
             <CardContent>
           <Markdown>{description}</Markdown>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
           <br/>
-          NodeID: <b>{nodeID ? nodeID.slice(-4)  : "Not connected..."}</b>
+          NodeID: <b>{nodeID ? displayContentID(nodeID)  : "Not connected..."}</b>
          <br />
-          ContentID: <b>{contentID ? contentID.slice(-4)  : "Not connected..."}</b>
+          ContentID: <b>{contentID ? displayContentID(contentID) : "Not connected..."}</b>
         </CardContent> 
         <CardContent>
-        <Form schema={form} onSubmit={({formData}) => dispatchColab(formData)}/>
+        <Form schema={form} onSubmit={dispatchForm}/>
           </CardContent>      
         <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"
       }} controls />
 
         <CardContent>
-
-        <Typography variant="body2" color="textPrimary" component="p" style={{
-          fontWeight: "bold"
-        }}>
-          <pre>{latestConsole.body.replace(/\].*/g, "")}</pre>
-        </Typography>
+          <Typography variant="body2" color="textPrimary" style={{
+            fontWeight: "bold"
+          }}>
+            {latestConsole.body.replace(/\].*/g, "")}
+          </Typography>
         </CardContent>
 
-        </CardActionArea>
+ 
         <CardActions>
         
         
@@ -67,5 +67,5 @@ export default function Model({notebook}) {
         </IconButton>
         </CardActions>
         </Card>;
-};
+});
   

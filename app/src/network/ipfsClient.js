@@ -1,119 +1,117 @@
 
 import {useState, useEffect, useMemo} from "react";
 import Client from 'ipfs-http-client';
-import {toPromise, toPromise1, noop} from "./utils"
+import {toPromise, toPromise1, noop, zip} from "./utils"
+
+import {extname} from "path";
 
 export const displayContentID = contentID => contentID.toString().slice(-4);
 
-const stateManager = (client) => {
+const IPFS_HOST = "18.157.173.110";
+
+const contentCache = new Map();
+
+const getStateCached = async (contentCache, client, {cid, type, name}) => {
+    if (contentCache.has(cid))
+        return contentCache.get(cid);
+    let result = null;
+
+    if (type === "dir") {
+        const files = await toPromise(client.ls(cid));
+        const filenames = files.map(({name}) => name);
+        const fileContents = await Promise.all(files.map(file => getStateCached(contentCache, client, file)));
+        result = Object.fromEntries(zip(filenames, fileContents));
+    }
+
+    if (type === "file") {
+        if (extname(name).length === 0 ) {
+            const {content} = await toPromise1(client.get(cid))
+            const contentArray = await toPromise1(content);
+            result = new TextDecoder().decode(contentArray);
+        } else
+            result = `http://${IPFS_HOST}:9090/ipfs/${cid}`;
+    }
     
+    if (result === null)
+        throw "Unknown IPFS entry";
+
+    contentCache.set(cid, result);
+    return result;
 }
 
-const colabConnectionManager = (onNodeID) => {
+const getState = (...args) => getStateCached(contentCache,...args)
+
+const stateManager = (client, onState) => {
+
+    let contentCache = new Map();
+
+    let state = {
+        nodeID: null,
+        contentID: null,
+        ipfs: null
+    };
+    
+    colabConnectionManager(client, nodeID => {
+        state = {...state, nodeID}
+        onState(state);
+    }, async contentID => {
+        state = {...state, contentID};
+        console.time("getstate");
+        console.log(await getState(client, {cid: contentID, type: "dir"}));     
+        console.timeEnd("getstate");
+        onState(state);
+    });
+
+}
+
+const colabConnectionManager = async (client, onNodeID, onContentID) => {
     let nodeID = null;
+    let contentID = null;
     const colabChannel = new BroadcastChannel("colabconnection");
     colabChannel.onmessage = async ({data:newNodeID}) => {
-        newNodeID = newNodeID.toString();
 
-        if (!newNodeID || newNodeID === "get_nodeid" || nodeID === newNodeID)
+        if (newNodeID === "get_nodeid")
             return;
+            
         console.log("old",nodeID,"new",newNodeID,"equal",nodeID===newNodeID)        
         
         nodeID = newNodeID;
         onNodeID(nodeID);
-    }
-    colabChannel.postMessage("get_nodeid");
-}
-
-colabConnectionManager(nodeID => console.log("Got nodeID",nodeID));
-
-const connect =  (onConnect, onState=noop) => {
-    console.log("Connecting to IPFS and creating BroadcastChannel...");
-    const client = Client('http://18.157.173.110:5002')
-    window.client = client;
-    const colabChannel = new BroadcastChannel("colabconnection");
-    let nodeID = null;
-    let contentID = null;
-
-    return {add:noop, publish:noop};
-    colabChannel.onmessage = async ({data:newNodeID}) => {
-        
-        newNodeID = newNodeID.toString();
-
-        if (!newNodeID || newNodeID === "get_nodeid" || nodeID === newNodeID)
-            return;
-        console.log("old",nodeID,"new",newNodeID,"equal",nodeID===newNodeID)        
-        
-        nodeID = newNodeID;
-        return;
-        
-        console.log("Set nodeID to newNodeID",nodeID)
-        let myID = await client.id();
-        console.log("My IPFS ID:", myID);
-                 
-
-        if (onConnect)
-            onConnect(nodeID);
-            
-        console.log("new nodeID from colab", nodeID);
-
-
-
-        client.pubsub.subscribe(nodeID, async ({data:newContentID}) => {
-            newContentID = newContentID.toString();
-
-            if (contentID !== newContentID) {
+        client.pubsub.subscribe(nodeID, async ({data}) => {
+            const newContentID = new TextDecoder().decode(data);
+    
+            if (true || contentID !== newContentID) {
                 
                 contentID = newContentID;
-
+    
                 console.log("contentID from colab", contentID);
-                
-                let inputs = await Promise.all(
-                    (await toPromise(client.ls(`${contentID}/input`)))
-                    // .map(async ({path}) => toPromise1(await client.get(path)))
-                );
-                
-                console.log(inputs);
+                onContentID(contentID);
             }
-
+    
         });
-        // console.log(await toPromise1(client.get(inputs[0].path)));
     }
     
-    // sending any message will trigger a reply with the nodeID
+
+    console.log("My ID", await client.id());
+    
     colabChannel.postMessage("get_nodeid");
+    // console.log(await toPromise1(client.get(inputs[0].path)));
 
-    
-    const add = async (name, data) => {
-        
-        console.log("Getting /input");
-        let inputs = await Promise.all(
-            (await toPromise(client.ls(`${contentID}/input`)))
-           // .map(async ({path}) => toPromise1(await client.get(path)))
-        );
-
-        console.log(inputs);
-        console.log(await toPromise1(client.get(inputs[0].path)));
-        // console.log("adding",name,data,"to", `${contentID}/input`)
-        
-        // const { path: addContentID } = await client.add(JSON.stringify(data));
-        // console.log("Added contentID", addContentID);
-        // const patchRes = await client.object.patch.addLink(contentID, {Hash: addContentID, name});
-        // console.log("Patched CID", patchRes.toString());
-        // contentID = patchRes;
-        // console.log("added files", await toPromise(client.ls(patchRes)));
-        
-    };
-    const publish = async () => {
-        await client.pubsub.publish(nodeID, contentID.toString());
-    }
-
-    
-    
-    return { add, publish };
 }
 
-// connect();
+console.log("Connecting to IPFS and creating BroadcastChannel...");
+const client = Client(`http://${IPFS_HOST}:5002`)
+
+stateManager(client, state => console.log("New State", state));
+
+const connect =  (onState=noop) => {
+
+
+
+    return {add:noop, publish:noop};
+  
+}
+
 const useColab= () => {
     const [ids, setIds] = useState({nodeID: null, contentID: null});
 

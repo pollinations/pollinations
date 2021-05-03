@@ -1,50 +1,60 @@
 import React, { useEffect, useMemo, useState } from "react";
 import colabLogoImage from "./help/colab_icon.png";
-import {TextField , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
+import {Field , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
 import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
 import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
-import each from "async-each";
+import {useHash} from 'react-use';
+import ReactJson from 'react-json-view'
 
 
-import useColab, {displayContentID} from "./network/ipfsClient"
+import useColab from "./network/ipfsClient"
+import {displayContentID, noop} from "./network/utils";
+import NodeStatus from "./network/NodeStatus";
+
+import Debug from "debug";
+const debug = Debug("Model");
+
+
+const fillForm = (form, input) => 
+  input ? {
+    properties: Object.fromEntries(Object.entries(form.properties).map(
+      ([formKey, prop]) => [formKey, formKey in input ? {...prop, "default": input[formKey]} : prop]
+    )) 
+  } 
+  : 
+  form;
+
+
 export default React.memo(function Model({notebook}) {
-    console.log("notebook",notebook)
-    const {description,form} = notebook;
+  debug("notebook",notebook)
+  const {description,form} = notebook;
 
-    const {nodeID, contentID, add:dispatchColab, publish: publishColab} = useColab();
+  const {state, dispatch: dispatchState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
+  
+  const { ipfs } = state;
 
-   
-    const [latestConsole, setLatestConsole] = useState({headers: {text:""}, body:"Loading..."});
+  const filledForm =  fillForm(form, ipfs.input);
 
-    const [latestMedia, setLatestMedia] = useState({headers:{type:"image/jpeg"}});
+  const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
 
-    const [text, setText] = useState("")
-    // console.log("latest",latestConsole);
+  useEffect(() => {
+    debug("First model render. We have a problem if you see this twice.")
+  },[]);
+  const dispatchForm = async ({ formData }) => {
+    dispatchState({...state, inputs: formData});
+  }
 
-
-    useEffect(() => setText(latestConsole.headers.text),[latestConsole.headers.text])
-
-    const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
- 
-    const dispatchForm = async ({formData}) => {
-      for (const keyVal of Object.entries(formData)) {
-        await dispatchColab(...keyVal);
-      }
-      await publishColab();
-    }
   return <Card variant="outlined">
-   
+  
             <CardContent>
           <Markdown>{description}</Markdown>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
-          <br/>
-          NodeID: <b>{nodeID ? displayContentID(nodeID)  : "Not connected..."}</b>
-         <br />
-          ContentID: <b>{contentID ? displayContentID(contentID) : "Not connected..."}</b>
+          <NodeStatus {...state} />
         </CardContent> 
         <CardContent>
-          <Form schema={form} onSubmit={dispatchForm}/>
+          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} />
+          <Form schema={filledForm} onSubmit={dispatchForm}/>
         </CardContent>      
         {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"

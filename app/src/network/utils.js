@@ -24,3 +24,5 @@ export const curry = (fn, ...oldArgs) => (...newArgs) => {
     const args = [...oldArgs, ...newArgs];
     return (args.length < fn.length) ? curry(fn, ...args) : fn(...args);
 };
+
+export const displayContentID = contentID => contentID ? contentID.toString().slice(-4) : "None";

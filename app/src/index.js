@@ -12,18 +12,16 @@ import runAllImg from "./help/Runtime-RunAll.png";
 import { Box, createMuiTheme, ThemeProvider } from '@material-ui/core';
 
 const darkTheme = createMuiTheme({
-  // palette: {
-  //   type: 'light',
-  // },
+  palette: {
+    type: 'light',
+  },
 });
 
 ReactDOM.render(
-  <React.StrictMode>
     <ThemeProvider theme={darkTheme}>
      <CssBaseline />
      <App />
-    </ThemeProvider>
-  </React.StrictMode>,
+    </ThemeProvider>,
   document.getElementById('root')
 );
 
@@ -35,4 +33,4 @@ serviceWorkerRegistration.unregister();
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+reportWebVitals(console.log);

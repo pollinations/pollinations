@@ -5,11 +5,18 @@ import {toPromise, toPromise1, noop, zip} from "./utils"
 
 import {extname} from "path";
 
-export const displayContentID = contentID => contentID.toString().slice(-4);
+
+import { useHash } from "react-use";
+
+import Debug from "debug";
+const debug = Debug("ipfsClient")
 
 const IPFS_HOST = "18.157.173.110";
 
 const contentCache = new Map();
+
+debug("Connecting to IPFS and creating BroadcastChannel...");
+const client = Client(`http://${IPFS_HOST}:5002`)
 
 const getStateCached = async (contentCache, client, {cid, type, name}) => {
     if (contentCache.has(cid))
@@ -39,52 +46,127 @@ const getStateCached = async (contentCache, client, {cid, type, name}) => {
     return result;
 }
 
-const getState = (...args) => getStateCached(contentCache,...args)
+const getState = (client, contentID) => {
+    debug("Getting state for CID",contentID)
+    return getStateCached(contentCache,client,{ cid: contentID, type: "dir"})
+}
 
 const stateManager = (client, onState) => {
-
-    let contentCache = new Map();
-
+    debug("Creating stateManager");
     let state = {
         nodeID: null,
         contentID: null,
-        ipfs: null
+        ipfs: {}
     };
-    
+
+    setInterval(() => debug("state interval",state),1000)
+
+
+    const mergeState = async newState => {
+        debug("Merging",newState,"into",state)
+        let mergedState = {
+            ...state,
+            ...newState
+        };
+        if (mergedState.contentID !== state.contentID) {
+            mergedState = {
+                ...mergedState,
+                ipfs:  await getState(client, mergedState.contentID)
+            };
+
+        }
+        debug("Triggering state change", state,"with",newState, "result", mergedState);
+        state = mergedState;
+        onState(state);
+    }
+
+    // mergeState({contentID:"QmZ6Yo8bps8HisxoNTCkxUwiimi2nw9zYnDWftjfW51JHL"})
+
     colabConnectionManager(client, nodeID => {
-        state = {...state, nodeID}
-        onState(state);
+        debug("merging state", state,"with",nodeID)
+        mergeState({nodeID});
     }, async contentID => {
-        state = {...state, contentID};
         console.time("getstate");
-        console.log(await getState(client, {cid: contentID, type: "dir"}));     
+        mergeState({contentID});
         console.timeEnd("getstate");
-        onState(state);
     });
 
+    const dispatch = async ({inputs}) => {
+        debug("Triggered dispatch. Inputs:",inputs, "state", state);
+        let contentID = state.contentID;
+        for (const [key,val] of Object.entries(inputs)) {
+
+            //debug(`${state.contentID}/input`, key);
+           
+            // debug(await client.files.cp(`/ipfs/${state.contentID}`,"/"));
+            // const {cid:mfsCid} = await client.files.stat("/");
+            // debug("mfscid",mfsCid);
+            // state = {...state, contentID: mfsCid};
+            // onState(state);
+            
+            const {cid: inputCid} = await getCidOfPath(contentID, "input");
+            // const {cid: valueCid} = await getCidOfPath(inputCid, key);
+            const  tmpInputCid  = await client.object.patch.rmLink(inputCid, { name: key });
+            debug({tmpInputCid})
+            const { cid: addedCid } = await client.add(val);
+            //debug("AddedCID", addedCid, tmpInputCid)
+            //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
+            debug("adding", contentID, { Hash: addedCid, name: key})
+            const newInputCid = await client.object.patch.addLink(tmpInputCid, { Hash: addedCid, name: key});
+
+            const removedInputCid = await client.object.patch.rmLink(contentID,{ name:"input"} );
+            debug("addlink2", removedInputCid, {Hash: newInputCid, name:"input" })
+            const newContentID = await client.object.patch.addLink(removedInputCid, {Hash: newInputCid, name:"input" });
+            // debug("newIpfs",await getState(client,  { cid: newInputCid, type: "dir"}))
+            contentID = newContentID.toString();   
+        };
+        // client.pubsub.publish(state.nodeID, contentID.toString());
+        if (contentID)
+            mergeState({contentID});
+
+    };
+
+    const setContentID = contentID => {
+        //mergeState({contentID});
+    };
+    return {dispatch, setContentID};
 }
+
+// // TODO: figure out why its rendering twice to avoid this singleton hack
+// const oneStateManager = (() => {
+//     let _stateManager = null;
+//     let _setState = null;
+//     return (client, setState) => {
+//         _setState = setState;
+//         if (!_stateManager) {
+//             console.log("Creating new stateManager now. Previous:", _stateManager)
+//             _stateManager = stateManager(client, _setState);
+//         }
+//         return _stateManager;
+//     }
+// })();
 
 const colabConnectionManager = async (client, onNodeID, onContentID) => {
     let nodeID = null;
     let contentID = null;
     const colabChannel = new BroadcastChannel("colabconnection");
+    //colabChannel.postMessage("get_nodeid");
     colabChannel.onmessage = async ({data:newNodeID}) => {
 
-        if (newNodeID === "get_nodeid")
+        if (newNodeID === "get_nodeid" || newNodeID === nodeID)
             return;
             
-        console.log("old",nodeID,"new",newNodeID,"equal",nodeID===newNodeID)        
+        debug("old",nodeID,"new",newNodeID,"equal",nodeID===newNodeID)        
         
         nodeID = newNodeID;
         onNodeID(nodeID);
         client.pubsub.subscribe(nodeID, async ({data}) => {
             const newContentID = new TextDecoder().decode(data);
-    
-            if (true || contentID !== newContentID) {
+            if (contentID !== newContentID) {
                 
                 contentID = newContentID;
     
-                console.log("contentID from colab", contentID);
+                debug("contentID from colab", contentID);
                 onContentID(contentID);
             }
     
@@ -92,33 +174,41 @@ const colabConnectionManager = async (client, onNodeID, onContentID) => {
     }
     
 
-    console.log("My ID", await client.id());
+    debug("My ID", await client.id());
     
-    colabChannel.postMessage("get_nodeid");
-    // console.log(await toPromise1(client.get(inputs[0].path)));
+
+    // debug(await toPromise1(client.get(inputs[0].path)));
 
 }
 
-console.log("Connecting to IPFS and creating BroadcastChannel...");
-const client = Client(`http://${IPFS_HOST}:5002`)
 
-stateManager(client, state => console.log("New State", state));
-
-const connect =  (onState=noop) => {
-
-
-
-    return {add:noop, publish:noop};
-  
-}
-
-const useColab= () => {
-    const [ids, setIds] = useState({nodeID: null, contentID: null});
-
-    const {add,publish} = useMemo(() => {
-        return connect(setIds);
+const useColab = () => {
+    const [hash, setHash] = useHash();
+    const [state, setState] = useState({nodeID: null, contentID: hash, ipfs: {}});
+    debug("useColab state", state);
+    const {dispatch, setContentID} = useMemo(() => {
+        const res= stateManager(client,setState);
+        debug("created stateManager",res);
+        return res;
     }, []);
-    return {...ids, add, publish};
+
+    useEffect(() => {
+        setHash(state.contentID)
+    },[state]);
+    useEffect(() => {
+        debug("HASH",hash);
+        if (hash && setContentID)
+            setContentID(hash.slice(1));
+
+    },[hash, setContentID])
+    return {state,dispatch};
 };
+
+
+
+async function getCidOfPath( dirCid, path) {
+    debug("getCifOfPath", dirCid, path);
+    return (await toPromise(client.ls(dirCid))).find(({ name }) => name === path);
+}
 
 export default useColab;

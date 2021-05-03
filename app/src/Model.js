@@ -53,7 +53,7 @@ export default React.memo(function Model({notebook}) {
           <NodeStatus {...state} />
         </CardContent> 
         <CardContent>
-          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} />
+          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} enableClipboard={false} displayDataTypes={false} displayObjectSize={false} />
           <Form schema={filledForm} onSubmit={dispatchForm}/>
         </CardContent>      
         {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{

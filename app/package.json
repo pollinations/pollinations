@@ -13,6 +13,7 @@
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^13.1.8",
     "debug": "^4.3.1",
+    "identicon": "^3.0.1",
     "ipfs-http-client": "^49.0.4",
     "markdown-to-jsx": "^7.1.2",
     "react": "^17.0.2",

@@ -54,8 +54,10 @@ const useColab = () => {
     return {
         state, 
         dispatch: async inputState => {
-            client.pubsub.publish(state.nodeID, state.contentID);
-            setContentID(await addInputContent(state.contentID, inputState));
+            const newContentID = await addInputContent(state.contentID, inputState);
+            setContentID(newContentID)
+            debug("Publishing contentID to colab", newContentID);
+            client.pubsub.publish(state.nodeID, newContentID);
         }
     };
 };
@@ -116,7 +118,8 @@ const colabConnectionManager = async (client, onNodeID, onContentID) => {
     let nodeID = null;
     const colabChannel = new BroadcastChannel("colabconnection");
     colabChannel.postMessage("get_nodeid");
-    colabChannel.onmessage = async ({data:newNodeID}) => {
+    colabChannel.onmessage = async ({data:nodeAndContentID}) => {
+        const [newNodeID, contentID] = nodeAndContentID.split(",");
 
         if (newNodeID === "get_nodeid" || newNodeID === nodeID)
             return;
@@ -125,6 +128,7 @@ const colabConnectionManager = async (client, onNodeID, onContentID) => {
         
         nodeID = newNodeID;
         onNodeID(nodeID);
+        onContentID(contentID);
         client.pubsub.subscribe(nodeID, async ({data}) => {
             const newContentID = new TextDecoder().decode(data);
             debug("content ID from colab", newContentID);

@@ -9,12 +9,12 @@ import readline from 'readline-async-generator';
 import {extname} from 'path';
 
 import { getIPFSState } from '../network/ipfsState.js';
-import ipfsClient, { getWebURL , nodeID, stringCID, ipfsMkdir} from "../network/ipfsConnector.js";
+import ipfsClient, { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet} from "../network/ipfsConnector.js";
 const debug = Debug("ipfsWatch")
 
 const mfsRoot = `/${nodeID}`;
 
-const watchPath = '/tmp/output';
+const watchPath = './output';
 
 const incrementalUpdate = async (nodeID, watchPath) => {
 
@@ -61,10 +61,11 @@ async function processRemoteCID(contentID) {
 }
 
 
-let result = null;
-
 async function processFile({name, cid} ) {
+  debug("processFile", name,cid)
   cid = stringCID(cid);
+  const result = await ipfsGet(cid, true);
+  //console.log("ipfsGetResult",result)
   return result;
 }
 
@@ -86,7 +87,7 @@ const order = events => sortBy(eventOrder,reverse(events));
 
 
 
-//incrementalUpdate(nodeID, watchPath)
+// incrementalUpdate(nodeID, watchPath)
 
 
 (async function(){

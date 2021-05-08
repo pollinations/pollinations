@@ -52,13 +52,13 @@ export const callLogger = (f,name = null) => (...args) => {
     if (!name)
       name = f.name;
     const _debug = debug.extend(name);
-    _debug("Calling ",name, "with input", ...args);
-    console.log("--- In:", ...args);
+    _debug("--- Calling ",name, "with input", ...args);
+    _debug("--- In:", ...args);
     const output = f(...args);
     if (output instanceof Promise)
-        output.then(out => _debug("Output of", name,":", out));
+        output.then(out => _debug("--- Out:", name,":", out));
     else
-        _debug("Output of", name,":", output);
+        _debug("--- Out:", name,":", output);
     return output;
   }
   

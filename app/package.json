@@ -1,8 +1,8 @@
 {
   "name": "pollinations",
   "homepage": "https://pollinations.ai",
-  "version": "0.2.0",
-  "private": true,
+  "version": "0.3.0",
+  "private": false,
   "type": "module",
   "dependencies": {
     "@emeraldpay/hashicon-react": "^0.5.1",
@@ -14,6 +14,7 @@
     "@testing-library/react": "^11.2.6",
     "@testing-library/user-event": "^13.1.8",
     "callbag-basics": "^4.0.0",
+    "cids": "^1.1.6",
     "debounce": "^1.2.1",
     "debug": "^4.3.1",
     "debug-trace": "^2.2.3",

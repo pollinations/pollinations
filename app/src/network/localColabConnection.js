@@ -25,9 +25,6 @@ const colabConnectionManager = async (onNodeID = noop, onContentID = noop) => {
     }
 
 
-    debug("My ID", await client.id());
-
-
     // debug(await toPromise1(client.get(inputs[0].path)));
 
 }

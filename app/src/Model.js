@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import colabLogoImage from "./help/colab_icon.png";
-import {Field , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea} from "@material-ui/core"
+import {Field , Fab, Card, CardMedia, Container, CardContent,Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider,CardActionArea, GridList, GridListTile} from "@material-ui/core"
 import {PlayArrow, Stop, MoreVer, Favorite, Share} from '@material-ui/icons';
 import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
 import {useHash} from 'react-use';
 import ReactJson from 'react-json-view'
+import {any, identity} from 'ramda';
 
-
-import useColab from "./network/ipfsClient"
+import useColab from "./network/useColab"
 import {displayContentID, noop} from "./network/utils";
 import NodeStatus from "./network/NodeStatus";
 
@@ -38,6 +38,15 @@ export default React.memo(function Model({notebook}) {
 
   const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
 
+  const extensions = [".jpg",".png",".mp4"];
+  
+  const filterByExtensions = filename => any(identity, extensions.map(ext => filename.endsWith(ext)));
+
+  const imageFilenames = ipfs.output ? Object.keys(ipfs.output)
+                      .filter(filterByExtensions) : [];
+
+  const images = imageFilenames.map(filename => [filename, ipfs.output[filename]]);
+  debug("images", images)
   useEffect(() => {
     debug("First model render. We have a problem if you see this twice.")
   },[]);
@@ -50,24 +59,35 @@ export default React.memo(function Model({notebook}) {
             <CardContent>
           <Markdown>{description}</Markdown>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
-          <NodeStatus {...state} />
+
         </CardContent> 
         <CardContent>
-          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} enableClipboard={false} displayDataTypes={false} displayObjectSize={false} />
           <Form schema={filledForm} onSubmit={dispatchForm}/>
-        </CardContent>      
+     
         {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"
       }} controls /> */}
-
-        <CardContent>
-          <Typography variant="body2" color="textPrimary" style={{
+      </CardContent>
+      <CardContent>
+                <Typography variant="body2" color="textPrimary" component="pre" style={{
             fontWeight: "bold"
           }}>
             { 
-            //latestConsole.body.replace(/\].*/g, "")
+            ipfs.output ? ipfs.output.log.replace(/\].*/g, ""):"Loading..."
             } 
           </Typography>
+<GridList cellHeight={160} cols={4}>
+  {images.map(([filename, url]) => (
+    <GridListTile key={filename} cols={1}>
+      <img src={url} alt={filename} />
+    </GridListTile>
+  ))}
+</GridList>
+</CardContent> 
+        <CardContent>
+          <NodeStatus {...state} />
+          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} enableClipboard={false} displayDataTypes={false} displayObjectSize={false} />
+
         </CardContent>
 
  

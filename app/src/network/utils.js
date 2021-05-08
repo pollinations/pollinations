@@ -1,3 +1,7 @@
+import { useState } from "react";
+
+import Debug from "debug";
+const debug = Debug("utils")
 
 export const toPromise = async asyncGen => {
     let contents = [];
@@ -25,4 +29,20 @@ export const curry = (fn, ...oldArgs) => (...newArgs) => {
     return (args.length < fn.length) ? curry(fn, ...args) : fn(...args);
 };
 
-export const displayContentID = contentID => contentID ? contentID.toString().slice(-4) : "None";
+export const displayContentID = contentID => contentID ? contentID.toString().slice(-999) : "None";
+
+export const useHash = () => {
+    console.log("history", window.history, "hash", window.location.hash);
+    //history.replaceState(undefined, undefined, "#hash_value")
+    const locationHash = window.location.hash.replace("#","");
+    const [hash,setHashState] = useState(locationHash || null);
+    debug("hash", hash);
+    const setHash = hash => {
+        //const title = "Pollinations - "+ displayContentID(hash);
+        const title=undefined;
+        window.history.replaceState(undefined, title, "#"+hash);
+        //window.title = title;
+        setHashState(hash);
+    }
+    return [hash, setHash];
+};

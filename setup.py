@@ -14,7 +14,7 @@ setup(
     description="Make Google Colab Notebooks available as a Servbice",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/voodoohop/colabasaservice",
+    url="https://github.com/voodoohop/pollinations",
     author="Pollination in Blatant Space (thomash)",
     author_email="t.haferlach@gmail.com",
     license="MIT",
@@ -23,7 +23,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["colabservice"],
+    packages=["pollinations"],
     include_package_data=True,
     install_requires=["stomp-py"],
     # entry_points={

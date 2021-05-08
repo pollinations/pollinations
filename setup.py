@@ -9,7 +9,7 @@ README = (HERE / "README.md").read_text()
 
 # This call to setup() does all the work
 setup(
-    name="colabservice",
+    name="pollinations",
     version="0.1.0",
     description="Make Google Colab Notebooks available as a Servbice",
     long_description=README,

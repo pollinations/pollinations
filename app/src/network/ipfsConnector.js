@@ -31,11 +31,11 @@ export async function getCID(ipfsPath = "/") {
 
 export const getWebURL = cid => `http://${IPFS_HOST}:9090/ipfs/${stringCID(cid)}`;
 
-export const stringCID = file => "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
+export const stringCID = file => file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
 
 const _ipfsLs = async cid => await toPromise(client.ls(stringCID(cid)));
 
-export const ipfsLs = callLogger(cacheOutput(_ipfsLs));
+export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 
 
 export const ipfsAdd = async (content, ipfsPath = null) => {

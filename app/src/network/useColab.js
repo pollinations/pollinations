@@ -2,8 +2,9 @@
 import {useState, useEffect, useMemo, useReducer} from "react";
 import {toPromise, toPromise1, noop, zip, useHash} from "./utils"
  
-import {getIPFSState, stateReducer, addInputContent, colabConnectionManager, publish } from "./ipfsClient";
+import {getIPFSState, stateReducer, addInputContent, publish } from "./ipfsClient";
 import Debug from "debug";
+import colabConnectionManager from "./localColabConnection";
 const debug = Debug("useColab")
 
 

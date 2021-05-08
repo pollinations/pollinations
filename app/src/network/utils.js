@@ -46,3 +46,19 @@ export const useHash = () => {
     }
     return [hash, setHash];
 };
+
+
+export const callLogger = (f,name = null) => (...args) => {
+    if (!name)
+      name = f.name;
+    const _debug = debug.extend(name);
+    _debug("Calling ",name, "with input", ...args);
+    console.log("--- In:", ...args);
+    const output = f(...args);
+    if (output instanceof Promise)
+        output.then(out => _debug("Output of", name,":", out));
+    else
+        _debug("Output of", name,":", output);
+    return output;
+  }
+  

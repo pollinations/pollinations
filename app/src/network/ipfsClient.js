@@ -1,7 +1,7 @@
 
 
 import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
-import { getIPFSState, client} from "./ipfsCachedState"
+import { client, getWebURL} from "./ipfsConnector.js"
 import { extname } from "path";
 
 
@@ -29,7 +29,7 @@ const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => 
             const contentArray = await toPromise1(content);
             result = new TextDecoder().decode(contentArray);
         } else
-            result = `http://${IPFS_HOST}:9090/ipfs/${cid}`;
+            result = getWebURL(cid);
     }
 
     if (result === null)

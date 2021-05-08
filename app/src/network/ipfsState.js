@@ -3,8 +3,10 @@
 import client, { globSource, nodeID, getCID, stringCID, ipfsLs, ipfsMkdir, ipfsAdd } from "./ipfsConnector.js";
 import Debug from "debug";
 import { toPromise } from "./utils.js";
+import { zip } from "ramda";
+import { cacheOutput } from "./contentCache.js";
 
-const debug = Debug("ipfsCachedState");
+const debug = Debug("ipfsState");
 
 
 export const getIPFSState = (contentID, processFile) => {
@@ -12,17 +14,12 @@ export const getIPFSState = (contentID, processFile) => {
     return _getIPFSState({ cid: contentID, name:".", type: "dir" }, processFile)
 }
 
-const _getIPFSState = async ({ cid, type, name }, processFile) => {
+const _getIPFSState = cacheOutput(async ({ cid, type, name }, processFile) => {
     cid = stringCID(cid);
-    debug("Requesting cached state for", type, name, cid);
-    if (contentCache.has(cid)) {
-        const res = contentCache.get(cid);
-        debug("Contentcache get",res);
-        return res;
-    }
+    debug("Getting state for", type, name, cid);
     if (type === "dir") {
-        const files = ipfsLs(cid);
-        debug("Got files for", name, cid);
+        const files = await ipfsLs(cid);
+        debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
         const contents = await Promise.all(files.map(
             file => _getIPFSState(file, processFile)
@@ -30,18 +27,15 @@ const _getIPFSState = async ({ cid, type, name }, processFile) => {
         return Object.fromEntries(zip(filenames, contents));
     
     }
-
-{
      
 
     if (type === "file") {
         const fileResult = await processFile({ cid, name });
-        contentCache.set(cid, fileResult);
         return fileResult;
     }
 
     throw `Unknown file type "${type}" encountered. Name: "${name}", CID: "${cid}".`;
-}
+});
 
 
 

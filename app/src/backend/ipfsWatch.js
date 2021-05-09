@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import watch from 'file-watch-iterator';
 
 import Debug from "debug";

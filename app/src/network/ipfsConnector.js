@@ -3,8 +3,13 @@ import Client from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1 } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
-
+import concat from 'it-concat';
+import all from "it-all";
 import Debug from "debug";
+import sleep from "await-sleep";
+import {concat as uint8ArrayConcat} from 'uint8arrays';
+import fetch from 'node-fetch';
+
 const debug=Debug("ipfsConnector")
 
 export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);
@@ -14,6 +19,8 @@ debug("NodeID", nodeID)
 const IPFS_HOST = "18.157.173.110";
 
 export const ipfsPeerURL = `http://${IPFS_HOST}:5002`;
+
+export const ipfsGatewayURL = cid => `http://pollinations.ai/ipfs/${cid}`;
 
 debug("Connecting to IPFS", ipfsPeerURL);
 
@@ -29,7 +36,7 @@ export async function getCID(ipfsPath = "/") {
     return cid;
 }
 
-export const getWebURL = cid => `/ipfs/${stringCID(cid)}`;
+export const getWebURL = ipfsGatewayURL;
 
 export const stringCID = file => file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
 
@@ -52,15 +59,16 @@ export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
 });
 
 export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
-    debug("Downloading remote file:", cid);
+    const _debug = debug.extend(`ipfsGet(${cid})`);
+    _debug("Downloading remote file");
 
     if (onlyLink)
         return getWebURL(cid);
 
-    const { content } = await toPromise1(client.get(cid));
-    debug("Got content reference. Downloading...");
-    const contentArray = await toPromise1(content);
-    debug("Received content length:", contentArray.length, typeof contentArray);
+    const response = await fetch(ipfsGatewayURL(cid));
+    const contentArray = await response.buffer();
+    // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
+    _debug("Received content length:", contentArray.length);
     // debug("Content type",contentArray)
     return contentArray;
 }));

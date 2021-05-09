@@ -1,1 +1,2 @@
-/ipfs 
+/ipfs/* http://ipfs.pollinations.ai:9090/ipfs/:splat 200
+/ipns/* http://ipfs.pollinations.ai:9090/ipns/:splat 200

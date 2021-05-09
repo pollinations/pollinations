@@ -15,6 +15,7 @@
     "@testing-library/user-event": "^13.1.8",
     "callbag-basics": "^4.0.0",
     "cids": "^1.1.6",
+    "commander": "^7.2.0",
     "debounce": "^1.2.1",
     "debug": "^4.3.1",
     "debug-trace": "^2.2.3",

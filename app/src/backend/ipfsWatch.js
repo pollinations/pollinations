@@ -6,7 +6,7 @@ import Debug from "debug";
 import {  callLogger, toPromise1 } from "../network/utils.js";
 import { sortBy,reverse } from "ramda";
 
-import readline from 'readline-async-generator';
+import Readline from 'readline';
 
 import { getIPFSState } from '../network/ipfsState.js';
 import { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd} from "../network/ipfsConnector.js";
@@ -14,13 +14,19 @@ import { writeFile , mkdir} from 'fs/promises';
 import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
+import awaitSleep from 'await-sleep';
 
 const debug = Debug("ipfsWatch")
+const readline = Readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
 program
   .option('-p, --path <path>', 'local folder to synchronize', '/tmp/ipfs')
   .option('-r, --receive', 'only receive state', false)
-  .option('-s, --send', 'only send state', false);
+  .option('-s, --send', 'only send state', false)
+  .option('-o, --once', 'run once and exit', false);
 
 program.parse(process.argv);
 
@@ -82,6 +88,8 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
     }
 
     console.log(await contentID(mfsRoot));
+    if (options.once)
+      break;
   };
 }
 
@@ -119,27 +127,25 @@ const  eventOrder = ({ event }) => _eventOrder.indexOf(event);
 const order = events => sortBy(eventOrder,reverse(events));
 
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT. Press Control-D to exit.');
-  process.kill();
-});
+// process.on('SIGINT', () => {
+
+//   process.kill();
+// });
 
 if (enableSend)
   incrementalUpdate(mfsRoot, watchPath);
 
 if (enableReceive)
   (async function(){
-    try {
-
-    const stdin = readline();
-    for await(const remoteCID of stdin) {
-      processRemoteCID(remoteCID);
+    for await (const remoteCID of readline) {
+      await processRemoteCID(remoteCID);
+      console.log(remoteCID);
+      if (options.once)
+        break;
     }
-    } catch (e) {
-      console.error(e);
-    }
+    
   }
-  )()
+  )();
 
 
 

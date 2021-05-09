@@ -13,12 +13,14 @@ import { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, content
 import { writeFile , mkdir} from 'fs/promises';
 import { dirname, join } from "path";
 import { program } from "commander";
-import { existsSync, fstat, mkdirSync } from 'fs';
+import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
 
 const debug = Debug("ipfsWatch")
 
 program
-  .option('-r, --root <root>', 'local folder to synchronize', '/tmp/ipfs');
+  .option('-p, --path <path>', 'local folder to synchronize', '/tmp/ipfs')
+  .option('-r, --receive', 'only receive state', false)
+  .option('-s, --send', 'only send state', false);
 
 program.parse(process.argv);
 
@@ -30,8 +32,10 @@ const mfsRoot = `/${nodeID}`;
 
 
 
-const watchPath = options.root;
+const watchPath = options.path;
 
+const enableSend = !options.receive;
+const enableReceive = !options.send;
 debug("Local: Watching", watchPath);
 
 if (!existsSync(watchPath)) {
@@ -44,7 +48,11 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
   await ipfsMkdir(mfsRoot);
   debug("IPFS: Created root IPFS path (if it did not exist)", mfsRoot);
 
-  for await (const files of watch(".",{cwd:watchPath, awaitWriteFinish:false})) {
+  for await (const files of watch(".",{
+    ignored: /(^|[\/\\])\../, 
+    cwd:watchPath, 
+    awaitWriteFinish:false, 
+  })) {
     
     const changed = getSortedChangedFiles(files);
     for (const { event, file } of changed) {
@@ -83,11 +91,15 @@ async function processRemoteCID(contentID) {
 }
 
 async function processFile({ path, cid} ) {
+  const _debug = debug.extend(`processFile(${path})`);
+  _debug("started")
   const destPath = join(watchPath, path);
-  debug("writeFile", destPath, cid);
+  _debug("writeFile", destPath, cid);
   const content = await ipfsGet(cid);
-  debug("writefile content",content)
+  _debug("writefile content",content)
   await writeFileAndCreateFolder(destPath, content);
+  _debug("done")
+  return destPath;
 } 
 
 function getSortedChangedFiles(files) {
@@ -107,17 +119,27 @@ const  eventOrder = ({ event }) => _eventOrder.indexOf(event);
 const order = events => sortBy(eventOrder,reverse(events));
 
 
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Press Control-D to exit.');
+  process.kill();
+});
 
-incrementalUpdate(mfsRoot, watchPath);
+if (enableSend)
+  incrementalUpdate(mfsRoot, watchPath);
 
+if (enableReceive)
+  (async function(){
+    try {
 
-(async function(){
-  const stdin = readline();
-  for await(const remoteCID of stdin) {
-     processRemoteCID(remoteCID);
+    const stdin = readline();
+    for await(const remoteCID of stdin) {
+      processRemoteCID(remoteCID);
+    }
+    } catch (e) {
+      console.error(e);
+    }
   }
-}
-)()
+  )()
 
 
 
@@ -128,9 +150,12 @@ incrementalUpdate(mfsRoot, watchPath);
 // });
 
 const writeFileAndCreateFolder = async (path, content) => {
-  debug("creating folder if it does not exist", path);
+  debug("creating folder if it does not exist", dirname(path));
   await mkdir(dirname(path), {recursive: true});
   debug("writing file of length",content.length,"to folder", path);
-  await writeFile(path,content);
+  writeFileSync(path,content);
   return path;
 };
+
+
+// setInterval(() => null,5000)

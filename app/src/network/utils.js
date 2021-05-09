@@ -16,7 +16,14 @@ export const toPromise = async asyncGen => {
     return contents;
 }
 
-export const toPromise1 = async asyncGen => (await toPromise(asyncGen))[0];
+export const toPromise1 = async asyncGen => {
+    debug("getting values of asyncGen");
+    for await (const value of asyncGen) {
+        debug("Got value",value)
+        return value;
+    }
+    throw "No value found to convert to Promise";
+}
 
 export const noop = () => null;
 

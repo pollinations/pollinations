@@ -57,7 +57,7 @@
     "deploy": "gh-pages -d build"
   },
   "bin": {
-    "ipfs_sync": "./src/backend/ipfsWatch.js"
+    "pollinate": "./src/backend/ipfsWatch.js"
   },
   "eslintConfig": {
     "extends": [

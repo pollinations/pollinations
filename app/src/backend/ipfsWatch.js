@@ -2,56 +2,77 @@ import watch from 'file-watch-iterator';
 
 import Debug from "debug";
 
-import {  toPromise1 } from "../network/utils.js";
+import {  callLogger, toPromise1 } from "../network/utils.js";
 import { sortBy,reverse } from "ramda";
 
 import readline from 'readline-async-generator';
-import {extname} from 'path';
 
 import { getIPFSState } from '../network/ipfsState.js';
-import ipfsClient, { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet} from "../network/ipfsConnector.js";
+import { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd} from "../network/ipfsConnector.js";
+import { writeFile , mkdir} from 'fs/promises';
+import { dirname, join } from "path";
+import { program } from "commander";
+import { existsSync, fstat, mkdirSync } from 'fs';
+
 const debug = Debug("ipfsWatch")
+
+program
+  .option('-r, --root <root>', 'local folder to synchronize', '/tmp/ipfs');
+
+program.parse(process.argv);
+
+const options = program.opts();
+debug("CLI options", options);
+
 
 const mfsRoot = `/${nodeID}`;
 
-const watchPath = './output';
 
-const incrementalUpdate = async (nodeID, watchPath) => {
 
-  debug(`Creating root directory if it does not exist.`);
-  
-  await ipfsMkdir();
-  debug("Absolute root IPFS path",);
+const watchPath = options.root;
+
+debug("Local: Watching", watchPath);
+
+if (!existsSync(watchPath)) {
+  debug("Local: Root directory does not exist. Creating", watchPath)
+  mkdirSync(watchPath, {recursive: true});
+}
+
+const incrementalUpdate = async (mfsRoot, watchPath) => {
+
+  await ipfsMkdir(mfsRoot);
+  debug("IPFS: Created root IPFS path (if it did not exist)", mfsRoot);
 
   for await (const files of watch(".",{cwd:watchPath, awaitWriteFinish:false})) {
-    //
+    
     const changed = getSortedChangedFiles(files);
     for (const { event, file } of changed) {
-      const localPath = `${watchPath}/${file}`;
+      const localPath = join(watchPath, file);
+      const ipfsPath = join(mfsRoot, file);
 
       if (event === "addDir") {
-        debug("adding directory", file);
-        await ipfsMkdir(file);
-        await cacheIPFSPath(ipfsPath, localPath);
-      };
+        await ipfsMkdir(ipfsPath);
+      }
 
       if (event === "add") {
-        
+        await ipfsAddFile(localPath, ipfsPath);
       }
-      
+
       if (event === "unlink" || event === "unlinkDir") {
         debug("removing", file, event);
-        //await removeCID(ipfsPath);
-        await ipfsClient.files.rm(ipfsPath, {recursive:true});
-        
+        await ipfsRm(ipfsPath);
       }
-      const {cid: rootCIDInner} = await ipfsClient.files.stat(mfsRoot);
-      debug("root CID changed to", getWebURL(rootCIDInner.toString()));
+
+      if (event === "change") {
+        debug("changing", file);
+        debug("remove",ipfsPath);
+        await ipfsRm(ipfsPath);
+        debug("add");
+        await ipfsAddFile(localPath, ipfsPath)
+      }
     }
 
-
-    const {cid: rootCID} = await ipfsClient.files.stat(mfsRoot);
-    console.log(getWebURL(rootCid));
+    console.log(await contentID(mfsRoot));
   };
 }
 
@@ -60,14 +81,13 @@ async function processRemoteCID(contentID) {
   debug("got remote state", (await getIPFSState(contentID,  processFile)));
 }
 
-
-async function processFile({name, cid} ) {
-  debug("processFile", name,cid)
-  cid = stringCID(cid);
-  const result = await ipfsGet(cid, true);
-  //console.log("ipfsGetResult",result)
-  return result;
-}
+async function processFile({ path, cid} ) {
+  const destPath = join(watchPath, path);
+  debug("writeFile", destPath, cid);
+  const content = await ipfsGet(cid);
+  debug("writefile content",content)
+  await writeFileAndCreateFolder(destPath, content);
+} 
 
 function getSortedChangedFiles(files) {
   const changed = files.toArray()
@@ -87,7 +107,7 @@ const order = events => sortBy(eventOrder,reverse(events));
 
 
 
-// incrementalUpdate(nodeID, watchPath)
+incrementalUpdate(mfsRoot, watchPath);
 
 
 (async function(){
@@ -100,8 +120,16 @@ const order = events => sortBy(eventOrder,reverse(events));
 
 
 
-ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
-  const newContentID = new TextDecoder().decode(data);
-  debug("content ID from colab", newContentID);
-  onContentID(newContentID);
-});
+// ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
+//   const newContentID = new TextDecoder().decode(data);
+//   debug("content ID from colab", newContentID);
+//   onContentID(newContentID);
+// });
+
+const writeFileAndCreateFolder = async (path, content) => {
+  debug("creating folder if it does not exist", path);
+  await mkdir(dirname(path), {recursive: true});
+  debug("writing file of length",content.length,"to folder", path);
+  await writeFile(path,content);
+  return path;
+};

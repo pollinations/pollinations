@@ -6,7 +6,7 @@ const debug = Debug("contentCache");
 
 const _contentCache = new Map();
 
-export function cacheOutput(cidFunc) {
+export function cacheOutput(funcThatFetchesCID) {
 
     const cachingFunc = async (cidOrFile, ...args) => {
             const cid = stringCID(cidOrFile);
@@ -15,17 +15,18 @@ export function cacheOutput(cidFunc) {
                 debug("cacheOutput. Cache HIT.");
                 return _contentCache.get(cid);
             }
-            debug("cacheOutput. Cache MISS. Running function...", cidOrFile, ...args);
-            const result = await Promise.resolve(cidFunc(cidOrFile, ...args));
+            debug("Cache MISS. Running function...",funcThatFetchesCID.name,"with cid", cidOrFile, "and args", ...args);
+            const result = await Promise.resolve(funcThatFetchesCID(cidOrFile, ...args));
             _contentCache.set(cid, result);
             return result
     };
     return cleanCIDs(cachingFunc);
 }
 
-export default function cacheInput(funcThatExpectsCID) {
+export default function cacheInput(funcThatGeneratesCID) {
     const cachingFunc = async (content, ...args) => {
-            const cid = stringCID(await Promise.resolve(funcThatExpectsCID(content, ...args)));
+            const cid = stringCID(await Promise.resolve(funcThatGeneratesCID(content, ...args)));
+            debug("Adding", cid, "to cache.");
             _contentCache.set(cid, content);
             return cid;
     };

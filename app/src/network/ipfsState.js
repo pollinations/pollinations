@@ -11,6 +11,7 @@ import all from "it-all";
 const debug = Debug("ipfsState");
 
 
+
 export const getIPFSState = (contentID, processFile) => {
     debug("Getting state for CID", contentID)
     return _getIPFSState({ cid: contentID, name:"root", type: "dir", path: "/"}, processFile)

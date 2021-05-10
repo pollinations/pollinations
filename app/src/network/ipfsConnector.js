@@ -38,7 +38,7 @@ export async function getCID(ipfsPath = "/") {
     return cid;
 }
 
-export const getWebURL = cid => `http://pollinations.ai/ipfs/${cid}`;;
+export const getWebURL = cid => `https://pollinations.ai/ipfs/${cid}`;;
 
 export const stringCID = file => file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
 

@@ -128,12 +128,6 @@ const eventOrder = ({ event }) => _eventOrder.indexOf(event);
 
 const order = events => sortBy(eventOrder, reverse(events));
 
-
-// process.on('SIGINT', () => {
-
-//   process.kill();
-// });
-
 if (enableSend)
   incrementalUpdate(mfsRoot, watchPath);
 
@@ -166,4 +160,4 @@ const writeFileAndCreateFolder = async (path, content) => {
 };
 
 
-// setInterval(() => null,5000)
+setInterval(() => null,5000)

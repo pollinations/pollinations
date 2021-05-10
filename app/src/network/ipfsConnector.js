@@ -10,6 +10,9 @@ import sleep from "await-sleep";
 import {concat as uint8ArrayConcat} from 'uint8arrays';
 import fetch from 'node-fetch';
 
+import Progress from "node-fetch-progress";
+import ProgressBar from "progress";
+
 const debug=Debug("ipfsConnector")
 
 export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);
@@ -20,7 +23,6 @@ const IPFS_HOST = "18.157.173.110";
 
 export const ipfsPeerURL = `http://${IPFS_HOST}:5002`;
 
-export const ipfsGatewayURL = cid => `http://pollinations.ai/ipfs/${cid}`;
 
 debug("Connecting to IPFS", ipfsPeerURL);
 
@@ -36,7 +38,7 @@ export async function getCID(ipfsPath = "/") {
     return cid;
 }
 
-export const getWebURL = ipfsGatewayURL;
+export const getWebURL = cid => `http://pollinations.ai/ipfs/${cid}`;;
 
 export const stringCID = file => file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
 
@@ -60,12 +62,16 @@ export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
 
 export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     const _debug = debug.extend(`ipfsGet(${cid})`);
-    _debug("Downloading remote file");
+
 
     if (onlyLink)
         return getWebURL(cid);
+    _debug("Downloading remote file");
+    const url = getWebURL(cid);
+    _debug()
+    const response = await fetch(url);
 
-    const response = await fetch(ipfsGatewayURL(cid));
+    const _ = await logFetchProgress(response)
     const contentArray = await response.buffer();
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
     _debug("Received content length:", contentArray.length);
@@ -91,3 +97,37 @@ export async function ipfsRm(ipfsPath) {
 export async function contentID(mfsPath="/") {
     return stringCID(await client.files.stat(mfsPath));
 }
+
+
+const logFetchProgress = response => {
+    const progress = new Progress(response, { throttle: 200 });
+    let progressBar = null;
+    progress.on('progress', ({total, progress}) => {
+        //debug("fetch progress",p)
+        if (!progressBar)
+            progressBar = new ProgressBar('  downloading [:bar] :rate/kbps :percent :etas', {
+                complete: '=',
+                incomplete: ' ',
+                width: 20,
+                total: total / 1000
+              });
+        progressBar.update(progress);
+    });
+}
+    
+//   console.log(
+//     p.total,
+//     p.done,
+//     p.totalh,
+//     p.doneh,
+//     p.startedAt,
+//     p.elapsed,
+//     p.rate,
+//     p.rateh,
+//     p.estimated,
+//     p.progress,
+//     p.eta,
+//     p.etah,
+//     p.etaDate
+//   )
+

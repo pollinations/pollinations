@@ -12,6 +12,7 @@ import fetch from 'node-fetch';
 
 import Progress from "node-fetch-progress";
 import ProgressBar from "progress";
+import memoryUsage from "../utils/memoryUsage.js";
 
 const debug=Debug("ipfsConnector")
 
@@ -75,7 +76,10 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     try {
         for await (const chunk of response.body) {
             chunks.push(chunk);
-            _debug("Chunk",chunks.length);
+            if (chunks.length % 10 === 0) {
+                _debug("Chunk",chunks.length);
+                memoryUsage();
+            }
         }
     } catch (err) {
         console.error(err.stack);

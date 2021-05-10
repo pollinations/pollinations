@@ -76,7 +76,7 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     try {
         for await (const chunk of response.body) {
             chunks.push(chunk);
-            if (chunks.length % 10 === 0) {
+            if (chunks.length % 100 === 0) {
                 _debug("Chunk",chunks.length);
                 memoryUsage();
             }

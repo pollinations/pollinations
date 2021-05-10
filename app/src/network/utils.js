@@ -10,7 +10,7 @@ export const toPromise = async asyncGen => {
             contents = [...contents, content];
         }
     } catch (e) {
-        console.log("Exception", e);
+        console.error("Exception", e);
         return [undefined];
     }
     return contents;

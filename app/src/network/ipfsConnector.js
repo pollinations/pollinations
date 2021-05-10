@@ -66,19 +66,27 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
 
     if (onlyLink)
         return getWebURL(cid);
-    _debug("Downloading remote file");
-    const url = getWebURL(cid);
-    _debug()
-    const response = await fetch(url, {
-        timeout: 0, // req/res timeout in ms, it resets on redirect. 0 to disable (OS limit applies)
-    compress: true, // support gzip/deflate content encoding. false to disable
-    size: 0, // maximum response body size in bytes. 0 to disable
-    agent: null });
 
-    const _ = await logFetchProgress(response)
-    const contentArray = await response.buffer();
+    const url = getWebURL(cid);
+    _debug("Downloading remote file from:",url);
+    const response = await fetch(url);
+    
+    const chunks = [];
+    try {
+        for await (const chunk of response.body) {
+            chunks.push(chunk);
+            _debug("Chunk",chuks.length);
+        }
+    } catch (err) {
+        console.error(err.stack);
+    }
+
+    _debug("Got all chunks. Total:", chunks.length);
+
+    const contentArray = Buffer.concat(chunks);
+
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
-    _debug("Received content length:", contentArray.length);
+    _debug("Received content length:", contentArray.size);
     // debug("Content type",contentArray)
     return contentArray;
 }));

@@ -78,7 +78,7 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
             chunks.push(chunk);
             if (chunks.length % 100 === 0) {
                 _debug("Chunk",chunks.length);
-                memoryUsage();
+                
             }
         }
     } catch (err) {
@@ -92,6 +92,7 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
     _debug("Received content length:", contentArray.size);
     // debug("Content type",contentArray)
+    memoryUsage();
     return contentArray;
 }));
 

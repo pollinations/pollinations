@@ -13,6 +13,7 @@ import fetch from 'node-fetch';
 import Progress from "node-fetch-progress";
 import ProgressBar from "progress";
 import memoryUsage from "../utils/memoryUsage.js";
+import { tap } from "streaming-iterables";
 
 const debug=Debug("ipfsConnector")
 
@@ -61,7 +62,7 @@ export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
     return cid;
 });
 
-export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
+export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false, asyncIter = false}) => {
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
 
@@ -71,8 +72,8 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     const url = getWebURL(cid);
     _debug("Downloading remote file from:",url);
     const response = await fetch(url);
-    
-    const chunks = [];
+    const length = response.headers.get('Content-Length');
+    const chunks = all(tap(logProgress, response.body));
     try {
         for await (const chunk of response.body) {
             chunks.push(chunk);

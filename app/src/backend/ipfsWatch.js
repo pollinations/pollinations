@@ -79,8 +79,8 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
 
       if (event === "change") {
         debug("changing", file);
-        debug("remove", ipfsPath);
-        await ipfsRm(ipfsPath);
+        // debug("remove", ipfsPath); the 
+        // await ipfsRm(ipfsPath);
         debug("add");
         await ipfsAddFile(localPath, ipfsPath)
       }
@@ -110,7 +110,7 @@ async function processFile({ path, cid }) {
   _debug("writeFile", destPath, cid,"queued");
   
   queue.add(async () => {
-    const content = await ipfsGet(cid);
+    const content = await ipfsGet(cid,{stream: true}));
     _debug("writefile content", content)
     await writeFileAndCreateFolder(destPath, content);
     _debug("done")

@@ -1,6 +1,6 @@
 
 
-import client, { globSource, nodeID, getCID, stringCID, ipfsLs, ipfsMkdir, ipfsAdd } from "./ipfsConnector.js";
+import  { globSource, nodeID, stringCID, ipfsLs } from "./ipfsConnector.js";
 import Debug from "debug";
 import { toPromise } from "./utils.js";
 import { zip } from "ramda";

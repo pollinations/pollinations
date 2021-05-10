@@ -1,5 +1,5 @@
 import Debug from "debug";
-import throttle from "lodash/throttle";
+import throttle from "lodash.throttle";
 
 const debug = Debug("memoryUsage")
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import watch from 'file-watch-iterator';
-
+import PQueue from "p-queue";
 import Debug from "debug";
 
 import { callLogger, toPromise1 } from "../network/utils.js";
@@ -100,15 +100,21 @@ async function processRemoteCID(contentID) {
   debug("got remote state", (await getIPFSState(contentID, processFile)));
 }
 
+const queue = new PQueue({concurrency: 5});
+
+
 async function processFile({ path, cid }) {
   const _debug = debug.extend(`processFile(${path})`);
   _debug("started")
   const destPath = join(watchPath, path);
-  _debug("writeFile", destPath, cid);
-  const content = await ipfsGet(cid);
-  _debug("writefile content", content)
-  await writeFileAndCreateFolder(destPath, content);
-  _debug("done")
+  _debug("writeFile", destPath, cid,"queued");
+  
+  queue.add(async () => {
+    const content = await ipfsGet(cid);
+    _debug("writefile content", content)
+    await writeFileAndCreateFolder(destPath, content);
+    _debug("done")
+  });
   return destPath;
 }
 
@@ -160,4 +166,4 @@ const writeFileAndCreateFolder = async (path, content) => {
 };
 
 
-setInterval(() => null,5000)
+// setInterval(() => null,5000)

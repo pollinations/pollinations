@@ -42,7 +42,6 @@ const watchPath = options.path;
 
 const enableSend = !options.receive;
 const enableReceive = !options.send;
-debug("Local: Watching", watchPath);
 
 if (!existsSync(watchPath)) {
   debug("Local: Root directory does not exist. Creating", watchPath)
@@ -53,7 +52,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
 
   await ipfsMkdir(mfsRoot);
   debug("IPFS: Created root IPFS path (if it did not exist)", mfsRoot);
-
+  debug("Local: Watching", watchPath);
   for await (const files of watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,

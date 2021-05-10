@@ -25,6 +25,7 @@
     "it-concat": "^2.0.0",
     "it-first": "^1.0.6",
     "it-reduce": "^1.0.5",
+    "lodash": "^4.17.21",
     "markdown-to-jsx": "^7.1.2",
     "mz": "^2.7.0",
     "node-fetch": "^2.6.1",

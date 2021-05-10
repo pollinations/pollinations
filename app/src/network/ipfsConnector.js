@@ -75,7 +75,7 @@ export const ipfsGet = cleanCIDs((async (cid, onlyLink = false) => {
     try {
         for await (const chunk of response.body) {
             chunks.push(chunk);
-            _debug("Chunk",chuks.length);
+            _debug("Chunk",chunks.length);
         }
     } catch (err) {
         console.error(err.stack);

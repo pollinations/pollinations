@@ -3,14 +3,14 @@ import watch from 'file-watch-iterator';
 
 import Debug from "debug";
 
-import {  callLogger, toPromise1 } from "../network/utils.js";
-import { sortBy,reverse } from "ramda";
-
+import { callLogger, toPromise1 } from "../network/utils.js";
+import { sortBy, reverse } from "ramda";
+import process from "process";
 import Readline from 'readline';
 
 import { getIPFSState } from '../network/ipfsState.js';
-import { getWebURL , nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd} from "../network/ipfsConnector.js";
-import { writeFile , mkdir} from 'fs/promises';
+import { getWebURL, nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd } from "../network/ipfsConnector.js";
+import { writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
@@ -46,7 +46,7 @@ debug("Local: Watching", watchPath);
 
 if (!existsSync(watchPath)) {
   debug("Local: Root directory does not exist. Creating", watchPath)
-  mkdirSync(watchPath, {recursive: true});
+  mkdirSync(watchPath, { recursive: true });
 }
 
 const incrementalUpdate = async (mfsRoot, watchPath) => {
@@ -54,12 +54,12 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
   await ipfsMkdir(mfsRoot);
   debug("IPFS: Created root IPFS path (if it did not exist)", mfsRoot);
 
-  for await (const files of watch(".",{
-    ignored: /(^|[\/\\])\../, 
-    cwd:watchPath, 
-    awaitWriteFinish:false, 
+  for await (const files of watch(".", {
+    ignored: /(^|[\/\\])\../,
+    cwd: watchPath,
+    awaitWriteFinish: false,
   })) {
-    
+
     const changed = getSortedChangedFiles(files);
     for (const { event, file } of changed) {
       const localPath = join(watchPath, file);
@@ -80,7 +80,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
 
       if (event === "change") {
         debug("changing", file);
-        debug("remove",ipfsPath);
+        debug("remove", ipfsPath);
         await ipfsRm(ipfsPath);
         debug("add");
         await ipfsAddFile(localPath, ipfsPath)
@@ -88,27 +88,30 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
     }
 
     console.log(await contentID(mfsRoot));
-    if (options.once)
+    if (options.once) {
       break;
-  };
+    }
+  }
+  //TODO:
+  process.exit(0);
 }
 
 async function processRemoteCID(contentID) {
-  debug("Processing remote CID",contentID);
-  debug("got remote state", (await getIPFSState(contentID,  processFile)));
+  debug("Processing remote CID", contentID);
+  debug("got remote state", (await getIPFSState(contentID, processFile)));
 }
 
-async function processFile({ path, cid} ) {
+async function processFile({ path, cid }) {
   const _debug = debug.extend(`processFile(${path})`);
   _debug("started")
   const destPath = join(watchPath, path);
   _debug("writeFile", destPath, cid);
   const content = await ipfsGet(cid);
-  _debug("writefile content",content)
+  _debug("writefile content", content)
   await writeFileAndCreateFolder(destPath, content);
   _debug("done")
   return destPath;
-} 
+}
 
 function getSortedChangedFiles(files) {
   const changed = files.toArray()
@@ -121,10 +124,10 @@ function getSortedChangedFiles(files) {
 
 
 
-const _eventOrder = ["unlink", "addDir","add", "unlink", "unlinkDir"];//.reverse();
-const  eventOrder = ({ event }) => _eventOrder.indexOf(event);
+const _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];//.reverse();
+const eventOrder = ({ event }) => _eventOrder.indexOf(event);
 
-const order = events => sortBy(eventOrder,reverse(events));
+const order = events => sortBy(eventOrder, reverse(events));
 
 
 // process.on('SIGINT', () => {
@@ -136,14 +139,14 @@ if (enableSend)
   incrementalUpdate(mfsRoot, watchPath);
 
 if (enableReceive)
-  (async function(){
+  (async function () {
     for await (const remoteCID of readline) {
       await processRemoteCID(remoteCID);
       console.log(remoteCID);
       if (options.once)
         break;
     }
-    
+
   }
   )();
 
@@ -157,9 +160,9 @@ if (enableReceive)
 
 const writeFileAndCreateFolder = async (path, content) => {
   debug("creating folder if it does not exist", dirname(path));
-  await mkdir(dirname(path), {recursive: true});
-  debug("writing file of length",content.length,"to folder", path);
-  writeFileSync(path,content);
+  await mkdir(dirname(path), { recursive: true });
+  debug("writing file of length", content.length, "to folder", path);
+  writeFileSync(path, content);
   return path;
 };
 

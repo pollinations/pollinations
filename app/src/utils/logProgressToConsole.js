@@ -39,10 +39,10 @@
 //     remove();
 // }
 
-import { MultiProgressBars } from 'multi-progress-bars';
+// import { MultiProgressBars } from 'multi-progress-bars';
 
-import pProgress from "p-progress";
-const mpb = new MultiProgressBars({stream:process.stderr, anchor:"bottom"});
+// import pProgress from "p-progress";
+// const mpb = new MultiProgressBars({stream:process.stderr, anchor:"bottom"});
 
 export default () => null;
 

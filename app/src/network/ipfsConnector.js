@@ -8,19 +8,15 @@ import all from "it-all";
 
 import Debug from "debug";
 
-import LimitConcurrency from "p-limit";
+
 
 import {promises as fsPromises} from "fs";
 
 import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 
-
 import { last } from "ramda";
 
-
-const concurrencyLimiter = LimitConcurrency(10);
-
-const limit = f => (...args) => concurrencyLimiter(() => f(...args));
+import limit from "../utils/concurrency.js";
 
 const { stat }  = fsPromises;
 

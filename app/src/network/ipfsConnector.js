@@ -3,17 +3,17 @@ import Client from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1 } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
-import concat from 'it-concat';
+
 import all from "it-all";
 import Debug from "debug";
-import sleep from "await-sleep";
-import {concat as uint8ArrayConcat} from 'uint8arrays';
+
 import fetch from 'node-fetch';
 
-import Progress from "node-fetch-progress";
+import {logProgressAsync} from "../utils/logProgressToConsole.js";
+
 import ProgressBar from "progress";
 import memoryUsage from "../utils/memoryUsage.js";
-import { tap } from "streaming-iterables";
+
 
 const debug=Debug("ipfsConnector")
 
@@ -48,7 +48,6 @@ const _ipfsLs = async cid => await toPromise(client.ls(stringCID(cid)));
 
 export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 
-
 export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
     const cid = stringCID(await client.add(content));
     debug("added", cid, "size", content.length);
@@ -62,7 +61,7 @@ export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
     return cid;
 });
 
-export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false, asyncIter = false}) => {
+export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false}) => {
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
 
@@ -73,18 +72,10 @@ export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false, asyncIter = fal
     _debug("Downloading remote file from:",url);
     const response = await fetch(url);
     const length = response.headers.get('Content-Length');
-    const chunks = all(tap(logProgress, response.body));
-    try {
-        for await (const chunk of response.body) {
-            chunks.push(chunk);
-            if (chunks.length % 100 === 0) {
-                _debug("Chunk",chunks.length);
-                
-            }
-        }
-    } catch (err) {
-        console.error(err.stack);
-    }
+
+    
+    const chunks = await all(logProgressAsync(response.body, length, cid));
+
 
     _debug("Got all chunks. Total:", chunks.length);
 
@@ -116,36 +107,4 @@ export async function contentID(mfsPath="/") {
     return stringCID(await client.files.stat(mfsPath));
 }
 
-
-const logFetchProgress = response => {
-    const progress = new Progress(response, { throttle: 200 });
-    let progressBar = null;
-    progress.on('progress', ({total, progress}) => {
-        //debug("fetch progress",p)
-        if (!progressBar)
-            progressBar = new ProgressBar('  downloading [:bar] :rate/kbps :percent :etas', {
-                complete: '=',
-                incomplete: ' ',
-                width: 20,
-                total: total / 1000
-              });
-        progressBar.update(progress);
-    });
-}
-    
-//   console.log(
-//     p.total,
-//     p.done,
-//     p.totalh,
-//     p.doneh,
-//     p.startedAt,
-//     p.elapsed,
-//     p.rate,
-//     p.rateh,
-//     p.estimated,
-//     p.progress,
-//     p.eta,
-//     p.etah,
-//     p.etaDate
-//   )
 

@@ -3841,14 +3841,6 @@ clean-stack@^2.0.0:
   resolved "https://registry.yarnpkg.com/clean-stack/-/clean-stack-2.2.0.tgz#ee8472dbb129e727b31e8a10a427dee9dfe4008b"
   integrity sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==
 
-cli-progress@^3.9.0:
-  version "3.9.0"
-  resolved "https://registry.yarnpkg.com/cli-progress/-/cli-progress-3.9.0.tgz#25db83447deb812e62d05bac1af9aec5387ef3d4"
-  integrity sha512-g7rLWfhAo/7pF+a/STFH/xPyosaL1zgADhI0OM83hl3c7S43iGvJWEAV2QuDOnQ8i6EMBj/u4+NTd0d5L+4JfA==
-  dependencies:
-    colors "^1.1.2"
-    string-width "^4.2.0"
-
 cliui@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/cliui/-/cliui-5.0.0.tgz#deefcfdb2e800784aa34f46fa08e06851c7bbbc5"
@@ -3943,11 +3935,6 @@ colorette@^1.2.1, colorette@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/colorette/-/colorette-1.2.2.tgz#cbcc79d5e99caea2dbf10eb3a26fd8b3e6acfa94"
   integrity sha512-MKGMzyfeuutC/ZJ1cba9NqcNpfeqMUcYmyF1ZFY6/Cn7CNSAKx6a+s48sqLqyAiZuaP2TcqMhoo+dlwFnVxT9w==
-
-colors@^1.1.2:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/colors/-/colors-1.4.0.tgz#c50491479d4c1bdaed2c9ced32cf7c7dc2360f78"
-  integrity sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==
 
 combined-stream@^1.0.6, combined-stream@^1.0.8, combined-stream@~1.0.6:
   version "1.0.8"
@@ -9303,13 +9290,6 @@ p-map@^4.0.0:
   dependencies:
     aggregate-error "^3.0.0"
 
-p-progress@^0.5.1:
-  version "0.5.1"
-  resolved "https://registry.yarnpkg.com/p-progress/-/p-progress-0.5.1.tgz#e1e40968db2b9b581fb445d50f439077c6568740"
-  integrity sha512-C1+tI3w8TtPtloj9QKQ5Id2avCziULxjQ3n8Eq/OML6pzsgSwem+5TMaojOGoMAOhyvkM+z6yTUFMk6b+Bgx7w==
-  dependencies:
-    p-times "^3.0.0"
-
 p-queue@^7.1.0:
   version "7.1.0"
   resolved "https://registry.yarnpkg.com/p-queue/-/p-queue-7.1.0.tgz#c2bb28f8dc0ebf3fadb985b8706cf2ce5fe5f275"
@@ -9329,13 +9309,6 @@ p-timeout@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/p-timeout/-/p-timeout-5.0.0.tgz#0f5dc08422e7243f8317669c461734cd1257a8dc"
   integrity sha512-z+bU/N7L1SABsqKnQzvAnINgPX7NHdzwUV+gHyJE7VGNDZSr03rhcPODCZSWiiT9k+gf74QPmzcZzqJRvxYZow==
-
-p-times@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/p-times/-/p-times-3.0.0.tgz#477ff51aa8cfe7edef4cfcd4bc7e0250b13b4183"
-  integrity sha512-/Z7mcs8Liie8E7IHI9SBtmkHVW/GjLroQ94ALoAMIG20mqFMuh56/3WYhtOTqX9ccRSOxgaCkFC94Bat1Ofskg==
-  dependencies:
-    p-map "^4.0.0"
 
 p-try@^1.0.0:
   version "1.0.0"
@@ -10906,11 +10879,6 @@ readdirp@~3.5.0:
   dependencies:
     picomatch "^2.2.1"
 
-readline-async-generator@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/readline-async-generator/-/readline-async-generator-1.0.0.tgz#f3f008c7331d139ea3eb8a0f3788487109451071"
-  integrity sha512-UWFBap5hs55d7nNgDe+xg5XZrlTVCP36UI6vDquTWPjgSOg0Q+l/zGc7h+/j4+7YwEuU+obONXiyQhbTCW+Gmw==
-
 readline@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/readline/-/readline-1.3.0.tgz#c580d77ef2cfc8752b132498060dc9793a7ac01c"
@@ -11979,11 +11947,6 @@ stream-to-it@^0.2.2:
   integrity sha512-xaK9EjPtLox5rrC7YLSBXSanTtUJN/lzJlMFvy9VaROmnyvy0U/X6m2uMhXPJRn3g3M9uOSIzTszW7BPiWSg9w==
   dependencies:
     get-iterator "^1.0.2"
-
-streaming-iterables@^5.0.4:
-  version "5.0.4"
-  resolved "https://registry.yarnpkg.com/streaming-iterables/-/streaming-iterables-5.0.4.tgz#4e0eed3416eed956968d1d19b9776dc480802062"
-  integrity sha512-nEs6hBGIPsVz6uq6pscGGKfoPDQWrDQW0b0UHurtSDysekfKLmkPg7FQVRE2sj3Rad6yUo9E1sGTxOWyYsHQ/g==
 
 strict-uri-encode@^1.0.0:
   version "1.1.0"

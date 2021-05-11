@@ -10,12 +10,15 @@ import Readline from 'readline';
 
 import { getIPFSState } from '../network/ipfsState.js';
 import { getWebURL, nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish } from "../network/ipfsConnector.js";
-import { writeFile, mkdir } from 'fs/promises';
+
+import {promises as fsPromises} from "fs";
+
 import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
 import awaitSleep from 'await-sleep';
 
+const { writeFile, mkdir }  = fsPromises;
 const debug = Debug("ipfsWatch")
 const readline = Readline.createInterface({
   input: process.stdin,
@@ -89,7 +92,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
     const newContentID = await contentID(mfsRoot);
     console.log(newContentID);
     publish(newContentID);
-    
+
     if (options.once) {
       break;
     }

@@ -88,10 +88,10 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
         await ipfsAddFile(localPath, ipfsPath)
       }
     }
-
+    // console.error("PUBLISHIIING")
     const newContentID = await contentID(mfsRoot);
-    console.log(newContentID);
-    publish(newContentID);
+    // console.log(newContentID);
+    // publish(newContentID);
 
     if (options.once) {
       break;

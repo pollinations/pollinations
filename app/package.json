@@ -17,6 +17,7 @@
     "await-sleep": "^0.0.1",
     "callbag-basics": "^4.0.0",
     "cids": "^1.1.6",
+    "cli-progress": "^3.9.0",
     "commander": "^7.2.0",
     "debounce": "^1.2.1",
     "debug": "^4.3.1",

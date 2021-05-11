@@ -5,6 +5,8 @@ import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 
 import all from "it-all";
+import parallelMap from "async/map";
+
 import Debug from "debug";
 
 import {promises as fsPromises} from "fs";
@@ -118,4 +120,8 @@ export async function contentID(mfsPath="/") {
 export async function publish(rootCID) {
     debug("publish", rootCID);
     debug("publishResponse", await client.name.publish(`/ipfs/${rootCID}`));
+}
+
+export async function ipfsResolve(path) {
+    return stringCID(await toPromise1(client.name.resolve(path)));
 }

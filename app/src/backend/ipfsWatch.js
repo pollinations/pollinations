@@ -148,7 +148,7 @@ if (enableReceive)
 
     for await (let remoteCID of readline) {
       if (remoteCID.startsWith("/ipns/"))
-        remoteCID = ipfsResolve(remoteCID);
+        remoteCID = await ipfsResolve(remoteCID);
       await processRemoteCID(remoteCID);
       console.log(remoteCID);
       if (options.once)

@@ -12,8 +12,6 @@ import LimitConcurrency from "p-limit";
 
 import {promises as fsPromises} from "fs";
 
-import fetch from 'node-fetch';
-
 import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 
 

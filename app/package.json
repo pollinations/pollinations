@@ -34,6 +34,7 @@
     "multicodec": "^3.0.1",
     "mz": "^2.7.0",
     "node-fetch": "^2.6.1",
+    "p-progress": "^0.5.1",
     "p-queue": "^7.1.0",
     "progress-stream": "^2.0.0",
     "ramda": "^0.27.1",

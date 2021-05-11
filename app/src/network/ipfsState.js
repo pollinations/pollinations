@@ -6,8 +6,7 @@ import { toPromise } from "./utils.js";
 import { zip } from "ramda";
 import { cacheOutput } from "./contentCache.js";
 import { join } from "path";
-import all from "it-all";
-import {map} from "streaming-iterables"
+import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 
 //import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
@@ -25,7 +24,7 @@ const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile)
         const files = await ipfsLs(cid);
         _debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
-        const contents = await Promise.all(files.map(
+        const contents = await PromiseAllProgress(path, files.map(
             file => _getIPFSState({...file, path:join(path,file.name)}, processFile)
             ));
 

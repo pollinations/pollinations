@@ -8649,6 +8649,14 @@ ms@^2.1.1:
   resolved "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
   integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
 
+multi-progress-bars@^3.2.4:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/multi-progress-bars/-/multi-progress-bars-3.2.4.tgz#2ee22741b04b0f277961fe586d4c7d852f245518"
+  integrity sha512-CjJSymgu9UPsFv1M57t72xWVJSKDI/mso+EJ0fJJLwcN0766H7nbuqjNGqv+jAM+d8UYhU1CmgIwQgr10kA4Ig==
+  dependencies:
+    chalk "^4.1.0"
+    string-width "^4.2.1"
+
 multiaddr-to-uri@^6.0.0:
   version "6.0.0"
   resolved "https://registry.npmjs.org/multiaddr-to-uri/-/multiaddr-to-uri-6.0.0.tgz"
@@ -10308,7 +10316,7 @@ progress-stream@^2.0.0:
     speedometer "~1.0.0"
     through2 "~2.0.3"
 
-progress@^2.0.0, progress@^2.0.3:
+progress@^2.0.0:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
@@ -11966,7 +11974,7 @@ string-width@^3.0.0, string-width@^3.1.0:
     is-fullwidth-code-point "^2.0.0"
     strip-ansi "^5.1.0"
 
-string-width@^4.1.0, string-width@^4.2.0:
+string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.1:
   version "4.2.2"
   resolved "https://registry.npmjs.org/string-width/-/string-width-4.2.2.tgz"
   integrity sha512-XBJbT3N4JhVumXE0eoLU9DCjcaF92KLNqTmFCnG1pf8duUxFGwtP6AD6nkjw9a3IdiRtL3E2w3JDiE/xi3vOeA==

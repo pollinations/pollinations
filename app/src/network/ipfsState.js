@@ -6,12 +6,12 @@ import { toPromise } from "./utils.js";
 import { zip } from "ramda";
 import { cacheOutput } from "./contentCache.js";
 import { join } from "path";
-import { flatMap, map } from "streaming-iterables";
+import { flatMap, parallelMap } from "streaming-iterables";
 import all from "it-all";
+
+//import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
-
-import concatLimit from 'async/concatLimit.js';
-
+const map = parallelMap(30);
 export const getIPFSState = (contentID, processFile, rootName="root") => {
     debug("Getting state for CID", contentID)
     return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/"}, processFile)

@@ -1,6 +1,4 @@
 import {MultiBar, Presets} from 'cli-progress';
-import { tap } from 'streaming-iterables';
-import { displayContentID } from '../network/utils.js';
 
 const multibar = new MultiBar({
     clearOnComplete: false,

@@ -10,11 +10,11 @@ import { flatMap, map } from "streaming-iterables";
 import all from "it-all";
 const debug = Debug("ipfsState");
 
+import concatLimit from 'async/concatLimit.js';
 
-
-export const getIPFSState = (contentID, processFile) => {
+export const getIPFSState = (contentID, processFile, rootName="root") => {
     debug("Getting state for CID", contentID)
-    return _getIPFSState({ cid: contentID, name:"root", type: "dir", path: "/"}, processFile)
+    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/"}, processFile)
 }
 
 const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile) => {

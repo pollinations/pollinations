@@ -63,7 +63,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
   },{debounce: 500})) {
 
     const changed = getSortedChangedFiles(files);
-    for (const { event, file } of changed) {
+    await Promise.all(changed.map(async ({ event, file}) => {
       const localPath = join(watchPath, file);
       const ipfsPath = join(mfsRoot, file);
 
@@ -82,12 +82,12 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
 
       if (event === "change") {
         debug("changing", file);
-        // debug("remove", ipfsPath); the 
-        // await ipfsRm(ipfsPath);
-        debug("add");
         await ipfsAddFile(localPath, ipfsPath)
       }
-    }
+    }));
+    // for (const { event, file } of changed) {
+     
+    // }
     // console.error("PUBLISHIIING")
     const newContentID = await contentID(mfsRoot);
     // console.log(newContentID);
@@ -98,7 +98,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
     }
   }
   //TODO:
-  process.exit(0);
+  process.exit(0); 
 }
 
 async function processRemoteCID(contentID) {

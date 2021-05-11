@@ -8,13 +8,22 @@ import all from "it-all";
 
 import Debug from "debug";
 
+import LimitConcurrency from "p-limit";
+
 import {promises as fsPromises} from "fs";
 
 import fetch from 'node-fetch';
 
 import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 
-import memoryUsage from "../utils/memoryUsage.js";
+
+import { last } from "ramda";
+
+
+const concurrencyLimiter = LimitConcurrency(10);
+
+const limit = f => (...args) => concurrencyLimiter(() => f(...args));
+
 const { stat }  = fsPromises;
 
 const debug=Debug("ipfsConnector")
@@ -42,15 +51,18 @@ export async function getCID(ipfsPath = "/") {
     return cid;
 }
 
-export const getWebURL = cid => `https://pollinations.ai/ipfs/${cid}`;;
 
-export const stringCID = file => file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file);
+export const getWebURL = cid => `https://pollinations.ai/3/${cid}`;;
 
-const _ipfsLs = async cid => await toPromise(client.ls(stringCID(cid)));
+const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
+
+export const stringCID = file => stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file));
+
+const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid)))).filter(({type}) => type !== "unknown");
 
 export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 
-export const ipfsAdd = cacheInput(async (content, ipfsPath = null, options={}) => {
+export const ipfsAdd = cacheInput(limit(async (content, ipfsPath = null, options={}) => {
 
     const cid = stringCID(await client.add(content, options));
     debug("added", cid, "size", content);
@@ -62,9 +74,10 @@ export const ipfsAdd = cacheInput(async (content, ipfsPath = null, options={}) =
         debug("No destination given. Not copying to MFS.");
     }
     return cid;
-});
+}));
 
-export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false}) => {
+export const ipfsGet = limit(cleanCIDs((async (cid, {onlyLink = false}) => {
+    
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
 
@@ -87,9 +100,8 @@ export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false}) => {
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
     _debug("Received content length:", contentArray.length);
     // debug("Content type",contentArray)
-    memoryUsage();
     return contentArray;
-}));
+})));
 
 export const ipfsAddFile = async (localPath, ipfsPath = null, options={size: null}) => {
     
@@ -122,5 +134,7 @@ export async function publish(rootCID) {
 }
 
 export async function ipfsResolve(path) {
-    return stringCID(await toPromise1(client.name.resolve(path)));
+    return stringCID(last(await toPromise(client.name.resolve(path))));
 }
+
+

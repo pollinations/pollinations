@@ -40,7 +40,7 @@
 // }
 
 
-export default logProgress = () => null;
+export default () => null;
 
 export const logProgressAsync = it => it;
 

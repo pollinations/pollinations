@@ -1,13 +1,14 @@
-import {MultiBar, Presets} from 'cli-progress';
+import {MultiBar, Presets, SingleBar} from 'cli-progress';
 
 const multibar = new MultiBar({
     clearOnComplete: false,
-    hideCursor: true,
+    hideCursor: false,
     format: ' {bar} | "{cid}" | {value}/{total}',
     // barCompleteChar: '\u2588',
     // barIncompleteChar: '\u2591',
-    stopOnComplete: true
-}, Presets.shades_grey);
+    stopOnComplete: false,
+    fps:8
+});
 
 const logProgress = (total, name="") => { 
     
@@ -30,7 +31,7 @@ export default logProgress;
 export const logProgressAsync = async function* (iterator, total, name)  {
     const [log, remove] = logProgress(total,name);
     for await (const chunk of iterator) {
-        log(chunk.size,name);
+        log(chunk.length,name);
         yield(chunk);
     }
     remove();

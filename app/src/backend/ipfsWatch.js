@@ -111,7 +111,7 @@ async function processFile({ path, cid }) {
   
   queue.add(async () => {
     const content = await ipfsGet(cid,{stream: true});
-    _debug("writefile content", content)
+    _debug("writefile content", content.length)
     await writeFileAndCreateFolder(destPath, content);
     _debug("done")
   });

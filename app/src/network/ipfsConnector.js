@@ -5,7 +5,6 @@ import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 
 import all from "it-all";
-import parallelMap from "async/map";
 
 import Debug from "debug";
 

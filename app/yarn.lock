@@ -10897,6 +10897,11 @@ readline-async-generator@^1.0.0:
   resolved "https://registry.yarnpkg.com/readline-async-generator/-/readline-async-generator-1.0.0.tgz#f3f008c7331d139ea3eb8a0f3788487109451071"
   integrity sha512-UWFBap5hs55d7nNgDe+xg5XZrlTVCP36UI6vDquTWPjgSOg0Q+l/zGc7h+/j4+7YwEuU+obONXiyQhbTCW+Gmw==
 
+readline@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/readline/-/readline-1.3.0.tgz#c580d77ef2cfc8752b132498060dc9793a7ac01c"
+  integrity sha1-xYDXfvLPyHUrEySYBg3JeTp6wBw=
+
 receptacle@^1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/receptacle/-/receptacle-1.3.2.tgz#a7994c7efafc7a01d0e2041839dab6c4951360d2"

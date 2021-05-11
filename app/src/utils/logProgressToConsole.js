@@ -19,7 +19,7 @@ const logProgress = (total, name="") => {
     }
 
     const remove = () => {
-        bar.stop();
+        // bar.stop();
         multibar.remove(bar);
     }
 

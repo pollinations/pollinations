@@ -86,7 +86,10 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
       }
     }
 
-    console.log(await contentID(mfsRoot));
+    const newContentID = await contentID(mfsRoot);
+    console.log(newContentID);
+    publish(newContentID);
+    
     if (options.once) {
       break;
     }

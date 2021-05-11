@@ -1,6 +1,6 @@
 // import {MultiBar, Presets, SingleBar} from 'cli-progress';
 
-import { noop } from "../network/utils";
+// import { noop } from "../network/utils";
 
 // const multibar = new MultiBar({
 //     clearOnComplete: false,
@@ -40,7 +40,7 @@ import { noop } from "../network/utils";
 // }
 
 
-export default logProgress = noop;
+export default logProgress = () => null;
 
 export const logProgressAsync = it => it;
 

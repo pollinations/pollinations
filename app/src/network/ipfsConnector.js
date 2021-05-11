@@ -52,7 +52,7 @@ export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 export const ipfsAdd = cacheInput(async (content, ipfsPath = null, options={}) => {
 
     const cid = stringCID(await client.add(content, options));
-    debug("added", cid, "size", content.length);
+    debug("added", cid, "size", content);
 
     if (ipfsPath) {
         debug("copying to", ipfsPath);
@@ -96,7 +96,7 @@ export const ipfsAddFile = async (localPath, ipfsPath = null, options={size: nul
 
     const progress = contentSize > 10000 ? logProgress(contentSize, localPath) : debug.extend(localPath)("addFile progress"); 
     
-    ipfsAdd(globSource(localPath,{preserveMtime: true, preserveMode: true}), ipfsPath, {progress});
+    await ipfsAdd(globSource(localPath,{preserveMtime: true, preserveMode: true}), ipfsPath, {progress});
 }
 
 export async function ipfsMkdir(path="/") {

@@ -24,7 +24,7 @@ debug("NodeID", nodeID)
 
 const IPFS_HOST = "18.157.173.110";
 
-export const ipfsPeerURL = `http://${IPFS_HOST}:5002`;
+export const ipfsPeerURL = `http://${IPFS_HOST}:5001`;
 
 
 debug("Connecting to IPFS", ipfsPeerURL);
@@ -72,12 +72,12 @@ export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false}) => {
 
     const url = getWebURL(cid);
     _debug("Downloading remote file from:",url);
-    const response = await fetch(url);
-    const length = response.headers.get('Content-Length');
+    // const response = await fetch(url);
+    // const length = response.headers.get('Content-Length');
 
     
-    const chunks = await all(logProgressAsync(response.body, length, cid));
-
+    // const chunks = await all(logProgressAsync(response.body, length));
+    const chunks = await all(client.cat(cid))
 
     _debug("Got all chunks. Total:", chunks.length);
 
@@ -115,3 +115,7 @@ export async function contentID(mfsPath="/") {
 }
 
 
+export async function publish(rootCID) {
+    debug("publish", rootCID);
+    debug("publishResponse", await client.name.publish(`/ipfs/${rootCID}`));
+}

@@ -9,7 +9,7 @@ import process from "process";
 import Readline from 'readline';
 
 import { getIPFSState } from '../network/ipfsState.js';
-import { getWebURL, nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd } from "../network/ipfsConnector.js";
+import { getWebURL, nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish } from "../network/ipfsConnector.js";
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, join } from "path";
 import { program } from "commander";
@@ -139,6 +139,7 @@ if (enableSend)
 
 if (enableReceive)
   (async function () {
+
     for await (const remoteCID of readline) {
       await processRemoteCID(remoteCID);
       console.log(remoteCID);

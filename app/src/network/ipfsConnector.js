@@ -20,7 +20,7 @@ import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 import { last } from "ramda";
 
 
-const concurrencyLimiter = LimitConcurrency(2);
+const concurrencyLimiter = LimitConcurrency(10);
 
 const limit = f => (...args) => concurrencyLimiter(() => f(...args));
 

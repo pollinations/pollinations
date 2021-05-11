@@ -7,14 +7,14 @@ import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import all from "it-all";
 import Debug from "debug";
 
-import {stat} from "fs/promises";
+import {promises as fsPromises} from "fs";
 
 import fetch from 'node-fetch';
 
 import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 
 import memoryUsage from "../utils/memoryUsage.js";
-
+const { stat }  = fsPromises;
 
 const debug=Debug("ipfsConnector")
 

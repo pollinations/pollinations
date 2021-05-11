@@ -56,8 +56,8 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
   for await (const files of watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
-    awaitWriteFinish: false,
-  })) {
+    awaitWriteFinish: true,
+  },{debounce: 500})) {
 
     const changed = getSortedChangedFiles(files);
     for (const { event, file } of changed) {
@@ -110,7 +110,7 @@ async function processFile({ path, cid }) {
   _debug("writeFile", destPath, cid,"queued");
   
   queue.add(async () => {
-    const content = await ipfsGet(cid,{stream: true}));
+    const content = await ipfsGet(cid,{stream: true});
     _debug("writefile content", content)
     await writeFileAndCreateFolder(destPath, content);
     _debug("done")
@@ -160,7 +160,7 @@ if (enableReceive)
 const writeFileAndCreateFolder = async (path, content) => {
   debug("creating folder if it does not exist", dirname(path));
   await mkdir(dirname(path), { recursive: true });
-  debug("writing file of length", content.length, "to folder", path);
+  debug("writing file of length", content.size, "to folder", path);
   writeFileSync(path, content);
   return path;
 };

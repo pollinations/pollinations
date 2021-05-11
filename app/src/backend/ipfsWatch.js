@@ -146,7 +146,7 @@ if (enableSend)
 if (enableReceive)
   (async function () {
 
-    for await (const remoteCID of readline) {
+    for await (let remoteCID of readline) {
       if (remoteCID.startsWith("/ipns/"))
         remoteCID = ipfsResolve(remoteCID);
       await processRemoteCID(remoteCID);

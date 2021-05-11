@@ -7,11 +7,12 @@ import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import all from "it-all";
 import Debug from "debug";
 
+import {stat} from "fs/promises";
+
 import fetch from 'node-fetch';
 
-import {logProgressAsync} from "../utils/logProgressToConsole.js";
+import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 
-import ProgressBar from "progress";
 import memoryUsage from "../utils/memoryUsage.js";
 
 
@@ -48,8 +49,9 @@ const _ipfsLs = async cid => await toPromise(client.ls(stringCID(cid)));
 
 export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 
-export const ipfsAdd = cacheInput(async (content, ipfsPath = null) => {
-    const cid = stringCID(await client.add(content));
+export const ipfsAdd = cacheInput(async (content, ipfsPath = null, options={}) => {
+
+    const cid = stringCID(await client.add(content, options));
     debug("added", cid, "size", content.length);
 
     if (ipfsPath) {
@@ -82,15 +84,20 @@ export const ipfsGet = cleanCIDs((async (cid, {onlyLink = false}) => {
     const contentArray = Buffer.concat(chunks);
 
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
-    _debug("Received content length:", contentArray.size);
+    _debug("Received content length:", contentArray.length);
     // debug("Content type",contentArray)
     memoryUsage();
     return contentArray;
 }));
 
-export const ipfsAddFile = async (localPath, ipfsPath = null) =>
-    ipfsAdd(globSource(localPath), ipfsPath);
+export const ipfsAddFile = async (localPath, ipfsPath = null, options={size: null}) => {
+    
+    const contentSize = (await stat(localPath)).size;
 
+    const progress = contentSize > 10000 ? logProgress(contentSize, localPath) : debug.extend(localPath)("addFile progress"); 
+    
+    ipfsAdd(globSource(localPath,{preserveMtime: true, preserveMode: true}), ipfsPath, {progress});
+}
 
 export async function ipfsMkdir(path="/") {
     debug("Creating folder", path);

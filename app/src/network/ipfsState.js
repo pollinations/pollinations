@@ -6,12 +6,12 @@ import { toPromise } from "./utils.js";
 import { zip } from "ramda";
 import { cacheOutput } from "./contentCache.js";
 import { join } from "path";
-import { flatMap, parallelMap } from "streaming-iterables";
 import all from "it-all";
+import {map} from "streaming-iterables"
 
 //import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
-const map = parallelMap(30);
+// const map = parallelMap(30);
 export const getIPFSState = (contentID, processFile, rootName="root") => {
     debug("Getting state for CID", contentID)
     return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/"}, processFile)
@@ -25,12 +25,13 @@ const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile)
         const files = await ipfsLs(cid);
         _debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
-        const contents = await all(map(
-            file => _getIPFSState({...file, path:  join(path,file.name)}, processFile)
-            , files ));
-        _debug("contents",contents);
-        return Object.fromEntries(zip(filenames, contents));
-    
+        const contents = await Promise.all(files.map(
+            file => _getIPFSState({...file, path:join(path,file.name)}, processFile)
+            ));
+
+        const contentResult = Object.fromEntries(zip(filenames, contents));
+        _debug("contents",contentResult);
+        return contentResult;
     }
      
 

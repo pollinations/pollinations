@@ -91,7 +91,7 @@ const incrementalUpdate = async (watchPath) => {
     // console.error("PUBLISHIIING")
     const newContentID = await contentID("/");
     console.log(newContentID);
-    if (options.publish) {
+    if (options.ipns) {
       debug("publish", newContentID)
       await publish(newContentID);
     }

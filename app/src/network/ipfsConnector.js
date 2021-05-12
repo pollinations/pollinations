@@ -17,6 +17,7 @@ import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
 import { last } from "ramda";
 
 import limit from "../utils/concurrency.js";
+import { join } from "path";
 
 const { stat }  = fsPromises;
 
@@ -27,6 +28,9 @@ export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);
 debug("NodeID", nodeID)
 
 const IPFS_HOST = "18.157.173.110";
+
+
+export const mfsRoot = `/${nodeID}`;
 
 export const ipfsPeerURL = `http://${IPFS_HOST}:5001`;
 
@@ -40,6 +44,7 @@ export const globSource = Client.globSource;
 export const files = client.files;
 
 export async function getCID(ipfsPath = "/") {
+    ipfsPath = join(mfsRoot, ipfsPath);
     const cid = stringCID(await client.files.stat(ipfsPath));
     debug("Got CID", cid, "for path", ipfsPath);
     return cid;
@@ -52,21 +57,23 @@ const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
 
 export const stringCID = file => stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file));
 
-const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid)))).filter(({type}) => type !== "unknown");
+const _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
+
+const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid))))
+                                        .filter(({type}) => type !== "unknown")
+                                        .map(_normalizeIPFS);
+                            
 
 export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
 
-export const ipfsAdd = cacheInput(limit(async (content, ipfsPath = null, options={}) => {
-
+export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) => {
+    ipfsPath = join(mfsRoot, ipfsPath);
     const cid = stringCID(await client.add(content, options));
     debug("added", cid, "size", content);
 
-    if (ipfsPath) {
-        debug("copying to", ipfsPath);
-        await client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
-    } else {
-        debug("No destination given. Not copying to MFS.");
-    }
+    debug("copying to", ipfsPath);
+    await client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+
     return cid;
 }));
 
@@ -97,27 +104,30 @@ export const ipfsGet = limit(cleanCIDs((async (cid, {onlyLink = false}) => {
     return contentArray;
 })));
 
-export const ipfsAddFile = async (localPath, ipfsPath = null, options={size: null}) => {
-    
+export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => {
+
     const contentSize = (await stat(localPath)).size;
 
     const progress = contentSize > 10000 ? logProgress(contentSize, localPath) : debug.extend(localPath)("addFile progress"); 
     
-    await ipfsAdd(globSource(localPath,{preserveMtime: true, preserveMode: true}), ipfsPath, {progress});
+    await ipfsAdd(ipfsPath, globSource(localPath,{preserveMtime: true, preserveMode: true}), {progress});
 }
 
 export async function ipfsMkdir(path="/") {
-    debug("Creating folder", path);
-    await client.files.mkdir(path, { parents: true });
+    const withMfsRoot = join(mfsRoot, path);
+    debug("Creating folder", path, "mfsRoot",withMfsRoot);
+    await client.files.mkdir(withMfsRoot, { parents: true });
     return path;
 }
 
 export async function ipfsRm(ipfsPath) {
+    ipfsPath = join(mfsRoot, ipfsPath);
     debug("Deleting",ipfsPath);
     await client.files.rm(ipfsPath,{force:true})
 }
 
 export async function contentID(mfsPath="/") {
+    mfsPath = join(mfsRoot, mfsPath);
     return stringCID(await client.files.stat(mfsPath));
 }
 

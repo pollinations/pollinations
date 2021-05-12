@@ -8,7 +8,7 @@ import {readFileSync, existsSync} from "fs";
 
 const debug = Debug("contentCache");
 
-const STATE_PATH = '/tmp/.ipfsState';
+const STATE_PATH = '/tmp/ipfsState.json';
 
 const load = () => { 
     if (existsSync(STATE_PATH)) {

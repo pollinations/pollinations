@@ -7,7 +7,10 @@ cd go-ipfs
 sudo bash install.sh
 cd -
 
-sudo apt update
+
+ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
+ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
+# sudo apt update
 
 # # NVM
 # wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash

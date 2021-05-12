@@ -25,7 +25,7 @@ const load = () => {
 let _contentCache = new Map(load());
 
 let _inverseContentCache = new Map([..._contentCache].map(([cid,path]) => [path,cid]));
-console.log(_inverseContentCache);
+
 // process.exit(1)
 const persist = debounce(() => {
     const contentCacheJSON = [..._contentCache];

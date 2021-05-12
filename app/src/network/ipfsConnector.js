@@ -82,14 +82,7 @@ export const ipfsGet = limit(cleanCIDs((async (cid, {onlyLink = false}) => {
 
     if (onlyLink)
         return getWebURL(cid);
-
-    const url = getWebURL(cid);
-    _debug("Downloading remote file from:",url);
-    // const response = await fetch(url);
-    // const length = response.headers.get('Content-Length');
-
     
-    // const chunks = await all(logProgressAsync(response.body, length));
     const chunks = await all(client.cat(cid))
 
     _debug("Got all chunks. Total:", chunks.length);

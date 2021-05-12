@@ -27,7 +27,7 @@ export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);
 
 debug("NodeID", nodeID)
 
-const IPFS_HOST = "18.157.173.110";
+const IPFS_HOST = "ipfs.pollinations.ai";
 
 
 export const mfsRoot = `/${nodeID}`;
@@ -131,5 +131,6 @@ export async function publish(rootCID) {
 export async function ipfsResolve(path) {
     return stringCID(last(await toPromise(client.name.resolve(path))));
 }
+
 
 

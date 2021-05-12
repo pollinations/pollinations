@@ -1,5 +1,5 @@
 
-import Client from "ipfs-http-client";
+import {create, globSource} from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1 } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
@@ -37,10 +37,8 @@ export const ipfsPeerURL = `http://${IPFS_HOST}:5001`;
 
 debug("Connecting to IPFS", ipfsPeerURL);
 
-export const client = Client(ipfsPeerURL);
+export const client = create(ipfsPeerURL);
 
-export default client;
-export const globSource = Client.globSource;
 export const files = client.files;
 
 export async function getCID(ipfsPath = "/") {

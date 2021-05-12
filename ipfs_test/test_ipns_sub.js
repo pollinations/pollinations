@@ -83,7 +83,7 @@ const ipnsaddr = "/ipns/QmRF3o3uZn9Su5CvHrScvJK8M53twgLSULvD9hYX7QGjSr";
     const Client = require('ipfs-http-client');
     
     (async function () {
-        const node2IP = "18.157.173.110"
+        const node2IP = "ipfs.pollinations.ai";
         const node2 = Client(`http://${node2IP}:5002`);
         
         // const node1 = Client("http://127.0.0.1:5002");

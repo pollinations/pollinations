@@ -58,7 +58,7 @@ export const stringCID = file => stripSlashIPFS(file instanceof Object && "cid" 
 const _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
 
 const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid))))
-                                        .filter(({type}) => type !== "unknown")
+                                        .filter(({type, name}) => type !== "unknown" && name !== undefined)
                                         .map(_normalizeIPFS);
                             
 

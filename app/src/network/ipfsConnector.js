@@ -62,7 +62,9 @@ const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid))))
                                         .map(_normalizeIPFS);
                             
 
-export const ipfsLs = callLogger(cacheOutput(_ipfsLs),"ipfsls");
+export const ipfsLs = callLogger(
+    // cacheOutput
+    (_ipfsLs),"ipfsls");
 
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) => {
     ipfsPath = join(mfsRoot, ipfsPath);

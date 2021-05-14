@@ -59,7 +59,7 @@ const has = (cid,inverse=false) => {
 }
 
 export function cacheOutput(funcThatFetchesCID) {
-
+    return funcThatFetchesCID;
     const cachingFunc = async (cidOrFile, ...args) => {
             const cid = stringCID(cidOrFile);
             debug("cacheOutput, checking if cache contains:",cid,"arguments:",...args);
@@ -76,6 +76,7 @@ export function cacheOutput(funcThatFetchesCID) {
 }
 
 export default function cacheInput(funcThatGeneratesCID) {
+    return funcThatGeneratesCID;
     const cachingFunc = async (content, ...args) => {
             if (has(content, true)) {
                 debug("Cache HIT (content add). Returning cached CID");

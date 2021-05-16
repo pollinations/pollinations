@@ -1,6 +1,6 @@
-import debug from "debug";
+import Debug from "debug";
 import { noop } from "./utils";
-
+const debug = Debug("localColabConnection");
 const colabConnectionManager = async (onNodeID = noop, onContentID = noop) => {
     debug("Initializing Connection Manager");
     let nodeID = null;

@@ -21,6 +21,8 @@ import { join } from "path";
 
 const { stat }  = fsPromises;
 
+export const ipfsGlobSource = globSource;
+
 const debug=Debug("ipfsConnector")
 
 export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);

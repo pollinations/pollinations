@@ -17,6 +17,7 @@ import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
 import awaitSleep from 'await-sleep';
+import {asyncFlatMap, asyncMap, asyncWrap, wrapEntries} from "iter-tools"
 
 const { writeFile, mkdir }  = fsPromises;
 const debug = Debug("ipfsWatch")
@@ -56,53 +57,64 @@ const incrementalUpdate = async (watchPath) => {
   await ipfsMkdir("/");
   debug("IPFS: Created root IPFS path (if it did not exist)");
   debug("Local: Watching", watchPath);
-  for await (const files of watch(".", {
+  const watch$ = watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     awaitWriteFinish: true,
-  },{debounce: 500})) {
+  },{debounce: 500});
 
-    const changed = getSortedChangedFiles(files);
-    await Promise.all(changed.map(async ({ event, file}) => {
-      const localPath = join(watchPath, file);
-      const ipfsPath = file;
+  const added$ = asyncFlatMap(async (added) =>  asyncWrap(Object.entries(added.files)))(watch$);
 
-      if (event === "addDir") {
-        await ipfsMkdir(ipfsPath);
-      }
-
-      if (event === "add") {
-        await ipfsAddFile(ipfsPath, localPath);
-      }
-
-      if (event === "unlink" || event === "unlinkDir") {
-        debug("removing", file, event);
-        await ipfsRm(ipfsPath);
-      }
-
-      if (event === "change") {
-        debug("changing", file);
-        await ipfsAddFile(ipfsPath, localPath)
-      }
-    }));
-    // for (const { event, file } of changed) {
-     
-    // }
-    // console.error("PUBLISHIIING")
-    const newContentID = await contentID("/");
-    console.log(newContentID);
-    if (options.ipns) {
-      debug("publish", newContentID)
-      await publish(newContentID);
-    }
-
-    if (options.once) {
-      break;
-    }
+  for await (const added of added$) {
+    console.log("added", added)
+    // for (const file of added)
+    //   console.log("added", added);
+  
   }
-  //TODO:
-  await awaitSleep(100);
-  process.exit(0); 
+
+  // for await (const files of) {
+
+  //   const changed = getSortedChangedFiles(files);
+  //   await Promise.all(changed.map(async ({ event, file}) => {
+  //     const localPath = join(watchPath, file);
+  //     const ipfsPath = file;
+
+  //     if (event === "addDir") {
+  //       await ipfsMkdir(ipfsPath);
+  //     }
+
+  //     if (event === "add") {
+  //       await ipfsAddFile(ipfsPath, localPath);
+  //     }
+
+  //     if (event === "unlink" || event === "unlinkDir") {
+  //       debug("removing", file, event);
+  //       await ipfsRm(ipfsPath);
+  //     }
+
+  //     if (event === "change") {
+  //       debug("changing", file);
+  //       await ipfsAddFile(ipfsPath, localPath)
+  //     }
+  //   }));
+  //   // for (const { event, file } of changed) {
+     
+  //   // }
+  //   // console.error("PUBLISHIIING")
+  //   const newContentID = await contentID("/");
+  //   console.log(newContentID);
+  //   if (options.ipns) {
+  //     debug("publish", newContentID)
+  //     await publish(newContentID);
+  //   }
+
+  //   if (options.once) {
+  //     break;
+  //   }
+  // }
+  // //TODO:
+  // await awaitSleep(100);
+  // process.exit(0); 
 }
 
 async function processRemoteCID(contentID) {

@@ -19,8 +19,6 @@ import { last } from "ramda";
 import limit from "../utils/concurrency.js";
 import { join } from "path";
 
-const { stat }  = fsPromises;
-
 export const ipfsGlobSource = globSource;
 
 const debug=Debug("ipfsConnector")
@@ -101,11 +99,7 @@ export const ipfsGet = limit(cleanCIDs((async (cid, {onlyLink = false}) => {
 
 export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => {
 
-    const contentSize = (await stat(localPath)).size;
-
-    const progress = contentSize > 10000 ? logProgress(contentSize, localPath) : debug.extend(localPath)("addFile progress"); 
-    
-    await ipfsAdd(ipfsPath, globSource(localPath,{preserveMtime: true, preserveMode: true}), {progress});
+    await ipfsAdd(ipfsPath, globSource(localPath,{preserveMtime: true, preserveMode: true}));
 }
 
 export async function ipfsMkdir(path="/") {

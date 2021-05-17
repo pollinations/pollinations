@@ -2,7 +2,7 @@
 import {useState, useEffect, useMemo, useReducer} from "react";
 import {toPromise, toPromise1, noop, zip, useHash} from "./utils"
  
-import {getIPFSState, stateReducer, addInputContent, publish } from "./ipfsClient";
+import {IPFSState, stateReducer, addInputContent, publish } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 const debug = Debug("useColab")
@@ -17,7 +17,7 @@ const useColab = () => {
         debug("setContentID",contentID);
         if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID)
-            dispatchState({ contentID, ipfs: await getIPFSState( contentID)});
+            dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }
     };
 

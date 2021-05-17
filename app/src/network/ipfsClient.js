@@ -6,43 +6,59 @@ import { extname } from "path";
 
 
 import Debug from "debug";
+import { getIPFSState } from "./ipfsState";
 const debug = Debug("ipfsClient")
 
 
-const contentCache = new Map();
+// const contentCache = new Map();
 
-const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => {
-    if (contentCache.has(cid))
-        return contentCache.get(cid);
-    let result = null;
+// const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => {
+//     if (contentCache.has(cid))
+//         return contentCache.get(cid);
+//     let result = null;
 
-    if (type === "dir") {
-        const files = await toPromise(client.ls(cid));
-        const filenames = files.map(({ name }) => name);
-        const fileContents = await Promise.all(files.map(file => getIPFSStateCached(contentCache, client, file)));
-        result = Object.fromEntries(zip(filenames, fileContents));
-    }
+//     if (type === "dir") {
+//         const files = await toPromise(client.ls(cid));
+//         const filenames = files.map(({ name }) => name);
+//         const fileContents = await Promise.all(files.map(file => getIPFSStateCached(contentCache, client, file)));
+//         result = Object.fromEntries(zip(filenames, fileContents));
+//     }
 
-    if (type === "file") {
-        if (extname(name).length === 0) {
+//     if (type === "file") {
+//         if (extname(name).length === 0) {
+//             const { content } = await toPromise1(client.get(cid))
+//             const contentArray = await toPromise1(content);
+//             result = new TextDecoder().decode(contentArray);
+//         } else
+//             result = getWebURL(cid);
+//     }
+
+//     if (result === null)
+//         throw "Unknown IPFS entry";
+
+//     contentCache.set(cid, result);
+//     return result;
+// }
+
+export const IPFSState = contentID => {
+    debug("Getting state for CID", contentID)
+    return getIPFSState(contentID, async ({name,cid}) => {
+        const ext = extname(name);
+        const extIsJSON = ext.toLowerCase() === ".json";
+        debug("ext",ext,"extIsJSON",extIsJSON);
+          if (ext.length === 0 || extIsJSON ) {
             const { content } = await toPromise1(client.get(cid))
             const contentArray = await toPromise1(content);
-            result = new TextDecoder().decode(contentArray);
-        } else
-            result = getWebURL(cid);
-    }
-
-    if (result === null)
-        throw "Unknown IPFS entry";
-
-    contentCache.set(cid, result);
-    return result;
+            const textContent= new TextDecoder().decode(contentArray);
+            return extIsJSON ? JSON.parse(textContent) : textContent;
+        } else {
+            return getWebURL(cid);
+        }
+            
+            
+        });
 }
 
-export const getIPFSState = contentID => {
-    debug("Getting state for CID", contentID)
-    return getIPFSStateCached(contentCache, client, { cid: contentID, type: "dir" })
-}
 
 export const stateReducer = [
     (state, newState) => {

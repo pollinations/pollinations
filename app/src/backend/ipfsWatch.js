@@ -3,7 +3,6 @@ import watch from 'file-watch-iterator';
 import PQueue from "p-queue";
 import Debug from "debug";
 
-import { callLogger, toPromise1 } from "../network/utils.js";
 import { sortBy, reverse } from "ramda";
 import process from "process";
 import Readline from 'readline';
@@ -16,8 +15,6 @@ import {promises as fsPromises} from "fs";
 import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
-
-import {asyncFlatMap, asyncMap, asyncWrap, wrapEntries} from "iter-tools"
 
 const { writeFile, mkdir }  = fsPromises;
 const debug = Debug("ipfsWatch")

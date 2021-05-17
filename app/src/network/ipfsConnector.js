@@ -7,8 +7,7 @@ import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import all from "it-all";
 
 import Debug from "debug";
-import asyncify from 'callback-to-async-iterator';
-
+import Asyncify from 'callback-to-async-iterator';
 
 import {promises as fsPromises} from "fs";
 
@@ -18,6 +17,9 @@ import { last } from "ramda";
 
 import limit from "../utils/concurrency.js";
 import { join } from "path";
+
+
+const asyncify = Asyncify.default;
 
 export const ipfsGlobSource = globSource;
 
@@ -129,13 +131,14 @@ export async function publish(rootCID) {
     debug("publishResponse", await client.name.publish(`/ipfs/${rootCID}`));
 }
 
-export async function subscribeCID() {
- debug("subscribeCID",await client.pubsub.subscribe(await nodeID));
-}
 
-export async function ipfsResolve(path) {
-    return stringCID(last(await toPromise(client.name.resolve(path))));
-}
+export const subscribeCID = async () =>
+ asyncify(async handler => await client.pubsub.subscribe(await nodeID, handler));
+
+
+export const ipfsResolve = async path =>
+    stringCID(last(await toPromise(client.name.resolve(path))));
+
 
 
 

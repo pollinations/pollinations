@@ -1,6 +1,6 @@
 
 
-import  { nodeID, stringCID, ipfsLs } from "./ipfsConnector.js";
+import  { stringCID, ipfsLs } from "./ipfsConnector.js";
 import Debug from "debug";
 import { toPromise } from "./utils.js";
 import { zip } from "ramda";

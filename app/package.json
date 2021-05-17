@@ -15,6 +15,7 @@
     "@testing-library/user-event": "^13.1.8",
     "async": "^3.2.0",
     "await-sleep": "^0.0.1",
+    "callback-to-async-iterator": "^1.1.1",
     "callbag-basics": "^4.0.0",
     "cids": "^1.1.6",
     "commander": "^7.2.0",
@@ -28,6 +29,7 @@
     "it-first": "^1.0.6",
     "it-reduce": "^1.0.5",
     "iter-tools": "^7.1.3",
+    "json5": "^2.2.0",
     "lodash.throttle": "^4.1.1",
     "markdown-to-jsx": "^7.1.2",
     "multi-progress-bars": "^3.2.4",
@@ -58,6 +60,7 @@
     "workbox-streams": "^6.1.5"
   },
   "devDependencies": {
+    "esbuild": "^0.11.23",
     "gh-pages": "^3.1.0"
   },
   "optionalDependencies": {},
@@ -67,7 +70,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "build_backend": "mkdir -p build && esbuild src/backend/ipfsWatch.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js"
   },
   "bin": {
     "pollinate": "./src/backend/ipfsWatch.js"

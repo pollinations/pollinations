@@ -7,7 +7,7 @@ import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import all from "it-all";
 
 import Debug from "debug";
-
+import asyncify from 'callback-to-async-iterator';
 
 
 import {promises as fsPromises} from "fs";
@@ -23,16 +23,13 @@ export const ipfsGlobSource = globSource;
 
 const debug=Debug("ipfsConnector")
 
-export const nodeID = "thomashmac" + Math.floor(Math.random() * 10000);
-
-debug("NodeID", nodeID)
 
 const IPFS_HOST = "ipfs.pollinations.ai";
 
 
-export const mfsRoot = `/${nodeID}`;
+export const mfsRoot = ``;
 
-export const ipfsPeerURL = `http://${IPFS_HOST}:5001`;
+export const ipfsPeerURL = process.env.IPFS_API || `http://${IPFS_HOST}:5001`;
 
 
 debug("Connecting to IPFS", ipfsPeerURL);
@@ -40,6 +37,11 @@ debug("Connecting to IPFS", ipfsPeerURL);
 export const client = create(ipfsPeerURL);
 
 export const files = client.files;
+
+
+export const nodeID = client.id();
+
+debug("NodeID", nodeID)
 
 export async function getCID(ipfsPath = "/") {
     ipfsPath = join(mfsRoot, ipfsPath);
@@ -123,7 +125,12 @@ export async function contentID(mfsPath="/") {
 
 export async function publish(rootCID) {
     debug("publish", rootCID);
+    await client.pubsub.publish(await nodeID, rootCID)
     debug("publishResponse", await client.name.publish(`/ipfs/${rootCID}`));
+}
+
+export async function subscribeCID() {
+ debug("subscribeCID",await client.pubsub.subscribe(await nodeID));
 }
 
 export async function ipfsResolve(path) {

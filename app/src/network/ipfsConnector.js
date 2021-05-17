@@ -19,7 +19,7 @@ import limit from "../utils/concurrency.js";
 import { join } from "path";
 
 
-const asyncify = Asyncify.default;
+const asyncify = typeof Asyncify === "function" ? Asyncify: Asyncify.default;
 
 export const ipfsGlobSource = globSource;
 

@@ -160,13 +160,13 @@ if (enableSend)
 
 if (enableReceive)
   (async function () {
-
-    for await (const subCID of await subscribeCID()) {
-      debug("got CID from subscription", subCID);
-      await processRemoteCID(subCID);
-      if (options.once)
-        break;
-    }
+    await subscribeCID();
+    // for await (const subCID of await subscribeCID()) {
+    //   debug("got CID from subscription", subCID);
+    //   await processRemoteCID(subCID);
+    //   if (options.once)
+    //     break;
+    // }
     
 
     for await (let remoteCID of readline) {

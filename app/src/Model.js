@@ -11,30 +11,48 @@ import {any, identity} from 'ramda';
 import useColab from "./network/useColab"
 import {displayContentID, noop} from "./network/utils";
 import NodeStatus from "./network/NodeStatus";
-
+import {parse} from "json5";
 import Debug from "debug";
 const debug = Debug("Model");
 
+const getType = help => help.includes("@param") ? parse(help.replace("@param","")).type: "string";
 
-const fillForm = (form, input) => 
-  input ? {
+const fillForm = ({"parameters.json": parameters, input, ...rest}) => {
+  debug("parameers", parameters, "input", input);
+  if (!parameters)
+    return {};
+  const properties = Object.fromEntries(
+    Object.values(parameters)
+      .map(({name, default: defaultVal, help}) => 
+        [ name,
+          {
+          title: name,
+          "default": parse(defaultVal),
+          description: help,
+          type: getType(help)
+        }])
+  );
+  
+  const form = {properties,name:"Form"};
+        debug("prefilledForm", form);
+
+  return input ? {
     properties: Object.fromEntries(Object.entries(form.properties).map(
       ([formKey, prop]) => [formKey, formKey in input ? {...prop, "default": input[formKey]} : prop]
     )) 
   } 
   : 
   form;
-
+};
 
 export default React.memo(function Model({notebook}) {
   debug("notebook",notebook)
-  const {description,form} = notebook;
-
+  const {description} = notebook;
   const {state, dispatch: dispatchState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
   
   const { ipfs } = state;
 
-  const filledForm =  fillForm(form, ipfs.input);
+  const filledForm =  fillForm(ipfs);
 
   const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
 

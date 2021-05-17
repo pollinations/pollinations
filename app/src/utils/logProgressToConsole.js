@@ -39,10 +39,10 @@
 //     remove();
 // }
 
-import { MultiProgressBars } from 'multi-progress-bars';
+// import { MultiProgressBars } from 'multi-progress-bars';
 
-import pProgress from "p-progress";
-const mpb = new MultiProgressBars({stream:process.stderr, anchor:"bottom"});
+// import pProgress from "p-progress";
+// const mpb = new MultiProgressBars({stream:process.stderr, anchor:"bottom"});
 
 export default () => null;
 
@@ -50,19 +50,20 @@ export const logProgressAsync = it => it;
 
 let globalBarIndex = 0;
 
-export const PromiseAllProgress = (name, promises) => {
-    const promiseProgress = pProgress.all(promises);
-    globalBarIndex++;
-    const barIndex = globalBarIndex;
-    mpb.addTask(name, {type:"percentage",index: barIndex});
-    promiseProgress.onProgress(p => {
-        // console.log(p)
-        mpb.updateTask(name, p);
-        if (p >= 1) {
-            mpb.done(name);
-            globalBarIndex--;
-        }
-    })
-    return promiseProgress;
-};
+export const PromiseAllProgress = (name, promises) => Promise.all(promises);
+// {
+//     const promiseProgress = pProgress.all(promises);
+//     globalBarIndex++;
+//     const barIndex = globalBarIndex;
+//     mpb.addTask(name, {type:"percentage",index: barIndex});
+//     promiseProgress.onProgress(p => {
+//         // console.log(p)
+//         mpb.updateTask(name, p);
+//         if (p >= 1) {
+//             mpb.done(name);
+//             globalBarIndex--;
+//         }
+//     })
+//     return promiseProgress;
+// };
 

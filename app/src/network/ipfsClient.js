@@ -1,7 +1,7 @@
 
 
 import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
-import { client, getWebURL} from "./ipfsConnector.js"
+import { client, getWebURL } from "./ipfsConnector.js"
 import { extname } from "path";
 
 
@@ -40,23 +40,30 @@ const debug = Debug("ipfsClient")
 //     return result;
 // }
 
+const fetchAndMakeURL = async ({ name, cid }) => {
+    const ext = extname(name);
+    const extIsJSON = ext.toLowerCase() === ".json";
+    debug("ext", ext, "extIsJSON", extIsJSON);
+    if (ext.length === 0 || extIsJSON) {
+        const { content } = await toPromise1(client.get(cid))
+        const contentArray = await toPromise1(content);
+        const textContent = new TextDecoder().decode(contentArray);
+        debug("textContent",textContent)
+        try {
+            return JSON.parse(textContent);
+        } catch (_e) {
+            debug("result was not json. returning raw.")
+            return textContent;
+        }
+
+    } else {
+        return getWebURL(cid);
+    }
+}
+
 export const IPFSState = contentID => {
     debug("Getting state for CID", contentID)
-    return getIPFSState(contentID, async ({name,cid}) => {
-        const ext = extname(name);
-        const extIsJSON = ext.toLowerCase() === ".json";
-        debug("ext",ext,"extIsJSON",extIsJSON);
-          if (ext.length === 0 || extIsJSON ) {
-            const { content } = await toPromise1(client.get(cid))
-            const contentArray = await toPromise1(content);
-            const textContent= new TextDecoder().decode(contentArray);
-            return extIsJSON ? JSON.parse(textContent) : textContent;
-        } else {
-            return getWebURL(cid);
-        }
-            
-            
-        });
+    return getIPFSState(contentID, fetchAndMakeURL);
 }
 
 
@@ -89,9 +96,10 @@ export const addInputContent = async (contentID, { inputs }) => {
 
         const { cid: inputCid } = await getCidOfPath(contentID, "input");
         // const {cid: valueCid} = await getCidOfPath(inputCid, key);
-        const tmpInputCid = await client.object.patch.rmLink(inputCid, { name: key });
+        // const tmpInputCid = await client.object.patch.rmLink(inputCid, { name: key });
+        const tmpInputCid = inputCid;
         debug({ tmpInputCid })
-        const { cid: addedCid } = await client.add(val);
+        const { cid: addedCid } = await client.add(JSON.stringify(val));
         //debug("AddedCID", addedCid, tmpInputCid)
         //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
         debug("adding", contentID, { Hash: addedCid, name: key })
@@ -108,12 +116,12 @@ export const addInputContent = async (contentID, { inputs }) => {
 };
 
 
-export const publish = (client, nodeID, newContentID) => {
+export const publish = (nodeID, newContentID) => {
     client.pubsub.publish(nodeID, newContentID)
 }
 
 
-export const getCidOfPath = async (client, dirCid, path) => {
+export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);
     return (await toPromise(client.ls(dirCid))).find(({ name }) => name === path);
 }

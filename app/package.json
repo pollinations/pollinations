@@ -66,7 +66,7 @@
   "optionalDependencies": {},
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && npm run build_backend",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",

@@ -1,48 +1,71 @@
 
 
 import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
-import { client, getWebURL} from "./ipfsConnector.js"
+import { client, getWebURL } from "./ipfsConnector.js"
 import { extname } from "path";
 
 
 import Debug from "debug";
+import { getIPFSState } from "./ipfsState";
 const debug = Debug("ipfsClient")
 
 
-const contentCache = new Map();
+// const contentCache = new Map();
 
-const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => {
-    if (contentCache.has(cid))
-        return contentCache.get(cid);
-    let result = null;
+// const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => {
+//     if (contentCache.has(cid))
+//         return contentCache.get(cid);
+//     let result = null;
 
-    if (type === "dir") {
-        const files = await toPromise(client.ls(cid));
-        const filenames = files.map(({ name }) => name);
-        const fileContents = await Promise.all(files.map(file => getIPFSStateCached(contentCache, client, file)));
-        result = Object.fromEntries(zip(filenames, fileContents));
+//     if (type === "dir") {
+//         const files = await toPromise(client.ls(cid));
+//         const filenames = files.map(({ name }) => name);
+//         const fileContents = await Promise.all(files.map(file => getIPFSStateCached(contentCache, client, file)));
+//         result = Object.fromEntries(zip(filenames, fileContents));
+//     }
+
+//     if (type === "file") {
+//         if (extname(name).length === 0) {
+//             const { content } = await toPromise1(client.get(cid))
+//             const contentArray = await toPromise1(content);
+//             result = new TextDecoder().decode(contentArray);
+//         } else
+//             result = getWebURL(cid);
+//     }
+
+//     if (result === null)
+//         throw "Unknown IPFS entry";
+
+//     contentCache.set(cid, result);
+//     return result;
+// }
+
+const fetchAndMakeURL = async ({ name, cid }) => {
+    const ext = extname(name);
+    const extIsJSON = ext.toLowerCase() === ".json";
+    debug("ext", ext, "extIsJSON", extIsJSON);
+    if (ext.length === 0 || extIsJSON) {
+        const { content } = await toPromise1(client.get(cid))
+        const contentArray = await toPromise1(content);
+        const textContent = new TextDecoder().decode(contentArray);
+        debug("textContent",textContent)
+        try {
+            return JSON.parse(textContent);
+        } catch (_e) {
+            debug("result was not json. returning raw.")
+            return textContent;
+        }
+
+    } else {
+        return getWebURL(cid);
     }
-
-    if (type === "file") {
-        if (extname(name).length === 0) {
-            const { content } = await toPromise1(client.get(cid))
-            const contentArray = await toPromise1(content);
-            result = new TextDecoder().decode(contentArray);
-        } else
-            result = getWebURL(cid);
-    }
-
-    if (result === null)
-        throw "Unknown IPFS entry";
-
-    contentCache.set(cid, result);
-    return result;
 }
 
-export const getIPFSState = contentID => {
+export const IPFSState = contentID => {
     debug("Getting state for CID", contentID)
-    return getIPFSStateCached(contentCache, client, { cid: contentID, type: "dir" })
+    return getIPFSState(contentID, fetchAndMakeURL);
 }
+
 
 export const stateReducer = [
     (state, newState) => {
@@ -73,9 +96,10 @@ export const addInputContent = async (contentID, { inputs }) => {
 
         const { cid: inputCid } = await getCidOfPath(contentID, "input");
         // const {cid: valueCid} = await getCidOfPath(inputCid, key);
-        const tmpInputCid = await client.object.patch.rmLink(inputCid, { name: key });
+        // const tmpInputCid = await client.object.patch.rmLink(inputCid, { name: key });
+        const tmpInputCid = inputCid;
         debug({ tmpInputCid })
-        const { cid: addedCid } = await client.add(val);
+        const { cid: addedCid } = await client.add(JSON.stringify(val));
         //debug("AddedCID", addedCid, tmpInputCid)
         //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
         debug("adding", contentID, { Hash: addedCid, name: key })
@@ -92,12 +116,12 @@ export const addInputContent = async (contentID, { inputs }) => {
 };
 
 
-export const publish = (client, nodeID, newContentID) => {
+export const publish = (nodeID, newContentID) => {
     client.pubsub.publish(nodeID, newContentID)
 }
 
 
-export const getCidOfPath = async (client, dirCid, path) => {
+export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);
     return (await toPromise(client.ls(dirCid))).find(({ name }) => name === path);
 }

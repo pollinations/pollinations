@@ -9,14 +9,15 @@ import process from "process";
 import Readline from 'readline';
 
 import { getIPFSState } from '../network/ipfsState.js';
-import { getWebURL, nodeID, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve } from "../network/ipfsConnector.js";
+import {getWebURL, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
 
 import {promises as fsPromises} from "fs";
 
 import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
-import awaitSleep from 'await-sleep';
+
+import {asyncFlatMap, asyncMap, asyncWrap, wrapEntries} from "iter-tools"
 
 const { writeFile, mkdir }  = fsPromises;
 const debug = Debug("ipfsWatch")
@@ -38,7 +39,6 @@ const options = program.opts();
 debug("CLI options", options);
 
 
-const mfsRoot = `/${nodeID}`;
 
 
 
@@ -52,28 +52,41 @@ if (!existsSync(watchPath)) {
   mkdirSync(watchPath, { recursive: true });
 }
 
-const incrementalUpdate = async (mfsRoot, watchPath) => {
+const incrementalUpdate = async (watchPath) => {
 
-  await ipfsMkdir(mfsRoot);
-  debug("IPFS: Created root IPFS path (if it did not exist)", mfsRoot);
+
+  
+  await ipfsMkdir("/");
+  debug("IPFS: Created root IPFS path (if it did not exist)");
   debug("Local: Watching", watchPath);
-  for await (const files of watch(".", {
+  const watch$ = watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     awaitWriteFinish: true,
-  },{debounce: 500})) {
+  },{debounce: 500});
+
+  // const added$ = asyncFlatMap(async (added) =>  asyncWrap(Object.entries(added.files)))(watch$);
+
+  // for await (const added of added$) {
+  //   console.log("added", added)
+  //   // for (const file of added)
+  //   //   console.log("added", added);
+  
+  // }
+
+  for await (const files of watch$) {
 
     const changed = getSortedChangedFiles(files);
     await Promise.all(changed.map(async ({ event, file}) => {
       const localPath = join(watchPath, file);
-      const ipfsPath = join(mfsRoot, file);
+      const ipfsPath = file;
 
       if (event === "addDir") {
         await ipfsMkdir(ipfsPath);
       }
 
       if (event === "add") {
-        await ipfsAddFile(localPath, ipfsPath);
+        await ipfsAddFile(ipfsPath, localPath);
       }
 
       if (event === "unlink" || event === "unlinkDir") {
@@ -83,16 +96,16 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
 
       if (event === "change") {
         debug("changing", file);
-        await ipfsAddFile(localPath, ipfsPath)
+        await ipfsAddFile(ipfsPath, localPath)
       }
     }));
     // for (const { event, file } of changed) {
      
     // }
     // console.error("PUBLISHIIING")
-    const newContentID = await contentID(mfsRoot);
+    const newContentID = await contentID("/");
     console.log(newContentID);
-    if (options.publish) {
+    if (options.ipns) {
       debug("publish", newContentID)
       await publish(newContentID);
     }
@@ -102,6 +115,7 @@ const incrementalUpdate = async (mfsRoot, watchPath) => {
     }
   }
   //TODO:
+  await awaitSleep(100);
   process.exit(0); 
 }
 
@@ -145,11 +159,12 @@ const eventOrder = ({ event }) => _eventOrder.indexOf(event);
 const order = events => sortBy(eventOrder, reverse(events));
 
 if (enableSend)
-  incrementalUpdate(mfsRoot, watchPath);
+  incrementalUpdate(watchPath);
 
 if (enableReceive)
   (async function () {
 
+    debug("subCIDRes",await subscribeCID());
     for await (let remoteCID of readline) {
       if (remoteCID.startsWith("/ipns/"))
         remoteCID = await ipfsResolve(remoteCID);

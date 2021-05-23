@@ -6,6 +6,7 @@ import Debug from "debug";
 import { sortBy, reverse } from "ramda";
 import process from "process";
 import Readline from 'readline';
+import eventit from "event-iterator"
 
 import { getIPFSState } from '../network/ipfsState.js';
 import {getWebURL, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
@@ -16,6 +17,7 @@ import { dirname, join } from "path";
 import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
 
+const {stream} = eventit;
 const { writeFile, mkdir }  = fsPromises;
 const debug = Debug("ipfsWatch")
 const readline = Readline.createInterface({
@@ -160,7 +162,8 @@ if (enableSend)
 
 if (enableReceive)
   (async function () {
-    await subscribeCID();
+    if (options.ipns)
+      await subscribeCID();
     // for await (const subCID of await subscribeCID()) {
     //   debug("got CID from subscription", subCID);
     //   await processRemoteCID(subCID);
@@ -169,7 +172,9 @@ if (enableReceive)
     // }
     
 
-    for await (let remoteCID of readline) {
+    // for await (let remoteCID of Right eadline) {
+      for await (let remoteCID of stream.call(process.stdin)) {
+        remoteCID = remoteCID.toString();
       if (remoteCID.startsWith("/ipns/"))
         remoteCID = await ipfsResolve(remoteCID);
       await processRemoteCID(remoteCID);

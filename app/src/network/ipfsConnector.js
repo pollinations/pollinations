@@ -43,7 +43,8 @@ export const files = client.files;
 
 export const nodeID = client.id();
 
-debug("NodeID", nodeID)
+(async () =>
+debug("NodeID", nodeID))();
 
 export async function getCID(ipfsPath = "/") {
     ipfsPath = join(mfsRoot, ipfsPath);

@@ -132,11 +132,8 @@ export async function publish(rootCID) {
 }
 
 
-export const subscribeCID = async () => {
- //asyncify(async handler => 
- const handler = cid => debug("got CID from pubsub", cid);
+export async function* subscribeCID(handler) {
   await client.pubsub.subscribe(await nodeID, handler)
-    //);
 }
 
 

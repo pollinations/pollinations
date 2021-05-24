@@ -163,7 +163,7 @@ if (enableSend)
 if (enableReceive)
   (async function () {
     if (options.ipns)
-      await subscribeCID();
+      await subscribeCID(remoteCID => processRemoteCID(stringCID(remoteCID)));
     // for await (const subCID of await subscribeCID()) {
     //   debug("got CID from subscription", subCID);
     //   await processRemoteCID(subCID);

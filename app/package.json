@@ -25,6 +25,7 @@
     "file-watch-iterator": "^0.7.0",
     "ipfs-http-client": "^50.0.0",
     "is-ipfs": "^5.0.0",
+    "is-port-reachable": "^3.0.0",
     "it-all": "^1.0.5",
     "it-concat": "^2.0.0",
     "it-first": "^1.0.6",

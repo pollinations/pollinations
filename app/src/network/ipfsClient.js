@@ -41,11 +41,12 @@ const debug = Debug("ipfsClient")
 // }
 
 const fetchAndMakeURL = async ({ name, cid }) => {
+
     const ext = extname(name);
     const extIsJSON = ext.toLowerCase() === ".json";
     debug("ext", ext, "extIsJSON", extIsJSON);
     if (ext.length === 0 || extIsJSON) {
-        const { content } = await toPromise1(client.get(cid))
+        const { content } = await toPromise1((await client).get(cid))
         const contentArray = await toPromise1(content);
         const textContent = new TextDecoder().decode(contentArray);
         debug("textContent",textContent)
@@ -83,6 +84,7 @@ export const stateReducer = [
     }];
 
 export const addInputContent = async (contentID, { inputs }) => {
+    const _client = await client;
     debug("Triggered dispatch. Inputs:", inputs, "cid before", contentID);
     for (const [key, val] of Object.entries(inputs)) {
 
@@ -99,15 +101,15 @@ export const addInputContent = async (contentID, { inputs }) => {
         // const tmpInputCid = await client.object.patch.rmLink(inputCid, { name: key });
         const tmpInputCid = inputCid;
         debug({ tmpInputCid })
-        const { cid: addedCid } = await client.add(JSON.stringify(val));
+        const { cid: addedCid } = await _client.add(JSON.stringify(val));
         //debug("AddedCID", addedCid, tmpInputCid)
         //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
         debug("adding", contentID, { Hash: addedCid, name: key })
-        const newInputCid = await client.object.patch.addLink(tmpInputCid, { Hash: addedCid, name: key });
+        const newInputCid = await _client.object.patch.addLink(tmpInputCid, { Hash: addedCid, name: key });
 
-        const removedInputCid = await client.object.patch.rmLink(contentID, { name: "input" });
+        const removedInputCid = await _client.object.patch.rmLink(contentID, { name: "input" });
         debug("addlink2", removedInputCid, { Hash: newInputCid, name: "input" })
-        const newContentID = await client.object.patch.addLink(removedInputCid, { Hash: newInputCid, name: "input" });
+        const newContentID = await _client.object.patch.addLink(removedInputCid, { Hash: newInputCid, name: "input" });
         // debug("newIpfs",await getState(client,  { cid: newInputCid, type: "dir"}))
         contentID = newContentID.toString();
     };
@@ -116,14 +118,14 @@ export const addInputContent = async (contentID, { inputs }) => {
 };
 
 
-export const publish = (nodeID, newContentID) => {
-    client.pubsub.publish(nodeID, newContentID)
+export const publish = async (nodeID, newContentID) => {
+    (await client).pubsub.publish(nodeID, newContentID)
 }
 
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);
-    return (await toPromise(client.ls(dirCid))).find(({ name }) => name === path);
+    return (await toPromise((await client).ls(dirCid))).find(({ name }) => name === path);
 }
 
 // export default useColab;

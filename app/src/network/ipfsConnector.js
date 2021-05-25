@@ -3,20 +3,19 @@ import {create, globSource} from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1 } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
+import reachable from "is-port-reachable";
 
 import all from "it-all";
 
 import Debug from "debug";
 import Asyncify from 'callback-to-async-iterator';
 
-import {promises as fsPromises} from "fs";
-
-import logProgress, {logProgressAsync} from "../utils/logProgressToConsole.js";
-
 import { last } from "ramda";
 
 import limit from "../utils/concurrency.js";
 import { join } from "path";
+
+import options from "../backend/options.js";
 
 
 const asyncify = typeof Asyncify === "function" ? Asyncify: Asyncify.default;
@@ -28,22 +27,21 @@ const debug=Debug("ipfsConnector")
 
 const IPFS_HOST = "ipfs.pollinations.ai";
 
-
-export const mfsRoot = ``;
-
-export const ipfsPeerURL = process.env.IPFS_API || `http://${IPFS_HOST}:5001`;
+export const mfsRoot = `/`;
 
 
-debug("Connecting to IPFS", ipfsPeerURL);
-
-export const client = create(ipfsPeerURL);
-
-export const files = client.files;
+const getIPFSDaemonURL = async () => 
+     (await reachable(5001)) ? "http://localhost:5001" : `http://${IPFS_HOST}:5001`;
 
 
-export const nodeID = client.id();
+const ipfsDaemonURL = getIPFSDaemonURL();
 
-debug("NodeID", nodeID)
+export const client = ipfsDaemonURL.then(create);
+
+export const nodeID = client.then(async client => options.nodeid || (await client.id()).id);
+
+(async () =>
+debug("NodeID", nodeID))();
 
 export async function getCID(ipfsPath = "/") {
     ipfsPath = join(mfsRoot, ipfsPath);
@@ -61,7 +59,7 @@ export const stringCID = file => stripSlashIPFS(file instanceof Object && "cid" 
 
 const _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
 
-const _ipfsLs = async cid => (await toPromise(client.ls(stringCID(cid))))
+const _ipfsLs = async cid => (await toPromise((await client).ls(stringCID(cid))))
                                         .filter(({type, name}) => type !== "unknown" && name !== undefined)
                                         .map(_normalizeIPFS);
                             
@@ -75,9 +73,16 @@ export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) =>
     const cid = stringCID(await client.add(content, options));
     debug("added", cid, "size", content);
 
+
+    try {
+        debug("Trying to delete", ipfsPath);
+        await client.files.rm(ipfsPath, { recursive: true });
+    } catch {
+        debug("Could not delete. Probably did not exist.")
+    };
     debug("copying to", ipfsPath);
     await client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
-
+   
     return cid;
 }));
 
@@ -89,7 +94,7 @@ export const ipfsGet = limit(cleanCIDs((async (cid, {onlyLink = false}) => {
     if (onlyLink)
         return getWebURL(cid);
     
-    const chunks = await all(client.cat(cid))
+    const chunks = await all((await client).cat(cid))
 
     _debug("Got all chunks. Total:", chunks.length);
 
@@ -128,20 +133,20 @@ export async function contentID(mfsPath="/") {
 export async function publish(rootCID) {
     debug("publish", rootCID);
     await client.pubsub.publish(await nodeID, rootCID)
-    debug("publishResponse", await client.name.publish(`/ipfs/${rootCID}`));
+    // dont await since this hangs sadly
+    client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
 }
 
 
-export const subscribeCID = async () => {
- //asyncify(async handler => 
- const handler = cid => debug("got CID from pubsub", cid);
-await client.pubsub.subscribe(await nodeID, handler)
-    //);
+export async function subscribeCID(callback) {
+  debug("Subscribing to pubsub events from", await nodeID);
+  const handler = ({data}) => callback(new TextDecoder().decode(data));
+  await (await client).pubsub.subscribe(await nodeID, handler)  
 }
 
 
 export const ipfsResolve = async path =>
-    stringCID(last(await toPromise(client.name.resolve(path))));
+    stringCID(last(await toPromise((await client).name.resolve(path))));
 
 
 

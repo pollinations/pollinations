@@ -14,8 +14,8 @@ import {getWebURL, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm
 import {promises as fsPromises} from "fs";
 
 import { dirname, join } from "path";
-import { program } from "commander";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
+import options from "./options.js";
 
 const {stream} = eventit;
 const { writeFile, mkdir }  = fsPromises;
@@ -25,16 +25,6 @@ const readline = Readline.createInterface({
   output: process.stdout
 });
 
-program
-  .option('-p, --path <path>', 'local folder to synchronize', '/tmp/ipfs')
-  .option('-r, --receive', 'only receive state', false)
-  .option('-s, --send', 'only send state', false)
-  .option('-o, --once', 'run once and exit', false)
-  .option('-i, --ipns', 'publish to /ipns/pollinations.ai', false);
-
-program.parse(process.argv);
-
-const options = program.opts();
 debug("CLI options", options);
 
 
@@ -160,18 +150,16 @@ const order = events => sortBy(eventOrder, reverse(events));
 if (enableSend)
   incrementalUpdate(watchPath);
 
-if (enableReceive)
+if (enableReceive) {
   (async function () {
-    if (options.ipns)
-      await subscribeCID(remoteCID => processRemoteCID(stringCID(remoteCID)));
-    // for await (const subCID of await subscribeCID()) {
-    //   debug("got CID from subscription", subCID);
-    //   await processRemoteCID(subCID);
-    //   if (options.once)
-    //     break;
-    // }
-    
+    if (options.ipns) {
+      debug("IPNS activated. subscring to CIDs")
+      await subscribeCID(remoteCID =>{
+         debug("remoteCID from pubsub", remoteCID);
+         processRemoteCID(stringCID(remoteCID))
+        });
 
+    }
     // for await (let remoteCID of Right eadline) {
       for await (let remoteCID of stream.call(process.stdin)) {
         remoteCID = remoteCID.toString();
@@ -185,6 +173,7 @@ if (enableReceive)
 
   }
   )();
+}
 
 
 

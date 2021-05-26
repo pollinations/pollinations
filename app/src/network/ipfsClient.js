@@ -119,7 +119,7 @@ export const addInputContent = async (contentID, { inputs }) => {
 
 
 export const publish = async (nodeID, newContentID) => {
-    (await client).pubsub.publish(nodeID, newContentID)
+    (await client).pubsub.publish(newContentID, nodeID)
 }
 
 

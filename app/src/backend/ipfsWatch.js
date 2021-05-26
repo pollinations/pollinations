@@ -172,7 +172,7 @@ if (enableReceive) {
           break;
       }
     }
-
+    process.exit(0);
   }
   )();
 }

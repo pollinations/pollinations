@@ -144,7 +144,7 @@ export async function publish(rootCID) {
 }
 
 
-export async function subscribeCID(callback) {
+export async function subscribeCID(callback, nodeID=nodeID) {
   debug("Subscribing to pubsub events from", await nodeID);
   const handler = ({data}) => callback(new TextDecoder().decode(data));
   await (await client).pubsub.subscribe(await nodeID, handler)  

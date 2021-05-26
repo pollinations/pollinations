@@ -154,7 +154,7 @@ if (enableReceive) {
   (async function () {
     if (options.ipns) {
       debug("IPNS activated. subscring to CIDs")
-      for await (let remoteCID of subscribeCID()) {
+      for await (let remoteCID of await subscribeCID()) {
         debug("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));
         if (options.once)

@@ -17,7 +17,13 @@ def notebook_add_metadata(target_notebook):
     json.dump(j, f)
 
 notebook_path = sys.argv[1]
+ipfs_root = sys.argv[2]
 
 notebook_add_metadata(notebook_path)
 
-print(json.dumps(pm.inspect_notebook(notebook_path),sort_keys=True, indent=4))
+#print(json.dumps(,sort_keys=True, indent=4))
+
+parameters = pm.inspect_notebook(notebook_path)
+for key, default in parameters.items():
+    print(default, file=open(f"{ipfs_root}/input/{key}", 'a'))
+

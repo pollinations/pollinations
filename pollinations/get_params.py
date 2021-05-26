@@ -25,5 +25,5 @@ notebook_add_metadata(notebook_path)
 
 parameters = pm.inspect_notebook(notebook_path)
 for key, default in parameters.items():
-    print(default, file=open(f"{ipfs_root}/input/{key}", 'a'))
+    print(default, file=open(f"{ipfs_root}/input/{key}", 'w'))
 

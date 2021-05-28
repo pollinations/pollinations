@@ -2,7 +2,7 @@
 import {useState, useEffect, useMemo, useReducer} from "react";
 import {toPromise, toPromise1, noop, zip, useHash} from "./utils"
  
-import {IPFSState, stateReducer, addInputContent, publish } from "./ipfsClient";
+import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 const debug = Debug("useColab")
@@ -22,8 +22,10 @@ const useColab = () => {
     };
 
     useEffect(() => {
-        colabConnectionManager(nodeID => {
+        colabConnectionManager(async nodeID => {
             dispatchState({ nodeID });
+            const subscribeResult = await subscribe(nodeID, setContentID);
+            debug("subscribeResult", subscribeResult);
         }, setContentID);
     },[]);
 

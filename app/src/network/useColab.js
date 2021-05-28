@@ -26,7 +26,7 @@ const useColab = () => {
             dispatchState({ nodeID });
             const subscribeResult = await subscribe(nodeID, setContentID);
             debug("subscribeResult", subscribeResult);
-        }, setContentID);
+        });
     },[]);
 
 

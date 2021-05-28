@@ -144,8 +144,8 @@ export async function publish(rootCID) {
     debug("publish pubsub", await nodeID, rootCID);
     await _client.pubsub.publish(await nodeID, rootCID)
     // dont await since this hangs sadly
-    await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
-    debug("published ipns");
+    //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
+    //debug("published ipns");
 }
 
 

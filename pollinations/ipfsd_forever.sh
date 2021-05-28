@@ -1,4 +1,5 @@
 #!/bin/bash
+set -m
 while :
 do
     ipfs daemon --enable-namesys-pubsub --enable-pubsub-experiment &

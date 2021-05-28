@@ -113,7 +113,7 @@ async function processRemoteCID(contentID) {
   debug("got remote state", (await getIPFSState(contentID, processFile)));
 }
 
-const queue = new PQueue({ concurrency: 5 });
+// const queue = new PQueue({ concurrency: 5 });
 
 
 async function processFile({ path, cid }) {
@@ -122,12 +122,12 @@ async function processFile({ path, cid }) {
   const destPath = join(watchPath, path);
   _debug("writeFile", destPath, cid, "queued");
 
-  queue.add(async () => {
+  // queue.add(async () => {
     const content = await ipfsGet(cid, { stream: true });
     _debug("writefile content", content.length)
     await writeFileAndCreateFolder(destPath, content);
     _debug("done")
-  });
+  // });
   return destPath;
 }
 

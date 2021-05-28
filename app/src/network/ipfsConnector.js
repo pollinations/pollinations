@@ -153,11 +153,20 @@ export async function subscribeCID(_nodeID=null) {
   const channel = new Channel();
   if (_nodeID===null)
     _nodeID = await nodeID;
-  debug("Subscribing to pubsub events from", await _nodeID);
+  debug("Subscribing to pubsub events from", _nodeID);
   const handler = ({data}) => channel.push(new TextDecoder().decode(data));
-  await (await client).pubsub.subscribe(await _nodeID, handler);
+  await (await client).pubsub.subscribe(_nodeID, handler);
   return channel;  
 }
+
+
+export async function subscribeCIDCallback(_nodeID=null, callback) {
+    if (_nodeID===null)
+      _nodeID = await nodeID;
+    debug("Subscribing to pubsub events from", _nodeID);
+    const handler = ({data}) => callback(new TextDecoder().decode(data));
+    return await (await client).pubsub.subscribe(_nodeID, handler);
+  }
 
 
 export const ipfsResolve = async path =>

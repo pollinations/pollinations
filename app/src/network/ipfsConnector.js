@@ -76,19 +76,20 @@ export const ipfsLs = callLogger(
     (_ipfsLs),"ipfsls");
 
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) => {
+    const _client = await client;
     ipfsPath = join(mfsRoot, ipfsPath);
-    const cid = stringCID(await client.add(content, options));
+    const cid = stringCID(await _client.add(content, options));
     debug("added", cid, "size", content);
 
 
     try {
         debug("Trying to delete", ipfsPath);
-        await client.files.rm(ipfsPath, { recursive: true });
+        await _client.files.rm(ipfsPath, { recursive: true });
     } catch {
         debug("Could not delete. Probably did not exist.")
     };
     debug("copying to", ipfsPath);
-    await client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+    await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
    
     return cid;
 }));
@@ -121,7 +122,7 @@ export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => 
 export async function ipfsMkdir(path="/") {
     const withMfsRoot = join(mfsRoot, path);
     debug("Creating folder", path, "mfsRoot",withMfsRoot);
-    await client.files.mkdir(withMfsRoot, { parents: true });
+    (await client).files.mkdir(withMfsRoot, { parents: true });
     return path;
 }
 
@@ -132,16 +133,19 @@ export async function ipfsRm(ipfsPath) {
 }
 
 export async function contentID(mfsPath="/") {
+    const _client = await client;
     mfsPath = join(mfsRoot, mfsPath);
-    return stringCID(await client.files.stat(mfsPath));
+    return stringCID(await _client.files.stat(mfsPath));
 }
 
 
 export async function publish(rootCID) {
-    debug("publish", rootCID);
-    await client.pubsub.publish(await nodeID, rootCID)
+    const _client = await client;
+    debug("publish pubsub", await nodeID, rootCID);
+    await _client.pubsub.publish(await nodeID, rootCID)
     // dont await since this hangs sadly
-    client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
+    await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
+    debug("published ipns");
 }
 
 

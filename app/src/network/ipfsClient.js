@@ -1,7 +1,7 @@
 
 
 import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
-import { client, getWebURL } from "./ipfsConnector.js"
+import { client, getWebURL, subscribeCIDCallback } from "./ipfsConnector.js"
 import { extname } from "path";
 
 
@@ -70,7 +70,7 @@ export const IPFSState = contentID => {
 
 export const stateReducer = [
     (state, newState) => {
-        debug("Merging", newState, "into", state)
+        debug("Merging", newState, "into", state);
         let mergedState = {
             ...state,
             ...newState
@@ -122,6 +122,7 @@ export const publish = async (nodeID, newContentID) => {
     (await client).pubsub.publish(newContentID, nodeID)
 }
 
+export const subscribe = subscribeCIDCallback;
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);

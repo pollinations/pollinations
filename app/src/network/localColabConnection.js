@@ -17,7 +17,7 @@ const colabConnectionManager = async (onNodeID = noop, onContentID = noop) => {
         if (newNodeID === "get_nodeid" || newNodeID === nodeID)
             return;
 
-        debug("old", nodeID, "new", newNodeID, "equal", nodeID === newNodeID)
+        debug("old", nodeID, "new", newNodeID, "equal", nodeID === newNodeID,"contentID",contentID)
 
         nodeID = newNodeID;
         onNodeID(nodeID);

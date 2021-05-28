@@ -2,7 +2,7 @@
 import watch from 'file-watch-iterator';
 import PQueue from "p-queue";
 import Debug from "debug";
-
+import awaitSleep from "await-sleep";
 import { sortBy, reverse } from "ramda";
 import process from "process";
 import Readline from 'readline';
@@ -104,7 +104,7 @@ const incrementalUpdate = async (watchPath) => {
     }
   }
   //TODO:
-  await awaitSleep(100);
+  await awaitSleep(500);
   process.exit(0);
 }
 

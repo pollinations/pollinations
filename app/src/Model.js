@@ -6,7 +6,7 @@ import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
 import {useHash} from 'react-use';
 import ReactJson from 'react-json-view'
-import {any, identity} from 'ramda';
+import {any, identity, last} from 'ramda';
 
 import useColab from "./network/useColab"
 import {displayContentID, noop} from "./network/utils";
@@ -54,7 +54,7 @@ export default React.memo(function Model({notebook}) {
 
   const filledForm =  fillForm(ipfs);
 
-  const colabURL = "https://colab.research.google.com/github/voodoohop/colabasaservice/blob/master/colabs/deep-daze.ipynb";
+  const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
 
   const extensions = [".jpg",".png",".mp4"];
   
@@ -75,7 +75,7 @@ export default React.memo(function Model({notebook}) {
   return <Card variant="outlined">
   
             <CardContent>
-          <Markdown>{description}</Markdown>
+          {/* <Markdown>{description}</Markdown> */}
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
 
         </CardContent> 
@@ -91,11 +91,14 @@ export default React.memo(function Model({notebook}) {
             fontWeight: "bold"
           }}>
             { 
-            ipfs.output ? ipfs.output.log.replace(/\].*/g, ""):"Loading..."
+            ipfs.output && ipfs.output.log ? ipfs.output.log.replace(/\].*/g, ""):"Loading..."
             } 
           </Typography>
+          {
+            images.length > 0 ? <center><img src={last(images)[1]} /></center> : null
+          }
 <GridList cellHeight={160} cols={4}>
-  {images.map(([filename, url]) => (
+  {images.slice().reverse().map(([filename, url]) => (
     <GridListTile key={filename} cols={1}>
       <img src={url} alt={filename} />
     </GridListTile>
@@ -104,7 +107,7 @@ export default React.memo(function Model({notebook}) {
 </CardContent> 
         <CardContent>
           <NodeStatus {...state} />
-          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} enableClipboard={false} displayDataTypes={false} displayObjectSize={false} />
+          <ReactJson src={state.ipfs} name={displayContentID(state.contentID)} enableClipboard={false} displayDataTypes={false} displayObjectSize={false} collapsed={true} />
 
         </CardContent>
 

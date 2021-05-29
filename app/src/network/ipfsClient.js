@@ -48,6 +48,8 @@ const fetchAndMakeURL = async ({ name, cid }) => {
     if (ext.length === 0 || extIsJSON) {
         const { content } = await toPromise1((await client).get(cid))
         const contentArray = await toPromise1(content);
+        if (!contentArray)
+            return null;
         const textContent = new TextDecoder().decode(contentArray);
         debug("textContent",textContent)
         try {

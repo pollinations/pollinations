@@ -22,7 +22,8 @@ export const toPromise1 = async asyncGen => {
         debug("Got value",value)
         return value;
     }
-    throw "No value found to convert to Promise";
+    debug("No value found to convert to Promise");
+    return null;
 }
 
 export const noop = () => null;

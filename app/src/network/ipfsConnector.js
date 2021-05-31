@@ -26,7 +26,7 @@ export const ipfsGlobSource = globSource;
 const debug=Debug("ipfsConnector")
 
 
-const IPFS_HOST = "ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs.pollinations.ai";
 
 export const mfsRoot = `/`;
 
@@ -36,8 +36,8 @@ const getIPFSDaemonURL = async () => {
         debug("Localhost:5001 is reachable. Connecting...");
         return "http://localhost:5001";
     }
-    debug("Localhost:5001 is not reachable. Connecting to",IPFS_HOST);
-    return `http://${IPFS_HOST}:5001`;
+    debug("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);
+    return IPFS_HOST;
 }
 
 

@@ -74,7 +74,8 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "build_backend": "mkdir -p build && esbuild src/backend/ipfsWatch.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js"
+    "build_backend": "mkdir -p build && esbuild src/backend/ipfsWatch.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js",
+    "install_backend": "chmod ugoa+x build/pollinate.js && cp build/pollinate.js /usr/local/bin/pollinate"
   },
   "bin": {
     "pollinate": "./src/backend/ipfsWatch.js"

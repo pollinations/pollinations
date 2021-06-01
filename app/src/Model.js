@@ -20,7 +20,7 @@ const getType = help => help.includes("@param") ? parse(help.replace("@param",""
 const fillForm = ({"parameters.json": parameters, input, ...rest}) => {
   debug("parameers", parameters, "input", input);
   if (!parameters)
-    return {};
+    return null;
   const properties = Object.fromEntries(
     Object.values(parameters)
       .map(({name, default: defaultVal, help}) => 
@@ -50,7 +50,7 @@ export default React.memo(function Model({notebook}) {
   const {description} = notebook;
   const {state, dispatch: dispatchState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
   
-  const { ipfs } = state;
+  const { ipfs, nodeID } = state;
 
   const filledForm =  fillForm(ipfs);
 
@@ -73,19 +73,20 @@ export default React.memo(function Model({notebook}) {
   }
 
   return <Card variant="outlined">
-  
-            <CardContent>
-          {/* <Markdown>{description}</Markdown> */}
+            {/* <Markdown>{description}</Markdown> */}
+        {
+        !nodeID ? <CardContent>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>
-
-        </CardContent> 
+        </CardContent> : null
+        }
+        { filledForm ? 
         <CardContent>
           <Form schema={filledForm} onSubmit={dispatchForm}/>
-     
-        {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
+        </CardContent> : null
+        }
+              {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{
         minHeight: "500px"
       }} controls /> */}
-      </CardContent>
       <CardContent>
                 <Typography variant="body2" color="textPrimary" component="pre" style={{
             fontWeight: "bold"

@@ -17,7 +17,7 @@ function readMetadata(notebookJSON) {
 
   return {
       form: {
-        "title": name,
+        // "title": name,
         // description,
         // type, 
         properties

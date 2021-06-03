@@ -1,18 +1,14 @@
 import Model from './Model';
 import React, { useEffect, useMemo, useState } from 'react';
 
-import {Container} from "@material-ui/core"
-
-import notebooks from "./data/notebooks.json";
+import {Container} from "@material-ui/core";
 
 function App() {
    return (
       <Container>
-        {
-          notebooks.map((notebook,i) => (
-          <Model key={i} notebook={notebook} />
-          ))
-        }
+
+          <Model />
+       
         </Container>
     );
 }

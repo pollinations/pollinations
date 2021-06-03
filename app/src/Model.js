@@ -11,30 +11,20 @@ import {any, identity, last} from 'ramda';
 import useColab from "./network/useColab"
 import {displayContentID, noop} from "./network/utils";
 import NodeStatus from "./network/NodeStatus";
+import readMetadata from "./backend/notebookMetadata";
 import {parse} from "json5";
 import Debug from "debug";
+
 const debug = Debug("Model");
 
 const getType = help => help.includes("@param") ? parse(help.replace("@param","")).type: "string";
 
-const fillForm = ({"parameters.json": parameters, input, ...rest}) => {
-  debug("parameers", parameters, "input", input);
-  if (!parameters)
+const getNotebookMetadata =  
+ ipfs => readMetadata(ipfs["notebook.ipynb"]);
+
+const fillForm = ({form},{input}) => {
+  if (!form)
     return null;
-  const properties = Object.fromEntries(
-    Object.values(parameters)
-      .map(({name, default: defaultVal, help}) => 
-        [ name,
-          {
-          title: name,
-          "default": parse(defaultVal),
-          description: help,
-          type: getType(help)
-        }])
-  );
-  
-  const form = {properties,name:"Form"};
-        debug("prefilledForm", form);
 
   return input ? {
     properties: Object.fromEntries(Object.entries(form.properties).map(
@@ -45,15 +35,16 @@ const fillForm = ({"parameters.json": parameters, input, ...rest}) => {
   form;
 };
 
-export default React.memo(function Model({notebook}) {
-  debug("notebook",notebook)
-  const {description} = notebook;
+export default React.memo(function Model() {
+
   const {state, dispatch: dispatchState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
   
   const { ipfs, nodeID } = state;
+  
+  const metadata = getNotebookMetadata(ipfs);
 
-  const filledForm =  fillForm(ipfs);
-
+  const filledForm =  ipfs && metadata ? fillForm(metadata, ipfs) : null;
+  debug("filled form", filledForm);
   const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
 
   const extensions = [".jpg",".png",".mp4"];
@@ -73,7 +64,7 @@ export default React.memo(function Model({notebook}) {
   }
 
   return <Card variant="outlined">
-            {/* <Markdown>{description}</Markdown> */}
+     {metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null }  
         {
         !nodeID ? <CardContent>
           <a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>

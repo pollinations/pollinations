@@ -72,7 +72,10 @@ export default React.memo(function Model() {
     {filledForm ?
       <CardContent>
         <Form schema={filledForm} onSubmit={dispatchForm}>
-          <Button type="submit">Submit</Button>
+          { 
+            ipfs.input ? <Button type="button" color="secondary" onClick={dispatchCancel}>Cancel</Button>
+                       : <Button type="submit" >Submit</Button>
+          }
         </Form>
       </CardContent> : null
     }

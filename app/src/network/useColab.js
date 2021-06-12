@@ -1,5 +1,5 @@
 
-import {useState, useEffect, useMemo, useReducer} from "react";
+import {useEffect, useReducer} from "react";
 
  
 import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
@@ -15,10 +15,8 @@ const history = createBrowserHistory();
 
 const useColab = () => {
     const [state, dispatchState] = useReducer(...stateReducer);
-    const {pathname} = useLocation();
-    const hash = pathname.split("/")[1] || null;
-    const setHash = h => history.push(h);
-    
+    const { hash, setHash } = useContentHash();
+
     debug("state", state); 
 
     const setContentID = async contentID => {
@@ -60,5 +58,14 @@ const useColab = () => {
         }
     };
 };
+
+
+function useContentHash() {
+    const { pathname } = useLocation();
+    const hash = pathname.split("/p/")[1] || null;
+    const setHash = h => history.push(`/p/${h}`);
+    return { hash, setHash };
+}
+
 
 export default useColab;

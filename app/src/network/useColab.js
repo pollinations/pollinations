@@ -62,6 +62,7 @@ const useColab = () => {
 
 function useContentHash() {
     const { pathname } = useLocation();
+    debug("location pathname", pathname)
     const hash = pathname.split("/p/")[1] || null;
     const setHash = h => history.push(`/p/${h}`);
     return { hash, setHash };

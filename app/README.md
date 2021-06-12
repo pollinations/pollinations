@@ -1,4 +1,4 @@
-# Pollionations.ai App
+# Pollionations.ai Web App
 
 Enable logging:
 `localstorage.debug = "*"`

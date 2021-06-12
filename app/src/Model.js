@@ -46,7 +46,7 @@ export default React.memo(function Model() {
   const filledForm = ipfs && metadata ? fillForm(metadata, ipfs) : null;
   debug("filled form", filledForm);
 
-  const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
+  const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
   const extensions = [".jpg", ".png", ".mp4"];
 

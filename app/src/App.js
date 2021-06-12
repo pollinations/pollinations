@@ -1,16 +1,27 @@
-import Model from './Model';
-import React, { useEffect, useMemo, useState } from 'react';
+import { routes } from './routes'
 
-import {Container} from "@material-ui/core";
+import { Container } from "@material-ui/core"
+
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 
 function App() {
-   return (
-      <Container>
+    return <Router>
 
-          <Model />
-       
+        <Container>
+
+            <Switch>
+                {
+                    routes.map(route => (
+                        <Route
+                            path={route.path}
+                            exact={route.exact}
+                            key={route.path}
+                            children={route.children} />
+                    ))
+                }
+            </Switch>
         </Container>
-    );
+    </Router>
 }
 
 export default App;

@@ -2,6 +2,9 @@
 
 Frontend: https://pollinations.ai/
 
+Enable logging:
+`localstorage.debug = "*"`
+
 - [x] unidirectional communication from colab notebook to browser (DONE)
 - [x] check for new media files each time a new line is printed to stdout (DONE)
 - [x] send image files as they are created (DONE)

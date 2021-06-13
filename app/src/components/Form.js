@@ -26,13 +26,10 @@ let FormView = ({ schema, onSubmit }) =>
         uiSchema={uiSchema}
         schema={schema}
         onSubmit={onSubmit}>
-        <div style={{ display: 'flex', widht: '100%', justifyContent: 'flex-end' }}>
             <Button
                 type="submit"
                 variant='contained'
-                children={IS_SUBMITED ? 'Cancel' : 'Submit'}
-                style={{ margin: '0 auto !important' }} />
-        </div>
+                children={IS_SUBMITED ? 'Cancel' : 'Submit'} />
     </Form>
 
 export default FormView

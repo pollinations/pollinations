@@ -21,13 +21,14 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     return <Form
         schema={{properties: filledForm}}
         uiSchema={uiSchema}
+        onSubmit={onSubmit}
     >
         {
             showSubmit 
             ?   <Button type="button" color="secondary" onClick={onCancel}>
                     Cancel
                 </Button>
-            :   <Button type="submit" onClick={onSubmit}>
+            :   <Button type="submit">
                     Submit
                 </Button>
         }

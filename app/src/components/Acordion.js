@@ -5,10 +5,9 @@ import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 
-export default function Acordion({visibleContent, hiddenContent}) {
+export default function Acordion({visibleContent, hiddenContent,}) {
 
-  return <div style={{width: '60%'}}>
-      <Accordion style={{backgroundColor: 'transparent', boxShadow: 'none'}}>
+  return <Accordion style={{backgroundColor: 'transparent', boxShadow: 'none', padding: 0}}>
         <AccordionSummary 
           expandIcon={<ExpandMoreIcon />}
           aria-controls="panel1a-content"
@@ -18,5 +17,4 @@ export default function Acordion({visibleContent, hiddenContent}) {
         <AccordionDetails
         children={hiddenContent}/>
       </Accordion>
-  </div>
 }

@@ -17,6 +17,9 @@ const darkTheme = createMuiTheme({
   },
   palette: {
     type: 'dark',
+    primary: {
+      main:'hsl(10,10,10)'
+      },
   },
 });
 

@@ -6,11 +6,10 @@ import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 
 function App() {
     return <Router>
-
         <Container>
 
-            <Switch>
-                {
+            <Switch
+                children={
                     routes.map(route => (
                         <Route
                             path={route.path}
@@ -18,8 +17,8 @@ function App() {
                             key={route.path}
                             children={route.children} />
                     ))
-                }
-            </Switch>
+                }/>
+
         </Container>
     </Router>
 }

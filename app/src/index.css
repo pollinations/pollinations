@@ -8,6 +8,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: black !important;
+  background-color: hsl(0,0,9) !important;
 }
 

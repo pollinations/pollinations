@@ -9,7 +9,7 @@ export const IpfsLog = () => {
     const { state } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
     const { ipfs } = state;
 
-    return <>
+    return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
 
         <CardContent>
             <Typography
@@ -35,6 +35,6 @@ export const IpfsLog = () => {
 
         </CardContent>
 
-    </>
+    </div>
 
 }

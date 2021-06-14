@@ -62,7 +62,9 @@ export default React.memo(function Model() {
     dispatchState({ ...state, inputs: formData });
   }
 
-  return <Card variant="outlined">
+  const dispatchCancel = () => null;
+  
+ return <Card variant="outlined">
     {metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null}
     {
       !nodeID ? <CardContent>

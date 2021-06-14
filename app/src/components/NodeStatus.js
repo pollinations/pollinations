@@ -1,7 +1,7 @@
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
 import Acordion from './Acordion'
-import {Button} from "@material-ui/core"
+import { Button, Link } from "@material-ui/core"
 
 const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
@@ -36,14 +36,14 @@ export default ({ nodeID, contentID }) => {
 
     <div style={RowStyle}>
         <p children='NodeID' style={ParagraphStyle}/>
-        {nodeID ? displayContentID(nodeID) : <ColabConnectButton />}
+        {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
     </div>
     
 
     <div style={RowStyle}>
         <p children='ContentID' style={ParagraphStyle}/>
         {contentID ? 
-        <a style={LinkStyle}
+        <Link style={LinkStyle}
             href={getWebURL(contentID)} children={displayContentID(contentID)}
             target="_blank"
             />

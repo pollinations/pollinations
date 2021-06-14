@@ -69,8 +69,10 @@ export default React.memo(function Model() {
   useEffect(() => {
     debug("First model render. We have a problem if you see this twice.")
   }, []);
+
   const dispatchForm = async ({ formData }) =>  dispatchState({ ...state, inputs: formData });
 
+  const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})
 
   return <>
     <div style={{display:'flex'}}>
@@ -92,7 +94,9 @@ export default React.memo(function Model() {
           <FormView
             ipfs={ipfs}
             metadata={metadata}
-            onSubmit={dispatchForm} />
+            onSubmit={dispatchForm} 
+            onCancel={cancelForm}
+            />
 
       </div>
 

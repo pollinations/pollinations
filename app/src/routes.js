@@ -3,7 +3,7 @@ import Model from "./pages/Model";
 export let routes = [
     {
         exact: false,
-        path: '/:hash',
+        path: '/p/:hash',
         children: <Model />,
     },
     //

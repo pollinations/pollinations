@@ -10,9 +10,22 @@ import useColab from "../network/useColab"
 import readMetadata from "../backend/notebookMetadata";
 import { parse } from "json5";
 import Debug from "debug";
+
+
+// Components
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
+import ImageViewer from '../components/ImageViewer'
+
+
+
 import NodeStatus from "../network/NodeStatus";
+
+
+
+
+
+
 
 const debug = Debug("Model");
 
@@ -20,21 +33,32 @@ const debug = Debug("Model");
 
 const getType = help => help.includes("@param") ? parse(help.replace("@param", "")).type : "string";
 
-const getNotebookMetadata =
-  ipfs => readMetadata(ipfs["notebook.ipynb"]);
+const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
 
-const fillForm = ({ form }, { input }) => {
-  if (!form)
-    return null;
+function PreviewImages(ipfs) {
+  const extensions = [".jpg", ".png", ".mp4"]
 
-  return input ? {
-    properties: Object.fromEntries(Object.entries(form.properties).map(
-      ([formKey, prop]) => [formKey, formKey in input ? { ...prop, "default": input[formKey] } : prop]
-    ))
-  }
-    :
-    form;
-};
+  const filterByExtensions = filename => 
+  any(identity, extensions
+  .map(ext => filename.endsWith(ext)));
+
+  const imageFilenames = ipfs.output ? Object.keys(ipfs.output)
+    .filter(filterByExtensions) : [];
+
+  const images = imageFilenames.map(filename => [filename, ipfs.output[filename]]);
+
+  return images
+}
+
+function getFormInputs(ipfs, metadata){
+    if ((metadata === undefined) || (metadata === null)) return;
+    if ((ipfs === undefined) || (ipfs === null)) return metadata;
+
+    return({
+          properties: Object.fromEntries(Object.entries(metadata.form.properties).map(
+          ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop] ))
+    })
+}
 
 export default React.memo(function Model() {
 
@@ -43,28 +67,18 @@ export default React.memo(function Model() {
   const { ipfs, nodeID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
+  const images = PreviewImages(ipfs)
+  const filledForm = getFormInputs(ipfs, metadata)
 
-  const filledForm = ipfs && metadata ? fillForm(metadata, ipfs) : null;
-  console.log(ipfs)
-  debug("filled form", filledForm);
+  //debug("filled form", filledForm);
   const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
 
-  const extensions = [".jpg", ".png", ".mp4"];
 
-  const filterByExtensions = filename => any(identity, extensions.map(ext => filename.endsWith(ext)));
-
-  const imageFilenames = ipfs.output ? Object.keys(ipfs.output)
-    .filter(filterByExtensions) : [];
-
-  const images = imageFilenames.map(filename => [filename, ipfs.output[filename]]);
-  console.log(images)
-  debug("images", images)
+  //debug("images", images)
   useEffect(() => {
     debug("First model render. We have a problem if you see this twice.")
   }, []);
-  const dispatchForm = async ({ formData }) => {
-    dispatchState({ ...state, inputs: formData });
-  }
+  const dispatchForm = async ({ formData }) =>  dispatchState({ ...state, inputs: formData });
 
 
 
@@ -73,7 +87,7 @@ export default React.memo(function Model() {
     <div style={{display:'flex'}}>
 
       {/* control panel */}
-      <div style={{ width: '30%'}}>
+      <div style={{ width: '30%',}}>
 
         {/* just in case */}
         {false && metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null}
@@ -96,19 +110,7 @@ export default React.memo(function Model() {
 
       {/* previews */}
       <div style={{ width: '70%' }}>
-        <CardContent>
-
-          <GridList cellHeight={200} cols={4}>
-
-            {images.slice().reverse().map(([filename, url]) => (
-              <GridListTile key={filename} cols={1}>
-                <img src={url} alt={filename} style={{ margin: 10 }} />
-              </GridListTile>
-            ))}
-
-          </GridList>
-
-        </CardContent>
+        <ImageViewer images={images}/>
       </div>
 
 

@@ -31,7 +31,14 @@ let ParagraphStyle = {
     opacity: 0.9
 }
 
+let shortenHash = (hash) => {
+    if (typeof hash !== typeof String()) return;
+    return`${hash.slice(0,4)}...${hash.slice(-4)}`
+};
+
 export default ({ nodeID, contentID }) => {
+
+
     return <div style={WrapperStyle}>
 
     <div style={RowStyle}>
@@ -44,7 +51,7 @@ export default ({ nodeID, contentID }) => {
         <p children='ContentID' style={ParagraphStyle}/>
         {contentID ? 
         <a style={LinkStyle}
-            href={getWebURL(contentID)} children={displayContentID(contentID)}
+            href={getWebURL(contentID)} children={shortenHash(displayContentID(contentID))}
             target="_blank"
             />
         : <p children="Not connected..."/>}

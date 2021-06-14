@@ -12,7 +12,7 @@ function ImageViewer({images}) {
     return (
         <div >
           <div style={{ width: '50%', margin: '20px auto' }}>
-          <img src={imgs[0]?.[1]} alt={imgs[0]?.[0]} style={{ width: '100%', margin: '0 auto' }} />
+          <img src={imgs[0]?.[1]} alt={imgs[0]?.[0]} style={{ width: '100%'}} />
           </div>
             
           <GridList cellHeight={200} cols={4}

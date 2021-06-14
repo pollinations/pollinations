@@ -43,17 +43,11 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
             showSubmit 
             ?   <Button type="button" color="secondary" onClick={onCancel}>
                     Cancel
-                </Button> :
-                <Button type="submit" >
+                </Button>
+            :   <Button type="submit" >
                     Submit
                 </Button>
         }
-        <Button
-            type="submit"
-            variant='contained'
-            children={IS_SUBMITED ? 'Cancel' : 'Submit'}
-            onClick={onSubmit}
-        />
 
     </Form>
 }

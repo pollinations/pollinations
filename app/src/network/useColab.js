@@ -36,11 +36,13 @@ const useColab = () => {
 
 
     useEffect(() => {
+        console.log(state)
         if (state.contentID && state.contentID !== hash)
             setHash(state.contentID)
     },[state]);
 
     useEffect(() => {
+        console.log(hash)
         debug("HASH",hash);
         if (hash && hash !== state.contentID)
             setContentID(hash);
@@ -61,11 +63,12 @@ const useColab = () => {
 
 function useContentHash() {
     const { pathname }  = useLocation()
-    const history = useHistory();
+    const history = useHistory()
+
     debug("location pathname", pathname);
     
-    const hash = pathname.split("/p/")[1] || null;
-    const setHash = h => history.push(`/p/${h}`);
+    const hash = pathname.split("/")[1] || null;
+    const setHash = h => history.push(`/${h}`);
     
     return { hash, setHash };
 }

@@ -52,7 +52,7 @@ const getUISchema = (filledForm, enabled) =>
 
 const toSchema = (key, enabled) => {
     const mappings = [
-        ["text_","textarea"],
+        ["text_","text"],
         ["file_", "file"]
     ];
 

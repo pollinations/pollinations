@@ -24,36 +24,50 @@ const uiSchema = {
 
 
 
-let FormView = ({ ipfs, metadata, onSubmit }) => {
+let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
 
     const filledForm = getFormInputs(ipfs, metadata);
-    
+
     if (!filledForm)
         return null;
 
     const schema = { properties: { ...filledForm.properties, file: { type: 'string', title: 'file' } } }
 
+    const showSubmit = ipfs.input && !ipfs.input.cancelled;
+
     return <Form
-            uiSchema={uiSchema}
-            schema={schema}
-            onSubmit={onSubmit}>
-                <Button
-                    type="submit"
-                    variant='contained'
-                    children={IS_SUBMITED ? 'Cancel' : 'Submit'} />
-            </Form>
+        uiSchema={uiSchema}
+        schema={schema}
+    >
+        {
+            showSubmit 
+            ?   <Button type="button" color="secondary" onClick={onCancel}>
+                    Cancel
+                </Button> :
+                <Button type="submit" >
+                    Submit
+                </Button>
+        }
+        <Button
+            type="submit"
+            variant='contained'
+            children={IS_SUBMITED ? 'Cancel' : 'Submit'}
+            onClick={onSubmit}
+        />
+
+    </Form>
 }
 
 export default FormView
 
 
-function getFormInputs(ipfs, metadata){
+function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     if ((ipfs === undefined) || (ipfs === null)) return metadata;
 
-    return({
-          properties: Object.fromEntries(Object.entries(metadata.form.properties).map(
-          ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop] ))
+    return ({
+        properties: Object.fromEntries(Object.entries(metadata.form.properties).map(
+            ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
     })
 }
 

@@ -12,7 +12,7 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     
     const uiSchema = getUISchema(filledForm, showSubmit)
     
-    const schema = { properties: { ...filledForm.properties, file: { type: 'string', title: 'file' } } }
+    const schema = { properties: { ...filledForm.properties } }
 
     return <Form
         schema={schema}

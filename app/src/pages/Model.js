@@ -70,21 +70,23 @@ export default React.memo(function Model() {
   const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})
 
   return <>
-    <div style={{display:'flex'}}>
+    <div style={{display:'flex', flexWrap: 'wrap'}}>
 
       {/* control panel */}
-      <div style={{ width: '30%',}}>
 
         {/* just in case */}
         {false && metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null}
         {(false && !nodeID) ? <CardContent children={<a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>} /> : null}
 
         {/* status */}
-        <h3 children='Status' />
-        <NodeStatus {...state} />
+        <div style={{ width: '100%'}}>
+          <h3 children='Status' />
+          <NodeStatus {...state} />
+        </div>
 
         {/* inputs */}
-        <h3 children='Inputs' style={{ margin: '20px 0' }} />
+        <div style={{ width: '100%'}}>
+          <h3 children='Inputs' />
 
           <FormView
             ipfs={ipfs}
@@ -92,14 +94,12 @@ export default React.memo(function Model() {
             onSubmit={dispatchForm} 
             onCancel={cancelForm}
             />
-
-      </div>
+        </div>
 
       {/* previews */}
-      <div style={{ width: '70%' }}>
+      <div style={{ width: '100%' }}>
         <ImageViewer images={images}/>
       </div>
-
 
     </div>
     <IpfsLog />

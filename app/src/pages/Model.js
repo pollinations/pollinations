@@ -70,6 +70,7 @@ export default React.memo(function Model() {
     debug("First model render. We have a problem if you see this twice.")
   }, []);
 
+
   const dispatchForm = async ({ formData }) =>  dispatchState({ ...state, inputs: formData });
 
   const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})

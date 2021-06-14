@@ -31,7 +31,7 @@ export const IpfsLog = () => {
                 enableClipboard={false}
                 displayDataTypes={false}
                 displayObjectSize={false}
-                collapsed={false} />
+                collapsed={true} />
 
         </CardContent>
 

@@ -37,7 +37,13 @@ export const curry = (fn, ...oldArgs) => (...newArgs) => {
     return (args.length < fn.length) ? curry(fn, ...args) : fn(...args);
 };
 
-export const displayContentID = contentID => contentID ? contentID.toString().slice(-999) : "None";
+
+const shortenHash = (hash) => {
+    if (typeof hash !== 'string') return "unknown hash type";
+    return`${hash.slice(0,4)}...${hash.slice(-4)}`
+};
+
+export const displayContentID = contentID => contentID ? shortenHash(contentID.toString()) : "None";
 
 export const useHash = () => {
     console.log("history", window.history, "hash", window.location.hash);

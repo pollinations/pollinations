@@ -50,15 +50,6 @@ function getPreviewImages(ipfs) {
   return images
 }
 
-function getFormInputs(ipfs, metadata){
-    if ((metadata === undefined) || (metadata === null)) return;
-    if ((ipfs === undefined) || (ipfs === null)) return metadata;
-
-    return({
-          properties: Object.fromEntries(Object.entries(metadata.form.properties).map(
-          ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop] ))
-    })
-}
 
 export default React.memo(function Model() {
 
@@ -68,7 +59,7 @@ export default React.memo(function Model() {
 
   const metadata = getNotebookMetadata(ipfs);
   const images = getPreviewImages(ipfs)
-  const filledForm = getFormInputs(ipfs, metadata)
+
 
   //debug("filled form", filledForm);
   const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
@@ -97,12 +88,11 @@ export default React.memo(function Model() {
 
         {/* inputs */}
         <h3 children='Inputs' style={{ margin: '20px 0' }} />
-        {filledForm ?
+
           <FormView
-                                                               //gambiarra pra mostrar o botão de arquivo 
-            schema={{ properties: { ...filledForm.properties, file: { type: 'string', title: 'file' } } }}
-            onSubmit={dispatchForm} /> : null
-        }
+            ipfs={ipfs}
+            metadata={metadata}
+            onSubmit={dispatchForm} />
 
       </div>
 

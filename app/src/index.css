@@ -13,3 +13,4 @@ body {
 
 .MuiAccordionSummary-root{padding: 0 !important;}
 .MuiAccordionDetails-root{padding: 8px 0px 16px !important;}
+.MuiAccordion-root:before{display: none;}

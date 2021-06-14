@@ -1,37 +1,43 @@
-import React from "react";
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
 import Acordion from './Acordion'
 
-export default ({ nodeID, contentID }) => (
-    <TableContainer>
-        <Table size="small" >
-            <TableBody>
-                <TableRow>
-                    <TableCell>
-                        NodeID
-                    </TableCell>
-                    <TableCell >
-                        <Acordion
-                            isOpen={false}
-                            visibleContent={nodeID ? displayContentID(nodeID) : "Not connected..."}
-                            hiddenContent={'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'} />
-                    </TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell>
-                        ContentID </TableCell>
-                    <TableCell>
-                        <b>{contentID ? <a href={getWebURL(contentID)} >{displayContentID(contentID)}</a>: "Not connected..."}</b>
-                    </TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
-    </TableContainer>
-)
+// Styles temporary
+let RowStyle = {
+    display: 'flex', 
+    flexDirection: 'column',
+    flexWrap: 'wrap',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+    alignItems: 'flex-start',
+    marginRight: 20,
+    paddingBottom: 5,
+    marginBottom: 5
+    };
+let LinkStyle = {
+    wordBreak: 'break-all',
+    color: 'whitesmoke',
+    margin: '0 0 20px',
+}
+
+export default ({ nodeID, contentID }) => {
+    return <>
+
+    <div style={RowStyle}>
+        <p children='NodeID'/>
+        
+        <Acordion 
+            visibleContent={nodeID ? displayContentID(nodeID) : "Not connected..."}
+            hiddenContent={'Lorem ipsum dolor sit amet, consectetur adipiscing elit.'} />
+    </div>
+    
+
+    <div style={RowStyle}>
+        <p children='ContentID'/>
+
+        {contentID ? 
+        <a style={LinkStyle}
+            href={getWebURL(contentID)} children={displayContentID(contentID)}/>
+        : <p children="Not connected..."/>}
+    </div>
+    </>
+}

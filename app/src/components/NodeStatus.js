@@ -1,6 +1,9 @@
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
 import Acordion from './Acordion'
+import {Button} from "@material-ui/core"
+
+const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
 // Styles temporary
 let WrapperStyle = {
@@ -33,10 +36,7 @@ export default ({ nodeID, contentID }) => {
 
     <div style={RowStyle}>
         <p children='NodeID' style={ParagraphStyle}/>
-        
-        <Acordion 
-            visibleContent={nodeID ? displayContentID(nodeID) : "Not connected..."}
-            hiddenContent={'Lorem ipsum dolor sit amet, consectetur adipiscing elit.123123123'} />
+        {nodeID ? displayContentID(nodeID) : <ColabConnectButton />}
     </div>
     
 
@@ -48,4 +48,9 @@ export default ({ nodeID, contentID }) => {
         : <p children="Not connected..."/>}
     </div>
     </div>
+}
+
+
+function ColabConnectButton() {
+    return <Button color="secondary" href={colabURL} target="_blank">Launch Colab Node</Button>
 }

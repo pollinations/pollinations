@@ -16,13 +16,7 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer from '../components/ImageViewer'
-
-
-
-import NodeStatus from "../network/NodeStatus";
-
-
-
+import NodeStatus from "../components/NodeStatus";
 
 
 

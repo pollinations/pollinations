@@ -23,8 +23,6 @@ export const IpfsLog = () => {
         </CardContent>
 
         <CardContent>
-
-
             <ReactJson
                 src={state.ipfs}
                 name={displayContentID(state.contentID)}

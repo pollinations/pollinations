@@ -1,29 +1,6 @@
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 
-let IS_SUBMITED = false;
-
-const uiSchema = {
-    text_input: {
-        "ui:widget": "textarea",
-        "ui:disabled": IS_SUBMITED,
-    },
-    text_not: {
-        "ui:widget": "textarea",
-        "ui:disabled": IS_SUBMITED
-    },
-    file: {
-        "ui:widget": "file",
-        "ui:disabled": IS_SUBMITED
-    },
-    submit: {
-        "ui:disabled": true
-    }
-};
-
-
-
-
 let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
 
     const filledForm = getFormInputs(ipfs, metadata);
@@ -31,13 +8,15 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     if (!filledForm)
         return null;
 
+    const showSubmit = ipfs.input && !ipfs.input.cancelled;
+    
+    const uiSchema = getUISchema(filledForm, showSubmit)
+    
     const schema = { properties: { ...filledForm.properties, file: { type: 'string', title: 'file' } } }
 
-    const showSubmit = ipfs.input && !ipfs.input.cancelled;
-
     return <Form
-        uiSchema={uiSchema}
         schema={schema}
+        uiSchema={uiSchema}
     >
         {
             showSubmit 
@@ -65,3 +44,20 @@ function getFormInputs(ipfs, metadata) {
     })
 }
 
+
+const getUISchema = (filledForm, enabled) =>
+    Object.fromEntries(Object.keys(filledForm).map(key => toSchema(key, enabled)))
+
+
+const toSchema = (key, enabled) => {
+    const mappings = [
+        ["text_","textarea"],
+        ["file_", "file"]
+    ];
+
+    return { 
+        "ui:widget": mappings.find(([keyPrefix, _]) => key.startsWith(keyPrefix)),
+        "ui_disabled": !enabled
+    }
+
+}

@@ -1,5 +1,8 @@
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
+import Debug from "debug";
+
+const debug = Debug("Form");
 
 let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
 
@@ -12,10 +15,11 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     
     const uiSchema = getUISchema(filledForm, showSubmit)
     
-    const schema = { properties: { ...filledForm.properties } }
+    debug("form uiSchema", uiSchema, filledForm, showSubmit)
+
 
     return <Form
-        schema={schema}
+        schema={{properties: filledForm}}
         uiSchema={uiSchema}
     >
         {
@@ -23,11 +27,10 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
             ?   <Button type="button" color="secondary" onClick={onCancel}>
                     Cancel
                 </Button>
-            :   <Button type="submit" >
+            :   <Button type="submit" onClick={onSubmit}>
                     Submit
                 </Button>
         }
-
     </Form>
 }
 
@@ -38,15 +41,13 @@ function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     if ((ipfs === undefined) || (ipfs === null)) return metadata;
 
-    return ({
-        properties: Object.fromEntries(Object.entries(metadata.form.properties).map(
+    return Object.fromEntries(Object.entries(metadata.form.properties).map(
             ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
-    })
 }
 
 
 const getUISchema = (filledForm, enabled) =>
-    Object.fromEntries(Object.keys(filledForm).map(key => toSchema(key, enabled)))
+    Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key, enabled)]))
 
 
 const toSchema = (key, enabled) => {
@@ -56,7 +57,7 @@ const toSchema = (key, enabled) => {
     ];
 
     return { 
-        "ui:widget": mappings.find(([keyPrefix, _]) => key.startsWith(keyPrefix)),
+        "ui:widget": mappings.find(([keyPrefix, _]) => key.startsWith(keyPrefix))[1],
         "ui_disabled": !enabled
     }
 

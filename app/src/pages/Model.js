@@ -35,7 +35,7 @@ const getType = help => help.includes("@param") ? parse(help.replace("@param", "
 
 const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
 
-function PreviewImages(ipfs) {
+function getPreviewImages(ipfs) {
   const extensions = [".jpg", ".png", ".mp4"]
 
   const filterByExtensions = filename => 
@@ -67,7 +67,7 @@ export default React.memo(function Model() {
   const { ipfs, nodeID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
-  const images = PreviewImages(ipfs)
+  const images = getPreviewImages(ipfs)
   const filledForm = getFormInputs(ipfs, metadata)
 
   //debug("filled form", filledForm);
@@ -79,8 +79,6 @@ export default React.memo(function Model() {
     debug("First model render. We have a problem if you see this twice.")
   }, []);
   const dispatchForm = async ({ formData }) =>  dispatchState({ ...state, inputs: formData });
-
-
 
 
   return <>

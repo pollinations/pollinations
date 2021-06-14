@@ -5,13 +5,12 @@ import {useEffect, useReducer} from "react";
 import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
-import { useLocation } from "react-use";
+import { useLocation,useParams, useHistory } from "react-router-dom";
 import { createBrowserHistory } from "history";
 
 
 const debug = Debug("useColab")
 
-const history = createBrowserHistory();
 
 const useColab = () => {
     const [state, dispatchState] = useReducer(...stateReducer);
@@ -61,10 +60,12 @@ const useColab = () => {
 
 
 function useContentHash() {
-    const { pathname } = useLocation();
-    debug("location pathname", pathname)
-    const hash = pathname.split("/p/")[1] || null;
-    const setHash = h => history.push(`/p/${h}`);
+    const pathname  = useParams()
+    const history = useHistory()
+
+    debug("location pathname", pathname.hash)
+    const hash = pathname.hash || null;
+    const setHash = h => history.push(`/${h}`);
     return { hash, setHash };
 }
 

@@ -44,7 +44,9 @@ export default ({ nodeID, contentID }) => {
         <p children='ContentID' style={ParagraphStyle}/>
         {contentID ? 
         <a style={LinkStyle}
-            href={getWebURL(contentID)} children={displayContentID(contentID)}/>
+            href={getWebURL(contentID)} children={displayContentID(contentID)}
+            target="_blank"
+            />
         : <p children="Not connected..."/>}
     </div>
     </div>

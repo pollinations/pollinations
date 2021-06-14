@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import colabLogoImage from "./help/colab_icon.png";
-import { Field, Fab, Card, CardMedia, Container, CardContent, Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider, CardActionArea, GridList, GridListTile } from "@material-ui/core"
+import { Field, Fab, Card, CardMedia, Container, CardContent, Typography, IconButton, CardHeader, Avatar, CardActions, Box, Paper, Divider, CardActionArea, GridList, GridListTile, Button } from "@material-ui/core"
 import { PlayArrow, Stop, MoreVer, Favorite, Share } from '@material-ui/icons';
 import Markdown from 'markdown-to-jsx';
 import Form from "@rjsf/material-ui";
-import { useHash } from 'react-use';
 import ReactJson from 'react-json-view'
 import { any, identity, last } from 'ramda';
 
@@ -63,7 +62,9 @@ export default React.memo(function Model() {
     dispatchState({ ...state, inputs: formData });
   }
 
-  return <Card variant="outlined">
+  const dispatchCancel = () => null;
+  
+ return <Card variant="outlined">
     {metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null}
     {
       !nodeID ? <CardContent>
@@ -72,7 +73,12 @@ export default React.memo(function Model() {
     }
     {filledForm ?
       <CardContent>
-        <Form schema={filledForm} onSubmit={dispatchForm} />
+        <Form schema={filledForm} onSubmit={dispatchForm}>
+          { 
+            ipfs.input ? <Button type="button" color="secondary" onClick={dispatchCancel}>Cancel</Button>
+                       : <Button type="submit" >Submit</Button>
+          }
+        </Form>
       </CardContent> : null
     }
     {/* <CardMedia component={latestMedia.headers.type.startsWith("image") ? "img" : "video"} src={latestMedia.body} title={text} style={{

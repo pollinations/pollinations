@@ -11,3 +11,4 @@ body {
   background-color: hsl(0,0,9) !important;
 }
 
+.MuiAccordionSummary-root{padding: 0 !important;}

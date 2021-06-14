@@ -30,7 +30,6 @@ export const IpfsLog = () => {
                 displayDataTypes={false}
                 displayObjectSize={false}
                 collapsed={true} />
-
         </CardContent>
 
     </div>

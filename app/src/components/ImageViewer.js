@@ -8,7 +8,7 @@ import AppsIcon from '@material-ui/icons/Apps';
 const debug = Debug("ImageViewer");
 
 const MediaDisplay = ({filename, ...props}) => 
-  filename.toLowerCase().endsWith(".mp4") ? <video {...props} controls /> : <img {...props} />;
+  filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
 function ImageViewer({images}) {
 
@@ -25,15 +25,14 @@ function ImageViewer({images}) {
     return (
         <div >
           <div style={{ width: '50%',maxWidth:'500px', margin: '20px auto' }}>
-            <MediaDisplay src={firstURL} filename={firstFilename} alt={firstFilename} style={{ width: '100%'}} />
+            <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />
             {firstFilename}
           </div>
             
           <GridList cellHeight={200} cols={4}
             children={imgs.map(([filename, url]) => (
               <GridListTile key={filename} cols={1}>
-                <MediaDisplay src={url} filename={filename} alt={filename} style={{ margin: 0 }} />
-                <GridListTileBar title={filename} />
+                <MediaDisplay src={url} filename={filename} style={{ margin: 0 }} />
               </GridListTile>
             ))}/>
 

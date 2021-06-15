@@ -6,7 +6,7 @@ const debug = Debug("Form");
 
 let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
 
-    const filledForm = getFormInputs(ipfs, metadata);
+    const filledForm = getFormInputs(ipfs.input, metadata);
 
     if (!filledForm)
         return null;
@@ -40,7 +40,7 @@ export default FormView
 
 function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
-    if ((ipfs === undefined) || (ipfs === null)) return metadata;
+    ipfs = ipfs || {};
 
     return Object.fromEntries(Object.entries(metadata.form.properties).map(
             ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))

@@ -17,10 +17,11 @@ function ImageViewer({images}) {
 
     const imgs = [...images]; imgs.reverse();
 
-    debug("images", imgs);
-
     const firstFilename = imgs[0][0];
-    const firstURL = imgs[0][1]
+    const firstURL = imgs[0][1];
+    imgs.shift();
+
+    debug("images", imgs);
     debug("first",firstFilename, firstURL)
     return (
         <div >
@@ -32,7 +33,7 @@ function ImageViewer({images}) {
           <GridList cellHeight={200} cols={4}
             children={imgs.map(([filename, url]) => (
               <GridListTile key={filename} cols={1}>
-                <MediaDisplay src={url} filename={filename} style={{ margin: 0 }} />
+                <MediaDisplay src={url} filename={filename} style={{ margin:"5px", height:"100%" }} />
               </GridListTile>
             ))}/>
 

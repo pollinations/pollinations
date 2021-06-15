@@ -15,7 +15,7 @@ function ImageViewer({images}) {
     if (!images || images.length === 0)
       return null;
 
-    const imgs = images.reverse();
+    const imgs = [...images]; imgs.reverse();
 
     debug("images", imgs);
 
@@ -24,7 +24,7 @@ function ImageViewer({images}) {
     debug("first",firstFilename, firstURL)
     return (
         <div >
-          <div style={{ width: '50%', margin: '20px auto' }}>
+          <div style={{ width: '50%',maxWidth:'500px', margin: '20px auto' }}>
             <MediaDisplay src={firstURL} filename={firstFilename} alt={firstFilename} style={{ width: '100%'}} />
             {firstFilename}
           </div>

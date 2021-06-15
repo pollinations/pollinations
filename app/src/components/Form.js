@@ -9,7 +9,7 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     const filledForm = getFormInputs(ipfs.input, metadata);
 
     if (!filledForm)
-        return null;
+        return;
 
     const showSubmit = ipfs.input && !ipfs.input.cancelled;
     

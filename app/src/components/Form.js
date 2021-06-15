@@ -54,7 +54,9 @@ const getUISchema = (filledForm, enabled) =>
 const toSchema = (key, enabled) => {
     const mappings = [
         ["text_","text"],
-        ["file_", "file"]
+        ["file_","file"],
+        ["num_","updown"],
+        ["","text"]
     ];
 
     return { 

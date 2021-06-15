@@ -25,8 +25,6 @@ const debug = Debug("Model");
 
 
 
-const getType = help => help.includes("@param") ? parse(help.replace("@param", "")).type : "string";
-
 const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
 
 function getPreviewImages(ipfs) {

@@ -18,7 +18,7 @@ export const IpfsLog = () => {
                 component="pre"
                 style={{ fontWeight: "bold" }}
                 children={
-                    ipfs.output && ipfs.output.log ? ipfs.output.log.replace(/\].*/g, "") : "Loading..."
+                    ipfs.output && ipfs.output.log ? formatLog(ipfs) : "Loading..."
                 } />
         </CardContent>
 
@@ -35,3 +35,11 @@ export const IpfsLog = () => {
     </div>
 
 }
+function formatLog(ipfs) {
+    return ipfs.output.log
+            .replace(/\].*/g, "")
+            .split("\n")
+            .slice(-4)
+            .join("\n");
+}
+

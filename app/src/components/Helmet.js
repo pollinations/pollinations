@@ -3,9 +3,8 @@ import { Helmet } from "react-helmet";
 export const SEOImage = ({url}) => 
     (<Helmet >
          <meta name="image" content={url} />
-         <meta property="og:image" content={"https://pollinations.ai/ipfs/QmUGafH7Lm18Rv7737BwQq1iLBEFHjxPggaep6mtBfVJxz/output/vibrant-painting-of-a-ufo-in-the-style-of-dali_00005.png"} />
-         <meta property="twitter:image" content={"https://pollinations.ai/ipfs/QmUGafH7Lm18Rv7737BwQq1iLBEFHjxPggaep6mtBfVJxz/output/vibrant-painting-of-a-ufo-in-the-style-of-dali_00005.png"} />
-         
+         <meta property="og:image" content={url} />
+         <meta property="twitter:image" content={url} />
     </Helmet>);
 
 export const SEOMetadata= ({title, description}) => {
@@ -18,6 +17,7 @@ export const SEOMetadata= ({title, description}) => {
                 <meta property="og:description" content={description} />
                 <meta name="description" content={description} />
                 <meta property="twitter:creator" content="pollinations_ai" />
-                <meta property="twitter:description" content={description} />                
+                <meta property="twitter:description" content={description} />
+                <meta property="og:url" content={window.location.toString()} />                
             </Helmet>;
 }

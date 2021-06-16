@@ -54,7 +54,7 @@ export default React.memo(function Model() {
   const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})
 
   return <>
-    <SEOMetadata title={metadata.name} description={metadata.description} />
+    {metadata && <SEOMetadata title={metadata.name} description={metadata.description} /> }
     <div style={{display:'flex', flexWrap: 'wrap'}}>
 
       {/* control panel */}

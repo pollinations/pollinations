@@ -4,7 +4,10 @@ export const SEOImage = ({url}) =>
     (<Helmet >
          <meta name="image" content={url} />
          <meta property="og:image" content={url} />
+         <meta property="og:image:width" content={512} />
+         <meta property="og:image:height" content={512} />
          <meta property="twitter:image" content={url} />
+         
     </Helmet>);
 
 export const SEOMetadata= ({title, description}) => {

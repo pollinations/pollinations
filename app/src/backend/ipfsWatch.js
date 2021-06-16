@@ -9,7 +9,7 @@ import Readline from 'readline';
 import eventit from "event-iterator"
 
 import { getIPFSState } from '../network/ipfsState.js';
-import { getWebURL, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
+import { stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
 
 import { promises as fsPromises } from "fs";
 

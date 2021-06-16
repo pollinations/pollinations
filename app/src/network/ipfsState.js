@@ -13,10 +13,10 @@ const debug = Debug("ipfsState");
 // const map = parallelMap(30);
 export const getIPFSState = (contentID, processFile, rootName="root") => {
     debug("Getting state for CID", contentID)
-    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/"}, processFile)
+    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, processFile)
 }
 
-const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile) => {
+const _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, processFile) => {
     cid = stringCID(cid);
     const _debug = debug.extend(`_getIPFSState(${path})`);
     _debug("Getting state for", type, name, cid);
@@ -25,7 +25,7 @@ const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile)
         _debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
         const contents = await PromiseAllProgress(path, files.map(
-            file => _getIPFSState({...file, path:join(path,file.name)}, processFile)
+            file => _getIPFSState({...file, path:join(path,file.name), rootCID}, processFile)
             ));
 
         const contentResult = Object.fromEntries(zip(filenames, contents));
@@ -35,7 +35,7 @@ const _getIPFSState = cacheOutput(async ({ cid, type, name, path }, processFile)
      
 
     if (type === "file") {
-        const fileResult = await processFile({ cid, path, name });
+        const fileResult = await processFile({ cid, path, name, rootCID });
         _debug("got result of processFile", fileResult);
         return fileResult;
     }

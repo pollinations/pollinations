@@ -58,7 +58,7 @@ export async function getCID(ipfsPath = "/") {
 }
 
 
-export const getWebURL = cid => `https://pollinations.ai/ipfs/${cid}`;;
+export const getWebURL = (cid, path="/") => `https://pollinations.ai/ipfs/${cid}${path}`;;
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
 

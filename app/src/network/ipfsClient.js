@@ -42,12 +42,12 @@ const debug = Debug("ipfsClient")
 //     return result;
 // }
 
-const fetchAndMakeURL = async ({ name, rootCID, path }) => {
+const fetchAndMakeURL = async ({ name, cid }) => {
 
     const ext = extname(name);
     const extIsJSON = ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb";
     debug("ext", ext, "extIsJSON", extIsJSON);
-    const webURL = getWebURL(rootCID, path);
+    const webURL = getWebURL(cid, name);
     if (extIsJSON) {
         const response = await fetch(webURL);
         const textContent = await response.text();

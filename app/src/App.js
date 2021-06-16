@@ -11,11 +11,10 @@ function App() {
             <Switch
                 children={
                     routes.map(route => (
-                        <Route
-                            path={route.path}
-                            exact={route.exact}
+                        <Route 
+                            {...route}
                             key={route.path}
-                            children={route.children} />
+                        />
                     ))
                 }/>
 

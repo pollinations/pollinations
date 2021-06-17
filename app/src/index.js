@@ -12,8 +12,14 @@ import runAllImg from "./help/Runtime-RunAll.png";
 import { Box, createMuiTheme, ThemeProvider } from '@material-ui/core';
 
 const darkTheme = createMuiTheme({
+  typography: {
+    fontFamily: 'Source Code Pro'
+  },
   palette: {
-    type: 'light',
+    type: 'dark',
+    primary: {
+      main:'hsl(10,10,10)'
+      },
   },
 });
 

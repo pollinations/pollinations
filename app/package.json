@@ -23,7 +23,8 @@
     "debug": "^4.3.1",
     "event-iterator": "^2.0.0",
     "file-watch-iterator": "^0.7.0",
-    "ipfs-http-client": "^50.0.0",
+    "history": "^5.0.0",
+    "ipfs-http-client": "^50.1.0",
     "is-ipfs": "^5.0.0",
     "is-port-reachable": "^3.0.0",
     "it-all": "^1.0.5",
@@ -40,10 +41,13 @@
     "node-fetch": "^2.6.1",
     "p-queue": "^7.1.0",
     "progress-stream": "^2.0.0",
+    "queueable": "^4.1.4",
     "ramda": "^0.27.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-helmet": "^6.1.0",
     "react-json-view": "^1.21.3",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
     "react-use": "^17.2.4",
     "readline": "^1.3.0",
@@ -65,7 +69,6 @@
     "esbuild": "^0.11.23",
     "gh-pages": "^3.1.0"
   },
-  "optionalDependencies": {},
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && npm run build_backend",
@@ -73,7 +76,8 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "build_backend": "mkdir -p build && esbuild src/backend/ipfsWatch.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js"
+    "build_backend": "mkdir -p build && esbuild src/backend/ipfsWatch.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js && mkdir -p dist && cp -v build/pollinate.js dist/pollinate.js && chmod ugoa+x dist/pollinate.js",
+    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate"
   },
   "bin": {
     "pollinate": "./src/backend/ipfsWatch.js"

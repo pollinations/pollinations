@@ -2,23 +2,23 @@
 import watch from 'file-watch-iterator';
 import PQueue from "p-queue";
 import Debug from "debug";
-
+import awaitSleep from "await-sleep";
 import { sortBy, reverse } from "ramda";
 import process from "process";
 import Readline from 'readline';
 import eventit from "event-iterator"
 
 import { getIPFSState } from '../network/ipfsState.js';
-import {getWebURL, stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
+import { stringCID, ipfsMkdir, ipfsGet, ipfsAddFile, contentID, ipfsRm, ipfsAdd, publish, ipfsResolve, subscribeCID } from "../network/ipfsConnector.js";
 
-import {promises as fsPromises} from "fs";
+import { promises as fsPromises } from "fs";
 
 import { dirname, join } from "path";
 import { existsSync, fstat, mkdirSync, writeFileSync } from 'fs';
 import options from "./options.js";
 
-const {stream} = eventit;
-const { writeFile, mkdir }  = fsPromises;
+const { stream } = eventit;
+const { writeFile, mkdir } = fsPromises;
 const debug = Debug("ipfsWatch")
 const readline = Readline.createInterface({
   input: process.stdin,
@@ -44,7 +44,7 @@ if (!existsSync(watchPath)) {
 const incrementalUpdate = async (watchPath) => {
 
 
-  
+
   await ipfsMkdir("/");
   debug("IPFS: Created root IPFS path (if it did not exist)");
   debug("Local: Watching", watchPath);
@@ -52,7 +52,7 @@ const incrementalUpdate = async (watchPath) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     awaitWriteFinish: true,
-  },{debounce: 500});
+  }, { debounce: 200 });
 
   // const added$ = asyncFlatMap(async (added) =>  asyncWrap(Object.entries(added.files)))(watch$);
 
@@ -60,13 +60,13 @@ const incrementalUpdate = async (watchPath) => {
   //   console.log("added", added)
   //   // for (const file of added)
   //   //   console.log("added", added);
-  
+
   // }
 
   for await (const files of watch$) {
 
     const changed = getSortedChangedFiles(files);
-    await Promise.all(changed.map(async ({ event, file}) => {
+    await Promise.all(changed.map(async ({ event, file }) => {
       const localPath = join(watchPath, file);
       const ipfsPath = file;
 
@@ -89,7 +89,7 @@ const incrementalUpdate = async (watchPath) => {
       }
     }));
     // for (const { event, file } of changed) {
-     
+
     // }
     // console.error("PUBLISHIIING")
     const newContentID = await contentID("/");
@@ -104,8 +104,8 @@ const incrementalUpdate = async (watchPath) => {
     }
   }
   //TODO:
-  await awaitSleep(100);
-  process.exit(0); 
+  await awaitSleep(500);
+  process.exit(0);
 }
 
 async function processRemoteCID(contentID) {
@@ -113,21 +113,21 @@ async function processRemoteCID(contentID) {
   debug("got remote state", (await getIPFSState(contentID, processFile)));
 }
 
-const queue = new PQueue({concurrency: 5});
+// const queue = new PQueue({ concurrency: 5 });
 
 
 async function processFile({ path, cid }) {
   const _debug = debug.extend(`processFile(${path})`);
   _debug("started")
   const destPath = join(watchPath, path);
-  _debug("writeFile", destPath, cid,"queued");
-  
-  queue.add(async () => {
-    const content = await ipfsGet(cid,{stream: true});
+  _debug("writeFile", destPath, cid, "queued");
+
+  // queue.add(async () => {
+    const content = await ipfsGet(cid, { stream: true });
     _debug("writefile content", content.length)
     await writeFileAndCreateFolder(destPath, content);
     _debug("done")
-  });
+  // });
   return destPath;
 }
 
@@ -154,23 +154,25 @@ if (enableReceive) {
   (async function () {
     if (options.ipns) {
       debug("IPNS activated. subscring to CIDs")
-      await subscribeCID(remoteCID =>{
-         debug("remoteCID from pubsub", remoteCID);
-         processRemoteCID(stringCID(remoteCID))
-        });
-
-    }
-    // for await (let remoteCID of Right eadline) {
+      for await (let remoteCID of await subscribeCID()) {
+        debug("remoteCID from pubsub", remoteCID);
+        await processRemoteCID(stringCID(remoteCID));
+        if (options.once)
+          break;
+      };
+    } else {
+      // for await (let remoteCID of Right eadline) {
       for await (let remoteCID of stream.call(process.stdin)) {
         remoteCID = remoteCID.toString();
-      if (remoteCID.startsWith("/ipns/"))
-        remoteCID = await ipfsResolve(remoteCID);
-      await processRemoteCID(remoteCID);
-      console.log(remoteCID);
-      if (options.once)
-        break;
+        if (remoteCID.startsWith("/ipns/"))
+          remoteCID = await ipfsResolve(remoteCID);
+        await processRemoteCID(remoteCID);
+        console.log(remoteCID);
+        if (options.once)
+          break;
+      }
     }
-
+    process.exit(0);
   }
   )();
 }

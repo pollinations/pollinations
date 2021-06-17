@@ -17,6 +17,7 @@ import { join } from "path";
 
 import options from "../backend/options.js";
 
+import { Channel } from 'queueable';
 
 const asyncify = typeof Asyncify === "function" ? Asyncify: Asyncify.default;
 
@@ -25,7 +26,7 @@ export const ipfsGlobSource = globSource;
 const debug=Debug("ipfsConnector")
 
 
-const IPFS_HOST = "ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs.pollinations.ai";
 
 export const mfsRoot = `/`;
 
@@ -35,8 +36,8 @@ const getIPFSDaemonURL = async () => {
         debug("Localhost:5001 is reachable. Connecting...");
         return "http://localhost:5001";
     }
-    debug("Localhost:5001 is not reachable. Connecting to",IPFS_HOST);
-    return `http://${IPFS_HOST}:5001`;
+    debug("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);
+    return IPFS_HOST;
 }
 
 
@@ -57,7 +58,10 @@ export async function getCID(ipfsPath = "/") {
 }
 
 
-export const getWebURL = cid => `https://pollinations.ai/ipfs/${cid}`;;
+export const getWebURL = (cid, name=null) => {
+    const filename = name ? `?filename=${name}` : '';
+    return `https://pollinations.ai/ipfs/${cid}${filename}`
+};
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
 
@@ -75,19 +79,20 @@ export const ipfsLs = callLogger(
     (_ipfsLs),"ipfsls");
 
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) => {
+    const _client = await client;
     ipfsPath = join(mfsRoot, ipfsPath);
-    const cid = stringCID(await client.add(content, options));
+    const cid = stringCID(await _client.add(content, options));
     debug("added", cid, "size", content);
 
 
     try {
         debug("Trying to delete", ipfsPath);
-        await client.files.rm(ipfsPath, { recursive: true });
+        await _client.files.rm(ipfsPath, { recursive: true });
     } catch {
         debug("Could not delete. Probably did not exist.")
     };
     debug("copying to", ipfsPath);
-    await client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+    await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
    
     return cid;
 }));
@@ -120,7 +125,7 @@ export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => 
 export async function ipfsMkdir(path="/") {
     const withMfsRoot = join(mfsRoot, path);
     debug("Creating folder", path, "mfsRoot",withMfsRoot);
-    await client.files.mkdir(withMfsRoot, { parents: true });
+    (await client).files.mkdir(withMfsRoot, { parents: true });
     return path;
 }
 
@@ -131,24 +136,40 @@ export async function ipfsRm(ipfsPath) {
 }
 
 export async function contentID(mfsPath="/") {
+    const _client = await client;
     mfsPath = join(mfsRoot, mfsPath);
-    return stringCID(await client.files.stat(mfsPath));
+    return stringCID(await _client.files.stat(mfsPath));
 }
 
 
 export async function publish(rootCID) {
-    debug("publish", rootCID);
-    await client.pubsub.publish(await nodeID, rootCID)
+    const _client = await client;
+    debug("publish pubsub", await nodeID, rootCID);
+    await _client.pubsub.publish(await nodeID, rootCID)
     // dont await since this hangs sadly
-    client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
+    //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
+    //debug("published ipns");
 }
 
 
-export async function subscribeCID(callback, nodeID=nodeID) {
-  debug("Subscribing to pubsub events from", await nodeID);
-  const handler = ({data}) => callback(new TextDecoder().decode(data));
-  await (await client).pubsub.subscribe(await nodeID, handler)  
+export async function subscribeCID(_nodeID=null) {
+  const channel = new Channel();
+  if (_nodeID===null)
+    _nodeID = await nodeID;
+  debug("Subscribing to pubsub events from", _nodeID);
+  const handler = ({data}) => channel.push(new TextDecoder().decode(data));
+  await (await client).pubsub.subscribe(_nodeID, handler);
+  return channel;  
 }
+
+
+export async function subscribeCIDCallback(_nodeID=null, callback) {
+    if (_nodeID===null)
+      _nodeID = await nodeID;
+    debug("Subscribing to pubsub events from", _nodeID);
+    const handler = ({data}) => callback(new TextDecoder().decode(data));
+    return await (await client).pubsub.subscribe(_nodeID, handler);
+  }
 
 
 export const ipfsResolve = async path =>

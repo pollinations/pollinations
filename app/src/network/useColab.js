@@ -1,5 +1,5 @@
 
-import {useEffect, useReducer} from "react";
+import {useCallback, useEffect, useMemo, useReducer} from "react";
 
  
 import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
@@ -18,13 +18,13 @@ const useColab = () => {
 
     debug("state", state); 
 
-    const setContentID = async contentID => {
+    const setContentID = useCallback(async contentID => {
         debug("setContentID", contentID);
         if (contentID && contentID !== state.contentID) {
-            debug("dispatching new contentID",contentID)
+            debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }
-    };
+    },[state]);
 
     useEffect(() => {
         colabConnectionManager(async nodeID => {

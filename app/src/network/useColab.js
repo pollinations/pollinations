@@ -1,20 +1,25 @@
 
-import {useState, useEffect, useMemo, useReducer} from "react";
-import {toPromise, toPromise1, noop, zip, useHash} from "./utils"
+import {useEffect, useReducer} from "react";
+
  
-import {IPFSState, stateReducer, addInputContent, publish } from "./ipfsClient";
+import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
+import { useLocation,useParams, useHistory } from "react-router-dom";
+import { createBrowserHistory } from "history";
+
+
 const debug = Debug("useColab")
 
 
 const useColab = () => {
     const [state, dispatchState] = useReducer(...stateReducer);
-    const [hash, setHash] = useHash();
+    const { hash, setHash } = useContentHash();
+
     debug("state", state); 
 
     const setContentID = async contentID => {
-        debug("setContentID",contentID);
+        debug("setContentID", contentID);
         if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
@@ -22,18 +27,22 @@ const useColab = () => {
     };
 
     useEffect(() => {
-        colabConnectionManager(nodeID => {
+        colabConnectionManager(async nodeID => {
             dispatchState({ nodeID });
-        }, setContentID);
+            const subscribeResult = await subscribe(nodeID, setContentID);
+            debug("subscribeResult", subscribeResult);
+        });
     },[]);
 
 
     useEffect(() => {
+        console.log(state)
         if (state.contentID && state.contentID !== hash)
             setHash(state.contentID)
     },[state]);
 
     useEffect(() => {
+        console.log(hash)
         debug("HASH",hash);
         if (hash && hash !== state.contentID)
             setContentID(hash);
@@ -50,5 +59,19 @@ const useColab = () => {
         }
     };
 };
+
+
+function useContentHash() {
+    const  params   = useParams()
+    const history = useHistory()
+
+    debug("location pathname", params);
+
+    const hash = params?.hash;
+    const setHash = h => history.push(`/p/${h}`);
+    
+    return { hash, setHash };
+}
+
 
 export default useColab;

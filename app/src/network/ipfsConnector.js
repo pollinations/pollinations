@@ -125,14 +125,14 @@ export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => 
 export async function ipfsMkdir(path="/") {
     const withMfsRoot = join(mfsRoot, path);
     debug("Creating folder", path, "mfsRoot",withMfsRoot);
-    (await client).files.mkdir(withMfsRoot, { parents: true });
+    await (await client).files.mkdir(withMfsRoot, { parents: true });
     return path;
 }
 
 export async function ipfsRm(ipfsPath) {
     ipfsPath = join(mfsRoot, ipfsPath);
     debug("Deleting",ipfsPath);
-    await client.files.rm(ipfsPath,{force:true})
+    await (await client).files.rm(ipfsPath,{force:true})
 }
 
 export async function contentID(mfsPath="/") {

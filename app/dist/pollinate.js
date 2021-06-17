@@ -9,7 +9,7 @@ var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, {enumerable: true, configurable: true, writable: true, value}) : obj[key] = value;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __spreadValues = (a, b) => {
   for (var prop in b || (b = {}))
     if (__hasOwnProp.call(b, prop))
@@ -22,7 +22,7 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
+var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
 var __objRest = (source, exclude) => {
   var target = {};
   for (var prop in source)
@@ -36,18 +36,18 @@ var __objRest = (source, exclude) => {
   return target;
 };
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[Object.keys(cb)[0]])((mod = {exports: {}}).exports, mod), mod.exports;
+  return mod || (0, cb[Object.keys(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
 var __reExport = (target, module2, desc) => {
   if (module2 && typeof module2 === "object" || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
       if (!__hasOwnProp.call(target, key) && key !== "default")
-        __defProp(target, key, {get: () => module2[key], enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable});
+        __defProp(target, key, { get: () => module2[key], enumerable: !(desc = __getOwnPropDesc(module2, key)) || desc.enumerable });
   }
   return target;
 };
 var __toModule = (module2) => {
-  return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? {get: () => module2.default, enumerable: true} : {value: module2, enumerable: true})), module2);
+  return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
 // node_modules/picomatch/lib/constants.js
@@ -178,11 +178,11 @@ var require_constants = __commonJS({
       SEP: path.sep,
       extglobChars(chars) {
         return {
-          "!": {type: "negate", open: "(?:(?!(?:", close: `))${chars.STAR})`},
-          "?": {type: "qmark", open: "(?:", close: ")?"},
-          "+": {type: "plus", open: "(?:", close: ")+"},
-          "*": {type: "star", open: "(?:", close: ")*"},
-          "@": {type: "at", open: "(?:", close: ")"}
+          "!": { type: "negate", open: "(?:(?!(?:", close: `))${chars.STAR})` },
+          "?": { type: "qmark", open: "(?:", close: ")?" },
+          "+": { type: "plus", open: "(?:", close: ")+" },
+          "*": { type: "star", open: "(?:", close: ")*" },
+          "@": { type: "at", open: "(?:", close: ")" }
         };
       },
       globChars(win32) {
@@ -308,7 +308,7 @@ var require_scan = __commonJS({
       let braces = 0;
       let prev;
       let code;
-      let token = {value: "", depth: 0, isGlob: false};
+      let token = { value: "", depth: 0, isGlob: false };
       const eos = () => index >= length;
       const peek = () => str.charCodeAt(index + 1);
       const advance = () => {
@@ -374,7 +374,7 @@ var require_scan = __commonJS({
         if (code === CHAR_FORWARD_SLASH) {
           slashes.push(index);
           tokens.push(token);
-          token = {value: "", depth: 0, isGlob: false};
+          token = { value: "", depth: 0, isGlob: false };
           if (finished === true)
             continue;
           if (prev === CHAR_DOT && index === start + 1) {
@@ -608,7 +608,7 @@ var require_parse = __commonJS({
       if (len > max) {
         throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
       }
-      const bos = {type: "bos", value: "", output: opts.prepend || ""};
+      const bos = { type: "bos", value: "", output: opts.prepend || "" };
       const tokens = [bos];
       const capture = opts.capture ? "" : "?:";
       const win32 = utils.isWindows(options);
@@ -725,14 +725,14 @@ var require_parse = __commonJS({
         prev = tok;
       };
       const extglobOpen = (type, value2) => {
-        const token = __spreadProps(__spreadValues({}, EXTGLOB_CHARS[value2]), {conditions: 1, inner: ""});
+        const token = __spreadProps(__spreadValues({}, EXTGLOB_CHARS[value2]), { conditions: 1, inner: "" });
         token.prev = prev;
         token.parens = state.parens;
         token.output = state.output;
         const output = (opts.capture ? "(" : "") + token.open;
         increment("parens");
-        push({type, value: value2, output: state.output ? "" : ONE_CHAR});
-        push({type: "paren", extglob: true, value: advance(), output});
+        push({ type, value: value2, output: state.output ? "" : ONE_CHAR });
+        push({ type: "paren", extglob: true, value: advance(), output });
         extglobs.push(token);
       };
       const extglobClose = (token) => {
@@ -749,7 +749,7 @@ var require_parse = __commonJS({
             state.negatedExtglob = true;
           }
         }
-        push({type: "paren", extglob: true, value, output});
+        push({ type: "paren", extglob: true, value, output });
         decrement("parens");
       };
       if (opts.fastpaths !== false && !/(^[*!]|[/()[\]{}"])/.test(input)) {
@@ -810,7 +810,7 @@ var require_parse = __commonJS({
           }
           if (!next) {
             value += "\\";
-            push({type: "text", value});
+            push({ type: "text", value });
             continue;
           }
           const match = /^\\+/.exec(remaining());
@@ -828,7 +828,7 @@ var require_parse = __commonJS({
             value += advance() || "";
           }
           if (state.brackets === 0) {
-            push({type: "text", value});
+            push({ type: "text", value });
             continue;
           }
         }
@@ -864,25 +864,25 @@ var require_parse = __commonJS({
             value = "^";
           }
           prev.value += value;
-          append({value});
+          append({ value });
           continue;
         }
         if (state.quotes === 1 && value !== '"') {
           value = utils.escapeRegex(value);
           prev.value += value;
-          append({value});
+          append({ value });
           continue;
         }
         if (value === '"') {
           state.quotes = state.quotes === 1 ? 0 : 1;
           if (opts.keepQuotes === true) {
-            push({type: "text", value});
+            push({ type: "text", value });
           }
           continue;
         }
         if (value === "(") {
           increment("parens");
-          push({type: "paren", value});
+          push({ type: "paren", value });
           continue;
         }
         if (value === ")") {
@@ -894,7 +894,7 @@ var require_parse = __commonJS({
             extglobClose(extglobs.pop());
             continue;
           }
-          push({type: "paren", value, output: state.parens ? ")" : "\\)"});
+          push({ type: "paren", value, output: state.parens ? ")" : "\\)" });
           decrement("parens");
           continue;
         }
@@ -907,19 +907,19 @@ var require_parse = __commonJS({
           } else {
             increment("brackets");
           }
-          push({type: "bracket", value});
+          push({ type: "bracket", value });
           continue;
         }
         if (value === "]") {
           if (opts.nobracket === true || prev && prev.type === "bracket" && prev.value.length === 1) {
-            push({type: "text", value, output: `\\${value}`});
+            push({ type: "text", value, output: `\\${value}` });
             continue;
           }
           if (state.brackets === 0) {
             if (opts.strictBrackets === true) {
               throw new SyntaxError(syntaxError("opening", "["));
             }
-            push({type: "text", value, output: `\\${value}`});
+            push({ type: "text", value, output: `\\${value}` });
             continue;
           }
           decrement("brackets");
@@ -928,7 +928,7 @@ var require_parse = __commonJS({
             value = `/${value}`;
           }
           prev.value += value;
-          append({value});
+          append({ value });
           if (opts.literalBrackets === false || utils.hasRegexChars(prevValue)) {
             continue;
           }
@@ -959,7 +959,7 @@ var require_parse = __commonJS({
         if (value === "}") {
           const brace = braces[braces.length - 1];
           if (opts.nobrace === true || !brace) {
-            push({type: "text", value, output: value});
+            push({ type: "text", value, output: value });
             continue;
           }
           let output = ")";
@@ -988,7 +988,7 @@ var require_parse = __commonJS({
               state.output += t.output || t.value;
             }
           }
-          push({type: "brace", value, output});
+          push({ type: "brace", value, output });
           decrement("braces");
           braces.pop();
           continue;
@@ -997,7 +997,7 @@ var require_parse = __commonJS({
           if (extglobs.length > 0) {
             extglobs[extglobs.length - 1].conditions++;
           }
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (value === ",") {
@@ -1007,7 +1007,7 @@ var require_parse = __commonJS({
             brace.comma = true;
             output = "|";
           }
-          push({type: "comma", value, output});
+          push({ type: "comma", value, output });
           continue;
         }
         if (value === "/") {
@@ -1019,7 +1019,7 @@ var require_parse = __commonJS({
             prev = bos;
             continue;
           }
-          push({type: "slash", value, output: SLASH_LITERAL});
+          push({ type: "slash", value, output: SLASH_LITERAL });
           continue;
         }
         if (value === ".") {
@@ -1034,10 +1034,10 @@ var require_parse = __commonJS({
             continue;
           }
           if (state.braces + state.parens === 0 && prev.type !== "bos" && prev.type !== "slash") {
-            push({type: "text", value, output: DOT_LITERAL});
+            push({ type: "text", value, output: DOT_LITERAL });
             continue;
           }
-          push({type: "dot", value, output: DOT_LITERAL});
+          push({ type: "dot", value, output: DOT_LITERAL });
           continue;
         }
         if (value === "?") {
@@ -1055,14 +1055,14 @@ var require_parse = __commonJS({
             if (prev.value === "(" && !/[!=<:]/.test(next) || next === "<" && !/<([!=]|\w+>)/.test(remaining())) {
               output = `\\${value}`;
             }
-            push({type: "text", value, output});
+            push({ type: "text", value, output });
             continue;
           }
           if (opts.dot !== true && (prev.type === "slash" || prev.type === "bos")) {
-            push({type: "qmark", value, output: QMARK_NO_DOT});
+            push({ type: "qmark", value, output: QMARK_NO_DOT });
             continue;
           }
-          push({type: "qmark", value, output: QMARK});
+          push({ type: "qmark", value, output: QMARK });
           continue;
         }
         if (value === "!") {
@@ -1083,22 +1083,22 @@ var require_parse = __commonJS({
             continue;
           }
           if (prev && prev.value === "(" || opts.regex === false) {
-            push({type: "plus", value, output: PLUS_LITERAL});
+            push({ type: "plus", value, output: PLUS_LITERAL });
             continue;
           }
           if (prev && (prev.type === "bracket" || prev.type === "paren" || prev.type === "brace") || state.parens > 0) {
-            push({type: "plus", value});
+            push({ type: "plus", value });
             continue;
           }
-          push({type: "plus", value: PLUS_LITERAL});
+          push({ type: "plus", value: PLUS_LITERAL });
           continue;
         }
         if (value === "@") {
           if (opts.noextglob !== true && peek() === "(" && peek(2) !== "?") {
-            push({type: "at", extglob: true, value, output: ""});
+            push({ type: "at", extglob: true, value, output: "" });
             continue;
           }
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (value !== "*") {
@@ -1110,7 +1110,7 @@ var require_parse = __commonJS({
             value += match[0];
             state.index += match[0].length;
           }
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (prev && (prev.type === "globstar" || prev.star === true)) {
@@ -1138,13 +1138,13 @@ var require_parse = __commonJS({
           const isStart = prior.type === "slash" || prior.type === "bos";
           const afterStar = before && (before.type === "star" || before.type === "globstar");
           if (opts.bash === true && (!isStart || rest[0] && rest[0] !== "/")) {
-            push({type: "star", value, output: ""});
+            push({ type: "star", value, output: "" });
             continue;
           }
           const isBrace = state.braces > 0 && (prior.type === "comma" || prior.type === "brace");
           const isExtglob = extglobs.length && (prior.type === "pipe" || prior.type === "paren");
           if (!isStart && prior.type !== "paren" && !isBrace && !isExtglob) {
-            push({type: "star", value, output: ""});
+            push({ type: "star", value, output: "" });
             continue;
           }
           while (rest.slice(0, 3) === "/**") {
@@ -1185,7 +1185,7 @@ var require_parse = __commonJS({
             state.output += prior.output + prev.output;
             state.globstar = true;
             consume(value + advance());
-            push({type: "slash", value: "/", output: ""});
+            push({ type: "slash", value: "/", output: "" });
             continue;
           }
           if (prior.type === "bos" && rest[0] === "/") {
@@ -1195,7 +1195,7 @@ var require_parse = __commonJS({
             state.output = prev.output;
             state.globstar = true;
             consume(value + advance());
-            push({type: "slash", value: "/", output: ""});
+            push({ type: "slash", value: "/", output: "" });
             continue;
           }
           state.output = state.output.slice(0, -prev.output.length);
@@ -1207,7 +1207,7 @@ var require_parse = __commonJS({
           consume(value);
           continue;
         }
-        const token = {type: "star", value, output: star};
+        const token = { type: "star", value, output: star };
         if (opts.bash === true) {
           token.output = ".*?";
           if (prev.type === "bos" || prev.type === "slash") {
@@ -1258,7 +1258,7 @@ var require_parse = __commonJS({
         decrement("braces");
       }
       if (opts.strictSlashes !== true && (prev.type === "star" || prev.type === "bracket")) {
-        push({type: "maybe_slash", value: "", output: `${SLASH_LITERAL}?`});
+        push({ type: "maybe_slash", value: "", output: `${SLASH_LITERAL}?` });
       }
       if (state.backtrack === true) {
         state.output = "";
@@ -1294,7 +1294,7 @@ var require_parse = __commonJS({
       const nodot = opts.dot ? NO_DOTS : NO_DOT;
       const slashDot = opts.dot ? NO_DOTS_SLASH : NO_DOT;
       const capture = opts.capture ? "" : "?:";
-      const state = {negated: false, prefix: ""};
+      const state = { negated: false, prefix: "" };
       let star = opts.bash === true ? ".*?" : STAR;
       if (opts.capture) {
         star = `(${star})`;
@@ -1378,12 +1378,12 @@ var require_picomatch = __commonJS({
       delete regex.state;
       let isIgnored = () => false;
       if (opts.ignore) {
-        const ignoreOpts = __spreadProps(__spreadValues({}, options), {ignore: null, onMatch: null, onResult: null});
+        const ignoreOpts = __spreadProps(__spreadValues({}, options), { ignore: null, onMatch: null, onResult: null });
         isIgnored = picomatch(opts.ignore, ignoreOpts, returnState);
       }
       const matcher = (input, returnObject = false) => {
-        const {isMatch, match, output} = picomatch.test(input, regex, options, {glob, posix});
-        const result = {glob, state, regex, posix, input, output, match, isMatch};
+        const { isMatch, match, output } = picomatch.test(input, regex, options, { glob, posix });
+        const result = { glob, state, regex, posix, input, output, match, isMatch };
         if (typeof opts.onResult === "function") {
           opts.onResult(result);
         }
@@ -1408,12 +1408,12 @@ var require_picomatch = __commonJS({
       }
       return matcher;
     };
-    picomatch.test = (input, regex, options, {glob, posix} = {}) => {
+    picomatch.test = (input, regex, options, { glob, posix } = {}) => {
       if (typeof input !== "string") {
         throw new TypeError("Expected input to be a string");
       }
       if (input === "") {
-        return {isMatch: false, output: ""};
+        return { isMatch: false, output: "" };
       }
       const opts = options || {};
       const format = opts.format || (posix ? utils.toPosixSlashes : null);
@@ -1430,7 +1430,7 @@ var require_picomatch = __commonJS({
           match = regex.exec(output);
         }
       }
-      return {isMatch: Boolean(match), match, output};
+      return { isMatch: Boolean(match), match, output };
     };
     picomatch.matchBase = (input, glob, options, posix = utils.isWindows(options)) => {
       const regex = glob instanceof RegExp ? glob : picomatch.makeRe(glob, options);
@@ -1440,7 +1440,7 @@ var require_picomatch = __commonJS({
     picomatch.parse = (pattern, options) => {
       if (Array.isArray(pattern))
         return pattern.map((p) => picomatch.parse(p, options));
-      return parse(pattern, __spreadProps(__spreadValues({}, options), {fastpaths: false}));
+      return parse(pattern, __spreadProps(__spreadValues({}, options), { fastpaths: false }));
     };
     picomatch.scan = (input, options) => scan(input, options);
     picomatch.compileRe = (parsed, options, returnOutput = false, returnState = false) => {
@@ -1465,7 +1465,7 @@ var require_picomatch = __commonJS({
         throw new TypeError("Expected a non-empty string");
       }
       const opts = options || {};
-      let parsed = {negated: false, fastpaths: true};
+      let parsed = { negated: false, fastpaths: true };
       let prefix = "";
       let output;
       if (input.startsWith("./")) {
@@ -1511,9 +1511,9 @@ var require_readdirp = __commonJS({
   "node_modules/file-watch-iterator/node_modules/readdirp/index.js"(exports2, module2) {
     "use strict";
     var fs = require("fs");
-    var {Readable} = require("stream");
+    var { Readable } = require("stream");
     var sysPath = require("path");
-    var {promisify} = require("util");
+    var { promisify } = require("util");
     var picomatch = require_picomatch2();
     var readdir = promisify(fs.readdir);
     var stat = promisify(fs.stat);
@@ -1575,12 +1575,12 @@ var require_readdirp = __commonJS({
           highWaterMark: options.highWaterMark || 4096
         });
         const opts = __spreadValues(__spreadValues({}, ReaddirpStream.defaultOptions), options);
-        const {root, type} = opts;
+        const { root, type } = opts;
         this._fileFilter = normalizeFilter(opts.fileFilter);
         this._directoryFilter = normalizeFilter(opts.directoryFilter);
         const statMethod = opts.lstat ? lstat : stat;
         if (process.platform === "win32" && stat.length === 3) {
-          this._stat = (path) => statMethod(path, {bigint: true});
+          this._stat = (path) => statMethod(path, { bigint: true });
         } else {
           this._stat = statMethod;
         }
@@ -1591,7 +1591,7 @@ var require_readdirp = __commonJS({
         this._root = sysPath.resolve(root);
         this._isDirent = "Dirent" in fs && !opts.alwaysStat;
         this._statsProp = this._isDirent ? "dirent" : "stats";
-        this._rdOptions = {encoding: "utf8", withFileTypes: this._isDirent};
+        this._rdOptions = { encoding: "utf8", withFileTypes: this._isDirent };
         this.parents = [this._exploreDir(root, 1)];
         this.reading = false;
         this.parent = void 0;
@@ -1602,7 +1602,7 @@ var require_readdirp = __commonJS({
         this.reading = true;
         try {
           while (!this.destroyed && batch > 0) {
-            const {path, depth, files = []} = this.parent || {};
+            const { path, depth, files = [] } = this.parent || {};
             if (files.length > 0) {
               const slice = files.splice(0, batch).map((dirent) => this._formatEntry(dirent, path));
               for (const entry of await Promise.all(slice)) {
@@ -1648,14 +1648,14 @@ var require_readdirp = __commonJS({
         } catch (error) {
           this._onError(error);
         }
-        return {files, depth, path};
+        return { files, depth, path };
       }
       async _formatEntry(dirent, path) {
         let entry;
         try {
           const basename = this._isDirent ? dirent.name : dirent;
           const fullPath = sysPath.resolve(sysPath.join(path, basename));
-          entry = {path: sysPath.relative(this._root, fullPath), fullPath, basename};
+          entry = { path: sysPath.relative(this._root, fullPath), fullPath, basename };
           entry[this._statsProp] = this._isDirent ? dirent : await this._stat(fullPath);
         } catch (err) {
           this._onError(err);
@@ -1767,11 +1767,11 @@ var require_normalize_path = __commonJS({
 var require_anymatch = __commonJS({
   "node_modules/file-watch-iterator/node_modules/anymatch/index.js"(exports2, module2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var picomatch = require_picomatch2();
     var normalizePath = require_normalize_path();
     var BANG = "!";
-    var DEFAULT_OPTIONS = {returnIndex: false};
+    var DEFAULT_OPTIONS = { returnIndex: false };
     var arrify = (item) => Array.isArray(item) ? item : [item];
     var createPattern = (matcher, options) => {
       if (typeof matcher === "function") {
@@ -1812,7 +1812,7 @@ var require_anymatch = __commonJS({
       if (matchers == null) {
         throw new TypeError("anymatch: specify first argument");
       }
-      const opts = typeof options === "boolean" ? {returnIndex: options} : options;
+      const opts = typeof options === "boolean" ? { returnIndex: options } : options;
       const returnIndex = opts.returnIndex || false;
       const mtchers = arrify(matchers);
       const negatedGlobs = mtchers.filter((item) => typeof item === "string" && item.charAt(0) === BANG).map((item) => item.slice(1)).map((item) => picomatch(item, opts));
@@ -1852,7 +1852,7 @@ var require_is_extglob = __commonJS({
 var require_is_glob = __commonJS({
   "node_modules/is-glob/index.js"(exports2, module2) {
     var isExtglob = require_is_extglob();
-    var chars = {"{": "}", "(": ")", "[": "]"};
+    var chars = { "{": "}", "(": ")", "[": "]" };
     var strictRegex = /\\(.)|(^!|\*|[\].+)]\?|\[[^\\\]]+\]|\{[^\\}]+\}|\(\?[:!=][^\\)]+\)|\([^|]+\|[^\\)]+\))/;
     var relaxedRegex = /\\(.)|(^!|[*?{}()[\]]|\(\?)/;
     module2.exports = function isGlob(str, options) {
@@ -1899,7 +1899,7 @@ var require_glob_parent = __commonJS({
     var globby = /(^|[^\\])([\{\[]|\([^\)]+$)/;
     var escaped = /\\([\!\*\?\|\[\]\(\)\{\}])/g;
     module2.exports = function globParent(str, opts) {
-      var options = Object.assign({flipBackslashes: true}, opts);
+      var options = Object.assign({ flipBackslashes: true }, opts);
       if (options.flipBackslashes && isWin32 && str.indexOf(slash) < 0) {
         str = str.replace(backslash, slash);
       }
@@ -2061,7 +2061,7 @@ var require_to_regex_range = __commonJS({
       if (isNumber(max) === false) {
         throw new TypeError("toRegexRange: expected the second argument to be a number.");
       }
-      let opts = __spreadValues({relaxZeros: true}, options);
+      let opts = __spreadValues({ relaxZeros: true }, options);
       if (typeof opts.strictZeros === "boolean") {
         opts.relaxZeros = opts.strictZeros === false;
       }
@@ -2086,7 +2086,7 @@ var require_to_regex_range = __commonJS({
         return `(?:${result})`;
       }
       let isPadded = hasPadding(min) || hasPadding(max);
-      let state = {min, max, a, b};
+      let state = { min, max, a, b };
       let positives = [];
       let negatives = [];
       if (isPadded) {
@@ -2141,7 +2141,7 @@ var require_to_regex_range = __commonJS({
     }
     function rangeToPattern(start, stop, options) {
       if (start === stop) {
-        return {pattern: start, count: [], digits: 0};
+        return { pattern: start, count: [], digits: 0 };
       }
       let zipped = zip2(start, stop);
       let digits = zipped.length;
@@ -2160,7 +2160,7 @@ var require_to_regex_range = __commonJS({
       if (count) {
         pattern += options.shorthand === true ? "\\d" : "[0-9]";
       }
-      return {pattern, count: [count], digits};
+      return { pattern, count: [count], digits };
     }
     function splitToPatterns(min, max, tok, options) {
       let ranges = splitToRanges(min, max);
@@ -2193,7 +2193,7 @@ var require_to_regex_range = __commonJS({
     function filterPatterns(arr, comparison, prefix, intersection, options) {
       let result = [];
       for (let ele of arr) {
-        let {string} = ele;
+        let { string } = ele;
         if (!intersection && !contains(comparison, "string", string)) {
           result.push(prefix + string);
         }
@@ -2336,7 +2336,7 @@ var require_fill_range = __commonJS({
     };
     var toRange = (a, b, isNumbers, options) => {
       if (isNumbers) {
-        return toRegexRange(a, b, __spreadValues({wrap: false}, options));
+        return toRegexRange(a, b, __spreadValues({ wrap: false }, options));
       }
       let start = String.fromCharCode(a);
       if (a === b)
@@ -2390,7 +2390,7 @@ var require_fill_range = __commonJS({
       if (options.toRegex && step === 1) {
         return toRange(toMaxLen(start, maxLen), toMaxLen(end, maxLen), true, options);
       }
-      let parts = {negatives: [], positives: []};
+      let parts = { negatives: [], positives: [] };
       let push = (num) => parts[num < 0 ? "negatives" : "positives"].push(Math.abs(num));
       let range = [];
       let index = 0;
@@ -2404,7 +2404,7 @@ var require_fill_range = __commonJS({
         index++;
       }
       if (options.toRegex === true) {
-        return step > 1 ? toSequence(parts, options) : toRegex(range, null, __spreadValues({wrap: false}, options));
+        return step > 1 ? toSequence(parts, options) : toRegex(range, null, __spreadValues({ wrap: false }, options));
       }
       return range;
     };
@@ -2429,7 +2429,7 @@ var require_fill_range = __commonJS({
         index++;
       }
       if (options.toRegex === true) {
-        return toRegex(range, null, {wrap: false, options});
+        return toRegex(range, null, { wrap: false, options });
       }
       return range;
     };
@@ -2441,7 +2441,7 @@ var require_fill_range = __commonJS({
         return invalidRange(start, end, options);
       }
       if (typeof step === "function") {
-        return fill(start, end, 1, {transform: step});
+        return fill(start, end, 1, { transform: step });
       }
       if (isObject(step)) {
         return fill(start, end, 0, step);
@@ -2497,7 +2497,7 @@ var require_compile = __commonJS({
         }
         if (node.nodes && node.ranges > 0) {
           let args = utils.reduce(node.nodes);
-          let range = fill(...args, __spreadProps(__spreadValues({}, options), {wrap: false, toRegex: true}));
+          let range = fill(...args, __spreadProps(__spreadValues({}, options), { wrap: false, toRegex: true }));
           if (range.length !== 0) {
             return args.length > 1 && range.length > 1 ? `(${range})` : range;
           }
@@ -2697,7 +2697,7 @@ var require_parse2 = __commonJS({
       if (input.length > max) {
         throw new SyntaxError(`Input length (${input.length}), exceeds max characters (${max})`);
       }
-      let ast = {type: "root", input, nodes: []};
+      let ast = { type: "root", input, nodes: [] };
       let stack = [ast];
       let block = ast;
       let prev = ast;
@@ -2722,7 +2722,7 @@ var require_parse2 = __commonJS({
         prev = node;
         return node;
       };
-      push({type: "bos"});
+      push({ type: "bos" });
       while (index < length) {
         block = stack[stack.length - 1];
         value = advance();
@@ -2730,11 +2730,11 @@ var require_parse2 = __commonJS({
           continue;
         }
         if (value === CHAR_BACKSLASH) {
-          push({type: "text", value: (options.keepEscaping ? value : "") + advance()});
+          push({ type: "text", value: (options.keepEscaping ? value : "") + advance() });
           continue;
         }
         if (value === CHAR_RIGHT_SQUARE_BRACKET) {
-          push({type: "text", value: "\\" + value});
+          push({ type: "text", value: "\\" + value });
           continue;
         }
         if (value === CHAR_LEFT_SQUARE_BRACKET) {
@@ -2758,22 +2758,22 @@ var require_parse2 = __commonJS({
               }
             }
           }
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (value === CHAR_LEFT_PARENTHESES) {
-          block = push({type: "paren", nodes: []});
+          block = push({ type: "paren", nodes: [] });
           stack.push(block);
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (value === CHAR_RIGHT_PARENTHESES) {
           if (block.type !== "paren") {
-            push({type: "text", value});
+            push({ type: "text", value });
             continue;
           }
           block = stack.pop();
-          push({type: "text", value});
+          push({ type: "text", value });
           block = stack[stack.length - 1];
           continue;
         }
@@ -2795,7 +2795,7 @@ var require_parse2 = __commonJS({
             }
             value += next;
           }
-          push({type: "text", value});
+          push({ type: "text", value });
           continue;
         }
         if (value === CHAR_LEFT_CURLY_BRACE) {
@@ -2813,18 +2813,18 @@ var require_parse2 = __commonJS({
           };
           block = push(brace);
           stack.push(block);
-          push({type: "open", value});
+          push({ type: "open", value });
           continue;
         }
         if (value === CHAR_RIGHT_CURLY_BRACE) {
           if (block.type !== "brace") {
-            push({type: "text", value});
+            push({ type: "text", value });
             continue;
           }
           let type = "close";
           block = stack.pop();
           block.close = true;
-          push({type, value});
+          push({ type, value });
           depth--;
           block = stack[stack.length - 1];
           continue;
@@ -2833,16 +2833,16 @@ var require_parse2 = __commonJS({
           if (block.ranges > 0) {
             block.ranges = 0;
             let open = block.nodes.shift();
-            block.nodes = [open, {type: "text", value: stringify(block)}];
+            block.nodes = [open, { type: "text", value: stringify(block) }];
           }
-          push({type: "comma", value});
+          push({ type: "comma", value });
           block.commas++;
           continue;
         }
         if (value === CHAR_DOT && depth > 0 && block.commas === 0) {
           let siblings = block.nodes;
           if (depth === 0 || siblings.length === 0) {
-            push({type: "text", value});
+            push({ type: "text", value });
             continue;
           }
           if (prev.type === "dot") {
@@ -2867,10 +2867,10 @@ var require_parse2 = __commonJS({
             block.ranges--;
             continue;
           }
-          push({type: "dot", value});
+          push({ type: "dot", value });
           continue;
         }
-        push({type: "text", value});
+        push({ type: "text", value });
       }
       do {
         block = stack.pop();
@@ -2891,7 +2891,7 @@ var require_parse2 = __commonJS({
           parent.nodes.splice(index2, 1, ...block.nodes);
         }
       } while (stack.length > 0);
-      push({type: "eos"});
+      push({ type: "eos" });
       return ast;
     };
     module2.exports = parse;
@@ -3249,8 +3249,8 @@ var require_is_binary_path = __commonJS({
 var require_constants3 = __commonJS({
   "node_modules/file-watch-iterator/node_modules/chokidar/lib/constants.js"(exports2) {
     "use strict";
-    var {sep} = require("path");
-    var {platform} = process;
+    var { sep } = require("path");
+    var { platform } = process;
     exports2.EV_ALL = "all";
     exports2.EV_READY = "ready";
     exports2.EV_ADD = "add";
@@ -3293,7 +3293,7 @@ var require_constants3 = __commonJS({
     exports2.ROOT_GLOBSTAR = "/**/*";
     exports2.SLASH_GLOBSTAR = "/**";
     exports2.DIR_SUFFIX = "Dir";
-    exports2.ANYMATCH_OPTS = {dot: true};
+    exports2.ANYMATCH_OPTS = { dot: true };
     exports2.STRING_TYPE = "string";
     exports2.FUNCTION_TYPE = "function";
     exports2.EMPTY_STR = "";
@@ -3312,7 +3312,7 @@ var require_nodefs_handler = __commonJS({
     "use strict";
     var fs = require("fs");
     var sysPath = require("path");
-    var {promisify} = require("util");
+    var { promisify } = require("util");
     var isBinaryPath = require_is_binary_path();
     var {
       isWindows,
@@ -3338,7 +3338,7 @@ var require_nodefs_handler = __commonJS({
     var lstat = promisify(fs.lstat);
     var close = promisify(fs.close);
     var fsrealpath = promisify(fs.realpath);
-    var statMethods = {lstat, stat};
+    var statMethods = { lstat, stat };
     var foreach = (val, fn) => {
       if (val instanceof Set) {
         val.forEach(fn);
@@ -3374,7 +3374,7 @@ var require_nodefs_handler = __commonJS({
     function createFsWatchInstance(path, options, listener, errHandler, emitRaw) {
       const handleEvent = (rawEvent, evPath) => {
         listener(path);
-        emitRaw(rawEvent, evPath, {watchedPath: path});
+        emitRaw(rawEvent, evPath, { watchedPath: path });
         if (evPath && path !== evPath) {
           fsWatchBroadcast(sysPath.resolve(path, evPath), KEY_LISTENERS, sysPath.join(path, evPath));
         }
@@ -3394,7 +3394,7 @@ var require_nodefs_handler = __commonJS({
       });
     };
     var setFsWatchListener = (path, fullPath, options, handlers) => {
-      const {listener, errHandler, rawEmitter} = handlers;
+      const { listener, errHandler, rawEmitter } = handlers;
       let cont = FsWatchInstances.get(fullPath);
       let watcher;
       if (!options.persistent) {
@@ -3446,7 +3446,7 @@ var require_nodefs_handler = __commonJS({
     };
     var FsWatchFileInstances = new Map();
     var setFsWatchFileListener = (path, fullPath, options, handlers) => {
-      const {listener, rawEmitter} = handlers;
+      const { listener, rawEmitter } = handlers;
       let cont = FsWatchFileInstances.get(fullPath);
       let listeners = new Set();
       let rawEmitters = new Set();
@@ -3467,7 +3467,7 @@ var require_nodefs_handler = __commonJS({
           options,
           watcher: fs.watchFile(fullPath, options, (curr, prev) => {
             foreach(cont.rawEmitters, (rawEmitter2) => {
-              rawEmitter2(EV_CHANGE, fullPath, {curr, prev});
+              rawEmitter2(EV_CHANGE, fullPath, { curr, prev });
             });
             const currmtime = curr.mtimeMs;
             if (curr.size !== prev.size || currmtime > prev.mtimeMs || currmtime === 0) {
@@ -3500,7 +3500,7 @@ var require_nodefs_handler = __commonJS({
         const parent = this.fsw._getWatchedDir(directory);
         parent.add(basename);
         const absolutePath = sysPath.resolve(path);
-        const options = {persistent: opts.persistent};
+        const options = { persistent: opts.persistent };
         if (!listener)
           listener = EMPTY_FN;
         let closer;
@@ -3748,7 +3748,7 @@ var require_fsevents_handler = __commonJS({
     "use strict";
     var fs = require("fs");
     var sysPath = require("path");
-    var {promisify} = require("util");
+    var { promisify } = require("util");
     var fsevents;
     try {
       fsevents = require("fsevents");
@@ -3789,11 +3789,11 @@ var require_fsevents_handler = __commonJS({
       EMPTY_FN,
       IDENTITY_FN
     } = require_constants3();
-    var Depth = (value) => isNaN(value) ? {} : {depth: value};
+    var Depth = (value) => isNaN(value) ? {} : { depth: value };
     var stat = promisify(fs.stat);
     var lstat = promisify(fs.lstat);
     var realpath = promisify(fs.realpath);
-    var statMethods = {stat, lstat};
+    var statMethods = { stat, lstat };
     var FSEventsWatchers = new Map();
     var consolidateThreshhold = 10;
     var wrongEventFlags = new Set([
@@ -3808,7 +3808,7 @@ var require_fsevents_handler = __commonJS({
     ]);
     var createFSEventsInstance = (path, callback) => {
       const stop = fsevents.watch(path, callback);
-      return {stop};
+      return { stop };
     };
     function setFSEventsListener(path, realPath, listener, rawEmitter) {
       let watchPath2 = sysPath.extname(path) ? sysPath.dirname(path) : path;
@@ -4073,7 +4073,7 @@ var require_fsevents_handler = __commonJS({
               if (entry.stats.isDirectory() && !wh.filterPath(entry))
                 return;
               const joinedPath = sysPath.join(wh.watchPath, entry.path);
-              const {fullPath} = entry;
+              const { fullPath } = entry;
               if (wh.followSymlinks && entry.stats.isSymbolicLink()) {
                 const curDepth = opts.depth === void 0 ? void 0 : calcDepth(joinedPath, sysPath.resolve(wh.watchPath)) + 1;
                 this._handleFsEventsSymlink(joinedPath, fullPath, processPath, curDepth);
@@ -4116,10 +4116,10 @@ var require_fsevents_handler = __commonJS({
 var require_chokidar = __commonJS({
   "node_modules/file-watch-iterator/node_modules/chokidar/index.js"(exports2) {
     "use strict";
-    var {EventEmitter: EventEmitter2} = require("events");
+    var { EventEmitter: EventEmitter2 } = require("events");
     var fs = require("fs");
     var sysPath = require("path");
-    var {promisify} = require("util");
+    var { promisify } = require("util");
     var readdirp = require_readdirp();
     var anymatch = require_anymatch().default;
     var globParent = require_glob_parent();
@@ -4218,14 +4218,14 @@ var require_chokidar = __commonJS({
         this.items = new Set();
       }
       add(item) {
-        const {items} = this;
+        const { items } = this;
         if (!items)
           return;
         if (item !== ONE_DOT && item !== TWO_DOTS)
           items.add(item);
       }
       async remove(item) {
-        const {items} = this;
+        const { items } = this;
         if (!items)
           return;
         items.delete(item);
@@ -4241,13 +4241,13 @@ var require_chokidar = __commonJS({
         }
       }
       has(item) {
-        const {items} = this;
+        const { items } = this;
         if (!items)
           return;
         return items.has(item);
       }
       getChildren() {
-        const {items} = this;
+        const { items } = this;
         if (!items)
           return;
         return [...items.values()];
@@ -4283,7 +4283,7 @@ var require_chokidar = __commonJS({
       }
       checkGlobSymlink(entry) {
         if (this.globSymlink === void 0) {
-          this.globSymlink = entry.fullParentDir === this.fullWatchPath ? false : {realPath: entry.fullParentDir, linkPath: this.fullWatchPath};
+          this.globSymlink = entry.fullParentDir === this.fullWatchPath ? false : { realPath: entry.fullParentDir, linkPath: this.fullWatchPath };
         }
         if (this.globSymlink) {
           return entry.fullPath.replace(this.globSymlink.realPath, this.globSymlink.linkPath);
@@ -4294,7 +4294,7 @@ var require_chokidar = __commonJS({
         return sysPath.join(this.watchPath, sysPath.relative(this.watchPath, this.checkGlobSymlink(entry)));
       }
       filterPath(entry) {
-        const {stats} = entry;
+        const { stats } = entry;
         if (stats && stats.isSymbolicLink())
           return this.filterDir(entry);
         const resolvedPath = this.entryPath(entry);
@@ -4415,7 +4415,7 @@ var require_chokidar = __commonJS({
         Object.freeze(opts);
       }
       add(paths_, _origAdd, _internal) {
-        const {cwd, disableGlobbing} = this.options;
+        const { cwd, disableGlobbing } = this.options;
         this.closed = false;
         let paths = unifyPaths(paths_);
         if (cwd) {
@@ -4466,7 +4466,7 @@ var require_chokidar = __commonJS({
         if (this.closed)
           return this;
         const paths = unifyPaths(paths_);
-        const {cwd} = this.options;
+        const { cwd } = this.options;
         paths.forEach((path) => {
           if (!sysPath.isAbsolute(path) && !this._closers.has(path)) {
             if (cwd)
@@ -4620,7 +4620,7 @@ var require_chokidar = __commonJS({
           return count;
         };
         timeoutObject = setTimeout(clear, timeout);
-        const thr = {timeoutObject, clear, count: 0};
+        const thr = { timeoutObject, clear, count: 0 };
         action.set(path, thr);
         return thr;
       }
@@ -4674,7 +4674,7 @@ var require_chokidar = __commonJS({
         if (this.options.atomic && DOT_RE.test(path))
           return true;
         if (!this._userIgnored) {
-          const {cwd} = this.options;
+          const { cwd } = this.options;
           const ign = this.options.ignored;
           const ignored = ign && ign.map(normalizeIgnored(cwd));
           const paths = arrify(ignored).filter((path2) => typeof path2 === STRING_TYPE && !isGlob(path2)).map((path2) => path2 + SLASH_GLOBSTAR);
@@ -4767,7 +4767,7 @@ var require_chokidar = __commonJS({
       _readdirp(root, opts) {
         if (this.closed)
           return;
-        const options = __spreadValues({type: EV_ALL, alwaysStat: true, lstat: true}, opts);
+        const options = __spreadValues({ type: EV_ALL, alwaysStat: true, lstat: true }, opts);
         let stream2 = readdirp(root, options);
         this._streams.add(stream2);
         stream2.once(STR_CLOSE, () => {
@@ -4800,7 +4800,7 @@ var require_debounce_queue = __commonJS({
         throw new Error("Required: the function to debounce");
       }
       if (typeof opts === "number") {
-        opts = {delay: opts};
+        opts = { delay: opts };
       }
       const delay = opts.delay = opts.delay || 100;
       let queue = [];
@@ -4857,27 +4857,27 @@ var require_break_async_iterator = __commonJS({
     module2.exports = (cb) => {
       let done = false;
       let interrupt, interruptPromise = new Promise((resolve, reject) => {
-        interrupt = ({error, value}) => error ? reject(error) : resolve({done, value});
+        interrupt = ({ error, value }) => error ? reject(error) : resolve({ done, value });
       });
       const breakPromise = (promise) => Promise.race([promise, interruptPromise]);
       const breakIterator = (iterator) => ({
         async next(value) {
           if (done)
-            return {done};
+            return { done };
           return Promise.race([iterator.next(value), interruptPromise]);
         },
         return(value) {
           if (done)
-            return {done};
+            return { done };
           done = true;
-          interrupt({value});
+          interrupt({ value });
           return iterator.return(value);
         },
         throw(error) {
           if (done)
-            return {done};
+            return { done };
           done = true;
-          interrupt({error});
+          interrupt({ error });
           return iterator.throw(error);
         },
         [Symbol.asyncIterator]() {
@@ -4918,11 +4918,11 @@ var require_Files = __commonJS({
         }
       }
       update(file, data) {
-        this.files[file] = __spreadValues({changed: true}, data);
+        this.files[file] = __spreadValues({ changed: true }, data);
       }
       *added() {
         for (const file in this.files) {
-          const {event, changed} = this.files[file];
+          const { event, changed } = this.files[file];
           if (!changed)
             continue;
           else if (event === "add")
@@ -4931,7 +4931,7 @@ var require_Files = __commonJS({
       }
       *changed(events = ["change", "add"]) {
         for (const file in this.files) {
-          const {event, changed} = this.files[file];
+          const { event, changed } = this.files[file];
           if (!changed)
             continue;
           else if (events.includes(event))
@@ -4942,7 +4942,7 @@ var require_Files = __commonJS({
         return this.changed(["unlink"]);
       }
       toArray() {
-        return Object.entries(this.files || {}).map(([file, data]) => __spreadValues({file}, data));
+        return Object.entries(this.files || {}).map(([file, data]) => __spreadValues({ file }, data));
       }
       get size() {
         return Object.keys(this.files).length;
@@ -4988,10 +4988,10 @@ var require_utils3 = __commonJS({
 // node_modules/file-watch-iterator/index.js
 var require_file_watch_iterator = __commonJS({
   "node_modules/file-watch-iterator/index.js"(exports2, module2) {
-    var {watch: watch2} = require_chokidar();
+    var { watch: watch2 } = require_chokidar();
     var debounce2 = require_debounce_queue();
     var breakAI = require_break_async_iterator();
-    var _a = require_utils3(), {Files, Defer} = _a, utils = __objRest(_a, ["Files", "Defer"]);
+    var _a = require_utils3(), { Files, Defer } = _a, utils = __objRest(_a, ["Files", "Defer"]);
     module2.exports = breakAI((breakable) => async function* (paths, chokidarOpts = {}, opts = {}) {
       const files = new Files();
       const deferred = new Defer();
@@ -5003,7 +5003,7 @@ var require_file_watch_iterator = __commonJS({
       }, opts.readyTimeout || 1e3);
       const on = debounce2((queue) => {
         queue.forEach(([event, file]) => {
-          files.update(file, {event});
+          files.update(file, { event });
         });
         if (!ready.is) {
           ready();
@@ -5630,7 +5630,7 @@ var require_browser = __commonJS({
       }
     }
     module2.exports = require_common()(exports2);
-    var {formatters} = module2.exports;
+    var { formatters } = module2.exports;
     formatters.j = function(v) {
       try {
         return JSON.stringify(v);
@@ -5661,7 +5661,7 @@ var require_supports_color = __commonJS({
     var os = require("os");
     var tty = require("tty");
     var hasFlag = require_has_flag();
-    var {env} = process;
+    var { env } = process;
     var forceColor;
     if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
       forceColor = 0;
@@ -5877,7 +5877,7 @@ var require_node = __commonJS({
       return "colors" in exports2.inspectOpts ? Boolean(exports2.inspectOpts.colors) : tty.isatty(process.stderr.fd);
     }
     function formatArgs(args) {
-      const {namespace: name, useColors: useColors2} = this;
+      const { namespace: name, useColors: useColors2 } = this;
       if (useColors2) {
         const c = this.color;
         const colorCode = "[3" + (c < 8 ? c : "8;5;" + c);
@@ -5915,7 +5915,7 @@ var require_node = __commonJS({
       }
     }
     module2.exports = require_common()(exports2);
-    var {formatters} = module2.exports;
+    var { formatters } = module2.exports;
     formatters.o = function(v) {
       this.inspectOpts.colors = this.useColors;
       return util.inspect(v, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
@@ -12183,7 +12183,7 @@ var require_src2 = __commonJS({
 var require_event_iterator = __commonJS({
   "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var EventQueue = class {
       constructor() {
         this.pullQueue = [];
@@ -12195,7 +12195,7 @@ var require_event_iterator = __commonJS({
       push(value) {
         if (this.isStopped)
           return;
-        const resolution = {value, done: false};
+        const resolution = { value, done: false };
         if (this.pullQueue.length) {
           const placeholder = this.pullQueue.shift();
           if (placeholder)
@@ -12218,7 +12218,7 @@ var require_event_iterator = __commonJS({
         this.isStopped = true;
         this.remove();
         for (const placeholder of this.pullQueue) {
-          placeholder.resolve({value: void 0, done: true});
+          placeholder.resolve({ value: void 0, done: true });
         }
         this.pullQueue.length = 0;
       }
@@ -12258,10 +12258,10 @@ var require_event_iterator = __commonJS({
               }
               return result;
             } else if (this.isStopped) {
-              return Promise.resolve({value: void 0, done: true});
+              return Promise.resolve({ value: void 0, done: true });
             } else {
               return new Promise((resolve, reject) => {
-                this.pullQueue.push({resolve, reject});
+                this.pullQueue.push({ resolve, reject });
               });
             }
           },
@@ -12269,13 +12269,13 @@ var require_event_iterator = __commonJS({
             this.isStopped = true;
             this.pushQueue.length = 0;
             this.remove();
-            return Promise.resolve({value: void 0, done: true});
+            return Promise.resolve({ value: void 0, done: true });
           }
         };
       }
     };
     var EventIterator = class {
-      constructor(listen, {highWaterMark = 100, lowWaterMark = 1} = {}) {
+      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
         const queue = new EventQueue();
         queue.highWaterMark = highWaterMark;
         queue.lowWaterMark = lowWaterMark;
@@ -12301,7 +12301,7 @@ var require_event_iterator = __commonJS({
 var require_node2 = __commonJS({
   "node_modules/event-iterator/lib/node.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var event_iterator_1 = require_event_iterator();
     exports2.EventIterator = event_iterator_1.EventIterator;
     function stream2(evOptions) {
@@ -12484,7 +12484,7 @@ var require_util = __commonJS({
       }
       return output;
     }
-    module2.exports = {decodeText, encodeText, concat};
+    module2.exports = { decodeText, encodeText, concat };
   }
 });
 
@@ -12492,7 +12492,7 @@ var require_util = __commonJS({
 var require_base = __commonJS({
   "node_modules/multibase/src/base.js"(exports2, module2) {
     "use strict";
-    var {encodeText} = require_util();
+    var { encodeText } = require_util();
     var Base = class {
       constructor(name, code, factory, alphabet) {
         this.name = name;
@@ -12585,7 +12585,7 @@ var require_rfc4648 = __commonJS({
         }
       };
     };
-    module2.exports = {rfc4648};
+    module2.exports = { rfc4648 };
   }
 });
 
@@ -12595,8 +12595,8 @@ var require_constants4 = __commonJS({
     "use strict";
     var baseX = require_src3();
     var Base = require_base();
-    var {rfc4648} = require_rfc4648();
-    var {decodeText, encodeText} = require_util();
+    var { rfc4648 } = require_rfc4648();
+    var { decodeText, encodeText } = require_util();
     var identity = () => {
       return {
         encode: decodeText,
@@ -12648,12 +12648,12 @@ var require_src4 = __commonJS({
   "node_modules/multibase/src/index.js"(exports2, module2) {
     "use strict";
     var constants = require_constants4();
-    var {encodeText, decodeText, concat} = require_util();
+    var { encodeText, decodeText, concat } = require_util();
     function multibase(nameOrCode, buf) {
       if (!buf) {
         throw new Error("requires an encoded Uint8Array");
       }
-      const {name, codeBuf} = encoding(nameOrCode);
+      const { name, codeBuf } = encoding(nameOrCode);
       validEncode(name, buf);
       return concat([codeBuf, buf], codeBuf.length + buf.length);
     }
@@ -13155,7 +13155,7 @@ var require_constants5 = __commonJS({
       "poseidon-bls12_381-a2-fc1": 46081,
       "poseidon-bls12_381-a2-fc1-sc": 46082
     });
-    module2.exports = {names};
+    module2.exports = { names };
   }
 });
 
@@ -13163,7 +13163,7 @@ var require_constants5 = __commonJS({
 var require_to_string = __commonJS({
   "node_modules/uint8arrays/to-string.js"(exports2, module2) {
     "use strict";
-    var {encoding: getCodec} = require_src4();
+    var { encoding: getCodec } = require_src4();
     var utf8Decoder = new TextDecoder("utf8");
     function uint8ArrayToAsciiString(array) {
       let string = "";
@@ -13189,7 +13189,7 @@ var require_to_string = __commonJS({
 var require_from_string = __commonJS({
   "node_modules/uint8arrays/from-string.js"(exports2, module2) {
     "use strict";
-    var {encoding: getCodec} = require_src4();
+    var { encoding: getCodec } = require_src4();
     var utf8Encoder = new TextEncoder();
     function asciiStringToUint8Array(string) {
       const array = new Uint8Array(string.length);
@@ -13237,7 +13237,7 @@ var require_src5 = __commonJS({
     "use strict";
     var multibase = require_src4();
     var varint = require_varint();
-    var {names} = require_constants5();
+    var { names } = require_constants5();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     var uint8ArrayConcat = require_concat3();
@@ -13863,7 +13863,7 @@ var require_generated_table = __commonJS({
       "holochain-sig-v1": 10711332,
       "skynet-ns": 11639056
     });
-    module2.exports = {baseTable};
+    module2.exports = { baseTable };
   }
 });
 
@@ -13871,7 +13871,7 @@ var require_generated_table = __commonJS({
 var require_maps = __commonJS({
   "node_modules/multicodec/src/maps.js"(exports2, module2) {
     "use strict";
-    var {baseTable} = require_generated_table();
+    var { baseTable } = require_generated_table();
     var varintEncode = require_util2().varintEncode;
     var nameToVarint = {};
     var constantToCode = {};
@@ -13906,7 +13906,7 @@ var require_src6 = __commonJS({
     var varint = require_varint();
     var uint8ArrayConcat = require_concat3();
     var util = require_util2();
-    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps();
+    var { nameToVarint, constantToCode, nameToCode, codeToName } = require_maps();
     function addPrefix(multicodecStrOrCode, data) {
       let prefix;
       if (multicodecStrOrCode instanceof Uint8Array) {
@@ -14082,7 +14082,7 @@ var require_src7 = __commonJS({
         this.version;
         this.codec;
         this.multihash;
-        Object.defineProperty(this, symbol, {value: true});
+        Object.defineProperty(this, symbol, { value: true });
         if (CID3.isCID(version)) {
           const cid = version;
           this.version = cid.version;
@@ -14106,7 +14106,7 @@ var require_src7 = __commonJS({
             this.multibaseName = "base58btc";
           }
           CID3.validateCID(this);
-          Object.defineProperty(this, "string", {value: version});
+          Object.defineProperty(this, "string", { value: version });
           return;
         }
         if (version instanceof Uint8Array) {
@@ -14150,7 +14150,7 @@ var require_src7 = __commonJS({
           } else {
             throw new Error("unsupported version");
           }
-          Object.defineProperty(this, "_bytes", {value: bytes});
+          Object.defineProperty(this, "_bytes", { value: bytes });
         }
         return bytes;
       }
@@ -14171,7 +14171,7 @@ var require_src7 = __commonJS({
         if (this.codec !== "dag-pb") {
           throw new Error("Cannot convert a non dag-pb CID to CIDv0");
         }
-        const {name, length} = mh.decode(this.multihash);
+        const { name, length } = mh.decode(this.multihash);
         if (name !== "sha2-256") {
           throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
         }
@@ -14199,7 +14199,7 @@ var require_src7 = __commonJS({
           throw new Error("unsupported version");
         }
         if (base === this.multibaseName) {
-          Object.defineProperty(this, "string", {value: str});
+          Object.defineProperty(this, "string", { value: str });
         }
         return str;
       }
@@ -14269,9 +14269,9 @@ var require_is_ip = __commonJS({
   "node_modules/is-ip/index.js"(exports2, module2) {
     "use strict";
     var ipRegex = require_ip_regex();
-    var isIp = (string) => ipRegex({exact: true}).test(string);
-    isIp.v4 = (string) => ipRegex.v4({exact: true}).test(string);
-    isIp.v6 = (string) => ipRegex.v6({exact: true}).test(string);
+    var isIp = (string) => ipRegex({ exact: true }).test(string);
+    isIp.v4 = (string) => ipRegex.v4({ exact: true }).test(string);
+    isIp.v6 = (string) => ipRegex.v6({ exact: true }).test(string);
     isIp.version = (string) => isIp(string) ? isIp.v4(string) ? 4 : 6 : void 0;
     module2.exports = isIp;
   }
@@ -14928,7 +14928,7 @@ var require_src8 = __commonJS({
         if (addr == null) {
           addr = "";
         }
-        Object.defineProperty(this, symbol, {value: true});
+        Object.defineProperty(this, symbol, { value: true });
         if (addr instanceof Uint8Array) {
           this.bytes = codec.fromBytes(addr);
         } else if (typeof addr === "string") {
@@ -15128,7 +15128,7 @@ var require_src8 = __commonJS({
     function multiaddr(addr) {
       return new Multiaddr(addr);
     }
-    module2.exports = {Multiaddr, multiaddr, protocols, resolvers};
+    module2.exports = { Multiaddr, multiaddr, protocols, resolvers };
   }
 });
 
@@ -15145,7 +15145,7 @@ var require_universalify = __commonJS({
             fn.call(this, ...args, (err, res) => err != null ? reject(err) : resolve(res));
           });
         }
-      }, "name", {value: fn.name});
+      }, "name", { value: fn.name });
     };
     exports2.fromPromise = function(fn) {
       return Object.defineProperty(function(...args) {
@@ -15154,7 +15154,7 @@ var require_universalify = __commonJS({
           return fn.apply(this, args);
         else
           fn.apply(this, args.slice(0, -1)).then((r) => cb(null, r), cb);
-      }, "name", {value: fn.name});
+      }, "name", { value: fn.name });
     };
   }
 });
@@ -15576,7 +15576,7 @@ var require_clone3 = __commonJS({
       if (obj === null || typeof obj !== "object")
         return obj;
       if (obj instanceof Object)
-        var copy = {__proto__: getPrototypeOf(obj)};
+        var copy = { __proto__: getPrototypeOf(obj) };
       else
         var copy = Object.create(null);
       Object.getOwnPropertyNames(obj).forEach(function(key) {
@@ -15974,7 +15974,7 @@ var require_fs = __commonJS({
         fs.read(fd, buffer, offset, length, position, (err, bytesRead, buffer2) => {
           if (err)
             return reject(err);
-          resolve({bytesRead, buffer: buffer2});
+          resolve({ bytesRead, buffer: buffer2 });
         });
       });
     };
@@ -15986,7 +15986,7 @@ var require_fs = __commonJS({
         fs.write(fd, buffer, ...args, (err, bytesWritten, buffer2) => {
           if (err)
             return reject(err);
-          resolve({bytesWritten, buffer: buffer2});
+          resolve({ bytesWritten, buffer: buffer2 });
         });
       });
     };
@@ -15999,7 +15999,7 @@ var require_fs = __commonJS({
           fs.writev(fd, buffers, ...args, (err, bytesWritten, buffers2) => {
             if (err)
               return reject(err);
-            resolve({bytesWritten, buffers: buffers2});
+            resolve({ bytesWritten, buffers: buffers2 });
           });
         });
       };
@@ -16040,9 +16040,9 @@ var require_make_dir = __commonJS({
       }
     };
     var processOptions = (options) => {
-      const defaults = {mode: 511};
+      const defaults = { mode: 511 };
       if (typeof options === "number")
-        options = {mode: options};
+        options = { mode: options };
       return __spreadValues(__spreadValues({}, defaults), options);
     };
     var permissionError = (pth) => {
@@ -16138,7 +16138,7 @@ var require_mkdirs = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/mkdirs/index.js"(exports2, module2) {
     "use strict";
     var u = require_universalify().fromPromise;
-    var {makeDir: _makeDir, makeDirSync} = require_make_dir();
+    var { makeDir: _makeDir, makeDirSync } = require_make_dir();
     var makeDir = u(_makeDir);
     module2.exports = {
       mkdirs: makeDir,
@@ -16189,8 +16189,8 @@ var require_stat = __commonJS({
     var util = require("util");
     var atLeastNode = require_at_least_node();
     var nodeSupportsBigInt = atLeastNode("10.5.0");
-    var stat = (file) => nodeSupportsBigInt ? fs.stat(file, {bigint: true}) : fs.stat(file);
-    var statSync = (file) => nodeSupportsBigInt ? fs.statSync(file, {bigint: true}) : fs.statSync(file);
+    var stat = (file) => nodeSupportsBigInt ? fs.stat(file, { bigint: true }) : fs.stat(file);
+    var statSync = (file) => nodeSupportsBigInt ? fs.statSync(file, { bigint: true }) : fs.statSync(file);
     function getStats(src, dest) {
       return Promise.all([
         stat(src),
@@ -16199,7 +16199,7 @@ var require_stat = __commonJS({
             return null;
           throw err;
         })
-      ]).then(([srcStat, destStat]) => ({srcStat, destStat}));
+      ]).then(([srcStat, destStat]) => ({ srcStat, destStat }));
     }
     function getStatsSync(src, dest) {
       let destStat;
@@ -16208,34 +16208,34 @@ var require_stat = __commonJS({
         destStat = statSync(dest);
       } catch (err) {
         if (err.code === "ENOENT")
-          return {srcStat, destStat: null};
+          return { srcStat, destStat: null };
         throw err;
       }
-      return {srcStat, destStat};
+      return { srcStat, destStat };
     }
     function checkPaths(src, dest, funcName, cb) {
       util.callbackify(getStats)(src, dest, (err, stats) => {
         if (err)
           return cb(err);
-        const {srcStat, destStat} = stats;
+        const { srcStat, destStat } = stats;
         if (destStat && areIdentical(srcStat, destStat)) {
           return cb(new Error("Source and destination must not be the same."));
         }
         if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
           return cb(new Error(errMsg(src, dest, funcName)));
         }
-        return cb(null, {srcStat, destStat});
+        return cb(null, { srcStat, destStat });
       });
     }
     function checkPathsSync(src, dest, funcName) {
-      const {srcStat, destStat} = getStatsSync(src, dest);
+      const { srcStat, destStat } = getStatsSync(src, dest);
       if (destStat && areIdentical(srcStat, destStat)) {
         throw new Error("Source and destination must not be the same.");
       }
       if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
         throw new Error(errMsg(src, dest, funcName));
       }
-      return {srcStat, destStat};
+      return { srcStat, destStat };
     }
     function checkParentPaths(src, srcStat, dest, funcName, cb) {
       const srcParent = path.resolve(path.dirname(src));
@@ -16254,7 +16254,7 @@ var require_stat = __commonJS({
         return checkParentPaths(src, srcStat, destParent, funcName, cb);
       };
       if (nodeSupportsBigInt)
-        fs.stat(destParent, {bigint: true}, callback);
+        fs.stat(destParent, { bigint: true }, callback);
       else
         fs.stat(destParent, callback);
     }
@@ -16316,7 +16316,7 @@ var require_copy_sync = __commonJS({
     var stat = require_stat();
     function copySync(src, dest, opts) {
       if (typeof opts === "function") {
-        opts = {filter: opts};
+        opts = { filter: opts };
       }
       opts = opts || {};
       opts.clobber = "clobber" in opts ? !!opts.clobber : true;
@@ -16326,7 +16326,7 @@ var require_copy_sync = __commonJS({
 
     see https://github.com/jprichardson/node-fs-extra/issues/269`);
       }
-      const {srcStat, destStat} = stat.checkPathsSync(src, dest, "copy");
+      const { srcStat, destStat } = stat.checkPathsSync(src, dest, "copy");
       stat.checkParentPathsSync(src, srcStat, dest, "copy");
       return handleFilterAndCopy(destStat, src, dest, opts);
     }
@@ -16409,7 +16409,7 @@ var require_copy_sync = __commonJS({
     function copyDirItem(item, src, dest, opts) {
       const srcItem = path.join(src, item);
       const destItem = path.join(dest, item);
-      const {destStat} = stat.checkPathsSync(srcItem, destItem, "copy");
+      const { destStat } = stat.checkPathsSync(srcItem, destItem, "copy");
       return startCopy(destStat, srcItem, destItem, opts);
     }
     function onLink(destStat, src, dest, opts) {
@@ -16489,7 +16489,7 @@ var require_copy = __commonJS({
         cb = opts;
         opts = {};
       } else if (typeof opts === "function") {
-        opts = {filter: opts};
+        opts = { filter: opts };
       }
       cb = cb || function() {
       };
@@ -16504,7 +16504,7 @@ var require_copy = __commonJS({
       stat.checkPaths(src, dest, "copy", (err, stats) => {
         if (err)
           return cb(err);
-        const {srcStat, destStat} = stats;
+        const { srcStat, destStat } = stats;
         stat.checkParentPaths(src, srcStat, dest, "copy", (err2) => {
           if (err2)
             return cb(err2);
@@ -16650,7 +16650,7 @@ var require_copy = __commonJS({
       stat.checkPaths(srcItem, destItem, "copy", (err, stats) => {
         if (err)
           return cb(err);
-        const {destStat} = stats;
+        const { destStat } = stats;
         startCopy(destStat, srcItem, destItem, opts, (err2) => {
           if (err2)
             return cb(err2);
@@ -17361,7 +17361,7 @@ var require_ensure = __commonJS({
 // node_modules/it-glob/node_modules/jsonfile/utils.js
 var require_utils4 = __commonJS({
   "node_modules/it-glob/node_modules/jsonfile/utils.js"(exports2, module2) {
-    function stringify(obj, {EOL = "\n", finalEOL = true, replacer = null, spaces} = {}) {
+    function stringify(obj, { EOL = "\n", finalEOL = true, replacer = null, spaces } = {}) {
       const EOF = finalEOL ? EOL : "";
       const str = JSON.stringify(obj, replacer, spaces);
       return str.replace(/\n/g, EOL) + EOF;
@@ -17371,7 +17371,7 @@ var require_utils4 = __commonJS({
         content = content.toString("utf8");
       return content.replace(/^\uFEFF/, "");
     }
-    module2.exports = {stringify, stripBom};
+    module2.exports = { stringify, stripBom };
   }
 });
 
@@ -17385,10 +17385,10 @@ var require_jsonfile = __commonJS({
       _fs = require("fs");
     }
     var universalify = require_universalify();
-    var {stringify, stripBom} = require_utils4();
+    var { stringify, stripBom } = require_utils4();
     async function _readFile(file, options = {}) {
       if (typeof options === "string") {
-        options = {encoding: options};
+        options = { encoding: options };
       }
       const fs = options.fs || _fs;
       const shouldThrow = "throws" in options ? options.throws : true;
@@ -17410,7 +17410,7 @@ var require_jsonfile = __commonJS({
     var readFile = universalify.fromPromise(_readFile);
     function readFileSync(file, options = {}) {
       if (typeof options === "string") {
-        options = {encoding: options};
+        options = { encoding: options };
       }
       const fs = options.fs || _fs;
       const shouldThrow = "throws" in options ? options.throws : true;
@@ -17508,8 +17508,8 @@ var require_output = __commonJS({
 var require_output_json = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/json/output-json.js"(exports2, module2) {
     "use strict";
-    var {stringify} = require_utils4();
-    var {outputFile} = require_output();
+    var { stringify } = require_utils4();
+    var { outputFile } = require_output();
     async function outputJson(file, data, options = {}) {
       const str = stringify(data, options);
       await outputFile(file, str, options);
@@ -17522,8 +17522,8 @@ var require_output_json = __commonJS({
 var require_output_json_sync = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/json/output-json-sync.js"(exports2, module2) {
     "use strict";
-    var {stringify} = require_utils4();
-    var {outputFileSync} = require_output();
+    var { stringify } = require_utils4();
+    var { outputFileSync } = require_output();
     function outputJsonSync(file, data, options) {
       const str = stringify(data, options);
       outputFileSync(file, str, options);
@@ -17563,7 +17563,7 @@ var require_move_sync = __commonJS({
     function moveSync(src, dest, opts) {
       opts = opts || {};
       const overwrite = opts.overwrite || opts.clobber || false;
-      const {srcStat} = stat.checkPathsSync(src, dest, "move");
+      const { srcStat } = stat.checkPathsSync(src, dest, "move");
       stat.checkParentPathsSync(src, srcStat, dest, "move");
       mkdirpSync(path.dirname(dest));
       return doRename(src, dest, overwrite);
@@ -17628,7 +17628,7 @@ var require_move2 = __commonJS({
       stat.checkPaths(src, dest, "move", (err, stats) => {
         if (err)
           return cb(err);
-        const {srcStat} = stats;
+        const { srcStat } = stats;
         stat.checkParentPaths(src, srcStat, dest, "move", (err2) => {
           if (err2)
             return cb(err2);
@@ -17937,7 +17937,7 @@ var require_minimatch = __commonJS({
   "node_modules/minimatch/minimatch.js"(exports2, module2) {
     module2.exports = minimatch;
     minimatch.Minimatch = Minimatch;
-    var path = {sep: "/"};
+    var path = { sep: "/" };
     try {
       path = require("path");
     } catch (er) {
@@ -17945,11 +17945,11 @@ var require_minimatch = __commonJS({
     var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {};
     var expand = require_brace_expansion();
     var plTypes = {
-      "!": {open: "(?:(?!(?:", close: "))[^/]*?)"},
-      "?": {open: "(?:", close: ")?"},
-      "+": {open: "(?:", close: ")+"},
-      "*": {open: "(?:", close: ")*"},
-      "@": {open: "(?:", close: ")"}
+      "!": { open: "(?:(?!(?:", close: "))[^/]*?)" },
+      "?": { open: "(?:", close: ")?" },
+      "+": { open: "(?:", close: ")+" },
+      "*": { open: "(?:", close: ")*" },
+      "@": { open: "(?:", close: ")" }
     };
     var qmark = "[^/]";
     var star = qmark + "*?";
@@ -18423,7 +18423,7 @@ var require_minimatch = __commonJS({
     }
     Minimatch.prototype.matchOne = function(file, pattern, partial) {
       var options = this.options;
-      this.debug("matchOne", {"this": this, file, pattern});
+      this.debug("matchOne", { "this": this, file, pattern });
       this.debug("matchOne", file.length, pattern.length);
       for (var fi = 0, pi = 0, fl = file.length, pl = pattern.length; fi < fl && pi < pl; fi++, pi++) {
         this.debug("matchOne loop");
@@ -18567,7 +18567,7 @@ var require_glob_source = __commonJS({
       };
       for await (const path of paths) {
         if (typeof path !== "string") {
-          throw errCode(new Error("Path must be a string"), "ERR_INVALID_PATH", {path});
+          throw errCode(new Error("Path must be a string"), "ERR_INVALID_PATH", { path });
         }
         const absolutePath = Path.resolve(process.cwd(), path);
         const stat = await fsp.stat(absolutePath);
@@ -18598,7 +18598,7 @@ var require_glob_source = __commonJS({
         }, globSourceOptions);
       }
     };
-    async function* toGlobSource({path, type, prefix, mode, mtime, preserveMode, preserveMtime}, options) {
+    async function* toGlobSource({ path, type, prefix, mode, mtime, preserveMode, preserveMtime }, options) {
       options = options || {};
       const baseName = Path.basename(path);
       if (type === "file") {
@@ -18611,7 +18611,7 @@ var require_glob_source = __commonJS({
         return;
       }
       if (type === "dir" && !options.recursive) {
-        throw errCode(new Error(`'${path}' is a directory and recursive option not set`), "ERR_DIR_NON_RECURSIVE", {path});
+        throw errCode(new Error(`'${path}' is a directory and recursive option not set`), "ERR_DIR_NON_RECURSIVE", { path });
       }
       const globOptions = Object.assign({}, options.glob, {
         cwd: path,
@@ -18837,14 +18837,14 @@ var require_internal = __commonJS({
     "use strict";
     var Buffer2 = require_safer().Buffer;
     module2.exports = {
-      utf8: {type: "_internal", bomAware: true},
-      cesu8: {type: "_internal", bomAware: true},
+      utf8: { type: "_internal", bomAware: true },
+      cesu8: { type: "_internal", bomAware: true },
       unicode11utf8: "utf8",
-      ucs2: {type: "_internal", bomAware: true},
+      ucs2: { type: "_internal", bomAware: true },
       utf16le: "ucs2",
-      binary: {type: "_internal"},
-      base64: {type: "_internal"},
-      hex: {type: "_internal"},
+      binary: { type: "_internal" },
+      base64: { type: "_internal" },
+      hex: { type: "_internal" },
       _internal: InternalCodec
     };
     function InternalCodec(codecOptions, iconv) {
@@ -18992,8 +18992,8 @@ var require_utf32 = __commonJS({
       this.bomAware = true;
       this.isLE = codecOptions.isLE;
     }
-    exports2.utf32le = {type: "_utf32", isLE: true};
-    exports2.utf32be = {type: "_utf32", isLE: false};
+    exports2.utf32le = { type: "_utf32", isLE: true };
+    exports2.utf32be = { type: "_utf32", isLE: false };
     exports2.ucs4le = "utf32le";
     exports2.ucs4be = "utf32be";
     Utf32Codec.prototype.encoder = Utf32Encoder;
@@ -21282,7 +21282,7 @@ var require_gbk_added = __commonJS({
 // node_modules/encoding/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json
 var require_gb18030_ranges = __commonJS({
   "node_modules/encoding/node_modules/iconv-lite/encodings/tables/gb18030-ranges.json"(exports2, module2) {
-    module2.exports = {uChars: [128, 165, 169, 178, 184, 216, 226, 235, 238, 244, 248, 251, 253, 258, 276, 284, 300, 325, 329, 334, 364, 463, 465, 467, 469, 471, 473, 475, 477, 506, 594, 610, 712, 716, 730, 930, 938, 962, 970, 1026, 1104, 1106, 8209, 8215, 8218, 8222, 8231, 8241, 8244, 8246, 8252, 8365, 8452, 8454, 8458, 8471, 8482, 8556, 8570, 8596, 8602, 8713, 8720, 8722, 8726, 8731, 8737, 8740, 8742, 8748, 8751, 8760, 8766, 8777, 8781, 8787, 8802, 8808, 8816, 8854, 8858, 8870, 8896, 8979, 9322, 9372, 9548, 9588, 9616, 9622, 9634, 9652, 9662, 9672, 9676, 9680, 9702, 9735, 9738, 9793, 9795, 11906, 11909, 11913, 11917, 11928, 11944, 11947, 11951, 11956, 11960, 11964, 11979, 12284, 12292, 12312, 12319, 12330, 12351, 12436, 12447, 12535, 12543, 12586, 12842, 12850, 12964, 13200, 13215, 13218, 13253, 13263, 13267, 13270, 13384, 13428, 13727, 13839, 13851, 14617, 14703, 14801, 14816, 14964, 15183, 15471, 15585, 16471, 16736, 17208, 17325, 17330, 17374, 17623, 17997, 18018, 18212, 18218, 18301, 18318, 18760, 18811, 18814, 18820, 18823, 18844, 18848, 18872, 19576, 19620, 19738, 19887, 40870, 59244, 59336, 59367, 59413, 59417, 59423, 59431, 59437, 59443, 59452, 59460, 59478, 59493, 63789, 63866, 63894, 63976, 63986, 64016, 64018, 64021, 64025, 64034, 64037, 64042, 65074, 65093, 65107, 65112, 65127, 65132, 65375, 65510, 65536], gbChars: [0, 36, 38, 45, 50, 81, 89, 95, 96, 100, 103, 104, 105, 109, 126, 133, 148, 172, 175, 179, 208, 306, 307, 308, 309, 310, 311, 312, 313, 341, 428, 443, 544, 545, 558, 741, 742, 749, 750, 805, 819, 820, 7922, 7924, 7925, 7927, 7934, 7943, 7944, 7945, 7950, 8062, 8148, 8149, 8152, 8164, 8174, 8236, 8240, 8262, 8264, 8374, 8380, 8381, 8384, 8388, 8390, 8392, 8393, 8394, 8396, 8401, 8406, 8416, 8419, 8424, 8437, 8439, 8445, 8482, 8485, 8496, 8521, 8603, 8936, 8946, 9046, 9050, 9063, 9066, 9076, 9092, 9100, 9108, 9111, 9113, 9131, 9162, 9164, 9218, 9219, 11329, 11331, 11334, 11336, 11346, 11361, 11363, 11366, 11370, 11372, 11375, 11389, 11682, 11686, 11687, 11692, 11694, 11714, 11716, 11723, 11725, 11730, 11736, 11982, 11989, 12102, 12336, 12348, 12350, 12384, 12393, 12395, 12397, 12510, 12553, 12851, 12962, 12973, 13738, 13823, 13919, 13933, 14080, 14298, 14585, 14698, 15583, 15847, 16318, 16434, 16438, 16481, 16729, 17102, 17122, 17315, 17320, 17402, 17418, 17859, 17909, 17911, 17915, 17916, 17936, 17939, 17961, 18664, 18703, 18814, 18962, 19043, 33469, 33470, 33471, 33484, 33485, 33490, 33497, 33501, 33505, 33513, 33520, 33536, 33550, 37845, 37921, 37948, 38029, 38038, 38064, 38065, 38066, 38069, 38075, 38076, 38078, 39108, 39109, 39113, 39114, 39115, 39116, 39265, 39394, 189e3]};
+    module2.exports = { uChars: [128, 165, 169, 178, 184, 216, 226, 235, 238, 244, 248, 251, 253, 258, 276, 284, 300, 325, 329, 334, 364, 463, 465, 467, 469, 471, 473, 475, 477, 506, 594, 610, 712, 716, 730, 930, 938, 962, 970, 1026, 1104, 1106, 8209, 8215, 8218, 8222, 8231, 8241, 8244, 8246, 8252, 8365, 8452, 8454, 8458, 8471, 8482, 8556, 8570, 8596, 8602, 8713, 8720, 8722, 8726, 8731, 8737, 8740, 8742, 8748, 8751, 8760, 8766, 8777, 8781, 8787, 8802, 8808, 8816, 8854, 8858, 8870, 8896, 8979, 9322, 9372, 9548, 9588, 9616, 9622, 9634, 9652, 9662, 9672, 9676, 9680, 9702, 9735, 9738, 9793, 9795, 11906, 11909, 11913, 11917, 11928, 11944, 11947, 11951, 11956, 11960, 11964, 11979, 12284, 12292, 12312, 12319, 12330, 12351, 12436, 12447, 12535, 12543, 12586, 12842, 12850, 12964, 13200, 13215, 13218, 13253, 13263, 13267, 13270, 13384, 13428, 13727, 13839, 13851, 14617, 14703, 14801, 14816, 14964, 15183, 15471, 15585, 16471, 16736, 17208, 17325, 17330, 17374, 17623, 17997, 18018, 18212, 18218, 18301, 18318, 18760, 18811, 18814, 18820, 18823, 18844, 18848, 18872, 19576, 19620, 19738, 19887, 40870, 59244, 59336, 59367, 59413, 59417, 59423, 59431, 59437, 59443, 59452, 59460, 59478, 59493, 63789, 63866, 63894, 63976, 63986, 64016, 64018, 64021, 64025, 64034, 64037, 64042, 65074, 65093, 65107, 65112, 65127, 65132, 65375, 65510, 65536], gbChars: [0, 36, 38, 45, 50, 81, 89, 95, 96, 100, 103, 104, 105, 109, 126, 133, 148, 172, 175, 179, 208, 306, 307, 308, 309, 310, 311, 312, 313, 341, 428, 443, 544, 545, 558, 741, 742, 749, 750, 805, 819, 820, 7922, 7924, 7925, 7927, 7934, 7943, 7944, 7945, 7950, 8062, 8148, 8149, 8152, 8164, 8174, 8236, 8240, 8262, 8264, 8374, 8380, 8381, 8384, 8388, 8390, 8392, 8393, 8394, 8396, 8401, 8406, 8416, 8419, 8424, 8437, 8439, 8445, 8482, 8485, 8496, 8521, 8603, 8936, 8946, 9046, 9050, 9063, 9066, 9076, 9092, 9100, 9108, 9111, 9113, 9131, 9162, 9164, 9218, 9219, 11329, 11331, 11334, 11336, 11346, 11361, 11363, 11366, 11370, 11372, 11375, 11389, 11682, 11686, 11687, 11692, 11694, 11714, 11716, 11723, 11725, 11730, 11736, 11982, 11989, 12102, 12336, 12348, 12350, 12384, 12393, 12395, 12397, 12510, 12553, 12851, 12962, 12973, 13738, 13823, 13919, 13933, 14080, 14298, 14585, 14698, 15583, 15847, 16318, 16434, 16438, 16481, 16729, 17102, 17122, 17315, 17320, 17402, 17418, 17859, 17909, 17911, 17915, 17916, 17936, 17939, 17961, 18664, 18703, 18814, 18962, 19043, 33469, 33470, 33471, 33484, 33485, 33490, 33497, 33501, 33505, 33513, 33520, 33536, 33550, 37845, 37921, 37948, 38029, 38038, 38064, 38065, 38066, 38069, 38075, 38076, 38078, 39108, 39109, 39113, 39114, 39115, 39116, 39265, 39394, 189e3] };
   }
 });
 
@@ -21886,8 +21886,8 @@ var require_dbcs_data = __commonJS({
         table: function() {
           return require_shiftjis();
         },
-        encodeAdd: {"\xA5": 92, "\u203E": 126},
-        encodeSkipVals: [{from: 60736, to: 63808}]
+        encodeAdd: { "\xA5": 92, "\u203E": 126 },
+        encodeSkipVals: [{ from: 60736, to: 63808 }]
       },
       "csshiftjis": "shiftjis",
       "mskanji": "shiftjis",
@@ -21904,7 +21904,7 @@ var require_dbcs_data = __commonJS({
         table: function() {
           return require_eucjp();
         },
-        encodeAdd: {"\xA5": 92, "\u203E": 126}
+        encodeAdd: { "\xA5": 92, "\u203E": 126 }
       },
       "gb2312": "cp936",
       "gb231280": "cp936",
@@ -21938,7 +21938,7 @@ var require_dbcs_data = __commonJS({
           return require_gb18030_ranges();
         },
         encodeSkipVals: [128],
-        encodeAdd: {"\u20AC": 41699}
+        encodeAdd: { "\u20AC": 41699 }
       },
       "chinese": "gb18030",
       "windows949": "cp949",
@@ -21973,7 +21973,75 @@ var require_dbcs_data = __commonJS({
         table: function() {
           return require_cp950().concat(require_big5_added());
         },
-        encodeSkipVals: [41676]
+        encodeSkipVals: [
+          36457,
+          36463,
+          36478,
+          36523,
+          36532,
+          36557,
+          36560,
+          36695,
+          36713,
+          36718,
+          36811,
+          36862,
+          36973,
+          36986,
+          37060,
+          37084,
+          37105,
+          37311,
+          37551,
+          37552,
+          37553,
+          37554,
+          37585,
+          37959,
+          38090,
+          38361,
+          38652,
+          39285,
+          39798,
+          39800,
+          39803,
+          39878,
+          39902,
+          39916,
+          39926,
+          40002,
+          40019,
+          40034,
+          40040,
+          40043,
+          40055,
+          40124,
+          40125,
+          40144,
+          40279,
+          40282,
+          40388,
+          40431,
+          40443,
+          40617,
+          40687,
+          40701,
+          40800,
+          40907,
+          41079,
+          41180,
+          41183,
+          36812,
+          37576,
+          38468,
+          38637,
+          41636,
+          41637,
+          41639,
+          41638,
+          41676,
+          41678
+        ]
       },
       "cnbig5": "big5hkscs",
       "csbig5": "big5hkscs",
@@ -22022,7 +22090,7 @@ var require_streams = __commonJS({
         Transform.call(this, options);
       }
       IconvLiteEncoderStream.prototype = Object.create(Transform.prototype, {
-        constructor: {value: IconvLiteEncoderStream}
+        constructor: { value: IconvLiteEncoderStream }
       });
       IconvLiteEncoderStream.prototype._transform = function(chunk, encoding, done) {
         if (typeof chunk != "string")
@@ -22064,7 +22132,7 @@ var require_streams = __commonJS({
         Transform.call(this, options);
       }
       IconvLiteDecoderStream.prototype = Object.create(Transform.prototype, {
-        constructor: {value: IconvLiteDecoderStream}
+        constructor: { value: IconvLiteDecoderStream }
       });
       IconvLiteDecoderStream.prototype._transform = function(chunk, encoding, done) {
         if (!Buffer2.isBuffer(chunk) && !(chunk instanceof Uint8Array))
@@ -22279,7 +22347,7 @@ var require_encoding = __commonJS({
 var require_lib3 = __commonJS({
   "node_modules/electron-fetch/lib/index.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var url = require("url");
     var http = require("http");
     var https = require("https");
@@ -22287,7 +22355,7 @@ var require_lib3 = __commonJS({
     var Stream = require("stream");
     var encoding = require_encoding();
     function _interopDefaultLegacy(e) {
-      return e && typeof e === "object" && "default" in e ? e : {"default": e};
+      return e && typeof e === "object" && "default" in e ? e : { "default": e };
     }
     function _interopNamespace(e) {
       if (e && e.__esModule)
@@ -23285,7 +23353,7 @@ var require_lib3 = __commonJS({
 var require_lib4 = __commonJS({
   "node_modules/node-fetch/lib/index.js"(exports2, module2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     function _interopDefault(ex) {
       return ex && typeof ex === "object" && "default" in ex ? ex["default"] : ex;
     }
@@ -23378,15 +23446,15 @@ var require_lib4 = __commonJS({
         const span = Math.max(relativeEnd - relativeStart, 0);
         const buffer = this[BUFFER];
         const slicedBuffer = buffer.slice(relativeStart, relativeStart + span);
-        const blob = new Blob2([], {type: arguments[2]});
+        const blob = new Blob2([], { type: arguments[2] });
         blob[BUFFER] = slicedBuffer;
         return blob;
       }
     };
     Object.defineProperties(Blob2.prototype, {
-      size: {enumerable: true},
-      type: {enumerable: true},
-      slice: {enumerable: true}
+      size: { enumerable: true },
+      type: { enumerable: true },
+      slice: { enumerable: true }
     });
     Object.defineProperty(Blob2.prototype, Symbol.toStringTag, {
       value: "Blob",
@@ -23498,12 +23566,12 @@ var require_lib4 = __commonJS({
       }
     };
     Object.defineProperties(Body.prototype, {
-      body: {enumerable: true},
-      bodyUsed: {enumerable: true},
-      arrayBuffer: {enumerable: true},
-      blob: {enumerable: true},
-      json: {enumerable: true},
-      text: {enumerable: true}
+      body: { enumerable: true },
+      bodyUsed: { enumerable: true },
+      arrayBuffer: { enumerable: true },
+      blob: { enumerable: true },
+      json: { enumerable: true },
+      text: { enumerable: true }
     });
     Body.mixIn = function(proto) {
       for (const name of Object.getOwnPropertyNames(Body.prototype)) {
@@ -23839,15 +23907,15 @@ var require_lib4 = __commonJS({
       configurable: true
     });
     Object.defineProperties(Headers.prototype, {
-      get: {enumerable: true},
-      forEach: {enumerable: true},
-      set: {enumerable: true},
-      append: {enumerable: true},
-      has: {enumerable: true},
-      delete: {enumerable: true},
-      keys: {enumerable: true},
-      values: {enumerable: true},
-      entries: {enumerable: true}
+      get: { enumerable: true },
+      forEach: { enumerable: true },
+      set: { enumerable: true },
+      append: { enumerable: true },
+      has: { enumerable: true },
+      delete: { enumerable: true },
+      keys: { enumerable: true },
+      values: { enumerable: true },
+      entries: { enumerable: true }
     });
     function getHeaders(headers) {
       let kind = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : "key+value";
@@ -23899,7 +23967,7 @@ var require_lib4 = __commonJS({
       configurable: true
     });
     function exportNodeCompatibleHeaders(headers) {
-      const obj = Object.assign({__proto__: null}, headers[MAP]);
+      const obj = Object.assign({ __proto__: null }, headers[MAP]);
       const hostHeaderKey = find(headers[MAP], "Host");
       if (hostHeaderKey !== void 0) {
         obj[hostHeaderKey] = obj[hostHeaderKey][0];
@@ -23983,13 +24051,13 @@ var require_lib4 = __commonJS({
     };
     Body.mixIn(Response2.prototype);
     Object.defineProperties(Response2.prototype, {
-      url: {enumerable: true},
-      status: {enumerable: true},
-      ok: {enumerable: true},
-      redirected: {enumerable: true},
-      statusText: {enumerable: true},
-      headers: {enumerable: true},
-      clone: {enumerable: true}
+      url: { enumerable: true },
+      status: { enumerable: true },
+      ok: { enumerable: true },
+      redirected: { enumerable: true },
+      statusText: { enumerable: true },
+      headers: { enumerable: true },
+      clone: { enumerable: true }
     });
     Object.defineProperty(Response2.prototype, Symbol.toStringTag, {
       value: "Response",
@@ -24084,12 +24152,12 @@ var require_lib4 = __commonJS({
       configurable: true
     });
     Object.defineProperties(Request.prototype, {
-      method: {enumerable: true},
-      url: {enumerable: true},
-      headers: {enumerable: true},
-      redirect: {enumerable: true},
-      clone: {enumerable: true},
-      signal: {enumerable: true}
+      method: { enumerable: true },
+      url: { enumerable: true },
+      headers: { enumerable: true },
+      redirect: { enumerable: true },
+      clone: { enumerable: true },
+      signal: { enumerable: true }
     });
     function getNodeRequestOptions(request) {
       const parsedURL = request[INTERNALS$2].parsedURL;
@@ -24317,7 +24385,7 @@ var require_lib4 = __commonJS({
     };
     fetch.Promise = global.Promise;
     module2.exports = exports2 = fetch;
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
     exports2.Request = Request;
@@ -24352,7 +24420,7 @@ var require_src9 = __commonJS({
 var require_fetch = __commonJS({
   "node_modules/ipfs-utils/src/fetch.js"(exports2, module2) {
     "use strict";
-    var {isElectronMain} = require_env();
+    var { isElectronMain } = require_env();
     if (isElectronMain) {
       module2.exports = require_lib3();
     } else {
@@ -24365,12 +24433,12 @@ var require_fetch = __commonJS({
 var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
-    var {TimeoutError: TimeoutError2, AbortError} = require_error();
-    var {Response: Response2, Request, Headers, default: fetch} = require_fetch();
+    var { TimeoutError: TimeoutError2, AbortError } = require_error();
+    var { Response: Response2, Request, Headers, default: fetch } = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
-      const {timeout, headers} = options;
+      const { timeout, headers } = options;
       if (timeout && timeout > 0 && timeout < Infinity) {
         request.timeout = timeout;
       }
@@ -24439,7 +24507,7 @@ var require_fetch_browser = __commonJS({
     var ResponseWithURL = class extends Response2 {
       constructor(url, body, options) {
         super(body, options);
-        Object.defineProperty(this, "url", {value: url});
+        Object.defineProperty(this, "url", { value: url });
       }
     };
     module2.exports = {
@@ -24566,8 +24634,8 @@ var require_p_fifo = __commonJS({
         this._waitingConsumers = new Fifo();
       }
       push(chunk) {
-        const {promise, resolve} = defer();
-        this._buffer.push({chunk, resolve});
+        const { promise, resolve } = defer();
+        this._buffer.push({ chunk, resolve });
         this._consume();
         return promise;
       }
@@ -24580,8 +24648,8 @@ var require_p_fifo = __commonJS({
         }
       }
       shift() {
-        const {promise, resolve} = defer();
-        this._waitingConsumers.push({resolve});
+        const { promise, resolve } = defer();
+        this._waitingConsumers.push({ resolve });
         this._consume();
         return promise;
       }
@@ -24595,10 +24663,10 @@ var require_p_fifo = __commonJS({
 // node_modules/it-to-stream/src/duplex.js
 var require_duplex = __commonJS({
   "node_modules/it-to-stream/src/duplex.js"(exports2, module2) {
-    var {Readable, Writable, Duplex} = require("stream");
+    var { Readable, Writable, Duplex } = require("stream");
     var getIterator = require_get_iterator();
     var Fifo = require_p_fifo();
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var END_CHUNK = Buffer2.alloc(0);
     module2.exports = function toDuplex(duplex, options) {
       options = options || {};
@@ -24623,7 +24691,7 @@ var require_duplex = __commonJS({
             reading = true;
             try {
               while (true) {
-                const {value, done} = await duplex.source.next(size);
+                const { value, done } = await duplex.source.next(size);
                 if (done)
                   return this.push(null);
                 if (!this.push(value))
@@ -24657,15 +24725,15 @@ var require_duplex = __commonJS({
           },
           async next() {
             const chunk = await fifo.shift();
-            return chunk === END_CHUNK ? {done: true} : {value: chunk};
+            return chunk === END_CHUNK ? { done: true } : { value: chunk };
           },
           async throw(err) {
             stream2.destroy(err);
-            return {done: true};
+            return { done: true };
           },
           async return() {
             stream2.destroy();
-            return {done: true};
+            return { done: true };
           }
         });
       }
@@ -24680,13 +24748,13 @@ var require_transform = __commonJS({
     var toDuplex = require_duplex();
     var defer = require_p_defer();
     module2.exports = function toTransform(transform, options) {
-      const {promise, resolve} = defer();
+      const { promise, resolve } = defer();
       const source = async function* () {
         const it = await promise;
         for await (const chunk of it)
           yield chunk;
       }();
-      return toDuplex({sink: (s) => resolve(transform(s)), source}, options);
+      return toDuplex({ sink: (s) => resolve(transform(s)), source }, options);
     };
   }
 });
@@ -24698,10 +24766,10 @@ var require_src10 = __commonJS({
     var toTransform = require_transform();
     var toDuplex = require_duplex();
     function toReadable(source, options) {
-      return toDuplex({source}, options);
+      return toDuplex({ source }, options);
     }
     function toWritable(sink, options) {
-      return toDuplex({sink}, options);
+      return toDuplex({ sink }, options);
     }
     module2.exports = toReadable;
     module2.exports.readable = toReadable;
@@ -24715,12 +24783,12 @@ var require_src10 = __commonJS({
 var require_fetch_node = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.node.js"(exports2, module2) {
     "use strict";
-    var {Request, Response: Response2, Headers, default: nativeFetch} = require_fetch();
+    var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
     var toStream = require_src10();
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
-      const {onUploadProgress, body} = options;
+      const { onUploadProgress, body } = options;
       if (onUploadProgress && body) {
         const content = normalizeBody(body);
         const rsp = new Response2(content);
@@ -24744,12 +24812,12 @@ var require_fetch_node = __commonJS({
     };
     var iterateBodyWithProgress = async function* (body, onUploadProgress) {
       if (body == null) {
-        onUploadProgress({total: 0, loaded: 0, lengthComputable: true});
+        onUploadProgress({ total: 0, loaded: 0, lengthComputable: true });
       } else if (Buffer2.isBuffer(body)) {
         const total = body.byteLength;
         const lengthComputable = true;
         yield body;
-        onUploadProgress({total, loaded: total, lengthComputable});
+        onUploadProgress({ total, loaded: total, lengthComputable });
       } else {
         const total = 0;
         const lengthComputable = false;
@@ -24757,7 +24825,7 @@ var require_fetch_node = __commonJS({
         for await (const chunk of body) {
           loaded += chunk.byteLength;
           yield chunk;
-          onUploadProgress({total, loaded, lengthComputable});
+          onUploadProgress({ total, loaded, lengthComputable });
         }
       }
     };
@@ -24800,8 +24868,8 @@ var require_merge_options = __commonJS({
   "node_modules/merge-options/index.js"(exports2, module2) {
     "use strict";
     var isOptionObject = require_is_plain_obj();
-    var {hasOwnProperty} = Object.prototype;
-    var {propertyIsEnumerable} = Object;
+    var { hasOwnProperty } = Object.prototype;
+    var { propertyIsEnumerable } = Object;
     var defineProperty = (object, name, value) => Object.defineProperty(object, name, {
       value,
       writable: true,
@@ -24897,7 +24965,7 @@ var require_merge_options = __commonJS({
     }
     module2.exports = function(...options) {
       const config = merge(clone(defaultMergeOptions), this !== globalThis2 && this || {}, defaultMergeOptions);
-      let merged = {_: {}};
+      let merged = { _: {} };
       for (const option of options) {
         if (option === void 0) {
           continue;
@@ -24905,7 +24973,7 @@ var require_merge_options = __commonJS({
         if (!isOptionObject(option)) {
           throw new TypeError("`" + option + "` is not an Option Object");
         }
-        merged = merge(merged, {_: option}, config);
+        merged = merge(merged, { _: option }, config);
       }
       return merged._;
     };
@@ -24916,7 +24984,7 @@ var require_merge_options = __commonJS({
 var require_url = __commonJS({
   "node_modules/iso-url/src/url.js"(exports2, module2) {
     "use strict";
-    var {URL: URL2, URLSearchParams: URLSearchParams2, format} = require("url");
+    var { URL: URL2, URLSearchParams: URLSearchParams2, format } = require("url");
     var defaultBase = "http://localhost";
     var URLWithLegacySupport = class extends URL2 {
       constructor(url = "", base = defaultBase) {
@@ -24942,7 +25010,7 @@ var require_url = __commonJS({
 var require_relative = __commonJS({
   "node_modules/iso-url/src/relative.js"(exports2, module2) {
     "use strict";
-    var {URLWithLegacySupport, format} = require_url();
+    var { URLWithLegacySupport, format } = require_url();
     module2.exports = (url, location2 = {}, protocolMap = {}, defaultProtocol) => {
       let protocol = location2.protocol ? location2.protocol.replace(":", "") : "http";
       protocol = (protocolMap[protocol] || defaultProtocol || protocol) + ":";
@@ -24986,7 +25054,7 @@ var require_iso_url = __commonJS({
 var require_event_target_shim = __commonJS({
   "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var privateData = new WeakMap();
     var wrappers = new WeakMap();
     function pd(event) {
@@ -25021,7 +25089,7 @@ var require_event_target_shim = __commonJS({
         passiveListener: null,
         timeStamp: event.timeStamp || Date.now()
       });
-      Object.defineProperty(this, "isTrusted", {value: false, enumerable: true});
+      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
       const keys = Object.keys(event);
       for (let i = 0; i < keys.length; ++i) {
         const key = keys[i];
@@ -25162,7 +25230,7 @@ var require_event_target_shim = __commonJS({
         BaseEvent.call(this, eventTarget, event);
       }
       CustomEvent.prototype = Object.create(BaseEvent.prototype, {
-        constructor: {value: CustomEvent, configurable: true, writable: true}
+        constructor: { value: CustomEvent, configurable: true, writable: true }
       });
       for (let i = 0; i < keys.length; ++i) {
         const key = keys[i];
@@ -25430,7 +25498,7 @@ var require_event_target_shim = __commonJS({
 var require_abort_controller = __commonJS({
   "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var eventTargetShim = require_event_target_shim();
     var AbortSignal = class extends eventTargetShim.EventTarget {
       constructor() {
@@ -25457,11 +25525,11 @@ var require_abort_controller = __commonJS({
         return;
       }
       abortedFlags.set(signal, true);
-      signal.dispatchEvent({type: "abort"});
+      signal.dispatchEvent({ type: "abort" });
     }
     var abortedFlags = new WeakMap();
     Object.defineProperties(AbortSignal.prototype, {
-      aborted: {enumerable: true}
+      aborted: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
       Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
@@ -25489,8 +25557,8 @@ var require_abort_controller = __commonJS({
       return signal;
     }
     Object.defineProperties(AbortController.prototype, {
-      signal: {enumerable: true},
-      abort: {enumerable: true}
+      signal: { enumerable: true },
+      abort: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
       Object.defineProperty(AbortController.prototype, Symbol.toStringTag, {
@@ -25527,7 +25595,7 @@ var require_src11 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     function anySignal(signals) {
       const controller = new AbortController();
       function onAbort() {
@@ -25558,11 +25626,11 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var {fetch, Request, Headers} = require_fetch2();
-    var {TimeoutError: TimeoutError2, HTTPError} = require_error();
-    var merge = require_merge_options().bind({ignoreUndefined: true});
-    var {URL: URL2, URLSearchParams: URLSearchParams2} = require_iso_url();
-    var {AbortController} = require_src11();
+    var { fetch, Request, Headers } = require_fetch2();
+    var { TimeoutError: TimeoutError2, HTTPError } = require_error();
+    var merge = require_merge_options().bind({ ignoreUndefined: true });
+    var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
+    var { AbortController } = require_src11();
     var anySignal = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -25653,26 +25721,26 @@ var require_http = __commonJS({
         return response;
       }
       post(resource, options = {}) {
-        return this.fetch(resource, __spreadProps(__spreadValues({}, options), {method: "POST"}));
+        return this.fetch(resource, __spreadProps(__spreadValues({}, options), { method: "POST" }));
       }
       get(resource, options = {}) {
-        return this.fetch(resource, __spreadProps(__spreadValues({}, options), {method: "GET"}));
+        return this.fetch(resource, __spreadProps(__spreadValues({}, options), { method: "GET" }));
       }
       put(resource, options = {}) {
-        return this.fetch(resource, __spreadProps(__spreadValues({}, options), {method: "PUT"}));
+        return this.fetch(resource, __spreadProps(__spreadValues({}, options), { method: "PUT" }));
       }
       delete(resource, options = {}) {
-        return this.fetch(resource, __spreadProps(__spreadValues({}, options), {method: "DELETE"}));
+        return this.fetch(resource, __spreadProps(__spreadValues({}, options), { method: "DELETE" }));
       }
       options(resource, options = {}) {
-        return this.fetch(resource, __spreadProps(__spreadValues({}, options), {method: "OPTIONS"}));
+        return this.fetch(resource, __spreadProps(__spreadValues({}, options), { method: "OPTIONS" }));
       }
     };
     var ndjson = async function* (source) {
       const decoder = new TextDecoder();
       let buf = "";
       for await (const chunk of source) {
-        buf += decoder.decode(chunk, {stream: true});
+        buf += decoder.decode(chunk, { stream: true });
         const lines = buf.split(/\r?\n/);
         for (let i = 0; i < lines.length - 1; i++) {
           const l = lines[i].trim();
@@ -25700,7 +25768,7 @@ var require_http = __commonJS({
                 if (typeof iter.return === "function") {
                   return iter.return();
                 }
-                return Promise.resolve({done: true, value});
+                return Promise.resolve({ done: true, value });
               }
             };
           }
@@ -25711,7 +25779,7 @@ var require_http = __commonJS({
         return async function* () {
           try {
             while (true) {
-              const {done, value} = await reader.read();
+              const { done, value } = await reader.read();
               if (done)
                 return;
               if (value) {
@@ -25827,7 +25895,7 @@ var require_parse_duration = __commonJS({
 // node_modules/multiaddr-to-uri/index.js
 var require_multiaddr_to_uri = __commonJS({
   "node_modules/multiaddr-to-uri/index.js"(exports2, module2) {
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var reduceValue = (_, v) => v;
     var tcpUri = (str, port, parts, opts) => {
       if (opts && opts.assumeHttp === false)
@@ -25879,7 +25947,7 @@ var require_multiaddr_to_uri = __commonJS({
 var require_to_url_string = __commonJS({
   "node_modules/ipfs-core-utils/src/to-url-string.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var multiAddrToUri = require_multiaddr_to_uri();
     module2.exports = (url) => {
       try {
@@ -25896,9 +25964,9 @@ var require_to_url_string = __commonJS({
 var require_core = __commonJS({
   "node_modules/ipfs-http-client/src/lib/core.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
-    var {isBrowser, isWebWorker, isNode} = require_env();
-    var {default: parseDuration} = require_parse_duration();
+    var { Multiaddr } = require_src8();
+    var { isBrowser, isWebWorker, isNode } = require_env();
+    var { default: parseDuration } = require_parse_duration();
     var log = require_src()("ipfs-http-client:lib:error-handler");
     var HTTP = require_http();
     var merge = require_merge_options();
@@ -26117,7 +26185,7 @@ var require_it_all = __commonJS({
 var require_utils5 = __commonJS({
   "node_modules/ipfs-core-utils/src/files/normalise-input/utils.js"(exports2, module2) {
     "use strict";
-    var {Blob: Blob2} = globalThis;
+    var { Blob: Blob2 } = globalThis;
     function isBytes(obj) {
       return ArrayBuffer.isView(obj) || obj instanceof ArrayBuffer;
     }
@@ -26165,7 +26233,7 @@ var require_normalise_content_browser = __commonJS({
       }
       if (Symbol.iterator in input || Symbol.asyncIterator in input) {
         const peekable = itPeekable(input);
-        const {value, done} = await peekable.peek();
+        const { value, done } = await peekable.peek();
         if (done) {
           return itToBlob(peekable);
         }
@@ -26750,7 +26818,7 @@ var require_longbits = __commonJS({
       return this.lo + this.hi * 4294967296;
     };
     LongBits.prototype.toLong = function toLong(unsigned) {
-      return util.Long ? new util.Long(this.lo | 0, this.hi | 0, Boolean(unsigned)) : {low: this.lo | 0, high: this.hi | 0, unsigned: Boolean(unsigned)};
+      return util.Long ? new util.Long(this.lo | 0, this.hi | 0, Boolean(unsigned)) : { low: this.lo | 0, high: this.hi | 0, unsigned: Boolean(unsigned) };
     };
     var charCodeAt = String.prototype.charCodeAt;
     LongBits.fromHash = function fromHash(hash) {
@@ -26853,20 +26921,20 @@ var require_minimal = __commonJS({
       function CustomError(message, properties) {
         if (!(this instanceof CustomError))
           return new CustomError(message, properties);
-        Object.defineProperty(this, "message", {get: function() {
+        Object.defineProperty(this, "message", { get: function() {
           return message;
-        }});
+        } });
         if (Error.captureStackTrace)
           Error.captureStackTrace(this, CustomError);
         else
-          Object.defineProperty(this, "stack", {value: new Error().stack || ""});
+          Object.defineProperty(this, "stack", { value: new Error().stack || "" });
         if (properties)
           merge(this, properties);
       }
       (CustomError.prototype = Object.create(Error.prototype)).constructor = CustomError;
-      Object.defineProperty(CustomError.prototype, "name", {get: function() {
+      Object.defineProperty(CustomError.prototype, "name", { get: function() {
         return name;
-      }});
+      } });
       CustomError.prototype.toString = function toString() {
         return this.name + ": " + this.message;
       };
@@ -27603,7 +27671,7 @@ var require_unixfs = __commonJS({
           }
         }
         if (!m.hasOwnProperty("Type"))
-          throw $util.ProtocolError("missing required 'Type'", {instance: m});
+          throw $util.ProtocolError("missing required 'Type'", { instance: m });
         return m;
       };
       Data.fromObject = function fromObject(d) {
@@ -27824,7 +27892,7 @@ var require_unixfs = __commonJS({
           }
         }
         if (!m.hasOwnProperty("Seconds"))
-          throw $util.ProtocolError("missing required 'Seconds'", {instance: m});
+          throw $util.ProtocolError("missing required 'Seconds'", { instance: m });
         return m;
       };
       UnixTime.fromObject = function fromObject(d) {
@@ -28201,7 +28269,7 @@ var require_normalise_input = __commonJS({
       }
       if (Symbol.iterator in input || Symbol.asyncIterator in input) {
         const peekable = itPeekable(input);
-        const {value, done} = await peekable.peek();
+        const { value, done } = await peekable.peek();
         if (done) {
           yield* [];
           return;
@@ -28227,7 +28295,7 @@ var require_normalise_input = __commonJS({
       throw errCode(new Error("Unexpected input: " + typeof input), "ERR_UNEXPECTED_INPUT");
     };
     async function toFileObject(input, normaliseContent) {
-      const {path, mode, mtime, content} = input;
+      const { path, mode, mtime, content } = input;
       const file = {
         path: path || "",
         mode: parseMode(mode),
@@ -28280,7 +28348,7 @@ var require_multipart_request_browser = __commonJS({
       const formData = new FormData();
       let index = 0;
       let total = 0;
-      for await (const {content, path, mode, mtime} of normaliseInput(source)) {
+      for await (const { content, path, mode, mtime } of normaliseInput(source)) {
         let fileSuffix = "";
         const type = content ? "file" : "dir";
         if (index > 0) {
@@ -28292,7 +28360,7 @@ var require_multipart_request_browser = __commonJS({
           qs.push(`mode=${modeToString(mode)}`);
         }
         if (mtime != null) {
-          const {secs, nsecs} = mtime;
+          const { secs, nsecs } = mtime;
           qs.push(`mtime=${secs}`);
           if (nsecs != null) {
             qs.push(`mtime-nsecs=${nsecs}`);
@@ -28304,10 +28372,10 @@ var require_multipart_request_browser = __commonJS({
         if (content) {
           formData.set(fieldName, content, path != null ? encodeURIComponent(path) : void 0);
           const end = total + content.size;
-          parts.push({name: path, start: total, end});
+          parts.push({ name: path, start: total, end });
           total = end;
         } else if (path != null) {
-          formData.set(fieldName, new File([""], encodeURIComponent(path), {type: "application/x-directory"}));
+          formData.set(fieldName, new File([""], encodeURIComponent(path), { type: "application/x-directory" }));
         } else {
           throw new Error("path or content or both must be set");
         }
@@ -28373,7 +28441,7 @@ var require_normalise_content = __commonJS({
       }
       if (Symbol.iterator in input || Symbol.asyncIterator in input) {
         const peekable = itPeekable(input);
-        const {value, done} = await peekable.peek();
+        const { value, done } = await peekable.peek();
         if (done) {
           yield* [];
           return;
@@ -28423,7 +28491,7 @@ var require_normalise_input2 = __commonJS({
 var require_url_alphabet = __commonJS({
   "node_modules/nanoid/url-alphabet/index.cjs"(exports2, module2) {
     var urlAlphabet = "ModuleSymbhasOwnPr-0123456789ABCDEFGHNRVfgctiUvz_KqYTJkLxpZXIjQW";
-    module2.exports = {urlAlphabet};
+    module2.exports = { urlAlphabet };
   }
 });
 
@@ -28431,7 +28499,7 @@ var require_url_alphabet = __commonJS({
 var require_nanoid = __commonJS({
   "node_modules/nanoid/index.cjs"(exports2, module2) {
     var crypto2 = require("crypto");
-    var {urlAlphabet} = require_url_alphabet();
+    var { urlAlphabet } = require_url_alphabet();
     var POOL_SIZE_MULTIPLIER = 32;
     var pool;
     var poolOffset;
@@ -28473,7 +28541,7 @@ var require_nanoid = __commonJS({
       }
       return id;
     };
-    module2.exports = {nanoid, customAlphabet, customRandom, urlAlphabet, random};
+    module2.exports = { nanoid, customAlphabet, customRandom, urlAlphabet, random };
   }
 });
 
@@ -28482,15 +28550,15 @@ var require_multipart_request_node = __commonJS({
   "node_modules/ipfs-http-client/src/lib/multipart-request.node.js"(exports2, module2) {
     "use strict";
     var normaliseInput = require_normalise_input2();
-    var {nanoid} = require_nanoid();
+    var { nanoid } = require_nanoid();
     var modeToString = require_mode_to_string();
-    var merge = require_merge_options().bind({ignoreUndefined: true});
+    var merge = require_merge_options().bind({ ignoreUndefined: true });
     var toStream = require_src10();
     async function multipartRequest(source, abortController, headers = {}, boundary = `-----------------------------${nanoid()}`) {
       async function* streamFiles(source2) {
         try {
           let index = 0;
-          for await (const {content, path, mode, mtime} of normaliseInput(source2)) {
+          for await (const { content, path, mode, mtime } of normaliseInput(source2)) {
             let fileSuffix = "";
             const type = content ? "file" : "dir";
             if (index > 0) {
@@ -28503,7 +28571,7 @@ var require_multipart_request_node = __commonJS({
               qs.push(`mode=${modeToString(mode)}`);
             }
             if (mtime != null) {
-              const {secs, nsecs} = mtime;
+              const { secs, nsecs } = mtime;
               qs.push(`mtime=${secs}`);
               if (nsecs != null) {
                 qs.push(`mtime-nsecs=${nsecs}`);
@@ -28549,7 +28617,7 @@ var require_multipart_request_node = __commonJS({
 var require_multipart_request = __commonJS({
   "node_modules/ipfs-http-client/src/lib/multipart-request.js"(exports2, module2) {
     "use strict";
-    var {isElectronRenderer} = require_env();
+    var { isElectronRenderer } = require_env();
     if (isElectronRenderer) {
       module2.exports = require_multipart_request_browser();
     } else {
@@ -28563,9 +28631,9 @@ var require_to_url_search_params = __commonJS({
   "node_modules/ipfs-http-client/src/lib/to-url-search-params.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src12();
+    var { parseMtime } = require_src12();
     module2.exports = (_a = {}) => {
-      var _b = _a, {arg, searchParams, hashAlg, mtime, mode} = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
+      var _b = _a, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
       if (searchParams) {
         options = __spreadValues(__spreadValues({}, options), searchParams);
       }
@@ -28599,7 +28667,7 @@ var require_to_url_search_params = __commonJS({
 var require_abort_signal = __commonJS({
   "node_modules/ipfs-http-client/src/lib/abort-signal.js"(exports2, module2) {
     "use strict";
-    var {anySignal} = require_any_signal();
+    var { anySignal } = require_any_signal();
     function filter(signals) {
       return signals.filter(Boolean);
     }
@@ -28619,12 +28687,12 @@ var require_add_all = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
         const controller = new AbortController();
         const signal = abortSignal(controller.signal, options.signal);
-        const {headers, body, total, parts} = await multipartRequest(source, controller, options.headers);
+        const { headers, body, total, parts } = await multipartRequest(source, controller, options.headers);
         const [progressFn, onUploadProgress] = typeof options.progress === "function" ? createProgressHandler(total, parts, options.progress) : [void 0, void 0];
         const res = await api.post("add", {
           searchParams: toUrlSearchParams(__spreadProps(__spreadValues({
@@ -28653,10 +28721,10 @@ var require_add_all = __commonJS({
     var createOnUploadProgress = (size, parts, progress) => {
       let index = 0;
       const count = parts.length;
-      return ({loaded, total}) => {
+      return ({ loaded, total }) => {
         const position = Math.floor(loaded / total * size);
         while (index < count) {
-          const {start, end, name} = parts[index];
+          const { start, end, name } = parts[index];
           if (position < end) {
             progress(position - start, name);
             break;
@@ -28667,7 +28735,7 @@ var require_add_all = __commonJS({
         }
       };
     };
-    function toCoreInterface({name, hash, size, mode, mtime, mtimeNsecs}) {
+    function toCoreInterface({ name, hash, size, mode, mtime, mtimeNsecs }) {
       const output = {
         path: name,
         cid: new CID3(hash),
@@ -28917,9 +28985,9 @@ var require_src13 = __commonJS({
   "node_modules/ipld-block/src/index.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {version} = require_package();
+    var { version } = require_package();
     var blockSymbol = Symbol.for("@ipld/js-ipld-block/block");
-    var readonly = {writable: false, configurable: false, enumerable: true};
+    var readonly = { writable: false, configurable: false, enumerable: true };
     var Block = class {
       constructor(data, cid) {
         if (!data || !(data instanceof Uint8Array)) {
@@ -29016,7 +29084,7 @@ var require_stat3 = __commonJS({
           headers: options.headers
         });
         const data = await res.json();
-        return {cid: new CID3(data.Key), size: data.Size};
+        return { cid: new CID3(data.Key), size: data.Size };
       }
       return stat;
     });
@@ -29034,11 +29102,11 @@ var require_put = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function put(data, options = {}) {
         if (Block.isBlock(data)) {
-          const {name, length} = multihash.decode(data.cid.multihash);
+          const { name, length } = multihash.decode(data.cid.multihash);
           options = __spreadProps(__spreadValues({}, options), {
             format: data.cid.codec,
             mhtype: name,
@@ -29048,7 +29116,7 @@ var require_put = __commonJS({
           data = data.data;
         } else if (options.cid) {
           const cid = new CID3(options.cid);
-          const {name, length} = multihash.decode(cid.multihash);
+          const { name, length } = multihash.decode(cid.multihash);
           options = __spreadProps(__spreadValues({}, options), {
             format: cid.codec,
             mhtype: name,
@@ -29069,9 +29137,9 @@ var require_put = __commonJS({
           res = await response.json();
         } catch (err) {
           if (options.format === "dag-pb") {
-            return put(data, __spreadProps(__spreadValues({}, options), {format: "protobuf"}));
+            return put(data, __spreadProps(__spreadValues({}, options), { format: "protobuf" }));
           } else if (options.format === "dag-cbor") {
-            return put(data, __spreadProps(__spreadValues({}, options), {format: "cbor"}));
+            return put(data, __spreadProps(__spreadValues({}, options), { format: "cbor" }));
           }
           throw err;
         }
@@ -29140,7 +29208,7 @@ var require_add3 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     module2.exports = configure((api) => {
       async function add(addr, options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -29151,8 +29219,8 @@ var require_add3 = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Peers} = await res.json();
-        return {Peers: Peers.map((ma) => new Multiaddr(ma))};
+        const { Peers } = await res.json();
+        return { Peers: Peers.map((ma) => new Multiaddr(ma)) };
       }
       return add;
     });
@@ -29165,7 +29233,7 @@ var require_clear = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     module2.exports = configure((api) => {
       async function clear(options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -29176,8 +29244,8 @@ var require_clear = __commonJS({
           })),
           headers: options.headers
         });
-        const {Peers} = await res.json();
-        return {Peers: Peers.map((ma) => new Multiaddr(ma))};
+        const { Peers } = await res.json();
+        return { Peers: Peers.map((ma) => new Multiaddr(ma)) };
       }
       return clear;
     });
@@ -29190,7 +29258,7 @@ var require_rm2 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     module2.exports = configure((api) => {
       async function rm(addr, options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -29201,8 +29269,8 @@ var require_rm2 = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Peers} = await res.json();
-        return {Peers: Peers.map((ma) => new Multiaddr(ma))};
+        const { Peers } = await res.json();
+        return { Peers: Peers.map((ma) => new Multiaddr(ma)) };
       }
       return rm;
     });
@@ -29215,7 +29283,7 @@ var require_reset = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     module2.exports = configure((api) => {
       async function reset(options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -29226,8 +29294,8 @@ var require_reset = __commonJS({
           })),
           headers: options.headers
         });
-        const {Peers} = await res.json();
-        return {Peers: Peers.map((ma) => new Multiaddr(ma))};
+        const { Peers } = await res.json();
+        return { Peers: Peers.map((ma) => new Multiaddr(ma)) };
       }
       return reset;
     });
@@ -29240,7 +29308,7 @@ var require_list = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     module2.exports = configure((api) => {
       async function list(options = {}) {
         const res = await api.post("bootstrap/list", {
@@ -29249,8 +29317,8 @@ var require_list = __commonJS({
           searchParams: toUrlSearchParams(options),
           headers: options.headers
         });
-        const {Peers} = await res.json();
-        return {Peers: Peers.map((ma) => new Multiaddr(ma))};
+        const { Peers } = await res.json();
+        return { Peers: Peers.map((ma) => new Multiaddr(ma)) };
       }
       return list;
     });
@@ -29390,11 +29458,11 @@ var require_set2 = __commonJS({
     var encodeParam = (key, value) => {
       switch (typeof value) {
         case "boolean":
-          return {arg: [key, value.toString()], bool: true};
+          return { arg: [key, value.toString()], bool: true };
         case "string":
-          return {arg: [key, value]};
+          return { arg: [key, value] };
         default:
-          return {arg: [key, JSON.stringify(value)], json: true};
+          return { arg: [key, JSON.stringify(value)], json: true };
       }
     };
   }
@@ -29409,7 +29477,7 @@ var require_replace2 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       const replace = async (config, options = {}) => {
         const controller = new AbortController();
@@ -29735,7 +29803,7 @@ var require_dagLink = __commonJS({
         this.Tsize = size;
         this.Hash = new CID3(cid);
         Object.defineProperties(this, {
-          _nameBuf: {value: null, writable: true, enumerable: false}
+          _nameBuf: { value: null, writable: true, enumerable: false }
         });
       }
       toString() {
@@ -30122,11 +30190,11 @@ var require_sha3 = __commonJS({
         return createOutputMethods(method, createKmacOutputMethod, bits2, padding);
       };
       var algorithms = [
-        {name: "keccak", padding: KECCAK_PADDING, bits: BITS, createMethod},
-        {name: "sha3", padding: PADDING, bits: BITS, createMethod},
-        {name: "shake", padding: SHAKE_PADDING, bits: SHAKE_BITS, createMethod: createShakeMethod},
-        {name: "cshake", padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createCshakeMethod},
-        {name: "kmac", padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createKmacMethod}
+        { name: "keccak", padding: KECCAK_PADDING, bits: BITS, createMethod },
+        { name: "sha3", padding: PADDING, bits: BITS, createMethod },
+        { name: "shake", padding: SHAKE_PADDING, bits: SHAKE_BITS, createMethod: createShakeMethod },
+        { name: "cshake", padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createCshakeMethod },
+        { name: "kmac", padding: CSHAKE_PADDING, bits: SHAKE_BITS, createMethod: createKmacMethod }
       ];
       var methods = {}, methodNames = [];
       for (var i = 0; i < algorithms.length; ++i) {
@@ -31831,8 +31899,8 @@ var require_crypto = __commonJS({
     "use strict";
     var sha3 = require_sha3();
     var mur = require_murmurhash3js_revisited();
-    var {factory: sha} = require_sha();
-    var {fromNumberTo32BitBuf} = require_utils6();
+    var { factory: sha } = require_sha();
+    var { fromNumberTo32BitBuf } = require_utils6();
     var uint8ArrayFromString = require_from_string();
     var hash = (algorithm) => async (data) => {
       switch (algorithm) {
@@ -31952,7 +32020,7 @@ var require_genCid = __commonJS({
     var CID3 = require_src7();
     var multicodec = require_src6();
     var multihashing = require_src14();
-    var {multihash} = multihashing;
+    var { multihash } = multihashing;
     var codec = multicodec.DAG_PB;
     var defaultHashAlg = multihash.names["sha2-256"];
     var cid = async (binaryBlob, userOptions = {}) => {
@@ -32053,8 +32121,8 @@ var require_dagNode = __commonJS({
     "use strict";
     var sortLinks = require_sortLinks();
     var DAGLink = require_dagLink();
-    var {createDagLinkFromB58EncodedHash} = require_util3();
-    var {serializeDAGNode} = require_serialize();
+    var { createDagLinkFromB58EncodedHash } = require_util3();
+    var { serializeDAGNode } = require_serialize();
     var toDAGLink = require_toDagLink();
     var addLink = require_addLink();
     var rmLink = require_rmLink();
@@ -32081,8 +32149,8 @@ var require_dagNode = __commonJS({
         this.Data = data;
         this.Links = sortedLinks;
         Object.defineProperties(this, {
-          _serializedSize: {value: serializedSize, writable: true, enumerable: false},
-          _size: {value: null, writable: true, enumerable: false}
+          _serializedSize: { value: serializedSize, writable: true, enumerable: false },
+          _size: { value: null, writable: true, enumerable: false }
         });
       }
       toJSON() {
@@ -32146,7 +32214,7 @@ var require_util5 = __commonJS({
     } = require_dag();
     var DAGLink = require_dagLink();
     var DAGNode = require_dagNode();
-    var {serializeDAGNode, serializeDAGNodeLike} = require_serialize();
+    var { serializeDAGNode, serializeDAGNodeLike } = require_serialize();
     var genCid = require_genCid();
     var cid = (binaryBlob, userOptions) => {
       return genCid.cid(binaryBlob, userOptions);
@@ -32341,7 +32409,7 @@ var require_bignumber = __commonJS({
       "use strict";
       var BigNumber, isNumeric = /^-?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i, mathceil = Math.ceil, mathfloor = Math.floor, bignumberError = "[BigNumber Error] ", tooManyDigits = bignumberError + "Number primitive has more than 15 significant digits: ", BASE = 1e14, LOG_BASE = 14, MAX_SAFE_INTEGER = 9007199254740991, POWS_TEN = [1, 10, 100, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9, 1e10, 1e11, 1e12, 1e13], SQRT_BASE = 1e7, MAX = 1e9;
       function clone(configObject) {
-        var div, convertBase, parseNumeric, P = BigNumber2.prototype = {constructor: BigNumber2, toString: null, valueOf: null}, ONE = new BigNumber2(1), DECIMAL_PLACES = 20, ROUNDING_MODE = 4, TO_EXP_NEG = -7, TO_EXP_POS = 21, MIN_EXP = -1e7, MAX_EXP = 1e7, CRYPTO = false, MODULO_MODE = 1, POW_PRECISION = 0, FORMAT = {
+        var div, convertBase, parseNumeric, P = BigNumber2.prototype = { constructor: BigNumber2, toString: null, valueOf: null }, ONE = new BigNumber2(1), DECIMAL_PLACES = 20, ROUNDING_MODE = 4, TO_EXP_NEG = -7, TO_EXP_POS = 21, MIN_EXP = -1e7, MAX_EXP = 1e7, CRYPTO = false, MODULO_MODE = 1, POW_PRECISION = 0, FORMAT = {
           prefix: "",
           groupSize: 3,
           secondaryGroupSize: 0,
@@ -34727,7 +34795,7 @@ var require_constants6 = __commonJS({
 var require_utils7 = __commonJS({
   "node_modules/borc/src/utils.js"(exports2) {
     "use strict";
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var Bignumber = require_bignumber().BigNumber;
     var constants = require_constants6();
     var SHIFT32 = constants.SHIFT32;
@@ -34945,7 +35013,7 @@ var require_tagged = __commonJS({
 var require_decoder = __commonJS({
   "node_modules/borc/src/decoder.js"(exports2, module2) {
     "use strict";
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var ieee754 = require_ieee754();
     var Bignumber = require_bignumber().BigNumber;
     var parser = require_decoder_asm();
@@ -34953,7 +35021,7 @@ var require_decoder = __commonJS({
     var c = require_constants6();
     var Simple = require_simple();
     var Tagged = require_tagged();
-    var {URL: URL2} = require_iso_url();
+    var { URL: URL2 } = require_iso_url();
     var Decoder = class {
       constructor(opts) {
         opts = opts || {};
@@ -35402,14 +35470,14 @@ var require_decoder = __commonJS({
         if (typeof input === "string") {
           input = Buffer2.from(input, enc || "hex");
         }
-        const dec = new Decoder({size: input.length});
+        const dec = new Decoder({ size: input.length });
         return dec.decodeFirst(input);
       }
       static decodeAll(input, enc) {
         if (typeof input === "string") {
           input = Buffer2.from(input, enc || "hex");
         }
-        const dec = new Decoder({size: input.length});
+        const dec = new Decoder({ size: input.length });
         return dec.decodeAll(input);
       }
     };
@@ -35422,7 +35490,7 @@ var require_decoder = __commonJS({
 var require_diagnose = __commonJS({
   "node_modules/borc/src/diagnose.js"(exports2, module2) {
     "use strict";
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var Decoder = require_decoder();
     var utils = require_utils7();
     var Diagnose = class extends Decoder {
@@ -35555,8 +35623,8 @@ var require_diagnose = __commonJS({
 var require_encoder = __commonJS({
   "node_modules/borc/src/encoder.js"(exports2, module2) {
     "use strict";
-    var {Buffer: Buffer2} = require("buffer");
-    var {URL: URL2} = require_iso_url();
+    var { Buffer: Buffer2 } = require("buffer");
+    var { URL: URL2 } = require_iso_url();
     var Bignumber = require_bignumber().BigNumber;
     var utils = require_utils7();
     var constants = require_constants6();
@@ -36023,7 +36091,7 @@ var require_util6 = __commonJS({
     var cbor = require_src16();
     var multicodec = require_src6();
     var multihashing = require_src14();
-    var {multihash} = multihashing;
+    var { multihash } = multihashing;
     var CID3 = require_src7();
     var isCircular = require_is_circular();
     var uint8ArrayConcat = require_concat3();
@@ -36124,7 +36192,7 @@ var require_util6 = __commonJS({
     }
     function deserialize(data) {
       if (data.length > currentSize && data.length <= maxSize) {
-        configureDecoder({size: data.length});
+        configureDecoder({ size: data.length });
       }
       if (data.length > currentSize) {
         throw new Error("Data is too large to deserialize with current decoder");
@@ -36223,7 +36291,7 @@ var require_src18 = __commonJS({
     "use strict";
     var CID3 = require_src7();
     var multihashing = require_src14();
-    var {multihash} = multihashing;
+    var { multihash } = multihashing;
     var multicodec = require_src6();
     module2.exports = {
       codec: multicodec.RAW,
@@ -36275,7 +36343,7 @@ var require_ipld_formats = __commonJS({
     var noop = (codec) => {
       return Promise.reject(new Error(`Missing IPLD format "${codec}"`));
     };
-    module2.exports = ({formats = [], loadFormat = noop} = {}) => {
+    module2.exports = ({ formats = [], loadFormat = noop } = {}) => {
       formats = formats || [];
       loadFormat = loadFormat || noop;
       const configuredFormats = {
@@ -36290,7 +36358,7 @@ var require_ipld_formats = __commonJS({
         const number = multicodec.getCodeFromName(codec);
         const format = configuredFormats[number] || await loadFormat(codec);
         if (!format) {
-          throw Object.assign(new Error(`Missing IPLD format "${codec}"`), {missingMulticodec: codec});
+          throw Object.assign(new Error(`Missing IPLD format "${codec}"`), { missingMulticodec: codec });
         }
         return format;
       };
@@ -36317,7 +36385,7 @@ var require_resolve = __commonJS({
           headers: options.headers
         });
         const data = await res.json();
-        return {cid: new CID3(data.Cid["/"]), remainderPath: data.RemPath};
+        return { cid: new CID3(data.Cid["/"]), remainderPath: data.RemPath };
       };
       return resolve;
     });
@@ -36360,7 +36428,7 @@ var require_put2 = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     var multicodec = require_src6();
     var loadFormat = require_ipld_formats();
     module2.exports = configure((api, opts) => {
@@ -36454,7 +36522,7 @@ var require_get4 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Value} = require_response_types();
+    var { Value } = require_response_types();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     module2.exports = configure((api) => {
@@ -36484,13 +36552,13 @@ var require_put3 = __commonJS({
   "node_modules/ipfs-http-client/src/dht/put.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function* put(key, value, options = {}) {
         const controller = new AbortController();
@@ -36506,7 +36574,7 @@ var require_put3 = __commonJS({
           message = toCamel(message);
           message.id = new CID3(message.id);
           if (message.responses) {
-            message.responses = message.responses.map(({ID, Addrs}) => ({
+            message.responses = message.responses.map(({ ID, Addrs }) => ({
               id: ID,
               addrs: (Addrs || []).map((a) => new Multiaddr(a))
             }));
@@ -36524,10 +36592,10 @@ var require_find_provs = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-provs.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Provider} = require_response_types();
+    var { Provider } = require_response_types();
     module2.exports = configure((api) => {
       async function* findProvs(cid, options = {}) {
         const res = await api.post("dht/findprovs", {
@@ -36540,7 +36608,7 @@ var require_find_provs = __commonJS({
         });
         for await (const message of res.ndjson()) {
           if (message.Type === Provider && message.Responses) {
-            for (const {ID, Addrs} of message.Responses) {
+            for (const { ID, Addrs } of message.Responses) {
               yield {
                 id: ID,
                 addrs: (Addrs || []).map((a) => new Multiaddr(a))
@@ -36558,10 +36626,10 @@ var require_find_provs = __commonJS({
 var require_find_peer = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-peer.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {FinalPeer} = require_response_types();
+    var { FinalPeer } = require_response_types();
     module2.exports = configure((api) => {
       async function findPeer(peerId, options = {}) {
         const res = await api.post("dht/findpeer", {
@@ -36574,7 +36642,7 @@ var require_find_peer = __commonJS({
         });
         for await (const data of res.ndjson()) {
           if (data.Type === FinalPeer && data.Responses) {
-            const {ID, Addrs} = data.Responses[0];
+            const { ID, Addrs } = data.Responses[0];
             return {
               id: ID,
               addrs: (Addrs || []).map((a) => new Multiaddr(a))
@@ -36593,12 +36661,12 @@ var require_provide = __commonJS({
   "node_modules/ipfs-http-client/src/dht/provide.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      async function* provide(cids, options = {recursive: false}) {
+      async function* provide(cids, options = { recursive: false }) {
         cids = Array.isArray(cids) ? cids : [cids];
         const res = await api.post("dht/provide", {
           timeout: options.timeout,
@@ -36612,7 +36680,7 @@ var require_provide = __commonJS({
           message = toCamel(message);
           message.id = new CID3(message.id);
           if (message.responses) {
-            message.responses = message.responses.map(({ID, Addrs}) => ({
+            message.responses = message.responses.map(({ ID, Addrs }) => ({
               id: ID,
               addrs: (Addrs || []).map((a) => new Multiaddr(a))
             }));
@@ -36632,7 +36700,7 @@ var require_query = __commonJS({
   "node_modules/ipfs-http-client/src/dht/query.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -36649,7 +36717,7 @@ var require_query = __commonJS({
         for await (let message of res.ndjson()) {
           message = toCamel(message);
           message.id = new CID3(message.id);
-          message.responses = (message.responses || []).map(({ID, Addrs}) => ({
+          message.responses = (message.responses || []).map(({ ID, Addrs }) => ({
             id: ID,
             addrs: (Addrs || []).map((a) => new Multiaddr(a))
           }));
@@ -36985,7 +37053,7 @@ var require_source = __commonJS({
           const reader = readable.getReader();
           try {
             while (true) {
-              const {done, value} = await reader.read();
+              const { done, value } = await reader.read();
               if (done)
                 return;
               yield value;
@@ -37112,12 +37180,12 @@ var require_write = __commonJS({
   "node_modules/ipfs-http-client/src/files/write.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src12();
+    var { parseMtime } = require_src12();
     var configure = require_configure();
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function write(path, input, options = {}) {
         const controller = new AbortController();
@@ -37167,7 +37235,7 @@ var require_files = __commonJS({
 var require_BufferList = __commonJS({
   "node_modules/bl/BufferList.js"(exports2, module2) {
     "use strict";
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var symbol = Symbol.for("BufferList");
     function BufferList(buf) {
       if (!(this instanceof BufferList)) {
@@ -37176,7 +37244,7 @@ var require_BufferList = __commonJS({
       BufferList._init.call(this, buf);
     }
     BufferList._init = function _init(buf) {
-      Object.defineProperty(this, symbol, {value: true});
+      Object.defineProperty(this, symbol, { value: true });
       this._bufs = [];
       this.length = 0;
       if (buf) {
@@ -37470,7 +37538,7 @@ var require_BufferList = __commonJS({
 // node_modules/it-tar/extract-headers.js
 var require_extract_headers = __commonJS({
   "node_modules/it-tar/extract-headers.js"(exports2) {
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var BufferList = require_BufferList();
     var ZERO_OFFSET = "0".charCodeAt(0);
     var USTAR_MAGIC = Buffer2.from("ustar\0", "binary");
@@ -37683,7 +37751,7 @@ var require_it_reader = __commonJS({
           }
         }
         if (bytes) {
-          throw Object.assign(new Error(`stream ended before ${bytes} bytes became available`), {code: "ERR_UNDER_READ", buffer: bl});
+          throw Object.assign(new Error(`stream ended before ${bytes} bytes became available`), { code: "ERR_UNDER_READ", buffer: bl });
         }
       }();
       reader.next();
@@ -37712,30 +37780,30 @@ var require_lte_reader = __commonJS({
               value = overflow.shallowSlice(0, bytes);
               overflow = overflow.shallowSlice(bytes);
             } else if (overflow.length < bytes) {
-              const {value: nextValue, done} = await reader.next(bytes - overflow.length);
+              const { value: nextValue, done } = await reader.next(bytes - overflow.length);
               if (done) {
-                throw Object.assign(new Error(`stream ended before ${bytes - overflow.length} bytes became available`), {code: "ERR_UNDER_READ"});
+                throw Object.assign(new Error(`stream ended before ${bytes - overflow.length} bytes became available`), { code: "ERR_UNDER_READ" });
               }
               value = new BufferList([overflow, nextValue]);
               overflow = null;
             }
-            return {value};
+            return { value };
           }
           return reader.next(bytes);
         },
         async nextLte(bytes) {
-          let {done, value} = await lteReader.next();
+          let { done, value } = await lteReader.next();
           if (done)
-            return {done};
+            return { done };
           if (value.length <= bytes)
-            return {value};
+            return { value };
           value = BufferList.isBufferList(value) ? value : new BufferList(value);
           if (overflow) {
             overflow.append(value.shallowSlice(bytes));
           } else {
             overflow = value.shallowSlice(bytes);
           }
-          return {value: value.shallowSlice(0, bytes)};
+          return { value: value.shallowSlice(0, bytes) };
         },
         return() {
           return reader.return();
@@ -37771,7 +37839,7 @@ var require_extract = __commonJS({
           while (true) {
             let headerBytes;
             try {
-              const {done, value} = await reader.next(512);
+              const { done, value } = await reader.next(512);
               if (done)
                 return;
               headerBytes = value;
@@ -37784,7 +37852,7 @@ var require_extract = __commonJS({
             if (!header)
               continue;
             if (header.type === "gnu-long-path") {
-              const {done, value: gnuLongPathBytes} = await reader.next(header.size);
+              const { done, value: gnuLongPathBytes } = await reader.next(header.size);
               if (done)
                 return;
               gnuLongPath = Headers.decodeLongPath(gnuLongPathBytes, options.filenameEncoding);
@@ -37792,7 +37860,7 @@ var require_extract = __commonJS({
               continue;
             }
             if (header.type === "gnu-long-link-path") {
-              const {done, value: gnuLongLinkPathBytes} = await reader.next(header.size);
+              const { done, value: gnuLongLinkPathBytes } = await reader.next(header.size);
               if (done)
                 return;
               gnuLongLinkPath = Headers.decodeLongPath(gnuLongLinkPathBytes, options.filenameEncoding);
@@ -37800,7 +37868,7 @@ var require_extract = __commonJS({
               continue;
             }
             if (header.type === "pax-global-header") {
-              const {done, value: paxGlobalBytes} = await reader.next(header.size);
+              const { done, value: paxGlobalBytes } = await reader.next(header.size);
               if (done)
                 return;
               paxGlobal = Headers.decodePax(paxGlobalBytes, options.filenameEncoding);
@@ -37808,7 +37876,7 @@ var require_extract = __commonJS({
               continue;
             }
             if (header.type === "pax-header") {
-              const {done, value: paxBytes} = await reader.next(header.size);
+              const { done, value: paxBytes } = await reader.next(header.size);
               if (done)
                 return;
               pax = Headers.decodePax(paxBytes, options.filenameEncoding);
@@ -37836,8 +37904,8 @@ var require_extract = __commonJS({
               pax = null;
             }
             if (!header.size || header.type === "directory") {
-              yield {header, body: async function* () {
-              }()};
+              yield { header, body: async function* () {
+              }() };
               continue;
             }
             let bytesRemaining = header.size;
@@ -37850,7 +37918,7 @@ var require_extract = __commonJS({
               try {
                 yield firstChunk.value;
                 while (bytesRemaining) {
-                  const {done, value} = await reader.nextLte(bytesRemaining);
+                  const { done, value } = await reader.nextLte(bytesRemaining);
                   if (done) {
                     bytesRemaining = 0;
                     return;
@@ -37862,7 +37930,7 @@ var require_extract = __commonJS({
                 bodyConsumed.resolve();
               }
             }();
-            yield {header, body};
+            yield { header, body };
             await bodyConsumed.promise;
             if (bytesRemaining) {
               for await (const _ of body) {
@@ -37919,7 +37987,7 @@ var require_it_concat = __commonJS({
 // node_modules/it-tar/pack-headers.js
 var require_pack_headers = __commonJS({
   "node_modules/it-tar/pack-headers.js"(exports2) {
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var alloc = Buffer2.alloc;
     var ZEROS = "0000000000000000000";
     var SEVENS = "7777777777777777777";
@@ -38035,9 +38103,9 @@ var require_pack_headers = __commonJS({
 // node_modules/it-tar/pack.js
 var require_pack = __commonJS({
   "node_modules/it-tar/pack.js"(exports2, module2) {
-    var {Buffer: Buffer2} = require("buffer");
+    var { Buffer: Buffer2 } = require("buffer");
     var BufferList = require_BufferList();
-    var {S_IFMT, S_IFBLK, S_IFCHR, S_IFDIR, S_IFIFO, S_IFLNK} = require_iso_constants();
+    var { S_IFMT, S_IFBLK, S_IFCHR, S_IFDIR, S_IFIFO, S_IFLNK } = require_iso_constants();
     var concat = require_it_concat();
     var Headers = require_pack_headers();
     var DMODE = parseInt("755", 8);
@@ -38095,11 +38163,11 @@ var require_pack = __commonJS({
         Headers.encode(newHeader),
         paxHeader,
         getPadding(paxHeader.length),
-        Headers.encode(__spreadProps(__spreadValues({}, newHeader), {size: header.size, type: header.type}))
+        Headers.encode(__spreadProps(__spreadValues({}, newHeader), { size: header.size, type: header.type }))
       ]);
     }
     module2.exports = () => async function* (source) {
-      for await (let {header, body} of source) {
+      for await (let { header, body } of source) {
         if (!header.size || header.type === "symlink")
           header.size = 0;
         if (!header.type)
@@ -38173,7 +38241,7 @@ var require_get5 = __commonJS({
           headers: options.headers
         });
         const extractor = Tar.extract();
-        for await (const {header, body} of extractor(res.iterator())) {
+        for await (const { header, body } of extractor(res.iterator())) {
           if (header.type === "directory") {
             yield {
               type: "dir",
@@ -38218,7 +38286,7 @@ var require_id = __commonJS({
   "node_modules/ipfs-http-client/src/id.js"(exports2, module2) {
     "use strict";
     var toCamel = require_object_to_camel();
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -38226,7 +38294,9 @@ var require_id = __commonJS({
         const res = await api.post("id", {
           timeout: options.timeout,
           signal: options.signal,
-          searchParams: toUrlSearchParams(options),
+          searchParams: toUrlSearchParams(__spreadValues({
+            arg: options.peerId ? options.peerId.toString() : void 0
+          }, options)),
           headers: options.headers
         });
         const data = await res.json();
@@ -38265,7 +38335,7 @@ var require_gen = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      async function gen(name, options = {type: "rsa", size: 2048}) {
+      async function gen(name, options = { type: "rsa", size: 2048 }) {
         const res = await api.post("key/gen", {
           timeout: options.timeout,
           signal: options.signal,
@@ -38787,7 +38857,7 @@ var require_get6 = __commonJS({
   "node_modules/ipfs-http-client/src/object/get.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGNode, DAGLink} = require_src15();
+    var { DAGNode, DAGLink } = require_src15();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var uint8ArrayFromString = require_from_string();
@@ -38815,7 +38885,7 @@ var require_links = __commonJS({
   "node_modules/ipfs-http-client/src/object/links.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGLink} = require_src15();
+    var { DAGLink } = require_src15();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -38853,7 +38923,7 @@ var require_new = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Hash} = await res.json();
+        const { Hash } = await res.json();
         return new CID3(Hash);
       }
       return newObject;
@@ -38882,7 +38952,7 @@ var require_add_link = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Hash} = await res.json();
+        const { Hash } = await res.json();
         return new CID3(Hash);
       }
       return addLink;
@@ -38899,7 +38969,7 @@ var require_append_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function appendData(cid, data, options = {}) {
         const controller = new AbortController();
@@ -38911,7 +38981,7 @@ var require_append_data = __commonJS({
             arg: `${cid instanceof Uint8Array ? new CID3(cid) : cid}`
           }, options))
         }, await multipartRequest(data, controller, options.headers)));
-        const {Hash} = await res.json();
+        const { Hash } = await res.json();
         return new CID3(Hash);
       }
       return appendData;
@@ -38939,7 +39009,7 @@ var require_rm_link = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Hash} = await res.json();
+        const { Hash } = await res.json();
         return new CID3(Hash);
       }
       return rmLink;
@@ -38956,12 +39026,12 @@ var require_set_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function setData(cid, data, options = {}) {
         const controller = new AbortController();
         const signal = abortSignal(controller.signal, options.signal);
-        const {Hash} = await (await api.post("object/patch/set-data", __spreadValues({
+        const { Hash } = await (await api.post("object/patch/set-data", __spreadValues({
           timeout: options.timeout,
           signal,
           searchParams: toUrlSearchParams(__spreadValues({
@@ -38995,12 +39065,12 @@ var require_put4 = __commonJS({
   "node_modules/ipfs-http-client/src/object/put.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGNode} = require_src15();
+    var { DAGNode } = require_src15();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     module2.exports = configure((api) => {
@@ -39049,7 +39119,7 @@ var require_put4 = __commonJS({
           signal,
           searchParams: toUrlSearchParams(options)
         }, await multipartRequest(buf, controller, options.headers)));
-        const {Hash} = await res.json();
+        const { Hash } = await res.json();
         return new CID3(Hash);
       }
       return put;
@@ -39118,12 +39188,12 @@ var require_service2 = __commonJS({
         return __spreadValues({
           service: json.Service,
           endpoint: new URL(json.ApiEndpoint)
-        }, json.Stat && {stat: Service.decodeStat(json.Stat)});
+        }, json.Stat && { stat: Service.decodeStat(json.Stat) });
       }
       static decodeStat(json) {
         switch (json.Status) {
           case "valid": {
-            const {Pinning, Pinned, Queued, Failed} = json.PinCount;
+            const { Pinning, Pinned, Queued, Failed } = json.PinCount;
             return {
               status: "valid",
               pinCount: {
@@ -39135,16 +39205,16 @@ var require_service2 = __commonJS({
             };
           }
           case "invalid": {
-            return {status: "invalid"};
+            return { status: "invalid" };
           }
           default: {
-            return {status: json.Status};
+            return { status: json.Status };
           }
         }
       }
     };
     Service.prototype.add = async function add(name, options) {
-      const {endpoint, key, headers, timeout, signal} = options;
+      const { endpoint, key, headers, timeout, signal } = options;
       await this.client.post("pin/remote/service/add", {
         timeout,
         signal,
@@ -39165,14 +39235,14 @@ var require_service2 = __commonJS({
       });
     };
     Service.prototype.ls = async function ls(options = {}) {
-      const {stat, headers, timeout, signal} = options;
+      const { stat, headers, timeout, signal } = options;
       const response = await this.client.post("pin/remote/service/ls", {
         timeout,
         signal,
         headers,
-        searchParams: stat === true ? toUrlSearchParams({stat}) : void 0
+        searchParams: stat === true ? toUrlSearchParams({ stat }) : void 0
       });
-      const {RemoteServices} = await response.json();
+      const { RemoteServices } = await response.json();
       return RemoteServices.map(Service.decodeRemoteService);
     };
     module2.exports = Service;
@@ -39194,17 +39264,17 @@ var require_remote = __commonJS({
       }
     };
     Remote.prototype.add = async function add(cid, _a) {
-      var _b = _a, {timeout, signal, headers} = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+      var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
       const response = await this.client.post("pin/remote/add", {
         timeout,
         signal,
         headers,
-        searchParams: encodeAddParams(__spreadValues({cid}, query))
+        searchParams: encodeAddParams(__spreadValues({ cid }, query))
       });
       return decodePin(await response.json());
     };
     Remote.prototype.ls = async function* ls(_a) {
-      var _b = _a, {timeout, signal, headers} = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+      var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
       const response = await this.client.post("pin/remote/ls", {
         timeout,
         signal,
@@ -39216,7 +39286,7 @@ var require_remote = __commonJS({
       }
     };
     Remote.prototype.rm = async function rm(_a) {
-      var _b = _a, {timeout, signal, headers} = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+      var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
       await this.client.post("pin/remote/rm", {
         timeout,
         signal,
@@ -39227,7 +39297,7 @@ var require_remote = __commonJS({
       });
     };
     Remote.prototype.rmAll = async function(_a) {
-      var _b = _a, {timeout, signal, headers} = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+      var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
       await this.client.post("pin/remote/rm", {
         timeout,
         signal,
@@ -39237,7 +39307,7 @@ var require_remote = __commonJS({
         }))
       });
     };
-    var decodePin = ({Name: name, Status: status, Cid: cid}) => {
+    var decodePin = ({ Name: name, Status: status, Cid: cid }) => {
       return {
         cid: new CID3(cid),
         name,
@@ -39258,7 +39328,7 @@ var require_remote = __commonJS({
         throw new TypeError(`CID instance expected instead of ${cid}`);
       }
     };
-    var encodeQuery = ({service, cid, name, status, all: all2}) => {
+    var encodeQuery = ({ service, cid, name, status, all: all2 }) => {
       const query = toUrlSearchParams({
         service: encodeService(service),
         name,
@@ -39276,7 +39346,7 @@ var require_remote = __commonJS({
       }
       return query;
     };
-    var encodeAddParams = ({cid, service, background, name, origins}) => {
+    var encodeAddParams = ({ cid, service, background, name, origins }) => {
       const params = toUrlSearchParams({
         arg: encodeCID(cid),
         service: encodeService(service),
@@ -39305,11 +39375,11 @@ var require_normalise_input3 = __commonJS({
         throw errCode(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
       }
       if (CID3.isCID(input)) {
-        yield toPin({cid: input});
+        yield toPin({ cid: input });
         return;
       }
       if (input instanceof String || typeof input === "string") {
-        yield toPin({path: input});
+        yield toPin({ path: input });
         return;
       }
       if (input.cid != null || input.path != null) {
@@ -39321,9 +39391,9 @@ var require_normalise_input3 = __commonJS({
         if (first.done)
           return iterator;
         if (CID3.isCID(first.value) || first.value instanceof String || typeof first.value === "string") {
-          yield toPin({cid: first.value});
+          yield toPin({ cid: first.value });
           for (const cid of iterator) {
-            yield toPin({cid});
+            yield toPin({ cid });
           }
           return;
         }
@@ -39342,9 +39412,9 @@ var require_normalise_input3 = __commonJS({
         if (first.done)
           return iterator;
         if (CID3.isCID(first.value) || first.value instanceof String || typeof first.value === "string") {
-          yield toPin({cid: first.value});
+          yield toPin({ cid: first.value });
           for await (const cid of iterator) {
-            yield toPin({cid});
+            yield toPin({ cid });
           }
           return;
         }
@@ -39386,7 +39456,7 @@ var require_add_all2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
-        for await (const {path, recursive, metadata} of normaliseInput(source)) {
+        for await (const { path, recursive, metadata } of normaliseInput(source)) {
           const res = await api.post("pin/add", {
             timeout: options.timeout,
             signal: options.signal,
@@ -39492,7 +39562,7 @@ var require_rm_all = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
       async function* rmAll(source, options = {}) {
-        for await (const {path, recursive} of normaliseInput(source)) {
+        for await (const { path, recursive } of normaliseInput(source)) {
           const searchParams = new URLSearchParams(options.searchParams);
           searchParams.append("arg", `${path}`);
           if (recursive != null)
@@ -39590,7 +39660,7 @@ var require_ls5 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
       async function ls(options = {}) {
-        const {Strings} = await (await api.post("pubsub/ls", {
+        const { Strings } = await (await api.post("pubsub/ls", {
           timeout: options.timeout,
           signal: options.signal,
           searchParams: toUrlSearchParams(options),
@@ -39619,7 +39689,7 @@ var require_peers = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Strings} = await res.json();
+        const { Strings } = await res.json();
         return Strings || [];
       }
       return peers;
@@ -39635,7 +39705,7 @@ var require_publish2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     module2.exports = configure((api) => {
       async function publish2(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
@@ -39659,7 +39729,7 @@ var require_publish2 = __commonJS({
 var require_subscription_tracker = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
     "use strict";
-    var {AbortController} = require_src11();
+    var { AbortController } = require_src11();
     var SubscriptionTracker = class {
       constructor() {
         this._subs = new Map();
@@ -39676,7 +39746,7 @@ var require_subscription_tracker = __commonJS({
           throw new Error(`Already subscribed to ${topic} with this handler`);
         }
         const controller = new AbortController();
-        this._subs.set(topic, [{handler, controller}].concat(topicSubs));
+        this._subs.set(topic, [{ handler, controller }].concat(topicSubs));
         if (signal) {
           signal.addEventListener("abort", () => this.unsubscribe(topic, handler));
         }
@@ -39749,7 +39819,7 @@ var require_subscribe = __commonJS({
       }
       return subscribe;
     });
-    async function readMessages(msgStream, {onMessage, onEnd, onError}) {
+    async function readMessages(msgStream, { onMessage, onEnd, onError }) {
       onError = onError || log;
       try {
         for await (const msg of msgStream) {
@@ -39967,7 +40037,7 @@ var require_resolve3 = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Path} = await res.json();
+        const { Path } = await res.json();
         return Path;
       }
       return resolve;
@@ -40053,7 +40123,7 @@ var require_stop = __commonJS({
 var require_addrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/addrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40064,7 +40134,7 @@ var require_addrs = __commonJS({
           searchParams: toUrlSearchParams(options),
           headers: options.headers
         });
-        const {Addrs} = await res.json();
+        const { Addrs } = await res.json();
         return Object.keys(Addrs).map((id) => ({
           id,
           addrs: (Addrs[id] || []).map((a) => new Multiaddr(a))
@@ -40091,7 +40161,7 @@ var require_connect = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Strings} = await res.json();
+        const { Strings } = await res.json();
         return Strings || [];
       }
       return connect;
@@ -40115,7 +40185,7 @@ var require_disconnect = __commonJS({
           }, options)),
           headers: options.headers
         });
-        const {Strings} = await res.json();
+        const { Strings } = await res.json();
         return Strings || [];
       }
       return disconnect;
@@ -40127,7 +40197,7 @@ var require_disconnect = __commonJS({
 var require_localAddrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/localAddrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40138,7 +40208,7 @@ var require_localAddrs = __commonJS({
           searchParams: toUrlSearchParams(options),
           headers: options.headers
         });
-        const {Strings} = await res.json();
+        const { Strings } = await res.json();
         return (Strings || []).map((a) => new Multiaddr(a));
       }
       return localAddrs;
@@ -40150,7 +40220,7 @@ var require_localAddrs = __commonJS({
 var require_peers2 = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/peers.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var { Multiaddr } = require_src8();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40161,7 +40231,7 @@ var require_peers2 = __commonJS({
           searchParams: toUrlSearchParams(options),
           headers: options.headers
         });
-        const {Peers} = await res.json();
+        const { Peers } = await res.json();
         return (Peers || []).map((peer) => {
           return {
             addr: new Multiaddr(peer.Addr),
@@ -40219,7 +40289,7 @@ var require_src19 = __commonJS({
   "node_modules/ipfs-http-client/src/index.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {multiaddr} = require_src8();
+    var { multiaddr } = require_src8();
     var multibase = require_src4();
     var multicodec = require_src6();
     var multihash = require_src5();
@@ -40390,12 +40460,12 @@ var require_react_production_min = __commonJS({
         b += "&args[]=" + encodeURIComponent(arguments[c]);
       return "Minified React error #" + a + "; visit " + b + " for the full message or use the non-minified dev environment for full errors and additional helpful warnings.";
     }
-    var A = {isMounted: function() {
+    var A = { isMounted: function() {
       return false;
     }, enqueueForceUpdate: function() {
     }, enqueueReplaceState: function() {
     }, enqueueSetState: function() {
-    }};
+    } };
     var B = {};
     function C(a, b, c) {
       this.props = a;
@@ -40425,9 +40495,9 @@ var require_react_production_min = __commonJS({
     F.constructor = E;
     l(F, C.prototype);
     F.isPureReactComponent = true;
-    var G = {current: null};
+    var G = { current: null };
     var H = Object.prototype.hasOwnProperty;
-    var I = {key: true, ref: true, __self: true, __source: true};
+    var I = { key: true, ref: true, __self: true, __source: true };
     function J(a, b, c) {
       var e, d = {}, k = null, h = null;
       if (b != null)
@@ -40444,16 +40514,16 @@ var require_react_production_min = __commonJS({
       if (a && a.defaultProps)
         for (e in g = a.defaultProps, g)
           d[e] === void 0 && (d[e] = g[e]);
-      return {$$typeof: n, type: a, key: k, ref: h, props: d, _owner: G.current};
+      return { $$typeof: n, type: a, key: k, ref: h, props: d, _owner: G.current };
     }
     function K(a, b) {
-      return {$$typeof: n, type: a.type, key: b, ref: a.ref, props: a.props, _owner: a._owner};
+      return { $$typeof: n, type: a.type, key: b, ref: a.ref, props: a.props, _owner: a._owner };
     }
     function L(a) {
       return typeof a === "object" && a !== null && a.$$typeof === n;
     }
     function escape(a) {
-      var b = {"=": "=0", ":": "=2"};
+      var b = { "=": "=0", ":": "=2" };
       return "$" + a.replace(/[=:]/g, function(a2) {
         return b[a2];
       });
@@ -40526,15 +40596,15 @@ var require_react_production_min = __commonJS({
         return a._result;
       throw a._result;
     }
-    var R = {current: null};
+    var R = { current: null };
     function S() {
       var a = R.current;
       if (a === null)
         throw Error(z(321));
       return a;
     }
-    var T = {ReactCurrentDispatcher: R, ReactCurrentBatchConfig: {transition: 0}, ReactCurrentOwner: G, IsSomeRendererActing: {current: false}, assign: l};
-    exports2.Children = {map: P, forEach: function(a, b, c) {
+    var T = { ReactCurrentDispatcher: R, ReactCurrentBatchConfig: { transition: 0 }, ReactCurrentOwner: G, IsSomeRendererActing: { current: false }, assign: l };
+    exports2.Children = { map: P, forEach: function(a, b, c) {
       P(a, function() {
         b.apply(this, arguments);
       }, c);
@@ -40552,7 +40622,7 @@ var require_react_production_min = __commonJS({
       if (!L(a))
         throw Error(z(143));
       return a;
-    }};
+    } };
     exports2.Component = C;
     exports2.PureComponent = E;
     exports2.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = T;
@@ -40588,8 +40658,8 @@ var require_react_production_min = __commonJS({
     };
     exports2.createContext = function(a, b) {
       b === void 0 && (b = null);
-      a = {$$typeof: r, _calculateChangedBits: b, _currentValue: a, _currentValue2: a, _threadCount: 0, Provider: null, Consumer: null};
-      a.Provider = {$$typeof: q, _context: a};
+      a = { $$typeof: r, _calculateChangedBits: b, _currentValue: a, _currentValue2: a, _threadCount: 0, Provider: null, Consumer: null };
+      a.Provider = { $$typeof: q, _context: a };
       return a.Consumer = a;
     };
     exports2.createElement = J;
@@ -40599,17 +40669,17 @@ var require_react_production_min = __commonJS({
       return b;
     };
     exports2.createRef = function() {
-      return {current: null};
+      return { current: null };
     };
     exports2.forwardRef = function(a) {
-      return {$$typeof: t, render: a};
+      return { $$typeof: t, render: a };
     };
     exports2.isValidElement = L;
     exports2.lazy = function(a) {
-      return {$$typeof: v, _payload: {_status: -1, _result: a}, _init: Q};
+      return { $$typeof: v, _payload: { _status: -1, _result: a }, _init: Q };
     };
     exports2.memo = function(a, b) {
-      return {$$typeof: u, type: a, compare: b === void 0 ? null : b};
+      return { $$typeof: u, type: a, compare: b === void 0 ? null : b };
     };
     exports2.useCallback = function(a, b) {
       return S().useCallback(a, b);
@@ -42263,7 +42333,7 @@ var require_is_port_reachable = __commonJS({
   "node_modules/is-port-reachable/index.js"(exports2, module2) {
     "use strict";
     var net = require("net");
-    module2.exports = async (port, {timeout = 1e3, host} = {}) => {
+    module2.exports = async (port, { timeout = 1e3, host } = {}) => {
       const promise = new Promise((resolve, reject) => {
         const socket = new net.Socket();
         const onError = () => {
@@ -42352,9 +42422,9 @@ var require_iterall = __commonJS({
     ArrayLikeIterator.prototype.next = function() {
       if (this._o === void 0 || this._i >= this._o.length) {
         this._o = void 0;
-        return {value: void 0, done: true};
+        return { value: void 0, done: true };
       }
-      return {value: this._o[this._i++], done: false};
+      return { value: this._o[this._i++], done: false };
     };
     function forEach(collection, callback, thisArg) {
       if (collection != null) {
@@ -42421,7 +42491,7 @@ var require_iterall = __commonJS({
       return unwrapAsyncFromSync(this._i, "next", value);
     };
     AsyncFromSyncIterator.prototype.return = function(value) {
-      return this._i.return ? unwrapAsyncFromSync(this._i, "return", value) : Promise.resolve({value, done: true});
+      return this._i.return ? unwrapAsyncFromSync(this._i, "return", value) : Promise.resolve({ value, done: true });
     };
     AsyncFromSyncIterator.prototype.throw = function(value) {
       return this._i.throw ? unwrapAsyncFromSync(this._i, "throw", value) : Promise.reject(value);
@@ -42432,7 +42502,7 @@ var require_iterall = __commonJS({
         step = iterator[fn](value);
         resolve(step.value);
       }).then(function(value2) {
-        return {value: value2, done: step.done};
+        return { value: value2, done: step.done };
       });
     }
     function forAwaitEach(source, callback, thisArg) {
@@ -42477,14 +42547,14 @@ var require_dist = __commonJS({
       try {
         let pushValue = function(value) {
           if (pullQueue.length !== 0) {
-            pullQueue.shift()({value, done: false});
+            pullQueue.shift()({ value, done: false });
           } else if (buffering === true) {
             pushQueue.push(value);
           }
         }, pullValue = function() {
           return new Promise((resolve) => {
             if (pushQueue.length !== 0) {
-              resolve({value: pushQueue.shift(), done: false});
+              resolve({ value: pushQueue.shift(), done: false });
             } else {
               pullQueue.push(resolve);
             }
@@ -42492,7 +42562,7 @@ var require_dist = __commonJS({
         }, emptyQueue = function() {
           if (listening) {
             listening = false;
-            pullQueue.forEach((resolve) => resolve({value: void 0, done: true}));
+            pullQueue.forEach((resolve) => resolve({ value: void 0, done: true }));
             pullQueue = [];
             pushQueue = [];
             onClose && onClose(listenerReturnValue);
@@ -42513,7 +42583,7 @@ var require_dist = __commonJS({
           },
           return() {
             emptyQueue();
-            return Promise.resolve({value: void 0, done: true});
+            return Promise.resolve({ value: void 0, done: true });
           },
           throw(error) {
             emptyQueue();
@@ -42666,7 +42736,7 @@ var require_commander = __commonJS({
       visibleArguments(cmd) {
         if (cmd._argsDescription && cmd._args.length) {
           return cmd._args.map((argument) => {
-            return {term: argument.name, description: cmd._argsDescription[argument.name] || ""};
+            return { term: argument.name, description: cmd._argsDescription[argument.name] || "" };
           }, 0);
         }
         return [];
@@ -43159,7 +43229,7 @@ var require_commander = __commonJS({
         return this._optionEx({}, flags, description, fn, defaultValue);
       }
       requiredOption(flags, description, fn, defaultValue) {
-        return this._optionEx({mandatory: true}, flags, description, fn, defaultValue);
+        return this._optionEx({ mandatory: true }, flags, description, fn, defaultValue);
       }
       combineFlagAndOptionalValue(combine = true) {
         this._combineFlagAndOptionalValue = !!combine;
@@ -43284,14 +43354,14 @@ var require_commander = __commonJS({
           if (launchWithNode) {
             args.unshift(bin);
             args = incrementNodeInspectorPort(process.execArgv).concat(args);
-            proc = childProcess.spawn(process.argv[0], args, {stdio: "inherit"});
+            proc = childProcess.spawn(process.argv[0], args, { stdio: "inherit" });
           } else {
-            proc = childProcess.spawn(bin, args, {stdio: "inherit"});
+            proc = childProcess.spawn(bin, args, { stdio: "inherit" });
           }
         } else {
           args.unshift(bin);
           args = incrementNodeInspectorPort(process.execArgv).concat(args);
-          proc = childProcess.spawn(process.execPath, args, {stdio: "inherit"});
+          proc = childProcess.spawn(process.execPath, args, { stdio: "inherit" });
         }
         const signals = ["SIGUSR1", "SIGUSR2", "SIGTERM", "SIGINT", "SIGHUP"];
         signals.forEach((signal) => {
@@ -43331,7 +43401,7 @@ var require_commander = __commonJS({
       _dispatchSubcommand(commandName, operands, unknown) {
         const subCommand = this._findCommand(commandName);
         if (!subCommand)
-          this.help({error: true});
+          this.help({ error: true });
         if (subCommand._executableHandler) {
           this._executeSubCommand(subCommand, operands.concat(unknown));
         } else {
@@ -43356,7 +43426,7 @@ var require_commander = __commonJS({
           this._dispatchSubcommand(this._defaultCommandName, operands, unknown);
         } else {
           if (this.commands.length && this.args.length === 0 && !this._actionHandler && !this._defaultCommandName) {
-            this.help({error: true});
+            this.help({ error: true });
           }
           outputHelpIfRequested(this, parsed.unknown);
           this._checkForMissingMandatoryOptions();
@@ -43397,7 +43467,7 @@ var require_commander = __commonJS({
               checkForUnknownOptions();
             }
           } else if (this.commands.length) {
-            this.help({error: true});
+            this.help({ error: true });
           } else {
             checkForUnknownOptions();
           }
@@ -43512,7 +43582,7 @@ var require_commander = __commonJS({
           }
           dest.push(arg);
         }
-        return {operands, unknown};
+        return { operands, unknown };
       }
       opts() {
         if (this._storeOptionsAsProperties) {
@@ -43635,7 +43705,7 @@ var require_commander = __commonJS({
       }
       _getHelpContext(contextOptions) {
         contextOptions = contextOptions || {};
-        const context = {error: !!contextOptions.error};
+        const context = { error: !!contextOptions.error };
         let write;
         if (context.error) {
           write = (arg) => this._outputConfiguration.writeErr(arg);
@@ -43703,7 +43773,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         this.on(helpEvent, (context) => {
           let helpStr;
           if (typeof text === "function") {
-            helpStr = text({error: context.error, command: context.command});
+            helpStr = text({ error: context.error, command: context.command });
           } else {
             helpStr = text;
           }
@@ -43749,7 +43819,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
         shortFlag = longFlag;
         longFlag = void 0;
       }
-      return {shortFlag, longFlag};
+      return { shortFlag, longFlag };
     }
     function incrementNodeInspectorPort(args) {
       return args.map((arg) => {
@@ -43787,7 +43857,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
 var require_Deferred = __commonJS({
   "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var Deferred = class {
       constructor() {
         this.promise = new Promise((resolve, reject) => {
@@ -43961,9 +44031,9 @@ var require_LinkedQueue = __commonJS({
   "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
-      return mod && mod.__esModule ? mod : {"default": mod};
+      return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var fast_list_1 = __importDefault(require_fast_list());
     var Queue = class {
       constructor(limit2 = 0) {
@@ -43972,7 +44042,7 @@ var require_LinkedQueue = __commonJS({
         this.list = new fast_list_1.default();
       }
       enqueue(value) {
-        const {list} = this;
+        const { list } = this;
         if (this.limit > 0 && list.length === this.limit) {
           list.shift();
         }
@@ -44002,7 +44072,7 @@ var require_LinkedQueue = __commonJS({
 var require_common2 = __commonJS({
   "node_modules/queueable/dist/lib/common.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.doneResult = Object.freeze({
       value: void 0,
       done: true
@@ -44015,7 +44085,7 @@ var require_common2 = __commonJS({
 var require_fromDom = __commonJS({
   "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var fromDom = (init) => (type, target, options) => {
       const adapter = init();
       const listener = (event) => void adapter.push(event);
@@ -44030,7 +44100,7 @@ var require_fromDom = __commonJS({
 var require_fromEmitter = __commonJS({
   "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
     "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var fromEmitter = (init) => (type, emitter) => {
       const adapter = init();
       const listener = (event) => void adapter.push(event);
@@ -44046,9 +44116,9 @@ var require_Channel = __commonJS({
   "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
-      return mod && mod.__esModule ? mod : {"default": mod};
+      return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var Deferred_1 = __importDefault(require_Deferred());
     var LinkedQueue_1 = __importDefault(require_LinkedQueue());
     var common_1 = require_common2();
@@ -44069,7 +44139,7 @@ var require_Channel = __commonJS({
           this.pullBuffer.enqueue(defer2);
           return defer2.promise;
         }
-        const {result, defer} = this.pushBuffer.dequeue();
+        const { result, defer } = this.pushBuffer.dequeue();
         defer.resolve(result);
         if (result.done) {
           this.close();
@@ -44088,7 +44158,7 @@ var require_Channel = __commonJS({
           return this.pullBuffer.dequeue().resolve(result);
         }
         const defer = new Deferred_1.default();
-        this.pushBuffer.enqueue({result, defer});
+        this.pushBuffer.enqueue({ result, defer });
         return defer.promise;
       }
       [Symbol.asyncIterator]() {
@@ -44106,9 +44176,9 @@ var require_Channel = __commonJS({
           return;
         }
         this.closed = true;
-        this.pushBuffer.forEach(({defer: {resolve}}) => void resolve(common_1.doneResult));
+        this.pushBuffer.forEach(({ defer: { resolve } }) => void resolve(common_1.doneResult));
         this.pushBuffer.clear();
-        this.pullBuffer.forEach(({resolve}) => void resolve(common_1.doneResult));
+        this.pullBuffer.forEach(({ resolve }) => void resolve(common_1.doneResult));
         this.pullBuffer.clear();
       }
       wrap(onReturn) {
@@ -44140,9 +44210,9 @@ var require_Multicast = __commonJS({
   "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
-      return mod && mod.__esModule ? mod : {"default": mod};
+      return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var Channel_1 = __importDefault(require_Channel());
     var Multicast = class {
       constructor(init = () => new Channel_1.default()) {
@@ -44155,7 +44225,7 @@ var require_Multicast = __commonJS({
       }
       [Symbol.asyncIterator]() {
         const producer = this.init();
-        const {receivers} = this;
+        const { receivers } = this;
         receivers.add(producer);
         if (this.onStart && receivers.size === 1) {
           this.onStart();
@@ -44177,9 +44247,9 @@ var require_LastResult = __commonJS({
   "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
-      return mod && mod.__esModule ? mod : {"default": mod};
+      return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var Deferred_1 = __importDefault(require_Deferred());
     var common_1 = require_common2();
     var fromDom_1 = __importDefault(require_fromDom());
@@ -44256,9 +44326,9 @@ var require_lib5 = __commonJS({
   "node_modules/queueable/dist/lib/index.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
-      return mod && mod.__esModule ? mod : {"default": mod};
+      return mod && mod.__esModule ? mod : { "default": mod };
     };
-    Object.defineProperty(exports2, "__esModule", {value: true});
+    Object.defineProperty(exports2, "__esModule", { value: true });
     var Multicast_1 = __importDefault(require_Multicast());
     exports2.Multicast = Multicast_1.default;
     var Channel_1 = __importDefault(require_Channel());
@@ -44392,11 +44462,14 @@ var ipfsDaemonURL = getIPFSDaemonURL();
 var client = ipfsDaemonURL.then(import_ipfs_http_client.create);
 var nodeID = client.then(async (client2) => options_default.nodeid || (await client2.id()).id);
 (async () => debug3("NodeID", nodeID))();
-var getWebURL = (cid) => `https://pollinations.ai/ipfs/${cid}`;
+var getWebURL = (cid, name = null) => {
+  const filename = name ? `?filename=${name}` : "";
+  return `https://pollinations.ai/ipfs/${cid}${filename}`;
+};
 var stripSlashIPFS = (cidString) => cidString.replace("/ipfs/", "");
 var stringCID = (file) => stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : import_cids2.default.isCID(file) ? file.toString() : file);
-var _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
-var _ipfsLs = async (cid) => (await toPromise((await client).ls(stringCID(cid)))).filter(({type, name}) => type !== "unknown" && name !== void 0).map(_normalizeIPFS);
+var _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
+var _ipfsLs = async (cid) => (await toPromise((await client).ls(stringCID(cid)))).filter(({ type, name }) => type !== "unknown" && name !== void 0).map(_normalizeIPFS);
 var ipfsLs = callLogger(_ipfsLs, "ipfsls");
 var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options = {}) => {
   const _client = await client;
@@ -44405,16 +44478,16 @@ var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options =
   debug3("added", cid, "size", content);
   try {
     debug3("Trying to delete", ipfsPath);
-    await _client.files.rm(ipfsPath, {recursive: true});
+    await _client.files.rm(ipfsPath, { recursive: true });
   } catch {
     debug3("Could not delete. Probably did not exist.");
   }
   ;
   debug3("copying to", ipfsPath);
-  await _client.files.cp(`/ipfs/${cid}`, ipfsPath, {create: true});
+  await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
   return cid;
 }));
-var ipfsGet = concurrency_default(cleanCIDs(async (cid, {onlyLink = false}) => {
+var ipfsGet = concurrency_default(cleanCIDs(async (cid, { onlyLink = false }) => {
   const _debug = debug3.extend(`ipfsGet(${cid})`);
   if (onlyLink)
     return getWebURL(cid);
@@ -44424,19 +44497,19 @@ var ipfsGet = concurrency_default(cleanCIDs(async (cid, {onlyLink = false}) => {
   _debug("Received content length:", contentArray.length);
   return contentArray;
 }));
-var ipfsAddFile = async (ipfsPath, localPath, options = {size: null}) => {
-  await ipfsAdd(ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, {preserveMtime: true, preserveMode: true}));
+var ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) => {
+  await ipfsAdd(ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, { preserveMtime: true, preserveMode: true }));
 };
 async function ipfsMkdir(path = "/") {
   const withMfsRoot = (0, import_path.join)(mfsRoot, path);
   debug3("Creating folder", path, "mfsRoot", withMfsRoot);
-  (await client).files.mkdir(withMfsRoot, {parents: true});
+  await (await client).files.mkdir(withMfsRoot, { parents: true });
   return path;
 }
 async function ipfsRm(ipfsPath) {
   ipfsPath = (0, import_path.join)(mfsRoot, ipfsPath);
   debug3("Deleting", ipfsPath);
-  await client.files.rm(ipfsPath, {force: true});
+  await (await client).files.rm(ipfsPath, { force: true });
 }
 async function contentID(mfsPath = "/") {
   const _client = await client;
@@ -44453,7 +44526,7 @@ async function subscribeCID(_nodeID = null) {
   if (_nodeID === null)
     _nodeID = await nodeID;
   debug3("Subscribing to pubsub events from", _nodeID);
-  const handler = ({data}) => channel.push(new TextDecoder().decode(data));
+  const handler = ({ data }) => channel.push(new TextDecoder().decode(data));
   await (await client).pubsub.subscribe(_nodeID, handler);
   return channel;
 }
@@ -44471,23 +44544,23 @@ var PromiseAllProgress = (name, promises) => Promise.all(promises);
 var debug4 = (0, import_debug4.default)("ipfsState");
 var getIPFSState = (contentID2, processFile2, rootName = "root") => {
   debug4("Getting state for CID", contentID2);
-  return _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/"}, processFile2);
+  return _getIPFSState({ cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2 }, processFile2);
 };
-var _getIPFSState = cacheOutput(async ({cid, type, name, path}, processFile2) => {
+var _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, processFile2) => {
   cid = stringCID(cid);
   const _debug = debug4.extend(`_getIPFSState(${path})`);
   _debug("Getting state for", type, name, cid);
   if (type === "dir") {
     const files = await ipfsLs(cid);
     _debug("Got files for", name, cid, files);
-    const filenames = files.map(({name: name2}) => name2);
-    const contents = await PromiseAllProgress(path, files.map((file) => _getIPFSState(__spreadProps(__spreadValues({}, file), {path: (0, import_path2.join)(path, file.name)}), processFile2)));
+    const filenames = files.map(({ name: name2 }) => name2);
+    const contents = await PromiseAllProgress(path, files.map((file) => _getIPFSState(__spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2)));
     const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
     _debug("contents", contentResult);
     return contentResult;
   }
   if (type === "file") {
-    const fileResult = await processFile2({cid, path, name});
+    const fileResult = await processFile2({ cid, path, name, rootCID });
     _debug("got result of processFile", fileResult);
     return fileResult;
   }
@@ -44498,8 +44571,8 @@ var _getIPFSState = cacheOutput(async ({cid, type, name, path}, processFile2) =>
 var import_fs = __toModule(require("fs"));
 var import_path3 = __toModule(require("path"));
 var import_fs2 = __toModule(require("fs"));
-var {stream} = import_event_iterator.default;
-var {writeFile, mkdir} = import_fs.promises;
+var { stream } = import_event_iterator.default;
+var { writeFile, mkdir } = import_fs.promises;
 var debug5 = (0, import_debug5.default)("ipfsWatch");
 var readline = import_readline.default.createInterface({
   input: import_process.default.stdin,
@@ -44511,7 +44584,7 @@ var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 if (!(0, import_fs2.existsSync)(watchPath)) {
   debug5("Local: Root directory does not exist. Creating", watchPath);
-  (0, import_fs2.mkdirSync)(watchPath, {recursive: true});
+  (0, import_fs2.mkdirSync)(watchPath, { recursive: true });
 }
 var incrementalUpdate = async (watchPath2) => {
   await ipfsMkdir("/");
@@ -44521,10 +44594,10 @@ var incrementalUpdate = async (watchPath2) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath2,
     awaitWriteFinish: true
-  }, {debounce: 200});
+  }, { debounce: 200 });
   for await (const files of watch$) {
     const changed = getSortedChangedFiles(files);
-    await Promise.all(changed.map(async ({event, file}) => {
+    await Promise.all(changed.map(async ({ event, file }) => {
       const localPath = (0, import_path3.join)(watchPath2, file);
       const ipfsPath = file;
       if (event === "addDir") {
@@ -44559,20 +44632,20 @@ async function processRemoteCID(contentID2) {
   debug5("Processing remote CID", contentID2);
   debug5("got remote state", await getIPFSState(contentID2, processFile));
 }
-async function processFile({path, cid}) {
+async function processFile({ path, cid }) {
   const _debug = debug5.extend(`processFile(${path})`);
   _debug("started");
   const destPath = (0, import_path3.join)(watchPath, path);
   _debug("writeFile", destPath, cid, "queued");
-  const content = await ipfsGet(cid, {stream: true});
+  const content = await ipfsGet(cid, { stream: true });
   _debug("writefile content", content.length);
   await writeFileAndCreateFolder(destPath, content);
   _debug("done");
   return destPath;
 }
 function getSortedChangedFiles(files) {
-  const changed = files.toArray().filter(({changed: changed2, file}) => changed2 && file.length > 0).map((_a) => {
-    var _b = _a, {changed: changed2} = _b, rest = __objRest(_b, ["changed"]);
+  const changed = files.toArray().filter(({ changed: changed2, file }) => changed2 && file.length > 0).map((_a) => {
+    var _b = _a, { changed: changed2 } = _b, rest = __objRest(_b, ["changed"]);
     return rest;
   });
   const changedOrdered = order(changed);
@@ -44580,7 +44653,7 @@ function getSortedChangedFiles(files) {
   return changedOrdered;
 }
 var _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];
-var eventOrder = ({event}) => _eventOrder.indexOf(event);
+var eventOrder = ({ event }) => _eventOrder.indexOf(event);
 var order = (events) => (0, import_ramda3.sortBy)(eventOrder, (0, import_ramda3.reverse)(events));
 if (enableSend)
   incrementalUpdate(watchPath);
@@ -44611,7 +44684,7 @@ if (enableReceive) {
 }
 var writeFileAndCreateFolder = async (path, content) => {
   debug5("creating folder if it does not exist", (0, import_path3.dirname)(path));
-  await mkdir((0, import_path3.dirname)(path), {recursive: true});
+  await mkdir((0, import_path3.dirname)(path), { recursive: true });
   debug5("writing file of length", content.size, "to folder", path);
   (0, import_fs2.writeFileSync)(path, content);
   return path;

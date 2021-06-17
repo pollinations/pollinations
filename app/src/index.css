@@ -1,3 +1,6 @@
+@import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
+
+
 body {
   margin: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,9 +8,12 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: hsl(0,0,9) !important;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+.MuiAccordionSummary-root{padding: 0 !important;}
+.MuiAccordionDetails-root{padding: 8px 0px 16px !important;}
+.MuiAccordion-root:before{display: none;}
+h3{
+  margin-bottom: 0;
 }

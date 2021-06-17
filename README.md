@@ -1,4 +1,4 @@
-## Colab as a Service
+## Pollinations
 
 Frontend: https://pollinations.ai/
 

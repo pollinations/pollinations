@@ -1,20 +1,25 @@
-import Model from './Model';
-import React, { useEffect, useMemo, useState } from 'react';
+import { routes } from './routes'
 
-import {Container} from "@material-ui/core"
+import { Container } from "@material-ui/core"
 
-import notebooks from "./data/notebooks.json";
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 
 function App() {
-   return (
-      <Container>
-        {
-          notebooks.map((notebook,i) => (
-          <Model key={i} notebook={notebook} />
-          ))
-        }
+    return <Router>
+        <Container maxWidth="md">
+
+            <Switch
+                children={
+                    routes.map(route => (
+                        <Route 
+                            {...route}
+                            key={route.path}
+                        />
+                    ))
+                }/>
+
         </Container>
-    );
+    </Router>
 }
 
 export default App;

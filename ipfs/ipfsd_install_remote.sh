@@ -7,6 +7,7 @@ cd go-ipfs
 sudo bash install.sh
 cd -
 
+ipfs bootstrap rm --all
 ipfs config Addresses.Swarm /ip4/0.0.0.0/tcp/4001
 ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
 ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080

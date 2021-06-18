@@ -11,8 +11,8 @@ const debug = Debug("ImageViewer");
 const MediaDisplay = ({filename, ...props}) => 
   filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
-function ImageViewer({ipfs}) {
-    const images = getPreviewImages(ipfs);
+function ImageViewer({output}) {
+    const images = getPreviewImages(output);
 
     if (!images || images.length === 0)
       return null;
@@ -44,16 +44,16 @@ function ImageViewer({ipfs}) {
     )
 }
 
-function getPreviewImages(ipfs) {
+function getPreviewImages(output) {
   const extensions = [".jpg", ".png", ".mp4"]
 
   const filterByExtensions = filename => 
     any(identity, extensions.map(ext => filename.endsWith(ext)));
 
-  const imageFilenames = ipfs.output ? Object.keys(ipfs.output)
+  const imageFilenames = output ? Object.keys(output)
     .filter(filterByExtensions) : [];
 
-  const images = imageFilenames.map(filename => [filename, ipfs.output[filename]]);
+  const images = imageFilenames.map(filename => [filename, output[filename]]);
 
   return images
 }

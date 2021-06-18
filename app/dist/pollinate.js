@@ -44484,7 +44484,11 @@ var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options =
   }
   ;
   debug3("copying to", ipfsPath);
-  await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+  try {
+    await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+  } catch (e) {
+    debug3("couldn't copy. file probably existed for some reason");
+  }
   return cid;
 }));
 var ipfsGet = concurrency_default(cleanCIDs(async (cid, { onlyLink = false }) => {

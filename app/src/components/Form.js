@@ -5,15 +5,19 @@ import Debug from "debug";
 
 const debug = Debug("Form");
 
-const FormView = ({ input, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input, metadata, nodeID, onSubmit, onCancel}) => {
 
     const filledForm = getFormInputs(input, metadata);
 
     if (!filledForm)
         return null;
 
-    const showSubmit = input && !input.cancelled;
-    
+
+    const showSubmit = !input || !input.submitted;
+    const formDisabled = !nodeID;
+    const cancelling = input && input.cancelled;
+
+    debug("nodeID",nodeID, formDisabled)
     const uiSchema = getUISchema(filledForm, showSubmit)
     
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
@@ -22,15 +26,16 @@ const FormView = ({ input, metadata, onSubmit, onCancel }) => {
     return <Form
         schema={{properties: filledForm}}
         uiSchema={uiSchema}
-        onSubmit={onSubmit}
+        onSubmit={({formData}) => onSubmit({...formData, submitted: true})}
+        disabled={formDisabled}
     >
         {
             showSubmit 
-            ?   <Button type="button" color="secondary" onClick={onCancel}>
-                    Cancel
-                </Button>
-            :   <Button type="submit">
+            ?  <Button type="submit" disabled={formDisabled}>
                     Submit
+                </Button>
+            :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled || cancelling}>
+                    {cancelling ? "Cancelling...": "Cancel"}
                 </Button>
         }
     </Form>

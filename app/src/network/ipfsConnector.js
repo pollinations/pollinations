@@ -92,8 +92,11 @@ export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options={}) =>
         debug("Could not delete. Probably did not exist.")
     };
     debug("copying to", ipfsPath);
-    await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
-   
+    try {
+        await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+    } catch (e) {
+        debug("couldn't copy. file probably existed for some reason");
+    }
     return cid;
 }));
 

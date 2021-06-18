@@ -1,17 +1,18 @@
+import React from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
 
 const debug = Debug("Form");
 
-let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input, metadata, onSubmit, onCancel }) => {
 
-    const filledForm = getFormInputs(ipfs.input, metadata);
+    const filledForm = getFormInputs(input, metadata);
 
     if (!filledForm)
         return null;
 
-    const showSubmit = ipfs.input && !ipfs.input.cancelled;
+    const showSubmit = input && !input.cancelled;
     
     const uiSchema = getUISchema(filledForm, showSubmit)
     
@@ -35,7 +36,7 @@ let FormView = ({ ipfs, metadata, onSubmit, onCancel }) => {
     </Form>
 }
 
-export default FormView
+export default React.memo(FormView)
 
 
 function getFormInputs(ipfs, metadata) {

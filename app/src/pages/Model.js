@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import colabLogoImage from "../help/colab_icon.png";
 import { Typography, Card, CardContent, GridList, GridListTile } from "@material-ui/core"
 
 import Markdown from 'markdown-to-jsx';

@@ -4,10 +4,9 @@ import './index.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import reportWebVitals from './reportWebVitals';
-import { useSearchParam } from 'react-use';
 import CssBaseline from '@material-ui/core/CssBaseline';
 // images
-import runAllImg from "./help/Runtime-RunAll.png"; 
+
 
 import { Box, createMuiTheme, ThemeProvider } from '@material-ui/core';
 

@@ -39,7 +39,7 @@ function formatLog(ipfs) {
     return ipfs.output.log
             .replace(/\].*/g, "")
             .split("\n")
-            .slice(-4)
+            .slice(-10)
             .join("\n");
 }
 

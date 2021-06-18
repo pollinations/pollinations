@@ -59,8 +59,7 @@ export default React.memo(function Model() {
       {/* control panel */}
 
         {/* just in case */}
-        {metadata && metadata.description ? <CardContent><Markdown>{metadata.description}</Markdown></CardContent> : null}
-        {(false && !nodeID) ? <CardContent children={<a href={colabURL} target="_blank"><img src={colabLogoImage} width="70" height="auto" /> </a>} /> : null}
+        {metadata && metadata.description ?<div style={{ width: '100%'}}><Markdown>{metadata.description}</Markdown></div> : null}
 
         {/* status */}
         <div style={{ width: '100%'}}>

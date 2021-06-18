@@ -49,7 +49,7 @@ export default React.memo(function Model() {
   }, []);
 
 
-  const dispatchForm = async ({ formData }) =>  dispatchState({ ...state, inputs: formData });
+  const dispatchForm = async inputs =>  dispatchState({ ...state, inputs });
 
   const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})
 
@@ -68,7 +68,7 @@ export default React.memo(function Model() {
           <h3 children='Status' />
           <NodeStatus {...state} />
         </div>
-
+        
         {/* inputs */}
         <div style={{ width: '100%'}}>
           <h3 children='Inputs' />
@@ -76,20 +76,25 @@ export default React.memo(function Model() {
           <FormView
             input={ipfs.input}
             metadata={metadata}
+            nodeID={nodeID}
             onSubmit={dispatchForm} 
             onCancel={cancelForm}
             />
         </div>
 
       {/* previews */}
-      <div style={{ width: '100%' }}>
-        <h3 children='Output' />
-        <ImageViewer ipfs={ipfs}/>
-      </div>
+      { ipfs.output && <div style={{ width: '100%' }}>
+                        <h3 children='Output' />
+                        <ImageViewer output={ipfs.output}/>
+                      </div>
+      }    
+
       <div style={{ width: '100%'}}>
           <h3 children='Log' />
           <IpfsLog />
       </div>
+
+
     </div>
 
 

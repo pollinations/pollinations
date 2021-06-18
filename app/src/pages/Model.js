@@ -74,7 +74,7 @@ export default React.memo(function Model() {
           <h3 children='Inputs' />
 
           <FormView
-            ipfs={ipfs}
+            input={ipfs.input}
             metadata={metadata}
             onSubmit={dispatchForm} 
             onCancel={cancelForm}
@@ -83,11 +83,15 @@ export default React.memo(function Model() {
 
       {/* previews */}
       <div style={{ width: '100%' }}>
+        <h3 children='Output' />
         <ImageViewer ipfs={ipfs}/>
       </div>
-
+      <div style={{ width: '100%'}}>
+          <h3 children='Log' />
+          <IpfsLog />
+      </div>
     </div>
-    <IpfsLog />
+
 
   </>
 });

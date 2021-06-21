@@ -55,7 +55,7 @@ const useColab = () => {
             const newContentID = await addInputContent(state.contentID, inputState);
             setContentID(newContentID)
             debug("Publishing contentID to colab", newContentID);
-            publish(newContentID,state.nodeID);
+            publish(state.nodeID, newContentID);
         }
     };
 };

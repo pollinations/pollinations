@@ -12,7 +12,4 @@ export let routes = [
         path: "/",
         children: <Redirect to="/p/QmNsc2NK1UMMWcshuJebRNH4z5xwkjx9G7R5K266xFZMxV"/>
     }
-    //
-    // Private here with if clause...
-    /////////////////////////////////
 ]

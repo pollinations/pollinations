@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
-<svg width="600" height="500" version="1.1" xmlns="http://www.w3.org/2000/svg" style="background-color: rgba(255,255,255,0.6">
+<svg width="600" height="400" version="1.1" xmlns="http://www.w3.org/2000/svg" style="background-color: rgba(255,255,255,0.9">
 	<ellipse stroke="black" stroke-width="1" fill="none" cx="282.5" cy="334.5" rx="30" ry="30"/>
 	<text x="249.5" y="340.5" font-family="Times New Roman" font-size="20">working</text>
 	<ellipse stroke="black" stroke-width="1" fill="none" cx="521.5" cy="224.5" rx="30" ry="30"/>

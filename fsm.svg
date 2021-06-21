@@ -2,8 +2,13 @@
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 
 <svg width="600" height="500" version="1.1" xmlns="http://www.w3.org/2000/svg">
+ <style>
+  text {
+      fill: white;
+  }
+ </style>
 	<ellipse stroke="white" stroke-width="1" fill="none" cx="282.5" cy="334.5" rx="30" ry="30"/>
-	<text x="249.5" y="340.5" font-family="Times New Roman" font-size="20">working</text>
+	<text x="249.5" y="340.5" font-family="Times New Roman" font-size="20" >working</text>
 	<ellipse stroke="white" stroke-width="1" fill="none" cx="521.5" cy="224.5" rx="30" ry="30"/>
 	<text x="474.5" y="230.5" font-family="Times New Roman" font-size="20">interrupting</text>
 	<ellipse stroke="white" stroke-width="1" fill="none" cx="250.5" cy="126.5" rx="30" ry="30"/>

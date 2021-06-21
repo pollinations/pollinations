@@ -1,5 +1,5 @@
 import React from 'react'
-import { CardContent, Link, Typography } from "@material-ui/core"
+import { Button, CardContent, Link, Typography } from "@material-ui/core"
 import ReactJson from 'react-json-view'
 import { displayContentID } from "../network/utils";
 import { getWebURL } from '../network/ipfsConnector';
@@ -12,25 +12,25 @@ const LinkStyle = {
 
 export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;
-    
+    const log = ipfs.status && ipfs.status.log;
     return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
-
-        <CardContent>
+        {log && <CardContent>
             <Typography
                 variant="body2"
                 color="textPrimary"
                 component="pre">
                 {
-                    ipfs.status && ipfs.status.log ? formatLog(ipfs.status.log) : "Loading..."
+                    log ? formatLog(log) : "Loading..."
                 }
             </Typography>
-            <Link style={LinkStyle}
+
+            <Button style={LinkStyle}
                 href={getWebURL(`${contentID}/status/log`)} 
                 target="_blank"
             >
                 See Full
-            </Link>
-        </CardContent>
+            </Button>
+        </CardContent>}
 
         <CardContent>
             <ReactJson

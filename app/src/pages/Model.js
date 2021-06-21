@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Typography, Card, CardContent, GridList, GridListTile } from "@material-ui/core"
+import { Paper } from "@material-ui/core"
 
 import Markdown from 'markdown-to-jsx';
 
-import { any, identity, last } from 'ramda';
 
 import useColab from "../network/useColab"
 import readMetadata from "../backend/notebookMetadata";
-import { parse } from "json5";
+
 import Debug from "debug";
 
 
@@ -77,10 +76,10 @@ export default React.memo(function Model() {
         </div>
 
       {/* previews */}
-      { ipfs.output && <div style={{ width: '100%' }}>
-                        <h3 children='Output' />
-                        <ImageViewer output={ipfs.output}/>
-                      </div>
+      { ipfs.output && <div >
+                          <h3 children='Output' />
+                          <ImageViewer output={ipfs.output}/>
+                        </div>
       }    
 
       <div style={{ width: '100%'}}>

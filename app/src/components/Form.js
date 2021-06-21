@@ -33,7 +33,7 @@ const FormView = ({ input, metadata, nodeID, onSubmit, onCancel}) => {
         <Box m={1}>
             {
                 showSubmit 
-                ?   <Button type="submit" disabled={formDisabled} variant="contained">
+                ?   <Button type="submit" disabled={formDisabled} variant="outlined">
                         Submit
                     </Button>
                 :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled || cancelling} variant="outlined">

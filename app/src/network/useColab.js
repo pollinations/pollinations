@@ -62,7 +62,7 @@ const useColab = () => {
 
 
 function useContentHash() {
-    const  params   = useParams()
+    const params  = useParams()
     const history = useHistory()
 
     debug("location pathname", params);

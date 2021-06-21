@@ -2,6 +2,7 @@ import React from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
+import { Box } from "@material-ui/core";
 
 const debug = Debug("Form");
 
@@ -29,15 +30,17 @@ const FormView = ({ input, metadata, nodeID, onSubmit, onCancel}) => {
         onSubmit={({formData}) => onSubmit({...formData, submitted: true})}
         disabled={formDisabled}
     >
-        {
-            showSubmit 
-            ?  <Button type="submit" disabled={formDisabled}>
-                    Submit
-                </Button>
-            :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled || cancelling}>
-                    {cancelling ? "Cancelling...": "Cancel"}
-                </Button>
-        }
+        <Box m={1}>
+            {
+                showSubmit 
+                ?   <Button type="submit" disabled={formDisabled} variant="contained">
+                        Submit
+                    </Button>
+                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled || cancelling} variant="outlined">
+                        {cancelling ? "Cancelling...": "Cancel"}
+                    </Button>
+            }
+        </Box>
     </Form>
 }
 

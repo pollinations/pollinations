@@ -136,9 +136,9 @@ export const addInputContent = async (contentID, { inputs }) => {
 
 };
 
-
+//TODO: use ipfsConnector's publish
 export const publish = async (nodeID, newContentID) => {
-    (await client).pubsub.publish(newContentID, nodeID)
+    (await client).pubsub.publish(nodeID, newContentID)
 }
 
 export const subscribe = subscribeCIDCallback;

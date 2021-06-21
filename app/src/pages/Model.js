@@ -32,15 +32,11 @@ const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
 
 export default React.memo(function Model() {
 
-  const { state, dispatch: dispatchState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
+  const { state, dispatch: dispatchInputState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
 
   const { ipfs, nodeID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
-
-  //debug("filled form", filledForm);
-  const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/master/colabs/pollinator.ipynb";
-
 
   //debug("images", images)
   useEffect(() => {
@@ -48,9 +44,9 @@ export default React.memo(function Model() {
   }, []);
 
 
-  const dispatchForm = async inputs =>  dispatchState({ ...state, inputs });
+  const dispatchForm = async inputs =>  dispatchInputState({ ...state, inputs });
 
-  const cancelForm = () => dispatchState({...state, inputs: {...state.inputs, cancelled: true}})
+  const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, cancelled: true}})
 
   return <>
     {metadata && <SEOMetadata title={metadata.name} description={metadata.description} /> }

@@ -64,8 +64,9 @@ export const getWebURL = (cid, name=null) => {
 };
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
+const firstLine = s => s.split("\n")[0];
 
-export const stringCID = file => stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file));
+export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file)));
 
 const _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
 

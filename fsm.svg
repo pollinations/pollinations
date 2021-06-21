@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="600" height="500" version="1.1" xmlns="http://www.w3.org/2000/svg">
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="282.5" cy="334.5" rx="30" ry="30"/>
+	<text x="249.5" y="340.5" font-family="Times New Roman" font-size="20">working</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="521.5" cy="224.5" rx="30" ry="30"/>
+	<text x="474.5" y="230.5" font-family="Times New Roman" font-size="20">interrupting</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="250.5" cy="126.5" rx="30" ry="30"/>
+	<text x="228.5" y="132.5" font-family="Times New Roman" font-size="20">ready</text>
+	<ellipse stroke="black" stroke-width="1" fill="none" cx="80.5" cy="323.5" rx="30" ry="30"/>
+	<text x="49.5" y="329.5" font-family="Times New Roman" font-size="20">dummy</text>
+	<polygon stroke="black" stroke-width="1" points="309.752,321.957 494.248,237.043"/>
+	<polygon fill="black" stroke-width="1" points="494.248,237.043 484.89,235.846 489.071,244.93"/>
+	<text x="346.5" y="270.5" font-family="Times New Roman" font-size="20">cancel</text>
+	<polygon stroke="black" stroke-width="1" points="493.288,214.298 278.712,136.702"/>
+	<polygon fill="black" stroke-width="1" points="278.712,136.702 284.535,144.125 287.936,134.721"/>
+	<text x="387.5" y="165.5" font-family="Times New Roman" font-size="20">interrupted</text>
+	<polygon stroke="black" stroke-width="1" points="255.062,156.151 277.938,304.849"/>
+	<polygon fill="black" stroke-width="1" points="277.938,304.849 281.664,296.182 271.78,297.702"/>
+	<text x="205.5" y="238.5" font-family="Times New Roman" font-size="20">submit</text>
+	<polygon stroke="black" stroke-width="1" points="252.544,332.869 110.456,325.131"/>
+	<polygon fill="black" stroke-width="1" points="110.456,325.131 118.172,330.559 118.716,320.574"/>
+	<text x="163.5" y="318.5" font-family="Times New Roman" font-size="20">done</text>
+	<polygon stroke="black" stroke-width="1" points="100.1,300.788 230.9,149.212"/>
+	<polygon fill="black" stroke-width="1" points="230.9,149.212 221.888,152.003 229.459,158.536"/>
+</svg>

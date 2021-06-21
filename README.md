@@ -12,3 +12,5 @@ Frontend: https://pollinations.ai/
 - [ ] test IPFS persistence and distributiuon of results (use pinning for results that are a finished run)
 - [ ] convert a few colab notebooks
 - [ ] github action to autodeploy
+
+![FSM](fsm.svg)

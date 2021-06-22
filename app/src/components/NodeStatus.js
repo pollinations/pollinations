@@ -31,13 +31,18 @@ let ParagraphStyle = {
     opacity: 0.9
 }
 
-export default ({ nodeID, contentID, status }) => {
+export default ({ nodeID, contentID, status, ipfs }) => {
+    const colabState = ipfs?.status?.colabState;
     return <>
             <h3>Status <Typography component="span">[{status}]</Typography></h3>
             <div style={WrapperStyle}>
             <div style={RowStyle}>
                 <p children='NodeID' style={ParagraphStyle}/>
                 {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
+                <p children='colab_status' style={ParagraphStyle}/>
+                    {colabState}
+
+                
             </div>
 
             <div style={RowStyle}>

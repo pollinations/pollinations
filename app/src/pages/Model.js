@@ -31,9 +31,9 @@ const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
 
 export default React.memo(function Model() {
 
-  const { state, dispatch: dispatchInputState } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
+  const { state, dispatch: dispatchInputState, setStatus } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
 
-  const { ipfs, nodeID } = state;
+  const { ipfs, nodeID, status } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
@@ -43,9 +43,9 @@ export default React.memo(function Model() {
   }, []);
 
 
-  const dispatchForm = async inputs =>  dispatchInputState({ ...state, inputs });
+  const dispatchForm = async inputs =>  dispatchInputState({ ...state, inputs: {...inputs, formAction: "submit"} });
 
-  const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, cancelled: true}})
+  const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, formAction: "cancel" }})
 
   return <>
     {metadata && <SEOMetadata title={metadata.name} description={metadata.description} /> }
@@ -58,7 +58,6 @@ export default React.memo(function Model() {
 
         {/* status */}
         <div style={{ width: '100%'}}>
-          <h3 children='Status' />
           <NodeStatus {...state} />
         </div>
         
@@ -68,6 +67,8 @@ export default React.memo(function Model() {
 
           <FormView
             input={ipfs.input}
+            status={status}
+            colabState={ipfs?.status?.colabState}
             metadata={metadata}
             nodeID={nodeID}
             onSubmit={dispatchForm} 

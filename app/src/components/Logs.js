@@ -3,7 +3,7 @@ import { Button, CardContent, Link, Typography } from "@material-ui/core"
 import ReactJson from 'react-json-view'
 import { displayContentID } from "../network/utils";
 import { getWebURL } from '../network/ipfsConnector';
-
+import JupyterViewer from "react-jupyter-notebook";
 const LinkStyle = {
     wordBreak: 'break-all',
     color: 'whitesmoke',
@@ -26,7 +26,13 @@ export const IpfsLog = ({state}) => {
                 color="textPrimary"
                 component="pre">
                 {
-                    log ? formatLog(log) : "Loading..."
+                     log ? formatLog(log) : "Loading..."
+                        // <JupyterViewer
+                        //     rawIpynb={ipfs?.output?.["notebook_output.ipynb"]}
+                        //     mediaAlign="center"
+                        //     displaySource="hide"
+                        //     displayOutput="auto"
+                        //     />
                 }
             </Typography>
         </CardContent>}

@@ -6,16 +6,17 @@ import { Box } from "@material-ui/core";
 
 const debug = Debug("Form");
 
-const FormView = ({ input, metadata, nodeID, onSubmit, onCancel}) => {
+const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCancel}) => {
 
     const filledForm = getFormInputs(input, metadata);
 
     if (!filledForm)
         return null;
 
+    debug("colabState",colabState)
 
-    const showSubmit = !input || !input.submitted;
-    const formDisabled = !nodeID;
+    const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
+    const formDisabled = status === "disconnected" ;
     const cancelling = input && input.cancelled;
 
     debug("nodeID",nodeID, formDisabled)
@@ -27,7 +28,7 @@ const FormView = ({ input, metadata, nodeID, onSubmit, onCancel}) => {
     return <Form
         schema={{properties: filledForm}}
         uiSchema={uiSchema}
-        onSubmit={({formData}) => onSubmit({...formData, submitted: true})}
+        onSubmit={({formData}) => onSubmit(formData)}
         disabled={formDisabled}
     >
         <Box m={1}>

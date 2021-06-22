@@ -88,49 +88,57 @@ export const stateReducer = [
         debug("Merging", newState, "into", state);
         let mergedState = {
             ...state,
-            ...newState
+            ...newState,
+            ipfs: {...state.ipfs, ...newState.ipfs}
         };
         debug("Merging result", mergedState);
         return mergedState;
     }, {
         nodeID: null,
         contentID: null,
-        ipfs: {}
+        ipfs: { },
+        status: "disconnected"
     }];
+
+export const setStatusName = async (contentID, name) => {
+    const _client = await client;
+    const statusCID = await getCidOfPath(contentID, "status");
+    let newStatusCID;
+    if (!statusCID) {
+        newStatusCID = stringCID(await _client.add({content: JSON.stringify(name), path: "name"}, {wrapWithDirectory: true}));
+    } else {
+        const { cid: addedCid } = await _client.add(JSON.stringify(name));
+        newStatusCID = stringCID(await _client.object.patch.addLink(statusCID.cid, { Hash: addedCid, name: "name" }));
+        contentID = await _client.object.patch.rmLink(contentID, { name: "status" });
+    }
+    debug("addLink",contentID, { Hash: newStatusCID, name: "status" })
+    contentID = stringCID(await _client.object.patch.addLink(contentID, { Hash: newStatusCID, name: "status" }));
+    return contentID;
+}
 
 export const addInputContent = async (contentID, { inputs }) => {
     const _client = await client;
+
     debug("Triggered dispatch. Inputs:", inputs, "cid before", contentID);
     for (const [key, val] of Object.entries(inputs)) {
-
-        //debug(`${state.contentID}/input`, key);
-
-        // debug(await client.files.cp(`/ipfs/${state.contentID}`,"/"));
-        // const {cid:mfsCid} = await client.files.stat("/");
-        // debug("mfscid",mfsCid);
-        // state = {...state, contentID: mfsCid};
-        // onState(state);
 
         const inputPath = await getCidOfPath(contentID, "input");
         
         let newInputCid;
-        let contentWithRemovedInput;
+
         if (!inputPath) {
             newInputCid = stringCID(await _client.add({content: JSON.stringify(val),path: key}, {wrapWithDirectory: true,}));
-            contentWithRemovedInput = contentID;
         } else {
             const { cid: addedCid } = await _client.add(JSON.stringify(val));
             //debug("AddedCID", addedCid, tmpInputCid)
             //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
             debug("adding", contentID, { Hash: addedCid, name: key })
             newInputCid = await _client.object.patch.addLink(inputPath.cid, { Hash: addedCid, name: key });
-            contentWithRemovedInput = await _client.object.patch.rmLink(contentID, { name: "input" });
+            contentID = stringCID(await _client.object.patch.rmLink(contentID, { name: "input" }));
         }
       
-        debug("addlink2", contentWithRemovedInput, { Hash: newInputCid, name: "input" })
-        const newContentID = await _client.object.patch.addLink(contentWithRemovedInput, { Hash: newInputCid, name: "input" });
-        // debug("newIpfs",await getState(client,  { cid: newInputCid, type: "dir"}))
-        contentID = newContentID.toString();
+        debug("addlink2", contentID, { Hash: newInputCid, name: "input" })
+        contentID = stringCID(await _client.object.patch.addLink(contentID, { Hash: newInputCid, name: "input" }));
     };
     return contentID;
 
@@ -145,7 +153,12 @@ export const subscribe = subscribeCIDCallback;
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);
-    return (await toPromise((await client).ls(dirCid))).find(({ name }) => name === path);
+    try {
+        return (await toPromise((await client).ls(dirCid))).find(({ name }) => name === path);
+    } catch {
+        debug("couldn't get cid of path", path);
+        return null;
+    }
 }
 
-// export default useColab;
+// export default ueColab;

@@ -14,6 +14,12 @@ export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;
     const log = ipfs.output && ipfs.output.log;
     return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
+         <h3>Logs [<Button style={LinkStyle}
+                href={getWebURL(`${contentID}/output/log`)} 
+                target="_blank"
+            >
+                See Full
+            </Button>]</h3>
         {log && <CardContent>
             <Typography
                 variant="body2"
@@ -23,13 +29,6 @@ export const IpfsLog = ({state}) => {
                     log ? formatLog(log) : "Loading..."
                 }
             </Typography>
-
-            <Button style={LinkStyle}
-                href={getWebURL(`${contentID}/status/log`)} 
-                target="_blank"
-            >
-                See Full
-            </Button>
         </CardContent>}
 
         <CardContent>

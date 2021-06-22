@@ -68,7 +68,7 @@ export default React.memo(function Model() {
           <FormView
             input={ipfs.input}
             status={status}
-            colabState={ipfs?.status?.colabState}
+            colabState={ipfs?.status}
             metadata={metadata}
             nodeID={nodeID}
             onSubmit={dispatchForm} 

@@ -44635,12 +44635,12 @@ var incrementalUpdate = async (watchPath2) => {
         await ipfsAddFile(ipfsPath, localPath);
       }
     }));
-    const newContentID2 = await contentID("/");
-    console.log(newContentID2);
+    const newContentID = await contentID("/");
+    console.log(newContentID);
     if (options_default.ipns) {
-      debug5("publish", newContentID2);
-      if (!isSameContentID(stringCID(newContentID2)))
-        await publish(newContentID2);
+      debug5("publish", newContentID);
+      if (!isSameContentID(stringCID(newContentID)))
+        await publish(newContentID);
     }
     if (options_default.once) {
       break;
@@ -44650,7 +44650,7 @@ var incrementalUpdate = async (watchPath2) => {
   import_process.default.exit(0);
 };
 async function processRemoteCID(contentID2) {
-  if (isSameContentID(stringCID(newContentID)))
+  if (isSameContentID(stringCID(contentID2)))
     return;
   debug5("Processing remote CID", contentID2);
   debug5("got remote state", await getIPFSState(contentID2, processFile));

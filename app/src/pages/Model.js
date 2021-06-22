@@ -84,7 +84,6 @@ export default React.memo(function Model() {
       }    
 
       <div style={{ width: '100%'}}>
-          <h3 children='Log' />
           <IpfsLog state={state}/>
       </div>
 

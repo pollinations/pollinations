@@ -119,7 +119,7 @@ const incrementalUpdate = async (watchPath) => {
 
 
 async function processRemoteCID(contentID) {
-  if (isSameContentID(stringCID(newContentID)))
+  if (isSameContentID(stringCID(contentID)))
     return;
   debug("Processing remote CID", contentID);
   debug("got remote state", (await getIPFSState(contentID, processFile)));

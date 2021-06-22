@@ -39,7 +39,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
             <div style={RowStyle}>
                 <p children='NodeID' style={ParagraphStyle}/>
                 {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
-                <p children='colab_status' style={ParagraphStyle}/>
+                <p children='ColabStatus' style={ParagraphStyle}/>
                     {colabState}
 
                 

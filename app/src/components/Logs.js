@@ -12,7 +12,7 @@ const LinkStyle = {
 
 export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;
-    const log = ipfs.status && ipfs.status.log;
+    const log = ipfs.output && ipfs.output.log;
     return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
         {log && <CardContent>
             <Typography

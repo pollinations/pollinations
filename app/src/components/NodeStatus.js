@@ -32,7 +32,7 @@ let ParagraphStyle = {
 }
 
 export default ({ nodeID, contentID, status, ipfs }) => {
-    const colabState = ipfs?.status?.colabState;
+    const colabState = ipfs?.status;
     return <>
             <h3>Status <Typography component="span">[{status}, {colabState}]</Typography></h3>
             <div style={WrapperStyle}>

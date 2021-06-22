@@ -2,11 +2,10 @@
 import {useCallback, useEffect, useMemo, useReducer} from "react";
 
  
-import {IPFSState, stateReducer, addInputContent, publish, subscribe } from "./ipfsClient";
+import {IPFSState, stateReducer, addInputContent, publish, subscribe, setStatusName } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
-import { useLocation,useParams, useHistory } from "react-router-dom";
-import { createBrowserHistory } from "history";
+import { useParams, useHistory } from "react-router-dom";
 
 
 const debug = Debug("useColab")
@@ -24,13 +23,15 @@ const useColab = () => {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }
-    },[state]);
+    }, [state]);
 
     useEffect(() => {
         colabConnectionManager(async nodeID => {
-            dispatchState({ nodeID });
+            dispatchState({ nodeID, status: "ready" });
             const subscribeResult = await subscribe(nodeID, setContentID);
             debug("subscribeResult", subscribeResult);
+            // debug("setting status name of contentID", state.contentID)
+            // setContentID(await setStatusName(state.contentID, "ready"));
         });
     },[]);
 
@@ -57,6 +58,12 @@ const useColab = () => {
             debug("Publishing contentID to colab", newContentID);
             publish(state.nodeID, newContentID);
         }
+        // ,
+        // setStatus: async name => {
+        //     const newContentID = await setStatusName(state.contentID, name);
+        //     setContentID(newContentID);
+        //     publish(state.nodeID, newContentID);
+        // }
     };
 };
 

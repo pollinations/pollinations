@@ -145,8 +145,14 @@ export async function contentID(mfsPath="/") {
     return stringCID(await _client.files.stat(mfsPath));
 }
 
+let _lastContentID = null;
 
 export async function publish(rootCID) {
+    if (_lastContentID === rootCID) {
+        debug("Skipping publish of rootCID since its the same as before", rootCID)
+        return;
+    }
+    _lastContentID = rootCID;
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
     await _client.pubsub.publish(await nodeID, rootCID)

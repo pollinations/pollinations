@@ -28,13 +28,21 @@ const readline = Readline.createInterface({
 debug("CLI options", options);
 
 
-
-
-
 const watchPath = options.path;
 
 const enableSend = !options.receive;
 const enableReceive = !options.send;
+
+let _lastContentID = null;
+
+const isSameContentID = cid => {
+  if (_lastContentID === cid) {
+    debug("contentid was the same. probably skipping")
+    return true;
+  }
+  _lastContentID = cid;
+  return false;
+}
 
 if (!existsSync(watchPath)) {
   debug("Local: Root directory does not exist. Creating", watchPath)
@@ -96,7 +104,8 @@ const incrementalUpdate = async (watchPath) => {
     console.log(newContentID);
     if (options.ipns) {
       debug("publish", newContentID)
-      await publish(newContentID);
+      if (!isSameContentID(stringCID(newContentID)))
+        await publish(newContentID);
     }
 
     if (options.once) {
@@ -108,7 +117,10 @@ const incrementalUpdate = async (watchPath) => {
   process.exit(0);
 }
 
+
 async function processRemoteCID(contentID) {
+  if (isSameContentID(stringCID(newContentID)))
+    return;
   debug("Processing remote CID", contentID);
   debug("got remote state", (await getIPFSState(contentID, processFile)));
 }

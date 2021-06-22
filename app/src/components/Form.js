@@ -16,8 +16,9 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     debug("colabState",colabState)
 
     const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
-    const formDisabled = status === "disconnected" ;
-    const cancelling = input && input.cancelled;
+    
+    const inProgress = input && input.formAction;
+    const formDisabled = status === "disconnected" || inProgress;
 
     debug("nodeID",nodeID, formDisabled)
     const uiSchema = getUISchema(filledForm, showSubmit)
@@ -29,16 +30,16 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         schema={{properties: filledForm}}
         uiSchema={uiSchema}
         onSubmit={({formData}) => onSubmit(formData)}
-        disabled={formDisabled}
+        disabled={formDisabled || colabState === "running"}
     >
         <Box m={1}>
             {
                 showSubmit 
                 ?   <Button type="submit" disabled={formDisabled} variant="outlined">
-                        Submit
+                        {inProgress ? "Submitting..." : "Submit" } 
                     </Button>
-                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled || cancelling} variant="outlined">
-                        {cancelling ? "Cancelling...": "Cancel"}
+                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} variant="outlined">
+                        {inProgress ? "Cancelling...": "Cancel"}
                     </Button>
             }
         </Box>
@@ -66,11 +67,12 @@ const toSchema = (key, enabled) => {
         ["text_","text"],
         ["file_","file"],
         ["num_","updown"],
+        ["save_","radio"],
         ["","text"]
     ];
 
     return { 
-        "ui:widget": mappings.find(([keyPrefix, _]) => key.startsWith(keyPrefix))[1],
+        "ui:widget": mappings.find(([keyPrefix, _]) => key.toLowerCase().startsWith(keyPrefix))[1],
         "ui_disabled": !enabled
     }
 

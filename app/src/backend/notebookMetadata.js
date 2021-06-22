@@ -20,8 +20,9 @@ function readMetadata(notebookJSON) {
         .map(extractParameters)
         .filter(param => param)
         .map(mapToJSONFormField);
+        debug("got parameters", allParameters);
   const properties = Object.fromEntries(allParameters);
-  debug("got parameters", properties);
+  
   return {
       form: {
         // "title": name,
@@ -35,8 +36,10 @@ function readMetadata(notebookJSON) {
 
 };
 
-const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s\s#@param\s{type:\s"(.*)"}/);
+const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
 
-const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parse(defaultVal), title: name}];
+const parseHandleSpecial = (val, type) => type === "boolean" ? parse(`"${val}"`) : parse(val)
+
+const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parseHandleSpecial(defaultVal, type), title: name}];
 
 export default readMetadata;

@@ -1,7 +1,7 @@
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
 import Acordion from './Acordion'
-import { Button, Link } from "@material-ui/core"
+import { Button, Link, Typography } from "@material-ui/core"
 
 const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
@@ -31,25 +31,27 @@ let ParagraphStyle = {
     opacity: 0.9
 }
 
-export default ({ nodeID, contentID }) => {
-    return <div style={WrapperStyle}>
+export default ({ nodeID, contentID, status }) => {
+    return <>
+            <h3>Status <Typography component="span">[{status}]</Typography></h3>
+            <div style={WrapperStyle}>
+            <div style={RowStyle}>
+                <p children='NodeID' style={ParagraphStyle}/>
+                {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
+            </div>
 
-    <div style={RowStyle}>
-        <p children='NodeID' style={ParagraphStyle}/>
-        {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
-    </div>
-    
+            <div style={RowStyle}>
+                <p children='ContentID' style={ParagraphStyle}/>
+                {contentID ? 
+                <Link style={LinkStyle}
+                    href={getWebURL(contentID)} children={displayContentID(contentID)}
+                    target="_blank"
+                    />
+                : <p children="Not connected..."/>}
+            </div>
 
-    <div style={RowStyle}>
-        <p children='ContentID' style={ParagraphStyle}/>
-        {contentID ? 
-        <Link style={LinkStyle}
-            href={getWebURL(contentID)} children={displayContentID(contentID)}
-            target="_blank"
-            />
-        : <p children="Not connected..."/>}
-    </div>
-    </div>
+            </div>
+    </>
 }
 
 

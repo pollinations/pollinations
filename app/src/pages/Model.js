@@ -13,9 +13,9 @@ import Debug from "debug";
 // Components
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
-import ImageViewer from '../components/ImageViewer'
+import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import NodeStatus from "../components/NodeStatus";
-import { SEOMetadata } from "../components/Helmet";
+import { SEO, SEOMetadata } from "../components/Helmet";
 
 
 
@@ -47,10 +47,8 @@ export default React.memo(function Model() {
 
   const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, formAction: "cancel" }})
 
-  return <>
-    {metadata && <SEOMetadata title={metadata.name} description={metadata.description} /> }
-    <div style={{display:'flex', flexWrap: 'wrap'}}>
-
+  return <div style={{display:'flex', flexWrap: 'wrap'}}>
+      <SEO metadata={metadata} output={ipfs.output} />
       {/* control panel */}
 
         {/* just in case */}
@@ -88,7 +86,4 @@ export default React.memo(function Model() {
 
 
     </div>
-
-
-  </>
 });

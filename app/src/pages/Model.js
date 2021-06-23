@@ -33,7 +33,7 @@ export default React.memo(function Model() {
 
   const { state, dispatch: dispatchInputState, setStatus } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
 
-  const { ipfs, nodeID, status } = state;
+  const { ipfs, nodeID, status, contentID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
@@ -78,8 +78,7 @@ export default React.memo(function Model() {
 
       {/* previews */}
       { ipfs.output && <div >
-                          <h3 children='Output' />
-                          <ImageViewer output={ipfs.output}/>
+                          <ImageViewer output={ipfs.output} contentID={contentID}/>
                         </div>
       }    
 

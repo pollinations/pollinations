@@ -17,7 +17,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
 
     const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
     
-    const inProgress = !!(input && input.formAction);
+    const inProgress = false//!!(input && input.formAction);
     const formDisabled = status === "disconnected" || inProgress;
 
     debug("nodeID",nodeID, formDisabled)

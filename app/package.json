@@ -31,6 +31,7 @@
     "json5": "^2.2.0",
     "lodash.throttle": "^4.1.1",
     "markdown-to-jsx": "^7.1.2",
+    "markdown-to-text": "^0.1.1",
     "multi-progress-bars": "^3.2.4",
     "multicodec": "^3.0.1",
     "mz": "^2.7.0",

@@ -41,7 +41,11 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                 :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} variant="outlined">
                         {inProgress ? "Cancelling...": "Cancel"}
                     </Button>
+                    
             }
+            <Button href="https://pollinations.ai">
+                        Reset
+                    </Button>
         </Box>
     </Form>
 }

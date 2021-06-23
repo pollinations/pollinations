@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet";
 import removeMarkdown from "markdown-to-text";
+import { getCoverImage } from "./MediaViewer";
 
 export const SEOImage = ({url}) => 
     (<Helmet >
@@ -24,4 +25,15 @@ export const SEOMetadata= ({title, description}) => {
                 <meta property="twitter:description" content={description} />
                 <meta property="og:url" content={window.location.toString()} />                
             </Helmet>;
+}
+
+export const SEO = ({metadata, output}) => {
+    if (!metadata)
+        return null;
+    const coverImage = getCoverImage(output);
+    const description = coverImage ? coverImage[0] : metadata.description;
+    return <>
+        <SEOMetadata title={metadata.name} description={description} />
+        {coverImage && <SEOImage url={coverImage[1]} /> }
+    </>;  
 }

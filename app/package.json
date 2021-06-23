@@ -51,6 +51,7 @@
     "readline": "^1.3.0",
     "robot3": "^0.2.19",
     "sass": "^1.35.1",
+    "social-post-api": "^1.0.16",
     "web-vitals": "^1.1.2",
     "workbox-background-sync": "^6.1.5",
     "workbox-broadcast-update": "^6.1.5",

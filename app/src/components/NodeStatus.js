@@ -20,11 +20,7 @@ let RowStyle = {
     padding: '10px 5px 10px 0 !important',
     padding: 2.5
     };
-let LinkStyle = {
-    wordBreak: 'break-all',
-    color: 'whitesmoke',
-    padding: '10px 0'
-}
+
 let ParagraphStyle = {
     margin: '5px 0',
     fontWeight: 'bold',
@@ -38,7 +34,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
             <div style={WrapperStyle}>
             <div style={RowStyle}>
                 <p children='NodeID' style={ParagraphStyle}/>
-                {nodeID ? <Link style={LinkStyle}>{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
+                {nodeID ? <Link >{displayContentID(nodeID)}</Link> : <ColabConnectButton />}
                    
 
                 
@@ -47,7 +43,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
             <div style={RowStyle}>
                 <p children='ContentID' style={ParagraphStyle}/>
                 {contentID ? 
-                <Link style={LinkStyle}
+                <Link
                     href={getWebURL(contentID)} children={displayContentID(contentID)}
                     target="_blank"
                     />

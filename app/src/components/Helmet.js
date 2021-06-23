@@ -12,6 +12,7 @@ export const SEOMetadata= ({title, description}) => {
     return  <Helmet>
                 <title children={title} />
                 <meta property="og:title" content={title} />
+                <meta property="og:type" content="image" />
                 <meta property="twitter:title" content={title} />
                 <meta property="og:description" content={description} />
                 <meta property="og:description" content={description} />

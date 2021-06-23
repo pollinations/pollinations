@@ -1,3 +1,4 @@
+/ipfs/*/image.png http://ipfs.pollinations.ai:8080/ipfs/:splat 200
 /ipfs/* http://ipfs.pollinations.ai:8080/ipfs/:splat 200
 /ipns/* http://ipfs.pollinations.ai:8080/ipns/:splat 200
 /p/* / 200

@@ -9,13 +9,6 @@ import { any, identity } from "ramda";
 import { getWebURL } from "../network/ipfsConnector";
 const debug = Debug("ImageViewer");
 
-const LinkStyle = {
-  wordBreak: 'break-all',
-  color: 'whitesmoke',
-  padding: '10px 0'
-}
-
-
 const MediaDisplay = ({filename, ...props}) => 
   filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
@@ -33,7 +26,7 @@ function ImageViewer({output, contentID}) {
     debug("first",firstFilename, firstURL)
     return (
         <div >
-          <h3>Output [<Button style={LinkStyle}
+          <h3>Output [<Button
                 href={getWebURL(`${contentID}/output`)} 
                 target="_blank">
                   Open Folder

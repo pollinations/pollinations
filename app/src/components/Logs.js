@@ -4,17 +4,12 @@ import ReactJson from 'react-json-view'
 import { displayContentID } from "../network/utils";
 import { getWebURL } from '../network/ipfsConnector';
 import JupyterViewer from "react-jupyter-notebook";
-const LinkStyle = {
-    wordBreak: 'break-all',
-    color: 'whitesmoke',
-    padding: '10px 0'
-}
 
 export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;
     const log = ipfs.output && ipfs.output.log;
     return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
-         <h3>Logs [<Button style={LinkStyle}
+         <h3>Logs [<Button 
                 href={getWebURL(`${contentID}/output/log`)} 
                 target="_blank"
             >

@@ -1763,9 +1763,9 @@ var require_normalize_path = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/anymatch/index.js
+// node_modules/anymatch/index.js
 var require_anymatch = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/anymatch/index.js"(exports2, module2) {
+  "node_modules/anymatch/index.js"(exports2, module2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {value: true});
     var picomatch = require_picomatch2();
@@ -1915,9 +1915,9 @@ var require_glob_parent = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/utils.js
+// node_modules/braces/lib/utils.js
 var require_utils2 = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/utils.js"(exports2) {
+  "node_modules/braces/lib/utils.js"(exports2) {
     "use strict";
     exports2.isInteger = (num) => {
       if (typeof num === "number") {
@@ -1999,9 +1999,9 @@ var require_utils2 = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/stringify.js
+// node_modules/braces/lib/stringify.js
 var require_stringify = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/stringify.js"(exports2, module2) {
+  "node_modules/braces/lib/stringify.js"(exports2, module2) {
     "use strict";
     var utils = require_utils2();
     module2.exports = (ast, options = {}) => {
@@ -2030,9 +2030,9 @@ var require_stringify = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/is-number/index.js
+// node_modules/to-regex-range/node_modules/is-number/index.js
 var require_is_number = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/is-number/index.js"(exports2, module2) {
+  "node_modules/to-regex-range/node_modules/is-number/index.js"(exports2, module2) {
     "use strict";
     module2.exports = function(num) {
       if (typeof num === "number") {
@@ -2046,9 +2046,9 @@ var require_is_number = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/to-regex-range/index.js
+// node_modules/to-regex-range/index.js
 var require_to_regex_range = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/to-regex-range/index.js"(exports2, module2) {
+  "node_modules/to-regex-range/index.js"(exports2, module2) {
     "use strict";
     var isNumber = require_is_number();
     var toRegexRange = (min, max, options) => {
@@ -2258,9 +2258,9 @@ var require_to_regex_range = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/fill-range/index.js
+// node_modules/fill-range/index.js
 var require_fill_range = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/fill-range/index.js"(exports2, module2) {
+  "node_modules/fill-range/index.js"(exports2, module2) {
     "use strict";
     var util = require("util");
     var toRegexRange = require_to_regex_range();
@@ -2464,9 +2464,9 @@ var require_fill_range = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/compile.js
+// node_modules/braces/lib/compile.js
 var require_compile = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/compile.js"(exports2, module2) {
+  "node_modules/braces/lib/compile.js"(exports2, module2) {
     "use strict";
     var fill = require_fill_range();
     var utils = require_utils2();
@@ -2515,9 +2515,9 @@ var require_compile = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/expand.js
+// node_modules/braces/lib/expand.js
 var require_expand = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/expand.js"(exports2, module2) {
+  "node_modules/braces/lib/expand.js"(exports2, module2) {
     "use strict";
     var fill = require_fill_range();
     var stringify = require_stringify();
@@ -2612,9 +2612,9 @@ var require_expand = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/constants.js
+// node_modules/braces/lib/constants.js
 var require_constants2 = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/constants.js"(exports2, module2) {
+  "node_modules/braces/lib/constants.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       MAX_LENGTH: 1024 * 64,
@@ -2666,9 +2666,9 @@ var require_constants2 = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/lib/parse.js
+// node_modules/braces/lib/parse.js
 var require_parse2 = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/lib/parse.js"(exports2, module2) {
+  "node_modules/braces/lib/parse.js"(exports2, module2) {
     "use strict";
     var stringify = require_stringify();
     var {
@@ -2898,9 +2898,9 @@ var require_parse2 = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/braces/index.js
+// node_modules/braces/index.js
 var require_braces = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/braces/index.js"(exports2, module2) {
+  "node_modules/braces/index.js"(exports2, module2) {
     "use strict";
     var stringify = require_stringify();
     var compile = require_compile();
@@ -2961,9 +2961,9 @@ var require_braces = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/binary-extensions/binary-extensions.json
+// node_modules/binary-extensions/binary-extensions.json
 var require_binary_extensions = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/binary-extensions/binary-extensions.json"(exports2, module2) {
+  "node_modules/binary-extensions/binary-extensions.json"(exports2, module2) {
     module2.exports = [
       "3dm",
       "3ds",
@@ -3227,16 +3227,16 @@ var require_binary_extensions = __commonJS({
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/binary-extensions/index.js
+// node_modules/binary-extensions/index.js
 var require_binary_extensions2 = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/binary-extensions/index.js"(exports2, module2) {
+  "node_modules/binary-extensions/index.js"(exports2, module2) {
     module2.exports = require_binary_extensions();
   }
 });
 
-// node_modules/file-watch-iterator/node_modules/is-binary-path/index.js
+// node_modules/is-binary-path/index.js
 var require_is_binary_path = __commonJS({
-  "node_modules/file-watch-iterator/node_modules/is-binary-path/index.js"(exports2, module2) {
+  "node_modules/is-binary-path/index.js"(exports2, module2) {
     "use strict";
     var path = require("path");
     var binaryExtensions = require_binary_extensions2();
@@ -24849,9 +24849,9 @@ var require_fetch2 = __commonJS({
   }
 });
 
-// node_modules/merge-options/node_modules/is-plain-obj/index.js
+// node_modules/is-plain-obj/index.js
 var require_is_plain_obj = __commonJS({
-  "node_modules/merge-options/node_modules/is-plain-obj/index.js"(exports2, module2) {
+  "node_modules/is-plain-obj/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (value) => {
       if (Object.prototype.toString.call(value) !== "[object Object]") {
@@ -44464,7 +44464,8 @@ var nodeID = client.then(async (client2) => options_default.nodeid || (await cli
 (async () => debug3("NodeID", nodeID))();
 var getWebURL = (cid, name = null) => {
   const filename = name ? `?filename=${name}` : "";
-  return `https://pollinations.ai/ipfs/${cid}${filename}`;
+  const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png" : "";
+  return `https://pollinations.ai/ipfs/${cid}${imgFBFixHack}${filename}`;
 };
 var stripSlashIPFS = (cidString) => cidString.replace("/ipfs/", "");
 var firstLine = (s) => s.split("\n")[0];
@@ -44614,7 +44615,7 @@ var incrementalUpdate = async (watchPath2) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath2,
     awaitWriteFinish: true
-  }, {debounce: 200});
+  }, {debounce: 1e3});
   for await (const files of watch$) {
     const changed = getSortedChangedFiles(files);
     await Promise.all(changed.map(async ({event, file}) => {

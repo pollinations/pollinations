@@ -60,7 +60,8 @@ export async function getCID(ipfsPath = "/") {
 
 export const getWebURL = (cid, name=null) => {
     const filename = name ? `?filename=${name}` : '';
-    return `https://pollinations.ai/ipfs/${cid}${filename}`
+    const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png":"";
+    return `https://pollinations.ai/ipfs/${cid}${imgFBFixHack}${filename}`
 };
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");

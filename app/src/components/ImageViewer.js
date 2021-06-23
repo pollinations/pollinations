@@ -6,12 +6,20 @@ import ListIcon from '@material-ui/icons/List';
 import AppsIcon from '@material-ui/icons/Apps';
 import { SEOImage } from "./Helmet";
 import { any, identity } from "ramda";
+import { getWebURL } from "../network/ipfsConnector";
 const debug = Debug("ImageViewer");
+
+const LinkStyle = {
+  wordBreak: 'break-all',
+  color: 'whitesmoke',
+  padding: '10px 0'
+}
+
 
 const MediaDisplay = ({filename, ...props}) => 
   filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
-function ImageViewer({output}) {
+function ImageViewer({output, contentID}) {
     const images = getPreviewImages(output);
 
     if (!images || images.length === 0)
@@ -27,6 +35,11 @@ function ImageViewer({output}) {
     debug("first",firstFilename, firstURL)
     return (
         <div >
+          <h3>Output [<Button style={LinkStyle}
+                href={getWebURL(contentID)} 
+                target="_blank">
+                  Open Folder
+            </Button>]</h3>
           <SEOImage url={firstURL} />
           <div style={{ width: '50%',maxWidth:'500px', margin: '20px auto' }}>
             <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />

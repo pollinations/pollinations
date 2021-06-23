@@ -25,13 +25,11 @@ function ImageViewer({output, contentID}) {
     if (!images || images.length === 0)
       return null;
 
-    const imgs = [...images]; imgs.reverse();
+    const firstFilename = images[0][0];
+    const firstURL = images[0][1];
+    images.shift();
 
-    const firstFilename = imgs[0][0];
-    const firstURL = imgs[0][1];
-    imgs.shift();
-
-    debug("images", imgs);
+    debug("images", images);
     debug("first",firstFilename, firstURL)
     return (
         <div >
@@ -46,7 +44,7 @@ function ImageViewer({output, contentID}) {
           </div>
             
           <GridList cellHeight={200} cols={4}
-            children={imgs.map(([filename, url]) => (
+            children={images.map(([filename, url]) => (
               <GridListTile key={filename} cols={1}>
                 <MediaDisplay src={url} filename={filename} style={{ margin:"5px", height:"100%" }} />
               </GridListTile>
@@ -73,7 +71,7 @@ function getMedia(output, type="all") {
     .filter(filterByExtensions) : [];
 
   const images = imageFilenames.map(filename => [filename, output[filename]]);
-
+  images.reverse();
   return images
 }
 

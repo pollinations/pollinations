@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet";
+import removeMarkdown from "markdown-to-text";
 
 export const SEOImage = ({url}) => 
     (<Helmet >
@@ -9,6 +10,8 @@ export const SEOImage = ({url}) =>
 
 export const SEOMetadata= ({title, description}) => {
     title = `Pollinations - ${title}`;
+    title = title.slice(0,60);
+    description = removeMarkdown(description);
     return  <Helmet>
                 <title children={title} />
                 <meta property="og:title" content={title} />

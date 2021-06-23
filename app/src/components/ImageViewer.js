@@ -36,7 +36,7 @@ function ImageViewer({output, contentID}) {
     return (
         <div >
           <h3>Output [<Button style={LinkStyle}
-                href={getWebURL(contentID)} 
+                href={getWebURL(`${contentID}/output`)} 
                 target="_blank">
                   Open Folder
             </Button>]</h3>

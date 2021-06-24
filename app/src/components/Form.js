@@ -38,8 +38,8 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                 ?   <Button type="submit" disabled={formDisabled} >
                         [ {inProgress ? "Submitting..." : "Submit" } ] 
                     </Button>
-                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} variant="outlined">
-                        {inProgress ? "Cancelling...": "Cancel"}
+                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
+                        [ {inProgress ? "Cancelling...": "Cancel"} ]
                     </Button>
                     
             }

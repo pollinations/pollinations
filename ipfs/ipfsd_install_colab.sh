@@ -2,8 +2,8 @@
 
 # IPFS
 
-wget https://dist.ipfs.io/go-ipfs/v0.8.0/go-ipfs_v0.8.0_linux-amd64.tar.gz
-tar -xvzf go-ipfs_v0.8.0_linux-amd64.tar.gz
+wget https://ipfs.io/ipns/dist.ipfs.io/go-ipfs/v0.9.0/go-ipfs_v0.9.0_linux-arm64.tar.gz
+tar -xvzf go-ipfs_v0.9.0_linux-amd64.tar.gz
 cd go-ipfs
 sudo bash install.sh
 cd -

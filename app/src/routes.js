@@ -10,9 +10,9 @@ export let routes = [
     { 
         exact: true,
         path: "/",
-        children: <Redirect to="/p/QmSTWP14EtZrhEREgKKQZFEpmYE8BTFTRMRQHgsX68QRaE" />,
+        children: <Redirect to="/p/QmYHqPL2trZ8GKMNiJqpDGXXxiKXKHP2t1LjtbA5ZpvQj6" />,
     }
 ]
 
 // Deep Daze"/p/Qma18Qy5tHzNEK1D7Qwa7UkEzZBWjtStW2s7hDRqJyxJ3g"
-// Latent2Visions "/p/QmSTWP14EtZrhEREgKKQZFEpmYE8BTFTRMRQHgsX68QRaE"
+// Latent2Visions "/p/QmYHqPL2trZ8GKMNiJqpDGXXxiKXKHP2t1LjtbA5ZpvQj6"

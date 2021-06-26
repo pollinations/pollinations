@@ -47,18 +47,17 @@ export default React.memo(function Model() {
 
   const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, formAction: "cancel" }})
 
-  return <div style={{display:'flex', flexWrap: 'wrap'}}>
+  return <>
+        {/* status */}      
+          <NodeStatus {...state} />
+
+      <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />
       {/* control panel */}
 
         {/* just in case */}
         {metadata && metadata.description ?<div style={{ width: '100%'}}><Markdown>{metadata.description}</Markdown></div> : null}
 
-        {/* status */}
-        <div style={{ width: '100%'}}>
-          <NodeStatus {...state} />
-        </div>
-        
         {/* inputs */}
         <div style={{ width: '100%'}}>
           <h3 children='Inputs' />
@@ -86,4 +85,5 @@ export default React.memo(function Model() {
 
 
     </div>
+    </>
 });

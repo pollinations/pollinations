@@ -16,7 +16,8 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     debug("colabState",colabState)
 
     const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
-    
+    const showCancel = !showSubmit && input.formAction !== "cancel";
+
     const inProgress = false//!!(input && input.formAction);
     const formDisabled = status === "disconnected" || inProgress;
 
@@ -33,18 +34,18 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         disabled={formDisabled || colabState === "running"}
     >
         <Box m={1}>
-            {
-                showSubmit 
-                ?   <Button type="submit" disabled={formDisabled} >
+            { showSubmit &&   <Button type="submit" disabled={formDisabled} >
                         [ {inProgress ? "Submitting..." : "Submit" } ] 
                     </Button>
-                :    <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
+            }
+                    
+            { showCancel && <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
                         [ {inProgress ? "Cancelling...": "Cancel"} ]
                     </Button>
-                    
             }
+
             <Button href="https://pollinations.ai">
-                        Reset
+                        [ Reset ]
                     </Button>
         </Box>
     </Form>

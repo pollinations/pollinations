@@ -44,7 +44,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                     </Button>
             }
 
-            <Button href="https://pollinations.ai">
+            <Button href="/">
                         [ Reset ]
                     </Button>
         </Box>

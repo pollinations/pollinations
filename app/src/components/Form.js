@@ -44,9 +44,9 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                     </Button>
             }
 
-            <Button href="/">
+            {!showCancel && !showSubmit && <Button href="/">
                         [ Reset ]
-                    </Button>
+                    </Button> }
         </Box>
     </Form>
 }

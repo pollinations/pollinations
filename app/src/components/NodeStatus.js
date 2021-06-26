@@ -1,9 +1,6 @@
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
-import Acordion from './Acordion'
-import { Button, Link, Typography, AppBar, Toolbar, IconButton, List, ListItem as MuiListItem, Paper, TableContainer, Table, TableHead, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled} from "@material-ui/core"
-import ExpandMore from "@material-ui/icons/ExpandMore";
-import MenuIcon from "@material-ui/icons/Menu";
+import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled} from "@material-ui/core"
 
 const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
@@ -19,29 +16,18 @@ const ListItem = styled(MuiListItem)({
       textAlign:"right"
   });
 
-//     <Typography variant="h6" >
-//       News
-//     </Typography>
-//     <Button color="inherit">Login</Button>
-//   </Toolbar>
-// </AppBar>
-
-export default ({ nodeID, contentID, status, ipfs }) => {
-    const colabState = ipfs?.output?.status;
-    return <AppBar position="static">
-        <Toolbar>
-         <IconButton edge="start" color="inherit" aria-label="menu">
-            <MenuIcon />
-         </IconButton>
-         {/* <List style={{marginLeft:"auto"}}>
+/* <List style={{marginLeft:"auto"}}>
             <ListItem>
                 <Typography>Status</Typography>
             </ListItem>
             <ListItem>
                 <Typography component="span">[{status}, {colabState}]</Typography>
             </ListItem>
-            </List> */}
-                <Table size="small" aria-label="a dense table" style={{width:"210px", marginLeft:"auto"}}>
+            </List> */
+
+export default ({ nodeID, contentID, status, ipfs }) => {
+    const colabState = ipfs?.output?.status;
+    return <Table size="small" aria-label="a dense table" style={{width:"210px", marginLeft:"auto"}}>
                     <TableBody>
                         <TableRow>
                             <TableCell style={{paddingRight: "0px"}}>Node</TableCell>
@@ -58,10 +44,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
                         </TableCell>
                         </TableRow>
                     </TableBody>
-                </Table>
-        </Toolbar>
-
-    </AppBar>
+                </Table>;
 }
 
 

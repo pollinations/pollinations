@@ -1,8 +1,9 @@
 import { routes } from './routes'
 
-import { Container } from "@material-ui/core"
+import { Button, Container } from "@material-ui/core"
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
+import GitHubIcon from '@material-ui/icons/GitHub';
 
 function App() {
     return <Router>
@@ -18,6 +19,7 @@ function App() {
                     ))
                 }/>
 
+            Get Documentation, Support and Contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button>
         </Container>
     </Router>
 }

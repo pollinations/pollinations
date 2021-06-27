@@ -40,7 +40,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
             }
                     
             { showCancel && <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
-                        [ {inProgress ? "Cancelling...": "Cancel"} ]
+                        [ {inProgress ? "Stopping...": "Stop"} ]
                     </Button>
             }
 

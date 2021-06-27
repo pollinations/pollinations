@@ -15,3 +15,4 @@
 
 [functions]
   node_bundler = "esbuild"
+  directory = "src/backend/functions"

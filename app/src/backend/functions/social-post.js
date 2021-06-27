@@ -3,7 +3,8 @@
 import SocialPost from "social-post-api"; 
 import { IPFSState } from "../../network/ipfsClient.js";
 import readMetadata from "../notebookMetadata.js";
-import { getCoverImage, getCoverVideo } from "../../components/MediaViewer.js";
+import { getCoverImage, getCoverVideo } from "../../data/media.js";
+
 // Live API Key
 const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 

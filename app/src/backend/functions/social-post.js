@@ -1,16 +1,12 @@
+
 /** Cut & Paste Node.js Code **/
-import SocialPost from "social-post-api"; // Install "npm i social-post-api"
-
+import SocialPost from "social-post-api"; 
+import { IPFSState } from "../../network/ipfsClient";
+import readMetadata from "../notebookMetadata";
+import { getCoverImage, getCoverVideo } from "../../components/MediaViewer";
 // Live API Key
-const social = new SocialPost("6FE4JJ0-2P94JT3-PN81AYX-ARRKJR4");
+const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-
-
-const coverImage = "https://pollinations.ai/ipfs/QmWGQoQ62YAvLbKpkpiCcTRR7wdbfZmseMMkerGJLZ1w4Q/image.png?filename=vibrant-painting-of-a-ufo-in-the-style-of-magritte_00695.png";
-
-const videoURL = "https://pollinations.ai/ipfs/Qmd5BFthKPeWPbSHRtK9RpcNxgSA9HZ7YuTFLxdf8NJijb?filename=vibrant-painting-of-a-ufo-in-the-style-of-magritte_3.mp4";
-
-const url = "https://pollinations.ai/p/QmTTAoSKLAYzE4QgzLUdmfSP4TwcNdiDWdYuo6WPtMJjLT"; 
 
 const followText =
 `
@@ -35,9 +31,15 @@ const inputs =
   "text_not":"disconnected, confusing, incoherent, cluttered, watermarks, text, writing"
 }`;
 
-async function doPost({inputs, modelTitle, videoURL, coverImage, url}) {
+async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
-  const { post, title } = formatPostAndTitle(modelTitle, inputs, url);
+  const inputs = JSON.stringify(input,null, 4);
+  
+  // TODO: this shouldn't need to be hard coded
+  // change inputs from object to list to get order
+  const principal_input = inputs["text_input"];
+
+  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
 
   const shareConfig = {
     post,
@@ -72,12 +74,10 @@ async function doPost({inputs, modelTitle, videoURL, coverImage, url}) {
   return [res1,res2];
 }
 
-const postResult = await doPost({modelTitle, inputs, videoURL, coverImage, url});
-
-console.log(postResult)
+// console.log(postResult)
 
 
-function formatPostAndTitle(modelTitle, inputs, url) {
+function formatPostAndTitle(modelTitle, input, inputs, url) {
   const title = `${modelTitle}: ${input}`;
 
   const post = `# ${title}
@@ -91,18 +91,30 @@ ${url}
 ${followText}`;
   return { post, title };
 }
-// {
-//   post: "YouTube Description",      // required: Video description
-//   platforms: ["youtube"],           // required
-//   mediaUrls: ["https://images.ayrshare.com/imgs/test-video-1.mp4"], // required: URL of video, 1 allowed               
-//   youTubeOptions: {
-//       title: "YouTube Title",       // required: Video Title
-//       youTubeVisibility: "private", // optional: "public", "unlisted", or "private" - default "private"
-//       /** Important Thumbnail information below **/
-//       thumbNail: "https://images.ayrshare.com/imgs/GhostBusters.jpg", // optional: URL of a JPEG or PNG and less than 2MB
-//       playListId: "PLrav6EfwgDX5peD7Ni-pOKa7B13WjLyUB" // optional: Playlist ID to add the video
-//   }
-// }
+
+
+
+
+export default handler = async ({path}) => {
+
+    const cid = path.split("/").slice(-1)[0];
+    // your server-side functionality
+    console.log("cid",cid);
+    const ipfs = await IPFSState(cid);
+    console.log("ipfs",ipfs);
+    const { name } = readMetadata(ipfs["notebook.ipynb"]);
+    const coverImage = getCoverImage(ipfs.output);
+    const videoURL = getCoverVideo(ipfs.output);
+    const url = `https://pollinations.ai/p/${cid}`;
+    console.log("Calling post",{modelTitle:name, input: ipfs.input, videoURL, coverImage, url});
+    const postResult = await doPost({modelTitle:name, input: ipfs.input, videoURL, coverImage, url});
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify(postResult)
+  };
+
+}
 
 
 
@@ -136,5 +148,4 @@ ${followText}`;
 
 // You can mention another Facebook Page by including the following in the post text. Note, Premium or Business Plan required for mentions.
 // @[page-id]
-
 

@@ -16,7 +16,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   
   // TODO: this shouldn't need to be hard coded
   // change inputs from object to list to get order
-  const principal_input = inputs["text_input"];
+  const principal_input = input["text_input"];
 
   const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
 

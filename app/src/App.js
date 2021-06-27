@@ -19,7 +19,7 @@ function App() {
                     ))
                 }/>
 
-            Get Documentation, Support and Contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button>
+            Get Help and Contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button>
         </Container>
     </Router>
 }

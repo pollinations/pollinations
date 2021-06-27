@@ -49,6 +49,7 @@ const formatLog =
         log =>  log
                 .replace(/\].*/g, "")
                 .split("\n")
+                .filter(s => !s.startsWith("unhandled iopub"))
                 .slice(-10)
                 .join("\n");
 

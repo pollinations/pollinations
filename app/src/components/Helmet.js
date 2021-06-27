@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet";
 import removeMarkdown from "markdown-to-text";
-import { getCoverImage } from "./MediaViewer";
+import { getCoverImage } from "../data/media";
 
 export const SEOImage = ({url}) => 
     (<Helmet >

@@ -70,4 +70,7 @@ function getMedia(output, type="all") {
 
 export const getCoverImage = output => output && getMedia(output, "image")[0];
 
+export const getCoverVideo = output => output && getMedia(output, "video")[0];
+
+
 export default ImageViewer;

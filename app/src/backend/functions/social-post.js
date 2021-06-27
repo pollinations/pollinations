@@ -86,8 +86,8 @@ export const handler = async ({path}) => {
     const ipfs = await IPFSState(cid);
 
     const { name } = readMetadata(ipfs["notebook.ipynb"]);
-    const coverImage = getCoverImage(ipfs.output);
-    const videoURL = getCoverVideo(ipfs.output);
+    const coverImage = getCoverImage(ipfs.output)[1];
+    const videoURL = getCoverVideo(ipfs.output)[1];
     const url = `https://pollinations.ai/p/${cid}`;
     console.log("Calling post",{modelTitle:name, input: ipfs.input, videoURL, coverImage, url});
     const postResult = await doPost({modelTitle:name, input: ipfs.input, videoURL, coverImage, url});

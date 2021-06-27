@@ -96,7 +96,7 @@ ${followText}`;
 
 
 
-export default handler = async ({path}) => {
+export const handler = async ({path}) => {
 
     const cid = path.split("/").slice(-1)[0];
     // your server-side functionality

@@ -2,11 +2,10 @@ import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Butto
 import Debug from "debug";
 
 // Icons
-import ListIcon from '@material-ui/icons/List';
-import AppsIcon from '@material-ui/icons/Apps';
-import { SEOImage } from "./Helmet";
-import { any, identity } from "ramda";
+
 import { getWebURL } from "../network/ipfsConnector";
+import { getMedia } from "../data/media";
+
 const debug = Debug("ImageViewer");
 
 const MediaDisplay = ({filename, ...props}) => 
@@ -46,31 +45,6 @@ function ImageViewer({output, contentID}) {
         </div>
     )
 }
-
-const _mediaTypeMap = {
-  "all": [".jpg", ".png", ".mp4",".webm"],
-  "video": [".mp4",".webm"],
-  "image": [".jpg", ".png"]
-}
-
-function getMedia(output, type="all") {
-
-  const extensions = _mediaTypeMap[type];
-
-  const filterByExtensions = filename => 
-    any(identity, extensions.map(ext => filename.toLowerCase().endsWith(ext)));
-
-  const imageFilenames = output ? Object.keys(output)
-    .filter(filterByExtensions) : [];
-
-  const images = imageFilenames.map(filename => [filename, output[filename]]);
-  images.reverse();
-  return images
-}
-
-export const getCoverImage = output => output && getMedia(output, "image")[0];
-
-export const getCoverVideo = output => output && getMedia(output, "video")[0];
 
 
 export default ImageViewer;

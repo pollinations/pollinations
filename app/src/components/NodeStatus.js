@@ -1,40 +1,29 @@
 import { displayContentID } from "../network/utils";
 import { getWebURL } from "../network/ipfsConnector";
-import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled} from "@material-ui/core"
-
+import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
 const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
 const TableCell = withStyles({
     root: {
-      borderBottom: "none"
+      borderBottom: "none",
+      padding: "2px"
     }
   })(MuiTableCell);
 
-const ListItem = styled(MuiListItem)({
-      margin: "0px",
-      padding:"4px",
-      textAlign:"right"
-  });
 
-/* <List style={{marginLeft:"auto"}}>
-            <ListItem>
-                <Typography>Status</Typography>
-            </ListItem>
-            <ListItem>
-                <Typography component="span">[{status}, {colabState}]</Typography>
-            </ListItem>
-            </List> */
+
 
 export default ({ nodeID, contentID, status, ipfs }) => {
     const colabState = ipfs?.output?.status;
-    return <Table size="small" aria-label="a dense table" style={{width:"210px", marginLeft:"auto"}}>
+    return <Box style={{width:"220px", marginLeft:"auto"}}>
+        <Table size="small" aria-label="a dense table" >
                     <TableBody>
                         <TableRow>
-                            <TableCell style={{paddingRight: "0px"}}>Node</TableCell>
+                            <TableCell><b>NodeID</b></TableCell>
                             <TableCell>{nodeID ? <Link >{displayContentID(nodeID)}</Link> : <ColabConnectButton />}</TableCell>
                         </TableRow>
                         <TableRow>
-                        <TableCell style={{paddingRight: "0px"}}>Content</TableCell>
+                        <TableCell ><b>ContentID</b></TableCell>
                             <TableCell>{contentID ?
                                 <Link
                                     href={getWebURL(contentID)} children={displayContentID(contentID)}
@@ -43,8 +32,15 @@ export default ({ nodeID, contentID, status, ipfs }) => {
                                 : <p children="Not connected..." />}
                         </TableCell>
                         </TableRow>
+                        <TableRow>
+                            <TableCell><b>Status</b></TableCell>
+                            <TableCell>
+                                {colabState}
+                            </TableCell>
+                        </TableRow>
                     </TableBody>
-                </Table>;
+                </Table>
+            </Box>;
 }
 
 

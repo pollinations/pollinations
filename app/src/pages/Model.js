@@ -16,6 +16,7 @@ import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import NodeStatus from "../components/NodeStatus";
 import { SEO, SEOMetadata } from "../components/Helmet";
+import { NotebookProgress } from "../components/NotebookProgress";
 
 
 
@@ -71,13 +72,17 @@ export default React.memo(function Model() {
             onSubmit={dispatchForm} 
             onCancel={cancelForm}
             />
+          <NotebookProgress 
+            output={ipfs.output}  
+            metadata={metadata}
+           />
         </div>
 
       {/* previews */}
       { ipfs.output && <div >
                           <ImageViewer output={ipfs.output} contentID={contentID}/>
                         </div>
-      }    
+      }
 
       <div style={{ width: '100%'}}>
           <IpfsLog state={state}/>

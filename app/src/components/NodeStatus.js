@@ -45,5 +45,5 @@ export default ({ nodeID, contentID, status, ipfs }) => {
 
 
 function ColabConnectButton() {
-    return <Button color="secondary" href={colabURL} variant="outlined" target="_blank">Launch</Button>
+    return <Button color="secondary" href={colabURL} target="_blank">[ Launch ]</Button>
 }

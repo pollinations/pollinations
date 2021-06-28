@@ -3,7 +3,7 @@ import { Button, CardContent, Link, Typography } from "@material-ui/core"
 import ReactJson from 'react-json-view'
 import { displayContentID } from "../network/utils";
 import { getWebURL } from '../network/ipfsConnector';
-import JupyterViewer from "react-jupyter-notebook";
+// import JupyterViewer from "react-jupyter-notebook";
 
 export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;

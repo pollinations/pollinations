@@ -7308,10 +7308,10 @@ ipaddr.js@1.9.1, ipaddr.js@^1.9.0:
   resolved "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-1.9.1.tgz"
   integrity sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==
 
-ipfs-core-types@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.npmjs.org/ipfs-core-types/-/ipfs-core-types-0.5.0.tgz"
-  integrity sha512-Upd++4T3beEijnegundRgjSaKsyjqzyf9gmKZHy47rRetObC6trJZALvp5VBpiR0cQXoFEegcXpVOuC/om/4pw==
+ipfs-core-types@^0.5.2:
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/ipfs-core-types/-/ipfs-core-types-0.5.2.tgz#e1e026f32c9799e9fa5d6a2556d49558bd5b16d6"
+  integrity sha512-DOQeL+GFGYMTlnbdtMeBzvfVnyAalSgCfPr8XUCI+FVBZZWwzkt5jZZzGDmF87HVRrMR3FuVyBKZj772mcXKyQ==
   dependencies:
     cids "^1.1.6"
     interface-datastore "^4.0.0"
@@ -7319,19 +7319,19 @@ ipfs-core-types@^0.5.0:
     multiaddr "^9.0.1"
     multibase "^4.0.2"
 
-ipfs-core-utils@^0.8.1:
-  version "0.8.1"
-  resolved "https://registry.npmjs.org/ipfs-core-utils/-/ipfs-core-utils-0.8.1.tgz"
-  integrity sha512-25InaceHlXNHzfoWGGtzv8jhq6/anPOJonCoxh2QlcqCNJS1NcrHgboTmMShMhWz9/67Pd0VMaku356Pou/smw==
+ipfs-core-utils@^0.8.3:
+  version "0.8.3"
+  resolved "https://registry.yarnpkg.com/ipfs-core-utils/-/ipfs-core-utils-0.8.3.tgz#7033266e17156600effb794c703a4164ecbd8387"
+  integrity sha512-PY7PkCgCtVYtNOe1C3ew1+5D9NqXqizb886R/lyGWe+KsmWtBQkQIk0ZIDwKyHGvG2KA2QQeIDzdOmzBQBJtHQ==
   dependencies:
     any-signal "^2.1.2"
     blob-to-it "^1.0.1"
     browser-readablestream-to-it "^1.0.1"
     cids "^1.1.6"
     err-code "^3.0.1"
-    ipfs-core-types "^0.5.0"
+    ipfs-core-types "^0.5.2"
     ipfs-unixfs "^4.0.3"
-    ipfs-utils "^7.0.0"
+    ipfs-utils "^8.1.2"
     it-all "^1.0.4"
     it-map "^1.0.4"
     it-peekable "^1.0.1"
@@ -7341,20 +7341,20 @@ ipfs-core-utils@^0.8.1:
     timeout-abort-controller "^1.1.1"
     uint8arrays "^2.1.3"
 
-ipfs-http-client@^50.1.0:
-  version "50.1.0"
-  resolved "https://registry.npmjs.org/ipfs-http-client/-/ipfs-http-client-50.1.0.tgz"
-  integrity sha512-w7zWRugPR9dm4TS/rshtwycjwGZkxk9AXHV1a8OoVYZHEi5BvHD+kp5PdskfrfJ2rBtnWEo3qo2OoIpBe2rxxQ==
+ipfs-http-client@^50.1.2:
+  version "50.1.2"
+  resolved "https://registry.yarnpkg.com/ipfs-http-client/-/ipfs-http-client-50.1.2.tgz#31b60f4bd301b2addbc6fd1288f5f973d57afc2a"
+  integrity sha512-ZbJlED4wqwFXQFVB9FQDs20ygdq7O/zSq4AvO9KRAmkqUj2TsCWCteUz2fBMnGWLh2tExxeSl/rQbHbJptb8JQ==
   dependencies:
     abort-controller "^3.0.0"
     any-signal "^2.1.2"
     cids "^1.1.6"
     debug "^4.1.1"
     form-data "^4.0.0"
-    ipfs-core-types "^0.5.0"
-    ipfs-core-utils "^0.8.1"
+    ipfs-core-types "^0.5.2"
+    ipfs-core-utils "^0.8.3"
     ipfs-unixfs "^4.0.3"
-    ipfs-utils "^7.0.0"
+    ipfs-utils "^8.1.2"
     ipld-block "^0.11.0"
     ipld-dag-cbor "^1.0.0"
     ipld-dag-pb "^0.22.1"
@@ -7401,6 +7401,28 @@ ipfs-utils@^7.0.0:
     native-abort-controller "^1.0.3"
     native-fetch "^3.0.0"
     node-fetch "^2.6.1"
+    stream-to-it "^0.2.2"
+
+ipfs-utils@^8.1.2:
+  version "8.1.3"
+  resolved "https://registry.yarnpkg.com/ipfs-utils/-/ipfs-utils-8.1.3.tgz#a090e9a34bd2a51299134441b4cc3da111ad956e"
+  integrity sha512-QS7P9cL7rXah8uB7Wv2fx4E/7/Yr72WxYNv5eIh9dUyxS6/JacgCaVYQgNn4uZ4ps/teYE1yESTUXMWmGa/DoQ==
+  dependencies:
+    abort-controller "^3.0.0"
+    any-signal "^2.1.0"
+    buffer "^6.0.1"
+    electron-fetch "^1.7.2"
+    err-code "^3.0.1"
+    is-electron "^2.2.0"
+    iso-url "^1.1.5"
+    it-glob "~0.0.11"
+    it-to-stream "^1.0.0"
+    merge-options "^3.0.4"
+    nanoid "^3.1.20"
+    native-abort-controller "^1.0.3"
+    native-fetch "^3.0.0"
+    node-fetch "npm:@achingbrain/node-fetch@^2.6.4"
+    react-native-fetch-api "^1.0.2"
     stream-to-it "^0.2.2"
 
 ipld-block@^0.11.0, ipld-block@^0.11.1:
@@ -9764,6 +9786,11 @@ node-fetch@2.6.1, node-fetch@^2.6.1:
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.6.1.tgz"
   integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
+"node-fetch@npm:@achingbrain/node-fetch@^2.6.4":
+  version "2.6.7"
+  resolved "https://registry.yarnpkg.com/@achingbrain/node-fetch/-/node-fetch-2.6.7.tgz#1b5d62978f2ed07b99444f64f0df39f960a6d34d"
+  integrity sha512-iTASGs+HTFK5E4ZqcMsHmeJ4zodyq8L38lZV33jwqcBJYoUt3HjN4+ot+O9/0b+ke8ddE7UgOtVuZN/OkV19/g==
+
 node-forge@^0.10.0:
   version "0.10.0"
   resolved "https://registry.npmjs.org/node-forge/-/node-forge-0.10.0.tgz"
@@ -11640,6 +11667,13 @@ react-markdown@^5.0.3:
     unified "^9.0.0"
     unist-util-visit "^2.0.0"
     xtend "^4.0.1"
+
+react-native-fetch-api@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/react-native-fetch-api/-/react-native-fetch-api-1.0.2.tgz#14acda0049f554625b96486d4a87a1c3e8448b59"
+  integrity sha512-BNCImbKfcp+7NyOPu4MuF4nhEzxcJX5hhYYftOyGDywhZVdV7Q9LrqhbFUaxprwwMeNugQHi/VOY9Bip99iNkA==
+  dependencies:
+    p-defer "^3.0.0"
 
 react-refresh@^0.8.3:
   version "0.8.3"

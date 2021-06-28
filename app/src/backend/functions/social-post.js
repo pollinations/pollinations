@@ -102,8 +102,7 @@ export const handler = async ({path}) => {
 
 
 const followText =
-`
-## Create
+`## Create
 https://pollinations.ai
 
 ## Follow

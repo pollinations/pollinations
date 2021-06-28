@@ -31,7 +31,8 @@ function readMetadata(notebookJSON) {
         properties
       },
       name,
-      description
+      description,
+      numCells: cells.length
   };
 
 };

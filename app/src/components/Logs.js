@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, CardContent, Link, Typography } from "@material-ui/core"
-import ReactJson from 'react-json-view'
+// import ReactJson from 'react-json-view'
 import { displayContentID } from "../network/utils";
 import { getWebURL } from '../network/ipfsConnector';
 // import JupyterViewer from "react-jupyter-notebook";
@@ -8,6 +8,8 @@ import { getWebURL } from '../network/ipfsConnector';
 export const IpfsLog = ({state}) => {
     const {ipfs, contentID} = state;
     const log = ipfs.output && ipfs.output.log;
+    if (!log)
+        return null;
     return <div style={{maxWidth: '100%', overflow: 'hidden'}}>
          <h3>Logs [<Button 
                 href={getWebURL(`${contentID}/output/log`)} 
@@ -32,7 +34,7 @@ export const IpfsLog = ({state}) => {
             </Typography>
         </CardContent>}
 
-        <CardContent>
+        {/* <CardContent>
             <ReactJson
                 src={ipfs}
                 name={displayContentID(contentID)}
@@ -40,7 +42,7 @@ export const IpfsLog = ({state}) => {
                 displayDataTypes={false}
                 displayObjectSize={false}
                 collapsed={true} />
-        </CardContent>
+        </CardContent> */}
 
     </div>
 

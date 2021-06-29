@@ -26,7 +26,7 @@ export default function SimpleModal() {
           aria-describedby="simple-modal-description"
           style={{display:'flex',alignItems:'center',justifyContent:'center'}}
         >
-            <Paper style={{maxWidth:"90%"}}> <Box p={1}>
+            <Paper style={{maxWidth:"90%"}} variant="outlined"> <Box p={1}>
                 <Markdown style={{maxWidth: "600px"}}>{markdown}</Markdown>
                 </Box>
             </Paper>

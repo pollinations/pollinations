@@ -13364,9 +13364,9 @@ var require_src5 = __commonJS({
   }
 });
 
-// node_modules/multicodec/src/util.js
+// node_modules/ipfs-http-client/node_modules/multicodec/src/util.js
 var require_util2 = __commonJS({
-  "node_modules/multicodec/src/util.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/multicodec/src/util.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
     var uint8ArrayToString = require_to_string();
@@ -13396,9 +13396,9 @@ var require_util2 = __commonJS({
   }
 });
 
-// node_modules/multicodec/src/generated-table.js
+// node_modules/ipfs-http-client/node_modules/multicodec/src/generated-table.js
 var require_generated_table = __commonJS({
-  "node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
     "use strict";
     var baseTable = Object.freeze({
       "identity": 0,
@@ -13867,9 +13867,9 @@ var require_generated_table = __commonJS({
   }
 });
 
-// node_modules/multicodec/src/maps.js
+// node_modules/ipfs-http-client/node_modules/multicodec/src/maps.js
 var require_maps = __commonJS({
-  "node_modules/multicodec/src/maps.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/multicodec/src/maps.js"(exports2, module2) {
     "use strict";
     var {baseTable} = require_generated_table();
     var varintEncode = require_util2().varintEncode;
@@ -13899,9 +13899,9 @@ var require_maps = __commonJS({
   }
 });
 
-// node_modules/multicodec/src/index.js
+// node_modules/ipfs-http-client/node_modules/multicodec/src/index.js
 var require_src6 = __commonJS({
-  "node_modules/multicodec/src/index.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
     var uint8ArrayConcat = require_concat3();
@@ -13996,9 +13996,9 @@ var require_src6 = __commonJS({
   }
 });
 
-// node_modules/cids/src/cid-util.js
+// node_modules/ipfs-http-client/node_modules/cids/src/cid-util.js
 var require_cid_util = __commonJS({
-  "node_modules/cids/src/cid-util.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
     var mh = require_src5();
     var CIDUtil = {
@@ -14060,9 +14060,9 @@ var require_equals3 = __commonJS({
   }
 });
 
-// node_modules/cids/src/index.js
+// node_modules/ipfs-http-client/node_modules/cids/src/index.js
 var require_src7 = __commonJS({
-  "node_modules/cids/src/index.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
     var mh = require_src5();
     var multibase = require_src4();
@@ -14441,8 +14441,935 @@ var require_protocols_table = __commonJS({
   }
 });
 
-// node_modules/multiaddr/node_modules/varint/encode.js
+// node_modules/multiaddr/node_modules/multicodec/node_modules/varint/encode.js
 var require_encode2 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/node_modules/varint/encode.js"(exports2, module2) {
+    module2.exports = encode;
+    var MSB = 128;
+    var REST = 127;
+    var MSBALL = ~REST;
+    var INT = Math.pow(2, 31);
+    function encode(num, out, offset) {
+      out = out || [];
+      offset = offset || 0;
+      var oldOffset = offset;
+      while (num >= INT) {
+        out[offset++] = num & 255 | MSB;
+        num /= 128;
+      }
+      while (num & MSBALL) {
+        out[offset++] = num & 255 | MSB;
+        num >>>= 7;
+      }
+      out[offset] = num | 0;
+      encode.bytes = offset - oldOffset + 1;
+      return out;
+    }
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/node_modules/varint/decode.js
+var require_decode2 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/node_modules/varint/decode.js"(exports2, module2) {
+    module2.exports = read;
+    var MSB = 128;
+    var REST = 127;
+    function read(buf, offset) {
+      var res = 0, offset = offset || 0, shift = 0, counter = offset, b, l = buf.length;
+      do {
+        if (counter >= l) {
+          read.bytes = 0;
+          throw new RangeError("Could not decode varint");
+        }
+        b = buf[counter++];
+        res += shift < 28 ? (b & REST) << shift : (b & REST) * Math.pow(2, shift);
+        shift += 7;
+      } while (b >= MSB);
+      read.bytes = counter - offset;
+      return res;
+    }
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/node_modules/varint/length.js
+var require_length3 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/node_modules/varint/length.js"(exports2, module2) {
+    var N1 = Math.pow(2, 7);
+    var N2 = Math.pow(2, 14);
+    var N3 = Math.pow(2, 21);
+    var N4 = Math.pow(2, 28);
+    var N5 = Math.pow(2, 35);
+    var N6 = Math.pow(2, 42);
+    var N7 = Math.pow(2, 49);
+    var N8 = Math.pow(2, 56);
+    var N9 = Math.pow(2, 63);
+    module2.exports = function(value) {
+      return value < N1 ? 1 : value < N2 ? 2 : value < N3 ? 3 : value < N4 ? 4 : value < N5 ? 5 : value < N6 ? 6 : value < N7 ? 7 : value < N8 ? 8 : value < N9 ? 9 : 10;
+    };
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/node_modules/varint/index.js
+var require_varint2 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/node_modules/varint/index.js"(exports2, module2) {
+    module2.exports = {
+      encode: require_encode2(),
+      decode: require_decode2(),
+      encodingLength: require_length3()
+    };
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/src/util.js
+var require_util3 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint2();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/src/generated-table.js
+var require_generated_table2 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/src/maps.js
+var require_maps2 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table2();
+    var varintEncode = require_util3().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/multiaddr/node_modules/multicodec/src/index.js
+var require_src8 = __commonJS({
+  "node_modules/multiaddr/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint2();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util3();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps2();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/multiaddr/node_modules/cids/src/cid-util.js
+var require_cid_util2 = __commonJS({
+  "node_modules/multiaddr/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/multiaddr/node_modules/cids/src/index.js
+var require_src9 = __commonJS({
+  "node_modules/multiaddr/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src8();
+    var CIDUtil = require_cid_util2();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
+  }
+});
+
+// node_modules/multiaddr/node_modules/varint/encode.js
+var require_encode3 = __commonJS({
   "node_modules/multiaddr/node_modules/varint/encode.js"(exports2, module2) {
     module2.exports = encode;
     var MSB = 128;
@@ -14473,7 +15400,7 @@ var require_encode2 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/varint/decode.js
-var require_decode2 = __commonJS({
+var require_decode3 = __commonJS({
   "node_modules/multiaddr/node_modules/varint/decode.js"(exports2, module2) {
     module2.exports = read;
     var MSB = 128;
@@ -14496,7 +15423,7 @@ var require_decode2 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/varint/length.js
-var require_length3 = __commonJS({
+var require_length4 = __commonJS({
   "node_modules/multiaddr/node_modules/varint/length.js"(exports2, module2) {
     var N1 = Math.pow(2, 7);
     var N2 = Math.pow(2, 14);
@@ -14514,12 +15441,12 @@ var require_length3 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/varint/index.js
-var require_varint2 = __commonJS({
+var require_varint3 = __commonJS({
   "node_modules/multiaddr/node_modules/varint/index.js"(exports2, module2) {
     module2.exports = {
-      encode: require_encode2(),
-      decode: require_decode2(),
-      encodingLength: require_length3()
+      encode: require_encode3(),
+      decode: require_decode3(),
+      encodingLength: require_length4()
     };
   }
 });
@@ -14530,9 +15457,9 @@ var require_convert = __commonJS({
     "use strict";
     var ip = require_ip();
     var protocols = require_protocols_table();
-    var CID3 = require_src7();
+    var CID3 = require_src9();
     var multibase = require_src4();
-    var varint = require_varint2();
+    var varint = require_varint3();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     var uint8ArrayConcat = require_concat3();
@@ -14698,7 +15625,7 @@ var require_codec = __commonJS({
     "use strict";
     var convert = require_convert();
     var protocols = require_protocols_table();
-    var varint = require_varint2();
+    var varint = require_varint3();
     var uint8ArrayConcat = require_concat3();
     var uint8ArrayToString = require_to_string();
     module2.exports = {
@@ -14910,13 +15837,13 @@ var require_err_code = __commonJS({
 });
 
 // node_modules/multiaddr/src/index.js
-var require_src8 = __commonJS({
+var require_src10 = __commonJS({
   "node_modules/multiaddr/src/index.js"(exports2, module2) {
     "use strict";
     var codec = require_codec();
     var protocols = require_protocols_table();
-    var varint = require_varint2();
-    var CID3 = require_src7();
+    var varint = require_varint3();
+    var CID3 = require_src9();
     var errCode = require_err_code();
     var inspect = Symbol.for("nodejs.util.inspect.custom");
     var uint8ArrayToString = require_to_string();
@@ -18702,6 +19629,7 @@ var require_env = __commonJS({
     var IS_NODE = typeof require === "function" && typeof process !== "undefined" && typeof process.release !== "undefined" && process.release.name === "node" && !IS_ELECTRON;
     var IS_WEBWORKER = typeof importScripts === "function" && typeof self !== "undefined" && typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
     var IS_TEST = typeof process !== "undefined" && typeof process.env !== "undefined" && process.env.NODE_ENV === "test";
+    var IS_REACT_NATIVE = typeof navigator !== "undefined" && navigator.product === "ReactNative";
     module2.exports = {
       isTest: IS_TEST,
       isElectron: IS_ELECTRON,
@@ -18710,7 +19638,8 @@ var require_env = __commonJS({
       isNode: IS_NODE,
       isBrowser: IS_BROWSER,
       isWebWorker: IS_WEBWORKER,
-      isEnvWithDom: IS_ENV_WITH_DOM
+      isEnvWithDom: IS_ENV_WITH_DOM,
+      isReactNative: IS_REACT_NATIVE
     };
   }
 });
@@ -23349,9 +24278,9 @@ var require_lib3 = __commonJS({
   }
 });
 
-// node_modules/node-fetch/lib/index.js
+// node_modules/ipfs-utils/node_modules/node-fetch/lib/index.js
 var require_lib4 = __commonJS({
-  "node_modules/node-fetch/lib/index.js"(exports2, module2) {
+  "node_modules/ipfs-utils/node_modules/node-fetch/lib/index.js"(exports2, module2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", {value: true});
     function _interopDefault(ex) {
@@ -24232,7 +25161,7 @@ var require_lib4 = __commonJS({
           let error = new AbortError("The user aborted a request.");
           reject(error);
           if (request.body && request.body instanceof Stream.Readable) {
-            request.body.destroy(error);
+            destroyStream(request.body, error);
           }
           if (!response || !response.body)
             return;
@@ -24267,8 +25196,29 @@ var require_lib4 = __commonJS({
         }
         req.on("error", function(err) {
           reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, "system", err));
+          if (response && response.body) {
+            destroyStream(response.body, err);
+          }
           finalize();
         });
+        fixResponseChunkedTransferBadEnding(req, function(err) {
+          if (signal && signal.aborted) {
+            return;
+          }
+          destroyStream(response.body, err);
+        });
+        if (parseInt(process.version.substring(1)) < 14) {
+          req.on("socket", function(s) {
+            s.addListener("close", function(hadError) {
+              const hasDataListener = s.listenerCount("data") > 0;
+              if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
+                const err = new Error("Premature close");
+                err.code = "ERR_STREAM_PREMATURE_CLOSE";
+                response.body.emit("error", err);
+              }
+            });
+          });
+        }
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
@@ -24380,6 +25330,33 @@ var require_lib4 = __commonJS({
         writeToStream(req, request);
       });
     }
+    function fixResponseChunkedTransferBadEnding(request, errorCallback) {
+      let socket;
+      request.on("socket", function(s) {
+        socket = s;
+      });
+      request.on("response", function(response) {
+        const headers = response.headers;
+        if (headers["transfer-encoding"] === "chunked" && !headers["content-length"]) {
+          response.once("close", function(hadError) {
+            const hasDataListener = socket.listenerCount("data") > 0;
+            if (hasDataListener && !hadError) {
+              const err = new Error("Premature close");
+              err.code = "ERR_STREAM_PREMATURE_CLOSE";
+              errorCallback(err);
+            }
+          });
+        }
+      });
+    }
+    function destroyStream(stream2, err) {
+      if (stream2.destroy) {
+        stream2.destroy(err);
+      } else {
+        stream2.emit("error", err);
+        stream2.end();
+      }
+    }
     fetch.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
@@ -24394,9 +25371,9 @@ var require_lib4 = __commonJS({
   }
 });
 
-// node_modules/native-fetch/src/index.js
-var require_src9 = __commonJS({
-  "node_modules/native-fetch/src/index.js"(exports2, module2) {
+// node_modules/ipfs-utils/node_modules/native-fetch/src/index.js
+var require_src11 = __commonJS({
+  "node_modules/ipfs-utils/node_modules/native-fetch/src/index.js"(exports2, module2) {
     "use strict";
     if (globalThis.fetch && globalThis.Headers && globalThis.Request && globalThis.Response) {
       module2.exports = {
@@ -24424,7 +25401,7 @@ var require_fetch = __commonJS({
     if (isElectronMain) {
       module2.exports = require_lib3();
     } else {
-      module2.exports = require_src9();
+      module2.exports = require_src11();
     }
   }
 });
@@ -24760,7 +25737,7 @@ var require_transform = __commonJS({
 });
 
 // node_modules/it-to-stream/src/index.js
-var require_src10 = __commonJS({
+var require_src12 = __commonJS({
   "node_modules/it-to-stream/src/index.js"(exports2, module2) {
     "use strict";
     var toTransform = require_transform();
@@ -24784,7 +25761,7 @@ var require_fetch_node = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.node.js"(exports2, module2) {
     "use strict";
     var {Request, Response: Response2, Headers, default: nativeFetch} = require_fetch();
-    var toStream = require_src10();
+    var toStream = require_src12();
     var {Buffer: Buffer2} = require("buffer");
     var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
@@ -24849,9 +25826,9 @@ var require_fetch2 = __commonJS({
   }
 });
 
-// node_modules/is-plain-obj/index.js
+// node_modules/merge-options/node_modules/is-plain-obj/index.js
 var require_is_plain_obj = __commonJS({
-  "node_modules/is-plain-obj/index.js"(exports2, module2) {
+  "node_modules/merge-options/node_modules/is-plain-obj/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (value) => {
       if (Object.prototype.toString.call(value) !== "[object Object]") {
@@ -25576,7 +26553,7 @@ var require_abort_controller = __commonJS({
 });
 
 // node_modules/native-abort-controller/src/index.js
-var require_src11 = __commonJS({
+var require_src13 = __commonJS({
   "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
     "use strict";
     var impl;
@@ -25595,7 +26572,7 @@ var require_src11 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     function anySignal(signals) {
       const controller = new AbortController();
       function onAbort() {
@@ -25630,7 +26607,7 @@ var require_http = __commonJS({
     var {TimeoutError: TimeoutError2, HTTPError} = require_error();
     var merge = require_merge_options().bind({ignoreUndefined: true});
     var {URL: URL2, URLSearchParams: URLSearchParams2} = require_iso_url();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     var anySignal = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -25895,7 +26872,7 @@ var require_parse_duration = __commonJS({
 // node_modules/multiaddr-to-uri/index.js
 var require_multiaddr_to_uri = __commonJS({
   "node_modules/multiaddr-to-uri/index.js"(exports2, module2) {
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var reduceValue = (_, v) => v;
     var tcpUri = (str, port, parts, opts) => {
       if (opts && opts.assumeHttp === false)
@@ -25947,7 +26924,7 @@ var require_multiaddr_to_uri = __commonJS({
 var require_to_url_string = __commonJS({
   "node_modules/ipfs-core-utils/src/to-url-string.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var multiAddrToUri = require_multiaddr_to_uri();
     module2.exports = (url) => {
       try {
@@ -25964,7 +26941,7 @@ var require_to_url_string = __commonJS({
 var require_core = __commonJS({
   "node_modules/ipfs-http-client/src/lib/core.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var {isBrowser, isWebWorker, isNode} = require_env();
     var {default: parseDuration} = require_parse_duration();
     var log = require_src()("ipfs-http-client:lib:error-handler");
@@ -28006,7 +28983,7 @@ var require_unixfs = __commonJS({
 });
 
 // node_modules/ipfs-unixfs/src/index.js
-var require_src12 = __commonJS({
+var require_src14 = __commonJS({
   "node_modules/ipfs-unixfs/src/index.js"(exports2, module2) {
     "use strict";
     var {
@@ -28251,7 +29228,7 @@ var require_normalise_input = __commonJS({
     var {
       parseMtime,
       parseMode
-    } = require_src12();
+    } = require_src14();
     module2.exports = async function* normaliseInput(input, normaliseContent) {
       if (input === null || input === void 0) {
         return;
@@ -28553,7 +29530,7 @@ var require_multipart_request_node = __commonJS({
     var {nanoid} = require_nanoid();
     var modeToString = require_mode_to_string();
     var merge = require_merge_options().bind({ignoreUndefined: true});
-    var toStream = require_src10();
+    var toStream = require_src12();
     async function multipartRequest(source, abortController, headers = {}, boundary = `-----------------------------${nanoid()}`) {
       async function* streamFiles(source2) {
         try {
@@ -28631,7 +29608,7 @@ var require_to_url_search_params = __commonJS({
   "node_modules/ipfs-http-client/src/lib/to-url-search-params.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src12();
+    var {parseMtime} = require_src14();
     module2.exports = (_a = {}) => {
       var _b = _a, {arg, searchParams, hashAlg, mtime, mode} = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
       if (searchParams) {
@@ -28687,7 +29664,7 @@ var require_add_all = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
         const controller = new AbortController();
@@ -28908,6 +29885,854 @@ var require_bitswap = __commonJS({
   }
 });
 
+// node_modules/ipld-block/node_modules/multicodec/src/util.js
+var require_util4 = __commonJS({
+  "node_modules/ipld-block/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/ipld-block/node_modules/multicodec/src/generated-table.js
+var require_generated_table3 = __commonJS({
+  "node_modules/ipld-block/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/ipld-block/node_modules/multicodec/src/maps.js
+var require_maps3 = __commonJS({
+  "node_modules/ipld-block/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table3();
+    var varintEncode = require_util4().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/ipld-block/node_modules/multicodec/src/index.js
+var require_src15 = __commonJS({
+  "node_modules/ipld-block/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util4();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps3();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/ipld-block/node_modules/cids/src/cid-util.js
+var require_cid_util3 = __commonJS({
+  "node_modules/ipld-block/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/ipld-block/node_modules/cids/src/index.js
+var require_src16 = __commonJS({
+  "node_modules/ipld-block/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src15();
+    var CIDUtil = require_cid_util3();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
+  }
+});
+
 // node_modules/ipld-block/package.json
 var require_package = __commonJS({
   "node_modules/ipld-block/package.json"(exports2, module2) {
@@ -28981,10 +30806,10 @@ var require_package = __commonJS({
 });
 
 // node_modules/ipld-block/src/index.js
-var require_src13 = __commonJS({
+var require_src17 = __commonJS({
   "node_modules/ipld-block/src/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src16();
     var {version} = require_package();
     var blockSymbol = Symbol.for("@ipld/js-ipld-block/block");
     var readonly = {writable: false, configurable: false, enumerable: true};
@@ -29044,7 +30869,7 @@ var require_src13 = __commonJS({
 var require_get = __commonJS({
   "node_modules/ipfs-http-client/src/block/get.js"(exports2, module2) {
     "use strict";
-    var Block = require_src13();
+    var Block = require_src17();
     var CID3 = require_src7();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -29095,14 +30920,14 @@ var require_stat3 = __commonJS({
 var require_put = __commonJS({
   "node_modules/ipfs-http-client/src/block/put.js"(exports2, module2) {
     "use strict";
-    var Block = require_src13();
+    var Block = require_src17();
     var CID3 = require_src7();
     var multihash = require_src5();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function put(data, options = {}) {
         if (Block.isBlock(data)) {
@@ -29208,7 +31033,7 @@ var require_add3 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     module2.exports = configure((api) => {
       async function add(addr, options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -29233,7 +31058,7 @@ var require_clear = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     module2.exports = configure((api) => {
       async function clear(options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -29258,7 +31083,7 @@ var require_rm2 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     module2.exports = configure((api) => {
       async function rm(addr, options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -29283,7 +31108,7 @@ var require_reset = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     module2.exports = configure((api) => {
       async function reset(options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -29308,7 +31133,7 @@ var require_list = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     module2.exports = configure((api) => {
       async function list(options = {}) {
         const res = await api.post("bootstrap/list", {
@@ -29477,7 +31302,7 @@ var require_replace2 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       const replace = async (config, options = {}) => {
         const controller = new AbortController();
@@ -29566,6 +31391,854 @@ var require_config = __commonJS({
       replace: require_replace2()(config),
       profiles: require_profiles()(config)
     });
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/multicodec/src/util.js
+var require_util5 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/multicodec/src/generated-table.js
+var require_generated_table4 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/multicodec/src/maps.js
+var require_maps4 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table4();
+    var varintEncode = require_util5().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/multicodec/src/index.js
+var require_src18 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util5();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps4();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/cids/src/cid-util.js
+var require_cid_util4 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/ipld-dag-pb/node_modules/cids/src/index.js
+var require_src19 = __commonJS({
+  "node_modules/ipld-dag-pb/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src18();
+    var CIDUtil = require_cid_util4();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
   }
 });
 
@@ -29792,7 +32465,7 @@ var require_dag = __commonJS({
 var require_dagLink = __commonJS({
   "node_modules/ipld-dag-pb/src/dag-link/dagLink.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src19();
     var uint8ArrayFromString = require_from_string();
     var DAGLink = class {
       constructor(name, size, cid) {
@@ -29948,7 +32621,7 @@ var require_sortLinks = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/src/dag-link/util.js
-var require_util3 = __commonJS({
+var require_util6 = __commonJS({
   "node_modules/ipld-dag-pb/src/dag-link/util.js"(exports2, module2) {
     "use strict";
     var DAGLink = require_dagLink();
@@ -29971,7 +32644,7 @@ var require_serialize = __commonJS({
     } = require_dag();
     var {
       createDagLinkFromB58EncodedHash
-    } = require_util3();
+    } = require_util6();
     var toProtoBuf = (node) => {
       const pbn = {};
       if (node.Data && node.Data.byteLength > 0) {
@@ -31112,7 +33785,7 @@ var require_utils6 = __commonJS({
 });
 
 // node_modules/blakejs/util.js
-var require_util4 = __commonJS({
+var require_util7 = __commonJS({
   "node_modules/blakejs/util.js"(exports2, module2) {
     var ERROR_MSG_INPUT = "Input must be an string, Buffer or Uint8Array";
     function normalizeInput(input) {
@@ -31186,7 +33859,7 @@ var require_util4 = __commonJS({
 // node_modules/blakejs/blake2b.js
 var require_blake2b = __commonJS({
   "node_modules/blakejs/blake2b.js"(exports2, module2) {
-    var util = require_util4();
+    var util = require_util7();
     function ADD64AA(v2, a, b) {
       var o0 = v2[a] + v2[b];
       var o1 = v2[a + 1] + v2[b + 1];
@@ -31556,7 +34229,7 @@ var require_blake2b = __commonJS({
 // node_modules/blakejs/blake2s.js
 var require_blake2s = __commonJS({
   "node_modules/blakejs/blake2s.js"(exports2, module2) {
-    var util = require_util4();
+    var util = require_util7();
     function B2S_GET32(v2, i) {
       return v2[i] ^ v2[i + 1] << 8 ^ v2[i + 2] << 16 ^ v2[i + 3] << 24;
     }
@@ -31957,7 +34630,7 @@ var require_crypto = __commonJS({
 });
 
 // node_modules/multihashing-async/src/index.js
-var require_src14 = __commonJS({
+var require_src20 = __commonJS({
   "node_modules/multihashing-async/src/index.js"(exports2, module2) {
     "use strict";
     var errcode = require_err_code();
@@ -32017,9 +34690,9 @@ var require_src14 = __commonJS({
 var require_genCid = __commonJS({
   "node_modules/ipld-dag-pb/src/genCid.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var multicodec = require_src6();
-    var multihashing = require_src14();
+    var CID3 = require_src19();
+    var multicodec = require_src18();
+    var multihashing = require_src20();
     var {multihash} = multihashing;
     var codec = multicodec.DAG_PB;
     var defaultHashAlg = multihash.names["sha2-256"];
@@ -32085,7 +34758,7 @@ var require_addLink = __commonJS({
 var require_rmLink = __commonJS({
   "node_modules/ipld-dag-pb/src/dag-node/rmLink.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src19();
     var uint8ArrayEquals = require_equals3();
     var rmLink = (dagNode, nameOrCid) => {
       let predicate = null;
@@ -32121,7 +34794,7 @@ var require_dagNode = __commonJS({
     "use strict";
     var sortLinks = require_sortLinks();
     var DAGLink = require_dagLink();
-    var {createDagLinkFromB58EncodedHash} = require_util3();
+    var {createDagLinkFromB58EncodedHash} = require_util6();
     var {serializeDAGNode} = require_serialize();
     var toDAGLink = require_toDagLink();
     var addLink = require_addLink();
@@ -32206,7 +34879,7 @@ var require_dagNode = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/src/util.js
-var require_util5 = __commonJS({
+var require_util8 = __commonJS({
   "node_modules/ipld-dag-pb/src/util.js"(exports2, module2) {
     "use strict";
     var {
@@ -32254,8 +34927,8 @@ var require_util5 = __commonJS({
 var require_resolver = __commonJS({
   "node_modules/ipld-dag-pb/src/resolver.js"(exports2) {
     "use strict";
-    var CID3 = require_src7();
-    var util = require_util5();
+    var CID3 = require_src19();
+    var util = require_util8();
     exports2.resolve = (binaryBlob, path = "/") => {
       let node = util.deserialize(binaryBlob);
       const parts = path.split("/").filter(Boolean);
@@ -32300,11 +34973,11 @@ var require_resolver = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/src/index.js
-var require_src15 = __commonJS({
+var require_src21 = __commonJS({
   "node_modules/ipld-dag-pb/src/index.js"(exports2, module2) {
     "use strict";
     var resolver = require_resolver();
-    var util = require_util5();
+    var util = require_util8();
     var DAGNodeClass = require_dagNode();
     var DAGLinkClass = require_dagLink();
     var format = {
@@ -36016,7 +38689,7 @@ var require_encoder = __commonJS({
 });
 
 // node_modules/borc/src/index.js
-var require_src16 = __commonJS({
+var require_src22 = __commonJS({
   "node_modules/borc/src/index.js"(exports2) {
     "use strict";
     exports2.Diagnose = require_diagnose();
@@ -36035,6 +38708,854 @@ var require_src16 = __commonJS({
       buffer: true,
       name: "cbor"
     };
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/multicodec/src/util.js
+var require_util9 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/multicodec/src/generated-table.js
+var require_generated_table5 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/multicodec/src/maps.js
+var require_maps5 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table5();
+    var varintEncode = require_util9().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/multicodec/src/index.js
+var require_src23 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util9();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps5();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/cids/src/cid-util.js
+var require_cid_util5 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/ipld-dag-cbor/node_modules/cids/src/index.js
+var require_src24 = __commonJS({
+  "node_modules/ipld-dag-cbor/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src23();
+    var CIDUtil = require_cid_util5();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
   }
 });
 
@@ -36085,14 +39606,14 @@ var require_is_circular = __commonJS({
 });
 
 // node_modules/ipld-dag-cbor/src/util.js
-var require_util6 = __commonJS({
+var require_util10 = __commonJS({
   "node_modules/ipld-dag-cbor/src/util.js"(exports2, module2) {
     "use strict";
-    var cbor = require_src16();
-    var multicodec = require_src6();
-    var multihashing = require_src14();
+    var cbor = require_src22();
+    var multicodec = require_src23();
+    var multihashing = require_src20();
     var {multihash} = multihashing;
-    var CID3 = require_src7();
+    var CID3 = require_src24();
     var isCircular = require_is_circular();
     var uint8ArrayConcat = require_concat3();
     var uint8ArrayFromString = require_from_string();
@@ -36229,8 +39750,8 @@ var require_util6 = __commonJS({
 var require_resolver2 = __commonJS({
   "node_modules/ipld-dag-cbor/src/resolver.js"(exports2) {
     "use strict";
-    var CID3 = require_src7();
-    var util = require_util6();
+    var CID3 = require_src24();
+    var util = require_util10();
     exports2.resolve = (binaryBlob, path = "") => {
       let node = util.deserialize(binaryBlob);
       const parts = path.split("/").filter(Boolean);
@@ -36271,10 +39792,10 @@ var require_resolver2 = __commonJS({
 });
 
 // node_modules/ipld-dag-cbor/src/index.js
-var require_src17 = __commonJS({
+var require_src25 = __commonJS({
   "node_modules/ipld-dag-cbor/src/index.js"(exports2, module2) {
     "use strict";
-    var util = require_util6();
+    var util = require_util10();
     var resolver = require_resolver2();
     module2.exports = {
       util,
@@ -36285,14 +39806,862 @@ var require_src17 = __commonJS({
   }
 });
 
+// node_modules/ipld-raw/node_modules/multicodec/src/util.js
+var require_util11 = __commonJS({
+  "node_modules/ipld-raw/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/ipld-raw/node_modules/multicodec/src/generated-table.js
+var require_generated_table6 = __commonJS({
+  "node_modules/ipld-raw/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/ipld-raw/node_modules/multicodec/src/maps.js
+var require_maps6 = __commonJS({
+  "node_modules/ipld-raw/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table6();
+    var varintEncode = require_util11().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/ipld-raw/node_modules/multicodec/src/index.js
+var require_src26 = __commonJS({
+  "node_modules/ipld-raw/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util11();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps6();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/ipld-raw/node_modules/cids/src/cid-util.js
+var require_cid_util6 = __commonJS({
+  "node_modules/ipld-raw/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/ipld-raw/node_modules/cids/src/index.js
+var require_src27 = __commonJS({
+  "node_modules/ipld-raw/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src26();
+    var CIDUtil = require_cid_util6();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
+  }
+});
+
 // node_modules/ipld-raw/src/index.js
-var require_src18 = __commonJS({
+var require_src28 = __commonJS({
   "node_modules/ipld-raw/src/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var multihashing = require_src14();
+    var CID3 = require_src27();
+    var multihashing = require_src20();
     var {multihash} = multihashing;
-    var multicodec = require_src6();
+    var multicodec = require_src26();
     module2.exports = {
       codec: multicodec.RAW,
       defaultHashAlg: multihash.names["sha2-256"],
@@ -36336,9 +40705,9 @@ var require_src18 = __commonJS({
 var require_ipld_formats = __commonJS({
   "node_modules/ipfs-http-client/src/lib/ipld-formats.js"(exports2, module2) {
     "use strict";
-    var dagPB = require_src15();
-    var dagCBOR = require_src17();
-    var raw = require_src18();
+    var dagPB = require_src21();
+    var dagCBOR = require_src25();
+    var raw = require_src28();
     var multicodec = require_src6();
     var noop = (codec) => {
       return Promise.reject(new Error(`Missing IPLD format "${codec}"`));
@@ -36428,7 +40797,7 @@ var require_put2 = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     var multicodec = require_src6();
     var loadFormat = require_ipld_formats();
     module2.exports = configure((api, opts) => {
@@ -36552,13 +40921,13 @@ var require_put3 = __commonJS({
   "node_modules/ipfs-http-client/src/dht/put.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function* put(key, value, options = {}) {
         const controller = new AbortController();
@@ -36592,7 +40961,7 @@ var require_find_provs = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-provs.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var {Provider} = require_response_types();
@@ -36626,7 +40995,7 @@ var require_find_provs = __commonJS({
 var require_find_peer = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-peer.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var {FinalPeer} = require_response_types();
@@ -36661,7 +41030,7 @@ var require_provide = __commonJS({
   "node_modules/ipfs-http-client/src/dht/provide.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -36700,7 +41069,7 @@ var require_query = __commonJS({
   "node_modules/ipfs-http-client/src/dht/query.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -37180,12 +41549,12 @@ var require_write = __commonJS({
   "node_modules/ipfs-http-client/src/files/write.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src12();
+    var {parseMtime} = require_src14();
     var configure = require_configure();
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function write(path, input, options = {}) {
         const controller = new AbortController();
@@ -38286,7 +42655,7 @@ var require_id = __commonJS({
   "node_modules/ipfs-http-client/src/id.js"(exports2, module2) {
     "use strict";
     var toCamel = require_object_to_camel();
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -38857,7 +43226,7 @@ var require_get6 = __commonJS({
   "node_modules/ipfs-http-client/src/object/get.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGNode, DAGLink} = require_src15();
+    var {DAGNode, DAGLink} = require_src21();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var uint8ArrayFromString = require_from_string();
@@ -38885,7 +43254,7 @@ var require_links = __commonJS({
   "node_modules/ipfs-http-client/src/object/links.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGLink} = require_src15();
+    var {DAGLink} = require_src21();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -38969,7 +43338,7 @@ var require_append_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function appendData(cid, data, options = {}) {
         const controller = new AbortController();
@@ -39026,7 +43395,7 @@ var require_set_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function setData(cid, data, options = {}) {
         const controller = new AbortController();
@@ -39065,12 +43434,12 @@ var require_put4 = __commonJS({
   "node_modules/ipfs-http-client/src/object/put.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {DAGNode} = require_src15();
+    var {DAGNode} = require_src21();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     module2.exports = configure((api) => {
@@ -39364,12 +43733,860 @@ var require_remote = __commonJS({
   }
 });
 
+// node_modules/ipfs-core-utils/node_modules/multicodec/src/util.js
+var require_util12 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/ipfs-core-utils/node_modules/multicodec/src/generated-table.js
+var require_generated_table7 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/ipfs-core-utils/node_modules/multicodec/src/maps.js
+var require_maps7 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table7();
+    var varintEncode = require_util12().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/ipfs-core-utils/node_modules/multicodec/src/index.js
+var require_src29 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util12();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps7();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/ipfs-core-utils/node_modules/cids/src/cid-util.js
+var require_cid_util7 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/ipfs-core-utils/node_modules/cids/src/index.js
+var require_src30 = __commonJS({
+  "node_modules/ipfs-core-utils/node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src29();
+    var CIDUtil = require_cid_util7();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
+  }
+});
+
 // node_modules/ipfs-core-utils/src/pins/normalise-input.js
 var require_normalise_input3 = __commonJS({
   "node_modules/ipfs-core-utils/src/pins/normalise-input.js"(exports2, module2) {
     "use strict";
     var errCode = require_err_code();
-    var CID3 = require_src7();
+    var CID3 = require_src30();
     module2.exports = async function* normaliseInput(input) {
       if (input === null || input === void 0) {
         throw errCode(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
@@ -39652,6 +44869,47 @@ var require_ping = __commonJS({
   }
 });
 
+// node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js
+var require_subscription_tracker = __commonJS({
+  "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
+    "use strict";
+    var {AbortController} = require_src13();
+    var SubscriptionTracker = class {
+      constructor() {
+        this._subs = new Map();
+      }
+      subscribe(topic, handler, signal) {
+        const topicSubs = this._subs.get(topic) || [];
+        if (topicSubs.find((s) => s.handler === handler)) {
+          throw new Error(`Already subscribed to ${topic} with this handler`);
+        }
+        const controller = new AbortController();
+        this._subs.set(topic, [{handler, controller}].concat(topicSubs));
+        if (signal) {
+          signal.addEventListener("abort", () => this.unsubscribe(topic, handler));
+        }
+        return controller.signal;
+      }
+      unsubscribe(topic, handler) {
+        const subs = this._subs.get(topic) || [];
+        let unsubs;
+        if (handler) {
+          this._subs.set(topic, subs.filter((s) => s.handler !== handler));
+          unsubs = subs.filter((s) => s.handler === handler);
+        } else {
+          this._subs.set(topic, []);
+          unsubs = subs;
+        }
+        if (!(this._subs.get(topic) || []).length) {
+          this._subs.delete(topic);
+        }
+        unsubs.forEach((s) => s.controller.abort());
+      }
+    };
+    module2.exports = SubscriptionTracker;
+  }
+});
+
 // node_modules/ipfs-http-client/src/pubsub/ls.js
 var require_ls5 = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/ls.js"(exports2, module2) {
@@ -39705,7 +44963,7 @@ var require_publish2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src11();
+    var {AbortController} = require_src13();
     module2.exports = configure((api) => {
       async function publish2(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
@@ -39725,51 +44983,6 @@ var require_publish2 = __commonJS({
   }
 });
 
-// node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js
-var require_subscription_tracker = __commonJS({
-  "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
-    "use strict";
-    var {AbortController} = require_src11();
-    var SubscriptionTracker = class {
-      constructor() {
-        this._subs = new Map();
-      }
-      static singleton() {
-        if (SubscriptionTracker.instance)
-          return SubscriptionTracker.instance;
-        SubscriptionTracker.instance = new SubscriptionTracker();
-        return SubscriptionTracker.instance;
-      }
-      subscribe(topic, handler, signal) {
-        const topicSubs = this._subs.get(topic) || [];
-        if (topicSubs.find((s) => s.handler === handler)) {
-          throw new Error(`Already subscribed to ${topic} with this handler`);
-        }
-        const controller = new AbortController();
-        this._subs.set(topic, [{handler, controller}].concat(topicSubs));
-        if (signal) {
-          signal.addEventListener("abort", () => this.unsubscribe(topic, handler));
-        }
-        return controller.signal;
-      }
-      unsubscribe(topic, handler) {
-        const subs = this._subs.get(topic) || [];
-        let unsubs;
-        if (handler) {
-          this._subs.set(topic, subs.filter((s) => s.handler !== handler));
-          unsubs = subs.filter((s) => s.handler === handler);
-        } else {
-          this._subs.set(topic, []);
-          unsubs = subs;
-        }
-        unsubs.forEach((s) => s.controller.abort());
-      }
-    };
-    SubscriptionTracker.instance = null;
-    module2.exports = SubscriptionTracker;
-  }
-});
-
 // node_modules/ipfs-http-client/src/pubsub/subscribe.js
 var require_subscribe = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/subscribe.js"(exports2, module2) {
@@ -39777,52 +44990,52 @@ var require_subscribe = __commonJS({
     var uint8ArrayFromString = require_from_string();
     var uint8ArrayToString = require_to_string();
     var log = require_src()("ipfs-http-client:pubsub:subscribe");
-    var SubscriptionTracker = require_subscription_tracker();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    module2.exports = configure((api, options) => {
-      const subsTracker = SubscriptionTracker.singleton();
-      async function subscribe(topic, handler, options2 = {}) {
-        options2.signal = subsTracker.subscribe(topic, handler, options2.signal);
-        let done;
-        let fail;
-        const result = new Promise((resolve, reject) => {
-          done = resolve;
-          fail = reject;
-        });
-        const ffWorkaround = setTimeout(() => done(), 1e3);
-        setTimeout(() => {
-          api.post("pubsub/sub", {
-            timeout: options2.timeout,
-            signal: options2.signal,
-            searchParams: toUrlSearchParams(__spreadValues({
-              arg: topic
-            }, options2)),
-            headers: options2.headers
-          }).catch((err) => {
-            subsTracker.unsubscribe(topic, handler);
-            fail(err);
-          }).then((response) => {
-            clearTimeout(ffWorkaround);
-            if (!response) {
-              return;
-            }
-            readMessages(response.ndjson(), {
-              onMessage: handler,
-              onEnd: () => subsTracker.unsubscribe(topic, handler),
-              onError: options2.onError
-            });
-            done();
+    module2.exports = (options, subsTracker) => {
+      return configure((api) => {
+        async function subscribe(topic, handler, options2 = {}) {
+          options2.signal = subsTracker.subscribe(topic, handler, options2.signal);
+          let done;
+          let fail;
+          const result = new Promise((resolve, reject) => {
+            done = resolve;
+            fail = reject;
           });
-        }, 0);
-        return result;
-      }
-      return subscribe;
-    });
-    async function readMessages(msgStream, {onMessage, onEnd, onError}) {
+          const ffWorkaround = setTimeout(() => done(), 1e3);
+          setTimeout(() => {
+            api.post("pubsub/sub", {
+              timeout: options2.timeout,
+              signal: options2.signal,
+              searchParams: toUrlSearchParams(__spreadValues({
+                arg: topic
+              }, options2)),
+              headers: options2.headers
+            }).catch((err) => {
+              subsTracker.unsubscribe(topic, handler);
+              fail(err);
+            }).then((response) => {
+              clearTimeout(ffWorkaround);
+              if (!response) {
+                return;
+              }
+              readMessages(response, {
+                onMessage: handler,
+                onEnd: () => subsTracker.unsubscribe(topic, handler),
+                onError: options2.onError
+              });
+              done();
+            });
+          }, 0);
+          return result;
+        }
+        return subscribe;
+      })(options);
+    };
+    async function readMessages(response, {onMessage, onEnd, onError}) {
       onError = onError || log;
       try {
-        for await (const msg of msgStream) {
+        for await (const msg of response.ndjson()) {
           try {
             if (!msg.from) {
               continue;
@@ -39839,13 +45052,23 @@ var require_subscribe = __commonJS({
           }
         }
       } catch (err) {
-        if (err.type !== "aborted" && err.name !== "AbortError") {
+        if (!isAbortError(err)) {
           onError(err, true);
         }
       } finally {
         onEnd();
       }
     }
+    var isAbortError = (error) => {
+      switch (error.type) {
+        case "aborted":
+          return true;
+        case "abort":
+          return true;
+        default:
+          return error.name === "AbortError";
+      }
+    };
   }
 });
 
@@ -39853,9 +45076,7 @@ var require_subscribe = __commonJS({
 var require_unsubscribe = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/unsubscribe.js"(exports2, module2) {
     "use strict";
-    var SubscriptionTracker = require_subscription_tracker();
-    module2.exports = (config) => {
-      const subsTracker = SubscriptionTracker.singleton();
+    module2.exports = (options, subsTracker) => {
       async function unsubscribe(topic, handler) {
         subsTracker.unsubscribe(topic, handler);
       }
@@ -39868,13 +45089,17 @@ var require_unsubscribe = __commonJS({
 var require_pubsub2 = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/index.js"(exports2, module2) {
     "use strict";
-    module2.exports = (config) => ({
-      ls: require_ls5()(config),
-      peers: require_peers()(config),
-      publish: require_publish2()(config),
-      subscribe: require_subscribe()(config),
-      unsubscribe: require_unsubscribe()(config)
-    });
+    var SubscriptionTracker = require_subscription_tracker();
+    module2.exports = (config) => {
+      const subscriptionTracker = new SubscriptionTracker();
+      return {
+        ls: require_ls5()(config),
+        peers: require_peers()(config),
+        publish: require_publish2()(config),
+        subscribe: require_subscribe()(config, subscriptionTracker),
+        unsubscribe: require_unsubscribe()(config, subscriptionTracker)
+      };
+    };
   }
 });
 
@@ -39909,24 +45134,24 @@ var require_refs = __commonJS({
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    module2.exports = configure((api, options) => {
-      const refs = async function* (args, options2 = {}) {
+    module2.exports = configure((api, opts) => {
+      const refs = async function* (args, options = {}) {
         if (!Array.isArray(args)) {
           args = [args];
         }
         const res = await api.post("refs", {
-          timeout: options2.timeout,
-          signal: options2.signal,
+          timeout: options.timeout,
+          signal: options.signal,
           searchParams: toUrlSearchParams(__spreadValues({
             arg: args.map((arg) => `${arg instanceof Uint8Array ? new CID3(arg) : arg}`)
-          }, options2)),
-          headers: options2.headers,
+          }, options)),
+          headers: options.headers,
           transform: toCamel
         });
         yield* res.ndjson();
       };
       return Object.assign(refs, {
-        local: require_local()(options)
+        local: require_local()(opts)
       });
     });
   }
@@ -40123,7 +45348,7 @@ var require_stop = __commonJS({
 var require_addrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/addrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40197,7 +45422,7 @@ var require_disconnect = __commonJS({
 var require_localAddrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/localAddrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40220,7 +45445,7 @@ var require_localAddrs = __commonJS({
 var require_peers2 = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/peers.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src8();
+    var {Multiaddr} = require_src10();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40285,11 +45510,11 @@ var require_version2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/index.js
-var require_src19 = __commonJS({
+var require_src31 = __commonJS({
   "node_modules/ipfs-http-client/src/index.js"(exports2, module2) {
     "use strict";
     var CID3 = require_src7();
-    var {multiaddr} = require_src8();
+    var {multiaddr} = require_src10();
     var multibase = require_src4();
     var multicodec = require_src6();
     var multihash = require_src5();
@@ -42271,6 +47496,854 @@ var require_react = __commonJS({
     } else {
       module2.exports = require_react_development();
     }
+  }
+});
+
+// node_modules/cids/node_modules/multicodec/src/util.js
+var require_util13 = __commonJS({
+  "node_modules/cids/node_modules/multicodec/src/util.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayFromString = require_from_string();
+    module2.exports = {
+      numberToUint8Array,
+      uint8ArrayToNumber,
+      varintUint8ArrayEncode,
+      varintEncode
+    };
+    function uint8ArrayToNumber(buf) {
+      return parseInt(uint8ArrayToString(buf, "base16"), 16);
+    }
+    function numberToUint8Array(num) {
+      let hexString = num.toString(16);
+      if (hexString.length % 2 === 1) {
+        hexString = "0" + hexString;
+      }
+      return uint8ArrayFromString(hexString, "base16");
+    }
+    function varintUint8ArrayEncode(input) {
+      return Uint8Array.from(varint.encode(uint8ArrayToNumber(input)));
+    }
+    function varintEncode(num) {
+      return Uint8Array.from(varint.encode(num));
+    }
+  }
+});
+
+// node_modules/cids/node_modules/multicodec/src/generated-table.js
+var require_generated_table8 = __commonJS({
+  "node_modules/cids/node_modules/multicodec/src/generated-table.js"(exports2, module2) {
+    "use strict";
+    var baseTable = Object.freeze({
+      "identity": 0,
+      "cidv1": 1,
+      "cidv2": 2,
+      "cidv3": 3,
+      "ip4": 4,
+      "tcp": 6,
+      "sha1": 17,
+      "sha2-256": 18,
+      "sha2-512": 19,
+      "sha3-512": 20,
+      "sha3-384": 21,
+      "sha3-256": 22,
+      "sha3-224": 23,
+      "shake-128": 24,
+      "shake-256": 25,
+      "keccak-224": 26,
+      "keccak-256": 27,
+      "keccak-384": 28,
+      "keccak-512": 29,
+      "blake3": 30,
+      "dccp": 33,
+      "murmur3-128": 34,
+      "murmur3-32": 35,
+      "ip6": 41,
+      "ip6zone": 42,
+      "path": 47,
+      "multicodec": 48,
+      "multihash": 49,
+      "multiaddr": 50,
+      "multibase": 51,
+      "dns": 53,
+      "dns4": 54,
+      "dns6": 55,
+      "dnsaddr": 56,
+      "protobuf": 80,
+      "cbor": 81,
+      "raw": 85,
+      "dbl-sha2-256": 86,
+      "rlp": 96,
+      "bencode": 99,
+      "dag-pb": 112,
+      "dag-cbor": 113,
+      "libp2p-key": 114,
+      "git-raw": 120,
+      "torrent-info": 123,
+      "torrent-file": 124,
+      "leofcoin-block": 129,
+      "leofcoin-tx": 130,
+      "leofcoin-pr": 131,
+      "sctp": 132,
+      "dag-jose": 133,
+      "dag-cose": 134,
+      "eth-block": 144,
+      "eth-block-list": 145,
+      "eth-tx-trie": 146,
+      "eth-tx": 147,
+      "eth-tx-receipt-trie": 148,
+      "eth-tx-receipt": 149,
+      "eth-state-trie": 150,
+      "eth-account-snapshot": 151,
+      "eth-storage-trie": 152,
+      "bitcoin-block": 176,
+      "bitcoin-tx": 177,
+      "bitcoin-witness-commitment": 178,
+      "zcash-block": 192,
+      "zcash-tx": 193,
+      "docid": 206,
+      "stellar-block": 208,
+      "stellar-tx": 209,
+      "md4": 212,
+      "md5": 213,
+      "bmt": 214,
+      "decred-block": 224,
+      "decred-tx": 225,
+      "ipld-ns": 226,
+      "ipfs-ns": 227,
+      "swarm-ns": 228,
+      "ipns-ns": 229,
+      "zeronet": 230,
+      "secp256k1-pub": 231,
+      "bls12_381-g1-pub": 234,
+      "bls12_381-g2-pub": 235,
+      "x25519-pub": 236,
+      "ed25519-pub": 237,
+      "bls12_381-g1g2-pub": 238,
+      "dash-block": 240,
+      "dash-tx": 241,
+      "swarm-manifest": 250,
+      "swarm-feed": 251,
+      "udp": 273,
+      "p2p-webrtc-star": 275,
+      "p2p-webrtc-direct": 276,
+      "p2p-stardust": 277,
+      "p2p-circuit": 290,
+      "dag-json": 297,
+      "udt": 301,
+      "utp": 302,
+      "unix": 400,
+      "thread": 406,
+      "p2p": 421,
+      "ipfs": 421,
+      "https": 443,
+      "onion": 444,
+      "onion3": 445,
+      "garlic64": 446,
+      "garlic32": 447,
+      "tls": 448,
+      "quic": 460,
+      "ws": 477,
+      "wss": 478,
+      "p2p-websocket-star": 479,
+      "http": 480,
+      "json": 512,
+      "messagepack": 513,
+      "libp2p-peer-record": 769,
+      "sha2-256-trunc254-padded": 4114,
+      "ripemd-128": 4178,
+      "ripemd-160": 4179,
+      "ripemd-256": 4180,
+      "ripemd-320": 4181,
+      "x11": 4352,
+      "p256-pub": 4608,
+      "p384-pub": 4609,
+      "p521-pub": 4610,
+      "ed448-pub": 4611,
+      "x448-pub": 4612,
+      "ed25519-priv": 4864,
+      "kangarootwelve": 7425,
+      "sm3-256": 21325,
+      "blake2b-8": 45569,
+      "blake2b-16": 45570,
+      "blake2b-24": 45571,
+      "blake2b-32": 45572,
+      "blake2b-40": 45573,
+      "blake2b-48": 45574,
+      "blake2b-56": 45575,
+      "blake2b-64": 45576,
+      "blake2b-72": 45577,
+      "blake2b-80": 45578,
+      "blake2b-88": 45579,
+      "blake2b-96": 45580,
+      "blake2b-104": 45581,
+      "blake2b-112": 45582,
+      "blake2b-120": 45583,
+      "blake2b-128": 45584,
+      "blake2b-136": 45585,
+      "blake2b-144": 45586,
+      "blake2b-152": 45587,
+      "blake2b-160": 45588,
+      "blake2b-168": 45589,
+      "blake2b-176": 45590,
+      "blake2b-184": 45591,
+      "blake2b-192": 45592,
+      "blake2b-200": 45593,
+      "blake2b-208": 45594,
+      "blake2b-216": 45595,
+      "blake2b-224": 45596,
+      "blake2b-232": 45597,
+      "blake2b-240": 45598,
+      "blake2b-248": 45599,
+      "blake2b-256": 45600,
+      "blake2b-264": 45601,
+      "blake2b-272": 45602,
+      "blake2b-280": 45603,
+      "blake2b-288": 45604,
+      "blake2b-296": 45605,
+      "blake2b-304": 45606,
+      "blake2b-312": 45607,
+      "blake2b-320": 45608,
+      "blake2b-328": 45609,
+      "blake2b-336": 45610,
+      "blake2b-344": 45611,
+      "blake2b-352": 45612,
+      "blake2b-360": 45613,
+      "blake2b-368": 45614,
+      "blake2b-376": 45615,
+      "blake2b-384": 45616,
+      "blake2b-392": 45617,
+      "blake2b-400": 45618,
+      "blake2b-408": 45619,
+      "blake2b-416": 45620,
+      "blake2b-424": 45621,
+      "blake2b-432": 45622,
+      "blake2b-440": 45623,
+      "blake2b-448": 45624,
+      "blake2b-456": 45625,
+      "blake2b-464": 45626,
+      "blake2b-472": 45627,
+      "blake2b-480": 45628,
+      "blake2b-488": 45629,
+      "blake2b-496": 45630,
+      "blake2b-504": 45631,
+      "blake2b-512": 45632,
+      "blake2s-8": 45633,
+      "blake2s-16": 45634,
+      "blake2s-24": 45635,
+      "blake2s-32": 45636,
+      "blake2s-40": 45637,
+      "blake2s-48": 45638,
+      "blake2s-56": 45639,
+      "blake2s-64": 45640,
+      "blake2s-72": 45641,
+      "blake2s-80": 45642,
+      "blake2s-88": 45643,
+      "blake2s-96": 45644,
+      "blake2s-104": 45645,
+      "blake2s-112": 45646,
+      "blake2s-120": 45647,
+      "blake2s-128": 45648,
+      "blake2s-136": 45649,
+      "blake2s-144": 45650,
+      "blake2s-152": 45651,
+      "blake2s-160": 45652,
+      "blake2s-168": 45653,
+      "blake2s-176": 45654,
+      "blake2s-184": 45655,
+      "blake2s-192": 45656,
+      "blake2s-200": 45657,
+      "blake2s-208": 45658,
+      "blake2s-216": 45659,
+      "blake2s-224": 45660,
+      "blake2s-232": 45661,
+      "blake2s-240": 45662,
+      "blake2s-248": 45663,
+      "blake2s-256": 45664,
+      "skein256-8": 45825,
+      "skein256-16": 45826,
+      "skein256-24": 45827,
+      "skein256-32": 45828,
+      "skein256-40": 45829,
+      "skein256-48": 45830,
+      "skein256-56": 45831,
+      "skein256-64": 45832,
+      "skein256-72": 45833,
+      "skein256-80": 45834,
+      "skein256-88": 45835,
+      "skein256-96": 45836,
+      "skein256-104": 45837,
+      "skein256-112": 45838,
+      "skein256-120": 45839,
+      "skein256-128": 45840,
+      "skein256-136": 45841,
+      "skein256-144": 45842,
+      "skein256-152": 45843,
+      "skein256-160": 45844,
+      "skein256-168": 45845,
+      "skein256-176": 45846,
+      "skein256-184": 45847,
+      "skein256-192": 45848,
+      "skein256-200": 45849,
+      "skein256-208": 45850,
+      "skein256-216": 45851,
+      "skein256-224": 45852,
+      "skein256-232": 45853,
+      "skein256-240": 45854,
+      "skein256-248": 45855,
+      "skein256-256": 45856,
+      "skein512-8": 45857,
+      "skein512-16": 45858,
+      "skein512-24": 45859,
+      "skein512-32": 45860,
+      "skein512-40": 45861,
+      "skein512-48": 45862,
+      "skein512-56": 45863,
+      "skein512-64": 45864,
+      "skein512-72": 45865,
+      "skein512-80": 45866,
+      "skein512-88": 45867,
+      "skein512-96": 45868,
+      "skein512-104": 45869,
+      "skein512-112": 45870,
+      "skein512-120": 45871,
+      "skein512-128": 45872,
+      "skein512-136": 45873,
+      "skein512-144": 45874,
+      "skein512-152": 45875,
+      "skein512-160": 45876,
+      "skein512-168": 45877,
+      "skein512-176": 45878,
+      "skein512-184": 45879,
+      "skein512-192": 45880,
+      "skein512-200": 45881,
+      "skein512-208": 45882,
+      "skein512-216": 45883,
+      "skein512-224": 45884,
+      "skein512-232": 45885,
+      "skein512-240": 45886,
+      "skein512-248": 45887,
+      "skein512-256": 45888,
+      "skein512-264": 45889,
+      "skein512-272": 45890,
+      "skein512-280": 45891,
+      "skein512-288": 45892,
+      "skein512-296": 45893,
+      "skein512-304": 45894,
+      "skein512-312": 45895,
+      "skein512-320": 45896,
+      "skein512-328": 45897,
+      "skein512-336": 45898,
+      "skein512-344": 45899,
+      "skein512-352": 45900,
+      "skein512-360": 45901,
+      "skein512-368": 45902,
+      "skein512-376": 45903,
+      "skein512-384": 45904,
+      "skein512-392": 45905,
+      "skein512-400": 45906,
+      "skein512-408": 45907,
+      "skein512-416": 45908,
+      "skein512-424": 45909,
+      "skein512-432": 45910,
+      "skein512-440": 45911,
+      "skein512-448": 45912,
+      "skein512-456": 45913,
+      "skein512-464": 45914,
+      "skein512-472": 45915,
+      "skein512-480": 45916,
+      "skein512-488": 45917,
+      "skein512-496": 45918,
+      "skein512-504": 45919,
+      "skein512-512": 45920,
+      "skein1024-8": 45921,
+      "skein1024-16": 45922,
+      "skein1024-24": 45923,
+      "skein1024-32": 45924,
+      "skein1024-40": 45925,
+      "skein1024-48": 45926,
+      "skein1024-56": 45927,
+      "skein1024-64": 45928,
+      "skein1024-72": 45929,
+      "skein1024-80": 45930,
+      "skein1024-88": 45931,
+      "skein1024-96": 45932,
+      "skein1024-104": 45933,
+      "skein1024-112": 45934,
+      "skein1024-120": 45935,
+      "skein1024-128": 45936,
+      "skein1024-136": 45937,
+      "skein1024-144": 45938,
+      "skein1024-152": 45939,
+      "skein1024-160": 45940,
+      "skein1024-168": 45941,
+      "skein1024-176": 45942,
+      "skein1024-184": 45943,
+      "skein1024-192": 45944,
+      "skein1024-200": 45945,
+      "skein1024-208": 45946,
+      "skein1024-216": 45947,
+      "skein1024-224": 45948,
+      "skein1024-232": 45949,
+      "skein1024-240": 45950,
+      "skein1024-248": 45951,
+      "skein1024-256": 45952,
+      "skein1024-264": 45953,
+      "skein1024-272": 45954,
+      "skein1024-280": 45955,
+      "skein1024-288": 45956,
+      "skein1024-296": 45957,
+      "skein1024-304": 45958,
+      "skein1024-312": 45959,
+      "skein1024-320": 45960,
+      "skein1024-328": 45961,
+      "skein1024-336": 45962,
+      "skein1024-344": 45963,
+      "skein1024-352": 45964,
+      "skein1024-360": 45965,
+      "skein1024-368": 45966,
+      "skein1024-376": 45967,
+      "skein1024-384": 45968,
+      "skein1024-392": 45969,
+      "skein1024-400": 45970,
+      "skein1024-408": 45971,
+      "skein1024-416": 45972,
+      "skein1024-424": 45973,
+      "skein1024-432": 45974,
+      "skein1024-440": 45975,
+      "skein1024-448": 45976,
+      "skein1024-456": 45977,
+      "skein1024-464": 45978,
+      "skein1024-472": 45979,
+      "skein1024-480": 45980,
+      "skein1024-488": 45981,
+      "skein1024-496": 45982,
+      "skein1024-504": 45983,
+      "skein1024-512": 45984,
+      "skein1024-520": 45985,
+      "skein1024-528": 45986,
+      "skein1024-536": 45987,
+      "skein1024-544": 45988,
+      "skein1024-552": 45989,
+      "skein1024-560": 45990,
+      "skein1024-568": 45991,
+      "skein1024-576": 45992,
+      "skein1024-584": 45993,
+      "skein1024-592": 45994,
+      "skein1024-600": 45995,
+      "skein1024-608": 45996,
+      "skein1024-616": 45997,
+      "skein1024-624": 45998,
+      "skein1024-632": 45999,
+      "skein1024-640": 46e3,
+      "skein1024-648": 46001,
+      "skein1024-656": 46002,
+      "skein1024-664": 46003,
+      "skein1024-672": 46004,
+      "skein1024-680": 46005,
+      "skein1024-688": 46006,
+      "skein1024-696": 46007,
+      "skein1024-704": 46008,
+      "skein1024-712": 46009,
+      "skein1024-720": 46010,
+      "skein1024-728": 46011,
+      "skein1024-736": 46012,
+      "skein1024-744": 46013,
+      "skein1024-752": 46014,
+      "skein1024-760": 46015,
+      "skein1024-768": 46016,
+      "skein1024-776": 46017,
+      "skein1024-784": 46018,
+      "skein1024-792": 46019,
+      "skein1024-800": 46020,
+      "skein1024-808": 46021,
+      "skein1024-816": 46022,
+      "skein1024-824": 46023,
+      "skein1024-832": 46024,
+      "skein1024-840": 46025,
+      "skein1024-848": 46026,
+      "skein1024-856": 46027,
+      "skein1024-864": 46028,
+      "skein1024-872": 46029,
+      "skein1024-880": 46030,
+      "skein1024-888": 46031,
+      "skein1024-896": 46032,
+      "skein1024-904": 46033,
+      "skein1024-912": 46034,
+      "skein1024-920": 46035,
+      "skein1024-928": 46036,
+      "skein1024-936": 46037,
+      "skein1024-944": 46038,
+      "skein1024-952": 46039,
+      "skein1024-960": 46040,
+      "skein1024-968": 46041,
+      "skein1024-976": 46042,
+      "skein1024-984": 46043,
+      "skein1024-992": 46044,
+      "skein1024-1000": 46045,
+      "skein1024-1008": 46046,
+      "skein1024-1016": 46047,
+      "skein1024-1024": 46048,
+      "poseidon-bls12_381-a2-fc1": 46081,
+      "poseidon-bls12_381-a2-fc1-sc": 46082,
+      "zeroxcert-imprint-256": 52753,
+      "fil-commitment-unsealed": 61697,
+      "fil-commitment-sealed": 61698,
+      "holochain-adr-v0": 8417572,
+      "holochain-adr-v1": 8483108,
+      "holochain-key-v0": 9728292,
+      "holochain-key-v1": 9793828,
+      "holochain-sig-v0": 10645796,
+      "holochain-sig-v1": 10711332,
+      "skynet-ns": 11639056
+    });
+    module2.exports = {baseTable};
+  }
+});
+
+// node_modules/cids/node_modules/multicodec/src/maps.js
+var require_maps8 = __commonJS({
+  "node_modules/cids/node_modules/multicodec/src/maps.js"(exports2, module2) {
+    "use strict";
+    var {baseTable} = require_generated_table8();
+    var varintEncode = require_util13().varintEncode;
+    var nameToVarint = {};
+    var constantToCode = {};
+    var codeToName = {};
+    for (const name in baseTable) {
+      const codecName = name;
+      const code = baseTable[codecName];
+      nameToVarint[codecName] = varintEncode(code);
+      const constant = codecName.toUpperCase().replace(/-/g, "_");
+      constantToCode[constant] = code;
+      if (!codeToName[code]) {
+        codeToName[code] = codecName;
+      }
+    }
+    Object.freeze(nameToVarint);
+    Object.freeze(constantToCode);
+    Object.freeze(codeToName);
+    var nameToCode = Object.freeze(baseTable);
+    module2.exports = {
+      nameToVarint,
+      constantToCode,
+      nameToCode,
+      codeToName
+    };
+  }
+});
+
+// node_modules/cids/node_modules/multicodec/src/index.js
+var require_src32 = __commonJS({
+  "node_modules/cids/node_modules/multicodec/src/index.js"(exports2, module2) {
+    "use strict";
+    var varint = require_varint();
+    var uint8ArrayConcat = require_concat3();
+    var util = require_util13();
+    var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps8();
+    function addPrefix(multicodecStrOrCode, data) {
+      let prefix;
+      if (multicodecStrOrCode instanceof Uint8Array) {
+        prefix = util.varintUint8ArrayEncode(multicodecStrOrCode);
+      } else {
+        if (nameToVarint[multicodecStrOrCode]) {
+          prefix = nameToVarint[multicodecStrOrCode];
+        } else {
+          throw new Error("multicodec not recognized");
+        }
+      }
+      return uint8ArrayConcat([prefix, data], prefix.length + data.length);
+    }
+    function rmPrefix(data) {
+      varint.decode(data);
+      return data.slice(varint.decode.bytes);
+    }
+    function getNameFromData(prefixedData) {
+      const code = varint.decode(prefixedData);
+      const name = codeToName[code];
+      if (name === void 0) {
+        throw new Error(`Code "${code}" not found`);
+      }
+      return name;
+    }
+    function getNameFromCode(codec) {
+      return codeToName[codec];
+    }
+    function getCodeFromName(name) {
+      const code = nameToCode[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getCodeFromData(prefixedData) {
+      return varint.decode(prefixedData);
+    }
+    function getVarintFromName(name) {
+      const code = nameToVarint[name];
+      if (code === void 0) {
+        throw new Error(`Codec "${name}" not found`);
+      }
+      return code;
+    }
+    function getVarintFromCode(code) {
+      return util.varintEncode(code);
+    }
+    function getCodec(prefixedData) {
+      return getNameFromData(prefixedData);
+    }
+    function getName(codec) {
+      return getNameFromCode(codec);
+    }
+    function getNumber(name) {
+      return getCodeFromName(name);
+    }
+    function getCode(prefixedData) {
+      return getCodeFromData(prefixedData);
+    }
+    function getCodeVarint(name) {
+      return getVarintFromName(name);
+    }
+    function getVarint(code) {
+      return Array.from(getVarintFromCode(code));
+    }
+    module2.exports = __spreadProps(__spreadValues({
+      addPrefix,
+      rmPrefix,
+      getNameFromData,
+      getNameFromCode,
+      getCodeFromName,
+      getCodeFromData,
+      getVarintFromName,
+      getVarintFromCode,
+      getCodec,
+      getName,
+      getNumber,
+      getCode,
+      getCodeVarint,
+      getVarint
+    }, constantToCode), {
+      nameToVarint,
+      nameToCode,
+      codeToName
+    });
+  }
+});
+
+// node_modules/cids/src/cid-util.js
+var require_cid_util8 = __commonJS({
+  "node_modules/cids/src/cid-util.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var CIDUtil = {
+      checkCIDComponents: function(other) {
+        if (other == null) {
+          return "null values are not valid CIDs";
+        }
+        if (!(other.version === 0 || other.version === 1)) {
+          return "Invalid version, must be a number equal to 1 or 0";
+        }
+        if (typeof other.codec !== "string") {
+          return "codec must be string";
+        }
+        if (other.version === 0) {
+          if (other.codec !== "dag-pb") {
+            return "codec must be 'dag-pb' for CIDv0";
+          }
+          if (other.multibaseName !== "base58btc") {
+            return "multibaseName must be 'base58btc' for CIDv0";
+          }
+        }
+        if (!(other.multihash instanceof Uint8Array)) {
+          return "multihash must be a Uint8Array";
+        }
+        try {
+          mh.validate(other.multihash);
+        } catch (err) {
+          let errorMsg = err.message;
+          if (!errorMsg) {
+            errorMsg = "Multihash validation failed";
+          }
+          return errorMsg;
+        }
+      }
+    };
+    module2.exports = CIDUtil;
+  }
+});
+
+// node_modules/cids/src/index.js
+var require_src33 = __commonJS({
+  "node_modules/cids/src/index.js"(exports2, module2) {
+    "use strict";
+    var mh = require_src5();
+    var multibase = require_src4();
+    var multicodec = require_src32();
+    var CIDUtil = require_cid_util8();
+    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayToString = require_to_string();
+    var uint8ArrayEquals = require_equals3();
+    var codecs = multicodec.nameToCode;
+    var codecInts = Object.keys(codecs).reduce((p, name) => {
+      p[codecs[name]] = name;
+      return p;
+    }, {});
+    var symbol = Symbol.for("@ipld/js-cid/CID");
+    var CID3 = class {
+      constructor(version, codec, multihash, multibaseName) {
+        this.version;
+        this.codec;
+        this.multihash;
+        Object.defineProperty(this, symbol, {value: true});
+        if (CID3.isCID(version)) {
+          const cid = version;
+          this.version = cid.version;
+          this.codec = cid.codec;
+          this.multihash = cid.multihash;
+          this.multibaseName = cid.multibaseName || (cid.version === 0 ? "base58btc" : "base32");
+          return;
+        }
+        if (typeof version === "string") {
+          const baseName = multibase.isEncoded(version);
+          if (baseName) {
+            const cid = multibase.decode(version);
+            this.version = parseInt(cid[0].toString(), 16);
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = baseName;
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = mh.fromB58String(version);
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          Object.defineProperty(this, "string", {value: version});
+          return;
+        }
+        if (version instanceof Uint8Array) {
+          const v = parseInt(version[0].toString(), 16);
+          if (v === 1) {
+            const cid = version;
+            this.version = v;
+            this.codec = multicodec.getCodec(cid.slice(1));
+            this.multihash = multicodec.rmPrefix(cid.slice(1));
+            this.multibaseName = "base32";
+          } else {
+            this.version = 0;
+            this.codec = "dag-pb";
+            this.multihash = version;
+            this.multibaseName = "base58btc";
+          }
+          CID3.validateCID(this);
+          return;
+        }
+        this.version = version;
+        if (typeof codec === "number") {
+          codec = codecInts[codec];
+        }
+        this.codec = codec;
+        this.multihash = multihash;
+        this.multibaseName = multibaseName || (version === 0 ? "base58btc" : "base32");
+        CID3.validateCID(this);
+      }
+      get bytes() {
+        let bytes = this._bytes;
+        if (!bytes) {
+          if (this.version === 0) {
+            bytes = this.multihash;
+          } else if (this.version === 1) {
+            const codec = multicodec.getCodeVarint(this.codec);
+            bytes = uint8ArrayConcat([
+              [1],
+              codec,
+              this.multihash
+            ], 1 + codec.byteLength + this.multihash.byteLength);
+          } else {
+            throw new Error("unsupported version");
+          }
+          Object.defineProperty(this, "_bytes", {value: bytes});
+        }
+        return bytes;
+      }
+      get prefix() {
+        const codec = multicodec.getCodeVarint(this.codec);
+        const multihash = mh.prefix(this.multihash);
+        const prefix = uint8ArrayConcat([
+          [this.version],
+          codec,
+          multihash
+        ], 1 + codec.byteLength + multihash.byteLength);
+        return prefix;
+      }
+      get code() {
+        return codecs[this.codec];
+      }
+      toV0() {
+        if (this.codec !== "dag-pb") {
+          throw new Error("Cannot convert a non dag-pb CID to CIDv0");
+        }
+        const {name, length} = mh.decode(this.multihash);
+        if (name !== "sha2-256") {
+          throw new Error("Cannot convert non sha2-256 multihash CID to CIDv0");
+        }
+        if (length !== 32) {
+          throw new Error("Cannot convert non 32 byte multihash CID to CIDv0");
+        }
+        return new CID3(0, this.codec, this.multihash);
+      }
+      toV1() {
+        return new CID3(1, this.codec, this.multihash, this.multibaseName);
+      }
+      toBaseEncodedString(base = this.multibaseName) {
+        if (this.string && this.string.length !== 0 && base === this.multibaseName) {
+          return this.string;
+        }
+        let str;
+        if (this.version === 0) {
+          if (base !== "base58btc") {
+            throw new Error("not supported with CIDv0, to support different bases, please migrate the instance do CIDv1, you can do that through cid.toV1()");
+          }
+          str = mh.toB58String(this.multihash);
+        } else if (this.version === 1) {
+          str = uint8ArrayToString(multibase.encode(base, this.bytes));
+        } else {
+          throw new Error("unsupported version");
+        }
+        if (base === this.multibaseName) {
+          Object.defineProperty(this, "string", {value: str});
+        }
+        return str;
+      }
+      [Symbol.for("nodejs.util.inspect.custom")]() {
+        return "CID(" + this.toString() + ")";
+      }
+      toString(base) {
+        return this.toBaseEncodedString(base);
+      }
+      toJSON() {
+        return {
+          codec: this.codec,
+          version: this.version,
+          hash: this.multihash
+        };
+      }
+      equals(other) {
+        return this.codec === other.codec && this.version === other.version && uint8ArrayEquals(this.multihash, other.multihash);
+      }
+      static validateCID(other) {
+        const errorMsg = CIDUtil.checkCIDComponents(other);
+        if (errorMsg) {
+          throw new Error(errorMsg);
+        }
+      }
+      static isCID(value) {
+        return value instanceof CID3 || Boolean(value && value[symbol]);
+      }
+    };
+    CID3.codecs = codecs;
+    module2.exports = CID3;
   }
 });
 
@@ -44370,7 +50443,7 @@ var import_readline = __toModule(require("readline"));
 var import_event_iterator = __toModule(require_node2());
 
 // src/network/ipfsConnector.js
-var import_ipfs_http_client = __toModule(require_src19());
+var import_ipfs_http_client = __toModule(require_src31());
 
 // src/network/utils.js
 var import_react = __toModule(require_react());
@@ -44403,10 +50476,10 @@ var callLogger = (f, name = null) => (...args) => {
 };
 
 // src/network/ipfsConnector.js
-var import_cids2 = __toModule(require_src7());
+var import_cids2 = __toModule(require_src33());
 
 // src/network/contentCache.js
-var import_cids = __toModule(require_src7());
+var import_cids = __toModule(require_src33());
 var import_debug2 = __toModule(require_src());
 var import_debounce = __toModule(require_debounce());
 var debug2 = (0, import_debug2.default)("contentCache");
@@ -44615,7 +50688,7 @@ var incrementalUpdate = async (watchPath2) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath2,
     awaitWriteFinish: true
-  }, {debounce: 1e3});
+  }, {debounce: 100});
   for await (const files of watch$) {
     const changed = getSortedChangedFiles(files);
     await Promise.all(changed.map(async ({event, file}) => {

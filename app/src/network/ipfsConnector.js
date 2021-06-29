@@ -193,18 +193,15 @@ export async function subscribeCIDCallback(_nodeID=null, callback, onError=noop)
     const handler = ({data}) => callback(new TextDecoder().decode(data));
     
     const doSub = async () => {
-        await (_client.pubsub
+        return await (_client.pubsub
                 .subscribe(_nodeID, handler, { onError })
                 .catch(async e => {
                     debug("Subscribe error", e, "... Retrying");
                     await awaitSleep(300);
-                    doSub();
+                    return await doSub();
                 }));
-        doSub();
-        
     };
-
-
+    return await doSub(); 
   }
 
 

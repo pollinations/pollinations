@@ -50632,13 +50632,13 @@ async function subscribeCIDCallback(_nodeID = null, callback, onError = noop) {
   debug3("Subscribing to pubsub events from", _nodeID);
   const handler = ({data}) => callback(new TextDecoder().decode(data));
   const doSub = async () => {
-    await _client.pubsub.subscribe(_nodeID, handler, {onError}).catch(async (e) => {
+    return await _client.pubsub.subscribe(_nodeID, handler, {onError}).catch(async (e) => {
       debug3("Subscribe error", e, "... Retrying");
       await (0, import_await_sleep.default)(300);
-      doSub();
+      return await doSub();
     });
-    doSub();
   };
+  return await doSub();
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path))));
 

@@ -6,7 +6,7 @@ import Markdown from 'markdown-to-jsx';
 
 import useColab from "../network/useColab"
 import readMetadata from "../backend/notebookMetadata";
-
+import Help from "../components/Help";
 import Debug from "debug";
 
 
@@ -51,7 +51,6 @@ export default React.memo(function Model() {
   return <>
         {/* status */}      
           <NodeStatus {...state} />
-
       <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />
       {/* control panel */}
@@ -61,7 +60,8 @@ export default React.memo(function Model() {
 
         {/* inputs */}
         <div style={{ width: '100%'}}>
-          <h3 children='Inputs' />
+
+          <h3>Inputs <Help /></h3>
 
           <FormView
             input={ipfs.input}

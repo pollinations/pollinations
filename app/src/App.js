@@ -1,6 +1,6 @@
 import { routes } from './routes'
 
-import { Button, Container } from "@material-ui/core"
+import { Button, Container, Typography, Link } from "@material-ui/core"
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 import GitHubIcon from '@material-ui/icons/GitHub';
@@ -19,7 +19,7 @@ function App() {
                     ))
                 }/>
 
-            Get Help and Contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button>
+            <Typography align="right" > Get help and contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
         </Container>
     </Router>
 }

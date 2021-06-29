@@ -9,20 +9,24 @@ function readMetadata(notebookJSON) {
     return null;
     
   let {metadata, cells} =  notebookJSON;
+  debug("cells",cells,"metadata",metadata);
   const { name } = metadata["colab"];
-  const descriptionCell = cells[0];
-  const parameterCell = cells[1];
+
+  const descriptionCell = cells.find(isMarkdownCell);
+  const parameterCell = cells.find(isParameterCell);
+  
   debug("parameter cell", parameterCell);
-  const description = descriptionCell["cell_type"] === "markdown" ? descriptionCell["source"].join("\n") : null;
-  const parameterTexts = parameterCell["cell_type"] === "code" ? parameterCell["source"] : null;
+  const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
+  const parameterTexts = parameterCell ? parameterCell["source"] : null;
   debug("parameter texts", parameterTexts)
   const allParameters = parameterTexts
         .map(extractParameters)
         .filter(param => param)
         .map(mapToJSONFormField);
-        debug("got parameters", allParameters);
+
   const properties = Object.fromEntries(allParameters);
-  
+  const primaryInput = allParameters[0][0];
+  debug("got parameters", allParameters,"primary input", primaryInput);
   return {
       form: {
         // "title": name,
@@ -32,7 +36,8 @@ function readMetadata(notebookJSON) {
       },
       name,
       description,
-      numCells: cells.length
+      numCells: cells.length,
+      primaryInput
   };
 
 };
@@ -42,5 +47,10 @@ const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@par
 const parseHandleSpecial = (val, type) => type === "boolean" ? parse(`"${val}"`) : parse(val)
 
 const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parseHandleSpecial(defaultVal, type), title: name}];
+
+const isParameterCell = cell => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
+
+const isMarkdownCell = cell => cell["cell_type"] === "markdown";
+
 
 export default readMetadata;

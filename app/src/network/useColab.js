@@ -37,13 +37,13 @@ const useColab = () => {
 
 
     useEffect(() => {
-        console.log(state)
-        if (state.contentID && state.contentID !== hash)
-            setHash(state.contentID)
+        if (state.contentID && state.contentID !== hash) {
+            debug("contentID changed to", state.contentID,"updating hash")
+            setHash(state.contentID);
+        }
     },[state]);
 
     useEffect(() => {
-        console.log(hash)
         debug("HASH",hash);
         if (hash && hash !== state.contentID)
             setContentID(hash);

@@ -1,7 +1,7 @@
 ### Instructions
 
 1. Visit the URL [pollinations.ai](https://pollinations.ai) (preferably in Google Chrome).
-2. Click on `NodeID -> [LAUNCH]`. A new browser tab will launch.
+2. Click on `NodeID -> [ LAUNCH ]`. A new browser tab will launch.
 3. In the new tab, click `Runtime --> Run All`.
 4. On the pop-up warning, click "run anyway."
 5. Return to the prior browser tab.

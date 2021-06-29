@@ -36,7 +36,7 @@ const _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, pro
 
     if (type === "file") {
         const fileResult = await processFile({ cid, path, name, rootCID });
-        _debug("got result of processFile", fileResult);
+        _debug("got result of processFile length", fileResult?.length);
         return fileResult;
     }
 

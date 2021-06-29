@@ -1,6 +1,6 @@
 
 import {create, globSource} from "ipfs-http-client";
-import { toPromise, callLogger, toPromise1 } from "./utils.js";
+import { toPromise, callLogger, toPromise1, noop } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
@@ -18,6 +18,7 @@ import { join } from "path";
 import options from "../backend/options.js";
 
 import { Channel } from 'queueable';
+import awaitSleep from "await-sleep";
 
 const asyncify = typeof Asyncify === "function" ? Asyncify: Asyncify.default;
 
@@ -44,11 +45,11 @@ const getIPFSDaemonURL = async () => {
 const ipfsDaemonURL = getIPFSDaemonURL();
 
 export const client = ipfsDaemonURL.then(create);
-
 export const nodeID = client.then(async client => options.nodeid || (await client.id()).id);
 
-(async () =>
-debug("NodeID", nodeID))();
+(async () => {
+    debug("NodeID", await nodeID);
+})();
 
 export async function getCID(ipfsPath = "/") {
     ipfsPath = join(mfsRoot, ipfsPath);
@@ -165,21 +166,41 @@ export async function publish(rootCID) {
 
 export async function subscribeCID(_nodeID=null) {
   const channel = new Channel();
-  if (_nodeID===null)
-    _nodeID = await nodeID;
   debug("Subscribing to pubsub events from", _nodeID);
-  const handler = ({data}) => channel.push(new TextDecoder().decode(data));
-  await (await client).pubsub.subscribe(_nodeID, handler);
+  const doSubscribe = async () => {
+    await subscribeCIDCallback(_nodeID, 
+        cid => channel.push(cid), 
+        async (...errors) => {
+            debug("Subscribe error", ...errors);
+            await awaitSleep(500);
+            debug("Resubscribing...")
+            doSubscribe();
+        }
+      );
+  }
+  await doSubscribe();
   return channel;  
 }
 
 
-export async function subscribeCIDCallback(_nodeID=null, callback) {
+export async function subscribeCIDCallback(_nodeID=null, callback, onError=noop) {
+    const _client = await client;
     if (_nodeID===null)
       _nodeID = await nodeID;
+    
     debug("Subscribing to pubsub events from", _nodeID);
     const handler = ({data}) => callback(new TextDecoder().decode(data));
-    return await (await client).pubsub.subscribe(_nodeID, handler);
+    
+    const doSub = async () => {
+        return await (_client.pubsub
+                .subscribe(_nodeID, handler, { onError })
+                .catch(async e => {
+                    debug("Subscribe error", e, "... Retrying");
+                    await awaitSleep(300);
+                    return await doSub();
+                }));
+    };
+    return await doSub(); 
   }
 
 

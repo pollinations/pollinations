@@ -16531,7 +16531,7 @@ var require_graceful_fs = __commonJS({
       gracefulQueue = "___graceful-fs.queue";
       previousSymbol = "___graceful-fs.previous";
     }
-    function noop() {
+    function noop2() {
     }
     function publishQueue(context, queue2) {
       Object.defineProperty(context, gracefulQueue, {
@@ -16540,7 +16540,7 @@ var require_graceful_fs = __commonJS({
         }
       });
     }
-    var debug6 = noop;
+    var debug6 = noop2;
     if (util.debuglog)
       debug6 = util.debuglog("gfs4");
     else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
@@ -27974,7 +27974,7 @@ var require_writer = __commonJS({
       this.next = void 0;
       this.val = val;
     }
-    function noop() {
+    function noop2() {
     }
     function State(writer) {
       this.head = writer.head;
@@ -27984,7 +27984,7 @@ var require_writer = __commonJS({
     }
     function Writer() {
       this.len = 0;
-      this.head = new Op(noop, 0, 0);
+      this.head = new Op(noop2, 0, 0);
       this.tail = this.head;
       this.states = null;
     }
@@ -28103,7 +28103,7 @@ var require_writer = __commonJS({
     };
     Writer.prototype.fork = function fork() {
       this.states = new State(this);
-      this.head = this.tail = new Op(noop, 0, 0);
+      this.head = this.tail = new Op(noop2, 0, 0);
       this.len = 0;
       return this;
     };
@@ -28114,7 +28114,7 @@ var require_writer = __commonJS({
         this.len = this.states.len;
         this.states = this.states.next;
       } else {
-        this.head = this.tail = new Op(noop, 0, 0);
+        this.head = this.tail = new Op(noop2, 0, 0);
         this.len = 0;
       }
       return this;
@@ -40709,12 +40709,12 @@ var require_ipld_formats = __commonJS({
     var dagCBOR = require_src25();
     var raw = require_src28();
     var multicodec = require_src6();
-    var noop = (codec) => {
+    var noop2 = (codec) => {
       return Promise.reject(new Error(`Missing IPLD format "${codec}"`));
     };
-    module2.exports = ({formats = [], loadFormat = noop} = {}) => {
+    module2.exports = ({formats = [], loadFormat = noop2} = {}) => {
       formats = formats || [];
-      loadFormat = loadFormat || noop;
+      loadFormat = loadFormat || noop2;
       const configuredFormats = {
         [multicodec.DAG_PB]: dagPB,
         [multicodec.DAG_CBOR]: dagCBOR,
@@ -50436,7 +50436,7 @@ var timeoutError = new TimeoutError();
 
 // src/backend/ipfsWatch.js
 var import_debug5 = __toModule(require_src());
-var import_await_sleep = __toModule(require_await_sleep());
+var import_await_sleep2 = __toModule(require_await_sleep());
 var import_ramda3 = __toModule(require_src2());
 var import_process = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
@@ -50461,6 +50461,7 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
+var noop = () => null;
 var callLogger = (f, name = null) => (...args) => {
   if (!name)
     name = f.name;
@@ -50513,12 +50514,13 @@ var import_path = __toModule(require("path"));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 20);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
 // src/network/ipfsConnector.js
 var import_queueable = __toModule(require_lib5());
+var import_await_sleep = __toModule(require_await_sleep());
 var asyncify = typeof import_callback_to_async_iterator.default === "function" ? import_callback_to_async_iterator.default : import_callback_to_async_iterator.default.default;
 var debug3 = (0, import_debug3.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
@@ -50534,7 +50536,9 @@ var getIPFSDaemonURL = async () => {
 var ipfsDaemonURL = getIPFSDaemonURL();
 var client = ipfsDaemonURL.then(import_ipfs_http_client.create);
 var nodeID = client.then(async (client2) => options_default.nodeid || (await client2.id()).id);
-(async () => debug3("NodeID", nodeID))();
+(async () => {
+  debug3("NodeID", await nodeID);
+})();
 var getWebURL = (cid, name = null) => {
   const filename = name ? `?filename=${name}` : "";
   const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png" : "";
@@ -50608,12 +50612,32 @@ async function publish(rootCID) {
 }
 async function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();
+  debug3("Subscribing to pubsub events from", _nodeID);
+  const doSubscribe = async () => {
+    await subscribeCIDCallback(_nodeID, (cid) => channel.push(cid), async (...errors) => {
+      debug3("Subscribe error", ...errors);
+      await (0, import_await_sleep.default)(500);
+      debug3("Resubscribing...");
+      doSubscribe();
+    });
+  };
+  await doSubscribe();
+  return channel;
+}
+async function subscribeCIDCallback(_nodeID = null, callback, onError = noop) {
+  const _client = await client;
   if (_nodeID === null)
     _nodeID = await nodeID;
   debug3("Subscribing to pubsub events from", _nodeID);
-  const handler = ({data}) => channel.push(new TextDecoder().decode(data));
-  await (await client).pubsub.subscribe(_nodeID, handler);
-  return channel;
+  const handler = ({data}) => callback(new TextDecoder().decode(data));
+  const doSub = async () => {
+    return await _client.pubsub.subscribe(_nodeID, handler, {onError}).catch(async (e) => {
+      debug3("Subscribe error", e, "... Retrying");
+      await (0, import_await_sleep.default)(300);
+      return await doSub();
+    });
+  };
+  return await doSub();
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path))));
 
@@ -50646,7 +50670,7 @@ var _getIPFSState = cacheOutput(async ({cid, type, name, path, rootCID}, process
   }
   if (type === "file") {
     const fileResult = await processFile2({cid, path, name, rootCID});
-    _debug("got result of processFile", fileResult);
+    _debug("got result of processFile length", fileResult?.length);
     return fileResult;
   }
   throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
@@ -50687,8 +50711,8 @@ var incrementalUpdate = async (watchPath2) => {
   const watch$ = (0, import_file_watch_iterator.default)(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath2,
-    awaitWriteFinish: true
-  }, {debounce: 100});
+    awaitWriteFinish: false
+  }, {debounce: options_default.debounce});
   for await (const files of watch$) {
     const changed = getSortedChangedFiles(files);
     await Promise.all(changed.map(async ({event, file}) => {
@@ -50720,7 +50744,7 @@ var incrementalUpdate = async (watchPath2) => {
       break;
     }
   }
-  await (0, import_await_sleep.default)(500);
+  await (0, import_await_sleep2.default)(500);
   import_process.default.exit(0);
 };
 async function processRemoteCID(contentID2) {

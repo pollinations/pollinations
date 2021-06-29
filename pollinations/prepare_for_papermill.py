@@ -7,9 +7,12 @@ def notebook_add_metadata(target_notebook):
   with open(target_notebook, "r") as f:
     j = json.load(f)
 
-  param_cell =1
-  j['cells'][param_cell]['metadata']['tags'] = ['parameters']
-  j['cells'][param_cell]['metadata']
+  param_cell = next(cell for cell in j['cells'] if "#@param" in "\n".join(cell["source"]))
+  
+  print("Found parameter cell", param_cell)
+  param_cell['metadata']['tags'] = ['parameters']
+  param_cell['metadata']
+
   j['metadata']['kernelspec']['language'] = 'python'
 
   with open(target_notebook, "w") as f:

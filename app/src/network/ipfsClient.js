@@ -63,7 +63,6 @@ const fetchAndMakeURL = async ({ name, cid }) => {
         // const textContent = new TextDecoder().decode(new Uint8Array(contentArray));
         // debug("got json chunks", contentArrays.length, "concatenated length", contentArray.length,"textcontent length", textContent.length);
 
-        debug("textContent",textContent)
         
         try {
             return parse(textContent);

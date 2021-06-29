@@ -59,7 +59,7 @@ const incrementalUpdate = async (watchPath) => {
   const watch$ = watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
-    awaitWriteFinish: true,
+    awaitWriteFinish: false,
   }, { debounce: 100 });
 
   // const added$ = asyncFlatMap(async (added) =>  asyncWrap(Object.entries(added.files)))(watch$);

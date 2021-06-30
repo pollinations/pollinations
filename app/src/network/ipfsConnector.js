@@ -164,12 +164,12 @@ export async function publish(rootCID) {
 }
 
 
-export async function subscribeCID(_nodeID=null) {
+export function subscribeCID(_nodeID=null) {
   const channel = new Channel();
-  debug("Subscribing to pubsub events from", _nodeID);
+  debug("Subscribing to pubsub events");
   const unsubscribe = subscribeCIDCallback(_nodeID, 
         cid => channel.push(cid)
- );
+  );
   return [channel, unsubscribe];  
 }
 
@@ -180,7 +180,7 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
     (async () => {
         const _client = await client;
         if (_nodeID===null)
-        _nodeID = await nodeID;
+            _nodeID = await nodeID;
         
 
         debug("Subscribing to pubsub events from", _nodeID);
@@ -198,18 +198,17 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
         const doSub = async () => {
             try {
                 debug("Executing subscribe", _nodeID)
-                const subRes = await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal  });
-                return subRes;
+                await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal  });
             } catch (e) {
                 if (e instanceof DOMException) {
                     debug("subscription was aborted. returning");
-                    return null;
+                    return;
                 }
                 debug("subscribe error", e);
                 if (e.message?.startsWith("Already subscribed"))
-                    return null;
+                    return;
                 await awaitSleep(300);
-                return await doSub();
+                doSub();
             }      
         };
 
@@ -218,7 +217,8 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
 
     return () => { 
         debug("subscribe abort was called");
-        abort.abort(); } 
+        abort.abort(); 
+    }; 
   }
 
 

@@ -28,12 +28,17 @@ const useColab = () => {
     useEffect(() => {
         colabConnectionManager(async nodeID => {
             dispatchState({ nodeID, status: "ready" });
-            const subscribeResult = await subscribe(nodeID, setContentID);
-            debug("subscribeResult", subscribeResult);
-            // debug("setting status name of contentID", state.contentID)
-            // setContentID(await setStatusName(state.contentID, "ready"));
         });
     },[]);
+
+    useEffect(
+        () => { 
+            if (!state.nodeID)
+                return;
+            debug("nodeID changed to", state.nodeID,". Resubscribing");
+            return subscribe(state.nodeID, setContentID);
+        }
+    , [state.nodeID]);
 
 
     useEffect(() => {

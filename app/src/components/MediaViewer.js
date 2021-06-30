@@ -24,7 +24,7 @@ function ImageViewer({output, contentID}) {
     debug("images", images);
     debug("first",firstFilename, firstURL)
     return (
-        <div >
+        <div style={{width:"100%"}}>
           <h3>Output [<Button
                 href={getWebURL(`${contentID}/output`)} 
                 target="_blank">

@@ -26514,7 +26514,7 @@ var require_abort_controller = __commonJS({
         value: "AbortSignal"
       });
     }
-    var AbortController = class {
+    var AbortController2 = class {
       constructor() {
         signals.set(this, createAbortSignal());
       }
@@ -26533,21 +26533,21 @@ var require_abort_controller = __commonJS({
       }
       return signal;
     }
-    Object.defineProperties(AbortController.prototype, {
+    Object.defineProperties(AbortController2.prototype, {
       signal: {enumerable: true},
       abort: {enumerable: true}
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController.prototype, Symbol.toStringTag, {
+      Object.defineProperty(AbortController2.prototype, Symbol.toStringTag, {
         configurable: true,
         value: "AbortController"
       });
     }
-    exports2.AbortController = AbortController;
+    exports2.AbortController = AbortController2;
     exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController;
-    module2.exports = AbortController;
-    module2.exports.AbortController = module2.exports["default"] = AbortController;
+    exports2.default = AbortController2;
+    module2.exports = AbortController2;
+    module2.exports.AbortController = module2.exports["default"] = AbortController2;
     module2.exports.AbortSignal = AbortSignal;
   }
 });
@@ -26572,9 +26572,9 @@ var require_src13 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     function anySignal(signals) {
-      const controller = new AbortController();
+      const controller = new AbortController2();
       function onAbort() {
         controller.abort();
         for (const signal of signals) {
@@ -26607,7 +26607,7 @@ var require_http = __commonJS({
     var {TimeoutError: TimeoutError2, HTTPError} = require_error();
     var merge = require_merge_options().bind({ignoreUndefined: true});
     var {URL: URL2, URLSearchParams: URLSearchParams2} = require_iso_url();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     var anySignal = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -26670,7 +26670,7 @@ var require_http = __commonJS({
           opts.body = JSON.stringify(opts.json);
           headers.set("content-type", "application/json");
         }
-        const abortController = new AbortController();
+        const abortController = new AbortController2();
         const signal = anySignal([abortController.signal, opts.signal]);
         const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
@@ -29664,10 +29664,10 @@ var require_add_all = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const {headers, body, total, parts} = await multipartRequest(source, controller, options.headers);
         const [progressFn, onUploadProgress] = typeof options.progress === "function" ? createProgressHandler(total, parts, options.progress) : [void 0, void 0];
@@ -30927,7 +30927,7 @@ var require_put = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function put(data, options = {}) {
         if (Block.isBlock(data)) {
@@ -30950,7 +30950,7 @@ var require_put = __commonJS({
           });
           delete options.cid;
         }
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         let res;
         try {
@@ -31302,10 +31302,10 @@ var require_replace2 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       const replace = async (config, options = {}) => {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("config/replace", __spreadValues({
           timeout: options.timeout,
@@ -40797,7 +40797,7 @@ var require_put2 = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     var multicodec = require_src6();
     var loadFormat = require_ipld_formats();
     module2.exports = configure((api, opts) => {
@@ -40826,7 +40826,7 @@ var require_put2 = __commonJS({
         }, encodingOptions);
         const format = await load(settings.format);
         const serialized = format.util.serialize(dagNode);
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, settings.signal);
         const res = await api.post("dag/put", __spreadValues({
           timeout: settings.timeout,
@@ -40927,10 +40927,10 @@ var require_put3 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function* put(key, value, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("dht/put", __spreadValues({
           timeout: options.timeout,
@@ -41554,10 +41554,10 @@ var require_write = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function write(path, input, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("files/write", __spreadValues({
           timeout: options.timeout,
@@ -43338,10 +43338,10 @@ var require_append_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function appendData(cid, data, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("object/patch/append-data", __spreadValues({
           timeout: options.timeout,
@@ -43395,10 +43395,10 @@ var require_set_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function setData(cid, data, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const {Hash} = await (await api.post("object/patch/set-data", __spreadValues({
           timeout: options.timeout,
@@ -43439,7 +43439,7 @@ var require_put4 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     module2.exports = configure((api) => {
@@ -43481,7 +43481,7 @@ var require_put4 = __commonJS({
           options.enc = "json";
           buf = uint8ArrayFromString(JSON.stringify(tmpObj));
         }
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("object/put", __spreadValues({
           timeout: options.timeout,
@@ -44873,7 +44873,7 @@ var require_ping = __commonJS({
 var require_subscription_tracker = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
     "use strict";
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     var SubscriptionTracker = class {
       constructor() {
         this._subs = new Map();
@@ -44883,7 +44883,7 @@ var require_subscription_tracker = __commonJS({
         if (topicSubs.find((s) => s.handler === handler)) {
           throw new Error(`Already subscribed to ${topic} with this handler`);
         }
-        const controller = new AbortController();
+        const controller = new AbortController2();
         this._subs.set(topic, [{handler, controller}].concat(topicSubs));
         if (signal) {
           signal.addEventListener("abort", () => this.unsubscribe(topic, handler));
@@ -44963,13 +44963,13 @@ var require_publish2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController} = require_src13();
+    var {AbortController: AbortController2} = require_src13();
     module2.exports = configure((api) => {
       async function publish2(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
           arg: topic
         }, options));
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("pubsub/pub", __spreadValues({
           timeout: options.timeout,
@@ -50461,7 +50461,6 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
-var noop = () => null;
 var callLogger = (f, name = null) => (...args) => {
   if (!name)
     name = f.name;
@@ -50498,6 +50497,7 @@ var cleanCIDs = (cidFunc) => async (cidOrFile, ...args) => {
 
 // src/network/ipfsConnector.js
 var import_is_port_reachable = __toModule(require_is_port_reachable());
+var import_native_abort_controller = __toModule(require_src13());
 var import_it_all = __toModule(require_it_all());
 var import_debug3 = __toModule(require_src());
 var import_callback_to_async_iterator = __toModule(require_dist());
@@ -50514,7 +50514,7 @@ var import_path = __toModule(require("path"));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 20);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 200);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
@@ -50613,31 +50613,47 @@ async function publish(rootCID) {
 async function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();
   debug3("Subscribing to pubsub events from", _nodeID);
-  const doSubscribe = async () => {
-    await subscribeCIDCallback(_nodeID, (cid) => channel.push(cid), async (...errors) => {
-      debug3("Subscribe error", ...errors);
-      await (0, import_await_sleep.default)(500);
-      debug3("Resubscribing...");
-      doSubscribe();
-    });
-  };
-  await doSubscribe();
-  return channel;
+  const unsubscribe = subscribeCIDCallback(_nodeID, (cid) => channel.push(cid));
+  return [channel, unsubscribe];
 }
-async function subscribeCIDCallback(_nodeID = null, callback, onError = noop) {
-  const _client = await client;
-  if (_nodeID === null)
-    _nodeID = await nodeID;
-  debug3("Subscribing to pubsub events from", _nodeID);
-  const handler = ({data}) => callback(new TextDecoder().decode(data));
-  const doSub = async () => {
-    return await _client.pubsub.subscribe(_nodeID, handler, {onError}).catch(async (e) => {
-      debug3("Subscribe error", e, "... Retrying");
+function subscribeCIDCallback(_nodeID = null, callback) {
+  const abort = new import_native_abort_controller.AbortController();
+  (async () => {
+    const _client = await client;
+    if (_nodeID === null)
+      _nodeID = await nodeID;
+    debug3("Subscribing to pubsub events from", _nodeID);
+    const onError = async (...errorArgs) => {
+      debug3("onError", ...errorArgs, "aborting");
+      abort.abort();
       await (0, import_await_sleep.default)(300);
-      return await doSub();
-    });
+      debug3("resubscribing");
+      await doSub();
+    };
+    const handler = ({data}) => callback(new TextDecoder().decode(data));
+    const doSub = async () => {
+      try {
+        debug3("Executing subscribe", _nodeID);
+        const subRes = await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal});
+        return subRes;
+      } catch (e) {
+        if (e instanceof DOMException) {
+          debug3("subscription was aborted. returning");
+          return null;
+        }
+        debug3("subscribe error", e);
+        if (e.message?.startsWith("Already subscribed"))
+          return null;
+        await (0, import_await_sleep.default)(300);
+        return await doSub();
+      }
+    };
+    doSub();
+  })();
+  return () => {
+    debug3("subscribe abort was called");
+    abort.abort();
   };
-  return await doSub();
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path))));
 
@@ -50711,7 +50727,7 @@ var incrementalUpdate = async (watchPath2) => {
   const watch$ = (0, import_file_watch_iterator.default)(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath2,
-    awaitWriteFinish: false
+    awaitWriteFinish: true
   }, {debounce: options_default.debounce});
   for await (const files of watch$) {
     const changed = getSortedChangedFiles(files);
@@ -50782,11 +50798,14 @@ if (enableReceive) {
   (async function() {
     if (options_default.ipns) {
       debug5("IPNS activated. subscring to CIDs");
-      for await (let remoteCID of await subscribeCID()) {
+      const [cidStream, unsubscribe] = subscribeCID();
+      for await (let remoteCID of await cidStream) {
         debug5("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));
-        if (options_default.once)
+        if (options_default.once) {
+          unsubscribe();
           break;
+        }
       }
       ;
     } else {

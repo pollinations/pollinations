@@ -4,7 +4,7 @@ import { toPromise, callLogger, toPromise1, noop } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
-
+import { AbortController } from 'native-abort-controller';
 import all from "it-all";
 
 import Debug from "debug";
@@ -167,40 +167,58 @@ export async function publish(rootCID) {
 export async function subscribeCID(_nodeID=null) {
   const channel = new Channel();
   debug("Subscribing to pubsub events from", _nodeID);
-  const doSubscribe = async () => {
-    await subscribeCIDCallback(_nodeID, 
-        cid => channel.push(cid), 
-        async (...errors) => {
-            debug("Subscribe error", ...errors);
-            await awaitSleep(500);
-            debug("Resubscribing...")
-            doSubscribe();
-        }
-      );
-  }
-  await doSubscribe();
-  return channel;  
+  const unsubscribe = subscribeCIDCallback(_nodeID, 
+        cid => channel.push(cid)
+ );
+  return [channel, unsubscribe];  
 }
 
 
-export async function subscribeCIDCallback(_nodeID=null, callback, onError=noop) {
-    const _client = await client;
-    if (_nodeID===null)
-      _nodeID = await nodeID;
+export function subscribeCIDCallback(_nodeID=null, callback) {
+    const abort = new AbortController();
     
-    debug("Subscribing to pubsub events from", _nodeID);
-    const handler = ({data}) => callback(new TextDecoder().decode(data));
-    
-    const doSub = async () => {
-        return await (_client.pubsub
-                .subscribe(_nodeID, handler, { onError })
-                .catch(async e => {
-                    debug("Subscribe error", e, "... Retrying");
-                    await awaitSleep(300);
-                    return await doSub();
-                }));
-    };
-    return await doSub(); 
+    (async () => {
+        const _client = await client;
+        if (_nodeID===null)
+        _nodeID = await nodeID;
+        
+
+        debug("Subscribing to pubsub events from", _nodeID);
+        
+        const onError = async (...errorArgs) => {
+            debug("onError",...errorArgs,"aborting");
+            abort.abort();
+            await awaitSleep(300);
+            debug("resubscribing")
+            await doSub();
+        };
+
+        const handler = ({data}) => callback(new TextDecoder().decode(data));
+        
+        const doSub = async () => {
+            try {
+                debug("Executing subscribe", _nodeID)
+                const subRes = await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal  });
+                return subRes;
+            } catch (e) {
+                if (e instanceof DOMException) {
+                    debug("subscription was aborted. returning");
+                    return null;
+                }
+                debug("subscribe error", e);
+                if (e.message?.startsWith("Already subscribed"))
+                    return null;
+                await awaitSleep(300);
+                return await doSub();
+            }      
+        };
+
+        doSub();
+    })();
+
+    return () => { 
+        debug("subscribe abort was called");
+        abort.abort(); } 
   }
 
 

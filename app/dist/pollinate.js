@@ -50610,9 +50610,9 @@ async function publish(rootCID) {
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID, rootCID);
 }
-async function subscribeCID(_nodeID = null) {
+function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();
-  debug3("Subscribing to pubsub events from", _nodeID);
+  debug3("Subscribing to pubsub events");
   const unsubscribe = subscribeCIDCallback(_nodeID, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
@@ -50634,18 +50634,17 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     const doSub = async () => {
       try {
         debug3("Executing subscribe", _nodeID);
-        const subRes = await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal});
-        return subRes;
+        await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal});
       } catch (e) {
-        if (e instanceof DOMException) {
+        debug3("subscribe error", e, e.name);
+        if (e.name === "DOMException") {
           debug3("subscription was aborted. returning");
-          return null;
+          return;
         }
-        debug3("subscribe error", e);
         if (e.message?.startsWith("Already subscribed"))
-          return null;
+          return;
         await (0, import_await_sleep.default)(300);
-        return await doSub();
+        doSub();
       }
     };
     doSub();

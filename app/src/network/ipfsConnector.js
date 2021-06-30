@@ -200,11 +200,12 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
                 debug("Executing subscribe", _nodeID)
                 await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal  });
             } catch (e) {
-                if (e instanceof DOMException) {
+                debug("subscribe error", e, e.name);
+                if (e.name === "DOMException") {
                     debug("subscription was aborted. returning");
                     return;
                 }
-                debug("subscribe error", e);
+
                 if (e.message?.startsWith("Already subscribed"))
                     return;
                 await awaitSleep(300);

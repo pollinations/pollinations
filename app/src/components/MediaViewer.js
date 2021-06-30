@@ -24,13 +24,13 @@ function ImageViewer({output, contentID}) {
     debug("images", images);
     debug("first",firstFilename, firstURL)
     return (
-        <div >
+        <div style={{width:"100%"}}>
           <h3>Output [<Button
                 href={getWebURL(`${contentID}/output`)} 
                 target="_blank">
                   Open Folder
             </Button>]</h3>
-          <div style={{ width: '50%',maxWidth:'500px', margin: '20px auto' }}>
+          <div style={{ maxWidth:'500px', margin: '20px auto' }}>
             <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />
             {firstFilename}
           </div>

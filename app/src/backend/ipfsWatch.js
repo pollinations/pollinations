@@ -59,7 +59,7 @@ const incrementalUpdate = async (watchPath) => {
   const watch$ = watch(".", {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
-    awaitWriteFinish: false,
+    awaitWriteFinish: true,
   }, { debounce: options.debounce });
 
   for await (const files of watch$) {
@@ -157,11 +157,14 @@ if (enableReceive) {
   (async function () {
     if (options.ipns) {
       debug("IPNS activated. subscring to CIDs")
-      for await (let remoteCID of await subscribeCID()) {
+      const [cidStream, unsubscribe] = subscribeCID();
+      for await (let remoteCID of await cidStream) {
         debug("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));
-        if (options.once)
+        if (options.once) {
+          unsubscribe();
           break;
+        }
       };
     } else {
       // for await (let remoteCID of Right eadline) {

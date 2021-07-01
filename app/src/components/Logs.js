@@ -2,7 +2,7 @@ import React from 'react'
 import { Button, CardContent, Link, Typography } from "@material-ui/core"
 // import ReactJson from 'react-json-view'
 import Ansi from "ansi-to-react";
-import { displayContentID } from "../network/utils";
+
 import { getWebURL } from '../network/ipfsConnector';
 // import JupyterViewer from "react-jupyter-notebook";
 

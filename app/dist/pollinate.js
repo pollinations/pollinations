@@ -29732,9 +29732,9 @@ var require_add_all = __commonJS({
   }
 });
 
-// node_modules/it-last/index.js
+// node_modules/ipfs-http-client/node_modules/it-last/index.js
 var require_it_last = __commonJS({
-  "node_modules/it-last/index.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
     var last2 = async (source) => {
       let res;
@@ -50538,6 +50538,7 @@ var client = ipfsDaemonURL.then(import_ipfs_http_client.create);
 var nodeID = client.then(async (client2) => options_default.nodeid || (await client2.id()).id);
 (async () => {
   debug3("NodeID", await nodeID);
+  window.client = await client;
 })();
 var getWebURL = (cid, name = null) => {
   const filename = name ? `?filename=${name}` : "";
@@ -50609,6 +50610,8 @@ async function publish(rootCID) {
   const _client = await client;
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID, rootCID);
+  debug3("publishing to ipns...", rootCID);
+  _client.name.publish(rootCID).then(() => debug3("published...", rootCID));
 }
 function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();

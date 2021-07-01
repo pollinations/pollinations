@@ -95,8 +95,8 @@ const incrementalUpdate = async (watchPath) => {
     console.log(newContentID);
     if (options.ipns) {
       debug("publish", newContentID)
-      if (!isSameContentID(stringCID(newContentID)))
-        await publish(newContentID);
+      // if (!isSameContentID(stringCID(newContentID)))
+      await publish(newContentID);
     }
 
     if (options.once) {

@@ -1,13 +1,14 @@
 
 
 import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
-import { client, getWebURL, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
+import { client, getWebURL, ipfsResolve, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
 import { getIPFSState } from "./ipfsState";
 import { parse } from "json5";
 import fetch from "node-fetch";
+import last from "it-last";
 
 const debug = Debug("ipfsClient")
 
@@ -147,6 +148,7 @@ export const addInputContent = async (contentID, { inputs }) => {
 export const publish = async (nodeID, newContentID) => {
     (await client).pubsub.publish(nodeID, newContentID)
 }
+export const resolve = nodeID => ipfsResolve(`/ipns/${nodeID}`)
 
 export const subscribe = subscribeCIDCallback;
 

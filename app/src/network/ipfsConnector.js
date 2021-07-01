@@ -170,9 +170,13 @@ export async function publish(rootCID) {
     if (abortPublish)
         abortPublish.abort();
     abortPublish = new AbortController();
-    _client.name.publish(rootCID,{signal: abortPublish.signal}).then(() => {
+    _client.name.publish(rootCID,{ signal: abortPublish.signal })
+    .then(() => {
         debug("published...", rootCID);
         abortPublish = null;
+    })
+    .catch(e => {
+        debug("exception on publish.",e);
     });
     // dont await since this hangs sadly
     //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });

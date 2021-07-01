@@ -49,6 +49,7 @@ export const nodeID = client.then(async client => options.nodeid || (await clien
 
 (async () => {
     debug("NodeID", await nodeID);
+    window.client = await client;
 })();
 
 export async function getCID(ipfsPath = "/") {
@@ -63,6 +64,10 @@ export const getWebURL = (cid, name=null) => {
     const filename = name ? `?filename=${name}` : '';
     const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png":"";
     return `https://pollinations.ai/ipfs/${cid}${imgFBFixHack}${filename}`
+};
+
+export const getIPNSURL = (id) => {
+    return `https://pollinations.ai/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
@@ -158,6 +163,8 @@ export async function publish(rootCID) {
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
     await _client.pubsub.publish(await nodeID, rootCID)
+    debug("publishing to ipns...", rootCID)
+    _client.name.publish(rootCID).then(() => debug("published...", rootCID));
     // dont await since this hangs sadly
     //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
     //debug("published ipns");
@@ -212,7 +219,6 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
                 doSub();
             }      
         };
-
         doSub();
     })();
 

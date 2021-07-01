@@ -50600,7 +50600,7 @@ async function contentID(mfsPath = "/") {
   return stringCID(await _client.files.stat(mfsPath));
 }
 var _lastContentID = null;
-var abortPublish = new import_native_abort_controller.AbortController();
+var abortPublish = null;
 async function publish(rootCID) {
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
@@ -50611,8 +50611,13 @@ async function publish(rootCID) {
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID, rootCID);
   debug3("publishing to ipns...", rootCID);
-  abortPublish.abort();
-  _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => debug3("published...", rootCID));
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller.AbortController();
+  _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => {
+    debug3("published...", rootCID);
+    abortPublish = null;
+  });
 }
 function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();

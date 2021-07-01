@@ -29732,9 +29732,9 @@ var require_add_all = __commonJS({
   }
 });
 
-// node_modules/it-last/index.js
+// node_modules/ipfs-http-client/node_modules/it-last/index.js
 var require_it_last = __commonJS({
-  "node_modules/it-last/index.js"(exports2, module2) {
+  "node_modules/ipfs-http-client/node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
     var last2 = async (source) => {
       let res;
@@ -50600,6 +50600,7 @@ async function contentID(mfsPath = "/") {
   return stringCID(await _client.files.stat(mfsPath));
 }
 var _lastContentID = null;
+var abortPublish = null;
 async function publish(rootCID) {
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
@@ -50609,6 +50610,14 @@ async function publish(rootCID) {
   const _client = await client;
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID, rootCID);
+  debug3("publishing to ipns...", rootCID);
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller.AbortController();
+  _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => {
+    debug3("published...", rootCID);
+    abortPublish = null;
+  });
 }
 function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();
@@ -50654,7 +50663,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     abort.abort();
   };
 }
-var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path))));
+var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path, {nocache: true}))));
 
 // src/network/ipfsState.js
 var import_debug4 = __toModule(require_src());
@@ -50752,8 +50761,7 @@ var incrementalUpdate = async (watchPath2) => {
     console.log(newContentID);
     if (options_default.ipns) {
       debug5("publish", newContentID);
-      if (!isSameContentID(stringCID(newContentID)))
-        await publish(newContentID);
+      await publish(newContentID);
     }
     if (options_default.once) {
       break;

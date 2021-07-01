@@ -49,6 +49,7 @@ export const nodeID = client.then(async client => options.nodeid || (await clien
 
 (async () => {
     debug("NodeID", await nodeID);
+    // window.client = await client;
 })();
 
 export async function getCID(ipfsPath = "/") {
@@ -63,6 +64,10 @@ export const getWebURL = (cid, name=null) => {
     const filename = name ? `?filename=${name}` : '';
     const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png":"";
     return `https://pollinations.ai/ipfs/${cid}${imgFBFixHack}${filename}`
+};
+
+export const getIPNSURL = (id) => {
+    return `https://pollinations.ai/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/","");
@@ -149,6 +154,9 @@ export async function contentID(mfsPath="/") {
 
 let _lastContentID = null;
 
+
+let abortPublish  = null;
+
 export async function publish(rootCID) {
     if (_lastContentID === rootCID) {
         debug("Skipping publish of rootCID since its the same as before", rootCID)
@@ -158,6 +166,14 @@ export async function publish(rootCID) {
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
     await _client.pubsub.publish(await nodeID, rootCID)
+    debug("publishing to ipns...", rootCID)
+    if (abortPublish)
+        abortPublish.abort();
+    abortPublish = new AbortController();
+    _client.name.publish(rootCID,{signal: abortPublish.signal}).then(() => {
+        debug("published...", rootCID);
+        abortPublish = null;
+    });
     // dont await since this hangs sadly
     //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
     //debug("published ipns");
@@ -212,7 +228,6 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
                 doSub();
             }      
         };
-
         doSub();
     })();
 
@@ -224,7 +239,7 @@ export function subscribeCIDCallback(_nodeID=null, callback) {
 
 
 export const ipfsResolve = async path =>
-    stringCID(last(await toPromise((await client).name.resolve(path))));
+    stringCID(last(await toPromise((await client).name.resolve(path,{nocache: true}))));
 
 
 

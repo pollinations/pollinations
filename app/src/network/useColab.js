@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useMemo, useReducer} from "react";
 
  
-import {IPFSState, stateReducer, addInputContent, publish, subscribe, setStatusName } from "./ipfsClient";
+import {IPFSState, stateReducer, addInputContent, publish, subscribe, setStatusName, resolve } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
@@ -25,17 +25,24 @@ const useColab = () => {
         }
     }, [state]);
 
-    useEffect(() => {
-        colabConnectionManager(async nodeID => {
+    const setNodeID = useCallback(async nodeID => {
+        debug("setNodeID", nodeID);
+        if (nodeID && nodeID !== state.nodeID) {
+            debug("setting new nodeID",nodeID);
             dispatchState({ nodeID, status: "ready" });
-        });
+        }
+    }, [state]);
+
+    useEffect(() => {
+        colabConnectionManager(setNodeID);
     },[]);
 
     useEffect(
         () => { 
             if (!state.nodeID)
                 return;
-            debug("nodeID changed to", state.nodeID,". Resubscribing");
+            debug("nodeID changed to", state.nodeID,". (Re)subscribing");
+            resolve(state.nodeID).then(setContentID);
             return subscribe(state.nodeID, setContentID);
         }
     , [state.nodeID]);

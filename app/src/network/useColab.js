@@ -42,7 +42,10 @@ const useColab = () => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            resolve(state.nodeID).then(setContentID);
+            resolve(state.nodeID).then(cid => { 
+                debug("resolved IPNS to cid",cid);
+                setContentID(cid);
+            });
             return subscribe(state.nodeID, setContentID);
         }
     , [state.nodeID]);

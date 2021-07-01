@@ -1,5 +1,5 @@
 import { displayContentID } from "../network/utils";
-import { getWebURL } from "../network/ipfsConnector";
+import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
 import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
 const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
 
@@ -20,7 +20,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
                     <TableBody>
                         <TableRow>
                             <TableCell><b>NodeID</b></TableCell>
-                            <TableCell>{nodeID ? <Link >{displayContentID(nodeID)}</Link> : <ColabConnectButton />}</TableCell>
+                            <TableCell>{nodeID ? <Link href={getIPNSURL(nodeID)} target="_blank">{displayContentID(nodeID)}</Link> : <ColabConnectButton />}</TableCell>
                         </TableRow>
                         <TableRow>
                         <TableCell ><b>ContentID</b></TableCell>

@@ -50617,6 +50617,8 @@ async function publish(rootCID) {
   _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => {
     debug3("published...", rootCID);
     abortPublish = null;
+  }).catch((e) => {
+    debug3("exception on publish.", e);
   });
 }
 function subscribeCID(_nodeID = null) {

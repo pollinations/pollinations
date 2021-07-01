@@ -50538,7 +50538,6 @@ var client = ipfsDaemonURL.then(import_ipfs_http_client.create);
 var nodeID = client.then(async (client2) => options_default.nodeid || (await client2.id()).id);
 (async () => {
   debug3("NodeID", await nodeID);
-  window.client = await client;
 })();
 var getWebURL = (cid, name = null) => {
   const filename = name ? `?filename=${name}` : "";

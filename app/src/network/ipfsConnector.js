@@ -49,7 +49,7 @@ export const nodeID = client.then(async client => options.nodeid || (await clien
 
 (async () => {
     debug("NodeID", await nodeID);
-    window.client = await client;
+    // window.client = await client;
 })();
 
 export async function getCID(ipfsPath = "/") {

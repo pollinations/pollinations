@@ -25,6 +25,7 @@
     "it-all": "^1.0.5",
     "it-concat": "^2.0.0",
     "it-first": "^1.0.6",
+    "it-last": "^1.0.5",
     "it-reduce": "^1.0.5",
     "iter-tools": "^7.1.3",
     "json5": "^2.2.0",

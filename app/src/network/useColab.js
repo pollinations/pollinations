@@ -10,6 +10,7 @@ import { useParams, useHistory } from "react-router-dom";
 
 const debug = Debug("useColab")
 
+const EMPTYCID = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
 
 const useColab = () => {
     const [state, dispatchState] = useReducer(...stateReducer);
@@ -44,7 +45,11 @@ const useColab = () => {
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
             resolve(state.nodeID).then(cid => { 
                 debug("resolved IPNS to cid",cid);
-                setContentID(cid);
+                if (cid !== EMPTYCID) {
+                    setContentID(cid);
+                } else {
+                    debug("Skipping since empty.");
+                }
             });
             return subscribe(state.nodeID, setContentID);
         }

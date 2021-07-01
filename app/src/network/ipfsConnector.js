@@ -155,7 +155,7 @@ export async function contentID(mfsPath="/") {
 let _lastContentID = null;
 
 
-const abortPublish = new AbortController();
+let abortPublish  = null;
 
 export async function publish(rootCID) {
     if (_lastContentID === rootCID) {
@@ -167,8 +167,13 @@ export async function publish(rootCID) {
     debug("publish pubsub", await nodeID, rootCID);
     await _client.pubsub.publish(await nodeID, rootCID)
     debug("publishing to ipns...", rootCID)
-    abortPublish.abort();
-    _client.name.publish(rootCID,{signal: abortPublish.signal}).then(() => debug("published...", rootCID));
+    if (abortPublish)
+        abortPublish.abort();
+    abortPublish = new AbortController();
+    _client.name.publish(rootCID,{signal: abortPublish.signal}).then(() => {
+        debug("published...", rootCID);
+        abortPublish = null;
+    });
     // dont await since this hangs sadly
     //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
     //debug("published ipns");

@@ -50600,6 +50600,7 @@ async function contentID(mfsPath = "/") {
   return stringCID(await _client.files.stat(mfsPath));
 }
 var _lastContentID = null;
+var abortPublish = new import_native_abort_controller.AbortController();
 async function publish(rootCID) {
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
@@ -50610,7 +50611,8 @@ async function publish(rootCID) {
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID, rootCID);
   debug3("publishing to ipns...", rootCID);
-  _client.name.publish(rootCID).then(() => debug3("published...", rootCID));
+  abortPublish.abort();
+  _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => debug3("published...", rootCID));
 }
 function subscribeCID(_nodeID = null) {
   const channel = new import_queueable.Channel();
@@ -50656,7 +50658,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     abort.abort();
   };
 }
-var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path))));
+var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path, {nocache: true}))));
 
 // src/network/ipfsState.js
 var import_debug4 = __toModule(require_src());
@@ -50754,8 +50756,7 @@ var incrementalUpdate = async (watchPath2) => {
     console.log(newContentID);
     if (options_default.ipns) {
       debug5("publish", newContentID);
-      if (!isSameContentID(stringCID(newContentID)))
-        await publish(newContentID);
+      await publish(newContentID);
     }
     if (options_default.once) {
       break;

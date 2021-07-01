@@ -7574,14 +7574,9 @@ it-glob@~0.0.11:
     fs-extra "^9.0.1"
     minimatch "^3.0.4"
 
-it-last@^1.0.4:
+it-last@^1.0.4, it-last@^1.0.5:
   version "1.0.5"
   resolved "https://registry.npmjs.org/it-last/-/it-last-1.0.5.tgz"
-  integrity sha512-PV/2S4zg5g6dkVuKfgrQfN2rUN4wdTI1FzyAvU+i8RV96syut40pa2s9Dut5X7SkjwA3P0tOhLABLdnOJ0Y/4Q==
-
-it-last@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/it-last/-/it-last-1.0.5.tgz#5c711c7d58948bcbc8e0cb129af3a039ba2a585b"
   integrity sha512-PV/2S4zg5g6dkVuKfgrQfN2rUN4wdTI1FzyAvU+i8RV96syut40pa2s9Dut5X7SkjwA3P0tOhLABLdnOJ0Y/4Q==
 
 it-map@^1.0.4:

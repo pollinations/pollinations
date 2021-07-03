@@ -3,6 +3,7 @@ import { parse } from "json5";
 
 const debug = Debug("notebookMetadata");
 
+const filterSensitive = line => !line.startsWith("Edit in ");
 
 function readMetadata(notebookJSON) {
   if (!notebookJSON)
@@ -16,7 +17,10 @@ function readMetadata(notebookJSON) {
   const parameterCell = cells.find(isParameterCell);
   
   debug("parameter cell", parameterCell);
-  const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
+  const description = descriptionCell ? descriptionCell["source"]
+    .filter(filterSensitive)
+    .join("\n") : null;
+    
   const parameterTexts = parameterCell ? parameterCell["source"] : null;
   debug("parameter texts", parameterTexts)
   const allParameters = parameterTexts

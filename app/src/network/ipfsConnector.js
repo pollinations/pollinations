@@ -170,7 +170,7 @@ export async function publish(rootCID) {
     if (abortPublish)
         abortPublish.abort();
     abortPublish = new AbortController();
-    _client.name.publish(rootCID,{ signal: abortPublish.signal })
+    _client.name.publish(rootCID,{ signal: abortPublish.signal, allowOffline: true })
     .then(() => {
         debug("published...", rootCID);
         abortPublish = null;

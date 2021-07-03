@@ -43,14 +43,14 @@ const useColab = () => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            resolve(state.nodeID).then(cid => { 
-                debug("resolved IPNS to cid",cid);
-                if (cid !== EMPTYCID) {
-                    setContentID(cid);
-                } else {
-                    debug("Skipping since empty.");
-                }
-            });
+            // resolve(state.nodeID).then(cid => { 
+            //     debug("resolved IPNS to cid",cid);
+            //     if (cid !== EMPTYCID) {
+            //         setContentID(cid);
+            //     } else {
+            //         debug("Skipping since empty.");
+            //     }
+            // });
             return subscribe(state.nodeID, setContentID);
         }
     , [state.nodeID]);

@@ -14,7 +14,7 @@ setup(
     description="Make Google Colab Notebooks available as a Servbice",
     long_description=README,
     long_description_content_type="text/markdown",
-    url="https://github.com/voodoohop/pollinations",
+    url="https://github.com/pollinations/pollinations",
     author="Pollination in Blatant Space (thomash)",
     author_email="t.haferlach@gmail.com",
     license="MIT",

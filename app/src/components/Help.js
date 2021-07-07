@@ -9,7 +9,7 @@ export default function SimpleModal() {
     const [markdown, setMarkdown] = useState("*loading...*");
   
     useEffect(async () => {
-        const response = await fetch("https://raw.githubusercontent.com/voodoohop/pollinations/dev/docs/instructions.md");
+        const response = await fetch("https://raw.githubusercontent.com/pollinations/pollinations/dev/docs/instructions.md");
         const md = await response.text();
         setMarkdown(md);
     },[]);

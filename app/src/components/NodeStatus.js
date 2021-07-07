@@ -1,7 +1,7 @@
 import { displayContentID } from "../network/utils";
 import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
 import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
-const colabURL = "https://colab.research.google.com/github/voodoohop/pollinations/blob/dev/colabs/pollinator.ipynb";
+const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
 
 const TableCell = withStyles({
     root: {

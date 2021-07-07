@@ -19,7 +19,7 @@ function App() {
                     ))
                 }/>
 
-            <Typography align="right" > Get help and contribute on<Button href="https://github.com/voodoohop/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
+            <Typography align="right" > Get help and contribute on<Button href="https://github.com/pollinatios/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
         </Container>
     </Router>
 }

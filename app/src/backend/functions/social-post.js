@@ -36,7 +36,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     "mediaUrls": [videoURL]
   };
 
-  const res2 = await social.post({
+  const res2 = social.post({
     ...shareConfig,
     post: `${title} ${url}`,
     "platforms": ["twitter","instagram"],
@@ -46,14 +46,14 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   console.log("res2", res2);
 
   const res1 = 
-    await social.post({
+     social.post({
       ...shareConfig,
       "platforms": ["facebook","youtube","linkedin"]
     }).catch(console.error);
 
 
 
-  return [res1,res2];
+  return Promise.all([res1,res2]);
 }
 
 // console.log(postResult)

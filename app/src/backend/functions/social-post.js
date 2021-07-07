@@ -39,8 +39,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const res2 = await social.post({
     ...shareConfig,
     post: `${title} ${url}`,
-
-    "platforms": ["twitter"],
+    "platforms": ["twitter","instagram"],
     "mediaUrls": [coverImage]
   }).catch(console.error);
   
@@ -49,7 +48,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const res1 = 
     await social.post({
       ...shareConfig,
-      "platforms": ["facebook","youtube","instagram","linkedin"]
+      "platforms": ["facebook","youtube","linkedin"]
     }).catch(console.error);
 
 

@@ -26,7 +26,7 @@ ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
 # npm install -g yarn
 
 # # Pollinations
-# git clone https://github.com/voodoohop/pollinations
+# git clone https://github.com/pollinations/pollinations
 # cd pollinations/src/app
 # yarn install
 # yarn install -g

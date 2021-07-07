@@ -17,11 +17,4 @@ ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
 #ipfs config --json Peering.Peers '[{"ID":"12D3KooWDwQ1R9ZmDRv8aWL4dJ4svS9AYvwfJicQ1F45W5aHAVmy", "Addrs": ["/ip4/18.157.205.205/tcp/4001"]}]' 
 #ipfs config --json Swarm.EnableAutoRelay true
 
-# # Pollinations
-# git clone https://github.com/voodoohop/pollinations
-# cd pollinations/src/app
-# yarn install
-# yarn install -g
-# cd -
-
 

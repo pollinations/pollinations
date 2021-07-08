@@ -41,9 +41,8 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     post: `${title} ${url}`,
     "platforms": ["twitter","instagram"],
     "mediaUrls": [coverImage]
-  }).catch(console.error);
+  }).catch(e => console.error("errror",e));
   
-  console.log("res2", res2);
 
   const res1 = 
      social.post({
@@ -84,14 +83,12 @@ export const handler = async ({path}) => {
     console.log("cid",cid);
     const ipfs = await IPFSState(cid);
     console.log("Starting async post but returning already");
-    postAsync(ipfs, cid).then((...res)=> console.log("Postres",...rest).catch((e) => console.error("posterror",e)));
+    const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e)));
+    console.log("res",res);
     return {
       statusCode: 200,
-      body: JSON.stringify(ipfs, null, 4)
+      body: JSON.stringify(res, null, 4)
     };
-
-
-
 
 }
 

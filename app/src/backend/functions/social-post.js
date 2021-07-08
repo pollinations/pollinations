@@ -87,7 +87,7 @@ export const handler = async ({path}) => {
     postAsync(ipfs, cid).then((...res)=> console.log("Postres",...rest).catch((e) => console.error("posterror",e)));
     return {
       statusCode: 200,
-      body: JSON.stringify(postResult)
+      body: JSON.stringify(ipfs, null, 4)
     };
 
 

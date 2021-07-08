@@ -83,7 +83,7 @@ export const handler = async ({path}) => {
     console.log("cid",cid);
     const ipfs = await IPFSState(cid);
     console.log("Starting async post but returning already");
-    const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e)));
+    const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e));
     console.log("res",res);
     return {
       statusCode: 200,

@@ -113,7 +113,7 @@ async function postAsync(ipfs, cid) {
   const { name } = readMetadata(ipfs["notebook.ipynb"]);
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
-  const videoURL = vid && vid[1] ? vid : coverImage;
+  const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
   console.log("Calling post", { modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
   const postResult = await doPost({ modelTitle: name, input: ipfs.input, videoURL, coverImage, url });

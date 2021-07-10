@@ -7,7 +7,7 @@ program
 .option('-o, --once', 'run once and exit', false)
 .option('-i, --ipns', 'publish to /ipns/pollinations.ai', false)
 .option('-n, --nodeid <nodeid>', 'local node id', null)
-.option('-d, --debounce <ms>', 'file watch debounce time', 200)
+.option('-d, --debounce <ms>', 'file watch debounce time', 1500)
 
 program.parse(process.argv);
 

@@ -1,5 +1,4 @@
 
-/** Cut & Paste Node.js Code **/
 import SocialPost from "social-post-api"; 
 import { IPFSState } from "../../network/ipfsClient.js";
 import readMetadata from "../notebookMetadata.js";
@@ -41,9 +40,8 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     post: `${title} ${url}`,
     "platforms": ["twitter","instagram"],
     "mediaUrls": [coverImage]
-  }).catch(console.error);
+  }).catch(e => console.error("errror",e));
   
-  console.log("res2", res2);
 
   const res1 = 
      social.post({
@@ -84,14 +82,12 @@ export const handler = async ({path}) => {
     console.log("cid",cid);
     const ipfs = await IPFSState(cid);
     console.log("Starting async post but returning already");
-    postAsync(ipfs, cid).then((...res)=> console.log("Postres",...rest).catch((e) => console.error("posterror",e)));
+    const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e));
+    console.log("res",res);
     return {
       statusCode: 200,
-      body: JSON.stringify(postResult)
+      body: JSON.stringify(res, null, 4)
     };
-
-
-
 
 }
 
@@ -105,6 +101,8 @@ https://pollinations.ai
 https://fb.com/pollinations
 https://twitter.com/pollinations_ai
 https://instagram.com/pollinations_ai
+
+#pollinations
 `;
 
 
@@ -114,7 +112,8 @@ https://instagram.com/pollinations_ai
 async function postAsync(ipfs, cid) {
   const { name } = readMetadata(ipfs["notebook.ipynb"]);
   const coverImage = getCoverImage(ipfs.output)[1];
-  const videoURL = getCoverVideo(ipfs.output)[1];
+  const vid = getCoverVideo(ipfs.output);
+  const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
   console.log("Calling post", { modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
   const postResult = await doPost({ modelTitle: name, input: ipfs.input, videoURL, coverImage, url });

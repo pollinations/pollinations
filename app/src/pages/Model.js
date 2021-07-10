@@ -60,8 +60,8 @@ export default React.memo(function Model() {
 
         {/* inputs */}
         <div style={{ width: '100%'}}>
-
-          <h3>Inputs <Help /></h3>
+        <Help />
+          <h3>Inputs</h3>
 
           <FormView
             input={ipfs.input}

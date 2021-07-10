@@ -16,7 +16,7 @@ export default function SimpleModal() {
     if (!open)
       return null;
     return (<Paper style={{maxWidth:"90%"}} variant="outlined"> <Box p={1}>
-                <Markdown style={{maxWidth: "600px"}}>{markdown}</Markdown>
+                <Markdown>{markdown}</Markdown>
               </Box>
               <Button onClick={() => setOpen(false)}>Close</Button>
             </Paper>

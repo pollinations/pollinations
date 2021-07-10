@@ -10,6 +10,6 @@
 8. When the rendering is complete, the .mp4 video will be generated. Right-click to save the video file to disc.
 9. Once you have rendered the first sentence, it should be much faster to generate new ones. 
 
- *Note: This is run using Google Colab's spare computing resources, and will not run quickly or at all during times of usage.*
+ *Note: This is run using Google Colab's spare computing resources, and will not run quickly or sometimes you need to retry a few times during heavy usage.*
 
  *Note 2: There are some bugs in the code of Pollinations which result in it becoming desyncronized with Colab. Often one has to go to the Colab tab and click "Runtime -> Factory Reset Runtime", then "Runtime -> Run All" and to be on the save side visit the homepage of [Pollinations.AI](https://pollinations.ai) to get started again. This whole process will become much easier in the near future.*

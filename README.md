@@ -3,6 +3,8 @@
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
+Thoughts by @gokaykucuk: https://www.notion.so/Pollinations-85d455e116c942e28014074611e52d0a 
+
 ### TODO
 - [x] unidirectional communication from colab notebook to browser (DONE)
 - [x] check for new media files each time a new line is printed to stdout (DONE)

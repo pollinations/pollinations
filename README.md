@@ -3,7 +3,7 @@
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
-Thoughts by @gokaykucuk: https://www.notion.so/Pollinations-85d455e116c942e28014074611e52d0a 
+Thoughts by [gyokaykucuk](https://github.com/gokaykucuk): https://www.notion.so/Pollinations-85d455e116c942e28014074611e52d0a 
 
 ### TODO
 - [x] unidirectional communication from colab notebook to browser (DONE)

@@ -35,14 +35,6 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     "mediaUrls": [videoURL]
   };
 
-  const res2 = social.post({
-    ...shareConfig,
-    post: `${title} ${url}`,
-    "platforms": ["twitter"],
-    "mediaUrls": [coverImage]
-  }).catch(e => console.error("errror",e));
-  
-
   const res1 = 
      social.post({
       ...shareConfig,
@@ -50,7 +42,14 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     }).catch(console.error);
 
 
-
+    const res2 = social.post({
+      ...shareConfig,
+      post: `${title} ${url}`,
+      "platforms": ["twitter","instagram"],
+      "mediaUrls": [coverImage]
+    }).catch(e => console.error("errror",e));
+    
+  
   return Promise.all([res1,res2]);
 }
 
@@ -83,7 +82,7 @@ export const handler = async ({path}) => {
     const ipfs = await IPFSState(cid);
     console.log("Starting async post but returning already");
     const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e));
-    console.log("res",res);
+    console.log("res",JSON.stringify(res,null,4));
     return {
       statusCode: 200,
       body: JSON.stringify(res, null, 4)

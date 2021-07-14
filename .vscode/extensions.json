@@ -1,0 +1,18 @@
+{
+    // See http://go.microsoft.com/fwlink/?LinkId=827846
+    // for the documentation about the extensions.json format
+    "recommendations": [
+      // Foam's own extension
+      "foam.foam-vscode",
+  
+      // Tons of markdown goodies (lists, tables of content, so much more)
+      "yzhang.markdown-all-in-one",
+  
+      // Image-pasting for markdown
+      "mushan.vscode-paste-image",
+  
+      // Spell checking for text, markdown and latex
+      "ban.spellright",
+    ]
+  }
+  

@@ -3,7 +3,9 @@
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
-### TODO
+[Thoughts and future directions](docs/Pollinations%209bc30012e1a04f94b4d6f045629f0631.md) by [gyokaykucuk](https://github.com/gokaykucuk) 
+
+### TODO (outdated)
 - [x] unidirectional communication from colab notebook to browser (DONE)
 - [x] check for new media files each time a new line is printed to stdout (DONE)
 - [x] send image files as they are created (DONE)

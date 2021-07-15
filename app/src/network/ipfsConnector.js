@@ -135,8 +135,12 @@ export const ipfsAddFile = async (ipfsPath, localPath, options={size: null}) => 
 
 export async function ipfsMkdir(path="/") {
     const withMfsRoot = join(mfsRoot, path);
-    debug("Creating folder", path, "mfsRoot",withMfsRoot);
-    await (await client).files.mkdir(withMfsRoot, { parents: true });
+    debug("Creating folder",withMfsRoot);
+    try {
+        await (await client).files.mkdir(withMfsRoot, { parents: true });
+    } catch (e) {
+        debug("couldn't create folder because it probably already exists",e)
+    }
     return path;
 }
 

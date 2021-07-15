@@ -3,7 +3,7 @@
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
-[Thoughts and future directions](docs/Pollinations%209bc30012e1a04f94b4d6f045629f0631.md) by [gyokaykucuk](https://github.com/gokaykucuk) 
+[Thoughts and future directions](docs/Pollinations%209bc30012e1a04f94b4d6f045629f0631.md) by [gokaykucuk](https://github.com/gokaykucuk) 
 
 [[todo]] although (slightly outdated)
 

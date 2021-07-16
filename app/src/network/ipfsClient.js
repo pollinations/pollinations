@@ -90,7 +90,6 @@ export const addInput = async (inputCID, contentID) => {
     contentID = contentID || stringCID(await _client.object.new());
     contentID =  await _client.object.patch.addLink(contentID, { Hash: inputCID, name: "input" });
     return contentID;
-   
 }; 
 
 export const adddOutput = async (outputCID, contentID) => {
@@ -119,11 +118,11 @@ export const getInputContent = async inputs => {
 
 //TODO: use ipfsConnector's publish
 export const publish = async (nodeID, newContentID) => {
-    (await client).pubsub.publish(nodeID, newContentID)
+    (await client).pubsub.publish(nodeID+"/input", newContentID)
 }
 export const resolve = nodeID => ipfsResolve(`/ipns/${nodeID}`)
 
-export const subscribe = subscribeCIDCallback;
+export const subscribe = (nodeID, callback) => subscribeCIDCallback(nodeID+"/output", callback);
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);

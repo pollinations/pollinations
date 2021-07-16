@@ -38,7 +38,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const res1 = 
      social.post({
       ...shareConfig,
-      "platforms": ["facebook","youtube","linkedin","instagram","twitter"]
+      "platforms": ["facebook","youtube","linkedin"]
     }).catch(console.error);
 
 

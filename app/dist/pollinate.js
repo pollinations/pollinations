@@ -29732,9 +29732,9 @@ var require_add_all = __commonJS({
   }
 });
 
-// node_modules/ipfs-http-client/node_modules/it-last/index.js
+// node_modules/it-last/index.js
 var require_it_last = __commonJS({
-  "node_modules/ipfs-http-client/node_modules/it-last/index.js"(exports2, module2) {
+  "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
     var last2 = async (source) => {
       let res;
@@ -50514,7 +50514,7 @@ var import_path = __toModule(require("path"));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 200);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 1500);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
@@ -50585,8 +50585,12 @@ var ipfsAddFile = async (ipfsPath, localPath, options = {size: null}) => {
 };
 async function ipfsMkdir(path = "/") {
   const withMfsRoot = (0, import_path.join)(mfsRoot, path);
-  debug3("Creating folder", path, "mfsRoot", withMfsRoot);
-  await (await client).files.mkdir(withMfsRoot, {parents: true});
+  debug3("Creating folder", withMfsRoot);
+  try {
+    await (await client).files.mkdir(withMfsRoot, {parents: true});
+  } catch (e) {
+    debug3("couldn't create folder because it probably already exists", e);
+  }
   return path;
 }
 async function ipfsRm(ipfsPath) {
@@ -50600,8 +50604,7 @@ async function contentID(mfsPath = "/") {
   return stringCID(await _client.files.stat(mfsPath));
 }
 var _lastContentID = null;
-var abortPublish = null;
-async function publish(rootCID) {
+async function publish(rootCID, suffix = "/output") {
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
     return;
@@ -50609,22 +50612,12 @@ async function publish(rootCID) {
   _lastContentID = rootCID;
   const _client = await client;
   debug3("publish pubsub", await nodeID, rootCID);
-  await _client.pubsub.publish(await nodeID, rootCID);
-  debug3("publishing to ipns...", rootCID);
-  if (abortPublish)
-    abortPublish.abort();
-  abortPublish = new import_native_abort_controller.AbortController();
-  _client.name.publish(rootCID, {signal: abortPublish.signal}).then(() => {
-    debug3("published...", rootCID);
-    abortPublish = null;
-  }).catch((e) => {
-    debug3("exception on publish.", e);
-  });
+  await _client.pubsub.publish(await nodeID + suffix, rootCID);
 }
-function subscribeCID(_nodeID = null) {
+function subscribeCID(_nodeID = null, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug3("Subscribing to pubsub events");
-  const unsubscribe = subscribeCIDCallback(_nodeID, (cid) => channel.push(cid));
+  const unsubscribe = subscribeCIDCallback(_nodeID + suffix, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
 function subscribeCIDCallback(_nodeID = null, callback) {
@@ -50807,7 +50800,7 @@ if (enableReceive) {
   (async function() {
     if (options_default.ipns) {
       debug5("IPNS activated. subscring to CIDs");
-      const [cidStream, unsubscribe] = subscribeCID();
+      const [cidStream, unsubscribe] = subscribeCID(null, "/input");
       for await (let remoteCID of await cidStream) {
         debug5("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));

@@ -50616,8 +50616,9 @@ async function publish(rootCID, suffix = "/output") {
 }
 function subscribeCID(_nodeID = null, suffix = "/input") {
   const channel = new import_queueable.Channel();
-  debug3("Subscribing to pubsub events");
-  const unsubscribe = subscribeCIDCallback(_nodeID + suffix, (cid) => channel.push(cid));
+  const topic = _nodeID + suffix;
+  debug3("Subscribing to pubsub events from", topic);
+  const unsubscribe = subscribeCIDCallback(topic, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
 function subscribeCIDCallback(_nodeID = null, callback) {
@@ -50799,7 +50800,7 @@ if (enableSend)
 if (enableReceive) {
   (async function() {
     if (options_default.ipns) {
-      debug5("IPNS activated. subscring to CIDs");
+      debug5("IPNS activated. subscring to CIDs from /input");
       const [cidStream, unsubscribe] = subscribeCID(null, "/input");
       for await (let remoteCID of await cidStream) {
         debug5("remoteCID from pubsub", remoteCID);

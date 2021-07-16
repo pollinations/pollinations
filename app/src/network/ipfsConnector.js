@@ -191,8 +191,9 @@ function experimentalIPNSPublish(rootCID, _client) {
 
 export function subscribeCID(_nodeID=null, suffix="/input") {
   const channel = new Channel();
-  debug("Subscribing to pubsub events");
-  const unsubscribe = subscribeCIDCallback(_nodeID+suffix, 
+  const topic = _nodeID + suffix;
+  debug("Subscribing to pubsub events from", topic);
+  const unsubscribe = subscribeCIDCallback(topic, 
         cid => channel.push(cid)
   );
   return [channel, unsubscribe];  

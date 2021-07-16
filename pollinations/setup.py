@@ -11,7 +11,7 @@ README = (HERE / "README.md").read_text()
 setup(
     name="pollinations",
     version="1.0.0",
-    description="Make Google Colab Notebooks available as a Servbice",
+    description="Make Google Colab Notebooks available as a Service",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/pollinations/pollinations",

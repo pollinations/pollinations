@@ -161,7 +161,7 @@ let _lastContentID = null;
 
 let abortPublish  = null;
 
-export async function publish(rootCID) {
+export async function publish(rootCID, suffix="/output") {
     if (_lastContentID === rootCID) {
         debug("Skipping publish of rootCID since its the same as before", rootCID)
         return;
@@ -169,29 +169,30 @@ export async function publish(rootCID) {
     _lastContentID = rootCID;
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
-    await _client.pubsub.publish(await nodeID, rootCID)
-    debug("publishing to ipns...", rootCID)
-    if (abortPublish)
-        abortPublish.abort();
-    abortPublish = new AbortController();
-    _client.name.publish(rootCID,{ signal: abortPublish.signal, allowOffline: true })
-    .then(() => {
-        debug("published...", rootCID);
-        abortPublish = null;
-    })
-    .catch(e => {
-        debug("exception on publish.",e);
-    });
-    // dont await since this hangs sadly
-    //await _client.name.publish(`/ipfs/${rootCID}`,{ allowOffline: true });
-    //debug("published ipns");
+    await _client.pubsub.publish((await nodeID)+suffix, rootCID)
+    // experimentalIPNSPublish(rootCID, _client);
 }
 
 
-export function subscribeCID(_nodeID=null) {
+function experimentalIPNSPublish(rootCID, _client) {
+    debug("publishing to ipns...", rootCID);
+    if (abortPublish)
+        abortPublish.abort();
+    abortPublish = new AbortController();
+    _client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true })
+        .then(() => {
+            debug("published...", rootCID);
+            abortPublish = null;
+        })
+        .catch(e => {
+            debug("exception on publish.", e);
+        });
+}
+
+export function subscribeCID(_nodeID=null, suffix="/input") {
   const channel = new Channel();
   debug("Subscribing to pubsub events");
-  const unsubscribe = subscribeCIDCallback(_nodeID, 
+  const unsubscribe = subscribeCIDCallback(_nodeID+suffix, 
         cid => channel.push(cid)
   );
   return [channel, unsubscribe];  

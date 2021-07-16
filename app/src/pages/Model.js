@@ -18,17 +18,12 @@ import NodeStatus from "../components/NodeStatus";
 import { SEO, SEOMetadata } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 
-
-
-
 const debug = Debug("Model");
 
+// for backward compatibility we check if the notebook.ipynb is at / or at /input
+// the new "correct" way is to save the notebook.ipynb to /input
 
-
-const getNotebookMetadata = ipfs => readMetadata(ipfs["notebook.ipynb"]);
-
-
-
+const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
 export default React.memo(function Model() {
 
@@ -44,7 +39,11 @@ export default React.memo(function Model() {
   }, []);
 
 
-  const dispatchForm = async inputs =>  dispatchInputState({...inputs, formAction: "submit"});
+  const dispatchForm = async inputs => dispatchInputState({
+    ...inputs,
+    ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"] , 
+    formAction: "submit"
+  });
 
   const cancelForm = () => dispatchInputState({...state.inputs, formAction: "cancel" })
 

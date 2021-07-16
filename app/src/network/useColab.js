@@ -6,7 +6,6 @@ import {IPFSState, stateReducer, getInputContent, publish, subscribe, setStatusN
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-import { contentID } from "./ipfsConnector";
 
 const debug = Debug("useColab")
 
@@ -74,8 +73,8 @@ const useColab = () => {
         state, 
         dispatch: async inputState => {
             const newInputContentID = await getInputContent(inputState);
-            debug("adding input",inputState,"got cid", newInputContentID)
-            const newContentID = await addInput(newInputContentID, await contentID());
+            debug("adding input",inputState,"got cid", newInputContentID,"to state",state.contentID)
+            const newContentID = await addInput(newInputContentID, state.contentID);
             debug("determined new contentID", newContentID)
             setContentID(newContentID)
             debug("Publishing contentID to colab", newContentID);

@@ -8,48 +8,17 @@ import Debug from "debug";
 import { getIPFSState } from "./ipfsState";
 import { parse } from "json5";
 import fetch from "node-fetch";
-import last from "it-last";
 
 const debug = Debug("ipfsClient")
 
 
-// const contentCache = new Map();
-
-// const getIPFSStateCached = async (contentCache, client, { cid, type, name }) => {
-//     if (contentCache.has(cid))
-//         return contentCache.get(cid);
-//     let result = null;
-
-//     if (type === "dir") {
-//         const files = await toPromise(client.ls(cid));
-//         const filenames = files.map(({ name }) => name);
-//         const fileContents = await Promise.all(files.map(file => getIPFSStateCached(contentCache, client, file)));
-//         result = Object.fromEntries(zip(filenames, fileContents));
-//     }
-
-//     if (type === "file") {
-//         if (extname(name).length === 0) {
-//             const { content } = await toPromise1(client.get(cid))
-//             const contentArray = await toPromise1(content);
-//             result = new TextDecoder().decode(contentArray);
-//         } else
-//             result = getWebURL(cid);
-//     }
-
-//     if (result === null)
-//         throw "Unknown IPFS entry";
-
-//     contentCache.set(cid, result);
-//     return result;
-// }
-
 const fetchAndMakeURL = async ({ name, cid }) => {
 
     const ext = extname(name);
-    const extIsJSON = ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb";
-    debug("ext", ext, "extIsJSON", extIsJSON);
+    const importOrURL = shouldImport(ext);
+    debug("ext", ext, "extIsJSON", importOrURL);
     const webURL = getWebURL(cid, name);
-    if (extIsJSON) {
+    if (importOrURL) {
         const response = await fetch(webURL);
         const textContent = await response.text();
 
@@ -116,41 +85,44 @@ export const setStatusName = async (contentID, name) => {
     return contentID;
 }
 
-export const addInputContent = async (contentID, { inputs }) => {
+export const addInput = async (inputCID, contentID) => {
     const _client = await client;
+    contentID = contentID || stringCID(await _client.object.new());
+    contentID =  await _client.object.patch.addLink(contentID, { Hash: inputCID, name: "input" });
+    return contentID;
+}; 
 
-    debug("Triggered dispatch. Inputs:", inputs, "cid before", contentID);
+export const adddOutput = async (outputCID, contentID) => {
+    const _client = await client;
+    contentID = contentID || stringCID(await _client.object.new());
+    contentID =  await _client.object.patch.addLink(contentID, { Hash: outputCID, name: "output" });
+    return contentID;
+}; 
+
+export const getInputContent = async inputs => {
+    const _client = await client;
+    let inputCID = stringCID(await _client.object.new({template:"unixfs-dir"}));
+    debug("Triggered dispatch. Inputs:", inputs, "cid before", inputCID);
     for (const [key, val] of Object.entries(inputs)) {
 
-        const inputPath = await getCidOfPath(contentID, "input");
-        
-        let newInputCid;
-
-        if (!inputPath) {
-            newInputCid = stringCID(await _client.add({content: JSON.stringify(val),path: key}, {wrapWithDirectory: true,}));
-        } else {
-            const { cid: addedCid } = await _client.add(JSON.stringify(val));
-            //debug("AddedCID", addedCid, tmpInputCid)
-            //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
-            debug("adding", contentID, { Hash: addedCid, name: key })
-            newInputCid = await _client.object.patch.addLink(inputPath.cid, { Hash: addedCid, name: key });
-            contentID = stringCID(await _client.object.patch.rmLink(contentID, { name: "input" }));
-        }
-      
-        debug("addlink2", contentID, { Hash: newInputCid, name: "input" })
-        contentID = stringCID(await _client.object.patch.addLink(contentID, { Hash: newInputCid, name: "input" }));
+        const { cid: addedCid } = await _client.add(JSON.stringify(val));
+        //debug("AddedCID", addedCid, tmpInputCid)
+        //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
+        debug("adding", inputCID, { Hash: addedCid, name: key })
+        inputCID = stringCID(await _client.object.patch.addLink(inputCID, { Hash: addedCid, name: key }));
+    
     };
-    return contentID;
+    return inputCID;
 
 };
 
 //TODO: use ipfsConnector's publish
 export const publish = async (nodeID, newContentID) => {
-    (await client).pubsub.publish(nodeID, newContentID)
+    (await client).pubsub.publish(nodeID+"/input", newContentID)
 }
 export const resolve = nodeID => ipfsResolve(`/ipns/${nodeID}`)
 
-export const subscribe = subscribeCIDCallback;
+export const subscribe = (nodeID, callback) => subscribeCIDCallback(nodeID+"/output", callback);
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);
@@ -162,4 +134,8 @@ export const getCidOfPath = async (dirCid, path) => {
     }
 }
 
+
+function shouldImport(ext) {
+    return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb";
+}
 // export default ueColab;

@@ -44,9 +44,9 @@ export default React.memo(function Model() {
   }, []);
 
 
-  const dispatchForm = async inputs =>  dispatchInputState({ ...state, inputs: {...inputs, formAction: "submit"} });
+  const dispatchForm = async inputs =>  dispatchInputState({...inputs, formAction: "submit"});
 
-  const cancelForm = () => dispatchInputState({...state, inputs: {...state.inputs, formAction: "cancel" }})
+  const cancelForm = () => dispatchInputState({...state.inputs, formAction: "cancel" })
 
   return <>
         {/* status */}      

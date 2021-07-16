@@ -156,8 +156,8 @@ if (enableSend)
 if (enableReceive) {
   (async function () {
     if (options.ipns) {
-      debug("IPNS activated. subscring to CIDs")
-      const [cidStream, unsubscribe] = subscribeCID();
+      debug("IPNS activated. subscring to CIDs from /input")
+      const [cidStream, unsubscribe] = await subscribeCID(null, "/input");
       for await (let remoteCID of await cidStream) {
         debug("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));

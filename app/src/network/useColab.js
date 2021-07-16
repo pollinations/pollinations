@@ -2,15 +2,13 @@
 import {useCallback, useEffect, useMemo, useReducer} from "react";
 
  
-import {IPFSState, stateReducer, addInputContent, publish, subscribe, setStatusName, resolve } from "./ipfsClient";
+import {IPFSState, stateReducer, getInputContent, publish, subscribe, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-
+import { contentID } from "./ipfsConnector";
 
 const debug = Debug("useColab")
-
-const EMPTYCID = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn";
 
 const useColab = () => {
     const [state, dispatchState] = useReducer(...stateReducer);
@@ -20,6 +18,8 @@ const useColab = () => {
 
     const setContentID = useCallback(async contentID => {
         debug("setContentID", contentID);
+        if ( typeof contentID === "function")
+           throw new Error("ContentID shouldnt be a function"); 
         if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
@@ -73,10 +73,13 @@ const useColab = () => {
     return {
         state, 
         dispatch: async inputState => {
-            const newContentID = await addInputContent(state.contentID, inputState);
+            const newInputContentID = await getInputContent(inputState);
+            debug("adding input",inputState,"got cid", newInputContentID)
+            const newContentID = await addInput(newInputContentID, await contentID());
+            debug("determined new contentID", newContentID)
             setContentID(newContentID)
             debug("Publishing contentID to colab", newContentID);
-            publish(state.nodeID, newContentID);
+            publish(state.nodeID, newInputContentID);
         }
         // ,
         // setStatus: async name => {

@@ -50614,7 +50614,9 @@ async function publish(rootCID, suffix = "/output") {
   debug3("publish pubsub", await nodeID, rootCID);
   await _client.pubsub.publish(await nodeID + suffix, rootCID);
 }
-function subscribeCID(_nodeID = null, suffix = "/input") {
+async function subscribeCID(_nodeID = null, suffix = "/input") {
+  if (_nodeID === null)
+    _nodeID = await nodeID;
   const channel = new import_queueable.Channel();
   const topic = _nodeID + suffix;
   debug3("Subscribing to pubsub events from", topic);
@@ -50801,7 +50803,7 @@ if (enableReceive) {
   (async function() {
     if (options_default.ipns) {
       debug5("IPNS activated. subscring to CIDs from /input");
-      const [cidStream, unsubscribe] = subscribeCID(null, "/input");
+      const [cidStream, unsubscribe] = await subscribeCID(null, "/input");
       for await (let remoteCID of await cidStream) {
         debug5("remoteCID from pubsub", remoteCID);
         await processRemoteCID(stringCID(remoteCID));

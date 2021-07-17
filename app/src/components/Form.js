@@ -3,6 +3,7 @@ import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
 import { Box } from "@material-ui/core";
+import HelpModal from "./HelpModal";
 
 const debug = Debug("Form");
 
@@ -27,6 +28,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
 
+
     return <Form
         schema={{properties: filledForm}}
         uiSchema={uiSchema}
@@ -43,6 +45,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                         [ {inProgress ? "Stopping...": "Stop"} ]
                     </Button>
             }
+            {formDisabled && <HelpModal/>}
 
             {!showCancel && !showSubmit && <Button href="/">
                         [ Reset ]

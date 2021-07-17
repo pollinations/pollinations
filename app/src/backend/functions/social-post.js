@@ -3,6 +3,7 @@ import SocialPost from "social-post-api";
 import { IPFSState } from "../../network/ipfsClient.js";
 import readMetadata from "../notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
+import { dissoc } from "ramda";
 
 
 async function doPost({input, modelTitle, videoURL, coverImage, url}) {
@@ -105,17 +106,16 @@ https://instagram.com/pollinations_ai
 `;
 
 
-
-
-
 async function postAsync(ipfs, cid) {
   const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
+  const input = dissoc("notebook.ipynb", ipfs.input);
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
-  console.log("Calling post", { modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
-  const postResult = await doPost({ modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
+
+  console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
+  const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url });
   return postResult;
 }
 // {

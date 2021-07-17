@@ -109,7 +109,7 @@ https://instagram.com/pollinations_ai
 
 
 async function postAsync(ipfs, cid) {
-  const { name } = readMetadata(ipfs["notebook.ipynb"]);
+  const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;

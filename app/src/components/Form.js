@@ -16,7 +16,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     debug("colabState",colabState)
 
     const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
-    const showCancel = !showSubmit && input.formAction !== "cancel";
+    const showCancel = false; //!showSubmit && input.formAction !== "cancel";
 
     const inProgress = false//!!(input && input.formAction);
     const formDisabled = status === "disconnected" || inProgress;
@@ -44,9 +44,9 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                     </Button>
             }
 
-            {!showCancel && !showSubmit && <Button href="/">
+            {/* {!showCancel && !showSubmit && <Button href="/">
                         [ Reset ]
-                    </Button> }
+                    </Button> } */}
         </Box>
     </Form>
 }

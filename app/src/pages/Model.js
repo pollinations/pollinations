@@ -6,7 +6,7 @@ import Markdown from 'markdown-to-jsx';
 
 import useColab from "../network/useColab"
 import readMetadata from "../backend/notebookMetadata";
-import Help from "../components/Help";
+import HelpModal from "../components/HelpModal";
 import Debug from "debug";
 
 
@@ -59,7 +59,6 @@ export default React.memo(function Model() {
 
         {/* inputs */}
         <div style={{ width: '100%'}}>
-        <Help />
           <h3>Inputs</h3>
 
           <FormView

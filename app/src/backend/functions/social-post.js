@@ -5,6 +5,9 @@ import readMetadata from "../notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
 import { dissoc } from "ramda";
 
+import mature from "mature";
+
+
 
 async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
@@ -13,6 +16,13 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
   const inputs = JSON.stringify(input,null, 4);
+  
+  const { mature: isMature} = await mature.checkText(inputs);
+
+  if (isMature) {
+    console.error("Not posting due to dubious words...");
+    return;
+  }
   
   // TODO: this shouldn't need to be hard coded
   // change inputs from object to list to get order
@@ -119,6 +129,7 @@ async function postAsync(ipfs, cid) {
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
+
 
   console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
   const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url });

@@ -16,4 +16,4 @@
 [functions]
   node_bundler = "esbuild"
   directory = "src/backend/functions"
-  external_node_modules = ["electron","mature","keyv"]
+  external_node_modules = ["electron"]

@@ -5,8 +5,7 @@ import readMetadata from "../notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
 import { dissoc } from "ramda";
 
-import mature from "mature";
-
+import mature from "./mature.js";
 
 
 async function doPost({input, modelTitle, videoURL, coverImage, url}) {
@@ -17,7 +16,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
   const inputs = JSON.stringify(input,null, 4);
   
-  const { mature: isMature} = await mature.checkText(inputs);
+  const isMature = await mature(inputs);
 
   if (isMature) {
     console.error("Not posting due to dubious words...");

@@ -5,7 +5,7 @@ import readMetadata from "../notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
 import { dissoc } from "ramda";
 
-import mature from "./mature.js";
+import mature from "../mature.js";
 
 
 async function doPost({input, modelTitle, videoURL, coverImage, url}) {

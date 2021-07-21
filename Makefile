@@ -1,7 +1,9 @@
 .PHONY: up
 up:
 	docker-compose up -d
-	cd app && yarn start
+.PHONY: dev
+dev:
+	cd app && DEBUG=* yarn start
 .PHONY: clean
 down:
 	docker-compose down

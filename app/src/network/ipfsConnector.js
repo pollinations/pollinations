@@ -19,6 +19,7 @@ import options from "../backend/options.js";
 
 import { Channel } from 'queueable';
 import awaitSleep from "await-sleep";
+import { isNode } from "browser-or-node";
 
 const asyncify = typeof Asyncify === "function" ? Asyncify : Asyncify.default;
 
@@ -32,12 +33,27 @@ const IPFS_HOST = "https://ipfs.pollinations.ai";
 export const mfsRoot = `/`;
 
 
+const localIPFSAvailable = async () => {
+    if (isNode) {
+        return await reachable(5001);
+    } else {
+        try {
+            // The fllowing line will return 404 if the port is open,
+            // otherwise it will throw an exception.
+            await fetch("http://localhost:5001", { mode: 'no-cors' })
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+}
+
 const getIPFSDaemonURL = async () => {
-    if (await reachable(5001)) {
-        debug("Localhost:5001 is reachable. Connecting...");
+    if (await localIPFSAvailable()) {
+        debug("Ipfs at localhost:5001 is reachable. Connecting...");
         return "http://localhost:5001";
     }
-    debug("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);
+    debug("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
     return IPFS_HOST;
 }
 

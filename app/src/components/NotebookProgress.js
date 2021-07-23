@@ -9,7 +9,11 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!output?.log)
         return null;
     const progress = getProgress(output.log, metadata.numCells)*100;
-    debug(progress)
+    debug(progress);
+    
+    if (progress >= 100)
+      return null;
+
     return  <Box display="flex" alignItems="center">
     <Box width="100%" mr={1}>
         <LinearProgress value={progress} variant="determinate" color="secondary" />

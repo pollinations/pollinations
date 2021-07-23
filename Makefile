@@ -1,9 +1,13 @@
-.PHONY: up
+.PHONY: init up dev clean debug
+init:
+	docker-compose up
 up:
+	cp docker/local_ipfs/config.json tmp/ipfs/config
 	docker-compose up -d
-.PHONY: dev
 dev:
 	cd app && yarn start
-.PHONY: clean
 down:
 	docker-compose down
+debug:
+	cp ./docker/local_ipfs/config.json ./tmp/ipfs/config
+	docker-compose up 

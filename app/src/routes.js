@@ -10,6 +10,6 @@ export let routes = [
     { 
         exact: true,
         path: "/",
-        children: <Redirect to="/p/QmbmP9eL3zZAZ2BHPt74MWwTDzrxYetx88i2YLTTGvsVGk" />,
+        children: <Redirect to="/p/QmXJnK2FUHEDjR5aFLYELChU6JqdfSxNsoZpy1yHiMXNoK" />,
     }
 ]

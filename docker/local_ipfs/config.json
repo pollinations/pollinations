@@ -131,7 +131,11 @@
     "IPNS": "/ipns"
   },
   "Peering": {
-    "Peers": null
+    "Peers": [
+      {
+        "Addrs": ["/ip4/18.157.205.205/tcp/4001"]
+      }
+    ]
   },
   "Pinning": {
     "RemoteServices": {}
@@ -143,8 +147,8 @@
     "Strategy": ""
   },
   "Pubsub": {
-    "DisableSigning": false,
-    "Router": ""
+    "DisableSigning": true,
+    "Router": "floodsub"
   },
   "Reprovider": {
     "Interval": "12h",

@@ -33,15 +33,16 @@ const IPFS_HOST = "https://ipfs.pollinations.ai";
 export const mfsRoot = `/`;
 
 
-// TODO: Implement fetch to check from browser
-const localIPFSAvailable =  async () => {
-    if (isNode){
+const localIPFSAvailable = async () => {
+    if (isNode) {
         return await reachable(5001);
-    }else{
-        try{
-            await fetch("http://localhost:5001",{ mode: 'no-cors'})
+    } else {
+        try {
+            // The fllowing line will return 404 if the port is open,
+            // otherwise it will throw an exception.
+            await fetch("http://localhost:5001", { mode: 'no-cors' })
             return true;
-        }catch(e){
+        } catch (e) {
             return false;
         }
     }
@@ -52,7 +53,7 @@ const getIPFSDaemonURL = async () => {
         debug("Ipfs at localhost:5001 is reachable. Connecting...");
         return "http://localhost:5001";
     }
-    debug("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);
+    debug("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
     return IPFS_HOST;
 }
 

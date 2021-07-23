@@ -3,6 +3,9 @@ import SocialPost from "social-post-api";
 import { IPFSState } from "../../network/ipfsClient.js";
 import readMetadata from "../notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
+import { dissoc } from "ramda";
+
+import mature from "../mature.js";
 
 
 async function doPost({input, modelTitle, videoURL, coverImage, url}) {
@@ -12,6 +15,13 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
   const inputs = JSON.stringify(input,null, 4);
+  
+  const isMature = await mature(inputs);
+
+  if (isMature) {
+    console.error("Not posting due to dubious words...");
+    return;
+  }
   
   // TODO: this shouldn't need to be hard coded
   // change inputs from object to list to get order
@@ -45,12 +55,18 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     const res2 = social.post({
       ...shareConfig,
       post: `${title} ${url} #pollinations`,
-      "platforms": ["twitter","instagram"],
+      "mediaUrls": [coverImage],
+      "platforms": ["twitter"]
+    }).catch(e => console.error("errror",e));
+    
+    const res3 = social.post({
+      ...shareConfig,
+      post: `${title} ${url} #pollinations`,
+      "platforms": ["instagram"],
       "mediaUrls": [coverImage]
     }).catch(e => console.error("errror",e));
     
-  
-  return Promise.all([res1,res2]);
+  return Promise.all([res1,res2,res3]);
 }
 
 // console.log(postResult)
@@ -105,17 +121,17 @@ https://instagram.com/pollinations_ai
 `;
 
 
-
-
-
 async function postAsync(ipfs, cid) {
-  const { name } = readMetadata(ipfs["notebook.ipynb"]);
+  const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
+  const input = dissoc("notebook.ipynb", ipfs.input);
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
-  console.log("Calling post", { modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
-  const postResult = await doPost({ modelTitle: name, input: ipfs.input, videoURL, coverImage, url });
+
+
+  console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
+  const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url });
   return postResult;
 }
 // {

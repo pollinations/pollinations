@@ -19,6 +19,7 @@ import options from "../backend/options.js";
 
 import { Channel } from 'queueable';
 import awaitSleep from "await-sleep";
+import { isNode } from "browser-or-node";
 
 const asyncify = typeof Asyncify === "function" ? Asyncify : Asyncify.default;
 
@@ -34,16 +35,21 @@ export const mfsRoot = `/`;
 
 // TODO: Implement fetch to check from browser
 const localIPFSAvailable =  async () => {
-    let portOpen = await reachable(5001)
-    if(!portOpen){
-        await fetch("http://localhost:5001")
+    if (isNode){
+        return await reachable(5001);
+    }else{
+        try{
+            await fetch("http://localhost:5001",{ mode: 'no-cors'})
+            return true;
+        }catch(e){
+            return false;
+        }
     }
-    
 }
 
 const getIPFSDaemonURL = async () => {
-    if (await reachable(5001)) {
-        debug("Localhost:5001 is reachable. Connecting...");
+    if (await localIPFSAvailable()) {
+        debug("Ipfs at localhost:5001 is reachable. Connecting...");
         return "http://localhost:5001";
     }
     debug("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);

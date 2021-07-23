@@ -1,13 +1,15 @@
 .PHONY: init up dev clean debug
 init:
-	docker-compose up
+	docker-compose -f ipfs-init.yml up
 up:
-	cp docker/local_ipfs/config.json tmp/ipfs/config
-	docker-compose up -d
+	cp docker/ipfs/config.json tmp/ipfs/config
+	docker-compose --remove-orphans up -d
 dev:
 	cd app && yarn start
 down:
 	docker-compose down
 debug-docker:
-	cp ./docker/local_ipfs/config.json ./tmp/ipfs/config
-	docker-compose up 
+	cp ./docker/ipfs/config.json ./tmp/ipfs/config
+	docker-compose --remove-orphans up 
+clean:
+	rm -rf tmp

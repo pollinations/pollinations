@@ -48,7 +48,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const res1 = 
      social.post({
       ...shareConfig,
-      "platforms": ["facebook","youtube","linkedin", "telegram"]
+      "platforms": ["facebook","youtube","linkedin"]
     }).catch(console.error);
 
 
@@ -56,7 +56,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
       ...shareConfig,
       post: `${title} ${url} #pollinations`,
       "mediaUrls": [coverImage],
-      "platforms": ["twitter","instagram"]
+      "platforms": ["twitter","instagram","telegram"]
     }).catch(e => console.error("errror",e));
     
     // const res3 = social.post({

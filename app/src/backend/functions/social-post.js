@@ -48,7 +48,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   const res1 = 
      social.post({
       ...shareConfig,
-      "platforms": ["facebook","youtube","linkedin"]
+      "platforms": ["facebook","youtube","linkedin", "telegram"]
     }).catch(console.error);
 
 
@@ -56,17 +56,17 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
       ...shareConfig,
       post: `${title} ${url} #pollinations`,
       "mediaUrls": [coverImage],
-      "platforms": ["twitter"]
+      "platforms": ["twitter","instagram"]
     }).catch(e => console.error("errror",e));
     
-    const res3 = social.post({
-      ...shareConfig,
-      post: `${title} ${url} #pollinations`,
-      "platforms": ["instagram"],
-      "mediaUrls": [coverImage]
-    }).catch(e => console.error("errror",e));
+    // const res3 = social.post({
+    //   ...shareConfig,
+    //   post: `${title} ${url} #pollinations`,
+    //   "platforms": ["instagram"],
+    //   "mediaUrls": [coverImage]
+    // }).catch(e => console.error("errror",e));
     
-  return Promise.all([res1,res2,res3]);
+  return Promise.all([res1,res2]);
 }
 
 // console.log(postResult)

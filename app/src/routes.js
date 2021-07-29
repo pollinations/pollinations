@@ -14,4 +14,4 @@ export let routes = [
     }
 ]
 
-// guided diffusion https://pollinations.ai/p/Qmf5MVSWnpPz7VmKLGWBvTZYPE8hqDE4WRy9YCNXAizEY8
+// guided diffusion https://pollinations.ai/p/QmYD8KjyktjGSpTKrjuyBvVT1j9pbKdZ85HBMXVaGv5HeY

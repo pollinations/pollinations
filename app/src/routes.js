@@ -13,3 +13,5 @@ export let routes = [
         children: <Redirect to="/p/QmXJnK2FUHEDjR5aFLYELChU6JqdfSxNsoZpy1yHiMXNoK" />,
     }
 ]
+
+// guided diffusion https://pollinations.ai/p/Qmf5MVSWnpPz7VmKLGWBvTZYPE8hqDE4WRy9YCNXAizEY8

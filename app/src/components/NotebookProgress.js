@@ -11,7 +11,7 @@ export const NotebookProgress = ({output, metadata}) => {
     const progress = getProgress(output.log, metadata.numCells)*100;
     debug(progress);
     
-    if (progress >= 100)
+    if (progress >= 100 || progress <= 1)
       return null;
 
     return  <Box display="flex" alignItems="center">

@@ -51,7 +51,7 @@ export const IpfsLog = ({state}) => {
 
 }
 const formatLog = 
-        log =>  log
+        log =>  log && log
                 .replace(/\].*/g, "")
                 .split("\n")
                 .filter(s => !s.startsWith("unhandled iopub"))

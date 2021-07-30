@@ -11391,7 +11391,7 @@ var require_graceful_fs = __commonJS({
       polyfills(fs2);
       fs2.gracefulify = patch;
       fs2.createReadStream = createReadStream;
-      fs2.createWriteStream = createWriteStream;
+      fs2.createWriteStream = createWriteStream2;
       var fs$readFile = fs2.readFile;
       fs2.readFile = readFile;
       function readFile(path, options, cb) {
@@ -11589,7 +11589,7 @@ var require_graceful_fs = __commonJS({
       function createReadStream(path, options) {
         return new fs2.ReadStream(path, options);
       }
-      function createWriteStream(path, options) {
+      function createWriteStream2(path, options) {
         return new fs2.WriteStream(path, options);
       }
       var fs$open = fs2.open;
@@ -50475,7 +50475,7 @@ var import_readline = __toModule(require("readline"));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 1500).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 200).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
@@ -50874,6 +50874,7 @@ var receive = async function({ipns, once, path: rootPath2}) {
 
 // src/backend/pollinate-cli.js
 var import_child_process = __toModule(require("child_process"));
+var import_fs4 = __toModule(require("fs"));
 var debug7 = (0, import_debug7.default)("pollinate");
 var readline = import_readline.default.createInterface({
   input: import_process2.default.stdin,
@@ -50885,7 +50886,7 @@ var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2;
-var execute = async (command) => new Promise((resolve, reject) => {
+var execute = async (command, logfile = null) => new Promise((resolve, reject) => {
   debug7("Executing command", command);
   const childProc = (0, import_child_process.exec)(command, (err) => {
     if (err)
@@ -50893,16 +50894,20 @@ var execute = async (command) => new Promise((resolve, reject) => {
     else
       resolve();
   });
-  childProc.stdout.pipe(import_process2.default.stdout);
+  childProc.stdout.pipe(import_process2.default.stderr);
   childProc.stderr.pipe(import_process2.default.stderr);
+  if (logfile) {
+    debug7("creating a write stream to ", logfile);
+    const logout = (0, import_fs4.createWriteStream)(logfile, {"flags": "a"});
+    childProc.stdout.pipe(logout);
+    childProc.stderr.pipe(logout);
+  }
 });
 if (executeCommand)
   (async () => {
-    const receivedCID = await receive(__spreadProps(__spreadValues({}, options_default), {once: true}));
-    debug7("received IPFS content", receivedCID);
     const {start, processing} = sender(__spreadProps(__spreadValues({}, options_default), {once: false}));
     start();
-    await execute(executeCommand);
+    await execute(executeCommand, options_default.logout);
     debug7("done executing", executeCommand, ". Waiting...");
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");

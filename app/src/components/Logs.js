@@ -54,7 +54,7 @@ const formatLog =
         log =>  log?.replace && log
                 .replace(/\].*/g, "")
                 .split("\n")
-                .filter(s => !s.startsWith("unhandled iopub"))
+                .filter(s => !s.startsWith("unhandled iopub") && !s.startsWith("Writing failed")
                 .slice(-10)
                 .join("\n");
 

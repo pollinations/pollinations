@@ -89,18 +89,20 @@ export const getIPNSURL = (id) => {
 const stripSlashIPFS = cidString => cidString.replace("/ipfs/", "");
 const firstLine = s => s.split("\n")[0];
 
-export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : file)));
+export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : (file instanceof Buffer ? file.toString():file ))));
 
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
-const _ipfsLs = async cid => (await toPromise((await client).ls(stringCID(cid))))
+export const ipfsLs = async cid => {
+    debug("calling ipfs ls with cid", cid);
+    const result = (await toPromise((await client).ls(stringCID(cid))))
     .filter(({ type, name }) => type !== "unknown" && name !== undefined)
     .map(_normalizeIPFS);
+    debug("got ipfs ls result",result);
+    return result;
+};
 
 
-export const ipfsLs = callLogger(
-    // cacheOutput
-    (_ipfsLs), "ipfsls");
 
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) => {
     const _client = await client;

@@ -50502,6 +50502,16 @@ var toPromise = async (asyncGen) => {
   return contents;
 };
 var noop = () => null;
+var retryException = async (f, n = 5) => {
+  while (n-- > 0) {
+    try {
+      return await f();
+    } catch (e) {
+      debug("retryException", e);
+    }
+  }
+  throw new Error("Too many retries");
+};
 
 // src/network/ipfsConnector.js
 var import_cids2 = __toModule(require_src32());
@@ -50591,7 +50601,7 @@ var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options =
   const _client = await client;
   ipfsPath = (0, import_path.join)(mfsRoot, ipfsPath);
   debug3("adding", ipfsPath, "options", options);
-  const cid = stringCID(await _client.add(content, options));
+  const cid = stringCID(await retryException(async () => await _client.add(content, options)));
   debug3("added", cid, "size", content);
   try {
     debug3("Trying to delete", ipfsPath);
@@ -50721,7 +50731,7 @@ var sender = ({path: watchPath, debounce: debounce2, ipns, once}) => {
     const watch$ = (0, import_file_watch_iterator.default)(".", {
       ignored: /(^|[\/\\])\../,
       cwd: watchPath,
-      awaitWriteFinish: true
+      awaitWriteFinish: false
     }, {debounce: debounce2});
     for await (const files of watch$) {
       let done = null;

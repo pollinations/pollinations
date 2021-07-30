@@ -11,7 +11,7 @@ import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
 
 
-export const debug = Debug("ipfsWatch")
+export const debug = Debug("pollinate")
 
 const readline = Readline.createInterface({
   input: process.stdin,

@@ -50887,12 +50887,14 @@ var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2;
 var execute = async (command) => new Promise((resolve, reject) => {
   debug7("Executing command", command);
-  const process4 = (0, import_child_process.exec)(command, (err) => {
+  const childProc = (0, import_child_process.exec)(command, (err) => {
     if (err)
       reject(err);
     else
       resolve();
   });
+  childProc.stdout.pipe(import_process2.default.stdout);
+  childProc.stderr.pipe(import_process2.default.stderr);
 });
 if (executeCommand)
   (async () => {

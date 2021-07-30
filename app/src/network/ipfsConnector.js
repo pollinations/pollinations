@@ -30,7 +30,7 @@ const debug = Debug("ipfsConnector")
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
-export const mfsRoot = `/`;
+export const mfsRoot = `/tmp_${Math.round(Math.random()*10000)}/`;
 
 
 const localIPFSAvailable = async () => {
@@ -107,6 +107,7 @@ export const ipfsLs = async cid => {
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) => {
     const _client = await client;
     ipfsPath = join(mfsRoot, ipfsPath);
+    debug("adding", ipfsPath, "options",options);
     const cid = stringCID(await _client.add(content, options));
     debug("added", cid, "size", content);
 

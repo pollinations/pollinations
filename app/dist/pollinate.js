@@ -38,6 +38,10 @@ var __objRest = (source, exclude) => {
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[Object.keys(cb)[0]])((mod = {exports: {}}).exports, mod), mod.exports;
 };
+var __export = (target, all2) => {
+  for (var name in all2)
+    __defProp(target, name, {get: all2[name], enumerable: true});
+};
 var __reExport = (target, module2, desc) => {
   if (module2 && typeof module2 === "object" || typeof module2 === "function") {
     for (let key of __getOwnPropNames(module2))
@@ -49,6 +53,2094 @@ var __reExport = (target, module2, desc) => {
 var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? {get: () => module2.default, enumerable: true} : {value: module2, enumerable: true})), module2);
 };
+
+// node_modules/eventemitter3/index.js
+var require_eventemitter3 = __commonJS({
+  "node_modules/eventemitter3/index.js"(exports2, module2) {
+    "use strict";
+    var has = Object.prototype.hasOwnProperty;
+    var prefix = "~";
+    function Events() {
+    }
+    if (Object.create) {
+      Events.prototype = Object.create(null);
+      if (!new Events().__proto__)
+        prefix = false;
+    }
+    function EE(fn, context, once) {
+      this.fn = fn;
+      this.context = context;
+      this.once = once || false;
+    }
+    function addListener(emitter, event, fn, context, once) {
+      if (typeof fn !== "function") {
+        throw new TypeError("The listener must be a function");
+      }
+      var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
+      if (!emitter._events[evt])
+        emitter._events[evt] = listener, emitter._eventsCount++;
+      else if (!emitter._events[evt].fn)
+        emitter._events[evt].push(listener);
+      else
+        emitter._events[evt] = [emitter._events[evt], listener];
+      return emitter;
+    }
+    function clearEvent(emitter, evt) {
+      if (--emitter._eventsCount === 0)
+        emitter._events = new Events();
+      else
+        delete emitter._events[evt];
+    }
+    function EventEmitter2() {
+      this._events = new Events();
+      this._eventsCount = 0;
+    }
+    EventEmitter2.prototype.eventNames = function eventNames() {
+      var names = [], events, name;
+      if (this._eventsCount === 0)
+        return names;
+      for (name in events = this._events) {
+        if (has.call(events, name))
+          names.push(prefix ? name.slice(1) : name);
+      }
+      if (Object.getOwnPropertySymbols) {
+        return names.concat(Object.getOwnPropertySymbols(events));
+      }
+      return names;
+    };
+    EventEmitter2.prototype.listeners = function listeners(event) {
+      var evt = prefix ? prefix + event : event, handlers = this._events[evt];
+      if (!handlers)
+        return [];
+      if (handlers.fn)
+        return [handlers.fn];
+      for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
+        ee[i] = handlers[i].fn;
+      }
+      return ee;
+    };
+    EventEmitter2.prototype.listenerCount = function listenerCount(event) {
+      var evt = prefix ? prefix + event : event, listeners = this._events[evt];
+      if (!listeners)
+        return 0;
+      if (listeners.fn)
+        return 1;
+      return listeners.length;
+    };
+    EventEmitter2.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt])
+        return false;
+      var listeners = this._events[evt], len = arguments.length, args, i;
+      if (listeners.fn) {
+        if (listeners.once)
+          this.removeListener(event, listeners.fn, void 0, true);
+        switch (len) {
+          case 1:
+            return listeners.fn.call(listeners.context), true;
+          case 2:
+            return listeners.fn.call(listeners.context, a1), true;
+          case 3:
+            return listeners.fn.call(listeners.context, a1, a2), true;
+          case 4:
+            return listeners.fn.call(listeners.context, a1, a2, a3), true;
+          case 5:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+          case 6:
+            return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+        }
+        for (i = 1, args = new Array(len - 1); i < len; i++) {
+          args[i - 1] = arguments[i];
+        }
+        listeners.fn.apply(listeners.context, args);
+      } else {
+        var length = listeners.length, j;
+        for (i = 0; i < length; i++) {
+          if (listeners[i].once)
+            this.removeListener(event, listeners[i].fn, void 0, true);
+          switch (len) {
+            case 1:
+              listeners[i].fn.call(listeners[i].context);
+              break;
+            case 2:
+              listeners[i].fn.call(listeners[i].context, a1);
+              break;
+            case 3:
+              listeners[i].fn.call(listeners[i].context, a1, a2);
+              break;
+            case 4:
+              listeners[i].fn.call(listeners[i].context, a1, a2, a3);
+              break;
+            default:
+              if (!args)
+                for (j = 1, args = new Array(len - 1); j < len; j++) {
+                  args[j - 1] = arguments[j];
+                }
+              listeners[i].fn.apply(listeners[i].context, args);
+          }
+        }
+      }
+      return true;
+    };
+    EventEmitter2.prototype.on = function on(event, fn, context) {
+      return addListener(this, event, fn, context, false);
+    };
+    EventEmitter2.prototype.once = function once(event, fn, context) {
+      return addListener(this, event, fn, context, true);
+    };
+    EventEmitter2.prototype.removeListener = function removeListener(event, fn, context, once) {
+      var evt = prefix ? prefix + event : event;
+      if (!this._events[evt])
+        return this;
+      if (!fn) {
+        clearEvent(this, evt);
+        return this;
+      }
+      var listeners = this._events[evt];
+      if (listeners.fn) {
+        if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) {
+          clearEvent(this, evt);
+        }
+      } else {
+        for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+          if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) {
+            events.push(listeners[i]);
+          }
+        }
+        if (events.length)
+          this._events[evt] = events.length === 1 ? events[0] : events;
+        else
+          clearEvent(this, evt);
+      }
+      return this;
+    };
+    EventEmitter2.prototype.removeAllListeners = function removeAllListeners(event) {
+      var evt;
+      if (event) {
+        evt = prefix ? prefix + event : event;
+        if (this._events[evt])
+          clearEvent(this, evt);
+      } else {
+        this._events = new Events();
+        this._eventsCount = 0;
+      }
+      return this;
+    };
+    EventEmitter2.prototype.off = EventEmitter2.prototype.removeListener;
+    EventEmitter2.prototype.addListener = EventEmitter2.prototype.on;
+    EventEmitter2.prefixed = prefix;
+    EventEmitter2.EventEmitter = EventEmitter2;
+    if (typeof module2 !== "undefined") {
+      module2.exports = EventEmitter2;
+    }
+  }
+});
+
+// node_modules/debug/node_modules/ms/index.js
+var require_ms = __commonJS({
+  "node_modules/debug/node_modules/ms/index.js"(exports2, module2) {
+    var s = 1e3;
+    var m = s * 60;
+    var h = m * 60;
+    var d = h * 24;
+    var w = d * 7;
+    var y = d * 365.25;
+    module2.exports = function(val, options) {
+      options = options || {};
+      var type = typeof val;
+      if (type === "string" && val.length > 0) {
+        return parse(val);
+      } else if (type === "number" && isFinite(val)) {
+        return options.long ? fmtLong(val) : fmtShort(val);
+      }
+      throw new Error("val is not a non-empty string or a valid number. val=" + JSON.stringify(val));
+    };
+    function parse(str) {
+      str = String(str);
+      if (str.length > 100) {
+        return;
+      }
+      var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(str);
+      if (!match) {
+        return;
+      }
+      var n = parseFloat(match[1]);
+      var type = (match[2] || "ms").toLowerCase();
+      switch (type) {
+        case "years":
+        case "year":
+        case "yrs":
+        case "yr":
+        case "y":
+          return n * y;
+        case "weeks":
+        case "week":
+        case "w":
+          return n * w;
+        case "days":
+        case "day":
+        case "d":
+          return n * d;
+        case "hours":
+        case "hour":
+        case "hrs":
+        case "hr":
+        case "h":
+          return n * h;
+        case "minutes":
+        case "minute":
+        case "mins":
+        case "min":
+        case "m":
+          return n * m;
+        case "seconds":
+        case "second":
+        case "secs":
+        case "sec":
+        case "s":
+          return n * s;
+        case "milliseconds":
+        case "millisecond":
+        case "msecs":
+        case "msec":
+        case "ms":
+          return n;
+        default:
+          return void 0;
+      }
+    }
+    function fmtShort(ms) {
+      var msAbs = Math.abs(ms);
+      if (msAbs >= d) {
+        return Math.round(ms / d) + "d";
+      }
+      if (msAbs >= h) {
+        return Math.round(ms / h) + "h";
+      }
+      if (msAbs >= m) {
+        return Math.round(ms / m) + "m";
+      }
+      if (msAbs >= s) {
+        return Math.round(ms / s) + "s";
+      }
+      return ms + "ms";
+    }
+    function fmtLong(ms) {
+      var msAbs = Math.abs(ms);
+      if (msAbs >= d) {
+        return plural(ms, msAbs, d, "day");
+      }
+      if (msAbs >= h) {
+        return plural(ms, msAbs, h, "hour");
+      }
+      if (msAbs >= m) {
+        return plural(ms, msAbs, m, "minute");
+      }
+      if (msAbs >= s) {
+        return plural(ms, msAbs, s, "second");
+      }
+      return ms + " ms";
+    }
+    function plural(ms, msAbs, n, name) {
+      var isPlural = msAbs >= n * 1.5;
+      return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
+    }
+  }
+});
+
+// node_modules/debug/src/common.js
+var require_common = __commonJS({
+  "node_modules/debug/src/common.js"(exports2, module2) {
+    function setup(env) {
+      createDebug.debug = createDebug;
+      createDebug.default = createDebug;
+      createDebug.coerce = coerce;
+      createDebug.disable = disable;
+      createDebug.enable = enable;
+      createDebug.enabled = enabled;
+      createDebug.humanize = require_ms();
+      createDebug.destroy = destroy;
+      Object.keys(env).forEach((key) => {
+        createDebug[key] = env[key];
+      });
+      createDebug.names = [];
+      createDebug.skips = [];
+      createDebug.formatters = {};
+      function selectColor(namespace) {
+        let hash = 0;
+        for (let i = 0; i < namespace.length; i++) {
+          hash = (hash << 5) - hash + namespace.charCodeAt(i);
+          hash |= 0;
+        }
+        return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
+      }
+      createDebug.selectColor = selectColor;
+      function createDebug(namespace) {
+        let prevTime;
+        let enableOverride = null;
+        function debug8(...args) {
+          if (!debug8.enabled) {
+            return;
+          }
+          const self2 = debug8;
+          const curr = Number(new Date());
+          const ms = curr - (prevTime || curr);
+          self2.diff = ms;
+          self2.prev = prevTime;
+          self2.curr = curr;
+          prevTime = curr;
+          args[0] = createDebug.coerce(args[0]);
+          if (typeof args[0] !== "string") {
+            args.unshift("%O");
+          }
+          let index = 0;
+          args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
+            if (match === "%%") {
+              return "%";
+            }
+            index++;
+            const formatter = createDebug.formatters[format];
+            if (typeof formatter === "function") {
+              const val = args[index];
+              match = formatter.call(self2, val);
+              args.splice(index, 1);
+              index--;
+            }
+            return match;
+          });
+          createDebug.formatArgs.call(self2, args);
+          const logFn = self2.log || createDebug.log;
+          logFn.apply(self2, args);
+        }
+        debug8.namespace = namespace;
+        debug8.useColors = createDebug.useColors();
+        debug8.color = createDebug.selectColor(namespace);
+        debug8.extend = extend;
+        debug8.destroy = createDebug.destroy;
+        Object.defineProperty(debug8, "enabled", {
+          enumerable: true,
+          configurable: false,
+          get: () => enableOverride === null ? createDebug.enabled(namespace) : enableOverride,
+          set: (v) => {
+            enableOverride = v;
+          }
+        });
+        if (typeof createDebug.init === "function") {
+          createDebug.init(debug8);
+        }
+        return debug8;
+      }
+      function extend(namespace, delimiter) {
+        const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
+        newDebug.log = this.log;
+        return newDebug;
+      }
+      function enable(namespaces) {
+        createDebug.save(namespaces);
+        createDebug.names = [];
+        createDebug.skips = [];
+        let i;
+        const split = (typeof namespaces === "string" ? namespaces : "").split(/[\s,]+/);
+        const len = split.length;
+        for (i = 0; i < len; i++) {
+          if (!split[i]) {
+            continue;
+          }
+          namespaces = split[i].replace(/\*/g, ".*?");
+          if (namespaces[0] === "-") {
+            createDebug.skips.push(new RegExp("^" + namespaces.substr(1) + "$"));
+          } else {
+            createDebug.names.push(new RegExp("^" + namespaces + "$"));
+          }
+        }
+      }
+      function disable() {
+        const namespaces = [
+          ...createDebug.names.map(toNamespace),
+          ...createDebug.skips.map(toNamespace).map((namespace) => "-" + namespace)
+        ].join(",");
+        createDebug.enable("");
+        return namespaces;
+      }
+      function enabled(name) {
+        if (name[name.length - 1] === "*") {
+          return true;
+        }
+        let i;
+        let len;
+        for (i = 0, len = createDebug.skips.length; i < len; i++) {
+          if (createDebug.skips[i].test(name)) {
+            return false;
+          }
+        }
+        for (i = 0, len = createDebug.names.length; i < len; i++) {
+          if (createDebug.names[i].test(name)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      function toNamespace(regexp) {
+        return regexp.toString().substring(2, regexp.toString().length - 2).replace(/\.\*\?$/, "*");
+      }
+      function coerce(val) {
+        if (val instanceof Error) {
+          return val.stack || val.message;
+        }
+        return val;
+      }
+      function destroy() {
+        console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
+      }
+      createDebug.enable(createDebug.load());
+      return createDebug;
+    }
+    module2.exports = setup;
+  }
+});
+
+// node_modules/debug/src/browser.js
+var require_browser = __commonJS({
+  "node_modules/debug/src/browser.js"(exports2, module2) {
+    exports2.formatArgs = formatArgs;
+    exports2.save = save;
+    exports2.load = load;
+    exports2.useColors = useColors;
+    exports2.storage = localstorage();
+    exports2.destroy = (() => {
+      let warned = false;
+      return () => {
+        if (!warned) {
+          warned = true;
+          console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
+        }
+      };
+    })();
+    exports2.colors = [
+      "#0000CC",
+      "#0000FF",
+      "#0033CC",
+      "#0033FF",
+      "#0066CC",
+      "#0066FF",
+      "#0099CC",
+      "#0099FF",
+      "#00CC00",
+      "#00CC33",
+      "#00CC66",
+      "#00CC99",
+      "#00CCCC",
+      "#00CCFF",
+      "#3300CC",
+      "#3300FF",
+      "#3333CC",
+      "#3333FF",
+      "#3366CC",
+      "#3366FF",
+      "#3399CC",
+      "#3399FF",
+      "#33CC00",
+      "#33CC33",
+      "#33CC66",
+      "#33CC99",
+      "#33CCCC",
+      "#33CCFF",
+      "#6600CC",
+      "#6600FF",
+      "#6633CC",
+      "#6633FF",
+      "#66CC00",
+      "#66CC33",
+      "#9900CC",
+      "#9900FF",
+      "#9933CC",
+      "#9933FF",
+      "#99CC00",
+      "#99CC33",
+      "#CC0000",
+      "#CC0033",
+      "#CC0066",
+      "#CC0099",
+      "#CC00CC",
+      "#CC00FF",
+      "#CC3300",
+      "#CC3333",
+      "#CC3366",
+      "#CC3399",
+      "#CC33CC",
+      "#CC33FF",
+      "#CC6600",
+      "#CC6633",
+      "#CC9900",
+      "#CC9933",
+      "#CCCC00",
+      "#CCCC33",
+      "#FF0000",
+      "#FF0033",
+      "#FF0066",
+      "#FF0099",
+      "#FF00CC",
+      "#FF00FF",
+      "#FF3300",
+      "#FF3333",
+      "#FF3366",
+      "#FF3399",
+      "#FF33CC",
+      "#FF33FF",
+      "#FF6600",
+      "#FF6633",
+      "#FF9900",
+      "#FF9933",
+      "#FFCC00",
+      "#FFCC33"
+    ];
+    function useColors() {
+      if (typeof window !== "undefined" && window.process && (window.process.type === "renderer" || window.process.__nwjs)) {
+        return true;
+      }
+      if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+        return false;
+      }
+      return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+    }
+    function formatArgs(args) {
+      args[0] = (this.useColors ? "%c" : "") + this.namespace + (this.useColors ? " %c" : " ") + args[0] + (this.useColors ? "%c " : " ") + "+" + module2.exports.humanize(this.diff);
+      if (!this.useColors) {
+        return;
+      }
+      const c = "color: " + this.color;
+      args.splice(1, 0, c, "color: inherit");
+      let index = 0;
+      let lastC = 0;
+      args[0].replace(/%[a-zA-Z%]/g, (match) => {
+        if (match === "%%") {
+          return;
+        }
+        index++;
+        if (match === "%c") {
+          lastC = index;
+        }
+      });
+      args.splice(lastC, 0, c);
+    }
+    exports2.log = console.debug || console.log || (() => {
+    });
+    function save(namespaces) {
+      try {
+        if (namespaces) {
+          exports2.storage.setItem("debug", namespaces);
+        } else {
+          exports2.storage.removeItem("debug");
+        }
+      } catch (error) {
+      }
+    }
+    function load() {
+      let r;
+      try {
+        r = exports2.storage.getItem("debug");
+      } catch (error) {
+      }
+      if (!r && typeof process !== "undefined" && "env" in process) {
+        r = process.env.DEBUG;
+      }
+      return r;
+    }
+    function localstorage() {
+      try {
+        return localStorage;
+      } catch (error) {
+      }
+    }
+    module2.exports = require_common()(exports2);
+    var {formatters} = module2.exports;
+    formatters.j = function(v) {
+      try {
+        return JSON.stringify(v);
+      } catch (error) {
+        return "[UnexpectedJSONParseError]: " + error.message;
+      }
+    };
+  }
+});
+
+// node_modules/has-flag/index.js
+var require_has_flag = __commonJS({
+  "node_modules/has-flag/index.js"(exports2, module2) {
+    "use strict";
+    module2.exports = (flag, argv) => {
+      argv = argv || process.argv;
+      const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
+      const pos = argv.indexOf(prefix + flag);
+      const terminatorPos = argv.indexOf("--");
+      return pos !== -1 && (terminatorPos === -1 ? true : pos < terminatorPos);
+    };
+  }
+});
+
+// node_modules/supports-color/index.js
+var require_supports_color = __commonJS({
+  "node_modules/supports-color/index.js"(exports2, module2) {
+    "use strict";
+    var os = require("os");
+    var hasFlag = require_has_flag();
+    var {env} = process;
+    var forceColor;
+    if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
+      forceColor = 0;
+    } else if (hasFlag("color") || hasFlag("colors") || hasFlag("color=true") || hasFlag("color=always")) {
+      forceColor = 1;
+    }
+    if ("FORCE_COLOR" in env) {
+      if (env.FORCE_COLOR === true || env.FORCE_COLOR === "true") {
+        forceColor = 1;
+      } else if (env.FORCE_COLOR === false || env.FORCE_COLOR === "false") {
+        forceColor = 0;
+      } else {
+        forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+      }
+    }
+    function translateLevel(level) {
+      if (level === 0) {
+        return false;
+      }
+      return {
+        level,
+        hasBasic: true,
+        has256: level >= 2,
+        has16m: level >= 3
+      };
+    }
+    function supportsColor(stream2) {
+      if (forceColor === 0) {
+        return 0;
+      }
+      if (hasFlag("color=16m") || hasFlag("color=full") || hasFlag("color=truecolor")) {
+        return 3;
+      }
+      if (hasFlag("color=256")) {
+        return 2;
+      }
+      if (stream2 && !stream2.isTTY && forceColor === void 0) {
+        return 0;
+      }
+      const min = forceColor || 0;
+      if (env.TERM === "dumb") {
+        return min;
+      }
+      if (process.platform === "win32") {
+        const osRelease = os.release().split(".");
+        if (Number(process.versions.node.split(".")[0]) >= 8 && Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
+          return Number(osRelease[2]) >= 14931 ? 3 : 2;
+        }
+        return 1;
+      }
+      if ("CI" in env) {
+        if (["TRAVIS", "CIRCLECI", "APPVEYOR", "GITLAB_CI"].some((sign) => sign in env) || env.CI_NAME === "codeship") {
+          return 1;
+        }
+        return min;
+      }
+      if ("TEAMCITY_VERSION" in env) {
+        return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+      }
+      if (env.COLORTERM === "truecolor") {
+        return 3;
+      }
+      if ("TERM_PROGRAM" in env) {
+        const version = parseInt((env.TERM_PROGRAM_VERSION || "").split(".")[0], 10);
+        switch (env.TERM_PROGRAM) {
+          case "iTerm.app":
+            return version >= 3 ? 3 : 2;
+          case "Apple_Terminal":
+            return 2;
+        }
+      }
+      if (/-256(color)?$/i.test(env.TERM)) {
+        return 2;
+      }
+      if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+        return 1;
+      }
+      if ("COLORTERM" in env) {
+        return 1;
+      }
+      return min;
+    }
+    function getSupportLevel(stream2) {
+      const level = supportsColor(stream2);
+      return translateLevel(level);
+    }
+    module2.exports = {
+      supportsColor: getSupportLevel,
+      stdout: getSupportLevel(process.stdout),
+      stderr: getSupportLevel(process.stderr)
+    };
+  }
+});
+
+// node_modules/debug/src/node.js
+var require_node = __commonJS({
+  "node_modules/debug/src/node.js"(exports2, module2) {
+    var tty = require("tty");
+    var util = require("util");
+    exports2.init = init;
+    exports2.log = log;
+    exports2.formatArgs = formatArgs;
+    exports2.save = save;
+    exports2.load = load;
+    exports2.useColors = useColors;
+    exports2.destroy = util.deprecate(() => {
+    }, "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
+    exports2.colors = [6, 2, 3, 4, 5, 1];
+    try {
+      const supportsColor = require_supports_color();
+      if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
+        exports2.colors = [
+          20,
+          21,
+          26,
+          27,
+          32,
+          33,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          56,
+          57,
+          62,
+          63,
+          68,
+          69,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          92,
+          93,
+          98,
+          99,
+          112,
+          113,
+          128,
+          129,
+          134,
+          135,
+          148,
+          149,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          178,
+          179,
+          184,
+          185,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          214,
+          215,
+          220,
+          221
+        ];
+      }
+    } catch (error) {
+    }
+    exports2.inspectOpts = Object.keys(process.env).filter((key) => {
+      return /^debug_/i.test(key);
+    }).reduce((obj, key) => {
+      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_, k) => {
+        return k.toUpperCase();
+      });
+      let val = process.env[key];
+      if (/^(yes|on|true|enabled)$/i.test(val)) {
+        val = true;
+      } else if (/^(no|off|false|disabled)$/i.test(val)) {
+        val = false;
+      } else if (val === "null") {
+        val = null;
+      } else {
+        val = Number(val);
+      }
+      obj[prop] = val;
+      return obj;
+    }, {});
+    function useColors() {
+      return "colors" in exports2.inspectOpts ? Boolean(exports2.inspectOpts.colors) : tty.isatty(process.stderr.fd);
+    }
+    function formatArgs(args) {
+      const {namespace: name, useColors: useColors2} = this;
+      if (useColors2) {
+        const c = this.color;
+        const colorCode = "[3" + (c < 8 ? c : "8;5;" + c);
+        const prefix = `  ${colorCode};1m${name} [0m`;
+        args[0] = prefix + args[0].split("\n").join("\n" + prefix);
+        args.push(colorCode + "m+" + module2.exports.humanize(this.diff) + "[0m");
+      } else {
+        args[0] = getDate() + name + " " + args[0];
+      }
+    }
+    function getDate() {
+      if (exports2.inspectOpts.hideDate) {
+        return "";
+      }
+      return new Date().toISOString() + " ";
+    }
+    function log(...args) {
+      return process.stderr.write(util.format(...args) + "\n");
+    }
+    function save(namespaces) {
+      if (namespaces) {
+        process.env.DEBUG = namespaces;
+      } else {
+        delete process.env.DEBUG;
+      }
+    }
+    function load() {
+      return process.env.DEBUG;
+    }
+    function init(debug8) {
+      debug8.inspectOpts = {};
+      const keys = Object.keys(exports2.inspectOpts);
+      for (let i = 0; i < keys.length; i++) {
+        debug8.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
+      }
+    }
+    module2.exports = require_common()(exports2);
+    var {formatters} = module2.exports;
+    formatters.o = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
+    };
+    formatters.O = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts);
+    };
+  }
+});
+
+// node_modules/debug/src/index.js
+var require_src = __commonJS({
+  "node_modules/debug/src/index.js"(exports2, module2) {
+    if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
+      module2.exports = require_browser();
+    } else {
+      module2.exports = require_node();
+    }
+  }
+});
+
+// node_modules/await-sleep/index.js
+var require_await_sleep = __commonJS({
+  "node_modules/await-sleep/index.js"(exports2, module2) {
+    module2.exports = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  }
+});
+
+// node_modules/commander/index.js
+var require_commander = __commonJS({
+  "node_modules/commander/index.js"(exports2, module2) {
+    var EventEmitter2 = require("events").EventEmitter;
+    var childProcess = require("child_process");
+    var path = require("path");
+    var fs = require("fs");
+    var Help = class {
+      constructor() {
+        this.helpWidth = void 0;
+        this.sortSubcommands = false;
+        this.sortOptions = false;
+      }
+      visibleCommands(cmd) {
+        const visibleCommands = cmd.commands.filter((cmd2) => !cmd2._hidden);
+        if (cmd._hasImplicitHelpCommand()) {
+          const args = cmd._helpCommandnameAndArgs.split(/ +/);
+          const helpCommand = cmd.createCommand(args.shift()).helpOption(false);
+          helpCommand.description(cmd._helpCommandDescription);
+          helpCommand._parseExpectedArgs(args);
+          visibleCommands.push(helpCommand);
+        }
+        if (this.sortSubcommands) {
+          visibleCommands.sort((a, b) => {
+            return a.name().localeCompare(b.name());
+          });
+        }
+        return visibleCommands;
+      }
+      visibleOptions(cmd) {
+        const visibleOptions = cmd.options.filter((option) => !option.hidden);
+        const showShortHelpFlag = cmd._hasHelpOption && cmd._helpShortFlag && !cmd._findOption(cmd._helpShortFlag);
+        const showLongHelpFlag = cmd._hasHelpOption && !cmd._findOption(cmd._helpLongFlag);
+        if (showShortHelpFlag || showLongHelpFlag) {
+          let helpOption;
+          if (!showShortHelpFlag) {
+            helpOption = cmd.createOption(cmd._helpLongFlag, cmd._helpDescription);
+          } else if (!showLongHelpFlag) {
+            helpOption = cmd.createOption(cmd._helpShortFlag, cmd._helpDescription);
+          } else {
+            helpOption = cmd.createOption(cmd._helpFlags, cmd._helpDescription);
+          }
+          visibleOptions.push(helpOption);
+        }
+        if (this.sortOptions) {
+          const getSortKey = (option) => {
+            return option.short ? option.short.replace(/^-/, "") : option.long.replace(/^--/, "");
+          };
+          visibleOptions.sort((a, b) => {
+            return getSortKey(a).localeCompare(getSortKey(b));
+          });
+        }
+        return visibleOptions;
+      }
+      visibleArguments(cmd) {
+        if (cmd._argsDescription && cmd._args.length) {
+          return cmd._args.map((argument) => {
+            return {term: argument.name, description: cmd._argsDescription[argument.name] || ""};
+          }, 0);
+        }
+        return [];
+      }
+      subcommandTerm(cmd) {
+        const args = cmd._args.map((arg) => humanReadableArgName(arg)).join(" ");
+        return cmd._name + (cmd._aliases[0] ? "|" + cmd._aliases[0] : "") + (cmd.options.length ? " [options]" : "") + (args ? " " + args : "");
+      }
+      optionTerm(option) {
+        return option.flags;
+      }
+      longestSubcommandTermLength(cmd, helper) {
+        return helper.visibleCommands(cmd).reduce((max, command) => {
+          return Math.max(max, helper.subcommandTerm(command).length);
+        }, 0);
+      }
+      longestOptionTermLength(cmd, helper) {
+        return helper.visibleOptions(cmd).reduce((max, option) => {
+          return Math.max(max, helper.optionTerm(option).length);
+        }, 0);
+      }
+      longestArgumentTermLength(cmd, helper) {
+        return helper.visibleArguments(cmd).reduce((max, argument) => {
+          return Math.max(max, argument.term.length);
+        }, 0);
+      }
+      commandUsage(cmd) {
+        let cmdName = cmd._name;
+        if (cmd._aliases[0]) {
+          cmdName = cmdName + "|" + cmd._aliases[0];
+        }
+        let parentCmdNames = "";
+        for (let parentCmd = cmd.parent; parentCmd; parentCmd = parentCmd.parent) {
+          parentCmdNames = parentCmd.name() + " " + parentCmdNames;
+        }
+        return parentCmdNames + cmdName + " " + cmd.usage();
+      }
+      commandDescription(cmd) {
+        return cmd.description();
+      }
+      subcommandDescription(cmd) {
+        return cmd.description();
+      }
+      optionDescription(option) {
+        if (option.negate) {
+          return option.description;
+        }
+        const extraInfo = [];
+        if (option.argChoices) {
+          extraInfo.push(`choices: ${option.argChoices.map((choice) => JSON.stringify(choice)).join(", ")}`);
+        }
+        if (option.defaultValue !== void 0) {
+          extraInfo.push(`default: ${option.defaultValueDescription || JSON.stringify(option.defaultValue)}`);
+        }
+        if (extraInfo.length > 0) {
+          return `${option.description} (${extraInfo.join(", ")})`;
+        }
+        return option.description;
+      }
+      formatHelp(cmd, helper) {
+        const termWidth = helper.padWidth(cmd, helper);
+        const helpWidth = helper.helpWidth || 80;
+        const itemIndentWidth = 2;
+        const itemSeparatorWidth = 2;
+        function formatItem(term, description) {
+          if (description) {
+            const fullText = `${term.padEnd(termWidth + itemSeparatorWidth)}${description}`;
+            return helper.wrap(fullText, helpWidth - itemIndentWidth, termWidth + itemSeparatorWidth);
+          }
+          return term;
+        }
+        ;
+        function formatList(textArray) {
+          return textArray.join("\n").replace(/^/gm, " ".repeat(itemIndentWidth));
+        }
+        let output = [`Usage: ${helper.commandUsage(cmd)}`, ""];
+        const commandDescription = helper.commandDescription(cmd);
+        if (commandDescription.length > 0) {
+          output = output.concat([commandDescription, ""]);
+        }
+        const argumentList = helper.visibleArguments(cmd).map((argument) => {
+          return formatItem(argument.term, argument.description);
+        });
+        if (argumentList.length > 0) {
+          output = output.concat(["Arguments:", formatList(argumentList), ""]);
+        }
+        const optionList = helper.visibleOptions(cmd).map((option) => {
+          return formatItem(helper.optionTerm(option), helper.optionDescription(option));
+        });
+        if (optionList.length > 0) {
+          output = output.concat(["Options:", formatList(optionList), ""]);
+        }
+        const commandList = helper.visibleCommands(cmd).map((cmd2) => {
+          return formatItem(helper.subcommandTerm(cmd2), helper.subcommandDescription(cmd2));
+        });
+        if (commandList.length > 0) {
+          output = output.concat(["Commands:", formatList(commandList), ""]);
+        }
+        return output.join("\n");
+      }
+      padWidth(cmd, helper) {
+        return Math.max(helper.longestOptionTermLength(cmd, helper), helper.longestSubcommandTermLength(cmd, helper), helper.longestArgumentTermLength(cmd, helper));
+      }
+      wrap(str, width, indent, minColumnWidth = 40) {
+        if (str.match(/[\n]\s+/))
+          return str;
+        const columnWidth = width - indent;
+        if (columnWidth < minColumnWidth)
+          return str;
+        const leadingStr = str.substr(0, indent);
+        const columnText = str.substr(indent);
+        const indentString = " ".repeat(indent);
+        const regex = new RegExp(".{1," + (columnWidth - 1) + "}([\\s\u200B]|$)|[^\\s\u200B]+?([\\s\u200B]|$)", "g");
+        const lines = columnText.match(regex) || [];
+        return leadingStr + lines.map((line, i) => {
+          if (line.slice(-1) === "\n") {
+            line = line.slice(0, line.length - 1);
+          }
+          return (i > 0 ? indentString : "") + line.trimRight();
+        }).join("\n");
+      }
+    };
+    var Option = class {
+      constructor(flags, description) {
+        this.flags = flags;
+        this.description = description || "";
+        this.required = flags.includes("<");
+        this.optional = flags.includes("[");
+        this.variadic = /\w\.\.\.[>\]]$/.test(flags);
+        this.mandatory = false;
+        const optionFlags = _parseOptionFlags(flags);
+        this.short = optionFlags.shortFlag;
+        this.long = optionFlags.longFlag;
+        this.negate = false;
+        if (this.long) {
+          this.negate = this.long.startsWith("--no-");
+        }
+        this.defaultValue = void 0;
+        this.defaultValueDescription = void 0;
+        this.parseArg = void 0;
+        this.hidden = false;
+        this.argChoices = void 0;
+      }
+      default(value, description) {
+        this.defaultValue = value;
+        this.defaultValueDescription = description;
+        return this;
+      }
+      argParser(fn) {
+        this.parseArg = fn;
+        return this;
+      }
+      makeOptionMandatory(mandatory = true) {
+        this.mandatory = !!mandatory;
+        return this;
+      }
+      hideHelp(hide = true) {
+        this.hidden = !!hide;
+        return this;
+      }
+      _concatValue(value, previous) {
+        if (previous === this.defaultValue || !Array.isArray(previous)) {
+          return [value];
+        }
+        return previous.concat(value);
+      }
+      choices(values) {
+        this.argChoices = values;
+        this.parseArg = (arg, previous) => {
+          if (!values.includes(arg)) {
+            throw new InvalidOptionArgumentError(`Allowed choices are ${values.join(", ")}.`);
+          }
+          if (this.variadic) {
+            return this._concatValue(arg, previous);
+          }
+          return arg;
+        };
+        return this;
+      }
+      name() {
+        if (this.long) {
+          return this.long.replace(/^--/, "");
+        }
+        return this.short.replace(/^-/, "");
+      }
+      attributeName() {
+        return camelcase(this.name().replace(/^no-/, ""));
+      }
+      is(arg) {
+        return this.short === arg || this.long === arg;
+      }
+    };
+    var CommanderError = class extends Error {
+      constructor(exitCode, code, message) {
+        super(message);
+        Error.captureStackTrace(this, this.constructor);
+        this.name = this.constructor.name;
+        this.code = code;
+        this.exitCode = exitCode;
+        this.nestedError = void 0;
+      }
+    };
+    var InvalidOptionArgumentError = class extends CommanderError {
+      constructor(message) {
+        super(1, "commander.invalidOptionArgument", message);
+        Error.captureStackTrace(this, this.constructor);
+        this.name = this.constructor.name;
+      }
+    };
+    var Command = class extends EventEmitter2 {
+      constructor(name) {
+        super();
+        this.commands = [];
+        this.options = [];
+        this.parent = null;
+        this._allowUnknownOption = false;
+        this._allowExcessArguments = true;
+        this._args = [];
+        this.rawArgs = null;
+        this._scriptPath = null;
+        this._name = name || "";
+        this._optionValues = {};
+        this._storeOptionsAsProperties = false;
+        this._actionResults = [];
+        this._actionHandler = null;
+        this._executableHandler = false;
+        this._executableFile = null;
+        this._defaultCommandName = null;
+        this._exitCallback = null;
+        this._aliases = [];
+        this._combineFlagAndOptionalValue = true;
+        this._description = "";
+        this._argsDescription = void 0;
+        this._enablePositionalOptions = false;
+        this._passThroughOptions = false;
+        this._outputConfiguration = {
+          writeOut: (str) => process.stdout.write(str),
+          writeErr: (str) => process.stderr.write(str),
+          getOutHelpWidth: () => process.stdout.isTTY ? process.stdout.columns : void 0,
+          getErrHelpWidth: () => process.stderr.isTTY ? process.stderr.columns : void 0,
+          outputError: (str, write) => write(str)
+        };
+        this._hidden = false;
+        this._hasHelpOption = true;
+        this._helpFlags = "-h, --help";
+        this._helpDescription = "display help for command";
+        this._helpShortFlag = "-h";
+        this._helpLongFlag = "--help";
+        this._addImplicitHelpCommand = void 0;
+        this._helpCommandName = "help";
+        this._helpCommandnameAndArgs = "help [command]";
+        this._helpCommandDescription = "display help for command";
+        this._helpConfiguration = {};
+      }
+      command(nameAndArgs, actionOptsOrExecDesc, execOpts) {
+        let desc = actionOptsOrExecDesc;
+        let opts = execOpts;
+        if (typeof desc === "object" && desc !== null) {
+          opts = desc;
+          desc = null;
+        }
+        opts = opts || {};
+        const args = nameAndArgs.split(/ +/);
+        const cmd = this.createCommand(args.shift());
+        if (desc) {
+          cmd.description(desc);
+          cmd._executableHandler = true;
+        }
+        if (opts.isDefault)
+          this._defaultCommandName = cmd._name;
+        cmd._outputConfiguration = this._outputConfiguration;
+        cmd._hidden = !!(opts.noHelp || opts.hidden);
+        cmd._hasHelpOption = this._hasHelpOption;
+        cmd._helpFlags = this._helpFlags;
+        cmd._helpDescription = this._helpDescription;
+        cmd._helpShortFlag = this._helpShortFlag;
+        cmd._helpLongFlag = this._helpLongFlag;
+        cmd._helpCommandName = this._helpCommandName;
+        cmd._helpCommandnameAndArgs = this._helpCommandnameAndArgs;
+        cmd._helpCommandDescription = this._helpCommandDescription;
+        cmd._helpConfiguration = this._helpConfiguration;
+        cmd._exitCallback = this._exitCallback;
+        cmd._storeOptionsAsProperties = this._storeOptionsAsProperties;
+        cmd._combineFlagAndOptionalValue = this._combineFlagAndOptionalValue;
+        cmd._allowExcessArguments = this._allowExcessArguments;
+        cmd._enablePositionalOptions = this._enablePositionalOptions;
+        cmd._executableFile = opts.executableFile || null;
+        this.commands.push(cmd);
+        cmd._parseExpectedArgs(args);
+        cmd.parent = this;
+        if (desc)
+          return this;
+        return cmd;
+      }
+      createCommand(name) {
+        return new Command(name);
+      }
+      createHelp() {
+        return Object.assign(new Help(), this.configureHelp());
+      }
+      configureHelp(configuration) {
+        if (configuration === void 0)
+          return this._helpConfiguration;
+        this._helpConfiguration = configuration;
+        return this;
+      }
+      configureOutput(configuration) {
+        if (configuration === void 0)
+          return this._outputConfiguration;
+        Object.assign(this._outputConfiguration, configuration);
+        return this;
+      }
+      addCommand(cmd, opts) {
+        if (!cmd._name)
+          throw new Error("Command passed to .addCommand() must have a name");
+        function checkExplicitNames(commandArray) {
+          commandArray.forEach((cmd2) => {
+            if (cmd2._executableHandler && !cmd2._executableFile) {
+              throw new Error(`Must specify executableFile for deeply nested executable: ${cmd2.name()}`);
+            }
+            checkExplicitNames(cmd2.commands);
+          });
+        }
+        checkExplicitNames(cmd.commands);
+        opts = opts || {};
+        if (opts.isDefault)
+          this._defaultCommandName = cmd._name;
+        if (opts.noHelp || opts.hidden)
+          cmd._hidden = true;
+        this.commands.push(cmd);
+        cmd.parent = this;
+        return this;
+      }
+      arguments(desc) {
+        return this._parseExpectedArgs(desc.split(/ +/));
+      }
+      addHelpCommand(enableOrNameAndArgs, description) {
+        if (enableOrNameAndArgs === false) {
+          this._addImplicitHelpCommand = false;
+        } else {
+          this._addImplicitHelpCommand = true;
+          if (typeof enableOrNameAndArgs === "string") {
+            this._helpCommandName = enableOrNameAndArgs.split(" ")[0];
+            this._helpCommandnameAndArgs = enableOrNameAndArgs;
+          }
+          this._helpCommandDescription = description || this._helpCommandDescription;
+        }
+        return this;
+      }
+      _hasImplicitHelpCommand() {
+        if (this._addImplicitHelpCommand === void 0) {
+          return this.commands.length && !this._actionHandler && !this._findCommand("help");
+        }
+        return this._addImplicitHelpCommand;
+      }
+      _parseExpectedArgs(args) {
+        if (!args.length)
+          return;
+        args.forEach((arg) => {
+          const argDetails = {
+            required: false,
+            name: "",
+            variadic: false
+          };
+          switch (arg[0]) {
+            case "<":
+              argDetails.required = true;
+              argDetails.name = arg.slice(1, -1);
+              break;
+            case "[":
+              argDetails.name = arg.slice(1, -1);
+              break;
+          }
+          if (argDetails.name.length > 3 && argDetails.name.slice(-3) === "...") {
+            argDetails.variadic = true;
+            argDetails.name = argDetails.name.slice(0, -3);
+          }
+          if (argDetails.name) {
+            this._args.push(argDetails);
+          }
+        });
+        this._args.forEach((arg, i) => {
+          if (arg.variadic && i < this._args.length - 1) {
+            throw new Error(`only the last argument can be variadic '${arg.name}'`);
+          }
+        });
+        return this;
+      }
+      exitOverride(fn) {
+        if (fn) {
+          this._exitCallback = fn;
+        } else {
+          this._exitCallback = (err) => {
+            if (err.code !== "commander.executeSubCommandAsync") {
+              throw err;
+            } else {
+            }
+          };
+        }
+        return this;
+      }
+      _exit(exitCode, code, message) {
+        if (this._exitCallback) {
+          this._exitCallback(new CommanderError(exitCode, code, message));
+        }
+        process.exit(exitCode);
+      }
+      action(fn) {
+        const listener = (args) => {
+          const expectedArgsCount = this._args.length;
+          const actionArgs = args.slice(0, expectedArgsCount);
+          if (this._storeOptionsAsProperties) {
+            actionArgs[expectedArgsCount] = this;
+          } else {
+            actionArgs[expectedArgsCount] = this.opts();
+          }
+          actionArgs.push(this);
+          const actionResult = fn.apply(this, actionArgs);
+          let rootCommand = this;
+          while (rootCommand.parent) {
+            rootCommand = rootCommand.parent;
+          }
+          rootCommand._actionResults.push(actionResult);
+        };
+        this._actionHandler = listener;
+        return this;
+      }
+      createOption(flags, description) {
+        return new Option(flags, description);
+      }
+      addOption(option) {
+        const oname = option.name();
+        const name = option.attributeName();
+        let defaultValue = option.defaultValue;
+        if (option.negate || option.optional || option.required || typeof defaultValue === "boolean") {
+          if (option.negate) {
+            const positiveLongFlag = option.long.replace(/^--no-/, "--");
+            defaultValue = this._findOption(positiveLongFlag) ? this._getOptionValue(name) : true;
+          }
+          if (defaultValue !== void 0) {
+            this._setOptionValue(name, defaultValue);
+          }
+        }
+        this.options.push(option);
+        this.on("option:" + oname, (val) => {
+          const oldValue = this._getOptionValue(name);
+          if (val !== null && option.parseArg) {
+            try {
+              val = option.parseArg(val, oldValue === void 0 ? defaultValue : oldValue);
+            } catch (err) {
+              if (err.code === "commander.invalidOptionArgument") {
+                const message = `error: option '${option.flags}' argument '${val}' is invalid. ${err.message}`;
+                this._displayError(err.exitCode, err.code, message);
+              }
+              throw err;
+            }
+          } else if (val !== null && option.variadic) {
+            val = option._concatValue(val, oldValue);
+          }
+          if (typeof oldValue === "boolean" || typeof oldValue === "undefined") {
+            if (val == null) {
+              this._setOptionValue(name, option.negate ? false : defaultValue || true);
+            } else {
+              this._setOptionValue(name, val);
+            }
+          } else if (val !== null) {
+            this._setOptionValue(name, option.negate ? false : val);
+          }
+        });
+        return this;
+      }
+      _optionEx(config, flags, description, fn, defaultValue) {
+        const option = this.createOption(flags, description);
+        option.makeOptionMandatory(!!config.mandatory);
+        if (typeof fn === "function") {
+          option.default(defaultValue).argParser(fn);
+        } else if (fn instanceof RegExp) {
+          const regex = fn;
+          fn = (val, def) => {
+            const m = regex.exec(val);
+            return m ? m[0] : def;
+          };
+          option.default(defaultValue).argParser(fn);
+        } else {
+          option.default(fn);
+        }
+        return this.addOption(option);
+      }
+      option(flags, description, fn, defaultValue) {
+        return this._optionEx({}, flags, description, fn, defaultValue);
+      }
+      requiredOption(flags, description, fn, defaultValue) {
+        return this._optionEx({mandatory: true}, flags, description, fn, defaultValue);
+      }
+      combineFlagAndOptionalValue(combine = true) {
+        this._combineFlagAndOptionalValue = !!combine;
+        return this;
+      }
+      allowUnknownOption(allowUnknown = true) {
+        this._allowUnknownOption = !!allowUnknown;
+        return this;
+      }
+      allowExcessArguments(allowExcess = true) {
+        this._allowExcessArguments = !!allowExcess;
+        return this;
+      }
+      enablePositionalOptions(positional = true) {
+        this._enablePositionalOptions = !!positional;
+        return this;
+      }
+      passThroughOptions(passThrough = true) {
+        this._passThroughOptions = !!passThrough;
+        if (!!this.parent && passThrough && !this.parent._enablePositionalOptions) {
+          throw new Error("passThroughOptions can not be used without turning on enablePositionalOptions for parent command(s)");
+        }
+        return this;
+      }
+      storeOptionsAsProperties(storeAsProperties = true) {
+        this._storeOptionsAsProperties = !!storeAsProperties;
+        if (this.options.length) {
+          throw new Error("call .storeOptionsAsProperties() before adding options");
+        }
+        return this;
+      }
+      _setOptionValue(key, value) {
+        if (this._storeOptionsAsProperties) {
+          this[key] = value;
+        } else {
+          this._optionValues[key] = value;
+        }
+      }
+      _getOptionValue(key) {
+        if (this._storeOptionsAsProperties) {
+          return this[key];
+        }
+        return this._optionValues[key];
+      }
+      parse(argv, parseOptions) {
+        if (argv !== void 0 && !Array.isArray(argv)) {
+          throw new Error("first parameter to parse must be array or undefined");
+        }
+        parseOptions = parseOptions || {};
+        if (argv === void 0) {
+          argv = process.argv;
+          if (process.versions && process.versions.electron) {
+            parseOptions.from = "electron";
+          }
+        }
+        this.rawArgs = argv.slice();
+        let userArgs;
+        switch (parseOptions.from) {
+          case void 0:
+          case "node":
+            this._scriptPath = argv[1];
+            userArgs = argv.slice(2);
+            break;
+          case "electron":
+            if (process.defaultApp) {
+              this._scriptPath = argv[1];
+              userArgs = argv.slice(2);
+            } else {
+              userArgs = argv.slice(1);
+            }
+            break;
+          case "user":
+            userArgs = argv.slice(0);
+            break;
+          default:
+            throw new Error(`unexpected parse option { from: '${parseOptions.from}' }`);
+        }
+        if (!this._scriptPath && require.main) {
+          this._scriptPath = require.main.filename;
+        }
+        this._name = this._name || this._scriptPath && path.basename(this._scriptPath, path.extname(this._scriptPath));
+        this._parseCommand([], userArgs);
+        return this;
+      }
+      parseAsync(argv, parseOptions) {
+        this.parse(argv, parseOptions);
+        return Promise.all(this._actionResults).then(() => this);
+      }
+      _executeSubCommand(subcommand, args) {
+        args = args.slice();
+        let launchWithNode = false;
+        const sourceExt = [".js", ".ts", ".tsx", ".mjs", ".cjs"];
+        this._checkForMissingMandatoryOptions();
+        let scriptPath = this._scriptPath;
+        if (!scriptPath && require.main) {
+          scriptPath = require.main.filename;
+        }
+        let baseDir;
+        try {
+          const resolvedLink = fs.realpathSync(scriptPath);
+          baseDir = path.dirname(resolvedLink);
+        } catch (e) {
+          baseDir = ".";
+        }
+        let bin = path.basename(scriptPath, path.extname(scriptPath)) + "-" + subcommand._name;
+        if (subcommand._executableFile) {
+          bin = subcommand._executableFile;
+        }
+        const localBin = path.join(baseDir, bin);
+        if (fs.existsSync(localBin)) {
+          bin = localBin;
+        } else {
+          sourceExt.forEach((ext) => {
+            if (fs.existsSync(`${localBin}${ext}`)) {
+              bin = `${localBin}${ext}`;
+            }
+          });
+        }
+        launchWithNode = sourceExt.includes(path.extname(bin));
+        let proc;
+        if (process.platform !== "win32") {
+          if (launchWithNode) {
+            args.unshift(bin);
+            args = incrementNodeInspectorPort(process.execArgv).concat(args);
+            proc = childProcess.spawn(process.argv[0], args, {stdio: "inherit"});
+          } else {
+            proc = childProcess.spawn(bin, args, {stdio: "inherit"});
+          }
+        } else {
+          args.unshift(bin);
+          args = incrementNodeInspectorPort(process.execArgv).concat(args);
+          proc = childProcess.spawn(process.execPath, args, {stdio: "inherit"});
+        }
+        const signals = ["SIGUSR1", "SIGUSR2", "SIGTERM", "SIGINT", "SIGHUP"];
+        signals.forEach((signal) => {
+          process.on(signal, () => {
+            if (proc.killed === false && proc.exitCode === null) {
+              proc.kill(signal);
+            }
+          });
+        });
+        const exitCallback = this._exitCallback;
+        if (!exitCallback) {
+          proc.on("close", process.exit.bind(process));
+        } else {
+          proc.on("close", () => {
+            exitCallback(new CommanderError(process.exitCode || 0, "commander.executeSubCommandAsync", "(close)"));
+          });
+        }
+        proc.on("error", (err) => {
+          if (err.code === "ENOENT") {
+            const executableMissing = `'${bin}' does not exist
+ - if '${subcommand._name}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
+ - if the default executable name is not suitable, use the executableFile option to supply a custom name`;
+            throw new Error(executableMissing);
+          } else if (err.code === "EACCES") {
+            throw new Error(`'${bin}' not executable`);
+          }
+          if (!exitCallback) {
+            process.exit(1);
+          } else {
+            const wrappedError = new CommanderError(1, "commander.executeSubCommandAsync", "(error)");
+            wrappedError.nestedError = err;
+            exitCallback(wrappedError);
+          }
+        });
+        this.runningCommand = proc;
+      }
+      _dispatchSubcommand(commandName, operands, unknown) {
+        const subCommand = this._findCommand(commandName);
+        if (!subCommand)
+          this.help({error: true});
+        if (subCommand._executableHandler) {
+          this._executeSubCommand(subCommand, operands.concat(unknown));
+        } else {
+          subCommand._parseCommand(operands, unknown);
+        }
+      }
+      _parseCommand(operands, unknown) {
+        const parsed = this.parseOptions(unknown);
+        operands = operands.concat(parsed.operands);
+        unknown = parsed.unknown;
+        this.args = operands.concat(unknown);
+        if (operands && this._findCommand(operands[0])) {
+          this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
+        } else if (this._hasImplicitHelpCommand() && operands[0] === this._helpCommandName) {
+          if (operands.length === 1) {
+            this.help();
+          } else {
+            this._dispatchSubcommand(operands[1], [], [this._helpLongFlag]);
+          }
+        } else if (this._defaultCommandName) {
+          outputHelpIfRequested(this, unknown);
+          this._dispatchSubcommand(this._defaultCommandName, operands, unknown);
+        } else {
+          if (this.commands.length && this.args.length === 0 && !this._actionHandler && !this._defaultCommandName) {
+            this.help({error: true});
+          }
+          outputHelpIfRequested(this, parsed.unknown);
+          this._checkForMissingMandatoryOptions();
+          const checkForUnknownOptions = () => {
+            if (parsed.unknown.length > 0) {
+              this.unknownOption(parsed.unknown[0]);
+            }
+          };
+          const commandEvent = `command:${this.name()}`;
+          if (this._actionHandler) {
+            checkForUnknownOptions();
+            const args = this.args.slice();
+            this._args.forEach((arg, i) => {
+              if (arg.required && args[i] == null) {
+                this.missingArgument(arg.name);
+              } else if (arg.variadic) {
+                args[i] = args.splice(i);
+                args.length = Math.min(i + 1, args.length);
+              }
+            });
+            if (args.length > this._args.length) {
+              this._excessArguments(args);
+            }
+            this._actionHandler(args);
+            if (this.parent)
+              this.parent.emit(commandEvent, operands, unknown);
+          } else if (this.parent && this.parent.listenerCount(commandEvent)) {
+            checkForUnknownOptions();
+            this.parent.emit(commandEvent, operands, unknown);
+          } else if (operands.length) {
+            if (this._findCommand("*")) {
+              this._dispatchSubcommand("*", operands, unknown);
+            } else if (this.listenerCount("command:*")) {
+              this.emit("command:*", operands, unknown);
+            } else if (this.commands.length) {
+              this.unknownCommand();
+            } else {
+              checkForUnknownOptions();
+            }
+          } else if (this.commands.length) {
+            this.help({error: true});
+          } else {
+            checkForUnknownOptions();
+          }
+        }
+      }
+      _findCommand(name) {
+        if (!name)
+          return void 0;
+        return this.commands.find((cmd) => cmd._name === name || cmd._aliases.includes(name));
+      }
+      _findOption(arg) {
+        return this.options.find((option) => option.is(arg));
+      }
+      _checkForMissingMandatoryOptions() {
+        for (let cmd = this; cmd; cmd = cmd.parent) {
+          cmd.options.forEach((anOption) => {
+            if (anOption.mandatory && cmd._getOptionValue(anOption.attributeName()) === void 0) {
+              cmd.missingMandatoryOptionValue(anOption);
+            }
+          });
+        }
+      }
+      parseOptions(argv) {
+        const operands = [];
+        const unknown = [];
+        let dest = operands;
+        const args = argv.slice();
+        function maybeOption(arg) {
+          return arg.length > 1 && arg[0] === "-";
+        }
+        let activeVariadicOption = null;
+        while (args.length) {
+          const arg = args.shift();
+          if (arg === "--") {
+            if (dest === unknown)
+              dest.push(arg);
+            dest.push(...args);
+            break;
+          }
+          if (activeVariadicOption && !maybeOption(arg)) {
+            this.emit(`option:${activeVariadicOption.name()}`, arg);
+            continue;
+          }
+          activeVariadicOption = null;
+          if (maybeOption(arg)) {
+            const option = this._findOption(arg);
+            if (option) {
+              if (option.required) {
+                const value = args.shift();
+                if (value === void 0)
+                  this.optionMissingArgument(option);
+                this.emit(`option:${option.name()}`, value);
+              } else if (option.optional) {
+                let value = null;
+                if (args.length > 0 && !maybeOption(args[0])) {
+                  value = args.shift();
+                }
+                this.emit(`option:${option.name()}`, value);
+              } else {
+                this.emit(`option:${option.name()}`);
+              }
+              activeVariadicOption = option.variadic ? option : null;
+              continue;
+            }
+          }
+          if (arg.length > 2 && arg[0] === "-" && arg[1] !== "-") {
+            const option = this._findOption(`-${arg[1]}`);
+            if (option) {
+              if (option.required || option.optional && this._combineFlagAndOptionalValue) {
+                this.emit(`option:${option.name()}`, arg.slice(2));
+              } else {
+                this.emit(`option:${option.name()}`);
+                args.unshift(`-${arg.slice(2)}`);
+              }
+              continue;
+            }
+          }
+          if (/^--[^=]+=/.test(arg)) {
+            const index = arg.indexOf("=");
+            const option = this._findOption(arg.slice(0, index));
+            if (option && (option.required || option.optional)) {
+              this.emit(`option:${option.name()}`, arg.slice(index + 1));
+              continue;
+            }
+          }
+          if (maybeOption(arg)) {
+            dest = unknown;
+          }
+          if ((this._enablePositionalOptions || this._passThroughOptions) && operands.length === 0 && unknown.length === 0) {
+            if (this._findCommand(arg)) {
+              operands.push(arg);
+              if (args.length > 0)
+                unknown.push(...args);
+              break;
+            } else if (arg === this._helpCommandName && this._hasImplicitHelpCommand()) {
+              operands.push(arg);
+              if (args.length > 0)
+                operands.push(...args);
+              break;
+            } else if (this._defaultCommandName) {
+              unknown.push(arg);
+              if (args.length > 0)
+                unknown.push(...args);
+              break;
+            }
+          }
+          if (this._passThroughOptions) {
+            dest.push(arg);
+            if (args.length > 0)
+              dest.push(...args);
+            break;
+          }
+          dest.push(arg);
+        }
+        return {operands, unknown};
+      }
+      opts() {
+        if (this._storeOptionsAsProperties) {
+          const result = {};
+          const len = this.options.length;
+          for (let i = 0; i < len; i++) {
+            const key = this.options[i].attributeName();
+            result[key] = key === this._versionOptionName ? this._version : this[key];
+          }
+          return result;
+        }
+        return this._optionValues;
+      }
+      _displayError(exitCode, code, message) {
+        this._outputConfiguration.outputError(`${message}
+`, this._outputConfiguration.writeErr);
+        this._exit(exitCode, code, message);
+      }
+      missingArgument(name) {
+        const message = `error: missing required argument '${name}'`;
+        this._displayError(1, "commander.missingArgument", message);
+      }
+      optionMissingArgument(option) {
+        const message = `error: option '${option.flags}' argument missing`;
+        this._displayError(1, "commander.optionMissingArgument", message);
+      }
+      missingMandatoryOptionValue(option) {
+        const message = `error: required option '${option.flags}' not specified`;
+        this._displayError(1, "commander.missingMandatoryOptionValue", message);
+      }
+      unknownOption(flag) {
+        if (this._allowUnknownOption)
+          return;
+        const message = `error: unknown option '${flag}'`;
+        this._displayError(1, "commander.unknownOption", message);
+      }
+      _excessArguments(receivedArgs) {
+        if (this._allowExcessArguments)
+          return;
+        const expected = this._args.length;
+        const s = expected === 1 ? "" : "s";
+        const forSubcommand = this.parent ? ` for '${this.name()}'` : "";
+        const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${receivedArgs.length}.`;
+        this._displayError(1, "commander.excessArguments", message);
+      }
+      unknownCommand() {
+        const partCommands = [this.name()];
+        for (let parentCmd = this.parent; parentCmd; parentCmd = parentCmd.parent) {
+          partCommands.unshift(parentCmd.name());
+        }
+        const fullCommand = partCommands.join(" ");
+        const message = `error: unknown command '${this.args[0]}'.` + (this._hasHelpOption ? ` See '${fullCommand} ${this._helpLongFlag}'.` : "");
+        this._displayError(1, "commander.unknownCommand", message);
+      }
+      version(str, flags, description) {
+        if (str === void 0)
+          return this._version;
+        this._version = str;
+        flags = flags || "-V, --version";
+        description = description || "output the version number";
+        const versionOption = this.createOption(flags, description);
+        this._versionOptionName = versionOption.attributeName();
+        this.options.push(versionOption);
+        this.on("option:" + versionOption.name(), () => {
+          this._outputConfiguration.writeOut(`${str}
+`);
+          this._exit(0, "commander.version", str);
+        });
+        return this;
+      }
+      description(str, argsDescription) {
+        if (str === void 0 && argsDescription === void 0)
+          return this._description;
+        this._description = str;
+        this._argsDescription = argsDescription;
+        return this;
+      }
+      alias(alias) {
+        if (alias === void 0)
+          return this._aliases[0];
+        let command = this;
+        if (this.commands.length !== 0 && this.commands[this.commands.length - 1]._executableHandler) {
+          command = this.commands[this.commands.length - 1];
+        }
+        if (alias === command._name)
+          throw new Error("Command alias can't be the same as its name");
+        command._aliases.push(alias);
+        return this;
+      }
+      aliases(aliases) {
+        if (aliases === void 0)
+          return this._aliases;
+        aliases.forEach((alias) => this.alias(alias));
+        return this;
+      }
+      usage(str) {
+        if (str === void 0) {
+          if (this._usage)
+            return this._usage;
+          const args = this._args.map((arg) => {
+            return humanReadableArgName(arg);
+          });
+          return [].concat(this.options.length || this._hasHelpOption ? "[options]" : [], this.commands.length ? "[command]" : [], this._args.length ? args : []).join(" ");
+        }
+        this._usage = str;
+        return this;
+      }
+      name(str) {
+        if (str === void 0)
+          return this._name;
+        this._name = str;
+        return this;
+      }
+      helpInformation(contextOptions) {
+        const helper = this.createHelp();
+        if (helper.helpWidth === void 0) {
+          helper.helpWidth = contextOptions && contextOptions.error ? this._outputConfiguration.getErrHelpWidth() : this._outputConfiguration.getOutHelpWidth();
+        }
+        return helper.formatHelp(this, helper);
+      }
+      _getHelpContext(contextOptions) {
+        contextOptions = contextOptions || {};
+        const context = {error: !!contextOptions.error};
+        let write;
+        if (context.error) {
+          write = (arg) => this._outputConfiguration.writeErr(arg);
+        } else {
+          write = (arg) => this._outputConfiguration.writeOut(arg);
+        }
+        context.write = contextOptions.write || write;
+        context.command = this;
+        return context;
+      }
+      outputHelp(contextOptions) {
+        let deprecatedCallback;
+        if (typeof contextOptions === "function") {
+          deprecatedCallback = contextOptions;
+          contextOptions = void 0;
+        }
+        const context = this._getHelpContext(contextOptions);
+        const groupListeners = [];
+        let command = this;
+        while (command) {
+          groupListeners.push(command);
+          command = command.parent;
+        }
+        groupListeners.slice().reverse().forEach((command2) => command2.emit("beforeAllHelp", context));
+        this.emit("beforeHelp", context);
+        let helpInformation = this.helpInformation(context);
+        if (deprecatedCallback) {
+          helpInformation = deprecatedCallback(helpInformation);
+          if (typeof helpInformation !== "string" && !Buffer.isBuffer(helpInformation)) {
+            throw new Error("outputHelp callback must return a string or a Buffer");
+          }
+        }
+        context.write(helpInformation);
+        this.emit(this._helpLongFlag);
+        this.emit("afterHelp", context);
+        groupListeners.forEach((command2) => command2.emit("afterAllHelp", context));
+      }
+      helpOption(flags, description) {
+        if (typeof flags === "boolean") {
+          this._hasHelpOption = flags;
+          return this;
+        }
+        this._helpFlags = flags || this._helpFlags;
+        this._helpDescription = description || this._helpDescription;
+        const helpFlags = _parseOptionFlags(this._helpFlags);
+        this._helpShortFlag = helpFlags.shortFlag;
+        this._helpLongFlag = helpFlags.longFlag;
+        return this;
+      }
+      help(contextOptions) {
+        this.outputHelp(contextOptions);
+        let exitCode = process.exitCode || 0;
+        if (exitCode === 0 && contextOptions && typeof contextOptions !== "function" && contextOptions.error) {
+          exitCode = 1;
+        }
+        this._exit(exitCode, "commander.help", "(outputHelp)");
+      }
+      addHelpText(position, text) {
+        const allowedValues = ["beforeAll", "before", "after", "afterAll"];
+        if (!allowedValues.includes(position)) {
+          throw new Error(`Unexpected value for position to addHelpText.
+Expecting one of '${allowedValues.join("', '")}'`);
+        }
+        const helpEvent = `${position}Help`;
+        this.on(helpEvent, (context) => {
+          let helpStr;
+          if (typeof text === "function") {
+            helpStr = text({error: context.error, command: context.command});
+          } else {
+            helpStr = text;
+          }
+          if (helpStr) {
+            context.write(`${helpStr}
+`);
+          }
+        });
+        return this;
+      }
+    };
+    exports2 = module2.exports = new Command();
+    exports2.program = exports2;
+    exports2.Command = Command;
+    exports2.Option = Option;
+    exports2.CommanderError = CommanderError;
+    exports2.InvalidOptionArgumentError = InvalidOptionArgumentError;
+    exports2.Help = Help;
+    function camelcase(flag) {
+      return flag.split("-").reduce((str, word) => {
+        return str + word[0].toUpperCase() + word.slice(1);
+      });
+    }
+    function outputHelpIfRequested(cmd, args) {
+      const helpOption = cmd._hasHelpOption && args.find((arg) => arg === cmd._helpLongFlag || arg === cmd._helpShortFlag);
+      if (helpOption) {
+        cmd.outputHelp();
+        cmd._exit(0, "commander.helpDisplayed", "(outputHelp)");
+      }
+    }
+    function humanReadableArgName(arg) {
+      const nameOutput = arg.name + (arg.variadic === true ? "..." : "");
+      return arg.required ? "<" + nameOutput + ">" : "[" + nameOutput + "]";
+    }
+    function _parseOptionFlags(flags) {
+      let shortFlag;
+      let longFlag;
+      const flagParts = flags.split(/[ |,]+/);
+      if (flagParts.length > 1 && !/^[[<]/.test(flagParts[1]))
+        shortFlag = flagParts.shift();
+      longFlag = flagParts.shift();
+      if (!shortFlag && /^-[^-]$/.test(longFlag)) {
+        shortFlag = longFlag;
+        longFlag = void 0;
+      }
+      return {shortFlag, longFlag};
+    }
+    function incrementNodeInspectorPort(args) {
+      return args.map((arg) => {
+        if (!arg.startsWith("--inspect")) {
+          return arg;
+        }
+        let debugOption;
+        let debugHost = "127.0.0.1";
+        let debugPort = "9229";
+        let match;
+        if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
+          debugOption = match[1];
+        } else if ((match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null) {
+          debugOption = match[1];
+          if (/^\d+$/.test(match[3])) {
+            debugPort = match[3];
+          } else {
+            debugHost = match[3];
+          }
+        } else if ((match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null) {
+          debugOption = match[1];
+          debugHost = match[3];
+          debugPort = match[4];
+        }
+        if (debugOption && debugPort !== "0") {
+          return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
+        }
+        return arg;
+      });
+    }
+  }
+});
 
 // node_modules/picomatch/lib/constants.js
 var require_constants = __commonJS({
@@ -3811,11 +5903,11 @@ var require_fsevents_handler = __commonJS({
       return {stop};
     };
     function setFSEventsListener(path, realPath, listener, rawEmitter) {
-      let watchPath2 = sysPath.extname(path) ? sysPath.dirname(path) : path;
-      const parentPath = sysPath.dirname(watchPath2);
-      let cont = FSEventsWatchers.get(watchPath2);
+      let watchPath = sysPath.extname(path) ? sysPath.dirname(path) : path;
+      const parentPath = sysPath.dirname(watchPath);
+      let cont = FSEventsWatchers.get(watchPath);
       if (couldConsolidate(parentPath)) {
-        watchPath2 = parentPath;
+        watchPath = parentPath;
       }
       const resolvedPath = sysPath.resolve(path);
       const hasSymlink = resolvedPath !== realPath;
@@ -3828,8 +5920,8 @@ var require_fsevents_handler = __commonJS({
       let watchedParent = false;
       for (const watchedPath of FSEventsWatchers.keys()) {
         if (realPath.indexOf(sysPath.resolve(watchedPath) + sysPath.sep) === 0) {
-          watchPath2 = watchedPath;
-          cont = FSEventsWatchers.get(watchPath2);
+          watchPath = watchedPath;
+          cont = FSEventsWatchers.get(watchPath);
           watchedParent = true;
           break;
         }
@@ -3840,7 +5932,7 @@ var require_fsevents_handler = __commonJS({
         cont = {
           listeners: new Set([filteredListener]),
           rawEmitter,
-          watcher: createFSEventsInstance(watchPath2, (fullPath, flags) => {
+          watcher: createFSEventsInstance(watchPath, (fullPath, flags) => {
             if (!cont.listeners.size)
               return;
             const info = fsevents.getInfo(fullPath, flags);
@@ -3850,13 +5942,13 @@ var require_fsevents_handler = __commonJS({
             cont.rawEmitter(info.event, fullPath, info);
           })
         };
-        FSEventsWatchers.set(watchPath2, cont);
+        FSEventsWatchers.set(watchPath, cont);
       }
       return () => {
         const lst = cont.listeners;
         lst.delete(filteredListener);
         if (!lst.size) {
-          FSEventsWatchers.delete(watchPath2);
+          FSEventsWatchers.delete(watchPath);
           if (cont.watcher)
             return cont.watcher.stop().then(() => {
               cont.rawEmitter = cont.watcher = void 0;
@@ -3867,8 +5959,8 @@ var require_fsevents_handler = __commonJS({
     }
     var couldConsolidate = (path) => {
       let count = 0;
-      for (const watchPath2 of FSEventsWatchers.keys()) {
-        if (watchPath2.indexOf(path) === 0) {
+      for (const watchPath of FSEventsWatchers.keys()) {
+        if (watchPath.indexOf(path) === 0) {
           count++;
           if (count >= consolidateThreshhold) {
             return true;
@@ -3947,8 +6039,8 @@ var require_fsevents_handler = __commonJS({
             this._addToFsEvents(path, false, true);
         }
       }
-      _watchWithFsEvents(watchPath2, realPath, transform, globFilter) {
-        if (this.fsw.closed || this.fsw._isIgnored(watchPath2))
+      _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
+        if (this.fsw.closed || this.fsw._isIgnored(watchPath))
           return;
         const opts = this.fsw.options;
         const watchCallback = async (fullPath, flags, info) => {
@@ -3956,7 +6048,7 @@ var require_fsevents_handler = __commonJS({
             return;
           if (opts.depth !== void 0 && calcDepth(fullPath, realPath) > opts.depth)
             return;
-          const path = transform(sysPath.join(watchPath2, sysPath.relative(watchPath2, fullPath)));
+          const path = transform(sysPath.join(watchPath, sysPath.relative(watchPath, fullPath)));
           if (globFilter && !globFilter(path))
             return;
           const parent = sysPath.dirname(path);
@@ -3992,7 +6084,7 @@ var require_fsevents_handler = __commonJS({
             }
           }
         };
-        const closer = setFSEventsListener(watchPath2, realPath, watchCallback, this.fsw._emitRaw);
+        const closer = setFSEventsListener(watchPath, realPath, watchCallback, this.fsw._emitRaw);
         this.fsw._emitReady();
         return closer;
       }
@@ -4263,12 +6355,12 @@ var require_chokidar = __commonJS({
     var STAT_METHOD_F = "stat";
     var STAT_METHOD_L = "lstat";
     var WatchHelper = class {
-      constructor(path, watchPath2, follow, fsw) {
+      constructor(path, watchPath, follow, fsw) {
         this.fsw = fsw;
         this.path = path = path.replace(REPLACER_RE, EMPTY_STR);
-        this.watchPath = watchPath2;
-        this.fullWatchPath = sysPath.resolve(watchPath2);
-        this.hasGlob = watchPath2 !== path;
+        this.watchPath = watchPath;
+        this.fullWatchPath = sysPath.resolve(watchPath);
+        this.hasGlob = watchPath !== path;
         if (path === EMPTY_STR)
           this.hasGlob = false;
         this.globSymlink = this.hasGlob && follow ? void 0 : false;
@@ -4687,9 +6779,9 @@ var require_chokidar = __commonJS({
         return !this._isIgnored(path, stat2);
       }
       _getWatchHelpers(path, depth) {
-        const watchPath2 = depth || this.options.disableGlobbing || !isGlob(path) ? path : globParent(path);
+        const watchPath = depth || this.options.disableGlobbing || !isGlob(path) ? path : globParent(path);
         const follow = this.options.followSymlinks;
-        return new WatchHelper(path, watchPath2, follow, this);
+        return new WatchHelper(path, watchPath, follow, this);
       }
       _getWatchedDir(directory) {
         if (!this._boundRemove)
@@ -5031,7306 +7123,8 @@ var require_file_watch_iterator = __commonJS({
   }
 });
 
-// node_modules/eventemitter3/index.js
-var require_eventemitter3 = __commonJS({
-  "node_modules/eventemitter3/index.js"(exports2, module2) {
-    "use strict";
-    var has = Object.prototype.hasOwnProperty;
-    var prefix = "~";
-    function Events() {
-    }
-    if (Object.create) {
-      Events.prototype = Object.create(null);
-      if (!new Events().__proto__)
-        prefix = false;
-    }
-    function EE(fn, context, once) {
-      this.fn = fn;
-      this.context = context;
-      this.once = once || false;
-    }
-    function addListener(emitter, event, fn, context, once) {
-      if (typeof fn !== "function") {
-        throw new TypeError("The listener must be a function");
-      }
-      var listener = new EE(fn, context || emitter, once), evt = prefix ? prefix + event : event;
-      if (!emitter._events[evt])
-        emitter._events[evt] = listener, emitter._eventsCount++;
-      else if (!emitter._events[evt].fn)
-        emitter._events[evt].push(listener);
-      else
-        emitter._events[evt] = [emitter._events[evt], listener];
-      return emitter;
-    }
-    function clearEvent(emitter, evt) {
-      if (--emitter._eventsCount === 0)
-        emitter._events = new Events();
-      else
-        delete emitter._events[evt];
-    }
-    function EventEmitter2() {
-      this._events = new Events();
-      this._eventsCount = 0;
-    }
-    EventEmitter2.prototype.eventNames = function eventNames() {
-      var names = [], events, name;
-      if (this._eventsCount === 0)
-        return names;
-      for (name in events = this._events) {
-        if (has.call(events, name))
-          names.push(prefix ? name.slice(1) : name);
-      }
-      if (Object.getOwnPropertySymbols) {
-        return names.concat(Object.getOwnPropertySymbols(events));
-      }
-      return names;
-    };
-    EventEmitter2.prototype.listeners = function listeners(event) {
-      var evt = prefix ? prefix + event : event, handlers = this._events[evt];
-      if (!handlers)
-        return [];
-      if (handlers.fn)
-        return [handlers.fn];
-      for (var i = 0, l = handlers.length, ee = new Array(l); i < l; i++) {
-        ee[i] = handlers[i].fn;
-      }
-      return ee;
-    };
-    EventEmitter2.prototype.listenerCount = function listenerCount(event) {
-      var evt = prefix ? prefix + event : event, listeners = this._events[evt];
-      if (!listeners)
-        return 0;
-      if (listeners.fn)
-        return 1;
-      return listeners.length;
-    };
-    EventEmitter2.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-      var evt = prefix ? prefix + event : event;
-      if (!this._events[evt])
-        return false;
-      var listeners = this._events[evt], len = arguments.length, args, i;
-      if (listeners.fn) {
-        if (listeners.once)
-          this.removeListener(event, listeners.fn, void 0, true);
-        switch (len) {
-          case 1:
-            return listeners.fn.call(listeners.context), true;
-          case 2:
-            return listeners.fn.call(listeners.context, a1), true;
-          case 3:
-            return listeners.fn.call(listeners.context, a1, a2), true;
-          case 4:
-            return listeners.fn.call(listeners.context, a1, a2, a3), true;
-          case 5:
-            return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-          case 6:
-            return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-        }
-        for (i = 1, args = new Array(len - 1); i < len; i++) {
-          args[i - 1] = arguments[i];
-        }
-        listeners.fn.apply(listeners.context, args);
-      } else {
-        var length = listeners.length, j;
-        for (i = 0; i < length; i++) {
-          if (listeners[i].once)
-            this.removeListener(event, listeners[i].fn, void 0, true);
-          switch (len) {
-            case 1:
-              listeners[i].fn.call(listeners[i].context);
-              break;
-            case 2:
-              listeners[i].fn.call(listeners[i].context, a1);
-              break;
-            case 3:
-              listeners[i].fn.call(listeners[i].context, a1, a2);
-              break;
-            case 4:
-              listeners[i].fn.call(listeners[i].context, a1, a2, a3);
-              break;
-            default:
-              if (!args)
-                for (j = 1, args = new Array(len - 1); j < len; j++) {
-                  args[j - 1] = arguments[j];
-                }
-              listeners[i].fn.apply(listeners[i].context, args);
-          }
-        }
-      }
-      return true;
-    };
-    EventEmitter2.prototype.on = function on(event, fn, context) {
-      return addListener(this, event, fn, context, false);
-    };
-    EventEmitter2.prototype.once = function once(event, fn, context) {
-      return addListener(this, event, fn, context, true);
-    };
-    EventEmitter2.prototype.removeListener = function removeListener(event, fn, context, once) {
-      var evt = prefix ? prefix + event : event;
-      if (!this._events[evt])
-        return this;
-      if (!fn) {
-        clearEvent(this, evt);
-        return this;
-      }
-      var listeners = this._events[evt];
-      if (listeners.fn) {
-        if (listeners.fn === fn && (!once || listeners.once) && (!context || listeners.context === context)) {
-          clearEvent(this, evt);
-        }
-      } else {
-        for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-          if (listeners[i].fn !== fn || once && !listeners[i].once || context && listeners[i].context !== context) {
-            events.push(listeners[i]);
-          }
-        }
-        if (events.length)
-          this._events[evt] = events.length === 1 ? events[0] : events;
-        else
-          clearEvent(this, evt);
-      }
-      return this;
-    };
-    EventEmitter2.prototype.removeAllListeners = function removeAllListeners(event) {
-      var evt;
-      if (event) {
-        evt = prefix ? prefix + event : event;
-        if (this._events[evt])
-          clearEvent(this, evt);
-      } else {
-        this._events = new Events();
-        this._eventsCount = 0;
-      }
-      return this;
-    };
-    EventEmitter2.prototype.off = EventEmitter2.prototype.removeListener;
-    EventEmitter2.prototype.addListener = EventEmitter2.prototype.on;
-    EventEmitter2.prefixed = prefix;
-    EventEmitter2.EventEmitter = EventEmitter2;
-    if (typeof module2 !== "undefined") {
-      module2.exports = EventEmitter2;
-    }
-  }
-});
-
-// node_modules/debug/node_modules/ms/index.js
-var require_ms = __commonJS({
-  "node_modules/debug/node_modules/ms/index.js"(exports2, module2) {
-    var s = 1e3;
-    var m = s * 60;
-    var h = m * 60;
-    var d = h * 24;
-    var w = d * 7;
-    var y = d * 365.25;
-    module2.exports = function(val, options) {
-      options = options || {};
-      var type = typeof val;
-      if (type === "string" && val.length > 0) {
-        return parse(val);
-      } else if (type === "number" && isFinite(val)) {
-        return options.long ? fmtLong(val) : fmtShort(val);
-      }
-      throw new Error("val is not a non-empty string or a valid number. val=" + JSON.stringify(val));
-    };
-    function parse(str) {
-      str = String(str);
-      if (str.length > 100) {
-        return;
-      }
-      var match = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(str);
-      if (!match) {
-        return;
-      }
-      var n = parseFloat(match[1]);
-      var type = (match[2] || "ms").toLowerCase();
-      switch (type) {
-        case "years":
-        case "year":
-        case "yrs":
-        case "yr":
-        case "y":
-          return n * y;
-        case "weeks":
-        case "week":
-        case "w":
-          return n * w;
-        case "days":
-        case "day":
-        case "d":
-          return n * d;
-        case "hours":
-        case "hour":
-        case "hrs":
-        case "hr":
-        case "h":
-          return n * h;
-        case "minutes":
-        case "minute":
-        case "mins":
-        case "min":
-        case "m":
-          return n * m;
-        case "seconds":
-        case "second":
-        case "secs":
-        case "sec":
-        case "s":
-          return n * s;
-        case "milliseconds":
-        case "millisecond":
-        case "msecs":
-        case "msec":
-        case "ms":
-          return n;
-        default:
-          return void 0;
-      }
-    }
-    function fmtShort(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return Math.round(ms / d) + "d";
-      }
-      if (msAbs >= h) {
-        return Math.round(ms / h) + "h";
-      }
-      if (msAbs >= m) {
-        return Math.round(ms / m) + "m";
-      }
-      if (msAbs >= s) {
-        return Math.round(ms / s) + "s";
-      }
-      return ms + "ms";
-    }
-    function fmtLong(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return plural(ms, msAbs, d, "day");
-      }
-      if (msAbs >= h) {
-        return plural(ms, msAbs, h, "hour");
-      }
-      if (msAbs >= m) {
-        return plural(ms, msAbs, m, "minute");
-      }
-      if (msAbs >= s) {
-        return plural(ms, msAbs, s, "second");
-      }
-      return ms + " ms";
-    }
-    function plural(ms, msAbs, n, name) {
-      var isPlural = msAbs >= n * 1.5;
-      return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
-    }
-  }
-});
-
-// node_modules/debug/src/common.js
-var require_common = __commonJS({
-  "node_modules/debug/src/common.js"(exports2, module2) {
-    function setup(env) {
-      createDebug.debug = createDebug;
-      createDebug.default = createDebug;
-      createDebug.coerce = coerce;
-      createDebug.disable = disable;
-      createDebug.enable = enable;
-      createDebug.enabled = enabled;
-      createDebug.humanize = require_ms();
-      createDebug.destroy = destroy;
-      Object.keys(env).forEach((key) => {
-        createDebug[key] = env[key];
-      });
-      createDebug.names = [];
-      createDebug.skips = [];
-      createDebug.formatters = {};
-      function selectColor(namespace) {
-        let hash = 0;
-        for (let i = 0; i < namespace.length; i++) {
-          hash = (hash << 5) - hash + namespace.charCodeAt(i);
-          hash |= 0;
-        }
-        return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
-      }
-      createDebug.selectColor = selectColor;
-      function createDebug(namespace) {
-        let prevTime;
-        let enableOverride = null;
-        function debug6(...args) {
-          if (!debug6.enabled) {
-            return;
-          }
-          const self2 = debug6;
-          const curr = Number(new Date());
-          const ms = curr - (prevTime || curr);
-          self2.diff = ms;
-          self2.prev = prevTime;
-          self2.curr = curr;
-          prevTime = curr;
-          args[0] = createDebug.coerce(args[0]);
-          if (typeof args[0] !== "string") {
-            args.unshift("%O");
-          }
-          let index = 0;
-          args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
-            if (match === "%%") {
-              return "%";
-            }
-            index++;
-            const formatter = createDebug.formatters[format];
-            if (typeof formatter === "function") {
-              const val = args[index];
-              match = formatter.call(self2, val);
-              args.splice(index, 1);
-              index--;
-            }
-            return match;
-          });
-          createDebug.formatArgs.call(self2, args);
-          const logFn = self2.log || createDebug.log;
-          logFn.apply(self2, args);
-        }
-        debug6.namespace = namespace;
-        debug6.useColors = createDebug.useColors();
-        debug6.color = createDebug.selectColor(namespace);
-        debug6.extend = extend;
-        debug6.destroy = createDebug.destroy;
-        Object.defineProperty(debug6, "enabled", {
-          enumerable: true,
-          configurable: false,
-          get: () => enableOverride === null ? createDebug.enabled(namespace) : enableOverride,
-          set: (v) => {
-            enableOverride = v;
-          }
-        });
-        if (typeof createDebug.init === "function") {
-          createDebug.init(debug6);
-        }
-        return debug6;
-      }
-      function extend(namespace, delimiter) {
-        const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
-        newDebug.log = this.log;
-        return newDebug;
-      }
-      function enable(namespaces) {
-        createDebug.save(namespaces);
-        createDebug.names = [];
-        createDebug.skips = [];
-        let i;
-        const split = (typeof namespaces === "string" ? namespaces : "").split(/[\s,]+/);
-        const len = split.length;
-        for (i = 0; i < len; i++) {
-          if (!split[i]) {
-            continue;
-          }
-          namespaces = split[i].replace(/\*/g, ".*?");
-          if (namespaces[0] === "-") {
-            createDebug.skips.push(new RegExp("^" + namespaces.substr(1) + "$"));
-          } else {
-            createDebug.names.push(new RegExp("^" + namespaces + "$"));
-          }
-        }
-      }
-      function disable() {
-        const namespaces = [
-          ...createDebug.names.map(toNamespace),
-          ...createDebug.skips.map(toNamespace).map((namespace) => "-" + namespace)
-        ].join(",");
-        createDebug.enable("");
-        return namespaces;
-      }
-      function enabled(name) {
-        if (name[name.length - 1] === "*") {
-          return true;
-        }
-        let i;
-        let len;
-        for (i = 0, len = createDebug.skips.length; i < len; i++) {
-          if (createDebug.skips[i].test(name)) {
-            return false;
-          }
-        }
-        for (i = 0, len = createDebug.names.length; i < len; i++) {
-          if (createDebug.names[i].test(name)) {
-            return true;
-          }
-        }
-        return false;
-      }
-      function toNamespace(regexp) {
-        return regexp.toString().substring(2, regexp.toString().length - 2).replace(/\.\*\?$/, "*");
-      }
-      function coerce(val) {
-        if (val instanceof Error) {
-          return val.stack || val.message;
-        }
-        return val;
-      }
-      function destroy() {
-        console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
-      }
-      createDebug.enable(createDebug.load());
-      return createDebug;
-    }
-    module2.exports = setup;
-  }
-});
-
-// node_modules/debug/src/browser.js
-var require_browser = __commonJS({
-  "node_modules/debug/src/browser.js"(exports2, module2) {
-    exports2.formatArgs = formatArgs;
-    exports2.save = save;
-    exports2.load = load;
-    exports2.useColors = useColors;
-    exports2.storage = localstorage();
-    exports2.destroy = (() => {
-      let warned = false;
-      return () => {
-        if (!warned) {
-          warned = true;
-          console.warn("Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
-        }
-      };
-    })();
-    exports2.colors = [
-      "#0000CC",
-      "#0000FF",
-      "#0033CC",
-      "#0033FF",
-      "#0066CC",
-      "#0066FF",
-      "#0099CC",
-      "#0099FF",
-      "#00CC00",
-      "#00CC33",
-      "#00CC66",
-      "#00CC99",
-      "#00CCCC",
-      "#00CCFF",
-      "#3300CC",
-      "#3300FF",
-      "#3333CC",
-      "#3333FF",
-      "#3366CC",
-      "#3366FF",
-      "#3399CC",
-      "#3399FF",
-      "#33CC00",
-      "#33CC33",
-      "#33CC66",
-      "#33CC99",
-      "#33CCCC",
-      "#33CCFF",
-      "#6600CC",
-      "#6600FF",
-      "#6633CC",
-      "#6633FF",
-      "#66CC00",
-      "#66CC33",
-      "#9900CC",
-      "#9900FF",
-      "#9933CC",
-      "#9933FF",
-      "#99CC00",
-      "#99CC33",
-      "#CC0000",
-      "#CC0033",
-      "#CC0066",
-      "#CC0099",
-      "#CC00CC",
-      "#CC00FF",
-      "#CC3300",
-      "#CC3333",
-      "#CC3366",
-      "#CC3399",
-      "#CC33CC",
-      "#CC33FF",
-      "#CC6600",
-      "#CC6633",
-      "#CC9900",
-      "#CC9933",
-      "#CCCC00",
-      "#CCCC33",
-      "#FF0000",
-      "#FF0033",
-      "#FF0066",
-      "#FF0099",
-      "#FF00CC",
-      "#FF00FF",
-      "#FF3300",
-      "#FF3333",
-      "#FF3366",
-      "#FF3399",
-      "#FF33CC",
-      "#FF33FF",
-      "#FF6600",
-      "#FF6633",
-      "#FF9900",
-      "#FF9933",
-      "#FFCC00",
-      "#FFCC33"
-    ];
-    function useColors() {
-      if (typeof window !== "undefined" && window.process && (window.process.type === "renderer" || window.process.__nwjs)) {
-        return true;
-      }
-      if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-        return false;
-      }
-      return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
-    }
-    function formatArgs(args) {
-      args[0] = (this.useColors ? "%c" : "") + this.namespace + (this.useColors ? " %c" : " ") + args[0] + (this.useColors ? "%c " : " ") + "+" + module2.exports.humanize(this.diff);
-      if (!this.useColors) {
-        return;
-      }
-      const c = "color: " + this.color;
-      args.splice(1, 0, c, "color: inherit");
-      let index = 0;
-      let lastC = 0;
-      args[0].replace(/%[a-zA-Z%]/g, (match) => {
-        if (match === "%%") {
-          return;
-        }
-        index++;
-        if (match === "%c") {
-          lastC = index;
-        }
-      });
-      args.splice(lastC, 0, c);
-    }
-    exports2.log = console.debug || console.log || (() => {
-    });
-    function save(namespaces) {
-      try {
-        if (namespaces) {
-          exports2.storage.setItem("debug", namespaces);
-        } else {
-          exports2.storage.removeItem("debug");
-        }
-      } catch (error) {
-      }
-    }
-    function load() {
-      let r;
-      try {
-        r = exports2.storage.getItem("debug");
-      } catch (error) {
-      }
-      if (!r && typeof process !== "undefined" && "env" in process) {
-        r = process.env.DEBUG;
-      }
-      return r;
-    }
-    function localstorage() {
-      try {
-        return localStorage;
-      } catch (error) {
-      }
-    }
-    module2.exports = require_common()(exports2);
-    var {formatters} = module2.exports;
-    formatters.j = function(v) {
-      try {
-        return JSON.stringify(v);
-      } catch (error) {
-        return "[UnexpectedJSONParseError]: " + error.message;
-      }
-    };
-  }
-});
-
-// node_modules/has-flag/index.js
-var require_has_flag = __commonJS({
-  "node_modules/has-flag/index.js"(exports2, module2) {
-    "use strict";
-    module2.exports = (flag, argv) => {
-      argv = argv || process.argv;
-      const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
-      const pos = argv.indexOf(prefix + flag);
-      const terminatorPos = argv.indexOf("--");
-      return pos !== -1 && (terminatorPos === -1 ? true : pos < terminatorPos);
-    };
-  }
-});
-
-// node_modules/supports-color/index.js
-var require_supports_color = __commonJS({
-  "node_modules/supports-color/index.js"(exports2, module2) {
-    "use strict";
-    var os = require("os");
-    var hasFlag = require_has_flag();
-    var {env} = process;
-    var forceColor;
-    if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
-      forceColor = 0;
-    } else if (hasFlag("color") || hasFlag("colors") || hasFlag("color=true") || hasFlag("color=always")) {
-      forceColor = 1;
-    }
-    if ("FORCE_COLOR" in env) {
-      if (env.FORCE_COLOR === true || env.FORCE_COLOR === "true") {
-        forceColor = 1;
-      } else if (env.FORCE_COLOR === false || env.FORCE_COLOR === "false") {
-        forceColor = 0;
-      } else {
-        forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
-      }
-    }
-    function translateLevel(level) {
-      if (level === 0) {
-        return false;
-      }
-      return {
-        level,
-        hasBasic: true,
-        has256: level >= 2,
-        has16m: level >= 3
-      };
-    }
-    function supportsColor(stream2) {
-      if (forceColor === 0) {
-        return 0;
-      }
-      if (hasFlag("color=16m") || hasFlag("color=full") || hasFlag("color=truecolor")) {
-        return 3;
-      }
-      if (hasFlag("color=256")) {
-        return 2;
-      }
-      if (stream2 && !stream2.isTTY && forceColor === void 0) {
-        return 0;
-      }
-      const min = forceColor || 0;
-      if (env.TERM === "dumb") {
-        return min;
-      }
-      if (process.platform === "win32") {
-        const osRelease = os.release().split(".");
-        if (Number(process.versions.node.split(".")[0]) >= 8 && Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
-          return Number(osRelease[2]) >= 14931 ? 3 : 2;
-        }
-        return 1;
-      }
-      if ("CI" in env) {
-        if (["TRAVIS", "CIRCLECI", "APPVEYOR", "GITLAB_CI"].some((sign) => sign in env) || env.CI_NAME === "codeship") {
-          return 1;
-        }
-        return min;
-      }
-      if ("TEAMCITY_VERSION" in env) {
-        return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
-      }
-      if (env.COLORTERM === "truecolor") {
-        return 3;
-      }
-      if ("TERM_PROGRAM" in env) {
-        const version = parseInt((env.TERM_PROGRAM_VERSION || "").split(".")[0], 10);
-        switch (env.TERM_PROGRAM) {
-          case "iTerm.app":
-            return version >= 3 ? 3 : 2;
-          case "Apple_Terminal":
-            return 2;
-        }
-      }
-      if (/-256(color)?$/i.test(env.TERM)) {
-        return 2;
-      }
-      if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
-        return 1;
-      }
-      if ("COLORTERM" in env) {
-        return 1;
-      }
-      return min;
-    }
-    function getSupportLevel(stream2) {
-      const level = supportsColor(stream2);
-      return translateLevel(level);
-    }
-    module2.exports = {
-      supportsColor: getSupportLevel,
-      stdout: getSupportLevel(process.stdout),
-      stderr: getSupportLevel(process.stderr)
-    };
-  }
-});
-
-// node_modules/debug/src/node.js
-var require_node = __commonJS({
-  "node_modules/debug/src/node.js"(exports2, module2) {
-    var tty = require("tty");
-    var util = require("util");
-    exports2.init = init;
-    exports2.log = log;
-    exports2.formatArgs = formatArgs;
-    exports2.save = save;
-    exports2.load = load;
-    exports2.useColors = useColors;
-    exports2.destroy = util.deprecate(() => {
-    }, "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.");
-    exports2.colors = [6, 2, 3, 4, 5, 1];
-    try {
-      const supportsColor = require_supports_color();
-      if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
-        exports2.colors = [
-          20,
-          21,
-          26,
-          27,
-          32,
-          33,
-          38,
-          39,
-          40,
-          41,
-          42,
-          43,
-          44,
-          45,
-          56,
-          57,
-          62,
-          63,
-          68,
-          69,
-          74,
-          75,
-          76,
-          77,
-          78,
-          79,
-          80,
-          81,
-          92,
-          93,
-          98,
-          99,
-          112,
-          113,
-          128,
-          129,
-          134,
-          135,
-          148,
-          149,
-          160,
-          161,
-          162,
-          163,
-          164,
-          165,
-          166,
-          167,
-          168,
-          169,
-          170,
-          171,
-          172,
-          173,
-          178,
-          179,
-          184,
-          185,
-          196,
-          197,
-          198,
-          199,
-          200,
-          201,
-          202,
-          203,
-          204,
-          205,
-          206,
-          207,
-          208,
-          209,
-          214,
-          215,
-          220,
-          221
-        ];
-      }
-    } catch (error) {
-    }
-    exports2.inspectOpts = Object.keys(process.env).filter((key) => {
-      return /^debug_/i.test(key);
-    }).reduce((obj, key) => {
-      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_, k) => {
-        return k.toUpperCase();
-      });
-      let val = process.env[key];
-      if (/^(yes|on|true|enabled)$/i.test(val)) {
-        val = true;
-      } else if (/^(no|off|false|disabled)$/i.test(val)) {
-        val = false;
-      } else if (val === "null") {
-        val = null;
-      } else {
-        val = Number(val);
-      }
-      obj[prop] = val;
-      return obj;
-    }, {});
-    function useColors() {
-      return "colors" in exports2.inspectOpts ? Boolean(exports2.inspectOpts.colors) : tty.isatty(process.stderr.fd);
-    }
-    function formatArgs(args) {
-      const {namespace: name, useColors: useColors2} = this;
-      if (useColors2) {
-        const c = this.color;
-        const colorCode = "[3" + (c < 8 ? c : "8;5;" + c);
-        const prefix = `  ${colorCode};1m${name} [0m`;
-        args[0] = prefix + args[0].split("\n").join("\n" + prefix);
-        args.push(colorCode + "m+" + module2.exports.humanize(this.diff) + "[0m");
-      } else {
-        args[0] = getDate() + name + " " + args[0];
-      }
-    }
-    function getDate() {
-      if (exports2.inspectOpts.hideDate) {
-        return "";
-      }
-      return new Date().toISOString() + " ";
-    }
-    function log(...args) {
-      return process.stderr.write(util.format(...args) + "\n");
-    }
-    function save(namespaces) {
-      if (namespaces) {
-        process.env.DEBUG = namespaces;
-      } else {
-        delete process.env.DEBUG;
-      }
-    }
-    function load() {
-      return process.env.DEBUG;
-    }
-    function init(debug6) {
-      debug6.inspectOpts = {};
-      const keys = Object.keys(exports2.inspectOpts);
-      for (let i = 0; i < keys.length; i++) {
-        debug6.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
-      }
-    }
-    module2.exports = require_common()(exports2);
-    var {formatters} = module2.exports;
-    formatters.o = function(v) {
-      this.inspectOpts.colors = this.useColors;
-      return util.inspect(v, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
-    };
-    formatters.O = function(v) {
-      this.inspectOpts.colors = this.useColors;
-      return util.inspect(v, this.inspectOpts);
-    };
-  }
-});
-
-// node_modules/debug/src/index.js
-var require_src = __commonJS({
-  "node_modules/debug/src/index.js"(exports2, module2) {
-    if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
-      module2.exports = require_browser();
-    } else {
-      module2.exports = require_node();
-    }
-  }
-});
-
-// node_modules/await-sleep/index.js
-var require_await_sleep = __commonJS({
-  "node_modules/await-sleep/index.js"(exports2, module2) {
-    module2.exports = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  }
-});
-
-// node_modules/ramda/src/F.js
-var require_F = __commonJS({
-  "node_modules/ramda/src/F.js"(exports2, module2) {
-    var F = function() {
-      return false;
-    };
-    module2.exports = F;
-  }
-});
-
-// node_modules/ramda/src/T.js
-var require_T = __commonJS({
-  "node_modules/ramda/src/T.js"(exports2, module2) {
-    var T = function() {
-      return true;
-    };
-    module2.exports = T;
-  }
-});
-
-// node_modules/ramda/src/__.js
-var require__ = __commonJS({
-  "node_modules/ramda/src/__.js"(exports2, module2) {
-    module2.exports = {
-      "@@functional/placeholder": true
-    };
-  }
-});
-
-// node_modules/ramda/src/internal/_isPlaceholder.js
-var require_isPlaceholder = __commonJS({
-  "node_modules/ramda/src/internal/_isPlaceholder.js"(exports2, module2) {
-    function _isPlaceholder(a) {
-      return a != null && typeof a === "object" && a["@@functional/placeholder"] === true;
-    }
-    module2.exports = _isPlaceholder;
-  }
-});
-
-// node_modules/ramda/src/internal/_curry1.js
-var require_curry1 = __commonJS({
-  "node_modules/ramda/src/internal/_curry1.js"(exports2, module2) {
-    var _isPlaceholder = require_isPlaceholder();
-    function _curry1(fn) {
-      return function f1(a) {
-        if (arguments.length === 0 || _isPlaceholder(a)) {
-          return f1;
-        } else {
-          return fn.apply(this, arguments);
-        }
-      };
-    }
-    module2.exports = _curry1;
-  }
-});
-
-// node_modules/ramda/src/internal/_curry2.js
-var require_curry2 = __commonJS({
-  "node_modules/ramda/src/internal/_curry2.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _isPlaceholder = require_isPlaceholder();
-    function _curry2(fn) {
-      return function f2(a, b) {
-        switch (arguments.length) {
-          case 0:
-            return f2;
-          case 1:
-            return _isPlaceholder(a) ? f2 : _curry1(function(_b) {
-              return fn(a, _b);
-            });
-          default:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b);
-            }) : _isPlaceholder(b) ? _curry1(function(_b) {
-              return fn(a, _b);
-            }) : fn(a, b);
-        }
-      };
-    }
-    module2.exports = _curry2;
-  }
-});
-
-// node_modules/ramda/src/add.js
-var require_add = __commonJS({
-  "node_modules/ramda/src/add.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var add = /* @__PURE__ */ _curry2(function add2(a, b) {
-      return Number(a) + Number(b);
-    });
-    module2.exports = add;
-  }
-});
-
-// node_modules/ramda/src/internal/_concat.js
-var require_concat = __commonJS({
-  "node_modules/ramda/src/internal/_concat.js"(exports2, module2) {
-    function _concat(set1, set2) {
-      set1 = set1 || [];
-      set2 = set2 || [];
-      var idx;
-      var len1 = set1.length;
-      var len2 = set2.length;
-      var result = [];
-      idx = 0;
-      while (idx < len1) {
-        result[result.length] = set1[idx];
-        idx += 1;
-      }
-      idx = 0;
-      while (idx < len2) {
-        result[result.length] = set2[idx];
-        idx += 1;
-      }
-      return result;
-    }
-    module2.exports = _concat;
-  }
-});
-
-// node_modules/ramda/src/internal/_arity.js
-var require_arity = __commonJS({
-  "node_modules/ramda/src/internal/_arity.js"(exports2, module2) {
-    function _arity(n, fn) {
-      switch (n) {
-        case 0:
-          return function() {
-            return fn.apply(this, arguments);
-          };
-        case 1:
-          return function(a0) {
-            return fn.apply(this, arguments);
-          };
-        case 2:
-          return function(a0, a1) {
-            return fn.apply(this, arguments);
-          };
-        case 3:
-          return function(a0, a1, a2) {
-            return fn.apply(this, arguments);
-          };
-        case 4:
-          return function(a0, a1, a2, a3) {
-            return fn.apply(this, arguments);
-          };
-        case 5:
-          return function(a0, a1, a2, a3, a4) {
-            return fn.apply(this, arguments);
-          };
-        case 6:
-          return function(a0, a1, a2, a3, a4, a5) {
-            return fn.apply(this, arguments);
-          };
-        case 7:
-          return function(a0, a1, a2, a3, a4, a5, a6) {
-            return fn.apply(this, arguments);
-          };
-        case 8:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7) {
-            return fn.apply(this, arguments);
-          };
-        case 9:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8) {
-            return fn.apply(this, arguments);
-          };
-        case 10:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
-            return fn.apply(this, arguments);
-          };
-        default:
-          throw new Error("First argument to _arity must be a non-negative integer no greater than ten");
-      }
-    }
-    module2.exports = _arity;
-  }
-});
-
-// node_modules/ramda/src/internal/_curryN.js
-var require_curryN = __commonJS({
-  "node_modules/ramda/src/internal/_curryN.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _isPlaceholder = require_isPlaceholder();
-    function _curryN(length, received, fn) {
-      return function() {
-        var combined = [];
-        var argsIdx = 0;
-        var left = length;
-        var combinedIdx = 0;
-        while (combinedIdx < received.length || argsIdx < arguments.length) {
-          var result;
-          if (combinedIdx < received.length && (!_isPlaceholder(received[combinedIdx]) || argsIdx >= arguments.length)) {
-            result = received[combinedIdx];
-          } else {
-            result = arguments[argsIdx];
-            argsIdx += 1;
-          }
-          combined[combinedIdx] = result;
-          if (!_isPlaceholder(result)) {
-            left -= 1;
-          }
-          combinedIdx += 1;
-        }
-        return left <= 0 ? fn.apply(this, combined) : _arity(left, _curryN(length, combined, fn));
-      };
-    }
-    module2.exports = _curryN;
-  }
-});
-
-// node_modules/ramda/src/curryN.js
-var require_curryN2 = __commonJS({
-  "node_modules/ramda/src/curryN.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry1 = require_curry1();
-    var _curry2 = require_curry2();
-    var _curryN = require_curryN();
-    var curryN = /* @__PURE__ */ _curry2(function curryN2(length, fn) {
-      if (length === 1) {
-        return _curry1(fn);
-      }
-      return _arity(length, _curryN(length, [], fn));
-    });
-    module2.exports = curryN;
-  }
-});
-
-// node_modules/ramda/src/addIndex.js
-var require_addIndex = __commonJS({
-  "node_modules/ramda/src/addIndex.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var addIndex = /* @__PURE__ */ _curry1(function addIndex2(fn) {
-      return curryN(fn.length, function() {
-        var idx = 0;
-        var origFn = arguments[0];
-        var list = arguments[arguments.length - 1];
-        var args = Array.prototype.slice.call(arguments, 0);
-        args[0] = function() {
-          var result = origFn.apply(this, _concat(arguments, [idx, list]));
-          idx += 1;
-          return result;
-        };
-        return fn.apply(this, args);
-      });
-    });
-    module2.exports = addIndex;
-  }
-});
-
-// node_modules/ramda/src/internal/_curry3.js
-var require_curry3 = __commonJS({
-  "node_modules/ramda/src/internal/_curry3.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _curry2 = require_curry2();
-    var _isPlaceholder = require_isPlaceholder();
-    function _curry3(fn) {
-      return function f3(a, b, c) {
-        switch (arguments.length) {
-          case 0:
-            return f3;
-          case 1:
-            return _isPlaceholder(a) ? f3 : _curry2(function(_b, _c) {
-              return fn(a, _b, _c);
-            });
-          case 2:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
-            }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
-              return fn(a, _b, _c);
-            }) : _curry1(function(_c) {
-              return fn(a, b, _c);
-            });
-          default:
-            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
-              return fn(_a, _b, c);
-            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
-            }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
-              return fn(a, _b, _c);
-            }) : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b, c);
-            }) : _isPlaceholder(b) ? _curry1(function(_b) {
-              return fn(a, _b, c);
-            }) : _isPlaceholder(c) ? _curry1(function(_c) {
-              return fn(a, b, _c);
-            }) : fn(a, b, c);
-        }
-      };
-    }
-    module2.exports = _curry3;
-  }
-});
-
-// node_modules/ramda/src/adjust.js
-var require_adjust = __commonJS({
-  "node_modules/ramda/src/adjust.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry3 = require_curry3();
-    var adjust = /* @__PURE__ */ _curry3(function adjust2(idx, fn, list) {
-      if (idx >= list.length || idx < -list.length) {
-        return list;
-      }
-      var start = idx < 0 ? list.length : 0;
-      var _idx = start + idx;
-      var _list = _concat(list);
-      _list[_idx] = fn(list[_idx]);
-      return _list;
-    });
-    module2.exports = adjust;
-  }
-});
-
-// node_modules/ramda/src/internal/_isArray.js
-var require_isArray = __commonJS({
-  "node_modules/ramda/src/internal/_isArray.js"(exports2, module2) {
-    module2.exports = Array.isArray || function _isArray(val) {
-      return val != null && val.length >= 0 && Object.prototype.toString.call(val) === "[object Array]";
-    };
-  }
-});
-
-// node_modules/ramda/src/internal/_isTransformer.js
-var require_isTransformer = __commonJS({
-  "node_modules/ramda/src/internal/_isTransformer.js"(exports2, module2) {
-    function _isTransformer(obj) {
-      return obj != null && typeof obj["@@transducer/step"] === "function";
-    }
-    module2.exports = _isTransformer;
-  }
-});
-
-// node_modules/ramda/src/internal/_dispatchable.js
-var require_dispatchable = __commonJS({
-  "node_modules/ramda/src/internal/_dispatchable.js"(exports2, module2) {
-    var _isArray = require_isArray();
-    var _isTransformer = require_isTransformer();
-    function _dispatchable(methodNames, xf, fn) {
-      return function() {
-        if (arguments.length === 0) {
-          return fn();
-        }
-        var args = Array.prototype.slice.call(arguments, 0);
-        var obj = args.pop();
-        if (!_isArray(obj)) {
-          var idx = 0;
-          while (idx < methodNames.length) {
-            if (typeof obj[methodNames[idx]] === "function") {
-              return obj[methodNames[idx]].apply(obj, args);
-            }
-            idx += 1;
-          }
-          if (_isTransformer(obj)) {
-            var transducer = xf.apply(null, args);
-            return transducer(obj);
-          }
-        }
-        return fn.apply(this, arguments);
-      };
-    }
-    module2.exports = _dispatchable;
-  }
-});
-
-// node_modules/ramda/src/internal/_reduced.js
-var require_reduced = __commonJS({
-  "node_modules/ramda/src/internal/_reduced.js"(exports2, module2) {
-    function _reduced(x) {
-      return x && x["@@transducer/reduced"] ? x : {
-        "@@transducer/value": x,
-        "@@transducer/reduced": true
-      };
-    }
-    module2.exports = _reduced;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfBase.js
-var require_xfBase = __commonJS({
-  "node_modules/ramda/src/internal/_xfBase.js"(exports2, module2) {
-    module2.exports = {
-      init: function() {
-        return this.xf["@@transducer/init"]();
-      },
-      result: function(result) {
-        return this.xf["@@transducer/result"](result);
-      }
-    };
-  }
-});
-
-// node_modules/ramda/src/internal/_xall.js
-var require_xall = __commonJS({
-  "node_modules/ramda/src/internal/_xall.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XAll = /* @__PURE__ */ function() {
-      function XAll2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-        this.all = true;
-      }
-      XAll2.prototype["@@transducer/init"] = _xfBase.init;
-      XAll2.prototype["@@transducer/result"] = function(result) {
-        if (this.all) {
-          result = this.xf["@@transducer/step"](result, true);
-        }
-        return this.xf["@@transducer/result"](result);
-      };
-      XAll2.prototype["@@transducer/step"] = function(result, input) {
-        if (!this.f(input)) {
-          this.all = false;
-          result = _reduced(this.xf["@@transducer/step"](result, false));
-        }
-        return result;
-      };
-      return XAll2;
-    }();
-    var _xall = /* @__PURE__ */ _curry2(function _xall2(f, xf) {
-      return new XAll(f, xf);
-    });
-    module2.exports = _xall;
-  }
-});
-
-// node_modules/ramda/src/all.js
-var require_all = __commonJS({
-  "node_modules/ramda/src/all.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xall = require_xall();
-    var all2 = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["all"], _xall, function all3(fn, list) {
-      var idx = 0;
-      while (idx < list.length) {
-        if (!fn(list[idx])) {
-          return false;
-        }
-        idx += 1;
-      }
-      return true;
-    }));
-    module2.exports = all2;
-  }
-});
-
-// node_modules/ramda/src/max.js
-var require_max = __commonJS({
-  "node_modules/ramda/src/max.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var max = /* @__PURE__ */ _curry2(function max2(a, b) {
-      return b > a ? b : a;
-    });
-    module2.exports = max;
-  }
-});
-
-// node_modules/ramda/src/internal/_map.js
-var require_map = __commonJS({
-  "node_modules/ramda/src/internal/_map.js"(exports2, module2) {
-    function _map(fn, functor) {
-      var idx = 0;
-      var len = functor.length;
-      var result = Array(len);
-      while (idx < len) {
-        result[idx] = fn(functor[idx]);
-        idx += 1;
-      }
-      return result;
-    }
-    module2.exports = _map;
-  }
-});
-
-// node_modules/ramda/src/internal/_isString.js
-var require_isString = __commonJS({
-  "node_modules/ramda/src/internal/_isString.js"(exports2, module2) {
-    function _isString(x) {
-      return Object.prototype.toString.call(x) === "[object String]";
-    }
-    module2.exports = _isString;
-  }
-});
-
-// node_modules/ramda/src/internal/_isArrayLike.js
-var require_isArrayLike = __commonJS({
-  "node_modules/ramda/src/internal/_isArrayLike.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _isArray = require_isArray();
-    var _isString = require_isString();
-    var _isArrayLike = /* @__PURE__ */ _curry1(function isArrayLike(x) {
-      if (_isArray(x)) {
-        return true;
-      }
-      if (!x) {
-        return false;
-      }
-      if (typeof x !== "object") {
-        return false;
-      }
-      if (_isString(x)) {
-        return false;
-      }
-      if (x.nodeType === 1) {
-        return !!x.length;
-      }
-      if (x.length === 0) {
-        return true;
-      }
-      if (x.length > 0) {
-        return x.hasOwnProperty(0) && x.hasOwnProperty(x.length - 1);
-      }
-      return false;
-    });
-    module2.exports = _isArrayLike;
-  }
-});
-
-// node_modules/ramda/src/internal/_xwrap.js
-var require_xwrap = __commonJS({
-  "node_modules/ramda/src/internal/_xwrap.js"(exports2, module2) {
-    var XWrap = /* @__PURE__ */ function() {
-      function XWrap2(fn) {
-        this.f = fn;
-      }
-      XWrap2.prototype["@@transducer/init"] = function() {
-        throw new Error("init not implemented on XWrap");
-      };
-      XWrap2.prototype["@@transducer/result"] = function(acc) {
-        return acc;
-      };
-      XWrap2.prototype["@@transducer/step"] = function(acc, x) {
-        return this.f(acc, x);
-      };
-      return XWrap2;
-    }();
-    function _xwrap(fn) {
-      return new XWrap(fn);
-    }
-    module2.exports = _xwrap;
-  }
-});
-
-// node_modules/ramda/src/bind.js
-var require_bind = __commonJS({
-  "node_modules/ramda/src/bind.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry2 = require_curry2();
-    var bind = /* @__PURE__ */ _curry2(function bind2(fn, thisObj) {
-      return _arity(fn.length, function() {
-        return fn.apply(thisObj, arguments);
-      });
-    });
-    module2.exports = bind;
-  }
-});
-
-// node_modules/ramda/src/internal/_reduce.js
-var require_reduce = __commonJS({
-  "node_modules/ramda/src/internal/_reduce.js"(exports2, module2) {
-    var _isArrayLike = require_isArrayLike();
-    var _xwrap = require_xwrap();
-    var bind = require_bind();
-    function _arrayReduce(xf, acc, list) {
-      var idx = 0;
-      var len = list.length;
-      while (idx < len) {
-        acc = xf["@@transducer/step"](acc, list[idx]);
-        if (acc && acc["@@transducer/reduced"]) {
-          acc = acc["@@transducer/value"];
-          break;
-        }
-        idx += 1;
-      }
-      return xf["@@transducer/result"](acc);
-    }
-    function _iterableReduce(xf, acc, iter) {
-      var step = iter.next();
-      while (!step.done) {
-        acc = xf["@@transducer/step"](acc, step.value);
-        if (acc && acc["@@transducer/reduced"]) {
-          acc = acc["@@transducer/value"];
-          break;
-        }
-        step = iter.next();
-      }
-      return xf["@@transducer/result"](acc);
-    }
-    function _methodReduce(xf, acc, obj, methodName) {
-      return xf["@@transducer/result"](obj[methodName](bind(xf["@@transducer/step"], xf), acc));
-    }
-    var symIterator = typeof Symbol !== "undefined" ? Symbol.iterator : "@@iterator";
-    function _reduce(fn, acc, list) {
-      if (typeof fn === "function") {
-        fn = _xwrap(fn);
-      }
-      if (_isArrayLike(list)) {
-        return _arrayReduce(fn, acc, list);
-      }
-      if (typeof list["fantasy-land/reduce"] === "function") {
-        return _methodReduce(fn, acc, list, "fantasy-land/reduce");
-      }
-      if (list[symIterator] != null) {
-        return _iterableReduce(fn, acc, list[symIterator]());
-      }
-      if (typeof list.next === "function") {
-        return _iterableReduce(fn, acc, list);
-      }
-      if (typeof list.reduce === "function") {
-        return _methodReduce(fn, acc, list, "reduce");
-      }
-      throw new TypeError("reduce: list must be array or iterable");
-    }
-    module2.exports = _reduce;
-  }
-});
-
-// node_modules/ramda/src/internal/_xmap.js
-var require_xmap = __commonJS({
-  "node_modules/ramda/src/internal/_xmap.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XMap = /* @__PURE__ */ function() {
-      function XMap2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XMap2.prototype["@@transducer/init"] = _xfBase.init;
-      XMap2.prototype["@@transducer/result"] = _xfBase.result;
-      XMap2.prototype["@@transducer/step"] = function(result, input) {
-        return this.xf["@@transducer/step"](result, this.f(input));
-      };
-      return XMap2;
-    }();
-    var _xmap = /* @__PURE__ */ _curry2(function _xmap2(f, xf) {
-      return new XMap(f, xf);
-    });
-    module2.exports = _xmap;
-  }
-});
-
-// node_modules/ramda/src/internal/_has.js
-var require_has = __commonJS({
-  "node_modules/ramda/src/internal/_has.js"(exports2, module2) {
-    function _has(prop, obj) {
-      return Object.prototype.hasOwnProperty.call(obj, prop);
-    }
-    module2.exports = _has;
-  }
-});
-
-// node_modules/ramda/src/internal/_isArguments.js
-var require_isArguments = __commonJS({
-  "node_modules/ramda/src/internal/_isArguments.js"(exports2, module2) {
-    var _has = require_has();
-    var toString = Object.prototype.toString;
-    var _isArguments = /* @__PURE__ */ function() {
-      return toString.call(arguments) === "[object Arguments]" ? function _isArguments2(x) {
-        return toString.call(x) === "[object Arguments]";
-      } : function _isArguments2(x) {
-        return _has("callee", x);
-      };
-    }();
-    module2.exports = _isArguments;
-  }
-});
-
-// node_modules/ramda/src/keys.js
-var require_keys = __commonJS({
-  "node_modules/ramda/src/keys.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _has = require_has();
-    var _isArguments = require_isArguments();
-    var hasEnumBug = !/* @__PURE__ */ {
-      toString: null
-    }.propertyIsEnumerable("toString");
-    var nonEnumerableProps = ["constructor", "valueOf", "isPrototypeOf", "toString", "propertyIsEnumerable", "hasOwnProperty", "toLocaleString"];
-    var hasArgsEnumBug = /* @__PURE__ */ function() {
-      "use strict";
-      return arguments.propertyIsEnumerable("length");
-    }();
-    var contains = function contains2(list, item) {
-      var idx = 0;
-      while (idx < list.length) {
-        if (list[idx] === item) {
-          return true;
-        }
-        idx += 1;
-      }
-      return false;
-    };
-    var keys = typeof Object.keys === "function" && !hasArgsEnumBug ? /* @__PURE__ */ _curry1(function keys2(obj) {
-      return Object(obj) !== obj ? [] : Object.keys(obj);
-    }) : /* @__PURE__ */ _curry1(function keys2(obj) {
-      if (Object(obj) !== obj) {
-        return [];
-      }
-      var prop, nIdx;
-      var ks = [];
-      var checkArgsLength = hasArgsEnumBug && _isArguments(obj);
-      for (prop in obj) {
-        if (_has(prop, obj) && (!checkArgsLength || prop !== "length")) {
-          ks[ks.length] = prop;
-        }
-      }
-      if (hasEnumBug) {
-        nIdx = nonEnumerableProps.length - 1;
-        while (nIdx >= 0) {
-          prop = nonEnumerableProps[nIdx];
-          if (_has(prop, obj) && !contains(ks, prop)) {
-            ks[ks.length] = prop;
-          }
-          nIdx -= 1;
-        }
-      }
-      return ks;
-    });
-    module2.exports = keys;
-  }
-});
-
-// node_modules/ramda/src/map.js
-var require_map2 = __commonJS({
-  "node_modules/ramda/src/map.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _map = require_map();
-    var _reduce = require_reduce();
-    var _xmap = require_xmap();
-    var curryN = require_curryN2();
-    var keys = require_keys();
-    var map = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["fantasy-land/map", "map"], _xmap, function map2(fn, functor) {
-      switch (Object.prototype.toString.call(functor)) {
-        case "[object Function]":
-          return curryN(functor.length, function() {
-            return fn.call(this, functor.apply(this, arguments));
-          });
-        case "[object Object]":
-          return _reduce(function(acc, key) {
-            acc[key] = fn(functor[key]);
-            return acc;
-          }, {}, keys(functor));
-        default:
-          return _map(fn, functor);
-      }
-    }));
-    module2.exports = map;
-  }
-});
-
-// node_modules/ramda/src/internal/_isInteger.js
-var require_isInteger = __commonJS({
-  "node_modules/ramda/src/internal/_isInteger.js"(exports2, module2) {
-    module2.exports = Number.isInteger || function _isInteger(n) {
-      return n << 0 === n;
-    };
-  }
-});
-
-// node_modules/ramda/src/nth.js
-var require_nth = __commonJS({
-  "node_modules/ramda/src/nth.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isString = require_isString();
-    var nth = /* @__PURE__ */ _curry2(function nth2(offset, list) {
-      var idx = offset < 0 ? list.length + offset : offset;
-      return _isString(list) ? list.charAt(idx) : list[idx];
-    });
-    module2.exports = nth;
-  }
-});
-
-// node_modules/ramda/src/paths.js
-var require_paths = __commonJS({
-  "node_modules/ramda/src/paths.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isInteger = require_isInteger();
-    var nth = require_nth();
-    var paths = /* @__PURE__ */ _curry2(function paths2(pathsArray, obj) {
-      return pathsArray.map(function(paths3) {
-        var val = obj;
-        var idx = 0;
-        var p;
-        while (idx < paths3.length) {
-          if (val == null) {
-            return;
-          }
-          p = paths3[idx];
-          val = _isInteger(p) ? nth(p, val) : val[p];
-          idx += 1;
-        }
-        return val;
-      });
-    });
-    module2.exports = paths;
-  }
-});
-
-// node_modules/ramda/src/path.js
-var require_path = __commonJS({
-  "node_modules/ramda/src/path.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var paths = require_paths();
-    var path = /* @__PURE__ */ _curry2(function path2(pathAr, obj) {
-      return paths([pathAr], obj)[0];
-    });
-    module2.exports = path;
-  }
-});
-
-// node_modules/ramda/src/prop.js
-var require_prop = __commonJS({
-  "node_modules/ramda/src/prop.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var path = require_path();
-    var prop = /* @__PURE__ */ _curry2(function prop2(p, obj) {
-      return path([p], obj);
-    });
-    module2.exports = prop;
-  }
-});
-
-// node_modules/ramda/src/pluck.js
-var require_pluck = __commonJS({
-  "node_modules/ramda/src/pluck.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var map = require_map2();
-    var prop = require_prop();
-    var pluck = /* @__PURE__ */ _curry2(function pluck2(p, list) {
-      return map(prop(p), list);
-    });
-    module2.exports = pluck;
-  }
-});
-
-// node_modules/ramda/src/reduce.js
-var require_reduce2 = __commonJS({
-  "node_modules/ramda/src/reduce.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var _reduce = require_reduce();
-    var reduce = /* @__PURE__ */ _curry3(_reduce);
-    module2.exports = reduce;
-  }
-});
-
-// node_modules/ramda/src/allPass.js
-var require_allPass = __commonJS({
-  "node_modules/ramda/src/allPass.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var max = require_max();
-    var pluck = require_pluck();
-    var reduce = require_reduce2();
-    var allPass = /* @__PURE__ */ _curry1(function allPass2(preds) {
-      return curryN(reduce(max, 0, pluck("length", preds)), function() {
-        var idx = 0;
-        var len = preds.length;
-        while (idx < len) {
-          if (!preds[idx].apply(this, arguments)) {
-            return false;
-          }
-          idx += 1;
-        }
-        return true;
-      });
-    });
-    module2.exports = allPass;
-  }
-});
-
-// node_modules/ramda/src/always.js
-var require_always = __commonJS({
-  "node_modules/ramda/src/always.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var always = /* @__PURE__ */ _curry1(function always2(val) {
-      return function() {
-        return val;
-      };
-    });
-    module2.exports = always;
-  }
-});
-
-// node_modules/ramda/src/and.js
-var require_and = __commonJS({
-  "node_modules/ramda/src/and.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var and = /* @__PURE__ */ _curry2(function and2(a, b) {
-      return a && b;
-    });
-    module2.exports = and;
-  }
-});
-
-// node_modules/ramda/src/internal/_xany.js
-var require_xany = __commonJS({
-  "node_modules/ramda/src/internal/_xany.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XAny = /* @__PURE__ */ function() {
-      function XAny2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-        this.any = false;
-      }
-      XAny2.prototype["@@transducer/init"] = _xfBase.init;
-      XAny2.prototype["@@transducer/result"] = function(result) {
-        if (!this.any) {
-          result = this.xf["@@transducer/step"](result, false);
-        }
-        return this.xf["@@transducer/result"](result);
-      };
-      XAny2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.f(input)) {
-          this.any = true;
-          result = _reduced(this.xf["@@transducer/step"](result, true));
-        }
-        return result;
-      };
-      return XAny2;
-    }();
-    var _xany = /* @__PURE__ */ _curry2(function _xany2(f, xf) {
-      return new XAny(f, xf);
-    });
-    module2.exports = _xany;
-  }
-});
-
-// node_modules/ramda/src/any.js
-var require_any = __commonJS({
-  "node_modules/ramda/src/any.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xany = require_xany();
-    var any = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["any"], _xany, function any2(fn, list) {
-      var idx = 0;
-      while (idx < list.length) {
-        if (fn(list[idx])) {
-          return true;
-        }
-        idx += 1;
-      }
-      return false;
-    }));
-    module2.exports = any;
-  }
-});
-
-// node_modules/ramda/src/anyPass.js
-var require_anyPass = __commonJS({
-  "node_modules/ramda/src/anyPass.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var max = require_max();
-    var pluck = require_pluck();
-    var reduce = require_reduce2();
-    var anyPass = /* @__PURE__ */ _curry1(function anyPass2(preds) {
-      return curryN(reduce(max, 0, pluck("length", preds)), function() {
-        var idx = 0;
-        var len = preds.length;
-        while (idx < len) {
-          if (preds[idx].apply(this, arguments)) {
-            return true;
-          }
-          idx += 1;
-        }
-        return false;
-      });
-    });
-    module2.exports = anyPass;
-  }
-});
-
-// node_modules/ramda/src/ap.js
-var require_ap = __commonJS({
-  "node_modules/ramda/src/ap.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var _reduce = require_reduce();
-    var map = require_map2();
-    var ap = /* @__PURE__ */ _curry2(function ap2(applyF, applyX) {
-      return typeof applyX["fantasy-land/ap"] === "function" ? applyX["fantasy-land/ap"](applyF) : typeof applyF.ap === "function" ? applyF.ap(applyX) : typeof applyF === "function" ? function(x) {
-        return applyF(x)(applyX(x));
-      } : _reduce(function(acc, f) {
-        return _concat(acc, map(f, applyX));
-      }, [], applyF);
-    });
-    module2.exports = ap;
-  }
-});
-
-// node_modules/ramda/src/internal/_aperture.js
-var require_aperture = __commonJS({
-  "node_modules/ramda/src/internal/_aperture.js"(exports2, module2) {
-    function _aperture(n, list) {
-      var idx = 0;
-      var limit2 = list.length - (n - 1);
-      var acc = new Array(limit2 >= 0 ? limit2 : 0);
-      while (idx < limit2) {
-        acc[idx] = Array.prototype.slice.call(list, idx, idx + n);
-        idx += 1;
-      }
-      return acc;
-    }
-    module2.exports = _aperture;
-  }
-});
-
-// node_modules/ramda/src/internal/_xaperture.js
-var require_xaperture = __commonJS({
-  "node_modules/ramda/src/internal/_xaperture.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XAperture = /* @__PURE__ */ function() {
-      function XAperture2(n, xf) {
-        this.xf = xf;
-        this.pos = 0;
-        this.full = false;
-        this.acc = new Array(n);
-      }
-      XAperture2.prototype["@@transducer/init"] = _xfBase.init;
-      XAperture2.prototype["@@transducer/result"] = function(result) {
-        this.acc = null;
-        return this.xf["@@transducer/result"](result);
-      };
-      XAperture2.prototype["@@transducer/step"] = function(result, input) {
-        this.store(input);
-        return this.full ? this.xf["@@transducer/step"](result, this.getCopy()) : result;
-      };
-      XAperture2.prototype.store = function(input) {
-        this.acc[this.pos] = input;
-        this.pos += 1;
-        if (this.pos === this.acc.length) {
-          this.pos = 0;
-          this.full = true;
-        }
-      };
-      XAperture2.prototype.getCopy = function() {
-        return _concat(Array.prototype.slice.call(this.acc, this.pos), Array.prototype.slice.call(this.acc, 0, this.pos));
-      };
-      return XAperture2;
-    }();
-    var _xaperture = /* @__PURE__ */ _curry2(function _xaperture2(n, xf) {
-      return new XAperture(n, xf);
-    });
-    module2.exports = _xaperture;
-  }
-});
-
-// node_modules/ramda/src/aperture.js
-var require_aperture2 = __commonJS({
-  "node_modules/ramda/src/aperture.js"(exports2, module2) {
-    var _aperture = require_aperture();
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xaperture = require_xaperture();
-    var aperture = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xaperture, _aperture));
-    module2.exports = aperture;
-  }
-});
-
-// node_modules/ramda/src/append.js
-var require_append = __commonJS({
-  "node_modules/ramda/src/append.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var append = /* @__PURE__ */ _curry2(function append2(el, list) {
-      return _concat(list, [el]);
-    });
-    module2.exports = append;
-  }
-});
-
-// node_modules/ramda/src/apply.js
-var require_apply = __commonJS({
-  "node_modules/ramda/src/apply.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var apply = /* @__PURE__ */ _curry2(function apply2(fn, args) {
-      return fn.apply(this, args);
-    });
-    module2.exports = apply;
-  }
-});
-
-// node_modules/ramda/src/values.js
-var require_values = __commonJS({
-  "node_modules/ramda/src/values.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var keys = require_keys();
-    var values = /* @__PURE__ */ _curry1(function values2(obj) {
-      var props = keys(obj);
-      var len = props.length;
-      var vals = [];
-      var idx = 0;
-      while (idx < len) {
-        vals[idx] = obj[props[idx]];
-        idx += 1;
-      }
-      return vals;
-    });
-    module2.exports = values;
-  }
-});
-
-// node_modules/ramda/src/applySpec.js
-var require_applySpec = __commonJS({
-  "node_modules/ramda/src/applySpec.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var apply = require_apply();
-    var curryN = require_curryN2();
-    var max = require_max();
-    var pluck = require_pluck();
-    var reduce = require_reduce2();
-    var keys = require_keys();
-    var values = require_values();
-    function mapValues(fn, obj) {
-      return keys(obj).reduce(function(acc, key) {
-        acc[key] = fn(obj[key]);
-        return acc;
-      }, {});
-    }
-    var applySpec = /* @__PURE__ */ _curry1(function applySpec2(spec) {
-      spec = mapValues(function(v) {
-        return typeof v == "function" ? v : applySpec2(v);
-      }, spec);
-      return curryN(reduce(max, 0, pluck("length", values(spec))), function() {
-        var args = arguments;
-        return mapValues(function(f) {
-          return apply(f, args);
-        }, spec);
-      });
-    });
-    module2.exports = applySpec;
-  }
-});
-
-// node_modules/ramda/src/applyTo.js
-var require_applyTo = __commonJS({
-  "node_modules/ramda/src/applyTo.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var applyTo = /* @__PURE__ */ _curry2(function applyTo2(x, f) {
-      return f(x);
-    });
-    module2.exports = applyTo;
-  }
-});
-
-// node_modules/ramda/src/ascend.js
-var require_ascend = __commonJS({
-  "node_modules/ramda/src/ascend.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var ascend = /* @__PURE__ */ _curry3(function ascend2(fn, a, b) {
-      var aa = fn(a);
-      var bb = fn(b);
-      return aa < bb ? -1 : aa > bb ? 1 : 0;
-    });
-    module2.exports = ascend;
-  }
-});
-
-// node_modules/ramda/src/assoc.js
-var require_assoc = __commonJS({
-  "node_modules/ramda/src/assoc.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var assoc = /* @__PURE__ */ _curry3(function assoc2(prop, val, obj) {
-      var result = {};
-      for (var p in obj) {
-        result[p] = obj[p];
-      }
-      result[prop] = val;
-      return result;
-    });
-    module2.exports = assoc;
-  }
-});
-
-// node_modules/ramda/src/isNil.js
-var require_isNil = __commonJS({
-  "node_modules/ramda/src/isNil.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var isNil = /* @__PURE__ */ _curry1(function isNil2(x) {
-      return x == null;
-    });
-    module2.exports = isNil;
-  }
-});
-
-// node_modules/ramda/src/assocPath.js
-var require_assocPath = __commonJS({
-  "node_modules/ramda/src/assocPath.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var _has = require_has();
-    var _isArray = require_isArray();
-    var _isInteger = require_isInteger();
-    var assoc = require_assoc();
-    var isNil = require_isNil();
-    var assocPath = /* @__PURE__ */ _curry3(function assocPath2(path, val, obj) {
-      if (path.length === 0) {
-        return val;
-      }
-      var idx = path[0];
-      if (path.length > 1) {
-        var nextObj = !isNil(obj) && _has(idx, obj) ? obj[idx] : _isInteger(path[1]) ? [] : {};
-        val = assocPath2(Array.prototype.slice.call(path, 1), val, nextObj);
-      }
-      if (_isInteger(idx) && _isArray(obj)) {
-        var arr = [].concat(obj);
-        arr[idx] = val;
-        return arr;
-      } else {
-        return assoc(idx, val, obj);
-      }
-    });
-    module2.exports = assocPath;
-  }
-});
-
-// node_modules/ramda/src/nAry.js
-var require_nAry = __commonJS({
-  "node_modules/ramda/src/nAry.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var nAry = /* @__PURE__ */ _curry2(function nAry2(n, fn) {
-      switch (n) {
-        case 0:
-          return function() {
-            return fn.call(this);
-          };
-        case 1:
-          return function(a0) {
-            return fn.call(this, a0);
-          };
-        case 2:
-          return function(a0, a1) {
-            return fn.call(this, a0, a1);
-          };
-        case 3:
-          return function(a0, a1, a2) {
-            return fn.call(this, a0, a1, a2);
-          };
-        case 4:
-          return function(a0, a1, a2, a3) {
-            return fn.call(this, a0, a1, a2, a3);
-          };
-        case 5:
-          return function(a0, a1, a2, a3, a4) {
-            return fn.call(this, a0, a1, a2, a3, a4);
-          };
-        case 6:
-          return function(a0, a1, a2, a3, a4, a5) {
-            return fn.call(this, a0, a1, a2, a3, a4, a5);
-          };
-        case 7:
-          return function(a0, a1, a2, a3, a4, a5, a6) {
-            return fn.call(this, a0, a1, a2, a3, a4, a5, a6);
-          };
-        case 8:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7) {
-            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7);
-          };
-        case 9:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8) {
-            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7, a8);
-          };
-        case 10:
-          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
-            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-          };
-        default:
-          throw new Error("First argument to nAry must be a non-negative integer no greater than ten");
-      }
-    });
-    module2.exports = nAry;
-  }
-});
-
-// node_modules/ramda/src/binary.js
-var require_binary = __commonJS({
-  "node_modules/ramda/src/binary.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var nAry = require_nAry();
-    var binary = /* @__PURE__ */ _curry1(function binary2(fn) {
-      return nAry(2, fn);
-    });
-    module2.exports = binary;
-  }
-});
-
-// node_modules/ramda/src/internal/_isFunction.js
-var require_isFunction = __commonJS({
-  "node_modules/ramda/src/internal/_isFunction.js"(exports2, module2) {
-    function _isFunction(x) {
-      var type = Object.prototype.toString.call(x);
-      return type === "[object Function]" || type === "[object AsyncFunction]" || type === "[object GeneratorFunction]" || type === "[object AsyncGeneratorFunction]";
-    }
-    module2.exports = _isFunction;
-  }
-});
-
-// node_modules/ramda/src/liftN.js
-var require_liftN = __commonJS({
-  "node_modules/ramda/src/liftN.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduce = require_reduce();
-    var ap = require_ap();
-    var curryN = require_curryN2();
-    var map = require_map2();
-    var liftN = /* @__PURE__ */ _curry2(function liftN2(arity, fn) {
-      var lifted = curryN(arity, fn);
-      return curryN(arity, function() {
-        return _reduce(ap, map(lifted, arguments[0]), Array.prototype.slice.call(arguments, 1));
-      });
-    });
-    module2.exports = liftN;
-  }
-});
-
-// node_modules/ramda/src/lift.js
-var require_lift = __commonJS({
-  "node_modules/ramda/src/lift.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var liftN = require_liftN();
-    var lift = /* @__PURE__ */ _curry1(function lift2(fn) {
-      return liftN(fn.length, fn);
-    });
-    module2.exports = lift;
-  }
-});
-
-// node_modules/ramda/src/both.js
-var require_both = __commonJS({
-  "node_modules/ramda/src/both.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isFunction = require_isFunction();
-    var and = require_and();
-    var lift = require_lift();
-    var both = /* @__PURE__ */ _curry2(function both2(f, g) {
-      return _isFunction(f) ? function _both() {
-        return f.apply(this, arguments) && g.apply(this, arguments);
-      } : lift(and)(f, g);
-    });
-    module2.exports = both;
-  }
-});
-
-// node_modules/ramda/src/curry.js
-var require_curry = __commonJS({
-  "node_modules/ramda/src/curry.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var curry = /* @__PURE__ */ _curry1(function curry2(fn) {
-      return curryN(fn.length, fn);
-    });
-    module2.exports = curry;
-  }
-});
-
-// node_modules/ramda/src/call.js
-var require_call = __commonJS({
-  "node_modules/ramda/src/call.js"(exports2, module2) {
-    var curry = require_curry();
-    var call = /* @__PURE__ */ curry(function call2(fn) {
-      return fn.apply(this, Array.prototype.slice.call(arguments, 1));
-    });
-    module2.exports = call;
-  }
-});
-
-// node_modules/ramda/src/internal/_makeFlat.js
-var require_makeFlat = __commonJS({
-  "node_modules/ramda/src/internal/_makeFlat.js"(exports2, module2) {
-    var _isArrayLike = require_isArrayLike();
-    function _makeFlat(recursive) {
-      return function flatt(list) {
-        var value, jlen, j;
-        var result = [];
-        var idx = 0;
-        var ilen = list.length;
-        while (idx < ilen) {
-          if (_isArrayLike(list[idx])) {
-            value = recursive ? flatt(list[idx]) : list[idx];
-            j = 0;
-            jlen = value.length;
-            while (j < jlen) {
-              result[result.length] = value[j];
-              j += 1;
-            }
-          } else {
-            result[result.length] = list[idx];
-          }
-          idx += 1;
-        }
-        return result;
-      };
-    }
-    module2.exports = _makeFlat;
-  }
-});
-
-// node_modules/ramda/src/internal/_forceReduced.js
-var require_forceReduced = __commonJS({
-  "node_modules/ramda/src/internal/_forceReduced.js"(exports2, module2) {
-    function _forceReduced(x) {
-      return {
-        "@@transducer/value": x,
-        "@@transducer/reduced": true
-      };
-    }
-    module2.exports = _forceReduced;
-  }
-});
-
-// node_modules/ramda/src/internal/_flatCat.js
-var require_flatCat = __commonJS({
-  "node_modules/ramda/src/internal/_flatCat.js"(exports2, module2) {
-    var _forceReduced = require_forceReduced();
-    var _isArrayLike = require_isArrayLike();
-    var _reduce = require_reduce();
-    var _xfBase = require_xfBase();
-    var preservingReduced = function(xf) {
-      return {
-        "@@transducer/init": _xfBase.init,
-        "@@transducer/result": function(result) {
-          return xf["@@transducer/result"](result);
-        },
-        "@@transducer/step": function(result, input) {
-          var ret = xf["@@transducer/step"](result, input);
-          return ret["@@transducer/reduced"] ? _forceReduced(ret) : ret;
-        }
-      };
-    };
-    var _flatCat = function _xcat(xf) {
-      var rxf = preservingReduced(xf);
-      return {
-        "@@transducer/init": _xfBase.init,
-        "@@transducer/result": function(result) {
-          return rxf["@@transducer/result"](result);
-        },
-        "@@transducer/step": function(result, input) {
-          return !_isArrayLike(input) ? _reduce(rxf, result, [input]) : _reduce(rxf, result, input);
-        }
-      };
-    };
-    module2.exports = _flatCat;
-  }
-});
-
-// node_modules/ramda/src/internal/_xchain.js
-var require_xchain = __commonJS({
-  "node_modules/ramda/src/internal/_xchain.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _flatCat = require_flatCat();
-    var map = require_map2();
-    var _xchain = /* @__PURE__ */ _curry2(function _xchain2(f, xf) {
-      return map(f, _flatCat(xf));
-    });
-    module2.exports = _xchain;
-  }
-});
-
-// node_modules/ramda/src/chain.js
-var require_chain = __commonJS({
-  "node_modules/ramda/src/chain.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _makeFlat = require_makeFlat();
-    var _xchain = require_xchain();
-    var map = require_map2();
-    var chain = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["fantasy-land/chain", "chain"], _xchain, function chain2(fn, monad) {
-      if (typeof monad === "function") {
-        return function(x) {
-          return fn(monad(x))(x);
-        };
-      }
-      return _makeFlat(false)(map(fn, monad));
-    }));
-    module2.exports = chain;
-  }
-});
-
-// node_modules/ramda/src/clamp.js
-var require_clamp = __commonJS({
-  "node_modules/ramda/src/clamp.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var clamp = /* @__PURE__ */ _curry3(function clamp2(min, max, value) {
-      if (min > max) {
-        throw new Error("min must not be greater than max in clamp(min, max, value)");
-      }
-      return value < min ? min : value > max ? max : value;
-    });
-    module2.exports = clamp;
-  }
-});
-
-// node_modules/ramda/src/internal/_cloneRegExp.js
-var require_cloneRegExp = __commonJS({
-  "node_modules/ramda/src/internal/_cloneRegExp.js"(exports2, module2) {
-    function _cloneRegExp(pattern) {
-      return new RegExp(pattern.source, (pattern.global ? "g" : "") + (pattern.ignoreCase ? "i" : "") + (pattern.multiline ? "m" : "") + (pattern.sticky ? "y" : "") + (pattern.unicode ? "u" : ""));
-    }
-    module2.exports = _cloneRegExp;
-  }
-});
-
-// node_modules/ramda/src/type.js
-var require_type = __commonJS({
-  "node_modules/ramda/src/type.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var type = /* @__PURE__ */ _curry1(function type2(val) {
-      return val === null ? "Null" : val === void 0 ? "Undefined" : Object.prototype.toString.call(val).slice(8, -1);
-    });
-    module2.exports = type;
-  }
-});
-
-// node_modules/ramda/src/internal/_clone.js
-var require_clone = __commonJS({
-  "node_modules/ramda/src/internal/_clone.js"(exports2, module2) {
-    var _cloneRegExp = require_cloneRegExp();
-    var type = require_type();
-    function _clone(value, refFrom, refTo, deep) {
-      var copy = function copy2(copiedValue) {
-        var len = refFrom.length;
-        var idx = 0;
-        while (idx < len) {
-          if (value === refFrom[idx]) {
-            return refTo[idx];
-          }
-          idx += 1;
-        }
-        refFrom[idx + 1] = value;
-        refTo[idx + 1] = copiedValue;
-        for (var key in value) {
-          copiedValue[key] = deep ? _clone(value[key], refFrom, refTo, true) : value[key];
-        }
-        return copiedValue;
-      };
-      switch (type(value)) {
-        case "Object":
-          return copy({});
-        case "Array":
-          return copy([]);
-        case "Date":
-          return new Date(value.valueOf());
-        case "RegExp":
-          return _cloneRegExp(value);
-        default:
-          return value;
-      }
-    }
-    module2.exports = _clone;
-  }
-});
-
-// node_modules/ramda/src/clone.js
-var require_clone2 = __commonJS({
-  "node_modules/ramda/src/clone.js"(exports2, module2) {
-    var _clone = require_clone();
-    var _curry1 = require_curry1();
-    var clone = /* @__PURE__ */ _curry1(function clone2(value) {
-      return value != null && typeof value.clone === "function" ? value.clone() : _clone(value, [], [], true);
-    });
-    module2.exports = clone;
-  }
-});
-
-// node_modules/ramda/src/comparator.js
-var require_comparator = __commonJS({
-  "node_modules/ramda/src/comparator.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var comparator = /* @__PURE__ */ _curry1(function comparator2(pred) {
-      return function(a, b) {
-        return pred(a, b) ? -1 : pred(b, a) ? 1 : 0;
-      };
-    });
-    module2.exports = comparator;
-  }
-});
-
-// node_modules/ramda/src/not.js
-var require_not = __commonJS({
-  "node_modules/ramda/src/not.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var not = /* @__PURE__ */ _curry1(function not2(a) {
-      return !a;
-    });
-    module2.exports = not;
-  }
-});
-
-// node_modules/ramda/src/complement.js
-var require_complement = __commonJS({
-  "node_modules/ramda/src/complement.js"(exports2, module2) {
-    var lift = require_lift();
-    var not = require_not();
-    var complement = /* @__PURE__ */ lift(not);
-    module2.exports = complement;
-  }
-});
-
-// node_modules/ramda/src/internal/_pipe.js
-var require_pipe = __commonJS({
-  "node_modules/ramda/src/internal/_pipe.js"(exports2, module2) {
-    function _pipe(f, g) {
-      return function() {
-        return g.call(this, f.apply(this, arguments));
-      };
-    }
-    module2.exports = _pipe;
-  }
-});
-
-// node_modules/ramda/src/internal/_checkForMethod.js
-var require_checkForMethod = __commonJS({
-  "node_modules/ramda/src/internal/_checkForMethod.js"(exports2, module2) {
-    var _isArray = require_isArray();
-    function _checkForMethod(methodname, fn) {
-      return function() {
-        var length = arguments.length;
-        if (length === 0) {
-          return fn();
-        }
-        var obj = arguments[length - 1];
-        return _isArray(obj) || typeof obj[methodname] !== "function" ? fn.apply(this, arguments) : obj[methodname].apply(obj, Array.prototype.slice.call(arguments, 0, length - 1));
-      };
-    }
-    module2.exports = _checkForMethod;
-  }
-});
-
-// node_modules/ramda/src/slice.js
-var require_slice = __commonJS({
-  "node_modules/ramda/src/slice.js"(exports2, module2) {
-    var _checkForMethod = require_checkForMethod();
-    var _curry3 = require_curry3();
-    var slice = /* @__PURE__ */ _curry3(/* @__PURE__ */ _checkForMethod("slice", function slice2(fromIndex, toIndex, list) {
-      return Array.prototype.slice.call(list, fromIndex, toIndex);
-    }));
-    module2.exports = slice;
-  }
-});
-
-// node_modules/ramda/src/tail.js
-var require_tail = __commonJS({
-  "node_modules/ramda/src/tail.js"(exports2, module2) {
-    var _checkForMethod = require_checkForMethod();
-    var _curry1 = require_curry1();
-    var slice = require_slice();
-    var tail = /* @__PURE__ */ _curry1(/* @__PURE__ */ _checkForMethod("tail", /* @__PURE__ */ slice(1, Infinity)));
-    module2.exports = tail;
-  }
-});
-
-// node_modules/ramda/src/pipe.js
-var require_pipe2 = __commonJS({
-  "node_modules/ramda/src/pipe.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _pipe = require_pipe();
-    var reduce = require_reduce2();
-    var tail = require_tail();
-    function pipe() {
-      if (arguments.length === 0) {
-        throw new Error("pipe requires at least one argument");
-      }
-      return _arity(arguments[0].length, reduce(_pipe, arguments[0], tail(arguments)));
-    }
-    module2.exports = pipe;
-  }
-});
-
-// node_modules/ramda/src/reverse.js
-var require_reverse = __commonJS({
-  "node_modules/ramda/src/reverse.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _isString = require_isString();
-    var reverse2 = /* @__PURE__ */ _curry1(function reverse3(list) {
-      return _isString(list) ? list.split("").reverse().join("") : Array.prototype.slice.call(list, 0).reverse();
-    });
-    module2.exports = reverse2;
-  }
-});
-
-// node_modules/ramda/src/compose.js
-var require_compose = __commonJS({
-  "node_modules/ramda/src/compose.js"(exports2, module2) {
-    var pipe = require_pipe2();
-    var reverse2 = require_reverse();
-    function compose() {
-      if (arguments.length === 0) {
-        throw new Error("compose requires at least one argument");
-      }
-      return pipe.apply(this, reverse2(arguments));
-    }
-    module2.exports = compose;
-  }
-});
-
-// node_modules/ramda/src/composeK.js
-var require_composeK = __commonJS({
-  "node_modules/ramda/src/composeK.js"(exports2, module2) {
-    var chain = require_chain();
-    var compose = require_compose();
-    var map = require_map2();
-    function composeK() {
-      if (arguments.length === 0) {
-        throw new Error("composeK requires at least one argument");
-      }
-      var init = Array.prototype.slice.call(arguments);
-      var last2 = init.pop();
-      return compose(compose.apply(this, map(chain, init)), last2);
-    }
-    module2.exports = composeK;
-  }
-});
-
-// node_modules/ramda/src/internal/_pipeP.js
-var require_pipeP = __commonJS({
-  "node_modules/ramda/src/internal/_pipeP.js"(exports2, module2) {
-    function _pipeP(f, g) {
-      return function() {
-        var ctx = this;
-        return f.apply(ctx, arguments).then(function(x) {
-          return g.call(ctx, x);
-        });
-      };
-    }
-    module2.exports = _pipeP;
-  }
-});
-
-// node_modules/ramda/src/pipeP.js
-var require_pipeP2 = __commonJS({
-  "node_modules/ramda/src/pipeP.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _pipeP = require_pipeP();
-    var reduce = require_reduce2();
-    var tail = require_tail();
-    function pipeP() {
-      if (arguments.length === 0) {
-        throw new Error("pipeP requires at least one argument");
-      }
-      return _arity(arguments[0].length, reduce(_pipeP, arguments[0], tail(arguments)));
-    }
-    module2.exports = pipeP;
-  }
-});
-
-// node_modules/ramda/src/composeP.js
-var require_composeP = __commonJS({
-  "node_modules/ramda/src/composeP.js"(exports2, module2) {
-    var pipeP = require_pipeP2();
-    var reverse2 = require_reverse();
-    function composeP() {
-      if (arguments.length === 0) {
-        throw new Error("composeP requires at least one argument");
-      }
-      return pipeP.apply(this, reverse2(arguments));
-    }
-    module2.exports = composeP;
-  }
-});
-
-// node_modules/ramda/src/head.js
-var require_head = __commonJS({
-  "node_modules/ramda/src/head.js"(exports2, module2) {
-    var nth = require_nth();
-    var head = /* @__PURE__ */ nth(0);
-    module2.exports = head;
-  }
-});
-
-// node_modules/ramda/src/internal/_identity.js
-var require_identity = __commonJS({
-  "node_modules/ramda/src/internal/_identity.js"(exports2, module2) {
-    function _identity(x) {
-      return x;
-    }
-    module2.exports = _identity;
-  }
-});
-
-// node_modules/ramda/src/identity.js
-var require_identity2 = __commonJS({
-  "node_modules/ramda/src/identity.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _identity = require_identity();
-    var identity = /* @__PURE__ */ _curry1(_identity);
-    module2.exports = identity;
-  }
-});
-
-// node_modules/ramda/src/pipeWith.js
-var require_pipeWith = __commonJS({
-  "node_modules/ramda/src/pipeWith.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry2 = require_curry2();
-    var head = require_head();
-    var _reduce = require_reduce();
-    var tail = require_tail();
-    var identity = require_identity2();
-    var pipeWith = /* @__PURE__ */ _curry2(function pipeWith2(xf, list) {
-      if (list.length <= 0) {
-        return identity;
-      }
-      var headList = head(list);
-      var tailList = tail(list);
-      return _arity(headList.length, function() {
-        return _reduce(function(result, f) {
-          return xf.call(this, f, result);
-        }, headList.apply(this, arguments), tailList);
-      });
-    });
-    module2.exports = pipeWith;
-  }
-});
-
-// node_modules/ramda/src/composeWith.js
-var require_composeWith = __commonJS({
-  "node_modules/ramda/src/composeWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var pipeWith = require_pipeWith();
-    var reverse2 = require_reverse();
-    var composeWith = /* @__PURE__ */ _curry2(function composeWith2(xf, list) {
-      return pipeWith.apply(this, [xf, reverse2(list)]);
-    });
-    module2.exports = composeWith;
-  }
-});
-
-// node_modules/ramda/src/internal/_arrayFromIterator.js
-var require_arrayFromIterator = __commonJS({
-  "node_modules/ramda/src/internal/_arrayFromIterator.js"(exports2, module2) {
-    function _arrayFromIterator(iter) {
-      var list = [];
-      var next;
-      while (!(next = iter.next()).done) {
-        list.push(next.value);
-      }
-      return list;
-    }
-    module2.exports = _arrayFromIterator;
-  }
-});
-
-// node_modules/ramda/src/internal/_includesWith.js
-var require_includesWith = __commonJS({
-  "node_modules/ramda/src/internal/_includesWith.js"(exports2, module2) {
-    function _includesWith(pred, x, list) {
-      var idx = 0;
-      var len = list.length;
-      while (idx < len) {
-        if (pred(x, list[idx])) {
-          return true;
-        }
-        idx += 1;
-      }
-      return false;
-    }
-    module2.exports = _includesWith;
-  }
-});
-
-// node_modules/ramda/src/internal/_functionName.js
-var require_functionName = __commonJS({
-  "node_modules/ramda/src/internal/_functionName.js"(exports2, module2) {
-    function _functionName(f) {
-      var match = String(f).match(/^function (\w*)/);
-      return match == null ? "" : match[1];
-    }
-    module2.exports = _functionName;
-  }
-});
-
-// node_modules/ramda/src/internal/_objectIs.js
-var require_objectIs = __commonJS({
-  "node_modules/ramda/src/internal/_objectIs.js"(exports2, module2) {
-    function _objectIs(a, b) {
-      if (a === b) {
-        return a !== 0 || 1 / a === 1 / b;
-      } else {
-        return a !== a && b !== b;
-      }
-    }
-    module2.exports = typeof Object.is === "function" ? Object.is : _objectIs;
-  }
-});
-
-// node_modules/ramda/src/internal/_equals.js
-var require_equals = __commonJS({
-  "node_modules/ramda/src/internal/_equals.js"(exports2, module2) {
-    var _arrayFromIterator = require_arrayFromIterator();
-    var _includesWith = require_includesWith();
-    var _functionName = require_functionName();
-    var _has = require_has();
-    var _objectIs = require_objectIs();
-    var keys = require_keys();
-    var type = require_type();
-    function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
-      var a = _arrayFromIterator(aIterator);
-      var b = _arrayFromIterator(bIterator);
-      function eq(_a, _b) {
-        return _equals(_a, _b, stackA.slice(), stackB.slice());
-      }
-      return !_includesWith(function(b2, aItem) {
-        return !_includesWith(eq, aItem, b2);
-      }, b, a);
-    }
-    function _equals(a, b, stackA, stackB) {
-      if (_objectIs(a, b)) {
-        return true;
-      }
-      var typeA = type(a);
-      if (typeA !== type(b)) {
-        return false;
-      }
-      if (a == null || b == null) {
-        return false;
-      }
-      if (typeof a["fantasy-land/equals"] === "function" || typeof b["fantasy-land/equals"] === "function") {
-        return typeof a["fantasy-land/equals"] === "function" && a["fantasy-land/equals"](b) && typeof b["fantasy-land/equals"] === "function" && b["fantasy-land/equals"](a);
-      }
-      if (typeof a.equals === "function" || typeof b.equals === "function") {
-        return typeof a.equals === "function" && a.equals(b) && typeof b.equals === "function" && b.equals(a);
-      }
-      switch (typeA) {
-        case "Arguments":
-        case "Array":
-        case "Object":
-          if (typeof a.constructor === "function" && _functionName(a.constructor) === "Promise") {
-            return a === b;
-          }
-          break;
-        case "Boolean":
-        case "Number":
-        case "String":
-          if (!(typeof a === typeof b && _objectIs(a.valueOf(), b.valueOf()))) {
-            return false;
-          }
-          break;
-        case "Date":
-          if (!_objectIs(a.valueOf(), b.valueOf())) {
-            return false;
-          }
-          break;
-        case "Error":
-          return a.name === b.name && a.message === b.message;
-        case "RegExp":
-          if (!(a.source === b.source && a.global === b.global && a.ignoreCase === b.ignoreCase && a.multiline === b.multiline && a.sticky === b.sticky && a.unicode === b.unicode)) {
-            return false;
-          }
-          break;
-      }
-      var idx = stackA.length - 1;
-      while (idx >= 0) {
-        if (stackA[idx] === a) {
-          return stackB[idx] === b;
-        }
-        idx -= 1;
-      }
-      switch (typeA) {
-        case "Map":
-          if (a.size !== b.size) {
-            return false;
-          }
-          return _uniqContentEquals(a.entries(), b.entries(), stackA.concat([a]), stackB.concat([b]));
-        case "Set":
-          if (a.size !== b.size) {
-            return false;
-          }
-          return _uniqContentEquals(a.values(), b.values(), stackA.concat([a]), stackB.concat([b]));
-        case "Arguments":
-        case "Array":
-        case "Object":
-        case "Boolean":
-        case "Number":
-        case "String":
-        case "Date":
-        case "Error":
-        case "RegExp":
-        case "Int8Array":
-        case "Uint8Array":
-        case "Uint8ClampedArray":
-        case "Int16Array":
-        case "Uint16Array":
-        case "Int32Array":
-        case "Uint32Array":
-        case "Float32Array":
-        case "Float64Array":
-        case "ArrayBuffer":
-          break;
-        default:
-          return false;
-      }
-      var keysA = keys(a);
-      if (keysA.length !== keys(b).length) {
-        return false;
-      }
-      var extendedStackA = stackA.concat([a]);
-      var extendedStackB = stackB.concat([b]);
-      idx = keysA.length - 1;
-      while (idx >= 0) {
-        var key = keysA[idx];
-        if (!(_has(key, b) && _equals(b[key], a[key], extendedStackA, extendedStackB))) {
-          return false;
-        }
-        idx -= 1;
-      }
-      return true;
-    }
-    module2.exports = _equals;
-  }
-});
-
-// node_modules/ramda/src/equals.js
-var require_equals2 = __commonJS({
-  "node_modules/ramda/src/equals.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _equals = require_equals();
-    var equals = /* @__PURE__ */ _curry2(function equals2(a, b) {
-      return _equals(a, b, [], []);
-    });
-    module2.exports = equals;
-  }
-});
-
-// node_modules/ramda/src/internal/_indexOf.js
-var require_indexOf = __commonJS({
-  "node_modules/ramda/src/internal/_indexOf.js"(exports2, module2) {
-    var equals = require_equals2();
-    function _indexOf(list, a, idx) {
-      var inf, item;
-      if (typeof list.indexOf === "function") {
-        switch (typeof a) {
-          case "number":
-            if (a === 0) {
-              inf = 1 / a;
-              while (idx < list.length) {
-                item = list[idx];
-                if (item === 0 && 1 / item === inf) {
-                  return idx;
-                }
-                idx += 1;
-              }
-              return -1;
-            } else if (a !== a) {
-              while (idx < list.length) {
-                item = list[idx];
-                if (typeof item === "number" && item !== item) {
-                  return idx;
-                }
-                idx += 1;
-              }
-              return -1;
-            }
-            return list.indexOf(a, idx);
-          case "string":
-          case "boolean":
-          case "function":
-          case "undefined":
-            return list.indexOf(a, idx);
-          case "object":
-            if (a === null) {
-              return list.indexOf(a, idx);
-            }
-        }
-      }
-      while (idx < list.length) {
-        if (equals(list[idx], a)) {
-          return idx;
-        }
-        idx += 1;
-      }
-      return -1;
-    }
-    module2.exports = _indexOf;
-  }
-});
-
-// node_modules/ramda/src/internal/_includes.js
-var require_includes = __commonJS({
-  "node_modules/ramda/src/internal/_includes.js"(exports2, module2) {
-    var _indexOf = require_indexOf();
-    function _includes(a, list) {
-      return _indexOf(list, a, 0) >= 0;
-    }
-    module2.exports = _includes;
-  }
-});
-
-// node_modules/ramda/src/internal/_quote.js
-var require_quote = __commonJS({
-  "node_modules/ramda/src/internal/_quote.js"(exports2, module2) {
-    function _quote(s) {
-      var escaped = s.replace(/\\/g, "\\\\").replace(/[\b]/g, "\\b").replace(/\f/g, "\\f").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t").replace(/\v/g, "\\v").replace(/\0/g, "\\0");
-      return '"' + escaped.replace(/"/g, '\\"') + '"';
-    }
-    module2.exports = _quote;
-  }
-});
-
-// node_modules/ramda/src/internal/_toISOString.js
-var require_toISOString = __commonJS({
-  "node_modules/ramda/src/internal/_toISOString.js"(exports2, module2) {
-    var pad = function pad2(n) {
-      return (n < 10 ? "0" : "") + n;
-    };
-    var _toISOString = typeof Date.prototype.toISOString === "function" ? function _toISOString2(d) {
-      return d.toISOString();
-    } : function _toISOString2(d) {
-      return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + "T" + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()) + "." + (d.getUTCMilliseconds() / 1e3).toFixed(3).slice(2, 5) + "Z";
-    };
-    module2.exports = _toISOString;
-  }
-});
-
-// node_modules/ramda/src/internal/_complement.js
-var require_complement2 = __commonJS({
-  "node_modules/ramda/src/internal/_complement.js"(exports2, module2) {
-    function _complement(f) {
-      return function() {
-        return !f.apply(this, arguments);
-      };
-    }
-    module2.exports = _complement;
-  }
-});
-
-// node_modules/ramda/src/internal/_filter.js
-var require_filter = __commonJS({
-  "node_modules/ramda/src/internal/_filter.js"(exports2, module2) {
-    function _filter(fn, list) {
-      var idx = 0;
-      var len = list.length;
-      var result = [];
-      while (idx < len) {
-        if (fn(list[idx])) {
-          result[result.length] = list[idx];
-        }
-        idx += 1;
-      }
-      return result;
-    }
-    module2.exports = _filter;
-  }
-});
-
-// node_modules/ramda/src/internal/_isObject.js
-var require_isObject = __commonJS({
-  "node_modules/ramda/src/internal/_isObject.js"(exports2, module2) {
-    function _isObject(x) {
-      return Object.prototype.toString.call(x) === "[object Object]";
-    }
-    module2.exports = _isObject;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfilter.js
-var require_xfilter = __commonJS({
-  "node_modules/ramda/src/internal/_xfilter.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XFilter = /* @__PURE__ */ function() {
-      function XFilter2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XFilter2.prototype["@@transducer/init"] = _xfBase.init;
-      XFilter2.prototype["@@transducer/result"] = _xfBase.result;
-      XFilter2.prototype["@@transducer/step"] = function(result, input) {
-        return this.f(input) ? this.xf["@@transducer/step"](result, input) : result;
-      };
-      return XFilter2;
-    }();
-    var _xfilter = /* @__PURE__ */ _curry2(function _xfilter2(f, xf) {
-      return new XFilter(f, xf);
-    });
-    module2.exports = _xfilter;
-  }
-});
-
-// node_modules/ramda/src/filter.js
-var require_filter2 = __commonJS({
-  "node_modules/ramda/src/filter.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _filter = require_filter();
-    var _isObject = require_isObject();
-    var _reduce = require_reduce();
-    var _xfilter = require_xfilter();
-    var keys = require_keys();
-    var filter = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["filter"], _xfilter, function(pred, filterable) {
-      return _isObject(filterable) ? _reduce(function(acc, key) {
-        if (pred(filterable[key])) {
-          acc[key] = filterable[key];
-        }
-        return acc;
-      }, {}, keys(filterable)) : _filter(pred, filterable);
-    }));
-    module2.exports = filter;
-  }
-});
-
-// node_modules/ramda/src/reject.js
-var require_reject = __commonJS({
-  "node_modules/ramda/src/reject.js"(exports2, module2) {
-    var _complement = require_complement2();
-    var _curry2 = require_curry2();
-    var filter = require_filter2();
-    var reject = /* @__PURE__ */ _curry2(function reject2(pred, filterable) {
-      return filter(_complement(pred), filterable);
-    });
-    module2.exports = reject;
-  }
-});
-
-// node_modules/ramda/src/internal/_toString.js
-var require_toString = __commonJS({
-  "node_modules/ramda/src/internal/_toString.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _map = require_map();
-    var _quote = require_quote();
-    var _toISOString = require_toISOString();
-    var keys = require_keys();
-    var reject = require_reject();
-    function _toString(x, seen) {
-      var recur = function recur2(y) {
-        var xs = seen.concat([x]);
-        return _includes(y, xs) ? "<Circular>" : _toString(y, xs);
-      };
-      var mapPairs = function(obj, keys2) {
-        return _map(function(k) {
-          return _quote(k) + ": " + recur(obj[k]);
-        }, keys2.slice().sort());
-      };
-      switch (Object.prototype.toString.call(x)) {
-        case "[object Arguments]":
-          return "(function() { return arguments; }(" + _map(recur, x).join(", ") + "))";
-        case "[object Array]":
-          return "[" + _map(recur, x).concat(mapPairs(x, reject(function(k) {
-            return /^\d+$/.test(k);
-          }, keys(x)))).join(", ") + "]";
-        case "[object Boolean]":
-          return typeof x === "object" ? "new Boolean(" + recur(x.valueOf()) + ")" : x.toString();
-        case "[object Date]":
-          return "new Date(" + (isNaN(x.valueOf()) ? recur(NaN) : _quote(_toISOString(x))) + ")";
-        case "[object Null]":
-          return "null";
-        case "[object Number]":
-          return typeof x === "object" ? "new Number(" + recur(x.valueOf()) + ")" : 1 / x === -Infinity ? "-0" : x.toString(10);
-        case "[object String]":
-          return typeof x === "object" ? "new String(" + recur(x.valueOf()) + ")" : _quote(x);
-        case "[object Undefined]":
-          return "undefined";
-        default:
-          if (typeof x.toString === "function") {
-            var repr = x.toString();
-            if (repr !== "[object Object]") {
-              return repr;
-            }
-          }
-          return "{" + mapPairs(x, keys(x)).join(", ") + "}";
-      }
-    }
-    module2.exports = _toString;
-  }
-});
-
-// node_modules/ramda/src/toString.js
-var require_toString2 = __commonJS({
-  "node_modules/ramda/src/toString.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _toString = require_toString();
-    var toString = /* @__PURE__ */ _curry1(function toString2(val) {
-      return _toString(val, []);
-    });
-    module2.exports = toString;
-  }
-});
-
-// node_modules/ramda/src/concat.js
-var require_concat2 = __commonJS({
-  "node_modules/ramda/src/concat.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isArray = require_isArray();
-    var _isFunction = require_isFunction();
-    var _isString = require_isString();
-    var toString = require_toString2();
-    var concat = /* @__PURE__ */ _curry2(function concat2(a, b) {
-      if (_isArray(a)) {
-        if (_isArray(b)) {
-          return a.concat(b);
-        }
-        throw new TypeError(toString(b) + " is not an array");
-      }
-      if (_isString(a)) {
-        if (_isString(b)) {
-          return a + b;
-        }
-        throw new TypeError(toString(b) + " is not a string");
-      }
-      if (a != null && _isFunction(a["fantasy-land/concat"])) {
-        return a["fantasy-land/concat"](b);
-      }
-      if (a != null && _isFunction(a.concat)) {
-        return a.concat(b);
-      }
-      throw new TypeError(toString(a) + ' does not have a method named "concat" or "fantasy-land/concat"');
-    });
-    module2.exports = concat;
-  }
-});
-
-// node_modules/ramda/src/cond.js
-var require_cond = __commonJS({
-  "node_modules/ramda/src/cond.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry1 = require_curry1();
-    var map = require_map2();
-    var max = require_max();
-    var reduce = require_reduce2();
-    var cond = /* @__PURE__ */ _curry1(function cond2(pairs) {
-      var arity = reduce(max, 0, map(function(pair) {
-        return pair[0].length;
-      }, pairs));
-      return _arity(arity, function() {
-        var idx = 0;
-        while (idx < pairs.length) {
-          if (pairs[idx][0].apply(this, arguments)) {
-            return pairs[idx][1].apply(this, arguments);
-          }
-          idx += 1;
-        }
-      });
-    });
-    module2.exports = cond;
-  }
-});
-
-// node_modules/ramda/src/constructN.js
-var require_constructN = __commonJS({
-  "node_modules/ramda/src/constructN.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var curry = require_curry();
-    var nAry = require_nAry();
-    var constructN = /* @__PURE__ */ _curry2(function constructN2(n, Fn) {
-      if (n > 10) {
-        throw new Error("Constructor with greater than ten arguments");
-      }
-      if (n === 0) {
-        return function() {
-          return new Fn();
-        };
-      }
-      return curry(nAry(n, function($0, $1, $2, $3, $4, $5, $6, $7, $8, $9) {
-        switch (arguments.length) {
-          case 1:
-            return new Fn($0);
-          case 2:
-            return new Fn($0, $1);
-          case 3:
-            return new Fn($0, $1, $2);
-          case 4:
-            return new Fn($0, $1, $2, $3);
-          case 5:
-            return new Fn($0, $1, $2, $3, $4);
-          case 6:
-            return new Fn($0, $1, $2, $3, $4, $5);
-          case 7:
-            return new Fn($0, $1, $2, $3, $4, $5, $6);
-          case 8:
-            return new Fn($0, $1, $2, $3, $4, $5, $6, $7);
-          case 9:
-            return new Fn($0, $1, $2, $3, $4, $5, $6, $7, $8);
-          case 10:
-            return new Fn($0, $1, $2, $3, $4, $5, $6, $7, $8, $9);
-        }
-      }));
-    });
-    module2.exports = constructN;
-  }
-});
-
-// node_modules/ramda/src/construct.js
-var require_construct = __commonJS({
-  "node_modules/ramda/src/construct.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var constructN = require_constructN();
-    var construct = /* @__PURE__ */ _curry1(function construct2(Fn) {
-      return constructN(Fn.length, Fn);
-    });
-    module2.exports = construct;
-  }
-});
-
-// node_modules/ramda/src/contains.js
-var require_contains = __commonJS({
-  "node_modules/ramda/src/contains.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _curry2 = require_curry2();
-    var contains = /* @__PURE__ */ _curry2(_includes);
-    module2.exports = contains;
-  }
-});
-
-// node_modules/ramda/src/converge.js
-var require_converge = __commonJS({
-  "node_modules/ramda/src/converge.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _map = require_map();
-    var curryN = require_curryN2();
-    var max = require_max();
-    var pluck = require_pluck();
-    var reduce = require_reduce2();
-    var converge = /* @__PURE__ */ _curry2(function converge2(after, fns) {
-      return curryN(reduce(max, 0, pluck("length", fns)), function() {
-        var args = arguments;
-        var context = this;
-        return after.apply(context, _map(function(fn) {
-          return fn.apply(context, args);
-        }, fns));
-      });
-    });
-    module2.exports = converge;
-  }
-});
-
-// node_modules/ramda/src/internal/_xreduceBy.js
-var require_xreduceBy = __commonJS({
-  "node_modules/ramda/src/internal/_xreduceBy.js"(exports2, module2) {
-    var _curryN = require_curryN();
-    var _has = require_has();
-    var _xfBase = require_xfBase();
-    var XReduceBy = /* @__PURE__ */ function() {
-      function XReduceBy2(valueFn, valueAcc, keyFn, xf) {
-        this.valueFn = valueFn;
-        this.valueAcc = valueAcc;
-        this.keyFn = keyFn;
-        this.xf = xf;
-        this.inputs = {};
-      }
-      XReduceBy2.prototype["@@transducer/init"] = _xfBase.init;
-      XReduceBy2.prototype["@@transducer/result"] = function(result) {
-        var key;
-        for (key in this.inputs) {
-          if (_has(key, this.inputs)) {
-            result = this.xf["@@transducer/step"](result, this.inputs[key]);
-            if (result["@@transducer/reduced"]) {
-              result = result["@@transducer/value"];
-              break;
-            }
-          }
-        }
-        this.inputs = null;
-        return this.xf["@@transducer/result"](result);
-      };
-      XReduceBy2.prototype["@@transducer/step"] = function(result, input) {
-        var key = this.keyFn(input);
-        this.inputs[key] = this.inputs[key] || [key, this.valueAcc];
-        this.inputs[key][1] = this.valueFn(this.inputs[key][1], input);
-        return result;
-      };
-      return XReduceBy2;
-    }();
-    var _xreduceBy = /* @__PURE__ */ _curryN(4, [], function _xreduceBy2(valueFn, valueAcc, keyFn, xf) {
-      return new XReduceBy(valueFn, valueAcc, keyFn, xf);
-    });
-    module2.exports = _xreduceBy;
-  }
-});
-
-// node_modules/ramda/src/reduceBy.js
-var require_reduceBy = __commonJS({
-  "node_modules/ramda/src/reduceBy.js"(exports2, module2) {
-    var _clone = require_clone();
-    var _curryN = require_curryN();
-    var _dispatchable = require_dispatchable();
-    var _has = require_has();
-    var _reduce = require_reduce();
-    var _xreduceBy = require_xreduceBy();
-    var reduceBy = /* @__PURE__ */ _curryN(4, [], /* @__PURE__ */ _dispatchable([], _xreduceBy, function reduceBy2(valueFn, valueAcc, keyFn, list) {
-      return _reduce(function(acc, elt) {
-        var key = keyFn(elt);
-        acc[key] = valueFn(_has(key, acc) ? acc[key] : _clone(valueAcc, [], [], false), elt);
-        return acc;
-      }, {}, list);
-    }));
-    module2.exports = reduceBy;
-  }
-});
-
-// node_modules/ramda/src/countBy.js
-var require_countBy = __commonJS({
-  "node_modules/ramda/src/countBy.js"(exports2, module2) {
-    var reduceBy = require_reduceBy();
-    var countBy = /* @__PURE__ */ reduceBy(function(acc, elem) {
-      return acc + 1;
-    }, 0);
-    module2.exports = countBy;
-  }
-});
-
-// node_modules/ramda/src/dec.js
-var require_dec = __commonJS({
-  "node_modules/ramda/src/dec.js"(exports2, module2) {
-    var add = require_add();
-    var dec = /* @__PURE__ */ add(-1);
-    module2.exports = dec;
-  }
-});
-
-// node_modules/ramda/src/defaultTo.js
-var require_defaultTo = __commonJS({
-  "node_modules/ramda/src/defaultTo.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var defaultTo = /* @__PURE__ */ _curry2(function defaultTo2(d, v) {
-      return v == null || v !== v ? d : v;
-    });
-    module2.exports = defaultTo;
-  }
-});
-
-// node_modules/ramda/src/descend.js
-var require_descend = __commonJS({
-  "node_modules/ramda/src/descend.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var descend = /* @__PURE__ */ _curry3(function descend2(fn, a, b) {
-      var aa = fn(a);
-      var bb = fn(b);
-      return aa > bb ? -1 : aa < bb ? 1 : 0;
-    });
-    module2.exports = descend;
-  }
-});
-
-// node_modules/ramda/src/internal/_Set.js
-var require_Set = __commonJS({
-  "node_modules/ramda/src/internal/_Set.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _Set = /* @__PURE__ */ function() {
-      function _Set2() {
-        this._nativeSet = typeof Set === "function" ? new Set() : null;
-        this._items = {};
-      }
-      _Set2.prototype.add = function(item) {
-        return !hasOrAdd(item, true, this);
-      };
-      _Set2.prototype.has = function(item) {
-        return hasOrAdd(item, false, this);
-      };
-      return _Set2;
-    }();
-    function hasOrAdd(item, shouldAdd, set) {
-      var type = typeof item;
-      var prevSize, newSize;
-      switch (type) {
-        case "string":
-        case "number":
-          if (item === 0 && 1 / item === -Infinity) {
-            if (set._items["-0"]) {
-              return true;
-            } else {
-              if (shouldAdd) {
-                set._items["-0"] = true;
-              }
-              return false;
-            }
-          }
-          if (set._nativeSet !== null) {
-            if (shouldAdd) {
-              prevSize = set._nativeSet.size;
-              set._nativeSet.add(item);
-              newSize = set._nativeSet.size;
-              return newSize === prevSize;
-            } else {
-              return set._nativeSet.has(item);
-            }
-          } else {
-            if (!(type in set._items)) {
-              if (shouldAdd) {
-                set._items[type] = {};
-                set._items[type][item] = true;
-              }
-              return false;
-            } else if (item in set._items[type]) {
-              return true;
-            } else {
-              if (shouldAdd) {
-                set._items[type][item] = true;
-              }
-              return false;
-            }
-          }
-        case "boolean":
-          if (type in set._items) {
-            var bIdx = item ? 1 : 0;
-            if (set._items[type][bIdx]) {
-              return true;
-            } else {
-              if (shouldAdd) {
-                set._items[type][bIdx] = true;
-              }
-              return false;
-            }
-          } else {
-            if (shouldAdd) {
-              set._items[type] = item ? [false, true] : [true, false];
-            }
-            return false;
-          }
-        case "function":
-          if (set._nativeSet !== null) {
-            if (shouldAdd) {
-              prevSize = set._nativeSet.size;
-              set._nativeSet.add(item);
-              newSize = set._nativeSet.size;
-              return newSize === prevSize;
-            } else {
-              return set._nativeSet.has(item);
-            }
-          } else {
-            if (!(type in set._items)) {
-              if (shouldAdd) {
-                set._items[type] = [item];
-              }
-              return false;
-            }
-            if (!_includes(item, set._items[type])) {
-              if (shouldAdd) {
-                set._items[type].push(item);
-              }
-              return false;
-            }
-            return true;
-          }
-        case "undefined":
-          if (set._items[type]) {
-            return true;
-          } else {
-            if (shouldAdd) {
-              set._items[type] = true;
-            }
-            return false;
-          }
-        case "object":
-          if (item === null) {
-            if (!set._items["null"]) {
-              if (shouldAdd) {
-                set._items["null"] = true;
-              }
-              return false;
-            }
-            return true;
-          }
-        default:
-          type = Object.prototype.toString.call(item);
-          if (!(type in set._items)) {
-            if (shouldAdd) {
-              set._items[type] = [item];
-            }
-            return false;
-          }
-          if (!_includes(item, set._items[type])) {
-            if (shouldAdd) {
-              set._items[type].push(item);
-            }
-            return false;
-          }
-          return true;
-      }
-    }
-    module2.exports = _Set;
-  }
-});
-
-// node_modules/ramda/src/difference.js
-var require_difference = __commonJS({
-  "node_modules/ramda/src/difference.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _Set = require_Set();
-    var difference = /* @__PURE__ */ _curry2(function difference2(first, second) {
-      var out = [];
-      var idx = 0;
-      var firstLen = first.length;
-      var secondLen = second.length;
-      var toFilterOut = new _Set();
-      for (var i = 0; i < secondLen; i += 1) {
-        toFilterOut.add(second[i]);
-      }
-      while (idx < firstLen) {
-        if (toFilterOut.add(first[idx])) {
-          out[out.length] = first[idx];
-        }
-        idx += 1;
-      }
-      return out;
-    });
-    module2.exports = difference;
-  }
-});
-
-// node_modules/ramda/src/differenceWith.js
-var require_differenceWith = __commonJS({
-  "node_modules/ramda/src/differenceWith.js"(exports2, module2) {
-    var _includesWith = require_includesWith();
-    var _curry3 = require_curry3();
-    var differenceWith = /* @__PURE__ */ _curry3(function differenceWith2(pred, first, second) {
-      var out = [];
-      var idx = 0;
-      var firstLen = first.length;
-      while (idx < firstLen) {
-        if (!_includesWith(pred, first[idx], second) && !_includesWith(pred, first[idx], out)) {
-          out.push(first[idx]);
-        }
-        idx += 1;
-      }
-      return out;
-    });
-    module2.exports = differenceWith;
-  }
-});
-
-// node_modules/ramda/src/dissoc.js
-var require_dissoc = __commonJS({
-  "node_modules/ramda/src/dissoc.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var dissoc = /* @__PURE__ */ _curry2(function dissoc2(prop, obj) {
-      var result = {};
-      for (var p in obj) {
-        result[p] = obj[p];
-      }
-      delete result[prop];
-      return result;
-    });
-    module2.exports = dissoc;
-  }
-});
-
-// node_modules/ramda/src/remove.js
-var require_remove = __commonJS({
-  "node_modules/ramda/src/remove.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var remove = /* @__PURE__ */ _curry3(function remove2(start, count, list) {
-      var result = Array.prototype.slice.call(list, 0);
-      result.splice(start, count);
-      return result;
-    });
-    module2.exports = remove;
-  }
-});
-
-// node_modules/ramda/src/update.js
-var require_update = __commonJS({
-  "node_modules/ramda/src/update.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var adjust = require_adjust();
-    var always = require_always();
-    var update = /* @__PURE__ */ _curry3(function update2(idx, x, list) {
-      return adjust(idx, always(x), list);
-    });
-    module2.exports = update;
-  }
-});
-
-// node_modules/ramda/src/dissocPath.js
-var require_dissocPath = __commonJS({
-  "node_modules/ramda/src/dissocPath.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isInteger = require_isInteger();
-    var _isArray = require_isArray();
-    var assoc = require_assoc();
-    var dissoc = require_dissoc();
-    var remove = require_remove();
-    var update = require_update();
-    var dissocPath = /* @__PURE__ */ _curry2(function dissocPath2(path, obj) {
-      switch (path.length) {
-        case 0:
-          return obj;
-        case 1:
-          return _isInteger(path[0]) && _isArray(obj) ? remove(path[0], 1, obj) : dissoc(path[0], obj);
-        default:
-          var head = path[0];
-          var tail = Array.prototype.slice.call(path, 1);
-          if (obj[head] == null) {
-            return obj;
-          } else if (_isInteger(head) && _isArray(obj)) {
-            return update(head, dissocPath2(tail, obj[head]), obj);
-          } else {
-            return assoc(head, dissocPath2(tail, obj[head]), obj);
-          }
-      }
-    });
-    module2.exports = dissocPath;
-  }
-});
-
-// node_modules/ramda/src/divide.js
-var require_divide = __commonJS({
-  "node_modules/ramda/src/divide.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var divide = /* @__PURE__ */ _curry2(function divide2(a, b) {
-      return a / b;
-    });
-    module2.exports = divide;
-  }
-});
-
-// node_modules/ramda/src/internal/_xdrop.js
-var require_xdrop = __commonJS({
-  "node_modules/ramda/src/internal/_xdrop.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XDrop = /* @__PURE__ */ function() {
-      function XDrop2(n, xf) {
-        this.xf = xf;
-        this.n = n;
-      }
-      XDrop2.prototype["@@transducer/init"] = _xfBase.init;
-      XDrop2.prototype["@@transducer/result"] = _xfBase.result;
-      XDrop2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.n > 0) {
-          this.n -= 1;
-          return result;
-        }
-        return this.xf["@@transducer/step"](result, input);
-      };
-      return XDrop2;
-    }();
-    var _xdrop = /* @__PURE__ */ _curry2(function _xdrop2(n, xf) {
-      return new XDrop(n, xf);
-    });
-    module2.exports = _xdrop;
-  }
-});
-
-// node_modules/ramda/src/drop.js
-var require_drop = __commonJS({
-  "node_modules/ramda/src/drop.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xdrop = require_xdrop();
-    var slice = require_slice();
-    var drop = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["drop"], _xdrop, function drop2(n, xs) {
-      return slice(Math.max(0, n), Infinity, xs);
-    }));
-    module2.exports = drop;
-  }
-});
-
-// node_modules/ramda/src/internal/_xtake.js
-var require_xtake = __commonJS({
-  "node_modules/ramda/src/internal/_xtake.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XTake = /* @__PURE__ */ function() {
-      function XTake2(n, xf) {
-        this.xf = xf;
-        this.n = n;
-        this.i = 0;
-      }
-      XTake2.prototype["@@transducer/init"] = _xfBase.init;
-      XTake2.prototype["@@transducer/result"] = _xfBase.result;
-      XTake2.prototype["@@transducer/step"] = function(result, input) {
-        this.i += 1;
-        var ret = this.n === 0 ? result : this.xf["@@transducer/step"](result, input);
-        return this.n >= 0 && this.i >= this.n ? _reduced(ret) : ret;
-      };
-      return XTake2;
-    }();
-    var _xtake = /* @__PURE__ */ _curry2(function _xtake2(n, xf) {
-      return new XTake(n, xf);
-    });
-    module2.exports = _xtake;
-  }
-});
-
-// node_modules/ramda/src/take.js
-var require_take = __commonJS({
-  "node_modules/ramda/src/take.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xtake = require_xtake();
-    var slice = require_slice();
-    var take = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["take"], _xtake, function take2(n, xs) {
-      return slice(0, n < 0 ? Infinity : n, xs);
-    }));
-    module2.exports = take;
-  }
-});
-
-// node_modules/ramda/src/internal/_dropLast.js
-var require_dropLast = __commonJS({
-  "node_modules/ramda/src/internal/_dropLast.js"(exports2, module2) {
-    var take = require_take();
-    function dropLast(n, xs) {
-      return take(n < xs.length ? xs.length - n : 0, xs);
-    }
-    module2.exports = dropLast;
-  }
-});
-
-// node_modules/ramda/src/internal/_xdropLast.js
-var require_xdropLast = __commonJS({
-  "node_modules/ramda/src/internal/_xdropLast.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XDropLast = /* @__PURE__ */ function() {
-      function XDropLast2(n, xf) {
-        this.xf = xf;
-        this.pos = 0;
-        this.full = false;
-        this.acc = new Array(n);
-      }
-      XDropLast2.prototype["@@transducer/init"] = _xfBase.init;
-      XDropLast2.prototype["@@transducer/result"] = function(result) {
-        this.acc = null;
-        return this.xf["@@transducer/result"](result);
-      };
-      XDropLast2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.full) {
-          result = this.xf["@@transducer/step"](result, this.acc[this.pos]);
-        }
-        this.store(input);
-        return result;
-      };
-      XDropLast2.prototype.store = function(input) {
-        this.acc[this.pos] = input;
-        this.pos += 1;
-        if (this.pos === this.acc.length) {
-          this.pos = 0;
-          this.full = true;
-        }
-      };
-      return XDropLast2;
-    }();
-    var _xdropLast = /* @__PURE__ */ _curry2(function _xdropLast2(n, xf) {
-      return new XDropLast(n, xf);
-    });
-    module2.exports = _xdropLast;
-  }
-});
-
-// node_modules/ramda/src/dropLast.js
-var require_dropLast2 = __commonJS({
-  "node_modules/ramda/src/dropLast.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _dropLast = require_dropLast();
-    var _xdropLast = require_xdropLast();
-    var dropLast = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropLast, _dropLast));
-    module2.exports = dropLast;
-  }
-});
-
-// node_modules/ramda/src/internal/_dropLastWhile.js
-var require_dropLastWhile = __commonJS({
-  "node_modules/ramda/src/internal/_dropLastWhile.js"(exports2, module2) {
-    var slice = require_slice();
-    function dropLastWhile(pred, xs) {
-      var idx = xs.length - 1;
-      while (idx >= 0 && pred(xs[idx])) {
-        idx -= 1;
-      }
-      return slice(0, idx + 1, xs);
-    }
-    module2.exports = dropLastWhile;
-  }
-});
-
-// node_modules/ramda/src/internal/_xdropLastWhile.js
-var require_xdropLastWhile = __commonJS({
-  "node_modules/ramda/src/internal/_xdropLastWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduce = require_reduce();
-    var _xfBase = require_xfBase();
-    var XDropLastWhile = /* @__PURE__ */ function() {
-      function XDropLastWhile2(fn, xf) {
-        this.f = fn;
-        this.retained = [];
-        this.xf = xf;
-      }
-      XDropLastWhile2.prototype["@@transducer/init"] = _xfBase.init;
-      XDropLastWhile2.prototype["@@transducer/result"] = function(result) {
-        this.retained = null;
-        return this.xf["@@transducer/result"](result);
-      };
-      XDropLastWhile2.prototype["@@transducer/step"] = function(result, input) {
-        return this.f(input) ? this.retain(result, input) : this.flush(result, input);
-      };
-      XDropLastWhile2.prototype.flush = function(result, input) {
-        result = _reduce(this.xf["@@transducer/step"], result, this.retained);
-        this.retained = [];
-        return this.xf["@@transducer/step"](result, input);
-      };
-      XDropLastWhile2.prototype.retain = function(result, input) {
-        this.retained.push(input);
-        return result;
-      };
-      return XDropLastWhile2;
-    }();
-    var _xdropLastWhile = /* @__PURE__ */ _curry2(function _xdropLastWhile2(fn, xf) {
-      return new XDropLastWhile(fn, xf);
-    });
-    module2.exports = _xdropLastWhile;
-  }
-});
-
-// node_modules/ramda/src/dropLastWhile.js
-var require_dropLastWhile2 = __commonJS({
-  "node_modules/ramda/src/dropLastWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _dropLastWhile = require_dropLastWhile();
-    var _xdropLastWhile = require_xdropLastWhile();
-    var dropLastWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropLastWhile, _dropLastWhile));
-    module2.exports = dropLastWhile;
-  }
-});
-
-// node_modules/ramda/src/internal/_xdropRepeatsWith.js
-var require_xdropRepeatsWith = __commonJS({
-  "node_modules/ramda/src/internal/_xdropRepeatsWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XDropRepeatsWith = /* @__PURE__ */ function() {
-      function XDropRepeatsWith2(pred, xf) {
-        this.xf = xf;
-        this.pred = pred;
-        this.lastValue = void 0;
-        this.seenFirstValue = false;
-      }
-      XDropRepeatsWith2.prototype["@@transducer/init"] = _xfBase.init;
-      XDropRepeatsWith2.prototype["@@transducer/result"] = _xfBase.result;
-      XDropRepeatsWith2.prototype["@@transducer/step"] = function(result, input) {
-        var sameAsLast = false;
-        if (!this.seenFirstValue) {
-          this.seenFirstValue = true;
-        } else if (this.pred(this.lastValue, input)) {
-          sameAsLast = true;
-        }
-        this.lastValue = input;
-        return sameAsLast ? result : this.xf["@@transducer/step"](result, input);
-      };
-      return XDropRepeatsWith2;
-    }();
-    var _xdropRepeatsWith = /* @__PURE__ */ _curry2(function _xdropRepeatsWith2(pred, xf) {
-      return new XDropRepeatsWith(pred, xf);
-    });
-    module2.exports = _xdropRepeatsWith;
-  }
-});
-
-// node_modules/ramda/src/last.js
-var require_last = __commonJS({
-  "node_modules/ramda/src/last.js"(exports2, module2) {
-    var nth = require_nth();
-    var last2 = /* @__PURE__ */ nth(-1);
-    module2.exports = last2;
-  }
-});
-
-// node_modules/ramda/src/dropRepeatsWith.js
-var require_dropRepeatsWith = __commonJS({
-  "node_modules/ramda/src/dropRepeatsWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last2 = require_last();
-    var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
-      var result = [];
-      var idx = 1;
-      var len = list.length;
-      if (len !== 0) {
-        result[0] = list[0];
-        while (idx < len) {
-          if (!pred(last2(result), list[idx])) {
-            result[result.length] = list[idx];
-          }
-          idx += 1;
-        }
-      }
-      return result;
-    }));
-    module2.exports = dropRepeatsWith;
-  }
-});
-
-// node_modules/ramda/src/dropRepeats.js
-var require_dropRepeats = __commonJS({
-  "node_modules/ramda/src/dropRepeats.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _dispatchable = require_dispatchable();
-    var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var dropRepeatsWith = require_dropRepeatsWith();
-    var equals = require_equals2();
-    var dropRepeats = /* @__PURE__ */ _curry1(/* @__PURE__ */ _dispatchable([], /* @__PURE__ */ _xdropRepeatsWith(equals), /* @__PURE__ */ dropRepeatsWith(equals)));
-    module2.exports = dropRepeats;
-  }
-});
-
-// node_modules/ramda/src/internal/_xdropWhile.js
-var require_xdropWhile = __commonJS({
-  "node_modules/ramda/src/internal/_xdropWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XDropWhile = /* @__PURE__ */ function() {
-      function XDropWhile2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XDropWhile2.prototype["@@transducer/init"] = _xfBase.init;
-      XDropWhile2.prototype["@@transducer/result"] = _xfBase.result;
-      XDropWhile2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.f) {
-          if (this.f(input)) {
-            return result;
-          }
-          this.f = null;
-        }
-        return this.xf["@@transducer/step"](result, input);
-      };
-      return XDropWhile2;
-    }();
-    var _xdropWhile = /* @__PURE__ */ _curry2(function _xdropWhile2(f, xf) {
-      return new XDropWhile(f, xf);
-    });
-    module2.exports = _xdropWhile;
-  }
-});
-
-// node_modules/ramda/src/dropWhile.js
-var require_dropWhile = __commonJS({
-  "node_modules/ramda/src/dropWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xdropWhile = require_xdropWhile();
-    var slice = require_slice();
-    var dropWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["dropWhile"], _xdropWhile, function dropWhile2(pred, xs) {
-      var idx = 0;
-      var len = xs.length;
-      while (idx < len && pred(xs[idx])) {
-        idx += 1;
-      }
-      return slice(idx, Infinity, xs);
-    }));
-    module2.exports = dropWhile;
-  }
-});
-
-// node_modules/ramda/src/or.js
-var require_or = __commonJS({
-  "node_modules/ramda/src/or.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var or = /* @__PURE__ */ _curry2(function or2(a, b) {
-      return a || b;
-    });
-    module2.exports = or;
-  }
-});
-
-// node_modules/ramda/src/either.js
-var require_either = __commonJS({
-  "node_modules/ramda/src/either.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isFunction = require_isFunction();
-    var lift = require_lift();
-    var or = require_or();
-    var either = /* @__PURE__ */ _curry2(function either2(f, g) {
-      return _isFunction(f) ? function _either() {
-        return f.apply(this, arguments) || g.apply(this, arguments);
-      } : lift(or)(f, g);
-    });
-    module2.exports = either;
-  }
-});
-
-// node_modules/ramda/src/empty.js
-var require_empty = __commonJS({
-  "node_modules/ramda/src/empty.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _isArguments = require_isArguments();
-    var _isArray = require_isArray();
-    var _isObject = require_isObject();
-    var _isString = require_isString();
-    var empty = /* @__PURE__ */ _curry1(function empty2(x) {
-      return x != null && typeof x["fantasy-land/empty"] === "function" ? x["fantasy-land/empty"]() : x != null && x.constructor != null && typeof x.constructor["fantasy-land/empty"] === "function" ? x.constructor["fantasy-land/empty"]() : x != null && typeof x.empty === "function" ? x.empty() : x != null && x.constructor != null && typeof x.constructor.empty === "function" ? x.constructor.empty() : _isArray(x) ? [] : _isString(x) ? "" : _isObject(x) ? {} : _isArguments(x) ? function() {
-        return arguments;
-      }() : void 0;
-    });
-    module2.exports = empty;
-  }
-});
-
-// node_modules/ramda/src/takeLast.js
-var require_takeLast = __commonJS({
-  "node_modules/ramda/src/takeLast.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var drop = require_drop();
-    var takeLast = /* @__PURE__ */ _curry2(function takeLast2(n, xs) {
-      return drop(n >= 0 ? xs.length - n : 0, xs);
-    });
-    module2.exports = takeLast;
-  }
-});
-
-// node_modules/ramda/src/endsWith.js
-var require_endsWith = __commonJS({
-  "node_modules/ramda/src/endsWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var equals = require_equals2();
-    var takeLast = require_takeLast();
-    var endsWith = /* @__PURE__ */ _curry2(function(suffix, list) {
-      return equals(takeLast(suffix.length, list), suffix);
-    });
-    module2.exports = endsWith;
-  }
-});
-
-// node_modules/ramda/src/eqBy.js
-var require_eqBy = __commonJS({
-  "node_modules/ramda/src/eqBy.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var equals = require_equals2();
-    var eqBy = /* @__PURE__ */ _curry3(function eqBy2(f, x, y) {
-      return equals(f(x), f(y));
-    });
-    module2.exports = eqBy;
-  }
-});
-
-// node_modules/ramda/src/eqProps.js
-var require_eqProps = __commonJS({
-  "node_modules/ramda/src/eqProps.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var equals = require_equals2();
-    var eqProps = /* @__PURE__ */ _curry3(function eqProps2(prop, obj1, obj2) {
-      return equals(obj1[prop], obj2[prop]);
-    });
-    module2.exports = eqProps;
-  }
-});
-
-// node_modules/ramda/src/evolve.js
-var require_evolve = __commonJS({
-  "node_modules/ramda/src/evolve.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var evolve = /* @__PURE__ */ _curry2(function evolve2(transformations, object) {
-      var result = object instanceof Array ? [] : {};
-      var transformation, key, type;
-      for (key in object) {
-        transformation = transformations[key];
-        type = typeof transformation;
-        result[key] = type === "function" ? transformation(object[key]) : transformation && type === "object" ? evolve2(transformation, object[key]) : object[key];
-      }
-      return result;
-    });
-    module2.exports = evolve;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfind.js
-var require_xfind = __commonJS({
-  "node_modules/ramda/src/internal/_xfind.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XFind = /* @__PURE__ */ function() {
-      function XFind2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-        this.found = false;
-      }
-      XFind2.prototype["@@transducer/init"] = _xfBase.init;
-      XFind2.prototype["@@transducer/result"] = function(result) {
-        if (!this.found) {
-          result = this.xf["@@transducer/step"](result, void 0);
-        }
-        return this.xf["@@transducer/result"](result);
-      };
-      XFind2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.f(input)) {
-          this.found = true;
-          result = _reduced(this.xf["@@transducer/step"](result, input));
-        }
-        return result;
-      };
-      return XFind2;
-    }();
-    var _xfind = /* @__PURE__ */ _curry2(function _xfind2(f, xf) {
-      return new XFind(f, xf);
-    });
-    module2.exports = _xfind;
-  }
-});
-
-// node_modules/ramda/src/find.js
-var require_find = __commonJS({
-  "node_modules/ramda/src/find.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xfind = require_xfind();
-    var find = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["find"], _xfind, function find2(fn, list) {
-      var idx = 0;
-      var len = list.length;
-      while (idx < len) {
-        if (fn(list[idx])) {
-          return list[idx];
-        }
-        idx += 1;
-      }
-    }));
-    module2.exports = find;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfindIndex.js
-var require_xfindIndex = __commonJS({
-  "node_modules/ramda/src/internal/_xfindIndex.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XFindIndex = /* @__PURE__ */ function() {
-      function XFindIndex2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-        this.idx = -1;
-        this.found = false;
-      }
-      XFindIndex2.prototype["@@transducer/init"] = _xfBase.init;
-      XFindIndex2.prototype["@@transducer/result"] = function(result) {
-        if (!this.found) {
-          result = this.xf["@@transducer/step"](result, -1);
-        }
-        return this.xf["@@transducer/result"](result);
-      };
-      XFindIndex2.prototype["@@transducer/step"] = function(result, input) {
-        this.idx += 1;
-        if (this.f(input)) {
-          this.found = true;
-          result = _reduced(this.xf["@@transducer/step"](result, this.idx));
-        }
-        return result;
-      };
-      return XFindIndex2;
-    }();
-    var _xfindIndex = /* @__PURE__ */ _curry2(function _xfindIndex2(f, xf) {
-      return new XFindIndex(f, xf);
-    });
-    module2.exports = _xfindIndex;
-  }
-});
-
-// node_modules/ramda/src/findIndex.js
-var require_findIndex = __commonJS({
-  "node_modules/ramda/src/findIndex.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xfindIndex = require_xfindIndex();
-    var findIndex = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindIndex, function findIndex2(fn, list) {
-      var idx = 0;
-      var len = list.length;
-      while (idx < len) {
-        if (fn(list[idx])) {
-          return idx;
-        }
-        idx += 1;
-      }
-      return -1;
-    }));
-    module2.exports = findIndex;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfindLast.js
-var require_xfindLast = __commonJS({
-  "node_modules/ramda/src/internal/_xfindLast.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XFindLast = /* @__PURE__ */ function() {
-      function XFindLast2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XFindLast2.prototype["@@transducer/init"] = _xfBase.init;
-      XFindLast2.prototype["@@transducer/result"] = function(result) {
-        return this.xf["@@transducer/result"](this.xf["@@transducer/step"](result, this.last));
-      };
-      XFindLast2.prototype["@@transducer/step"] = function(result, input) {
-        if (this.f(input)) {
-          this.last = input;
-        }
-        return result;
-      };
-      return XFindLast2;
-    }();
-    var _xfindLast = /* @__PURE__ */ _curry2(function _xfindLast2(f, xf) {
-      return new XFindLast(f, xf);
-    });
-    module2.exports = _xfindLast;
-  }
-});
-
-// node_modules/ramda/src/findLast.js
-var require_findLast = __commonJS({
-  "node_modules/ramda/src/findLast.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xfindLast = require_xfindLast();
-    var findLast = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindLast, function findLast2(fn, list) {
-      var idx = list.length - 1;
-      while (idx >= 0) {
-        if (fn(list[idx])) {
-          return list[idx];
-        }
-        idx -= 1;
-      }
-    }));
-    module2.exports = findLast;
-  }
-});
-
-// node_modules/ramda/src/internal/_xfindLastIndex.js
-var require_xfindLastIndex = __commonJS({
-  "node_modules/ramda/src/internal/_xfindLastIndex.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XFindLastIndex = /* @__PURE__ */ function() {
-      function XFindLastIndex2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-        this.idx = -1;
-        this.lastIdx = -1;
-      }
-      XFindLastIndex2.prototype["@@transducer/init"] = _xfBase.init;
-      XFindLastIndex2.prototype["@@transducer/result"] = function(result) {
-        return this.xf["@@transducer/result"](this.xf["@@transducer/step"](result, this.lastIdx));
-      };
-      XFindLastIndex2.prototype["@@transducer/step"] = function(result, input) {
-        this.idx += 1;
-        if (this.f(input)) {
-          this.lastIdx = this.idx;
-        }
-        return result;
-      };
-      return XFindLastIndex2;
-    }();
-    var _xfindLastIndex = /* @__PURE__ */ _curry2(function _xfindLastIndex2(f, xf) {
-      return new XFindLastIndex(f, xf);
-    });
-    module2.exports = _xfindLastIndex;
-  }
-});
-
-// node_modules/ramda/src/findLastIndex.js
-var require_findLastIndex = __commonJS({
-  "node_modules/ramda/src/findLastIndex.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xfindLastIndex = require_xfindLastIndex();
-    var findLastIndex = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindLastIndex, function findLastIndex2(fn, list) {
-      var idx = list.length - 1;
-      while (idx >= 0) {
-        if (fn(list[idx])) {
-          return idx;
-        }
-        idx -= 1;
-      }
-      return -1;
-    }));
-    module2.exports = findLastIndex;
-  }
-});
-
-// node_modules/ramda/src/flatten.js
-var require_flatten = __commonJS({
-  "node_modules/ramda/src/flatten.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _makeFlat = require_makeFlat();
-    var flatten = /* @__PURE__ */ _curry1(/* @__PURE__ */ _makeFlat(true));
-    module2.exports = flatten;
-  }
-});
-
-// node_modules/ramda/src/flip.js
-var require_flip = __commonJS({
-  "node_modules/ramda/src/flip.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var flip = /* @__PURE__ */ _curry1(function flip2(fn) {
-      return curryN(fn.length, function(a, b) {
-        var args = Array.prototype.slice.call(arguments, 0);
-        args[0] = b;
-        args[1] = a;
-        return fn.apply(this, args);
-      });
-    });
-    module2.exports = flip;
-  }
-});
-
-// node_modules/ramda/src/forEach.js
-var require_forEach = __commonJS({
-  "node_modules/ramda/src/forEach.js"(exports2, module2) {
-    var _checkForMethod = require_checkForMethod();
-    var _curry2 = require_curry2();
-    var forEach = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("forEach", function forEach2(fn, list) {
-      var len = list.length;
-      var idx = 0;
-      while (idx < len) {
-        fn(list[idx]);
-        idx += 1;
-      }
-      return list;
-    }));
-    module2.exports = forEach;
-  }
-});
-
-// node_modules/ramda/src/forEachObjIndexed.js
-var require_forEachObjIndexed = __commonJS({
-  "node_modules/ramda/src/forEachObjIndexed.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var keys = require_keys();
-    var forEachObjIndexed = /* @__PURE__ */ _curry2(function forEachObjIndexed2(fn, obj) {
-      var keyList = keys(obj);
-      var idx = 0;
-      while (idx < keyList.length) {
-        var key = keyList[idx];
-        fn(obj[key], key, obj);
-        idx += 1;
-      }
-      return obj;
-    });
-    module2.exports = forEachObjIndexed;
-  }
-});
-
-// node_modules/ramda/src/fromPairs.js
-var require_fromPairs = __commonJS({
-  "node_modules/ramda/src/fromPairs.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var fromPairs = /* @__PURE__ */ _curry1(function fromPairs2(pairs) {
-      var result = {};
-      var idx = 0;
-      while (idx < pairs.length) {
-        result[pairs[idx][0]] = pairs[idx][1];
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = fromPairs;
-  }
-});
-
-// node_modules/ramda/src/groupBy.js
-var require_groupBy = __commonJS({
-  "node_modules/ramda/src/groupBy.js"(exports2, module2) {
-    var _checkForMethod = require_checkForMethod();
-    var _curry2 = require_curry2();
-    var reduceBy = require_reduceBy();
-    var groupBy = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("groupBy", /* @__PURE__ */ reduceBy(function(acc, item) {
-      if (acc == null) {
-        acc = [];
-      }
-      acc.push(item);
-      return acc;
-    }, null)));
-    module2.exports = groupBy;
-  }
-});
-
-// node_modules/ramda/src/groupWith.js
-var require_groupWith = __commonJS({
-  "node_modules/ramda/src/groupWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var groupWith = /* @__PURE__ */ _curry2(function(fn, list) {
-      var res = [];
-      var idx = 0;
-      var len = list.length;
-      while (idx < len) {
-        var nextidx = idx + 1;
-        while (nextidx < len && fn(list[nextidx - 1], list[nextidx])) {
-          nextidx += 1;
-        }
-        res.push(list.slice(idx, nextidx));
-        idx = nextidx;
-      }
-      return res;
-    });
-    module2.exports = groupWith;
-  }
-});
-
-// node_modules/ramda/src/gt.js
-var require_gt = __commonJS({
-  "node_modules/ramda/src/gt.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var gt = /* @__PURE__ */ _curry2(function gt2(a, b) {
-      return a > b;
-    });
-    module2.exports = gt;
-  }
-});
-
-// node_modules/ramda/src/gte.js
-var require_gte = __commonJS({
-  "node_modules/ramda/src/gte.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var gte = /* @__PURE__ */ _curry2(function gte2(a, b) {
-      return a >= b;
-    });
-    module2.exports = gte;
-  }
-});
-
-// node_modules/ramda/src/hasPath.js
-var require_hasPath = __commonJS({
-  "node_modules/ramda/src/hasPath.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _has = require_has();
-    var isNil = require_isNil();
-    var hasPath = /* @__PURE__ */ _curry2(function hasPath2(_path, obj) {
-      if (_path.length === 0 || isNil(obj)) {
-        return false;
-      }
-      var val = obj;
-      var idx = 0;
-      while (idx < _path.length) {
-        if (!isNil(val) && _has(_path[idx], val)) {
-          val = val[_path[idx]];
-          idx += 1;
-        } else {
-          return false;
-        }
-      }
-      return true;
-    });
-    module2.exports = hasPath;
-  }
-});
-
-// node_modules/ramda/src/has.js
-var require_has2 = __commonJS({
-  "node_modules/ramda/src/has.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var hasPath = require_hasPath();
-    var has = /* @__PURE__ */ _curry2(function has2(prop, obj) {
-      return hasPath([prop], obj);
-    });
-    module2.exports = has;
-  }
-});
-
-// node_modules/ramda/src/hasIn.js
-var require_hasIn = __commonJS({
-  "node_modules/ramda/src/hasIn.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var hasIn = /* @__PURE__ */ _curry2(function hasIn2(prop, obj) {
-      return prop in obj;
-    });
-    module2.exports = hasIn;
-  }
-});
-
-// node_modules/ramda/src/identical.js
-var require_identical = __commonJS({
-  "node_modules/ramda/src/identical.js"(exports2, module2) {
-    var _objectIs = require_objectIs();
-    var _curry2 = require_curry2();
-    var identical = /* @__PURE__ */ _curry2(_objectIs);
-    module2.exports = identical;
-  }
-});
-
-// node_modules/ramda/src/ifElse.js
-var require_ifElse = __commonJS({
-  "node_modules/ramda/src/ifElse.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var curryN = require_curryN2();
-    var ifElse = /* @__PURE__ */ _curry3(function ifElse2(condition, onTrue, onFalse) {
-      return curryN(Math.max(condition.length, onTrue.length, onFalse.length), function _ifElse() {
-        return condition.apply(this, arguments) ? onTrue.apply(this, arguments) : onFalse.apply(this, arguments);
-      });
-    });
-    module2.exports = ifElse;
-  }
-});
-
-// node_modules/ramda/src/inc.js
-var require_inc = __commonJS({
-  "node_modules/ramda/src/inc.js"(exports2, module2) {
-    var add = require_add();
-    var inc = /* @__PURE__ */ add(1);
-    module2.exports = inc;
-  }
-});
-
-// node_modules/ramda/src/includes.js
-var require_includes2 = __commonJS({
-  "node_modules/ramda/src/includes.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _curry2 = require_curry2();
-    var includes = /* @__PURE__ */ _curry2(_includes);
-    module2.exports = includes;
-  }
-});
-
-// node_modules/ramda/src/indexBy.js
-var require_indexBy = __commonJS({
-  "node_modules/ramda/src/indexBy.js"(exports2, module2) {
-    var reduceBy = require_reduceBy();
-    var indexBy = /* @__PURE__ */ reduceBy(function(acc, elem) {
-      return elem;
-    }, null);
-    module2.exports = indexBy;
-  }
-});
-
-// node_modules/ramda/src/indexOf.js
-var require_indexOf2 = __commonJS({
-  "node_modules/ramda/src/indexOf.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _indexOf = require_indexOf();
-    var _isArray = require_isArray();
-    var indexOf = /* @__PURE__ */ _curry2(function indexOf2(target, xs) {
-      return typeof xs.indexOf === "function" && !_isArray(xs) ? xs.indexOf(target) : _indexOf(xs, target, 0);
-    });
-    module2.exports = indexOf;
-  }
-});
-
-// node_modules/ramda/src/init.js
-var require_init = __commonJS({
-  "node_modules/ramda/src/init.js"(exports2, module2) {
-    var slice = require_slice();
-    var init = /* @__PURE__ */ slice(0, -1);
-    module2.exports = init;
-  }
-});
-
-// node_modules/ramda/src/innerJoin.js
-var require_innerJoin = __commonJS({
-  "node_modules/ramda/src/innerJoin.js"(exports2, module2) {
-    var _includesWith = require_includesWith();
-    var _curry3 = require_curry3();
-    var _filter = require_filter();
-    var innerJoin = /* @__PURE__ */ _curry3(function innerJoin2(pred, xs, ys) {
-      return _filter(function(x) {
-        return _includesWith(pred, x, ys);
-      }, xs);
-    });
-    module2.exports = innerJoin;
-  }
-});
-
-// node_modules/ramda/src/insert.js
-var require_insert = __commonJS({
-  "node_modules/ramda/src/insert.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var insert = /* @__PURE__ */ _curry3(function insert2(idx, elt, list) {
-      idx = idx < list.length && idx >= 0 ? idx : list.length;
-      var result = Array.prototype.slice.call(list, 0);
-      result.splice(idx, 0, elt);
-      return result;
-    });
-    module2.exports = insert;
-  }
-});
-
-// node_modules/ramda/src/insertAll.js
-var require_insertAll = __commonJS({
-  "node_modules/ramda/src/insertAll.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var insertAll = /* @__PURE__ */ _curry3(function insertAll2(idx, elts, list) {
-      idx = idx < list.length && idx >= 0 ? idx : list.length;
-      return [].concat(Array.prototype.slice.call(list, 0, idx), elts, Array.prototype.slice.call(list, idx));
-    });
-    module2.exports = insertAll;
-  }
-});
-
-// node_modules/ramda/src/uniqBy.js
-var require_uniqBy = __commonJS({
-  "node_modules/ramda/src/uniqBy.js"(exports2, module2) {
-    var _Set = require_Set();
-    var _curry2 = require_curry2();
-    var uniqBy = /* @__PURE__ */ _curry2(function uniqBy2(fn, list) {
-      var set = new _Set();
-      var result = [];
-      var idx = 0;
-      var appliedItem, item;
-      while (idx < list.length) {
-        item = list[idx];
-        appliedItem = fn(item);
-        if (set.add(appliedItem)) {
-          result.push(item);
-        }
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = uniqBy;
-  }
-});
-
-// node_modules/ramda/src/uniq.js
-var require_uniq = __commonJS({
-  "node_modules/ramda/src/uniq.js"(exports2, module2) {
-    var identity = require_identity2();
-    var uniqBy = require_uniqBy();
-    var uniq = /* @__PURE__ */ uniqBy(identity);
-    module2.exports = uniq;
-  }
-});
-
-// node_modules/ramda/src/intersection.js
-var require_intersection = __commonJS({
-  "node_modules/ramda/src/intersection.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _curry2 = require_curry2();
-    var _filter = require_filter();
-    var flip = require_flip();
-    var uniq = require_uniq();
-    var intersection = /* @__PURE__ */ _curry2(function intersection2(list1, list2) {
-      var lookupList, filteredList;
-      if (list1.length > list2.length) {
-        lookupList = list1;
-        filteredList = list2;
-      } else {
-        lookupList = list2;
-        filteredList = list1;
-      }
-      return uniq(_filter(flip(_includes)(lookupList), filteredList));
-    });
-    module2.exports = intersection;
-  }
-});
-
-// node_modules/ramda/src/intersperse.js
-var require_intersperse = __commonJS({
-  "node_modules/ramda/src/intersperse.js"(exports2, module2) {
-    var _checkForMethod = require_checkForMethod();
-    var _curry2 = require_curry2();
-    var intersperse = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("intersperse", function intersperse2(separator, list) {
-      var out = [];
-      var idx = 0;
-      var length = list.length;
-      while (idx < length) {
-        if (idx === length - 1) {
-          out.push(list[idx]);
-        } else {
-          out.push(list[idx], separator);
-        }
-        idx += 1;
-      }
-      return out;
-    }));
-    module2.exports = intersperse;
-  }
-});
-
-// node_modules/ramda/src/internal/_objectAssign.js
-var require_objectAssign = __commonJS({
-  "node_modules/ramda/src/internal/_objectAssign.js"(exports2, module2) {
-    var _has = require_has();
-    function _objectAssign(target) {
-      if (target == null) {
-        throw new TypeError("Cannot convert undefined or null to object");
-      }
-      var output = Object(target);
-      var idx = 1;
-      var length = arguments.length;
-      while (idx < length) {
-        var source = arguments[idx];
-        if (source != null) {
-          for (var nextKey in source) {
-            if (_has(nextKey, source)) {
-              output[nextKey] = source[nextKey];
-            }
-          }
-        }
-        idx += 1;
-      }
-      return output;
-    }
-    module2.exports = typeof Object.assign === "function" ? Object.assign : _objectAssign;
-  }
-});
-
-// node_modules/ramda/src/objOf.js
-var require_objOf = __commonJS({
-  "node_modules/ramda/src/objOf.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var objOf = /* @__PURE__ */ _curry2(function objOf2(key, val) {
-      var obj = {};
-      obj[key] = val;
-      return obj;
-    });
-    module2.exports = objOf;
-  }
-});
-
-// node_modules/ramda/src/internal/_stepCat.js
-var require_stepCat = __commonJS({
-  "node_modules/ramda/src/internal/_stepCat.js"(exports2, module2) {
-    var _objectAssign = require_objectAssign();
-    var _identity = require_identity();
-    var _isArrayLike = require_isArrayLike();
-    var _isTransformer = require_isTransformer();
-    var objOf = require_objOf();
-    var _stepCatArray = {
-      "@@transducer/init": Array,
-      "@@transducer/step": function(xs, x) {
-        xs.push(x);
-        return xs;
-      },
-      "@@transducer/result": _identity
-    };
-    var _stepCatString = {
-      "@@transducer/init": String,
-      "@@transducer/step": function(a, b) {
-        return a + b;
-      },
-      "@@transducer/result": _identity
-    };
-    var _stepCatObject = {
-      "@@transducer/init": Object,
-      "@@transducer/step": function(result, input) {
-        return _objectAssign(result, _isArrayLike(input) ? objOf(input[0], input[1]) : input);
-      },
-      "@@transducer/result": _identity
-    };
-    function _stepCat(obj) {
-      if (_isTransformer(obj)) {
-        return obj;
-      }
-      if (_isArrayLike(obj)) {
-        return _stepCatArray;
-      }
-      if (typeof obj === "string") {
-        return _stepCatString;
-      }
-      if (typeof obj === "object") {
-        return _stepCatObject;
-      }
-      throw new Error("Cannot create transformer for " + obj);
-    }
-    module2.exports = _stepCat;
-  }
-});
-
-// node_modules/ramda/src/into.js
-var require_into = __commonJS({
-  "node_modules/ramda/src/into.js"(exports2, module2) {
-    var _clone = require_clone();
-    var _curry3 = require_curry3();
-    var _isTransformer = require_isTransformer();
-    var _reduce = require_reduce();
-    var _stepCat = require_stepCat();
-    var into = /* @__PURE__ */ _curry3(function into2(acc, xf, list) {
-      return _isTransformer(acc) ? _reduce(xf(acc), acc["@@transducer/init"](), list) : _reduce(xf(_stepCat(acc)), _clone(acc, [], [], false), list);
-    });
-    module2.exports = into;
-  }
-});
-
-// node_modules/ramda/src/invert.js
-var require_invert = __commonJS({
-  "node_modules/ramda/src/invert.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _has = require_has();
-    var keys = require_keys();
-    var invert = /* @__PURE__ */ _curry1(function invert2(obj) {
-      var props = keys(obj);
-      var len = props.length;
-      var idx = 0;
-      var out = {};
-      while (idx < len) {
-        var key = props[idx];
-        var val = obj[key];
-        var list = _has(val, out) ? out[val] : out[val] = [];
-        list[list.length] = key;
-        idx += 1;
-      }
-      return out;
-    });
-    module2.exports = invert;
-  }
-});
-
-// node_modules/ramda/src/invertObj.js
-var require_invertObj = __commonJS({
-  "node_modules/ramda/src/invertObj.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var keys = require_keys();
-    var invertObj = /* @__PURE__ */ _curry1(function invertObj2(obj) {
-      var props = keys(obj);
-      var len = props.length;
-      var idx = 0;
-      var out = {};
-      while (idx < len) {
-        var key = props[idx];
-        out[obj[key]] = key;
-        idx += 1;
-      }
-      return out;
-    });
-    module2.exports = invertObj;
-  }
-});
-
-// node_modules/ramda/src/invoker.js
-var require_invoker = __commonJS({
-  "node_modules/ramda/src/invoker.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isFunction = require_isFunction();
-    var curryN = require_curryN2();
-    var toString = require_toString2();
-    var invoker = /* @__PURE__ */ _curry2(function invoker2(arity, method) {
-      return curryN(arity + 1, function() {
-        var target = arguments[arity];
-        if (target != null && _isFunction(target[method])) {
-          return target[method].apply(target, Array.prototype.slice.call(arguments, 0, arity));
-        }
-        throw new TypeError(toString(target) + ' does not have a method named "' + method + '"');
-      });
-    });
-    module2.exports = invoker;
-  }
-});
-
-// node_modules/ramda/src/is.js
-var require_is = __commonJS({
-  "node_modules/ramda/src/is.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var is = /* @__PURE__ */ _curry2(function is2(Ctor, val) {
-      return val != null && val.constructor === Ctor || val instanceof Ctor;
-    });
-    module2.exports = is;
-  }
-});
-
-// node_modules/ramda/src/isEmpty.js
-var require_isEmpty = __commonJS({
-  "node_modules/ramda/src/isEmpty.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var empty = require_empty();
-    var equals = require_equals2();
-    var isEmpty = /* @__PURE__ */ _curry1(function isEmpty2(x) {
-      return x != null && equals(x, empty(x));
-    });
-    module2.exports = isEmpty;
-  }
-});
-
-// node_modules/ramda/src/join.js
-var require_join = __commonJS({
-  "node_modules/ramda/src/join.js"(exports2, module2) {
-    var invoker = require_invoker();
-    var join4 = /* @__PURE__ */ invoker(1, "join");
-    module2.exports = join4;
-  }
-});
-
-// node_modules/ramda/src/juxt.js
-var require_juxt = __commonJS({
-  "node_modules/ramda/src/juxt.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var converge = require_converge();
-    var juxt = /* @__PURE__ */ _curry1(function juxt2(fns) {
-      return converge(function() {
-        return Array.prototype.slice.call(arguments, 0);
-      }, fns);
-    });
-    module2.exports = juxt;
-  }
-});
-
-// node_modules/ramda/src/keysIn.js
-var require_keysIn = __commonJS({
-  "node_modules/ramda/src/keysIn.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var keysIn = /* @__PURE__ */ _curry1(function keysIn2(obj) {
-      var prop;
-      var ks = [];
-      for (prop in obj) {
-        ks[ks.length] = prop;
-      }
-      return ks;
-    });
-    module2.exports = keysIn;
-  }
-});
-
-// node_modules/ramda/src/lastIndexOf.js
-var require_lastIndexOf = __commonJS({
-  "node_modules/ramda/src/lastIndexOf.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isArray = require_isArray();
-    var equals = require_equals2();
-    var lastIndexOf = /* @__PURE__ */ _curry2(function lastIndexOf2(target, xs) {
-      if (typeof xs.lastIndexOf === "function" && !_isArray(xs)) {
-        return xs.lastIndexOf(target);
-      } else {
-        var idx = xs.length - 1;
-        while (idx >= 0) {
-          if (equals(xs[idx], target)) {
-            return idx;
-          }
-          idx -= 1;
-        }
-        return -1;
-      }
-    });
-    module2.exports = lastIndexOf;
-  }
-});
-
-// node_modules/ramda/src/internal/_isNumber.js
-var require_isNumber = __commonJS({
-  "node_modules/ramda/src/internal/_isNumber.js"(exports2, module2) {
-    function _isNumber(x) {
-      return Object.prototype.toString.call(x) === "[object Number]";
-    }
-    module2.exports = _isNumber;
-  }
-});
-
-// node_modules/ramda/src/length.js
-var require_length = __commonJS({
-  "node_modules/ramda/src/length.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _isNumber = require_isNumber();
-    var length = /* @__PURE__ */ _curry1(function length2(list) {
-      return list != null && _isNumber(list.length) ? list.length : NaN;
-    });
-    module2.exports = length;
-  }
-});
-
-// node_modules/ramda/src/lens.js
-var require_lens = __commonJS({
-  "node_modules/ramda/src/lens.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var map = require_map2();
-    var lens = /* @__PURE__ */ _curry2(function lens2(getter, setter) {
-      return function(toFunctorFn) {
-        return function(target) {
-          return map(function(focus) {
-            return setter(focus, target);
-          }, toFunctorFn(getter(target)));
-        };
-      };
-    });
-    module2.exports = lens;
-  }
-});
-
-// node_modules/ramda/src/lensIndex.js
-var require_lensIndex = __commonJS({
-  "node_modules/ramda/src/lensIndex.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var lens = require_lens();
-    var nth = require_nth();
-    var update = require_update();
-    var lensIndex = /* @__PURE__ */ _curry1(function lensIndex2(n) {
-      return lens(nth(n), update(n));
-    });
-    module2.exports = lensIndex;
-  }
-});
-
-// node_modules/ramda/src/lensPath.js
-var require_lensPath = __commonJS({
-  "node_modules/ramda/src/lensPath.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var assocPath = require_assocPath();
-    var lens = require_lens();
-    var path = require_path();
-    var lensPath = /* @__PURE__ */ _curry1(function lensPath2(p) {
-      return lens(path(p), assocPath(p));
-    });
-    module2.exports = lensPath;
-  }
-});
-
-// node_modules/ramda/src/lensProp.js
-var require_lensProp = __commonJS({
-  "node_modules/ramda/src/lensProp.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var assoc = require_assoc();
-    var lens = require_lens();
-    var prop = require_prop();
-    var lensProp = /* @__PURE__ */ _curry1(function lensProp2(k) {
-      return lens(prop(k), assoc(k));
-    });
-    module2.exports = lensProp;
-  }
-});
-
-// node_modules/ramda/src/lt.js
-var require_lt = __commonJS({
-  "node_modules/ramda/src/lt.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var lt = /* @__PURE__ */ _curry2(function lt2(a, b) {
-      return a < b;
-    });
-    module2.exports = lt;
-  }
-});
-
-// node_modules/ramda/src/lte.js
-var require_lte = __commonJS({
-  "node_modules/ramda/src/lte.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var lte = /* @__PURE__ */ _curry2(function lte2(a, b) {
-      return a <= b;
-    });
-    module2.exports = lte;
-  }
-});
-
-// node_modules/ramda/src/mapAccum.js
-var require_mapAccum = __commonJS({
-  "node_modules/ramda/src/mapAccum.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var mapAccum = /* @__PURE__ */ _curry3(function mapAccum2(fn, acc, list) {
-      var idx = 0;
-      var len = list.length;
-      var result = [];
-      var tuple = [acc];
-      while (idx < len) {
-        tuple = fn(tuple[0], list[idx]);
-        result[idx] = tuple[1];
-        idx += 1;
-      }
-      return [tuple[0], result];
-    });
-    module2.exports = mapAccum;
-  }
-});
-
-// node_modules/ramda/src/mapAccumRight.js
-var require_mapAccumRight = __commonJS({
-  "node_modules/ramda/src/mapAccumRight.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var mapAccumRight = /* @__PURE__ */ _curry3(function mapAccumRight2(fn, acc, list) {
-      var idx = list.length - 1;
-      var result = [];
-      var tuple = [acc];
-      while (idx >= 0) {
-        tuple = fn(tuple[0], list[idx]);
-        result[idx] = tuple[1];
-        idx -= 1;
-      }
-      return [tuple[0], result];
-    });
-    module2.exports = mapAccumRight;
-  }
-});
-
-// node_modules/ramda/src/mapObjIndexed.js
-var require_mapObjIndexed = __commonJS({
-  "node_modules/ramda/src/mapObjIndexed.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduce = require_reduce();
-    var keys = require_keys();
-    var mapObjIndexed = /* @__PURE__ */ _curry2(function mapObjIndexed2(fn, obj) {
-      return _reduce(function(acc, key) {
-        acc[key] = fn(obj[key], key, obj);
-        return acc;
-      }, {}, keys(obj));
-    });
-    module2.exports = mapObjIndexed;
-  }
-});
-
-// node_modules/ramda/src/match.js
-var require_match = __commonJS({
-  "node_modules/ramda/src/match.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var match = /* @__PURE__ */ _curry2(function match2(rx, str) {
-      return str.match(rx) || [];
-    });
-    module2.exports = match;
-  }
-});
-
-// node_modules/ramda/src/mathMod.js
-var require_mathMod = __commonJS({
-  "node_modules/ramda/src/mathMod.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isInteger = require_isInteger();
-    var mathMod = /* @__PURE__ */ _curry2(function mathMod2(m, p) {
-      if (!_isInteger(m)) {
-        return NaN;
-      }
-      if (!_isInteger(p) || p < 1) {
-        return NaN;
-      }
-      return (m % p + p) % p;
-    });
-    module2.exports = mathMod;
-  }
-});
-
-// node_modules/ramda/src/maxBy.js
-var require_maxBy = __commonJS({
-  "node_modules/ramda/src/maxBy.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var maxBy = /* @__PURE__ */ _curry3(function maxBy2(f, a, b) {
-      return f(b) > f(a) ? b : a;
-    });
-    module2.exports = maxBy;
-  }
-});
-
-// node_modules/ramda/src/sum.js
-var require_sum = __commonJS({
-  "node_modules/ramda/src/sum.js"(exports2, module2) {
-    var add = require_add();
-    var reduce = require_reduce2();
-    var sum = /* @__PURE__ */ reduce(add, 0);
-    module2.exports = sum;
-  }
-});
-
-// node_modules/ramda/src/mean.js
-var require_mean = __commonJS({
-  "node_modules/ramda/src/mean.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var sum = require_sum();
-    var mean = /* @__PURE__ */ _curry1(function mean2(list) {
-      return sum(list) / list.length;
-    });
-    module2.exports = mean;
-  }
-});
-
-// node_modules/ramda/src/median.js
-var require_median = __commonJS({
-  "node_modules/ramda/src/median.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var mean = require_mean();
-    var median = /* @__PURE__ */ _curry1(function median2(list) {
-      var len = list.length;
-      if (len === 0) {
-        return NaN;
-      }
-      var width = 2 - len % 2;
-      var idx = (len - width) / 2;
-      return mean(Array.prototype.slice.call(list, 0).sort(function(a, b) {
-        return a < b ? -1 : a > b ? 1 : 0;
-      }).slice(idx, idx + width));
-    });
-    module2.exports = median;
-  }
-});
-
-// node_modules/ramda/src/memoizeWith.js
-var require_memoizeWith = __commonJS({
-  "node_modules/ramda/src/memoizeWith.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry2 = require_curry2();
-    var _has = require_has();
-    var memoizeWith = /* @__PURE__ */ _curry2(function memoizeWith2(mFn, fn) {
-      var cache = {};
-      return _arity(fn.length, function() {
-        var key = mFn.apply(this, arguments);
-        if (!_has(key, cache)) {
-          cache[key] = fn.apply(this, arguments);
-        }
-        return cache[key];
-      });
-    });
-    module2.exports = memoizeWith;
-  }
-});
-
-// node_modules/ramda/src/merge.js
-var require_merge = __commonJS({
-  "node_modules/ramda/src/merge.js"(exports2, module2) {
-    var _objectAssign = require_objectAssign();
-    var _curry2 = require_curry2();
-    var merge = /* @__PURE__ */ _curry2(function merge2(l, r) {
-      return _objectAssign({}, l, r);
-    });
-    module2.exports = merge;
-  }
-});
-
-// node_modules/ramda/src/mergeAll.js
-var require_mergeAll = __commonJS({
-  "node_modules/ramda/src/mergeAll.js"(exports2, module2) {
-    var _objectAssign = require_objectAssign();
-    var _curry1 = require_curry1();
-    var mergeAll = /* @__PURE__ */ _curry1(function mergeAll2(list) {
-      return _objectAssign.apply(null, [{}].concat(list));
-    });
-    module2.exports = mergeAll;
-  }
-});
-
-// node_modules/ramda/src/mergeWithKey.js
-var require_mergeWithKey = __commonJS({
-  "node_modules/ramda/src/mergeWithKey.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var _has = require_has();
-    var mergeWithKey = /* @__PURE__ */ _curry3(function mergeWithKey2(fn, l, r) {
-      var result = {};
-      var k;
-      for (k in l) {
-        if (_has(k, l)) {
-          result[k] = _has(k, r) ? fn(k, l[k], r[k]) : l[k];
-        }
-      }
-      for (k in r) {
-        if (_has(k, r) && !_has(k, result)) {
-          result[k] = r[k];
-        }
-      }
-      return result;
-    });
-    module2.exports = mergeWithKey;
-  }
-});
-
-// node_modules/ramda/src/mergeDeepWithKey.js
-var require_mergeDeepWithKey = __commonJS({
-  "node_modules/ramda/src/mergeDeepWithKey.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var _isObject = require_isObject();
-    var mergeWithKey = require_mergeWithKey();
-    var mergeDeepWithKey = /* @__PURE__ */ _curry3(function mergeDeepWithKey2(fn, lObj, rObj) {
-      return mergeWithKey(function(k, lVal, rVal) {
-        if (_isObject(lVal) && _isObject(rVal)) {
-          return mergeDeepWithKey2(fn, lVal, rVal);
-        } else {
-          return fn(k, lVal, rVal);
-        }
-      }, lObj, rObj);
-    });
-    module2.exports = mergeDeepWithKey;
-  }
-});
-
-// node_modules/ramda/src/mergeDeepLeft.js
-var require_mergeDeepLeft = __commonJS({
-  "node_modules/ramda/src/mergeDeepLeft.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var mergeDeepWithKey = require_mergeDeepWithKey();
-    var mergeDeepLeft = /* @__PURE__ */ _curry2(function mergeDeepLeft2(lObj, rObj) {
-      return mergeDeepWithKey(function(k, lVal, rVal) {
-        return lVal;
-      }, lObj, rObj);
-    });
-    module2.exports = mergeDeepLeft;
-  }
-});
-
-// node_modules/ramda/src/mergeDeepRight.js
-var require_mergeDeepRight = __commonJS({
-  "node_modules/ramda/src/mergeDeepRight.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var mergeDeepWithKey = require_mergeDeepWithKey();
-    var mergeDeepRight = /* @__PURE__ */ _curry2(function mergeDeepRight2(lObj, rObj) {
-      return mergeDeepWithKey(function(k, lVal, rVal) {
-        return rVal;
-      }, lObj, rObj);
-    });
-    module2.exports = mergeDeepRight;
-  }
-});
-
-// node_modules/ramda/src/mergeDeepWith.js
-var require_mergeDeepWith = __commonJS({
-  "node_modules/ramda/src/mergeDeepWith.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var mergeDeepWithKey = require_mergeDeepWithKey();
-    var mergeDeepWith = /* @__PURE__ */ _curry3(function mergeDeepWith2(fn, lObj, rObj) {
-      return mergeDeepWithKey(function(k, lVal, rVal) {
-        return fn(lVal, rVal);
-      }, lObj, rObj);
-    });
-    module2.exports = mergeDeepWith;
-  }
-});
-
-// node_modules/ramda/src/mergeLeft.js
-var require_mergeLeft = __commonJS({
-  "node_modules/ramda/src/mergeLeft.js"(exports2, module2) {
-    var _objectAssign = require_objectAssign();
-    var _curry2 = require_curry2();
-    var mergeLeft = /* @__PURE__ */ _curry2(function mergeLeft2(l, r) {
-      return _objectAssign({}, r, l);
-    });
-    module2.exports = mergeLeft;
-  }
-});
-
-// node_modules/ramda/src/mergeRight.js
-var require_mergeRight = __commonJS({
-  "node_modules/ramda/src/mergeRight.js"(exports2, module2) {
-    var _objectAssign = require_objectAssign();
-    var _curry2 = require_curry2();
-    var mergeRight = /* @__PURE__ */ _curry2(function mergeRight2(l, r) {
-      return _objectAssign({}, l, r);
-    });
-    module2.exports = mergeRight;
-  }
-});
-
-// node_modules/ramda/src/mergeWith.js
-var require_mergeWith = __commonJS({
-  "node_modules/ramda/src/mergeWith.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var mergeWithKey = require_mergeWithKey();
-    var mergeWith = /* @__PURE__ */ _curry3(function mergeWith2(fn, l, r) {
-      return mergeWithKey(function(_, _l, _r) {
-        return fn(_l, _r);
-      }, l, r);
-    });
-    module2.exports = mergeWith;
-  }
-});
-
-// node_modules/ramda/src/min.js
-var require_min = __commonJS({
-  "node_modules/ramda/src/min.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var min = /* @__PURE__ */ _curry2(function min2(a, b) {
-      return b < a ? b : a;
-    });
-    module2.exports = min;
-  }
-});
-
-// node_modules/ramda/src/minBy.js
-var require_minBy = __commonJS({
-  "node_modules/ramda/src/minBy.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var minBy = /* @__PURE__ */ _curry3(function minBy2(f, a, b) {
-      return f(b) < f(a) ? b : a;
-    });
-    module2.exports = minBy;
-  }
-});
-
-// node_modules/ramda/src/modulo.js
-var require_modulo = __commonJS({
-  "node_modules/ramda/src/modulo.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var modulo = /* @__PURE__ */ _curry2(function modulo2(a, b) {
-      return a % b;
-    });
-    module2.exports = modulo;
-  }
-});
-
-// node_modules/ramda/src/move.js
-var require_move = __commonJS({
-  "node_modules/ramda/src/move.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var move = /* @__PURE__ */ _curry3(function(from, to, list) {
-      var length = list.length;
-      var result = list.slice();
-      var positiveFrom = from < 0 ? length + from : from;
-      var positiveTo = to < 0 ? length + to : to;
-      var item = result.splice(positiveFrom, 1);
-      return positiveFrom < 0 || positiveFrom >= list.length || positiveTo < 0 || positiveTo >= list.length ? list : [].concat(result.slice(0, positiveTo)).concat(item).concat(result.slice(positiveTo, list.length));
-    });
-    module2.exports = move;
-  }
-});
-
-// node_modules/ramda/src/multiply.js
-var require_multiply = __commonJS({
-  "node_modules/ramda/src/multiply.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var multiply = /* @__PURE__ */ _curry2(function multiply2(a, b) {
-      return a * b;
-    });
-    module2.exports = multiply;
-  }
-});
-
-// node_modules/ramda/src/negate.js
-var require_negate = __commonJS({
-  "node_modules/ramda/src/negate.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var negate = /* @__PURE__ */ _curry1(function negate2(n) {
-      return -n;
-    });
-    module2.exports = negate;
-  }
-});
-
-// node_modules/ramda/src/none.js
-var require_none = __commonJS({
-  "node_modules/ramda/src/none.js"(exports2, module2) {
-    var _complement = require_complement2();
-    var _curry2 = require_curry2();
-    var all2 = require_all();
-    var none = /* @__PURE__ */ _curry2(function none2(fn, input) {
-      return all2(_complement(fn), input);
-    });
-    module2.exports = none;
-  }
-});
-
-// node_modules/ramda/src/nthArg.js
-var require_nthArg = __commonJS({
-  "node_modules/ramda/src/nthArg.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var curryN = require_curryN2();
-    var nth = require_nth();
-    var nthArg = /* @__PURE__ */ _curry1(function nthArg2(n) {
-      var arity = n < 0 ? 1 : n + 1;
-      return curryN(arity, function() {
-        return nth(n, arguments);
-      });
-    });
-    module2.exports = nthArg;
-  }
-});
-
-// node_modules/ramda/src/o.js
-var require_o = __commonJS({
-  "node_modules/ramda/src/o.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var o = /* @__PURE__ */ _curry3(function o2(f, g, x) {
-      return f(g(x));
-    });
-    module2.exports = o;
-  }
-});
-
-// node_modules/ramda/src/internal/_of.js
-var require_of = __commonJS({
-  "node_modules/ramda/src/internal/_of.js"(exports2, module2) {
-    function _of(x) {
-      return [x];
-    }
-    module2.exports = _of;
-  }
-});
-
-// node_modules/ramda/src/of.js
-var require_of2 = __commonJS({
-  "node_modules/ramda/src/of.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _of = require_of();
-    var of = /* @__PURE__ */ _curry1(_of);
-    module2.exports = of;
-  }
-});
-
-// node_modules/ramda/src/omit.js
-var require_omit = __commonJS({
-  "node_modules/ramda/src/omit.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var omit = /* @__PURE__ */ _curry2(function omit2(names, obj) {
-      var result = {};
-      var index = {};
-      var idx = 0;
-      var len = names.length;
-      while (idx < len) {
-        index[names[idx]] = 1;
-        idx += 1;
-      }
-      for (var prop in obj) {
-        if (!index.hasOwnProperty(prop)) {
-          result[prop] = obj[prop];
-        }
-      }
-      return result;
-    });
-    module2.exports = omit;
-  }
-});
-
-// node_modules/ramda/src/once.js
-var require_once = __commonJS({
-  "node_modules/ramda/src/once.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry1 = require_curry1();
-    var once = /* @__PURE__ */ _curry1(function once2(fn) {
-      var called = false;
-      var result;
-      return _arity(fn.length, function() {
-        if (called) {
-          return result;
-        }
-        called = true;
-        result = fn.apply(this, arguments);
-        return result;
-      });
-    });
-    module2.exports = once;
-  }
-});
-
-// node_modules/ramda/src/internal/_assertPromise.js
-var require_assertPromise = __commonJS({
-  "node_modules/ramda/src/internal/_assertPromise.js"(exports2, module2) {
-    var _isFunction = require_isFunction();
-    var _toString = require_toString();
-    function _assertPromise(name, p) {
-      if (p == null || !_isFunction(p.then)) {
-        throw new TypeError("`" + name + "` expected a Promise, received " + _toString(p, []));
-      }
-    }
-    module2.exports = _assertPromise;
-  }
-});
-
-// node_modules/ramda/src/otherwise.js
-var require_otherwise = __commonJS({
-  "node_modules/ramda/src/otherwise.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _assertPromise = require_assertPromise();
-    var otherwise = /* @__PURE__ */ _curry2(function otherwise2(f, p) {
-      _assertPromise("otherwise", p);
-      return p.then(null, f);
-    });
-    module2.exports = otherwise;
-  }
-});
-
-// node_modules/ramda/src/over.js
-var require_over = __commonJS({
-  "node_modules/ramda/src/over.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var Identity = function(x) {
-      return {
-        value: x,
-        map: function(f) {
-          return Identity(f(x));
-        }
-      };
-    };
-    var over = /* @__PURE__ */ _curry3(function over2(lens, f, x) {
-      return lens(function(y) {
-        return Identity(f(y));
-      })(x).value;
-    });
-    module2.exports = over;
-  }
-});
-
-// node_modules/ramda/src/pair.js
-var require_pair = __commonJS({
-  "node_modules/ramda/src/pair.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var pair = /* @__PURE__ */ _curry2(function pair2(fst, snd) {
-      return [fst, snd];
-    });
-    module2.exports = pair;
-  }
-});
-
-// node_modules/ramda/src/internal/_createPartialApplicator.js
-var require_createPartialApplicator = __commonJS({
-  "node_modules/ramda/src/internal/_createPartialApplicator.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _curry2 = require_curry2();
-    function _createPartialApplicator(concat) {
-      return _curry2(function(fn, args) {
-        return _arity(Math.max(0, fn.length - args.length), function() {
-          return fn.apply(this, concat(args, arguments));
-        });
-      });
-    }
-    module2.exports = _createPartialApplicator;
-  }
-});
-
-// node_modules/ramda/src/partial.js
-var require_partial = __commonJS({
-  "node_modules/ramda/src/partial.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _createPartialApplicator = require_createPartialApplicator();
-    var partial = /* @__PURE__ */ _createPartialApplicator(_concat);
-    module2.exports = partial;
-  }
-});
-
-// node_modules/ramda/src/partialRight.js
-var require_partialRight = __commonJS({
-  "node_modules/ramda/src/partialRight.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _createPartialApplicator = require_createPartialApplicator();
-    var flip = require_flip();
-    var partialRight = /* @__PURE__ */ _createPartialApplicator(/* @__PURE__ */ flip(_concat));
-    module2.exports = partialRight;
-  }
-});
-
-// node_modules/ramda/src/partition.js
-var require_partition = __commonJS({
-  "node_modules/ramda/src/partition.js"(exports2, module2) {
-    var filter = require_filter2();
-    var juxt = require_juxt();
-    var reject = require_reject();
-    var partition = /* @__PURE__ */ juxt([filter, reject]);
-    module2.exports = partition;
-  }
-});
-
-// node_modules/ramda/src/pathEq.js
-var require_pathEq = __commonJS({
-  "node_modules/ramda/src/pathEq.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var equals = require_equals2();
-    var path = require_path();
-    var pathEq = /* @__PURE__ */ _curry3(function pathEq2(_path, val, obj) {
-      return equals(path(_path, obj), val);
-    });
-    module2.exports = pathEq;
-  }
-});
-
-// node_modules/ramda/src/pathOr.js
-var require_pathOr = __commonJS({
-  "node_modules/ramda/src/pathOr.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var defaultTo = require_defaultTo();
-    var path = require_path();
-    var pathOr = /* @__PURE__ */ _curry3(function pathOr2(d, p, obj) {
-      return defaultTo(d, path(p, obj));
-    });
-    module2.exports = pathOr;
-  }
-});
-
-// node_modules/ramda/src/pathSatisfies.js
-var require_pathSatisfies = __commonJS({
-  "node_modules/ramda/src/pathSatisfies.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var path = require_path();
-    var pathSatisfies = /* @__PURE__ */ _curry3(function pathSatisfies2(pred, propPath, obj) {
-      return pred(path(propPath, obj));
-    });
-    module2.exports = pathSatisfies;
-  }
-});
-
-// node_modules/ramda/src/pick.js
-var require_pick = __commonJS({
-  "node_modules/ramda/src/pick.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var pick = /* @__PURE__ */ _curry2(function pick2(names, obj) {
-      var result = {};
-      var idx = 0;
-      while (idx < names.length) {
-        if (names[idx] in obj) {
-          result[names[idx]] = obj[names[idx]];
-        }
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = pick;
-  }
-});
-
-// node_modules/ramda/src/pickAll.js
-var require_pickAll = __commonJS({
-  "node_modules/ramda/src/pickAll.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var pickAll = /* @__PURE__ */ _curry2(function pickAll2(names, obj) {
-      var result = {};
-      var idx = 0;
-      var len = names.length;
-      while (idx < len) {
-        var name = names[idx];
-        result[name] = obj[name];
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = pickAll;
-  }
-});
-
-// node_modules/ramda/src/pickBy.js
-var require_pickBy = __commonJS({
-  "node_modules/ramda/src/pickBy.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var pickBy = /* @__PURE__ */ _curry2(function pickBy2(test, obj) {
-      var result = {};
-      for (var prop in obj) {
-        if (test(obj[prop], prop, obj)) {
-          result[prop] = obj[prop];
-        }
-      }
-      return result;
-    });
-    module2.exports = pickBy;
-  }
-});
-
-// node_modules/ramda/src/pipeK.js
-var require_pipeK = __commonJS({
-  "node_modules/ramda/src/pipeK.js"(exports2, module2) {
-    var composeK = require_composeK();
-    var reverse2 = require_reverse();
-    function pipeK() {
-      if (arguments.length === 0) {
-        throw new Error("pipeK requires at least one argument");
-      }
-      return composeK.apply(this, reverse2(arguments));
-    }
-    module2.exports = pipeK;
-  }
-});
-
-// node_modules/ramda/src/prepend.js
-var require_prepend = __commonJS({
-  "node_modules/ramda/src/prepend.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var prepend = /* @__PURE__ */ _curry2(function prepend2(el, list) {
-      return _concat([el], list);
-    });
-    module2.exports = prepend;
-  }
-});
-
-// node_modules/ramda/src/product.js
-var require_product = __commonJS({
-  "node_modules/ramda/src/product.js"(exports2, module2) {
-    var multiply = require_multiply();
-    var reduce = require_reduce2();
-    var product = /* @__PURE__ */ reduce(multiply, 1);
-    module2.exports = product;
-  }
-});
-
-// node_modules/ramda/src/useWith.js
-var require_useWith = __commonJS({
-  "node_modules/ramda/src/useWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var curryN = require_curryN2();
-    var useWith = /* @__PURE__ */ _curry2(function useWith2(fn, transformers) {
-      return curryN(transformers.length, function() {
-        var args = [];
-        var idx = 0;
-        while (idx < transformers.length) {
-          args.push(transformers[idx].call(this, arguments[idx]));
-          idx += 1;
-        }
-        return fn.apply(this, args.concat(Array.prototype.slice.call(arguments, transformers.length)));
-      });
-    });
-    module2.exports = useWith;
-  }
-});
-
-// node_modules/ramda/src/project.js
-var require_project = __commonJS({
-  "node_modules/ramda/src/project.js"(exports2, module2) {
-    var _map = require_map();
-    var identity = require_identity2();
-    var pickAll = require_pickAll();
-    var useWith = require_useWith();
-    var project = /* @__PURE__ */ useWith(_map, [pickAll, identity]);
-    module2.exports = project;
-  }
-});
-
-// node_modules/ramda/src/propEq.js
-var require_propEq = __commonJS({
-  "node_modules/ramda/src/propEq.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var equals = require_equals2();
-    var propEq = /* @__PURE__ */ _curry3(function propEq2(name, val, obj) {
-      return equals(val, obj[name]);
-    });
-    module2.exports = propEq;
-  }
-});
-
-// node_modules/ramda/src/propIs.js
-var require_propIs = __commonJS({
-  "node_modules/ramda/src/propIs.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var is = require_is();
-    var propIs = /* @__PURE__ */ _curry3(function propIs2(type, name, obj) {
-      return is(type, obj[name]);
-    });
-    module2.exports = propIs;
-  }
-});
-
-// node_modules/ramda/src/propOr.js
-var require_propOr = __commonJS({
-  "node_modules/ramda/src/propOr.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var pathOr = require_pathOr();
-    var propOr = /* @__PURE__ */ _curry3(function propOr2(val, p, obj) {
-      return pathOr(val, [p], obj);
-    });
-    module2.exports = propOr;
-  }
-});
-
-// node_modules/ramda/src/propSatisfies.js
-var require_propSatisfies = __commonJS({
-  "node_modules/ramda/src/propSatisfies.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var propSatisfies = /* @__PURE__ */ _curry3(function propSatisfies2(pred, name, obj) {
-      return pred(obj[name]);
-    });
-    module2.exports = propSatisfies;
-  }
-});
-
-// node_modules/ramda/src/props.js
-var require_props = __commonJS({
-  "node_modules/ramda/src/props.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var path = require_path();
-    var props = /* @__PURE__ */ _curry2(function props2(ps, obj) {
-      return ps.map(function(p) {
-        return path([p], obj);
-      });
-    });
-    module2.exports = props;
-  }
-});
-
-// node_modules/ramda/src/range.js
-var require_range = __commonJS({
-  "node_modules/ramda/src/range.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _isNumber = require_isNumber();
-    var range = /* @__PURE__ */ _curry2(function range2(from, to) {
-      if (!(_isNumber(from) && _isNumber(to))) {
-        throw new TypeError("Both arguments to range must be numbers");
-      }
-      var result = [];
-      var n = from;
-      while (n < to) {
-        result.push(n);
-        n += 1;
-      }
-      return result;
-    });
-    module2.exports = range;
-  }
-});
-
-// node_modules/ramda/src/reduceRight.js
-var require_reduceRight = __commonJS({
-  "node_modules/ramda/src/reduceRight.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var reduceRight = /* @__PURE__ */ _curry3(function reduceRight2(fn, acc, list) {
-      var idx = list.length - 1;
-      while (idx >= 0) {
-        acc = fn(list[idx], acc);
-        idx -= 1;
-      }
-      return acc;
-    });
-    module2.exports = reduceRight;
-  }
-});
-
-// node_modules/ramda/src/reduceWhile.js
-var require_reduceWhile = __commonJS({
-  "node_modules/ramda/src/reduceWhile.js"(exports2, module2) {
-    var _curryN = require_curryN();
-    var _reduce = require_reduce();
-    var _reduced = require_reduced();
-    var reduceWhile = /* @__PURE__ */ _curryN(4, [], function _reduceWhile(pred, fn, a, list) {
-      return _reduce(function(acc, x) {
-        return pred(acc, x) ? fn(acc, x) : _reduced(acc);
-      }, a, list);
-    });
-    module2.exports = reduceWhile;
-  }
-});
-
-// node_modules/ramda/src/reduced.js
-var require_reduced2 = __commonJS({
-  "node_modules/ramda/src/reduced.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _reduced = require_reduced();
-    var reduced = /* @__PURE__ */ _curry1(_reduced);
-    module2.exports = reduced;
-  }
-});
-
-// node_modules/ramda/src/times.js
-var require_times = __commonJS({
-  "node_modules/ramda/src/times.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var times = /* @__PURE__ */ _curry2(function times2(fn, n) {
-      var len = Number(n);
-      var idx = 0;
-      var list;
-      if (len < 0 || isNaN(len)) {
-        throw new RangeError("n must be a non-negative number");
-      }
-      list = new Array(len);
-      while (idx < len) {
-        list[idx] = fn(idx);
-        idx += 1;
-      }
-      return list;
-    });
-    module2.exports = times;
-  }
-});
-
-// node_modules/ramda/src/repeat.js
-var require_repeat = __commonJS({
-  "node_modules/ramda/src/repeat.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var always = require_always();
-    var times = require_times();
-    var repeat = /* @__PURE__ */ _curry2(function repeat2(value, n) {
-      return times(always(value), n);
-    });
-    module2.exports = repeat;
-  }
-});
-
-// node_modules/ramda/src/replace.js
-var require_replace = __commonJS({
-  "node_modules/ramda/src/replace.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var replace = /* @__PURE__ */ _curry3(function replace2(regex, replacement, str) {
-      return str.replace(regex, replacement);
-    });
-    module2.exports = replace;
-  }
-});
-
-// node_modules/ramda/src/scan.js
-var require_scan2 = __commonJS({
-  "node_modules/ramda/src/scan.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var scan = /* @__PURE__ */ _curry3(function scan2(fn, acc, list) {
-      var idx = 0;
-      var len = list.length;
-      var result = [acc];
-      while (idx < len) {
-        acc = fn(acc, list[idx]);
-        result[idx + 1] = acc;
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = scan;
-  }
-});
-
-// node_modules/ramda/src/sequence.js
-var require_sequence = __commonJS({
-  "node_modules/ramda/src/sequence.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var ap = require_ap();
-    var map = require_map2();
-    var prepend = require_prepend();
-    var reduceRight = require_reduceRight();
-    var sequence = /* @__PURE__ */ _curry2(function sequence2(of, traversable) {
-      return typeof traversable.sequence === "function" ? traversable.sequence(of) : reduceRight(function(x, acc) {
-        return ap(map(prepend, x), acc);
-      }, of([]), traversable);
-    });
-    module2.exports = sequence;
-  }
-});
-
-// node_modules/ramda/src/set.js
-var require_set = __commonJS({
-  "node_modules/ramda/src/set.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var always = require_always();
-    var over = require_over();
-    var set = /* @__PURE__ */ _curry3(function set2(lens, v, x) {
-      return over(lens, always(v), x);
-    });
-    module2.exports = set;
-  }
-});
-
-// node_modules/ramda/src/sort.js
-var require_sort = __commonJS({
-  "node_modules/ramda/src/sort.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var sort = /* @__PURE__ */ _curry2(function sort2(comparator, list) {
-      return Array.prototype.slice.call(list, 0).sort(comparator);
-    });
-    module2.exports = sort;
-  }
-});
-
-// node_modules/ramda/src/sortBy.js
-var require_sortBy = __commonJS({
-  "node_modules/ramda/src/sortBy.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var sortBy2 = /* @__PURE__ */ _curry2(function sortBy3(fn, list) {
-      return Array.prototype.slice.call(list, 0).sort(function(a, b) {
-        var aa = fn(a);
-        var bb = fn(b);
-        return aa < bb ? -1 : aa > bb ? 1 : 0;
-      });
-    });
-    module2.exports = sortBy2;
-  }
-});
-
-// node_modules/ramda/src/sortWith.js
-var require_sortWith = __commonJS({
-  "node_modules/ramda/src/sortWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var sortWith = /* @__PURE__ */ _curry2(function sortWith2(fns, list) {
-      return Array.prototype.slice.call(list, 0).sort(function(a, b) {
-        var result = 0;
-        var i = 0;
-        while (result === 0 && i < fns.length) {
-          result = fns[i](a, b);
-          i += 1;
-        }
-        return result;
-      });
-    });
-    module2.exports = sortWith;
-  }
-});
-
-// node_modules/ramda/src/split.js
-var require_split = __commonJS({
-  "node_modules/ramda/src/split.js"(exports2, module2) {
-    var invoker = require_invoker();
-    var split = /* @__PURE__ */ invoker(1, "split");
-    module2.exports = split;
-  }
-});
-
-// node_modules/ramda/src/splitAt.js
-var require_splitAt = __commonJS({
-  "node_modules/ramda/src/splitAt.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var length = require_length();
-    var slice = require_slice();
-    var splitAt = /* @__PURE__ */ _curry2(function splitAt2(index, array) {
-      return [slice(0, index, array), slice(index, length(array), array)];
-    });
-    module2.exports = splitAt;
-  }
-});
-
-// node_modules/ramda/src/splitEvery.js
-var require_splitEvery = __commonJS({
-  "node_modules/ramda/src/splitEvery.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var slice = require_slice();
-    var splitEvery = /* @__PURE__ */ _curry2(function splitEvery2(n, list) {
-      if (n <= 0) {
-        throw new Error("First argument to splitEvery must be a positive integer");
-      }
-      var result = [];
-      var idx = 0;
-      while (idx < list.length) {
-        result.push(slice(idx, idx += n, list));
-      }
-      return result;
-    });
-    module2.exports = splitEvery;
-  }
-});
-
-// node_modules/ramda/src/splitWhen.js
-var require_splitWhen = __commonJS({
-  "node_modules/ramda/src/splitWhen.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var splitWhen = /* @__PURE__ */ _curry2(function splitWhen2(pred, list) {
-      var idx = 0;
-      var len = list.length;
-      var prefix = [];
-      while (idx < len && !pred(list[idx])) {
-        prefix.push(list[idx]);
-        idx += 1;
-      }
-      return [prefix, Array.prototype.slice.call(list, idx)];
-    });
-    module2.exports = splitWhen;
-  }
-});
-
-// node_modules/ramda/src/startsWith.js
-var require_startsWith = __commonJS({
-  "node_modules/ramda/src/startsWith.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var equals = require_equals2();
-    var take = require_take();
-    var startsWith = /* @__PURE__ */ _curry2(function(prefix, list) {
-      return equals(take(prefix.length, list), prefix);
-    });
-    module2.exports = startsWith;
-  }
-});
-
-// node_modules/ramda/src/subtract.js
-var require_subtract = __commonJS({
-  "node_modules/ramda/src/subtract.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var subtract = /* @__PURE__ */ _curry2(function subtract2(a, b) {
-      return Number(a) - Number(b);
-    });
-    module2.exports = subtract;
-  }
-});
-
-// node_modules/ramda/src/symmetricDifference.js
-var require_symmetricDifference = __commonJS({
-  "node_modules/ramda/src/symmetricDifference.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var concat = require_concat2();
-    var difference = require_difference();
-    var symmetricDifference = /* @__PURE__ */ _curry2(function symmetricDifference2(list1, list2) {
-      return concat(difference(list1, list2), difference(list2, list1));
-    });
-    module2.exports = symmetricDifference;
-  }
-});
-
-// node_modules/ramda/src/symmetricDifferenceWith.js
-var require_symmetricDifferenceWith = __commonJS({
-  "node_modules/ramda/src/symmetricDifferenceWith.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var concat = require_concat2();
-    var differenceWith = require_differenceWith();
-    var symmetricDifferenceWith = /* @__PURE__ */ _curry3(function symmetricDifferenceWith2(pred, list1, list2) {
-      return concat(differenceWith(pred, list1, list2), differenceWith(pred, list2, list1));
-    });
-    module2.exports = symmetricDifferenceWith;
-  }
-});
-
-// node_modules/ramda/src/takeLastWhile.js
-var require_takeLastWhile = __commonJS({
-  "node_modules/ramda/src/takeLastWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var slice = require_slice();
-    var takeLastWhile = /* @__PURE__ */ _curry2(function takeLastWhile2(fn, xs) {
-      var idx = xs.length - 1;
-      while (idx >= 0 && fn(xs[idx])) {
-        idx -= 1;
-      }
-      return slice(idx + 1, Infinity, xs);
-    });
-    module2.exports = takeLastWhile;
-  }
-});
-
-// node_modules/ramda/src/internal/_xtakeWhile.js
-var require_xtakeWhile = __commonJS({
-  "node_modules/ramda/src/internal/_xtakeWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _reduced = require_reduced();
-    var _xfBase = require_xfBase();
-    var XTakeWhile = /* @__PURE__ */ function() {
-      function XTakeWhile2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XTakeWhile2.prototype["@@transducer/init"] = _xfBase.init;
-      XTakeWhile2.prototype["@@transducer/result"] = _xfBase.result;
-      XTakeWhile2.prototype["@@transducer/step"] = function(result, input) {
-        return this.f(input) ? this.xf["@@transducer/step"](result, input) : _reduced(result);
-      };
-      return XTakeWhile2;
-    }();
-    var _xtakeWhile = /* @__PURE__ */ _curry2(function _xtakeWhile2(f, xf) {
-      return new XTakeWhile(f, xf);
-    });
-    module2.exports = _xtakeWhile;
-  }
-});
-
-// node_modules/ramda/src/takeWhile.js
-var require_takeWhile = __commonJS({
-  "node_modules/ramda/src/takeWhile.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xtakeWhile = require_xtakeWhile();
-    var slice = require_slice();
-    var takeWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["takeWhile"], _xtakeWhile, function takeWhile2(fn, xs) {
-      var idx = 0;
-      var len = xs.length;
-      while (idx < len && fn(xs[idx])) {
-        idx += 1;
-      }
-      return slice(0, idx, xs);
-    }));
-    module2.exports = takeWhile;
-  }
-});
-
-// node_modules/ramda/src/internal/_xtap.js
-var require_xtap = __commonJS({
-  "node_modules/ramda/src/internal/_xtap.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _xfBase = require_xfBase();
-    var XTap = /* @__PURE__ */ function() {
-      function XTap2(f, xf) {
-        this.xf = xf;
-        this.f = f;
-      }
-      XTap2.prototype["@@transducer/init"] = _xfBase.init;
-      XTap2.prototype["@@transducer/result"] = _xfBase.result;
-      XTap2.prototype["@@transducer/step"] = function(result, input) {
-        this.f(input);
-        return this.xf["@@transducer/step"](result, input);
-      };
-      return XTap2;
-    }();
-    var _xtap = /* @__PURE__ */ _curry2(function _xtap2(f, xf) {
-      return new XTap(f, xf);
-    });
-    module2.exports = _xtap;
-  }
-});
-
-// node_modules/ramda/src/tap.js
-var require_tap = __commonJS({
-  "node_modules/ramda/src/tap.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _dispatchable = require_dispatchable();
-    var _xtap = require_xtap();
-    var tap = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xtap, function tap2(fn, x) {
-      fn(x);
-      return x;
-    }));
-    module2.exports = tap;
-  }
-});
-
-// node_modules/ramda/src/internal/_isRegExp.js
-var require_isRegExp = __commonJS({
-  "node_modules/ramda/src/internal/_isRegExp.js"(exports2, module2) {
-    function _isRegExp(x) {
-      return Object.prototype.toString.call(x) === "[object RegExp]";
-    }
-    module2.exports = _isRegExp;
-  }
-});
-
-// node_modules/ramda/src/test.js
-var require_test = __commonJS({
-  "node_modules/ramda/src/test.js"(exports2, module2) {
-    var _cloneRegExp = require_cloneRegExp();
-    var _curry2 = require_curry2();
-    var _isRegExp = require_isRegExp();
-    var toString = require_toString2();
-    var test = /* @__PURE__ */ _curry2(function test2(pattern, str) {
-      if (!_isRegExp(pattern)) {
-        throw new TypeError("\u2018test\u2019 requires a value of type RegExp as its first argument; received " + toString(pattern));
-      }
-      return _cloneRegExp(pattern).test(str);
-    });
-    module2.exports = test;
-  }
-});
-
-// node_modules/ramda/src/andThen.js
-var require_andThen = __commonJS({
-  "node_modules/ramda/src/andThen.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _assertPromise = require_assertPromise();
-    var andThen = /* @__PURE__ */ _curry2(function andThen2(f, p) {
-      _assertPromise("andThen", p);
-      return p.then(f);
-    });
-    module2.exports = andThen;
-  }
-});
-
-// node_modules/ramda/src/toLower.js
-var require_toLower = __commonJS({
-  "node_modules/ramda/src/toLower.js"(exports2, module2) {
-    var invoker = require_invoker();
-    var toLower = /* @__PURE__ */ invoker(0, "toLowerCase");
-    module2.exports = toLower;
-  }
-});
-
-// node_modules/ramda/src/toPairs.js
-var require_toPairs = __commonJS({
-  "node_modules/ramda/src/toPairs.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var _has = require_has();
-    var toPairs = /* @__PURE__ */ _curry1(function toPairs2(obj) {
-      var pairs = [];
-      for (var prop in obj) {
-        if (_has(prop, obj)) {
-          pairs[pairs.length] = [prop, obj[prop]];
-        }
-      }
-      return pairs;
-    });
-    module2.exports = toPairs;
-  }
-});
-
-// node_modules/ramda/src/toPairsIn.js
-var require_toPairsIn = __commonJS({
-  "node_modules/ramda/src/toPairsIn.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var toPairsIn = /* @__PURE__ */ _curry1(function toPairsIn2(obj) {
-      var pairs = [];
-      for (var prop in obj) {
-        pairs[pairs.length] = [prop, obj[prop]];
-      }
-      return pairs;
-    });
-    module2.exports = toPairsIn;
-  }
-});
-
-// node_modules/ramda/src/toUpper.js
-var require_toUpper = __commonJS({
-  "node_modules/ramda/src/toUpper.js"(exports2, module2) {
-    var invoker = require_invoker();
-    var toUpper = /* @__PURE__ */ invoker(0, "toUpperCase");
-    module2.exports = toUpper;
-  }
-});
-
-// node_modules/ramda/src/transduce.js
-var require_transduce = __commonJS({
-  "node_modules/ramda/src/transduce.js"(exports2, module2) {
-    var _reduce = require_reduce();
-    var _xwrap = require_xwrap();
-    var curryN = require_curryN2();
-    var transduce = /* @__PURE__ */ curryN(4, function transduce2(xf, fn, acc, list) {
-      return _reduce(xf(typeof fn === "function" ? _xwrap(fn) : fn), acc, list);
-    });
-    module2.exports = transduce;
-  }
-});
-
-// node_modules/ramda/src/transpose.js
-var require_transpose = __commonJS({
-  "node_modules/ramda/src/transpose.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var transpose = /* @__PURE__ */ _curry1(function transpose2(outerlist) {
-      var i = 0;
-      var result = [];
-      while (i < outerlist.length) {
-        var innerlist = outerlist[i];
-        var j = 0;
-        while (j < innerlist.length) {
-          if (typeof result[j] === "undefined") {
-            result[j] = [];
-          }
-          result[j].push(innerlist[j]);
-          j += 1;
-        }
-        i += 1;
-      }
-      return result;
-    });
-    module2.exports = transpose;
-  }
-});
-
-// node_modules/ramda/src/traverse.js
-var require_traverse = __commonJS({
-  "node_modules/ramda/src/traverse.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var map = require_map2();
-    var sequence = require_sequence();
-    var traverse = /* @__PURE__ */ _curry3(function traverse2(of, f, traversable) {
-      return typeof traversable["fantasy-land/traverse"] === "function" ? traversable["fantasy-land/traverse"](f, of) : sequence(of, map(f, traversable));
-    });
-    module2.exports = traverse;
-  }
-});
-
-// node_modules/ramda/src/trim.js
-var require_trim = __commonJS({
-  "node_modules/ramda/src/trim.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var ws = "	\n\v\f\r \xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF";
-    var zeroWidth = "\u200B";
-    var hasProtoTrim = typeof String.prototype.trim === "function";
-    var trim = !hasProtoTrim || /* @__PURE__ */ ws.trim() || !/* @__PURE__ */ zeroWidth.trim() ? /* @__PURE__ */ _curry1(function trim2(str) {
-      var beginRx = new RegExp("^[" + ws + "][" + ws + "]*");
-      var endRx = new RegExp("[" + ws + "][" + ws + "]*$");
-      return str.replace(beginRx, "").replace(endRx, "");
-    }) : /* @__PURE__ */ _curry1(function trim2(str) {
-      return str.trim();
-    });
-    module2.exports = trim;
-  }
-});
-
-// node_modules/ramda/src/tryCatch.js
-var require_tryCatch = __commonJS({
-  "node_modules/ramda/src/tryCatch.js"(exports2, module2) {
-    var _arity = require_arity();
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var tryCatch = /* @__PURE__ */ _curry2(function _tryCatch(tryer, catcher) {
-      return _arity(tryer.length, function() {
-        try {
-          return tryer.apply(this, arguments);
-        } catch (e) {
-          return catcher.apply(this, _concat([e], arguments));
-        }
-      });
-    });
-    module2.exports = tryCatch;
-  }
-});
-
-// node_modules/ramda/src/unapply.js
-var require_unapply = __commonJS({
-  "node_modules/ramda/src/unapply.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var unapply = /* @__PURE__ */ _curry1(function unapply2(fn) {
-      return function() {
-        return fn(Array.prototype.slice.call(arguments, 0));
-      };
-    });
-    module2.exports = unapply;
-  }
-});
-
-// node_modules/ramda/src/unary.js
-var require_unary = __commonJS({
-  "node_modules/ramda/src/unary.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var nAry = require_nAry();
-    var unary = /* @__PURE__ */ _curry1(function unary2(fn) {
-      return nAry(1, fn);
-    });
-    module2.exports = unary;
-  }
-});
-
-// node_modules/ramda/src/uncurryN.js
-var require_uncurryN = __commonJS({
-  "node_modules/ramda/src/uncurryN.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var curryN = require_curryN2();
-    var uncurryN = /* @__PURE__ */ _curry2(function uncurryN2(depth, fn) {
-      return curryN(depth, function() {
-        var currentDepth = 1;
-        var value = fn;
-        var idx = 0;
-        var endIdx;
-        while (currentDepth <= depth && typeof value === "function") {
-          endIdx = currentDepth === depth ? arguments.length : idx + value.length;
-          value = value.apply(this, Array.prototype.slice.call(arguments, idx, endIdx));
-          currentDepth += 1;
-          idx = endIdx;
-        }
-        return value;
-      });
-    });
-    module2.exports = uncurryN;
-  }
-});
-
-// node_modules/ramda/src/unfold.js
-var require_unfold = __commonJS({
-  "node_modules/ramda/src/unfold.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var unfold = /* @__PURE__ */ _curry2(function unfold2(fn, seed) {
-      var pair = fn(seed);
-      var result = [];
-      while (pair && pair.length) {
-        result[result.length] = pair[0];
-        pair = fn(pair[1]);
-      }
-      return result;
-    });
-    module2.exports = unfold;
-  }
-});
-
-// node_modules/ramda/src/union.js
-var require_union = __commonJS({
-  "node_modules/ramda/src/union.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry2 = require_curry2();
-    var compose = require_compose();
-    var uniq = require_uniq();
-    var union = /* @__PURE__ */ _curry2(/* @__PURE__ */ compose(uniq, _concat));
-    module2.exports = union;
-  }
-});
-
-// node_modules/ramda/src/uniqWith.js
-var require_uniqWith = __commonJS({
-  "node_modules/ramda/src/uniqWith.js"(exports2, module2) {
-    var _includesWith = require_includesWith();
-    var _curry2 = require_curry2();
-    var uniqWith = /* @__PURE__ */ _curry2(function uniqWith2(pred, list) {
-      var idx = 0;
-      var len = list.length;
-      var result = [];
-      var item;
-      while (idx < len) {
-        item = list[idx];
-        if (!_includesWith(pred, item, result)) {
-          result[result.length] = item;
-        }
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = uniqWith;
-  }
-});
-
-// node_modules/ramda/src/unionWith.js
-var require_unionWith = __commonJS({
-  "node_modules/ramda/src/unionWith.js"(exports2, module2) {
-    var _concat = require_concat();
-    var _curry3 = require_curry3();
-    var uniqWith = require_uniqWith();
-    var unionWith = /* @__PURE__ */ _curry3(function unionWith2(pred, list1, list2) {
-      return uniqWith(pred, _concat(list1, list2));
-    });
-    module2.exports = unionWith;
-  }
-});
-
-// node_modules/ramda/src/unless.js
-var require_unless = __commonJS({
-  "node_modules/ramda/src/unless.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var unless = /* @__PURE__ */ _curry3(function unless2(pred, whenFalseFn, x) {
-      return pred(x) ? x : whenFalseFn(x);
-    });
-    module2.exports = unless;
-  }
-});
-
-// node_modules/ramda/src/unnest.js
-var require_unnest = __commonJS({
-  "node_modules/ramda/src/unnest.js"(exports2, module2) {
-    var _identity = require_identity();
-    var chain = require_chain();
-    var unnest = /* @__PURE__ */ chain(_identity);
-    module2.exports = unnest;
-  }
-});
-
-// node_modules/ramda/src/until.js
-var require_until = __commonJS({
-  "node_modules/ramda/src/until.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var until = /* @__PURE__ */ _curry3(function until2(pred, fn, init) {
-      var val = init;
-      while (!pred(val)) {
-        val = fn(val);
-      }
-      return val;
-    });
-    module2.exports = until;
-  }
-});
-
-// node_modules/ramda/src/valuesIn.js
-var require_valuesIn = __commonJS({
-  "node_modules/ramda/src/valuesIn.js"(exports2, module2) {
-    var _curry1 = require_curry1();
-    var valuesIn = /* @__PURE__ */ _curry1(function valuesIn2(obj) {
-      var prop;
-      var vs = [];
-      for (prop in obj) {
-        vs[vs.length] = obj[prop];
-      }
-      return vs;
-    });
-    module2.exports = valuesIn;
-  }
-});
-
-// node_modules/ramda/src/view.js
-var require_view = __commonJS({
-  "node_modules/ramda/src/view.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var Const = function(x) {
-      return {
-        value: x,
-        "fantasy-land/map": function() {
-          return this;
-        }
-      };
-    };
-    var view = /* @__PURE__ */ _curry2(function view2(lens, x) {
-      return lens(Const)(x).value;
-    });
-    module2.exports = view;
-  }
-});
-
-// node_modules/ramda/src/when.js
-var require_when = __commonJS({
-  "node_modules/ramda/src/when.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var when = /* @__PURE__ */ _curry3(function when2(pred, whenTrueFn, x) {
-      return pred(x) ? whenTrueFn(x) : x;
-    });
-    module2.exports = when;
-  }
-});
-
-// node_modules/ramda/src/where.js
-var require_where = __commonJS({
-  "node_modules/ramda/src/where.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var _has = require_has();
-    var where = /* @__PURE__ */ _curry2(function where2(spec, testObj) {
-      for (var prop in spec) {
-        if (_has(prop, spec) && !spec[prop](testObj[prop])) {
-          return false;
-        }
-      }
-      return true;
-    });
-    module2.exports = where;
-  }
-});
-
-// node_modules/ramda/src/whereEq.js
-var require_whereEq = __commonJS({
-  "node_modules/ramda/src/whereEq.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var equals = require_equals2();
-    var map = require_map2();
-    var where = require_where();
-    var whereEq = /* @__PURE__ */ _curry2(function whereEq2(spec, testObj) {
-      return where(map(equals, spec), testObj);
-    });
-    module2.exports = whereEq;
-  }
-});
-
-// node_modules/ramda/src/without.js
-var require_without = __commonJS({
-  "node_modules/ramda/src/without.js"(exports2, module2) {
-    var _includes = require_includes();
-    var _curry2 = require_curry2();
-    var flip = require_flip();
-    var reject = require_reject();
-    var without = /* @__PURE__ */ _curry2(function(xs, list) {
-      return reject(flip(_includes)(xs), list);
-    });
-    module2.exports = without;
-  }
-});
-
-// node_modules/ramda/src/xor.js
-var require_xor = __commonJS({
-  "node_modules/ramda/src/xor.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var xor = /* @__PURE__ */ _curry2(function xor2(a, b) {
-      return Boolean(!a ^ !b);
-    });
-    module2.exports = xor;
-  }
-});
-
-// node_modules/ramda/src/xprod.js
-var require_xprod = __commonJS({
-  "node_modules/ramda/src/xprod.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var xprod = /* @__PURE__ */ _curry2(function xprod2(a, b) {
-      var idx = 0;
-      var ilen = a.length;
-      var j;
-      var jlen = b.length;
-      var result = [];
-      while (idx < ilen) {
-        j = 0;
-        while (j < jlen) {
-          result[result.length] = [a[idx], b[j]];
-          j += 1;
-        }
-        idx += 1;
-      }
-      return result;
-    });
-    module2.exports = xprod;
-  }
-});
-
-// node_modules/ramda/src/zip.js
-var require_zip = __commonJS({
-  "node_modules/ramda/src/zip.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var zip2 = /* @__PURE__ */ _curry2(function zip3(a, b) {
-      var rv = [];
-      var idx = 0;
-      var len = Math.min(a.length, b.length);
-      while (idx < len) {
-        rv[idx] = [a[idx], b[idx]];
-        idx += 1;
-      }
-      return rv;
-    });
-    module2.exports = zip2;
-  }
-});
-
-// node_modules/ramda/src/zipObj.js
-var require_zipObj = __commonJS({
-  "node_modules/ramda/src/zipObj.js"(exports2, module2) {
-    var _curry2 = require_curry2();
-    var zipObj = /* @__PURE__ */ _curry2(function zipObj2(keys, values) {
-      var idx = 0;
-      var len = Math.min(keys.length, values.length);
-      var out = {};
-      while (idx < len) {
-        out[keys[idx]] = values[idx];
-        idx += 1;
-      }
-      return out;
-    });
-    module2.exports = zipObj;
-  }
-});
-
-// node_modules/ramda/src/zipWith.js
-var require_zipWith = __commonJS({
-  "node_modules/ramda/src/zipWith.js"(exports2, module2) {
-    var _curry3 = require_curry3();
-    var zipWith = /* @__PURE__ */ _curry3(function zipWith2(fn, a, b) {
-      var rv = [];
-      var idx = 0;
-      var len = Math.min(a.length, b.length);
-      while (idx < len) {
-        rv[idx] = fn(a[idx], b[idx]);
-        idx += 1;
-      }
-      return rv;
-    });
-    module2.exports = zipWith;
-  }
-});
-
-// node_modules/ramda/src/thunkify.js
-var require_thunkify = __commonJS({
-  "node_modules/ramda/src/thunkify.js"(exports2, module2) {
-    var curryN = require_curryN2();
-    var _curry1 = require_curry1();
-    var thunkify = /* @__PURE__ */ _curry1(function thunkify2(fn) {
-      return curryN(fn.length, function createThunk() {
-        var fnArgs = arguments;
-        return function invokeThunk() {
-          return fn.apply(this, fnArgs);
-        };
-      });
-    });
-    module2.exports = thunkify;
-  }
-});
-
-// node_modules/ramda/src/index.js
-var require_src2 = __commonJS({
-  "node_modules/ramda/src/index.js"(exports2, module2) {
-    module2.exports = {};
-    module2.exports.F = require_F();
-    module2.exports.T = require_T();
-    module2.exports.__ = require__();
-    module2.exports.add = require_add();
-    module2.exports.addIndex = require_addIndex();
-    module2.exports.adjust = require_adjust();
-    module2.exports.all = require_all();
-    module2.exports.allPass = require_allPass();
-    module2.exports.always = require_always();
-    module2.exports.and = require_and();
-    module2.exports.any = require_any();
-    module2.exports.anyPass = require_anyPass();
-    module2.exports.ap = require_ap();
-    module2.exports.aperture = require_aperture2();
-    module2.exports.append = require_append();
-    module2.exports.apply = require_apply();
-    module2.exports.applySpec = require_applySpec();
-    module2.exports.applyTo = require_applyTo();
-    module2.exports.ascend = require_ascend();
-    module2.exports.assoc = require_assoc();
-    module2.exports.assocPath = require_assocPath();
-    module2.exports.binary = require_binary();
-    module2.exports.bind = require_bind();
-    module2.exports.both = require_both();
-    module2.exports.call = require_call();
-    module2.exports.chain = require_chain();
-    module2.exports.clamp = require_clamp();
-    module2.exports.clone = require_clone2();
-    module2.exports.comparator = require_comparator();
-    module2.exports.complement = require_complement();
-    module2.exports.compose = require_compose();
-    module2.exports.composeK = require_composeK();
-    module2.exports.composeP = require_composeP();
-    module2.exports.composeWith = require_composeWith();
-    module2.exports.concat = require_concat2();
-    module2.exports.cond = require_cond();
-    module2.exports.construct = require_construct();
-    module2.exports.constructN = require_constructN();
-    module2.exports.contains = require_contains();
-    module2.exports.converge = require_converge();
-    module2.exports.countBy = require_countBy();
-    module2.exports.curry = require_curry();
-    module2.exports.curryN = require_curryN2();
-    module2.exports.dec = require_dec();
-    module2.exports.defaultTo = require_defaultTo();
-    module2.exports.descend = require_descend();
-    module2.exports.difference = require_difference();
-    module2.exports.differenceWith = require_differenceWith();
-    module2.exports.dissoc = require_dissoc();
-    module2.exports.dissocPath = require_dissocPath();
-    module2.exports.divide = require_divide();
-    module2.exports.drop = require_drop();
-    module2.exports.dropLast = require_dropLast2();
-    module2.exports.dropLastWhile = require_dropLastWhile2();
-    module2.exports.dropRepeats = require_dropRepeats();
-    module2.exports.dropRepeatsWith = require_dropRepeatsWith();
-    module2.exports.dropWhile = require_dropWhile();
-    module2.exports.either = require_either();
-    module2.exports.empty = require_empty();
-    module2.exports.endsWith = require_endsWith();
-    module2.exports.eqBy = require_eqBy();
-    module2.exports.eqProps = require_eqProps();
-    module2.exports.equals = require_equals2();
-    module2.exports.evolve = require_evolve();
-    module2.exports.filter = require_filter2();
-    module2.exports.find = require_find();
-    module2.exports.findIndex = require_findIndex();
-    module2.exports.findLast = require_findLast();
-    module2.exports.findLastIndex = require_findLastIndex();
-    module2.exports.flatten = require_flatten();
-    module2.exports.flip = require_flip();
-    module2.exports.forEach = require_forEach();
-    module2.exports.forEachObjIndexed = require_forEachObjIndexed();
-    module2.exports.fromPairs = require_fromPairs();
-    module2.exports.groupBy = require_groupBy();
-    module2.exports.groupWith = require_groupWith();
-    module2.exports.gt = require_gt();
-    module2.exports.gte = require_gte();
-    module2.exports.has = require_has2();
-    module2.exports.hasIn = require_hasIn();
-    module2.exports.hasPath = require_hasPath();
-    module2.exports.head = require_head();
-    module2.exports.identical = require_identical();
-    module2.exports.identity = require_identity2();
-    module2.exports.ifElse = require_ifElse();
-    module2.exports.inc = require_inc();
-    module2.exports.includes = require_includes2();
-    module2.exports.indexBy = require_indexBy();
-    module2.exports.indexOf = require_indexOf2();
-    module2.exports.init = require_init();
-    module2.exports.innerJoin = require_innerJoin();
-    module2.exports.insert = require_insert();
-    module2.exports.insertAll = require_insertAll();
-    module2.exports.intersection = require_intersection();
-    module2.exports.intersperse = require_intersperse();
-    module2.exports.into = require_into();
-    module2.exports.invert = require_invert();
-    module2.exports.invertObj = require_invertObj();
-    module2.exports.invoker = require_invoker();
-    module2.exports.is = require_is();
-    module2.exports.isEmpty = require_isEmpty();
-    module2.exports.isNil = require_isNil();
-    module2.exports.join = require_join();
-    module2.exports.juxt = require_juxt();
-    module2.exports.keys = require_keys();
-    module2.exports.keysIn = require_keysIn();
-    module2.exports.last = require_last();
-    module2.exports.lastIndexOf = require_lastIndexOf();
-    module2.exports.length = require_length();
-    module2.exports.lens = require_lens();
-    module2.exports.lensIndex = require_lensIndex();
-    module2.exports.lensPath = require_lensPath();
-    module2.exports.lensProp = require_lensProp();
-    module2.exports.lift = require_lift();
-    module2.exports.liftN = require_liftN();
-    module2.exports.lt = require_lt();
-    module2.exports.lte = require_lte();
-    module2.exports.map = require_map2();
-    module2.exports.mapAccum = require_mapAccum();
-    module2.exports.mapAccumRight = require_mapAccumRight();
-    module2.exports.mapObjIndexed = require_mapObjIndexed();
-    module2.exports.match = require_match();
-    module2.exports.mathMod = require_mathMod();
-    module2.exports.max = require_max();
-    module2.exports.maxBy = require_maxBy();
-    module2.exports.mean = require_mean();
-    module2.exports.median = require_median();
-    module2.exports.memoizeWith = require_memoizeWith();
-    module2.exports.merge = require_merge();
-    module2.exports.mergeAll = require_mergeAll();
-    module2.exports.mergeDeepLeft = require_mergeDeepLeft();
-    module2.exports.mergeDeepRight = require_mergeDeepRight();
-    module2.exports.mergeDeepWith = require_mergeDeepWith();
-    module2.exports.mergeDeepWithKey = require_mergeDeepWithKey();
-    module2.exports.mergeLeft = require_mergeLeft();
-    module2.exports.mergeRight = require_mergeRight();
-    module2.exports.mergeWith = require_mergeWith();
-    module2.exports.mergeWithKey = require_mergeWithKey();
-    module2.exports.min = require_min();
-    module2.exports.minBy = require_minBy();
-    module2.exports.modulo = require_modulo();
-    module2.exports.move = require_move();
-    module2.exports.multiply = require_multiply();
-    module2.exports.nAry = require_nAry();
-    module2.exports.negate = require_negate();
-    module2.exports.none = require_none();
-    module2.exports.not = require_not();
-    module2.exports.nth = require_nth();
-    module2.exports.nthArg = require_nthArg();
-    module2.exports.o = require_o();
-    module2.exports.objOf = require_objOf();
-    module2.exports.of = require_of2();
-    module2.exports.omit = require_omit();
-    module2.exports.once = require_once();
-    module2.exports.or = require_or();
-    module2.exports.otherwise = require_otherwise();
-    module2.exports.over = require_over();
-    module2.exports.pair = require_pair();
-    module2.exports.partial = require_partial();
-    module2.exports.partialRight = require_partialRight();
-    module2.exports.partition = require_partition();
-    module2.exports.path = require_path();
-    module2.exports.paths = require_paths();
-    module2.exports.pathEq = require_pathEq();
-    module2.exports.pathOr = require_pathOr();
-    module2.exports.pathSatisfies = require_pathSatisfies();
-    module2.exports.pick = require_pick();
-    module2.exports.pickAll = require_pickAll();
-    module2.exports.pickBy = require_pickBy();
-    module2.exports.pipe = require_pipe2();
-    module2.exports.pipeK = require_pipeK();
-    module2.exports.pipeP = require_pipeP2();
-    module2.exports.pipeWith = require_pipeWith();
-    module2.exports.pluck = require_pluck();
-    module2.exports.prepend = require_prepend();
-    module2.exports.product = require_product();
-    module2.exports.project = require_project();
-    module2.exports.prop = require_prop();
-    module2.exports.propEq = require_propEq();
-    module2.exports.propIs = require_propIs();
-    module2.exports.propOr = require_propOr();
-    module2.exports.propSatisfies = require_propSatisfies();
-    module2.exports.props = require_props();
-    module2.exports.range = require_range();
-    module2.exports.reduce = require_reduce2();
-    module2.exports.reduceBy = require_reduceBy();
-    module2.exports.reduceRight = require_reduceRight();
-    module2.exports.reduceWhile = require_reduceWhile();
-    module2.exports.reduced = require_reduced2();
-    module2.exports.reject = require_reject();
-    module2.exports.remove = require_remove();
-    module2.exports.repeat = require_repeat();
-    module2.exports.replace = require_replace();
-    module2.exports.reverse = require_reverse();
-    module2.exports.scan = require_scan2();
-    module2.exports.sequence = require_sequence();
-    module2.exports.set = require_set();
-    module2.exports.slice = require_slice();
-    module2.exports.sort = require_sort();
-    module2.exports.sortBy = require_sortBy();
-    module2.exports.sortWith = require_sortWith();
-    module2.exports.split = require_split();
-    module2.exports.splitAt = require_splitAt();
-    module2.exports.splitEvery = require_splitEvery();
-    module2.exports.splitWhen = require_splitWhen();
-    module2.exports.startsWith = require_startsWith();
-    module2.exports.subtract = require_subtract();
-    module2.exports.sum = require_sum();
-    module2.exports.symmetricDifference = require_symmetricDifference();
-    module2.exports.symmetricDifferenceWith = require_symmetricDifferenceWith();
-    module2.exports.tail = require_tail();
-    module2.exports.take = require_take();
-    module2.exports.takeLast = require_takeLast();
-    module2.exports.takeLastWhile = require_takeLastWhile();
-    module2.exports.takeWhile = require_takeWhile();
-    module2.exports.tap = require_tap();
-    module2.exports.test = require_test();
-    module2.exports.andThen = require_andThen();
-    module2.exports.times = require_times();
-    module2.exports.toLower = require_toLower();
-    module2.exports.toPairs = require_toPairs();
-    module2.exports.toPairsIn = require_toPairsIn();
-    module2.exports.toString = require_toString2();
-    module2.exports.toUpper = require_toUpper();
-    module2.exports.transduce = require_transduce();
-    module2.exports.transpose = require_transpose();
-    module2.exports.traverse = require_traverse();
-    module2.exports.trim = require_trim();
-    module2.exports.tryCatch = require_tryCatch();
-    module2.exports.type = require_type();
-    module2.exports.unapply = require_unapply();
-    module2.exports.unary = require_unary();
-    module2.exports.uncurryN = require_uncurryN();
-    module2.exports.unfold = require_unfold();
-    module2.exports.union = require_union();
-    module2.exports.unionWith = require_unionWith();
-    module2.exports.uniq = require_uniq();
-    module2.exports.uniqBy = require_uniqBy();
-    module2.exports.uniqWith = require_uniqWith();
-    module2.exports.unless = require_unless();
-    module2.exports.unnest = require_unnest();
-    module2.exports.until = require_until();
-    module2.exports.update = require_update();
-    module2.exports.useWith = require_useWith();
-    module2.exports.values = require_values();
-    module2.exports.valuesIn = require_valuesIn();
-    module2.exports.view = require_view();
-    module2.exports.when = require_when();
-    module2.exports.where = require_where();
-    module2.exports.whereEq = require_whereEq();
-    module2.exports.without = require_without();
-    module2.exports.xor = require_xor();
-    module2.exports.xprod = require_xprod();
-    module2.exports.zip = require_zip();
-    module2.exports.zipObj = require_zipObj();
-    module2.exports.zipWith = require_zipWith();
-    module2.exports.thunkify = require_thunkify();
-  }
-});
-
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = {value, done: false};
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({value: void 0, done: true});
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({value: void 0, done: true});
-            } else {
-              return new Promise((resolve, reject) => {
-                this.pullQueue.push({resolve, reject});
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({value: void 0, done: true});
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, {highWaterMark = 100, lowWaterMark = 1} = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {value: true});
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
-  }
-});
-
 // node_modules/@multiformats/base-x/src/index.js
-var require_src3 = __commonJS({
+var require_src2 = __commonJS({
   "node_modules/@multiformats/base-x/src/index.js"(exports2, module2) {
     "use strict";
     function base(ALPHABET) {
@@ -12593,7 +7387,7 @@ var require_rfc4648 = __commonJS({
 var require_constants4 = __commonJS({
   "node_modules/multibase/src/constants.js"(exports2, module2) {
     "use strict";
-    var baseX = require_src3();
+    var baseX = require_src2();
     var Base = require_base();
     var {rfc4648} = require_rfc4648();
     var {decodeText, encodeText} = require_util();
@@ -12644,7 +7438,7 @@ var require_constants4 = __commonJS({
 });
 
 // node_modules/multibase/src/index.js
-var require_src4 = __commonJS({
+var require_src3 = __commonJS({
   "node_modules/multibase/src/index.js"(exports2, module2) {
     "use strict";
     var constants = require_constants4();
@@ -12770,7 +7564,7 @@ var require_decode = __commonJS({
 });
 
 // node_modules/varint/length.js
-var require_length2 = __commonJS({
+var require_length = __commonJS({
   "node_modules/varint/length.js"(exports2, module2) {
     var N1 = Math.pow(2, 7);
     var N2 = Math.pow(2, 14);
@@ -12793,7 +7587,7 @@ var require_varint = __commonJS({
     module2.exports = {
       encode: require_encode(),
       decode: require_decode(),
-      encodingLength: require_length2()
+      encodingLength: require_length()
     };
   }
 });
@@ -13163,7 +7957,7 @@ var require_constants5 = __commonJS({
 var require_to_string = __commonJS({
   "node_modules/uint8arrays/to-string.js"(exports2, module2) {
     "use strict";
-    var {encoding: getCodec} = require_src4();
+    var {encoding: getCodec} = require_src3();
     var utf8Decoder = new TextDecoder("utf8");
     function uint8ArrayToAsciiString(array) {
       let string = "";
@@ -13189,7 +7983,7 @@ var require_to_string = __commonJS({
 var require_from_string = __commonJS({
   "node_modules/uint8arrays/from-string.js"(exports2, module2) {
     "use strict";
-    var {encoding: getCodec} = require_src4();
+    var {encoding: getCodec} = require_src3();
     var utf8Encoder = new TextEncoder();
     function asciiStringToUint8Array(string) {
       const array = new Uint8Array(string.length);
@@ -13212,7 +8006,7 @@ var require_from_string = __commonJS({
 });
 
 // node_modules/uint8arrays/concat.js
-var require_concat3 = __commonJS({
+var require_concat = __commonJS({
   "node_modules/uint8arrays/concat.js"(exports2, module2) {
     "use strict";
     function concat(arrays, length) {
@@ -13232,15 +8026,15 @@ var require_concat3 = __commonJS({
 });
 
 // node_modules/multihashes/src/index.js
-var require_src5 = __commonJS({
+var require_src4 = __commonJS({
   "node_modules/multihashes/src/index.js"(exports2, module2) {
     "use strict";
-    var multibase = require_src4();
+    var multibase = require_src3();
     var varint = require_varint();
     var {names} = require_constants5();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var codes = {};
     for (const key in names) {
       const name = key;
@@ -13900,11 +8694,11 @@ var require_maps = __commonJS({
 });
 
 // node_modules/ipfs-http-client/node_modules/multicodec/src/index.js
-var require_src6 = __commonJS({
+var require_src5 = __commonJS({
   "node_modules/ipfs-http-client/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util2();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps();
     function addPrefix(multicodecStrOrCode, data) {
@@ -14000,7 +8794,7 @@ var require_src6 = __commonJS({
 var require_cid_util = __commonJS({
   "node_modules/ipfs-http-client/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -14039,7 +8833,7 @@ var require_cid_util = __commonJS({
 });
 
 // node_modules/uint8arrays/equals.js
-var require_equals3 = __commonJS({
+var require_equals = __commonJS({
   "node_modules/uint8arrays/equals.js"(exports2, module2) {
     "use strict";
     function equals(a, b) {
@@ -14061,16 +8855,16 @@ var require_equals3 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/node_modules/cids/src/index.js
-var require_src7 = __commonJS({
+var require_src6 = __commonJS({
   "node_modules/ipfs-http-client/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src6();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src5();
     var CIDUtil = require_cid_util();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -14492,7 +9286,7 @@ var require_decode2 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/multicodec/node_modules/varint/length.js
-var require_length3 = __commonJS({
+var require_length2 = __commonJS({
   "node_modules/multiaddr/node_modules/multicodec/node_modules/varint/length.js"(exports2, module2) {
     var N1 = Math.pow(2, 7);
     var N2 = Math.pow(2, 14);
@@ -14515,7 +9309,7 @@ var require_varint2 = __commonJS({
     module2.exports = {
       encode: require_encode2(),
       decode: require_decode2(),
-      encodingLength: require_length3()
+      encodingLength: require_length2()
     };
   }
 });
@@ -15056,11 +9850,11 @@ var require_maps2 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/multicodec/src/index.js
-var require_src8 = __commonJS({
+var require_src7 = __commonJS({
   "node_modules/multiaddr/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint2();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util3();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps2();
     function addPrefix(multicodecStrOrCode, data) {
@@ -15156,7 +9950,7 @@ var require_src8 = __commonJS({
 var require_cid_util2 = __commonJS({
   "node_modules/multiaddr/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -15195,16 +9989,16 @@ var require_cid_util2 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/cids/src/index.js
-var require_src9 = __commonJS({
+var require_src8 = __commonJS({
   "node_modules/multiaddr/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src8();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src7();
     var CIDUtil = require_cid_util2();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -15423,7 +10217,7 @@ var require_decode3 = __commonJS({
 });
 
 // node_modules/multiaddr/node_modules/varint/length.js
-var require_length4 = __commonJS({
+var require_length3 = __commonJS({
   "node_modules/multiaddr/node_modules/varint/length.js"(exports2, module2) {
     var N1 = Math.pow(2, 7);
     var N2 = Math.pow(2, 14);
@@ -15446,7 +10240,7 @@ var require_varint3 = __commonJS({
     module2.exports = {
       encode: require_encode3(),
       decode: require_decode3(),
-      encodingLength: require_length4()
+      encodingLength: require_length3()
     };
   }
 });
@@ -15457,12 +10251,12 @@ var require_convert = __commonJS({
     "use strict";
     var ip = require_ip();
     var protocols = require_protocols_table();
-    var CID3 = require_src9();
-    var multibase = require_src4();
+    var CID3 = require_src8();
+    var multibase = require_src3();
     var varint = require_varint3();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     module2.exports = Convert;
     function Convert(proto, a) {
       if (a instanceof Uint8Array) {
@@ -15626,7 +10420,7 @@ var require_codec = __commonJS({
     var convert = require_convert();
     var protocols = require_protocols_table();
     var varint = require_varint3();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
     module2.exports = {
       stringToStringTuples,
@@ -15837,17 +10631,17 @@ var require_err_code = __commonJS({
 });
 
 // node_modules/multiaddr/src/index.js
-var require_src10 = __commonJS({
+var require_src9 = __commonJS({
   "node_modules/multiaddr/src/index.js"(exports2, module2) {
     "use strict";
     var codec = require_codec();
     var protocols = require_protocols_table();
     var varint = require_varint3();
-    var CID3 = require_src9();
+    var CID3 = require_src8();
     var errCode = require_err_code();
     var inspect = Symbol.for("nodejs.util.inspect.custom");
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var resolvers = new Map();
     var symbol = Symbol.for("@multiformats/js-multiaddr/multiaddr");
     var Multiaddr = class {
@@ -16492,7 +11286,7 @@ var require_legacy_streams = __commonJS({
 });
 
 // node_modules/graceful-fs/clone.js
-var require_clone3 = __commonJS({
+var require_clone = __commonJS({
   "node_modules/graceful-fs/clone.js"(exports2, module2) {
     "use strict";
     module2.exports = clone;
@@ -16520,7 +11314,7 @@ var require_graceful_fs = __commonJS({
     var fs = require("fs");
     var polyfills = require_polyfills();
     var legacy = require_legacy_streams();
-    var clone = require_clone3();
+    var clone = require_clone();
     var util = require("util");
     var gracefulQueue;
     var previousSymbol;
@@ -16540,11 +11334,11 @@ var require_graceful_fs = __commonJS({
         }
       });
     }
-    var debug6 = noop2;
+    var debug8 = noop2;
     if (util.debuglog)
-      debug6 = util.debuglog("gfs4");
+      debug8 = util.debuglog("gfs4");
     else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
-      debug6 = function() {
+      debug8 = function() {
         var m = util.format.apply(util, arguments);
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
@@ -16579,7 +11373,7 @@ var require_graceful_fs = __commonJS({
       }(fs.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug6(fs[gracefulQueue]);
+          debug8(fs[gracefulQueue]);
           require("assert").equal(fs[gracefulQueue].length, 0);
         });
       }
@@ -16597,7 +11391,7 @@ var require_graceful_fs = __commonJS({
       polyfills(fs2);
       fs2.gracefulify = patch;
       fs2.createReadStream = createReadStream;
-      fs2.createWriteStream = createWriteStream;
+      fs2.createWriteStream = createWriteStream2;
       var fs$readFile = fs2.readFile;
       fs2.readFile = readFile;
       function readFile(path, options, cb) {
@@ -16795,7 +11589,7 @@ var require_graceful_fs = __commonJS({
       function createReadStream(path, options) {
         return new fs2.ReadStream(path, options);
       }
-      function createWriteStream(path, options) {
+      function createWriteStream2(path, options) {
         return new fs2.WriteStream(path, options);
       }
       var fs$open = fs2.open;
@@ -16819,13 +11613,13 @@ var require_graceful_fs = __commonJS({
       return fs2;
     }
     function enqueue(elem) {
-      debug6("ENQUEUE", elem[0].name, elem[1]);
+      debug8("ENQUEUE", elem[0].name, elem[1]);
       fs[gracefulQueue].push(elem);
     }
     function retry() {
       var elem = fs[gracefulQueue].shift();
       if (elem) {
-        debug6("RETRY", elem[0].name, elem[1]);
+        debug8("RETRY", elem[0].name, elem[1]);
         elem[0].apply(null, elem[1]);
       }
     }
@@ -17877,7 +12671,7 @@ var require_rimraf = __commonJS({
 });
 
 // node_modules/it-glob/node_modules/fs-extra/lib/remove/index.js
-var require_remove2 = __commonJS({
+var require_remove = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/remove/index.js"(exports2, module2) {
     "use strict";
     var u = require_universalify().fromCallback;
@@ -17890,14 +12684,14 @@ var require_remove2 = __commonJS({
 });
 
 // node_modules/it-glob/node_modules/fs-extra/lib/empty/index.js
-var require_empty2 = __commonJS({
+var require_empty = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/empty/index.js"(exports2, module2) {
     "use strict";
     var u = require_universalify().fromCallback;
     var fs = require_graceful_fs();
     var path = require("path");
     var mkdir2 = require_mkdirs();
-    var remove = require_remove2();
+    var remove = require_remove();
     var emptyDir = u(function emptyDir2(dir, callback) {
       callback = callback || function() {
       };
@@ -18484,7 +13278,7 @@ var require_move_sync = __commonJS({
     var fs = require_graceful_fs();
     var path = require("path");
     var copySync = require_copy_sync2().copySync;
-    var removeSync = require_remove2().removeSync;
+    var removeSync = require_remove().removeSync;
     var mkdirpSync = require_mkdirs().mkdirpSync;
     var stat = require_stat();
     function moveSync(src, dest, opts) {
@@ -18536,13 +13330,13 @@ var require_move_sync2 = __commonJS({
 });
 
 // node_modules/it-glob/node_modules/fs-extra/lib/move/move.js
-var require_move2 = __commonJS({
+var require_move = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/move/move.js"(exports2, module2) {
     "use strict";
     var fs = require_graceful_fs();
     var path = require("path");
     var copy = require_copy2().copy;
-    var remove = require_remove2().remove;
+    var remove = require_remove().remove;
     var mkdirp = require_mkdirs().mkdirp;
     var pathExists = require_path_exists().pathExists;
     var stat = require_stat();
@@ -18608,12 +13402,12 @@ var require_move2 = __commonJS({
 });
 
 // node_modules/it-glob/node_modules/fs-extra/lib/move/index.js
-var require_move3 = __commonJS({
+var require_move2 = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/move/index.js"(exports2, module2) {
     "use strict";
     var u = require_universalify().fromCallback;
     module2.exports = {
-      move: u(require_move2())
+      move: u(require_move())
     };
   }
 });
@@ -18622,7 +13416,7 @@ var require_move3 = __commonJS({
 var require_lib = __commonJS({
   "node_modules/it-glob/node_modules/fs-extra/lib/index.js"(exports2, module2) {
     "use strict";
-    module2.exports = __spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues({}, require_fs()), require_copy_sync2()), require_copy2()), require_empty2()), require_ensure()), require_json()), require_mkdirs()), require_move_sync2()), require_move3()), require_output()), require_path_exists()), require_remove2());
+    module2.exports = __spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues(__spreadValues({}, require_fs()), require_copy_sync2()), require_copy2()), require_empty()), require_ensure()), require_json()), require_mkdirs()), require_move_sync2()), require_move2()), require_output()), require_path_exists()), require_remove());
     var fs = require("fs");
     if (Object.getOwnPropertyDescriptor(fs, "promises")) {
       Object.defineProperty(module2.exports, "promises", {
@@ -24092,7 +18886,7 @@ var require_lib3 = __commonJS({
       electron = require("electron");
     }
     var isReady = electron && electron.app && !electron.app.isReady() ? new Promise((resolve) => electron.app.once("ready", resolve)) : Promise.resolve();
-    function fetch(url$1, opts = {}) {
+    function fetch2(url$1, opts = {}) {
       return isReady.then(() => new Promise((resolve, reject) => {
         const request = new Request(url$1, opts);
         const options = getNodeRequestOptions(request);
@@ -24181,7 +18975,7 @@ var require_lib3 = __commonJS({
           if (request.signal) {
             request.signal.removeEventListener("abort", abortRequest);
           }
-          if (fetch.isRedirect(res.statusCode) && request.redirect !== "manual") {
+          if (fetch2.isRedirect(res.statusCode) && request.redirect !== "manual") {
             if (request.redirect === "error") {
               reject(new FetchError(`redirect mode is set to error: ${request.url}`, "no-redirect"));
               return;
@@ -24200,7 +18994,7 @@ var require_lib3 = __commonJS({
               request.headers.delete("content-length");
             }
             request.counter++;
-            resolve(fetch(url.resolve(request.url, res.headers.location), request));
+            resolve(fetch2(url.resolve(request.url, res.headers.location), request));
             return;
           }
           const headers2 = new Headers();
@@ -24269,12 +19063,12 @@ var require_lib3 = __commonJS({
         writeToStream(req, request);
       }));
     }
-    fetch.isRedirect = (code) => code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
+    fetch2.isRedirect = (code) => code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     exports2.FetchError = FetchError;
     exports2.Headers = Headers;
     exports2.Request = Request;
     exports2.Response = Response2;
-    exports2.default = fetch;
+    exports2.default = fetch2;
   }
 });
 
@@ -25146,12 +19940,12 @@ var require_lib4 = __commonJS({
     AbortError.prototype.name = "AbortError";
     var PassThrough$1 = Stream.PassThrough;
     var resolve_url = Url.resolve;
-    function fetch(url, opts) {
-      if (!fetch.Promise) {
+    function fetch2(url, opts) {
+      if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch.Promise;
-      return new fetch.Promise(function(resolve, reject) {
+      Body.Promise = fetch2.Promise;
+      return new fetch2.Promise(function(resolve, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -25222,7 +20016,7 @@ var require_lib4 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch.isRedirect(res.statusCode)) {
+          if (fetch2.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
             const locationURL = location2 === null ? null : resolve_url(request.url, location2);
             switch (request.redirect) {
@@ -25270,7 +20064,7 @@ var require_lib4 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch(new Request(locationURL, requestOpts)));
+                resolve(fetch2(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -25357,11 +20151,11 @@ var require_lib4 = __commonJS({
         stream2.end();
       }
     }
-    fetch.isRedirect = function(code) {
+    fetch2.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch.Promise = global.Promise;
-    module2.exports = exports2 = fetch;
+    fetch2.Promise = global.Promise;
+    module2.exports = exports2 = fetch2;
     Object.defineProperty(exports2, "__esModule", {value: true});
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -25372,7 +20166,7 @@ var require_lib4 = __commonJS({
 });
 
 // node_modules/ipfs-utils/node_modules/native-fetch/src/index.js
-var require_src11 = __commonJS({
+var require_src10 = __commonJS({
   "node_modules/ipfs-utils/node_modules/native-fetch/src/index.js"(exports2, module2) {
     "use strict";
     if (globalThis.fetch && globalThis.Headers && globalThis.Request && globalThis.Response) {
@@ -25401,7 +20195,7 @@ var require_fetch = __commonJS({
     if (isElectronMain) {
       module2.exports = require_lib3();
     } else {
-      module2.exports = require_src11();
+      module2.exports = require_src10();
     }
   }
 });
@@ -25411,7 +20205,7 @@ var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
     var {TimeoutError: TimeoutError2, AbortError} = require_error();
-    var {Response: Response2, Request, Headers, default: fetch} = require_fetch();
+    var {Response: Response2, Request, Headers, default: fetch2} = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
@@ -25469,7 +20263,7 @@ var require_fetch_browser = __commonJS({
         request.send(options.body);
       });
     };
-    var fetchWithStreaming = fetch;
+    var fetchWithStreaming = fetch2;
     var fetchWith = (url, options = {}) => options.onUploadProgress != null ? fetchWithProgress(url, options) : fetchWithStreaming(url, options);
     var parseHeaders = (input) => {
       const headers = new Headers();
@@ -25737,7 +20531,7 @@ var require_transform = __commonJS({
 });
 
 // node_modules/it-to-stream/src/index.js
-var require_src12 = __commonJS({
+var require_src11 = __commonJS({
   "node_modules/it-to-stream/src/index.js"(exports2, module2) {
     "use strict";
     var toTransform = require_transform();
@@ -25761,9 +20555,9 @@ var require_fetch_node = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.node.js"(exports2, module2) {
     "use strict";
     var {Request, Response: Response2, Headers, default: nativeFetch} = require_fetch();
-    var toStream = require_src12();
+    var toStream = require_src11();
     var {Buffer: Buffer2} = require("buffer");
-    var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
+    var fetch2 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
       const {onUploadProgress, body} = options;
       if (onUploadProgress && body) {
@@ -25807,7 +20601,7 @@ var require_fetch_node = __commonJS({
       }
     };
     module2.exports = {
-      fetch,
+      fetch: fetch2,
       Request,
       Headers
     };
@@ -26553,7 +21347,7 @@ var require_abort_controller = __commonJS({
 });
 
 // node_modules/native-abort-controller/src/index.js
-var require_src13 = __commonJS({
+var require_src12 = __commonJS({
   "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
     "use strict";
     var impl;
@@ -26572,7 +21366,7 @@ var require_src13 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     function anySignal(signals) {
       const controller = new AbortController2();
       function onAbort() {
@@ -26603,11 +21397,11 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var {fetch, Request, Headers} = require_fetch2();
+    var {fetch: fetch2, Request, Headers} = require_fetch2();
     var {TimeoutError: TimeoutError2, HTTPError} = require_error();
     var merge = require_merge_options().bind({ignoreUndefined: true});
     var {URL: URL2, URLSearchParams: URLSearchParams2} = require_iso_url();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     var anySignal = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -26672,7 +21466,7 @@ var require_http = __commonJS({
         }
         const abortController = new AbortController2();
         const signal = anySignal([abortController.signal, opts.signal]);
-        const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
+        const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
           timeout: void 0,
           headers
@@ -26872,7 +21666,7 @@ var require_parse_duration = __commonJS({
 // node_modules/multiaddr-to-uri/index.js
 var require_multiaddr_to_uri = __commonJS({
   "node_modules/multiaddr-to-uri/index.js"(exports2, module2) {
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var reduceValue = (_, v) => v;
     var tcpUri = (str, port, parts, opts) => {
       if (opts && opts.assumeHttp === false)
@@ -26924,7 +21718,7 @@ var require_multiaddr_to_uri = __commonJS({
 var require_to_url_string = __commonJS({
   "node_modules/ipfs-core-utils/src/to-url-string.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var multiAddrToUri = require_multiaddr_to_uri();
     module2.exports = (url) => {
       try {
@@ -26941,8 +21735,8 @@ var require_to_url_string = __commonJS({
 var require_core = __commonJS({
   "node_modules/ipfs-http-client/src/lib/core.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
-    var {isBrowser, isWebWorker, isNode} = require_env();
+    var {Multiaddr} = require_src9();
+    var {isBrowser, isWebWorker, isNode: isNode2} = require_env();
     var {default: parseDuration} = require_parse_duration();
     var log = require_src()("ipfs-http-client:lib:error-handler");
     var HTTP = require_http();
@@ -26979,7 +21773,7 @@ var require_core = __commonJS({
       } else if (url.pathname === "/" || url.pathname === void 0) {
         url.pathname = "api/v0";
       }
-      if (isNode) {
+      if (isNode2) {
         const Agent = url.protocol.startsWith("https") ? https.Agent : http.Agent;
         agent = opts.agent || new Agent({
           keepAlive: true,
@@ -27056,12 +21850,12 @@ var require_core = __commonJS({
         delete this.put;
         delete this.delete;
         delete this.options;
-        const fetch = this.fetch;
+        const fetch2 = this.fetch;
         this.fetch = (resource, options2 = {}) => {
           if (typeof resource === "string" && !resource.startsWith("/")) {
             resource = `${opts.url}/${resource}`;
           }
-          return fetch.call(this, resource, merge(options2, {
+          return fetch2.call(this, resource, merge(options2, {
             method: "POST"
           }));
         };
@@ -28983,7 +23777,7 @@ var require_unixfs = __commonJS({
 });
 
 // node_modules/ipfs-unixfs/src/index.js
-var require_src14 = __commonJS({
+var require_src13 = __commonJS({
   "node_modules/ipfs-unixfs/src/index.js"(exports2, module2) {
     "use strict";
     var {
@@ -29228,7 +24022,7 @@ var require_normalise_input = __commonJS({
     var {
       parseMtime,
       parseMode
-    } = require_src14();
+    } = require_src13();
     module2.exports = async function* normaliseInput(input, normaliseContent) {
       if (input === null || input === void 0) {
         return;
@@ -29530,7 +24324,7 @@ var require_multipart_request_node = __commonJS({
     var {nanoid} = require_nanoid();
     var modeToString = require_mode_to_string();
     var merge = require_merge_options().bind({ignoreUndefined: true});
-    var toStream = require_src12();
+    var toStream = require_src11();
     async function multipartRequest(source, abortController, headers = {}, boundary = `-----------------------------${nanoid()}`) {
       async function* streamFiles(source2) {
         try {
@@ -29608,7 +24402,7 @@ var require_to_url_search_params = __commonJS({
   "node_modules/ipfs-http-client/src/lib/to-url-search-params.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src14();
+    var {parseMtime} = require_src13();
     module2.exports = (_a = {}) => {
       var _b = _a, {arg, searchParams, hashAlg, mtime, mode} = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
       if (searchParams) {
@@ -29658,13 +24452,13 @@ var require_abort_signal = __commonJS({
 var require_add_all = __commonJS({
   "node_modules/ipfs-http-client/src/add-all.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
         const controller = new AbortController2();
@@ -29748,7 +24542,7 @@ var require_it_last = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/add.js
-var require_add2 = __commonJS({
+var require_add = __commonJS({
   "node_modules/ipfs-http-client/src/add.js"(exports2, module2) {
     "use strict";
     var addAll = require_add_all();
@@ -29770,7 +24564,7 @@ var require_add2 = __commonJS({
 var require_wantlist = __commonJS({
   "node_modules/ipfs-http-client/src/bitswap/wantlist.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -29792,7 +24586,7 @@ var require_wantlist = __commonJS({
 var require_wantlist_for_peer = __commonJS({
   "node_modules/ipfs-http-client/src/bitswap/wantlist-for-peer.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -29817,7 +24611,7 @@ var require_wantlist_for_peer = __commonJS({
 var require_stat2 = __commonJS({
   "node_modules/ipfs-http-client/src/bitswap/stat.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -29852,7 +24646,7 @@ var require_stat2 = __commonJS({
 var require_unwant = __commonJS({
   "node_modules/ipfs-http-client/src/bitswap/unwant.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -30421,11 +25215,11 @@ var require_maps3 = __commonJS({
 });
 
 // node_modules/ipld-block/node_modules/multicodec/src/index.js
-var require_src15 = __commonJS({
+var require_src14 = __commonJS({
   "node_modules/ipld-block/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util4();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps3();
     function addPrefix(multicodecStrOrCode, data) {
@@ -30521,7 +25315,7 @@ var require_src15 = __commonJS({
 var require_cid_util3 = __commonJS({
   "node_modules/ipld-block/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -30560,16 +25354,16 @@ var require_cid_util3 = __commonJS({
 });
 
 // node_modules/ipld-block/node_modules/cids/src/index.js
-var require_src16 = __commonJS({
+var require_src15 = __commonJS({
   "node_modules/ipld-block/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src15();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src14();
     var CIDUtil = require_cid_util3();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -30806,10 +25600,10 @@ var require_package = __commonJS({
 });
 
 // node_modules/ipld-block/src/index.js
-var require_src17 = __commonJS({
+var require_src16 = __commonJS({
   "node_modules/ipld-block/src/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src16();
+    var CID3 = require_src15();
     var {version} = require_package();
     var blockSymbol = Symbol.for("@ipld/js-ipld-block/block");
     var readonly = {writable: false, configurable: false, enumerable: true};
@@ -30869,8 +25663,8 @@ var require_src17 = __commonJS({
 var require_get = __commonJS({
   "node_modules/ipfs-http-client/src/block/get.js"(exports2, module2) {
     "use strict";
-    var Block = require_src17();
-    var CID3 = require_src7();
+    var Block = require_src16();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -30895,7 +25689,7 @@ var require_get = __commonJS({
 var require_stat3 = __commonJS({
   "node_modules/ipfs-http-client/src/block/stat.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -30920,14 +25714,14 @@ var require_stat3 = __commonJS({
 var require_put = __commonJS({
   "node_modules/ipfs-http-client/src/block/put.js"(exports2, module2) {
     "use strict";
-    var Block = require_src17();
-    var CID3 = require_src7();
-    var multihash = require_src5();
+    var Block = require_src16();
+    var CID3 = require_src6();
+    var multihash = require_src4();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function put(data, options = {}) {
         if (Block.isBlock(data)) {
@@ -30979,7 +25773,7 @@ var require_put = __commonJS({
 var require_rm = __commonJS({
   "node_modules/ipfs-http-client/src/block/rm.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -31028,12 +25822,12 @@ var require_block = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/bootstrap/add.js
-var require_add3 = __commonJS({
+var require_add2 = __commonJS({
   "node_modules/ipfs-http-client/src/bootstrap/add.js"(exports2, module2) {
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     module2.exports = configure((api) => {
       async function add(addr, options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -31058,7 +25852,7 @@ var require_clear = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     module2.exports = configure((api) => {
       async function clear(options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -31083,7 +25877,7 @@ var require_rm2 = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     module2.exports = configure((api) => {
       async function rm(addr, options = {}) {
         const res = await api.post("bootstrap/rm", {
@@ -31108,7 +25902,7 @@ var require_reset = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     module2.exports = configure((api) => {
       async function reset(options = {}) {
         const res = await api.post("bootstrap/add", {
@@ -31133,7 +25927,7 @@ var require_list = __commonJS({
     "use strict";
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     module2.exports = configure((api) => {
       async function list(options = {}) {
         const res = await api.post("bootstrap/list", {
@@ -31155,7 +25949,7 @@ var require_bootstrap = __commonJS({
   "node_modules/ipfs-http-client/src/bootstrap/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (config) => ({
-      add: require_add3()(config),
+      add: require_add2()(config),
       clear: require_clear()(config),
       rm: require_rm2()(config),
       reset: require_reset()(config),
@@ -31168,7 +25962,7 @@ var require_bootstrap = __commonJS({
 var require_cat = __commonJS({
   "node_modules/ipfs-http-client/src/cat.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -31259,7 +26053,7 @@ var require_get2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/config/set.js
-var require_set2 = __commonJS({
+var require_set = __commonJS({
   "node_modules/ipfs-http-client/src/config/set.js"(exports2, module2) {
     "use strict";
     var configure = require_configure();
@@ -31294,7 +26088,7 @@ var require_set2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/config/replace.js
-var require_replace2 = __commonJS({
+var require_replace = __commonJS({
   "node_modules/ipfs-http-client/src/config/replace.js"(exports2, module2) {
     "use strict";
     var uint8ArrayFromString = require_from_string();
@@ -31302,7 +26096,7 @@ var require_replace2 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       const replace = async (config, options = {}) => {
         const controller = new AbortController2();
@@ -31320,7 +26114,7 @@ var require_replace2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/config/profiles/apply.js
-var require_apply2 = __commonJS({
+var require_apply = __commonJS({
   "node_modules/ipfs-http-client/src/config/profiles/apply.js"(exports2, module2) {
     "use strict";
     var configure = require_configure();
@@ -31374,7 +26168,7 @@ var require_profiles = __commonJS({
   "node_modules/ipfs-http-client/src/config/profiles/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (config) => ({
-      apply: require_apply2()(config),
+      apply: require_apply()(config),
       list: require_list2()(config)
     });
   }
@@ -31387,8 +26181,8 @@ var require_config = __commonJS({
     module2.exports = (config) => ({
       getAll: require_getAll()(config),
       get: require_get2()(config),
-      set: require_set2()(config),
-      replace: require_replace2()(config),
+      set: require_set()(config),
+      replace: require_replace()(config),
       profiles: require_profiles()(config)
     });
   }
@@ -31930,11 +26724,11 @@ var require_maps4 = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/node_modules/multicodec/src/index.js
-var require_src18 = __commonJS({
+var require_src17 = __commonJS({
   "node_modules/ipld-dag-pb/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util5();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps4();
     function addPrefix(multicodecStrOrCode, data) {
@@ -32030,7 +26824,7 @@ var require_src18 = __commonJS({
 var require_cid_util4 = __commonJS({
   "node_modules/ipld-dag-pb/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -32069,16 +26863,16 @@ var require_cid_util4 = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/node_modules/cids/src/index.js
-var require_src19 = __commonJS({
+var require_src18 = __commonJS({
   "node_modules/ipld-dag-pb/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src18();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src17();
     var CIDUtil = require_cid_util4();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -32465,7 +27259,7 @@ var require_dag = __commonJS({
 var require_dagLink = __commonJS({
   "node_modules/ipld-dag-pb/src/dag-link/dagLink.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src19();
+    var CID3 = require_src18();
     var uint8ArrayFromString = require_from_string();
     var DAGLink = class {
       constructor(name, size, cid) {
@@ -32512,16 +27306,16 @@ var require_stable = __commonJS({
     })(exports2, function() {
       "use strict";
       var stable = function(arr, comp) {
-        return exec(arr.slice(), comp);
+        return exec2(arr.slice(), comp);
       };
       stable.inplace = function(arr, comp) {
-        var result = exec(arr, comp);
+        var result = exec2(arr, comp);
         if (result !== arr) {
           pass(result, null, arr.length, arr);
         }
         return arr;
       };
-      function exec(arr, comp) {
+      function exec2(arr, comp) {
         if (typeof comp !== "function") {
           comp = function(a, b) {
             return String(a).localeCompare(b);
@@ -33736,7 +28530,7 @@ var require_sha = __commonJS({
   "node_modules/multihashing-async/src/sha.js"(exports2, module2) {
     "use strict";
     var crypto2 = require("crypto");
-    var multihash = require_src5();
+    var multihash = require_src4();
     var digest = async (data, alg) => {
       switch (alg) {
         case "sha1":
@@ -34630,13 +29424,13 @@ var require_crypto = __commonJS({
 });
 
 // node_modules/multihashing-async/src/index.js
-var require_src20 = __commonJS({
+var require_src19 = __commonJS({
   "node_modules/multihashing-async/src/index.js"(exports2, module2) {
     "use strict";
     var errcode = require_err_code();
-    var multihash = require_src5();
+    var multihash = require_src4();
     var crypto2 = require_crypto();
-    var equals = require_equals3();
+    var equals = require_equals();
     async function Multihashing(bytes, alg, length) {
       const digest = await Multihashing.digest(bytes, alg, length);
       return multihash.encode(digest, alg, length);
@@ -34690,9 +29484,9 @@ var require_src20 = __commonJS({
 var require_genCid = __commonJS({
   "node_modules/ipld-dag-pb/src/genCid.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src19();
-    var multicodec = require_src18();
-    var multihashing = require_src20();
+    var CID3 = require_src18();
+    var multicodec = require_src17();
+    var multihashing = require_src19();
     var {multihash} = multihashing;
     var codec = multicodec.DAG_PB;
     var defaultHashAlg = multihash.names["sha2-256"];
@@ -34758,8 +29552,8 @@ var require_addLink = __commonJS({
 var require_rmLink = __commonJS({
   "node_modules/ipld-dag-pb/src/dag-node/rmLink.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src19();
-    var uint8ArrayEquals = require_equals3();
+    var CID3 = require_src18();
+    var uint8ArrayEquals = require_equals();
     var rmLink = (dagNode, nameOrCid) => {
       let predicate = null;
       if (typeof nameOrCid === "string") {
@@ -34927,7 +29721,7 @@ var require_util8 = __commonJS({
 var require_resolver = __commonJS({
   "node_modules/ipld-dag-pb/src/resolver.js"(exports2) {
     "use strict";
-    var CID3 = require_src19();
+    var CID3 = require_src18();
     var util = require_util8();
     exports2.resolve = (binaryBlob, path = "/") => {
       let node = util.deserialize(binaryBlob);
@@ -34973,7 +29767,7 @@ var require_resolver = __commonJS({
 });
 
 // node_modules/ipld-dag-pb/src/index.js
-var require_src21 = __commonJS({
+var require_src20 = __commonJS({
   "node_modules/ipld-dag-pb/src/index.js"(exports2, module2) {
     "use strict";
     var resolver = require_resolver();
@@ -38689,7 +33483,7 @@ var require_encoder = __commonJS({
 });
 
 // node_modules/borc/src/index.js
-var require_src22 = __commonJS({
+var require_src21 = __commonJS({
   "node_modules/borc/src/index.js"(exports2) {
     "use strict";
     exports2.Diagnose = require_diagnose();
@@ -39247,11 +34041,11 @@ var require_maps5 = __commonJS({
 });
 
 // node_modules/ipld-dag-cbor/node_modules/multicodec/src/index.js
-var require_src23 = __commonJS({
+var require_src22 = __commonJS({
   "node_modules/ipld-dag-cbor/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util9();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps5();
     function addPrefix(multicodecStrOrCode, data) {
@@ -39347,7 +34141,7 @@ var require_src23 = __commonJS({
 var require_cid_util5 = __commonJS({
   "node_modules/ipld-dag-cbor/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -39386,16 +34180,16 @@ var require_cid_util5 = __commonJS({
 });
 
 // node_modules/ipld-dag-cbor/node_modules/cids/src/index.js
-var require_src24 = __commonJS({
+var require_src23 = __commonJS({
   "node_modules/ipld-dag-cbor/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src23();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src22();
     var CIDUtil = require_cid_util5();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -39560,7 +34354,7 @@ var require_src24 = __commonJS({
 });
 
 // node_modules/is-circular/lib/node.js
-var require_node3 = __commonJS({
+var require_node2 = __commonJS({
   "node_modules/is-circular/lib/node.js"(exports2, module2) {
     module2.exports = Node;
     function Node(value, next) {
@@ -39582,7 +34376,7 @@ var require_node3 = __commonJS({
 // node_modules/is-circular/index.js
 var require_is_circular = __commonJS({
   "node_modules/is-circular/index.js"(exports2, module2) {
-    var Node = require_node3();
+    var Node = require_node2();
     module2.exports = isCircular;
     function isCircular(obj) {
       if (!(obj instanceof Object)) {
@@ -39609,13 +34403,13 @@ var require_is_circular = __commonJS({
 var require_util10 = __commonJS({
   "node_modules/ipld-dag-cbor/src/util.js"(exports2, module2) {
     "use strict";
-    var cbor = require_src22();
-    var multicodec = require_src23();
-    var multihashing = require_src20();
+    var cbor = require_src21();
+    var multicodec = require_src22();
+    var multihashing = require_src19();
     var {multihash} = multihashing;
-    var CID3 = require_src24();
+    var CID3 = require_src23();
     var isCircular = require_is_circular();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayFromString = require_from_string();
     var CID_CBOR_TAG = 42;
     function tagCID(cid2) {
@@ -39750,7 +34544,7 @@ var require_util10 = __commonJS({
 var require_resolver2 = __commonJS({
   "node_modules/ipld-dag-cbor/src/resolver.js"(exports2) {
     "use strict";
-    var CID3 = require_src24();
+    var CID3 = require_src23();
     var util = require_util10();
     exports2.resolve = (binaryBlob, path = "") => {
       let node = util.deserialize(binaryBlob);
@@ -39792,7 +34586,7 @@ var require_resolver2 = __commonJS({
 });
 
 // node_modules/ipld-dag-cbor/src/index.js
-var require_src25 = __commonJS({
+var require_src24 = __commonJS({
   "node_modules/ipld-dag-cbor/src/index.js"(exports2, module2) {
     "use strict";
     var util = require_util10();
@@ -40342,11 +35136,11 @@ var require_maps6 = __commonJS({
 });
 
 // node_modules/ipld-raw/node_modules/multicodec/src/index.js
-var require_src26 = __commonJS({
+var require_src25 = __commonJS({
   "node_modules/ipld-raw/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util11();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps6();
     function addPrefix(multicodecStrOrCode, data) {
@@ -40442,7 +35236,7 @@ var require_src26 = __commonJS({
 var require_cid_util6 = __commonJS({
   "node_modules/ipld-raw/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -40481,16 +35275,16 @@ var require_cid_util6 = __commonJS({
 });
 
 // node_modules/ipld-raw/node_modules/cids/src/index.js
-var require_src27 = __commonJS({
+var require_src26 = __commonJS({
   "node_modules/ipld-raw/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src26();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src25();
     var CIDUtil = require_cid_util6();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -40655,13 +35449,13 @@ var require_src27 = __commonJS({
 });
 
 // node_modules/ipld-raw/src/index.js
-var require_src28 = __commonJS({
+var require_src27 = __commonJS({
   "node_modules/ipld-raw/src/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src27();
-    var multihashing = require_src20();
+    var CID3 = require_src26();
+    var multihashing = require_src19();
     var {multihash} = multihashing;
-    var multicodec = require_src26();
+    var multicodec = require_src25();
     module2.exports = {
       codec: multicodec.RAW,
       defaultHashAlg: multihash.names["sha2-256"],
@@ -40705,10 +35499,10 @@ var require_src28 = __commonJS({
 var require_ipld_formats = __commonJS({
   "node_modules/ipfs-http-client/src/lib/ipld-formats.js"(exports2, module2) {
     "use strict";
-    var dagPB = require_src21();
-    var dagCBOR = require_src25();
-    var raw = require_src28();
-    var multicodec = require_src6();
+    var dagPB = require_src20();
+    var dagCBOR = require_src24();
+    var raw = require_src27();
+    var multicodec = require_src5();
     var noop2 = (codec) => {
       return Promise.reject(new Error(`Missing IPLD format "${codec}"`));
     };
@@ -40740,7 +35534,7 @@ var require_ipld_formats = __commonJS({
 var require_resolve = __commonJS({
   "node_modules/ipfs-http-client/src/dag/resolve.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -40766,7 +35560,7 @@ var require_get3 = __commonJS({
   "node_modules/ipfs-http-client/src/dag/get.js"(exports2, module2) {
     "use strict";
     var configure = require_configure();
-    var multicodec = require_src6();
+    var multicodec = require_src5();
     var loadFormat = require_ipld_formats();
     module2.exports = configure((api, opts) => {
       const getBlock = require_get()(opts);
@@ -40791,14 +35585,14 @@ var require_get3 = __commonJS({
 var require_put2 = __commonJS({
   "node_modules/ipfs-http-client/src/dag/put.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var multihash = require_src5();
+    var CID3 = require_src6();
+    var multihash = require_src4();
     var configure = require_configure();
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
-    var multicodec = require_src6();
+    var {AbortController: AbortController2} = require_src12();
+    var multicodec = require_src5();
     var loadFormat = require_ipld_formats();
     module2.exports = configure((api, opts) => {
       const load = loadFormat(opts.ipld);
@@ -40920,14 +35714,14 @@ var require_get4 = __commonJS({
 var require_put3 = __commonJS({
   "node_modules/ipfs-http-client/src/dht/put.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {Multiaddr} = require_src10();
+    var CID3 = require_src6();
+    var {Multiaddr} = require_src9();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function* put(key, value, options = {}) {
         const controller = new AbortController2();
@@ -40960,8 +35754,8 @@ var require_put3 = __commonJS({
 var require_find_provs = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-provs.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {Multiaddr} = require_src10();
+    var CID3 = require_src6();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var {Provider} = require_response_types();
@@ -40995,7 +35789,7 @@ var require_find_provs = __commonJS({
 var require_find_peer = __commonJS({
   "node_modules/ipfs-http-client/src/dht/find-peer.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var {FinalPeer} = require_response_types();
@@ -41029,8 +35823,8 @@ var require_find_peer = __commonJS({
 var require_provide = __commonJS({
   "node_modules/ipfs-http-client/src/dht/provide.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {Multiaddr} = require_src10();
+    var CID3 = require_src6();
+    var {Multiaddr} = require_src9();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -41068,8 +35862,8 @@ var require_provide = __commonJS({
 var require_query = __commonJS({
   "node_modules/ipfs-http-client/src/dht/query.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {Multiaddr} = require_src10();
+    var CID3 = require_src6();
+    var {Multiaddr} = require_src9();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -41240,7 +36034,7 @@ var require_chmod = __commonJS({
 var require_cp = __commonJS({
   "node_modules/ipfs-http-client/src/files/cp.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -41267,7 +36061,7 @@ var require_cp = __commonJS({
 var require_flush = __commonJS({
   "node_modules/ipfs-http-client/src/files/flush.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -41318,7 +36112,7 @@ var require_object_to_camel_with_metadata = __commonJS({
 var require_ls = __commonJS({
   "node_modules/ipfs-http-client/src/files/ls.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var toCamelWithMetadata = require_object_to_camel_with_metadata();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -41388,7 +36182,7 @@ var require_mkdir = __commonJS({
 var require_mv = __commonJS({
   "node_modules/ipfs-http-client/src/files/mv.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -41489,7 +36283,7 @@ var require_rm3 = __commonJS({
 var require_stat4 = __commonJS({
   "node_modules/ipfs-http-client/src/files/stat.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var toCamelWithMetadata = require_object_to_camel_with_metadata();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -41549,12 +36343,12 @@ var require_write = __commonJS({
   "node_modules/ipfs-http-client/src/files/write.js"(exports2, module2) {
     "use strict";
     var modeToString = require_mode_to_string();
-    var {parseMtime} = require_src14();
+    var {parseMtime} = require_src13();
     var configure = require_configure();
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function write(path, input, options = {}) {
         const controller = new AbortController2();
@@ -42595,7 +37389,7 @@ var require_get5 = __commonJS({
   "node_modules/ipfs-http-client/src/get.js"(exports2, module2) {
     "use strict";
     var Tar = require_it_tar();
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var map = require_it_map();
@@ -42655,7 +37449,7 @@ var require_id = __commonJS({
   "node_modules/ipfs-http-client/src/id.js"(exports2, module2) {
     "use strict";
     var toCamel = require_object_to_camel();
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -42868,7 +37662,7 @@ var require_key = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/log/tail.js
-var require_tail2 = __commonJS({
+var require_tail = __commonJS({
   "node_modules/ipfs-http-client/src/log/tail.js"(exports2, module2) {
     "use strict";
     var configure = require_configure();
@@ -42942,7 +37736,7 @@ var require_log = __commonJS({
   "node_modules/ipfs-http-client/src/log/index.js"(exports2, module2) {
     "use strict";
     module2.exports = (config) => ({
-      tail: require_tail2()(config),
+      tail: require_tail()(config),
       ls: require_ls2()(config),
       level: require_level()(config)
     });
@@ -42953,7 +37747,7 @@ var require_log = __commonJS({
 var require_ls3 = __commonJS({
   "node_modules/ipfs-http-client/src/ls.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var stat = require_stat4();
@@ -43200,7 +37994,7 @@ var require_name = __commonJS({
 var require_data = __commonJS({
   "node_modules/ipfs-http-client/src/object/data.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43225,8 +38019,8 @@ var require_data = __commonJS({
 var require_get6 = __commonJS({
   "node_modules/ipfs-http-client/src/object/get.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {DAGNode, DAGLink} = require_src21();
+    var CID3 = require_src6();
+    var {DAGNode, DAGLink} = require_src20();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var uint8ArrayFromString = require_from_string();
@@ -43253,8 +38047,8 @@ var require_get6 = __commonJS({
 var require_links = __commonJS({
   "node_modules/ipfs-http-client/src/object/links.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {DAGLink} = require_src21();
+    var CID3 = require_src6();
+    var {DAGLink} = require_src20();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43279,7 +38073,7 @@ var require_links = __commonJS({
 var require_new = __commonJS({
   "node_modules/ipfs-http-client/src/object/new.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43304,7 +38098,7 @@ var require_new = __commonJS({
 var require_add_link = __commonJS({
   "node_modules/ipfs-http-client/src/object/patch/add-link.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43333,12 +38127,12 @@ var require_add_link = __commonJS({
 var require_append_data = __commonJS({
   "node_modules/ipfs-http-client/src/object/patch/append-data.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function appendData(cid, data, options = {}) {
         const controller = new AbortController2();
@@ -43362,7 +38156,7 @@ var require_append_data = __commonJS({
 var require_rm_link = __commonJS({
   "node_modules/ipfs-http-client/src/object/patch/rm-link.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43390,12 +38184,12 @@ var require_rm_link = __commonJS({
 var require_set_data = __commonJS({
   "node_modules/ipfs-http-client/src/object/patch/set-data.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function setData(cid, data, options = {}) {
         const controller = new AbortController2();
@@ -43433,13 +38227,13 @@ var require_patch = __commonJS({
 var require_put4 = __commonJS({
   "node_modules/ipfs-http-client/src/object/put.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {DAGNode} = require_src21();
+    var CID3 = require_src6();
+    var {DAGNode} = require_src20();
     var multipartRequest = require_multipart_request();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     var uint8ArrayToString = require_to_string();
     var uint8ArrayFromString = require_from_string();
     module2.exports = configure((api) => {
@@ -43500,7 +38294,7 @@ var require_put4 = __commonJS({
 var require_stat5 = __commonJS({
   "node_modules/ipfs-http-client/src/object/stat.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -43622,7 +38416,7 @@ var require_service2 = __commonJS({
 var require_remote = __commonJS({
   "node_modules/ipfs-http-client/src/pin/remote/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var Client = require_core();
     var Service = require_service2();
     var toUrlSearchParams = require_to_url_search_params();
@@ -44269,11 +39063,11 @@ var require_maps7 = __commonJS({
 });
 
 // node_modules/ipfs-core-utils/node_modules/multicodec/src/index.js
-var require_src29 = __commonJS({
+var require_src28 = __commonJS({
   "node_modules/ipfs-core-utils/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util12();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps7();
     function addPrefix(multicodecStrOrCode, data) {
@@ -44369,7 +39163,7 @@ var require_src29 = __commonJS({
 var require_cid_util7 = __commonJS({
   "node_modules/ipfs-core-utils/node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -44408,16 +39202,16 @@ var require_cid_util7 = __commonJS({
 });
 
 // node_modules/ipfs-core-utils/node_modules/cids/src/index.js
-var require_src30 = __commonJS({
+var require_src29 = __commonJS({
   "node_modules/ipfs-core-utils/node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src29();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src28();
     var CIDUtil = require_cid_util7();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -44586,7 +39380,7 @@ var require_normalise_input3 = __commonJS({
   "node_modules/ipfs-core-utils/src/pins/normalise-input.js"(exports2, module2) {
     "use strict";
     var errCode = require_err_code();
-    var CID3 = require_src30();
+    var CID3 = require_src29();
     module2.exports = async function* normaliseInput(input) {
       if (input === null || input === void 0) {
         throw errCode(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
@@ -44667,7 +39461,7 @@ var require_normalise_input3 = __commonJS({
 var require_add_all2 = __commonJS({
   "node_modules/ipfs-http-client/src/pin/add-all.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var normaliseInput = require_normalise_input3();
     var toUrlSearchParams = require_to_url_search_params();
@@ -44702,7 +39496,7 @@ var require_add_all2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/pin/add.js
-var require_add4 = __commonJS({
+var require_add3 = __commonJS({
   "node_modules/ipfs-http-client/src/pin/add.js"(exports2, module2) {
     "use strict";
     var addAll = require_add_all2();
@@ -44726,7 +39520,7 @@ var require_add4 = __commonJS({
 var require_ls4 = __commonJS({
   "node_modules/ipfs-http-client/src/pin/ls.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     function toPin(type, cid, metadata) {
@@ -44773,7 +39567,7 @@ var require_ls4 = __commonJS({
 var require_rm_all = __commonJS({
   "node_modules/ipfs-http-client/src/pin/rm-all.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var normaliseInput = require_normalise_input3();
     var toUrlSearchParams = require_to_url_search_params();
@@ -44834,7 +39628,7 @@ var require_pin = __commonJS({
     "use strict";
     var Remote = require_remote();
     module2.exports = (config) => ({
-      add: require_add4()(config),
+      add: require_add3()(config),
       addAll: require_add_all2()(config),
       ls: require_ls4()(config),
       rm: require_rm5()(config),
@@ -44873,7 +39667,7 @@ var require_ping = __commonJS({
 var require_subscription_tracker = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
     "use strict";
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     var SubscriptionTracker = class {
       constructor() {
         this._subs = new Map();
@@ -44963,7 +39757,7 @@ var require_publish2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var {AbortController: AbortController2} = require_src13();
+    var {AbortController: AbortController2} = require_src12();
     module2.exports = configure((api) => {
       async function publish2(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
@@ -45130,7 +39924,7 @@ var require_local = __commonJS({
 var require_refs = __commonJS({
   "node_modules/ipfs-http-client/src/refs/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var toCamel = require_object_to_camel();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
@@ -45161,7 +39955,7 @@ var require_refs = __commonJS({
 var require_gc = __commonJS({
   "node_modules/ipfs-http-client/src/repo/gc.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
+    var CID3 = require_src6();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -45348,7 +40142,7 @@ var require_stop = __commonJS({
 var require_addrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/addrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -45422,7 +40216,7 @@ var require_disconnect = __commonJS({
 var require_localAddrs = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/localAddrs.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -45445,7 +40239,7 @@ var require_localAddrs = __commonJS({
 var require_peers2 = __commonJS({
   "node_modules/ipfs-http-client/src/swarm/peers.js"(exports2, module2) {
     "use strict";
-    var {Multiaddr} = require_src10();
+    var {Multiaddr} = require_src9();
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
@@ -45510,19 +40304,19 @@ var require_version2 = __commonJS({
 });
 
 // node_modules/ipfs-http-client/src/index.js
-var require_src31 = __commonJS({
+var require_src30 = __commonJS({
   "node_modules/ipfs-http-client/src/index.js"(exports2, module2) {
     "use strict";
-    var CID3 = require_src7();
-    var {multiaddr} = require_src10();
-    var multibase = require_src4();
-    var multicodec = require_src6();
-    var multihash = require_src5();
+    var CID3 = require_src6();
+    var {multiaddr} = require_src9();
+    var multibase = require_src3();
+    var multicodec = require_src5();
+    var multihash = require_src4();
     var globSource2 = require_glob_source();
     var urlSource = require_url_source();
     function create2(options = {}) {
       const client2 = {
-        add: require_add2()(options),
+        add: require_add()(options),
         addAll: require_add_all()(options),
         bitswap: require_bitswap()(options),
         block: require_block()(options),
@@ -48035,11 +42829,11 @@ var require_maps8 = __commonJS({
 });
 
 // node_modules/cids/node_modules/multicodec/src/index.js
-var require_src32 = __commonJS({
+var require_src31 = __commonJS({
   "node_modules/cids/node_modules/multicodec/src/index.js"(exports2, module2) {
     "use strict";
     var varint = require_varint();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var util = require_util13();
     var {nameToVarint, constantToCode, nameToCode, codeToName} = require_maps8();
     function addPrefix(multicodecStrOrCode, data) {
@@ -48135,7 +42929,7 @@ var require_src32 = __commonJS({
 var require_cid_util8 = __commonJS({
   "node_modules/cids/src/cid-util.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
+    var mh = require_src4();
     var CIDUtil = {
       checkCIDComponents: function(other) {
         if (other == null) {
@@ -48174,16 +42968,16 @@ var require_cid_util8 = __commonJS({
 });
 
 // node_modules/cids/src/index.js
-var require_src33 = __commonJS({
+var require_src32 = __commonJS({
   "node_modules/cids/src/index.js"(exports2, module2) {
     "use strict";
-    var mh = require_src5();
-    var multibase = require_src4();
-    var multicodec = require_src32();
+    var mh = require_src4();
+    var multibase = require_src3();
+    var multicodec = require_src31();
     var CIDUtil = require_cid_util8();
-    var uint8ArrayConcat = require_concat3();
+    var uint8ArrayConcat = require_concat();
     var uint8ArrayToString = require_to_string();
-    var uint8ArrayEquals = require_equals3();
+    var uint8ArrayEquals = require_equals();
     var codecs = multicodec.nameToCode;
     var codecInts = Object.keys(codecs).reduce((p, name) => {
       p[codecs[name]] = name;
@@ -48689,6 +43483,6240 @@ var require_dist = __commonJS({
   }
 });
 
+// node_modules/ramda/src/F.js
+var require_F = __commonJS({
+  "node_modules/ramda/src/F.js"(exports2, module2) {
+    var F = function() {
+      return false;
+    };
+    module2.exports = F;
+  }
+});
+
+// node_modules/ramda/src/T.js
+var require_T = __commonJS({
+  "node_modules/ramda/src/T.js"(exports2, module2) {
+    var T = function() {
+      return true;
+    };
+    module2.exports = T;
+  }
+});
+
+// node_modules/ramda/src/__.js
+var require__ = __commonJS({
+  "node_modules/ramda/src/__.js"(exports2, module2) {
+    module2.exports = {
+      "@@functional/placeholder": true
+    };
+  }
+});
+
+// node_modules/ramda/src/internal/_isPlaceholder.js
+var require_isPlaceholder = __commonJS({
+  "node_modules/ramda/src/internal/_isPlaceholder.js"(exports2, module2) {
+    function _isPlaceholder(a) {
+      return a != null && typeof a === "object" && a["@@functional/placeholder"] === true;
+    }
+    module2.exports = _isPlaceholder;
+  }
+});
+
+// node_modules/ramda/src/internal/_curry1.js
+var require_curry1 = __commonJS({
+  "node_modules/ramda/src/internal/_curry1.js"(exports2, module2) {
+    var _isPlaceholder = require_isPlaceholder();
+    function _curry1(fn) {
+      return function f1(a) {
+        if (arguments.length === 0 || _isPlaceholder(a)) {
+          return f1;
+        } else {
+          return fn.apply(this, arguments);
+        }
+      };
+    }
+    module2.exports = _curry1;
+  }
+});
+
+// node_modules/ramda/src/internal/_curry2.js
+var require_curry2 = __commonJS({
+  "node_modules/ramda/src/internal/_curry2.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _isPlaceholder = require_isPlaceholder();
+    function _curry2(fn) {
+      return function f2(a, b) {
+        switch (arguments.length) {
+          case 0:
+            return f2;
+          case 1:
+            return _isPlaceholder(a) ? f2 : _curry1(function(_b) {
+              return fn(a, _b);
+            });
+          default:
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
+              return fn(_a, b);
+            }) : _isPlaceholder(b) ? _curry1(function(_b) {
+              return fn(a, _b);
+            }) : fn(a, b);
+        }
+      };
+    }
+    module2.exports = _curry2;
+  }
+});
+
+// node_modules/ramda/src/add.js
+var require_add4 = __commonJS({
+  "node_modules/ramda/src/add.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var add = /* @__PURE__ */ _curry2(function add2(a, b) {
+      return Number(a) + Number(b);
+    });
+    module2.exports = add;
+  }
+});
+
+// node_modules/ramda/src/internal/_concat.js
+var require_concat2 = __commonJS({
+  "node_modules/ramda/src/internal/_concat.js"(exports2, module2) {
+    function _concat(set1, set2) {
+      set1 = set1 || [];
+      set2 = set2 || [];
+      var idx;
+      var len1 = set1.length;
+      var len2 = set2.length;
+      var result = [];
+      idx = 0;
+      while (idx < len1) {
+        result[result.length] = set1[idx];
+        idx += 1;
+      }
+      idx = 0;
+      while (idx < len2) {
+        result[result.length] = set2[idx];
+        idx += 1;
+      }
+      return result;
+    }
+    module2.exports = _concat;
+  }
+});
+
+// node_modules/ramda/src/internal/_arity.js
+var require_arity = __commonJS({
+  "node_modules/ramda/src/internal/_arity.js"(exports2, module2) {
+    function _arity(n, fn) {
+      switch (n) {
+        case 0:
+          return function() {
+            return fn.apply(this, arguments);
+          };
+        case 1:
+          return function(a0) {
+            return fn.apply(this, arguments);
+          };
+        case 2:
+          return function(a0, a1) {
+            return fn.apply(this, arguments);
+          };
+        case 3:
+          return function(a0, a1, a2) {
+            return fn.apply(this, arguments);
+          };
+        case 4:
+          return function(a0, a1, a2, a3) {
+            return fn.apply(this, arguments);
+          };
+        case 5:
+          return function(a0, a1, a2, a3, a4) {
+            return fn.apply(this, arguments);
+          };
+        case 6:
+          return function(a0, a1, a2, a3, a4, a5) {
+            return fn.apply(this, arguments);
+          };
+        case 7:
+          return function(a0, a1, a2, a3, a4, a5, a6) {
+            return fn.apply(this, arguments);
+          };
+        case 8:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7) {
+            return fn.apply(this, arguments);
+          };
+        case 9:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8) {
+            return fn.apply(this, arguments);
+          };
+        case 10:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+            return fn.apply(this, arguments);
+          };
+        default:
+          throw new Error("First argument to _arity must be a non-negative integer no greater than ten");
+      }
+    }
+    module2.exports = _arity;
+  }
+});
+
+// node_modules/ramda/src/internal/_curryN.js
+var require_curryN = __commonJS({
+  "node_modules/ramda/src/internal/_curryN.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _isPlaceholder = require_isPlaceholder();
+    function _curryN(length, received, fn) {
+      return function() {
+        var combined = [];
+        var argsIdx = 0;
+        var left = length;
+        var combinedIdx = 0;
+        while (combinedIdx < received.length || argsIdx < arguments.length) {
+          var result;
+          if (combinedIdx < received.length && (!_isPlaceholder(received[combinedIdx]) || argsIdx >= arguments.length)) {
+            result = received[combinedIdx];
+          } else {
+            result = arguments[argsIdx];
+            argsIdx += 1;
+          }
+          combined[combinedIdx] = result;
+          if (!_isPlaceholder(result)) {
+            left -= 1;
+          }
+          combinedIdx += 1;
+        }
+        return left <= 0 ? fn.apply(this, combined) : _arity(left, _curryN(length, combined, fn));
+      };
+    }
+    module2.exports = _curryN;
+  }
+});
+
+// node_modules/ramda/src/curryN.js
+var require_curryN2 = __commonJS({
+  "node_modules/ramda/src/curryN.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry1 = require_curry1();
+    var _curry2 = require_curry2();
+    var _curryN = require_curryN();
+    var curryN = /* @__PURE__ */ _curry2(function curryN2(length, fn) {
+      if (length === 1) {
+        return _curry1(fn);
+      }
+      return _arity(length, _curryN(length, [], fn));
+    });
+    module2.exports = curryN;
+  }
+});
+
+// node_modules/ramda/src/addIndex.js
+var require_addIndex = __commonJS({
+  "node_modules/ramda/src/addIndex.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var addIndex = /* @__PURE__ */ _curry1(function addIndex2(fn) {
+      return curryN(fn.length, function() {
+        var idx = 0;
+        var origFn = arguments[0];
+        var list = arguments[arguments.length - 1];
+        var args = Array.prototype.slice.call(arguments, 0);
+        args[0] = function() {
+          var result = origFn.apply(this, _concat(arguments, [idx, list]));
+          idx += 1;
+          return result;
+        };
+        return fn.apply(this, args);
+      });
+    });
+    module2.exports = addIndex;
+  }
+});
+
+// node_modules/ramda/src/internal/_curry3.js
+var require_curry3 = __commonJS({
+  "node_modules/ramda/src/internal/_curry3.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _curry2 = require_curry2();
+    var _isPlaceholder = require_isPlaceholder();
+    function _curry3(fn) {
+      return function f3(a, b, c) {
+        switch (arguments.length) {
+          case 0:
+            return f3;
+          case 1:
+            return _isPlaceholder(a) ? f3 : _curry2(function(_b, _c) {
+              return fn(a, _b, _c);
+            });
+          case 2:
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
+              return fn(_a, b, _c);
+            }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
+              return fn(a, _b, _c);
+            }) : _curry1(function(_c) {
+              return fn(a, b, _c);
+            });
+          default:
+            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
+              return fn(_a, _b, c);
+            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
+              return fn(_a, b, _c);
+            }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
+              return fn(a, _b, _c);
+            }) : _isPlaceholder(a) ? _curry1(function(_a) {
+              return fn(_a, b, c);
+            }) : _isPlaceholder(b) ? _curry1(function(_b) {
+              return fn(a, _b, c);
+            }) : _isPlaceholder(c) ? _curry1(function(_c) {
+              return fn(a, b, _c);
+            }) : fn(a, b, c);
+        }
+      };
+    }
+    module2.exports = _curry3;
+  }
+});
+
+// node_modules/ramda/src/adjust.js
+var require_adjust = __commonJS({
+  "node_modules/ramda/src/adjust.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry3 = require_curry3();
+    var adjust = /* @__PURE__ */ _curry3(function adjust2(idx, fn, list) {
+      if (idx >= list.length || idx < -list.length) {
+        return list;
+      }
+      var start = idx < 0 ? list.length : 0;
+      var _idx = start + idx;
+      var _list = _concat(list);
+      _list[_idx] = fn(list[_idx]);
+      return _list;
+    });
+    module2.exports = adjust;
+  }
+});
+
+// node_modules/ramda/src/internal/_isArray.js
+var require_isArray = __commonJS({
+  "node_modules/ramda/src/internal/_isArray.js"(exports2, module2) {
+    module2.exports = Array.isArray || function _isArray(val) {
+      return val != null && val.length >= 0 && Object.prototype.toString.call(val) === "[object Array]";
+    };
+  }
+});
+
+// node_modules/ramda/src/internal/_isTransformer.js
+var require_isTransformer = __commonJS({
+  "node_modules/ramda/src/internal/_isTransformer.js"(exports2, module2) {
+    function _isTransformer(obj) {
+      return obj != null && typeof obj["@@transducer/step"] === "function";
+    }
+    module2.exports = _isTransformer;
+  }
+});
+
+// node_modules/ramda/src/internal/_dispatchable.js
+var require_dispatchable = __commonJS({
+  "node_modules/ramda/src/internal/_dispatchable.js"(exports2, module2) {
+    var _isArray = require_isArray();
+    var _isTransformer = require_isTransformer();
+    function _dispatchable(methodNames, xf, fn) {
+      return function() {
+        if (arguments.length === 0) {
+          return fn();
+        }
+        var args = Array.prototype.slice.call(arguments, 0);
+        var obj = args.pop();
+        if (!_isArray(obj)) {
+          var idx = 0;
+          while (idx < methodNames.length) {
+            if (typeof obj[methodNames[idx]] === "function") {
+              return obj[methodNames[idx]].apply(obj, args);
+            }
+            idx += 1;
+          }
+          if (_isTransformer(obj)) {
+            var transducer = xf.apply(null, args);
+            return transducer(obj);
+          }
+        }
+        return fn.apply(this, arguments);
+      };
+    }
+    module2.exports = _dispatchable;
+  }
+});
+
+// node_modules/ramda/src/internal/_reduced.js
+var require_reduced = __commonJS({
+  "node_modules/ramda/src/internal/_reduced.js"(exports2, module2) {
+    function _reduced(x) {
+      return x && x["@@transducer/reduced"] ? x : {
+        "@@transducer/value": x,
+        "@@transducer/reduced": true
+      };
+    }
+    module2.exports = _reduced;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfBase.js
+var require_xfBase = __commonJS({
+  "node_modules/ramda/src/internal/_xfBase.js"(exports2, module2) {
+    module2.exports = {
+      init: function() {
+        return this.xf["@@transducer/init"]();
+      },
+      result: function(result) {
+        return this.xf["@@transducer/result"](result);
+      }
+    };
+  }
+});
+
+// node_modules/ramda/src/internal/_xall.js
+var require_xall = __commonJS({
+  "node_modules/ramda/src/internal/_xall.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XAll = /* @__PURE__ */ function() {
+      function XAll2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+        this.all = true;
+      }
+      XAll2.prototype["@@transducer/init"] = _xfBase.init;
+      XAll2.prototype["@@transducer/result"] = function(result) {
+        if (this.all) {
+          result = this.xf["@@transducer/step"](result, true);
+        }
+        return this.xf["@@transducer/result"](result);
+      };
+      XAll2.prototype["@@transducer/step"] = function(result, input) {
+        if (!this.f(input)) {
+          this.all = false;
+          result = _reduced(this.xf["@@transducer/step"](result, false));
+        }
+        return result;
+      };
+      return XAll2;
+    }();
+    var _xall = /* @__PURE__ */ _curry2(function _xall2(f, xf) {
+      return new XAll(f, xf);
+    });
+    module2.exports = _xall;
+  }
+});
+
+// node_modules/ramda/src/all.js
+var require_all = __commonJS({
+  "node_modules/ramda/src/all.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xall = require_xall();
+    var all2 = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["all"], _xall, function all3(fn, list) {
+      var idx = 0;
+      while (idx < list.length) {
+        if (!fn(list[idx])) {
+          return false;
+        }
+        idx += 1;
+      }
+      return true;
+    }));
+    module2.exports = all2;
+  }
+});
+
+// node_modules/ramda/src/max.js
+var require_max = __commonJS({
+  "node_modules/ramda/src/max.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var max = /* @__PURE__ */ _curry2(function max2(a, b) {
+      return b > a ? b : a;
+    });
+    module2.exports = max;
+  }
+});
+
+// node_modules/ramda/src/internal/_map.js
+var require_map = __commonJS({
+  "node_modules/ramda/src/internal/_map.js"(exports2, module2) {
+    function _map(fn, functor) {
+      var idx = 0;
+      var len = functor.length;
+      var result = Array(len);
+      while (idx < len) {
+        result[idx] = fn(functor[idx]);
+        idx += 1;
+      }
+      return result;
+    }
+    module2.exports = _map;
+  }
+});
+
+// node_modules/ramda/src/internal/_isString.js
+var require_isString = __commonJS({
+  "node_modules/ramda/src/internal/_isString.js"(exports2, module2) {
+    function _isString(x) {
+      return Object.prototype.toString.call(x) === "[object String]";
+    }
+    module2.exports = _isString;
+  }
+});
+
+// node_modules/ramda/src/internal/_isArrayLike.js
+var require_isArrayLike = __commonJS({
+  "node_modules/ramda/src/internal/_isArrayLike.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _isArray = require_isArray();
+    var _isString = require_isString();
+    var _isArrayLike = /* @__PURE__ */ _curry1(function isArrayLike(x) {
+      if (_isArray(x)) {
+        return true;
+      }
+      if (!x) {
+        return false;
+      }
+      if (typeof x !== "object") {
+        return false;
+      }
+      if (_isString(x)) {
+        return false;
+      }
+      if (x.nodeType === 1) {
+        return !!x.length;
+      }
+      if (x.length === 0) {
+        return true;
+      }
+      if (x.length > 0) {
+        return x.hasOwnProperty(0) && x.hasOwnProperty(x.length - 1);
+      }
+      return false;
+    });
+    module2.exports = _isArrayLike;
+  }
+});
+
+// node_modules/ramda/src/internal/_xwrap.js
+var require_xwrap = __commonJS({
+  "node_modules/ramda/src/internal/_xwrap.js"(exports2, module2) {
+    var XWrap = /* @__PURE__ */ function() {
+      function XWrap2(fn) {
+        this.f = fn;
+      }
+      XWrap2.prototype["@@transducer/init"] = function() {
+        throw new Error("init not implemented on XWrap");
+      };
+      XWrap2.prototype["@@transducer/result"] = function(acc) {
+        return acc;
+      };
+      XWrap2.prototype["@@transducer/step"] = function(acc, x) {
+        return this.f(acc, x);
+      };
+      return XWrap2;
+    }();
+    function _xwrap(fn) {
+      return new XWrap(fn);
+    }
+    module2.exports = _xwrap;
+  }
+});
+
+// node_modules/ramda/src/bind.js
+var require_bind = __commonJS({
+  "node_modules/ramda/src/bind.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry2 = require_curry2();
+    var bind = /* @__PURE__ */ _curry2(function bind2(fn, thisObj) {
+      return _arity(fn.length, function() {
+        return fn.apply(thisObj, arguments);
+      });
+    });
+    module2.exports = bind;
+  }
+});
+
+// node_modules/ramda/src/internal/_reduce.js
+var require_reduce = __commonJS({
+  "node_modules/ramda/src/internal/_reduce.js"(exports2, module2) {
+    var _isArrayLike = require_isArrayLike();
+    var _xwrap = require_xwrap();
+    var bind = require_bind();
+    function _arrayReduce(xf, acc, list) {
+      var idx = 0;
+      var len = list.length;
+      while (idx < len) {
+        acc = xf["@@transducer/step"](acc, list[idx]);
+        if (acc && acc["@@transducer/reduced"]) {
+          acc = acc["@@transducer/value"];
+          break;
+        }
+        idx += 1;
+      }
+      return xf["@@transducer/result"](acc);
+    }
+    function _iterableReduce(xf, acc, iter) {
+      var step = iter.next();
+      while (!step.done) {
+        acc = xf["@@transducer/step"](acc, step.value);
+        if (acc && acc["@@transducer/reduced"]) {
+          acc = acc["@@transducer/value"];
+          break;
+        }
+        step = iter.next();
+      }
+      return xf["@@transducer/result"](acc);
+    }
+    function _methodReduce(xf, acc, obj, methodName) {
+      return xf["@@transducer/result"](obj[methodName](bind(xf["@@transducer/step"], xf), acc));
+    }
+    var symIterator = typeof Symbol !== "undefined" ? Symbol.iterator : "@@iterator";
+    function _reduce(fn, acc, list) {
+      if (typeof fn === "function") {
+        fn = _xwrap(fn);
+      }
+      if (_isArrayLike(list)) {
+        return _arrayReduce(fn, acc, list);
+      }
+      if (typeof list["fantasy-land/reduce"] === "function") {
+        return _methodReduce(fn, acc, list, "fantasy-land/reduce");
+      }
+      if (list[symIterator] != null) {
+        return _iterableReduce(fn, acc, list[symIterator]());
+      }
+      if (typeof list.next === "function") {
+        return _iterableReduce(fn, acc, list);
+      }
+      if (typeof list.reduce === "function") {
+        return _methodReduce(fn, acc, list, "reduce");
+      }
+      throw new TypeError("reduce: list must be array or iterable");
+    }
+    module2.exports = _reduce;
+  }
+});
+
+// node_modules/ramda/src/internal/_xmap.js
+var require_xmap = __commonJS({
+  "node_modules/ramda/src/internal/_xmap.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XMap = /* @__PURE__ */ function() {
+      function XMap2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XMap2.prototype["@@transducer/init"] = _xfBase.init;
+      XMap2.prototype["@@transducer/result"] = _xfBase.result;
+      XMap2.prototype["@@transducer/step"] = function(result, input) {
+        return this.xf["@@transducer/step"](result, this.f(input));
+      };
+      return XMap2;
+    }();
+    var _xmap = /* @__PURE__ */ _curry2(function _xmap2(f, xf) {
+      return new XMap(f, xf);
+    });
+    module2.exports = _xmap;
+  }
+});
+
+// node_modules/ramda/src/internal/_has.js
+var require_has = __commonJS({
+  "node_modules/ramda/src/internal/_has.js"(exports2, module2) {
+    function _has(prop, obj) {
+      return Object.prototype.hasOwnProperty.call(obj, prop);
+    }
+    module2.exports = _has;
+  }
+});
+
+// node_modules/ramda/src/internal/_isArguments.js
+var require_isArguments = __commonJS({
+  "node_modules/ramda/src/internal/_isArguments.js"(exports2, module2) {
+    var _has = require_has();
+    var toString = Object.prototype.toString;
+    var _isArguments = /* @__PURE__ */ function() {
+      return toString.call(arguments) === "[object Arguments]" ? function _isArguments2(x) {
+        return toString.call(x) === "[object Arguments]";
+      } : function _isArguments2(x) {
+        return _has("callee", x);
+      };
+    }();
+    module2.exports = _isArguments;
+  }
+});
+
+// node_modules/ramda/src/keys.js
+var require_keys = __commonJS({
+  "node_modules/ramda/src/keys.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _has = require_has();
+    var _isArguments = require_isArguments();
+    var hasEnumBug = !/* @__PURE__ */ {
+      toString: null
+    }.propertyIsEnumerable("toString");
+    var nonEnumerableProps = ["constructor", "valueOf", "isPrototypeOf", "toString", "propertyIsEnumerable", "hasOwnProperty", "toLocaleString"];
+    var hasArgsEnumBug = /* @__PURE__ */ function() {
+      "use strict";
+      return arguments.propertyIsEnumerable("length");
+    }();
+    var contains = function contains2(list, item) {
+      var idx = 0;
+      while (idx < list.length) {
+        if (list[idx] === item) {
+          return true;
+        }
+        idx += 1;
+      }
+      return false;
+    };
+    var keys = typeof Object.keys === "function" && !hasArgsEnumBug ? /* @__PURE__ */ _curry1(function keys2(obj) {
+      return Object(obj) !== obj ? [] : Object.keys(obj);
+    }) : /* @__PURE__ */ _curry1(function keys2(obj) {
+      if (Object(obj) !== obj) {
+        return [];
+      }
+      var prop, nIdx;
+      var ks = [];
+      var checkArgsLength = hasArgsEnumBug && _isArguments(obj);
+      for (prop in obj) {
+        if (_has(prop, obj) && (!checkArgsLength || prop !== "length")) {
+          ks[ks.length] = prop;
+        }
+      }
+      if (hasEnumBug) {
+        nIdx = nonEnumerableProps.length - 1;
+        while (nIdx >= 0) {
+          prop = nonEnumerableProps[nIdx];
+          if (_has(prop, obj) && !contains(ks, prop)) {
+            ks[ks.length] = prop;
+          }
+          nIdx -= 1;
+        }
+      }
+      return ks;
+    });
+    module2.exports = keys;
+  }
+});
+
+// node_modules/ramda/src/map.js
+var require_map2 = __commonJS({
+  "node_modules/ramda/src/map.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _map = require_map();
+    var _reduce = require_reduce();
+    var _xmap = require_xmap();
+    var curryN = require_curryN2();
+    var keys = require_keys();
+    var map = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["fantasy-land/map", "map"], _xmap, function map2(fn, functor) {
+      switch (Object.prototype.toString.call(functor)) {
+        case "[object Function]":
+          return curryN(functor.length, function() {
+            return fn.call(this, functor.apply(this, arguments));
+          });
+        case "[object Object]":
+          return _reduce(function(acc, key) {
+            acc[key] = fn(functor[key]);
+            return acc;
+          }, {}, keys(functor));
+        default:
+          return _map(fn, functor);
+      }
+    }));
+    module2.exports = map;
+  }
+});
+
+// node_modules/ramda/src/internal/_isInteger.js
+var require_isInteger = __commonJS({
+  "node_modules/ramda/src/internal/_isInteger.js"(exports2, module2) {
+    module2.exports = Number.isInteger || function _isInteger(n) {
+      return n << 0 === n;
+    };
+  }
+});
+
+// node_modules/ramda/src/nth.js
+var require_nth = __commonJS({
+  "node_modules/ramda/src/nth.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isString = require_isString();
+    var nth = /* @__PURE__ */ _curry2(function nth2(offset, list) {
+      var idx = offset < 0 ? list.length + offset : offset;
+      return _isString(list) ? list.charAt(idx) : list[idx];
+    });
+    module2.exports = nth;
+  }
+});
+
+// node_modules/ramda/src/paths.js
+var require_paths = __commonJS({
+  "node_modules/ramda/src/paths.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isInteger = require_isInteger();
+    var nth = require_nth();
+    var paths = /* @__PURE__ */ _curry2(function paths2(pathsArray, obj) {
+      return pathsArray.map(function(paths3) {
+        var val = obj;
+        var idx = 0;
+        var p;
+        while (idx < paths3.length) {
+          if (val == null) {
+            return;
+          }
+          p = paths3[idx];
+          val = _isInteger(p) ? nth(p, val) : val[p];
+          idx += 1;
+        }
+        return val;
+      });
+    });
+    module2.exports = paths;
+  }
+});
+
+// node_modules/ramda/src/path.js
+var require_path = __commonJS({
+  "node_modules/ramda/src/path.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var paths = require_paths();
+    var path = /* @__PURE__ */ _curry2(function path2(pathAr, obj) {
+      return paths([pathAr], obj)[0];
+    });
+    module2.exports = path;
+  }
+});
+
+// node_modules/ramda/src/prop.js
+var require_prop = __commonJS({
+  "node_modules/ramda/src/prop.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var path = require_path();
+    var prop = /* @__PURE__ */ _curry2(function prop2(p, obj) {
+      return path([p], obj);
+    });
+    module2.exports = prop;
+  }
+});
+
+// node_modules/ramda/src/pluck.js
+var require_pluck = __commonJS({
+  "node_modules/ramda/src/pluck.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var map = require_map2();
+    var prop = require_prop();
+    var pluck = /* @__PURE__ */ _curry2(function pluck2(p, list) {
+      return map(prop(p), list);
+    });
+    module2.exports = pluck;
+  }
+});
+
+// node_modules/ramda/src/reduce.js
+var require_reduce2 = __commonJS({
+  "node_modules/ramda/src/reduce.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var _reduce = require_reduce();
+    var reduce = /* @__PURE__ */ _curry3(_reduce);
+    module2.exports = reduce;
+  }
+});
+
+// node_modules/ramda/src/allPass.js
+var require_allPass = __commonJS({
+  "node_modules/ramda/src/allPass.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var max = require_max();
+    var pluck = require_pluck();
+    var reduce = require_reduce2();
+    var allPass = /* @__PURE__ */ _curry1(function allPass2(preds) {
+      return curryN(reduce(max, 0, pluck("length", preds)), function() {
+        var idx = 0;
+        var len = preds.length;
+        while (idx < len) {
+          if (!preds[idx].apply(this, arguments)) {
+            return false;
+          }
+          idx += 1;
+        }
+        return true;
+      });
+    });
+    module2.exports = allPass;
+  }
+});
+
+// node_modules/ramda/src/always.js
+var require_always = __commonJS({
+  "node_modules/ramda/src/always.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var always = /* @__PURE__ */ _curry1(function always2(val) {
+      return function() {
+        return val;
+      };
+    });
+    module2.exports = always;
+  }
+});
+
+// node_modules/ramda/src/and.js
+var require_and = __commonJS({
+  "node_modules/ramda/src/and.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var and = /* @__PURE__ */ _curry2(function and2(a, b) {
+      return a && b;
+    });
+    module2.exports = and;
+  }
+});
+
+// node_modules/ramda/src/internal/_xany.js
+var require_xany = __commonJS({
+  "node_modules/ramda/src/internal/_xany.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XAny = /* @__PURE__ */ function() {
+      function XAny2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+        this.any = false;
+      }
+      XAny2.prototype["@@transducer/init"] = _xfBase.init;
+      XAny2.prototype["@@transducer/result"] = function(result) {
+        if (!this.any) {
+          result = this.xf["@@transducer/step"](result, false);
+        }
+        return this.xf["@@transducer/result"](result);
+      };
+      XAny2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.f(input)) {
+          this.any = true;
+          result = _reduced(this.xf["@@transducer/step"](result, true));
+        }
+        return result;
+      };
+      return XAny2;
+    }();
+    var _xany = /* @__PURE__ */ _curry2(function _xany2(f, xf) {
+      return new XAny(f, xf);
+    });
+    module2.exports = _xany;
+  }
+});
+
+// node_modules/ramda/src/any.js
+var require_any = __commonJS({
+  "node_modules/ramda/src/any.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xany = require_xany();
+    var any = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["any"], _xany, function any2(fn, list) {
+      var idx = 0;
+      while (idx < list.length) {
+        if (fn(list[idx])) {
+          return true;
+        }
+        idx += 1;
+      }
+      return false;
+    }));
+    module2.exports = any;
+  }
+});
+
+// node_modules/ramda/src/anyPass.js
+var require_anyPass = __commonJS({
+  "node_modules/ramda/src/anyPass.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var max = require_max();
+    var pluck = require_pluck();
+    var reduce = require_reduce2();
+    var anyPass = /* @__PURE__ */ _curry1(function anyPass2(preds) {
+      return curryN(reduce(max, 0, pluck("length", preds)), function() {
+        var idx = 0;
+        var len = preds.length;
+        while (idx < len) {
+          if (preds[idx].apply(this, arguments)) {
+            return true;
+          }
+          idx += 1;
+        }
+        return false;
+      });
+    });
+    module2.exports = anyPass;
+  }
+});
+
+// node_modules/ramda/src/ap.js
+var require_ap = __commonJS({
+  "node_modules/ramda/src/ap.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var _reduce = require_reduce();
+    var map = require_map2();
+    var ap = /* @__PURE__ */ _curry2(function ap2(applyF, applyX) {
+      return typeof applyX["fantasy-land/ap"] === "function" ? applyX["fantasy-land/ap"](applyF) : typeof applyF.ap === "function" ? applyF.ap(applyX) : typeof applyF === "function" ? function(x) {
+        return applyF(x)(applyX(x));
+      } : _reduce(function(acc, f) {
+        return _concat(acc, map(f, applyX));
+      }, [], applyF);
+    });
+    module2.exports = ap;
+  }
+});
+
+// node_modules/ramda/src/internal/_aperture.js
+var require_aperture = __commonJS({
+  "node_modules/ramda/src/internal/_aperture.js"(exports2, module2) {
+    function _aperture(n, list) {
+      var idx = 0;
+      var limit2 = list.length - (n - 1);
+      var acc = new Array(limit2 >= 0 ? limit2 : 0);
+      while (idx < limit2) {
+        acc[idx] = Array.prototype.slice.call(list, idx, idx + n);
+        idx += 1;
+      }
+      return acc;
+    }
+    module2.exports = _aperture;
+  }
+});
+
+// node_modules/ramda/src/internal/_xaperture.js
+var require_xaperture = __commonJS({
+  "node_modules/ramda/src/internal/_xaperture.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XAperture = /* @__PURE__ */ function() {
+      function XAperture2(n, xf) {
+        this.xf = xf;
+        this.pos = 0;
+        this.full = false;
+        this.acc = new Array(n);
+      }
+      XAperture2.prototype["@@transducer/init"] = _xfBase.init;
+      XAperture2.prototype["@@transducer/result"] = function(result) {
+        this.acc = null;
+        return this.xf["@@transducer/result"](result);
+      };
+      XAperture2.prototype["@@transducer/step"] = function(result, input) {
+        this.store(input);
+        return this.full ? this.xf["@@transducer/step"](result, this.getCopy()) : result;
+      };
+      XAperture2.prototype.store = function(input) {
+        this.acc[this.pos] = input;
+        this.pos += 1;
+        if (this.pos === this.acc.length) {
+          this.pos = 0;
+          this.full = true;
+        }
+      };
+      XAperture2.prototype.getCopy = function() {
+        return _concat(Array.prototype.slice.call(this.acc, this.pos), Array.prototype.slice.call(this.acc, 0, this.pos));
+      };
+      return XAperture2;
+    }();
+    var _xaperture = /* @__PURE__ */ _curry2(function _xaperture2(n, xf) {
+      return new XAperture(n, xf);
+    });
+    module2.exports = _xaperture;
+  }
+});
+
+// node_modules/ramda/src/aperture.js
+var require_aperture2 = __commonJS({
+  "node_modules/ramda/src/aperture.js"(exports2, module2) {
+    var _aperture = require_aperture();
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xaperture = require_xaperture();
+    var aperture = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xaperture, _aperture));
+    module2.exports = aperture;
+  }
+});
+
+// node_modules/ramda/src/append.js
+var require_append = __commonJS({
+  "node_modules/ramda/src/append.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var append = /* @__PURE__ */ _curry2(function append2(el, list) {
+      return _concat(list, [el]);
+    });
+    module2.exports = append;
+  }
+});
+
+// node_modules/ramda/src/apply.js
+var require_apply2 = __commonJS({
+  "node_modules/ramda/src/apply.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var apply = /* @__PURE__ */ _curry2(function apply2(fn, args) {
+      return fn.apply(this, args);
+    });
+    module2.exports = apply;
+  }
+});
+
+// node_modules/ramda/src/values.js
+var require_values = __commonJS({
+  "node_modules/ramda/src/values.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var keys = require_keys();
+    var values = /* @__PURE__ */ _curry1(function values2(obj) {
+      var props = keys(obj);
+      var len = props.length;
+      var vals = [];
+      var idx = 0;
+      while (idx < len) {
+        vals[idx] = obj[props[idx]];
+        idx += 1;
+      }
+      return vals;
+    });
+    module2.exports = values;
+  }
+});
+
+// node_modules/ramda/src/applySpec.js
+var require_applySpec = __commonJS({
+  "node_modules/ramda/src/applySpec.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var apply = require_apply2();
+    var curryN = require_curryN2();
+    var max = require_max();
+    var pluck = require_pluck();
+    var reduce = require_reduce2();
+    var keys = require_keys();
+    var values = require_values();
+    function mapValues(fn, obj) {
+      return keys(obj).reduce(function(acc, key) {
+        acc[key] = fn(obj[key]);
+        return acc;
+      }, {});
+    }
+    var applySpec = /* @__PURE__ */ _curry1(function applySpec2(spec) {
+      spec = mapValues(function(v) {
+        return typeof v == "function" ? v : applySpec2(v);
+      }, spec);
+      return curryN(reduce(max, 0, pluck("length", values(spec))), function() {
+        var args = arguments;
+        return mapValues(function(f) {
+          return apply(f, args);
+        }, spec);
+      });
+    });
+    module2.exports = applySpec;
+  }
+});
+
+// node_modules/ramda/src/applyTo.js
+var require_applyTo = __commonJS({
+  "node_modules/ramda/src/applyTo.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var applyTo = /* @__PURE__ */ _curry2(function applyTo2(x, f) {
+      return f(x);
+    });
+    module2.exports = applyTo;
+  }
+});
+
+// node_modules/ramda/src/ascend.js
+var require_ascend = __commonJS({
+  "node_modules/ramda/src/ascend.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var ascend = /* @__PURE__ */ _curry3(function ascend2(fn, a, b) {
+      var aa = fn(a);
+      var bb = fn(b);
+      return aa < bb ? -1 : aa > bb ? 1 : 0;
+    });
+    module2.exports = ascend;
+  }
+});
+
+// node_modules/ramda/src/assoc.js
+var require_assoc = __commonJS({
+  "node_modules/ramda/src/assoc.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var assoc = /* @__PURE__ */ _curry3(function assoc2(prop, val, obj) {
+      var result = {};
+      for (var p in obj) {
+        result[p] = obj[p];
+      }
+      result[prop] = val;
+      return result;
+    });
+    module2.exports = assoc;
+  }
+});
+
+// node_modules/ramda/src/isNil.js
+var require_isNil = __commonJS({
+  "node_modules/ramda/src/isNil.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var isNil = /* @__PURE__ */ _curry1(function isNil2(x) {
+      return x == null;
+    });
+    module2.exports = isNil;
+  }
+});
+
+// node_modules/ramda/src/assocPath.js
+var require_assocPath = __commonJS({
+  "node_modules/ramda/src/assocPath.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var _has = require_has();
+    var _isArray = require_isArray();
+    var _isInteger = require_isInteger();
+    var assoc = require_assoc();
+    var isNil = require_isNil();
+    var assocPath = /* @__PURE__ */ _curry3(function assocPath2(path, val, obj) {
+      if (path.length === 0) {
+        return val;
+      }
+      var idx = path[0];
+      if (path.length > 1) {
+        var nextObj = !isNil(obj) && _has(idx, obj) ? obj[idx] : _isInteger(path[1]) ? [] : {};
+        val = assocPath2(Array.prototype.slice.call(path, 1), val, nextObj);
+      }
+      if (_isInteger(idx) && _isArray(obj)) {
+        var arr = [].concat(obj);
+        arr[idx] = val;
+        return arr;
+      } else {
+        return assoc(idx, val, obj);
+      }
+    });
+    module2.exports = assocPath;
+  }
+});
+
+// node_modules/ramda/src/nAry.js
+var require_nAry = __commonJS({
+  "node_modules/ramda/src/nAry.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var nAry = /* @__PURE__ */ _curry2(function nAry2(n, fn) {
+      switch (n) {
+        case 0:
+          return function() {
+            return fn.call(this);
+          };
+        case 1:
+          return function(a0) {
+            return fn.call(this, a0);
+          };
+        case 2:
+          return function(a0, a1) {
+            return fn.call(this, a0, a1);
+          };
+        case 3:
+          return function(a0, a1, a2) {
+            return fn.call(this, a0, a1, a2);
+          };
+        case 4:
+          return function(a0, a1, a2, a3) {
+            return fn.call(this, a0, a1, a2, a3);
+          };
+        case 5:
+          return function(a0, a1, a2, a3, a4) {
+            return fn.call(this, a0, a1, a2, a3, a4);
+          };
+        case 6:
+          return function(a0, a1, a2, a3, a4, a5) {
+            return fn.call(this, a0, a1, a2, a3, a4, a5);
+          };
+        case 7:
+          return function(a0, a1, a2, a3, a4, a5, a6) {
+            return fn.call(this, a0, a1, a2, a3, a4, a5, a6);
+          };
+        case 8:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7) {
+            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7);
+          };
+        case 9:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8) {
+            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7, a8);
+          };
+        case 10:
+          return function(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
+            return fn.call(this, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+          };
+        default:
+          throw new Error("First argument to nAry must be a non-negative integer no greater than ten");
+      }
+    });
+    module2.exports = nAry;
+  }
+});
+
+// node_modules/ramda/src/binary.js
+var require_binary = __commonJS({
+  "node_modules/ramda/src/binary.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var nAry = require_nAry();
+    var binary = /* @__PURE__ */ _curry1(function binary2(fn) {
+      return nAry(2, fn);
+    });
+    module2.exports = binary;
+  }
+});
+
+// node_modules/ramda/src/internal/_isFunction.js
+var require_isFunction = __commonJS({
+  "node_modules/ramda/src/internal/_isFunction.js"(exports2, module2) {
+    function _isFunction(x) {
+      var type = Object.prototype.toString.call(x);
+      return type === "[object Function]" || type === "[object AsyncFunction]" || type === "[object GeneratorFunction]" || type === "[object AsyncGeneratorFunction]";
+    }
+    module2.exports = _isFunction;
+  }
+});
+
+// node_modules/ramda/src/liftN.js
+var require_liftN = __commonJS({
+  "node_modules/ramda/src/liftN.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduce = require_reduce();
+    var ap = require_ap();
+    var curryN = require_curryN2();
+    var map = require_map2();
+    var liftN = /* @__PURE__ */ _curry2(function liftN2(arity, fn) {
+      var lifted = curryN(arity, fn);
+      return curryN(arity, function() {
+        return _reduce(ap, map(lifted, arguments[0]), Array.prototype.slice.call(arguments, 1));
+      });
+    });
+    module2.exports = liftN;
+  }
+});
+
+// node_modules/ramda/src/lift.js
+var require_lift = __commonJS({
+  "node_modules/ramda/src/lift.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var liftN = require_liftN();
+    var lift = /* @__PURE__ */ _curry1(function lift2(fn) {
+      return liftN(fn.length, fn);
+    });
+    module2.exports = lift;
+  }
+});
+
+// node_modules/ramda/src/both.js
+var require_both = __commonJS({
+  "node_modules/ramda/src/both.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isFunction = require_isFunction();
+    var and = require_and();
+    var lift = require_lift();
+    var both = /* @__PURE__ */ _curry2(function both2(f, g) {
+      return _isFunction(f) ? function _both() {
+        return f.apply(this, arguments) && g.apply(this, arguments);
+      } : lift(and)(f, g);
+    });
+    module2.exports = both;
+  }
+});
+
+// node_modules/ramda/src/curry.js
+var require_curry = __commonJS({
+  "node_modules/ramda/src/curry.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var curry = /* @__PURE__ */ _curry1(function curry2(fn) {
+      return curryN(fn.length, fn);
+    });
+    module2.exports = curry;
+  }
+});
+
+// node_modules/ramda/src/call.js
+var require_call = __commonJS({
+  "node_modules/ramda/src/call.js"(exports2, module2) {
+    var curry = require_curry();
+    var call = /* @__PURE__ */ curry(function call2(fn) {
+      return fn.apply(this, Array.prototype.slice.call(arguments, 1));
+    });
+    module2.exports = call;
+  }
+});
+
+// node_modules/ramda/src/internal/_makeFlat.js
+var require_makeFlat = __commonJS({
+  "node_modules/ramda/src/internal/_makeFlat.js"(exports2, module2) {
+    var _isArrayLike = require_isArrayLike();
+    function _makeFlat(recursive) {
+      return function flatt(list) {
+        var value, jlen, j;
+        var result = [];
+        var idx = 0;
+        var ilen = list.length;
+        while (idx < ilen) {
+          if (_isArrayLike(list[idx])) {
+            value = recursive ? flatt(list[idx]) : list[idx];
+            j = 0;
+            jlen = value.length;
+            while (j < jlen) {
+              result[result.length] = value[j];
+              j += 1;
+            }
+          } else {
+            result[result.length] = list[idx];
+          }
+          idx += 1;
+        }
+        return result;
+      };
+    }
+    module2.exports = _makeFlat;
+  }
+});
+
+// node_modules/ramda/src/internal/_forceReduced.js
+var require_forceReduced = __commonJS({
+  "node_modules/ramda/src/internal/_forceReduced.js"(exports2, module2) {
+    function _forceReduced(x) {
+      return {
+        "@@transducer/value": x,
+        "@@transducer/reduced": true
+      };
+    }
+    module2.exports = _forceReduced;
+  }
+});
+
+// node_modules/ramda/src/internal/_flatCat.js
+var require_flatCat = __commonJS({
+  "node_modules/ramda/src/internal/_flatCat.js"(exports2, module2) {
+    var _forceReduced = require_forceReduced();
+    var _isArrayLike = require_isArrayLike();
+    var _reduce = require_reduce();
+    var _xfBase = require_xfBase();
+    var preservingReduced = function(xf) {
+      return {
+        "@@transducer/init": _xfBase.init,
+        "@@transducer/result": function(result) {
+          return xf["@@transducer/result"](result);
+        },
+        "@@transducer/step": function(result, input) {
+          var ret = xf["@@transducer/step"](result, input);
+          return ret["@@transducer/reduced"] ? _forceReduced(ret) : ret;
+        }
+      };
+    };
+    var _flatCat = function _xcat(xf) {
+      var rxf = preservingReduced(xf);
+      return {
+        "@@transducer/init": _xfBase.init,
+        "@@transducer/result": function(result) {
+          return rxf["@@transducer/result"](result);
+        },
+        "@@transducer/step": function(result, input) {
+          return !_isArrayLike(input) ? _reduce(rxf, result, [input]) : _reduce(rxf, result, input);
+        }
+      };
+    };
+    module2.exports = _flatCat;
+  }
+});
+
+// node_modules/ramda/src/internal/_xchain.js
+var require_xchain = __commonJS({
+  "node_modules/ramda/src/internal/_xchain.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _flatCat = require_flatCat();
+    var map = require_map2();
+    var _xchain = /* @__PURE__ */ _curry2(function _xchain2(f, xf) {
+      return map(f, _flatCat(xf));
+    });
+    module2.exports = _xchain;
+  }
+});
+
+// node_modules/ramda/src/chain.js
+var require_chain = __commonJS({
+  "node_modules/ramda/src/chain.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _makeFlat = require_makeFlat();
+    var _xchain = require_xchain();
+    var map = require_map2();
+    var chain = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["fantasy-land/chain", "chain"], _xchain, function chain2(fn, monad) {
+      if (typeof monad === "function") {
+        return function(x) {
+          return fn(monad(x))(x);
+        };
+      }
+      return _makeFlat(false)(map(fn, monad));
+    }));
+    module2.exports = chain;
+  }
+});
+
+// node_modules/ramda/src/clamp.js
+var require_clamp = __commonJS({
+  "node_modules/ramda/src/clamp.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var clamp = /* @__PURE__ */ _curry3(function clamp2(min, max, value) {
+      if (min > max) {
+        throw new Error("min must not be greater than max in clamp(min, max, value)");
+      }
+      return value < min ? min : value > max ? max : value;
+    });
+    module2.exports = clamp;
+  }
+});
+
+// node_modules/ramda/src/internal/_cloneRegExp.js
+var require_cloneRegExp = __commonJS({
+  "node_modules/ramda/src/internal/_cloneRegExp.js"(exports2, module2) {
+    function _cloneRegExp(pattern) {
+      return new RegExp(pattern.source, (pattern.global ? "g" : "") + (pattern.ignoreCase ? "i" : "") + (pattern.multiline ? "m" : "") + (pattern.sticky ? "y" : "") + (pattern.unicode ? "u" : ""));
+    }
+    module2.exports = _cloneRegExp;
+  }
+});
+
+// node_modules/ramda/src/type.js
+var require_type = __commonJS({
+  "node_modules/ramda/src/type.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var type = /* @__PURE__ */ _curry1(function type2(val) {
+      return val === null ? "Null" : val === void 0 ? "Undefined" : Object.prototype.toString.call(val).slice(8, -1);
+    });
+    module2.exports = type;
+  }
+});
+
+// node_modules/ramda/src/internal/_clone.js
+var require_clone2 = __commonJS({
+  "node_modules/ramda/src/internal/_clone.js"(exports2, module2) {
+    var _cloneRegExp = require_cloneRegExp();
+    var type = require_type();
+    function _clone(value, refFrom, refTo, deep) {
+      var copy = function copy2(copiedValue) {
+        var len = refFrom.length;
+        var idx = 0;
+        while (idx < len) {
+          if (value === refFrom[idx]) {
+            return refTo[idx];
+          }
+          idx += 1;
+        }
+        refFrom[idx + 1] = value;
+        refTo[idx + 1] = copiedValue;
+        for (var key in value) {
+          copiedValue[key] = deep ? _clone(value[key], refFrom, refTo, true) : value[key];
+        }
+        return copiedValue;
+      };
+      switch (type(value)) {
+        case "Object":
+          return copy({});
+        case "Array":
+          return copy([]);
+        case "Date":
+          return new Date(value.valueOf());
+        case "RegExp":
+          return _cloneRegExp(value);
+        default:
+          return value;
+      }
+    }
+    module2.exports = _clone;
+  }
+});
+
+// node_modules/ramda/src/clone.js
+var require_clone3 = __commonJS({
+  "node_modules/ramda/src/clone.js"(exports2, module2) {
+    var _clone = require_clone2();
+    var _curry1 = require_curry1();
+    var clone = /* @__PURE__ */ _curry1(function clone2(value) {
+      return value != null && typeof value.clone === "function" ? value.clone() : _clone(value, [], [], true);
+    });
+    module2.exports = clone;
+  }
+});
+
+// node_modules/ramda/src/comparator.js
+var require_comparator = __commonJS({
+  "node_modules/ramda/src/comparator.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var comparator = /* @__PURE__ */ _curry1(function comparator2(pred) {
+      return function(a, b) {
+        return pred(a, b) ? -1 : pred(b, a) ? 1 : 0;
+      };
+    });
+    module2.exports = comparator;
+  }
+});
+
+// node_modules/ramda/src/not.js
+var require_not = __commonJS({
+  "node_modules/ramda/src/not.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var not = /* @__PURE__ */ _curry1(function not2(a) {
+      return !a;
+    });
+    module2.exports = not;
+  }
+});
+
+// node_modules/ramda/src/complement.js
+var require_complement = __commonJS({
+  "node_modules/ramda/src/complement.js"(exports2, module2) {
+    var lift = require_lift();
+    var not = require_not();
+    var complement = /* @__PURE__ */ lift(not);
+    module2.exports = complement;
+  }
+});
+
+// node_modules/ramda/src/internal/_pipe.js
+var require_pipe = __commonJS({
+  "node_modules/ramda/src/internal/_pipe.js"(exports2, module2) {
+    function _pipe(f, g) {
+      return function() {
+        return g.call(this, f.apply(this, arguments));
+      };
+    }
+    module2.exports = _pipe;
+  }
+});
+
+// node_modules/ramda/src/internal/_checkForMethod.js
+var require_checkForMethod = __commonJS({
+  "node_modules/ramda/src/internal/_checkForMethod.js"(exports2, module2) {
+    var _isArray = require_isArray();
+    function _checkForMethod(methodname, fn) {
+      return function() {
+        var length = arguments.length;
+        if (length === 0) {
+          return fn();
+        }
+        var obj = arguments[length - 1];
+        return _isArray(obj) || typeof obj[methodname] !== "function" ? fn.apply(this, arguments) : obj[methodname].apply(obj, Array.prototype.slice.call(arguments, 0, length - 1));
+      };
+    }
+    module2.exports = _checkForMethod;
+  }
+});
+
+// node_modules/ramda/src/slice.js
+var require_slice = __commonJS({
+  "node_modules/ramda/src/slice.js"(exports2, module2) {
+    var _checkForMethod = require_checkForMethod();
+    var _curry3 = require_curry3();
+    var slice = /* @__PURE__ */ _curry3(/* @__PURE__ */ _checkForMethod("slice", function slice2(fromIndex, toIndex, list) {
+      return Array.prototype.slice.call(list, fromIndex, toIndex);
+    }));
+    module2.exports = slice;
+  }
+});
+
+// node_modules/ramda/src/tail.js
+var require_tail2 = __commonJS({
+  "node_modules/ramda/src/tail.js"(exports2, module2) {
+    var _checkForMethod = require_checkForMethod();
+    var _curry1 = require_curry1();
+    var slice = require_slice();
+    var tail = /* @__PURE__ */ _curry1(/* @__PURE__ */ _checkForMethod("tail", /* @__PURE__ */ slice(1, Infinity)));
+    module2.exports = tail;
+  }
+});
+
+// node_modules/ramda/src/pipe.js
+var require_pipe2 = __commonJS({
+  "node_modules/ramda/src/pipe.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _pipe = require_pipe();
+    var reduce = require_reduce2();
+    var tail = require_tail2();
+    function pipe() {
+      if (arguments.length === 0) {
+        throw new Error("pipe requires at least one argument");
+      }
+      return _arity(arguments[0].length, reduce(_pipe, arguments[0], tail(arguments)));
+    }
+    module2.exports = pipe;
+  }
+});
+
+// node_modules/ramda/src/reverse.js
+var require_reverse = __commonJS({
+  "node_modules/ramda/src/reverse.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _isString = require_isString();
+    var reverse2 = /* @__PURE__ */ _curry1(function reverse3(list) {
+      return _isString(list) ? list.split("").reverse().join("") : Array.prototype.slice.call(list, 0).reverse();
+    });
+    module2.exports = reverse2;
+  }
+});
+
+// node_modules/ramda/src/compose.js
+var require_compose = __commonJS({
+  "node_modules/ramda/src/compose.js"(exports2, module2) {
+    var pipe = require_pipe2();
+    var reverse2 = require_reverse();
+    function compose() {
+      if (arguments.length === 0) {
+        throw new Error("compose requires at least one argument");
+      }
+      return pipe.apply(this, reverse2(arguments));
+    }
+    module2.exports = compose;
+  }
+});
+
+// node_modules/ramda/src/composeK.js
+var require_composeK = __commonJS({
+  "node_modules/ramda/src/composeK.js"(exports2, module2) {
+    var chain = require_chain();
+    var compose = require_compose();
+    var map = require_map2();
+    function composeK() {
+      if (arguments.length === 0) {
+        throw new Error("composeK requires at least one argument");
+      }
+      var init = Array.prototype.slice.call(arguments);
+      var last2 = init.pop();
+      return compose(compose.apply(this, map(chain, init)), last2);
+    }
+    module2.exports = composeK;
+  }
+});
+
+// node_modules/ramda/src/internal/_pipeP.js
+var require_pipeP = __commonJS({
+  "node_modules/ramda/src/internal/_pipeP.js"(exports2, module2) {
+    function _pipeP(f, g) {
+      return function() {
+        var ctx = this;
+        return f.apply(ctx, arguments).then(function(x) {
+          return g.call(ctx, x);
+        });
+      };
+    }
+    module2.exports = _pipeP;
+  }
+});
+
+// node_modules/ramda/src/pipeP.js
+var require_pipeP2 = __commonJS({
+  "node_modules/ramda/src/pipeP.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _pipeP = require_pipeP();
+    var reduce = require_reduce2();
+    var tail = require_tail2();
+    function pipeP() {
+      if (arguments.length === 0) {
+        throw new Error("pipeP requires at least one argument");
+      }
+      return _arity(arguments[0].length, reduce(_pipeP, arguments[0], tail(arguments)));
+    }
+    module2.exports = pipeP;
+  }
+});
+
+// node_modules/ramda/src/composeP.js
+var require_composeP = __commonJS({
+  "node_modules/ramda/src/composeP.js"(exports2, module2) {
+    var pipeP = require_pipeP2();
+    var reverse2 = require_reverse();
+    function composeP() {
+      if (arguments.length === 0) {
+        throw new Error("composeP requires at least one argument");
+      }
+      return pipeP.apply(this, reverse2(arguments));
+    }
+    module2.exports = composeP;
+  }
+});
+
+// node_modules/ramda/src/head.js
+var require_head = __commonJS({
+  "node_modules/ramda/src/head.js"(exports2, module2) {
+    var nth = require_nth();
+    var head = /* @__PURE__ */ nth(0);
+    module2.exports = head;
+  }
+});
+
+// node_modules/ramda/src/internal/_identity.js
+var require_identity = __commonJS({
+  "node_modules/ramda/src/internal/_identity.js"(exports2, module2) {
+    function _identity(x) {
+      return x;
+    }
+    module2.exports = _identity;
+  }
+});
+
+// node_modules/ramda/src/identity.js
+var require_identity2 = __commonJS({
+  "node_modules/ramda/src/identity.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _identity = require_identity();
+    var identity = /* @__PURE__ */ _curry1(_identity);
+    module2.exports = identity;
+  }
+});
+
+// node_modules/ramda/src/pipeWith.js
+var require_pipeWith = __commonJS({
+  "node_modules/ramda/src/pipeWith.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry2 = require_curry2();
+    var head = require_head();
+    var _reduce = require_reduce();
+    var tail = require_tail2();
+    var identity = require_identity2();
+    var pipeWith = /* @__PURE__ */ _curry2(function pipeWith2(xf, list) {
+      if (list.length <= 0) {
+        return identity;
+      }
+      var headList = head(list);
+      var tailList = tail(list);
+      return _arity(headList.length, function() {
+        return _reduce(function(result, f) {
+          return xf.call(this, f, result);
+        }, headList.apply(this, arguments), tailList);
+      });
+    });
+    module2.exports = pipeWith;
+  }
+});
+
+// node_modules/ramda/src/composeWith.js
+var require_composeWith = __commonJS({
+  "node_modules/ramda/src/composeWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var pipeWith = require_pipeWith();
+    var reverse2 = require_reverse();
+    var composeWith = /* @__PURE__ */ _curry2(function composeWith2(xf, list) {
+      return pipeWith.apply(this, [xf, reverse2(list)]);
+    });
+    module2.exports = composeWith;
+  }
+});
+
+// node_modules/ramda/src/internal/_arrayFromIterator.js
+var require_arrayFromIterator = __commonJS({
+  "node_modules/ramda/src/internal/_arrayFromIterator.js"(exports2, module2) {
+    function _arrayFromIterator(iter) {
+      var list = [];
+      var next;
+      while (!(next = iter.next()).done) {
+        list.push(next.value);
+      }
+      return list;
+    }
+    module2.exports = _arrayFromIterator;
+  }
+});
+
+// node_modules/ramda/src/internal/_includesWith.js
+var require_includesWith = __commonJS({
+  "node_modules/ramda/src/internal/_includesWith.js"(exports2, module2) {
+    function _includesWith(pred, x, list) {
+      var idx = 0;
+      var len = list.length;
+      while (idx < len) {
+        if (pred(x, list[idx])) {
+          return true;
+        }
+        idx += 1;
+      }
+      return false;
+    }
+    module2.exports = _includesWith;
+  }
+});
+
+// node_modules/ramda/src/internal/_functionName.js
+var require_functionName = __commonJS({
+  "node_modules/ramda/src/internal/_functionName.js"(exports2, module2) {
+    function _functionName(f) {
+      var match = String(f).match(/^function (\w*)/);
+      return match == null ? "" : match[1];
+    }
+    module2.exports = _functionName;
+  }
+});
+
+// node_modules/ramda/src/internal/_objectIs.js
+var require_objectIs = __commonJS({
+  "node_modules/ramda/src/internal/_objectIs.js"(exports2, module2) {
+    function _objectIs(a, b) {
+      if (a === b) {
+        return a !== 0 || 1 / a === 1 / b;
+      } else {
+        return a !== a && b !== b;
+      }
+    }
+    module2.exports = typeof Object.is === "function" ? Object.is : _objectIs;
+  }
+});
+
+// node_modules/ramda/src/internal/_equals.js
+var require_equals2 = __commonJS({
+  "node_modules/ramda/src/internal/_equals.js"(exports2, module2) {
+    var _arrayFromIterator = require_arrayFromIterator();
+    var _includesWith = require_includesWith();
+    var _functionName = require_functionName();
+    var _has = require_has();
+    var _objectIs = require_objectIs();
+    var keys = require_keys();
+    var type = require_type();
+    function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
+      var a = _arrayFromIterator(aIterator);
+      var b = _arrayFromIterator(bIterator);
+      function eq(_a, _b) {
+        return _equals(_a, _b, stackA.slice(), stackB.slice());
+      }
+      return !_includesWith(function(b2, aItem) {
+        return !_includesWith(eq, aItem, b2);
+      }, b, a);
+    }
+    function _equals(a, b, stackA, stackB) {
+      if (_objectIs(a, b)) {
+        return true;
+      }
+      var typeA = type(a);
+      if (typeA !== type(b)) {
+        return false;
+      }
+      if (a == null || b == null) {
+        return false;
+      }
+      if (typeof a["fantasy-land/equals"] === "function" || typeof b["fantasy-land/equals"] === "function") {
+        return typeof a["fantasy-land/equals"] === "function" && a["fantasy-land/equals"](b) && typeof b["fantasy-land/equals"] === "function" && b["fantasy-land/equals"](a);
+      }
+      if (typeof a.equals === "function" || typeof b.equals === "function") {
+        return typeof a.equals === "function" && a.equals(b) && typeof b.equals === "function" && b.equals(a);
+      }
+      switch (typeA) {
+        case "Arguments":
+        case "Array":
+        case "Object":
+          if (typeof a.constructor === "function" && _functionName(a.constructor) === "Promise") {
+            return a === b;
+          }
+          break;
+        case "Boolean":
+        case "Number":
+        case "String":
+          if (!(typeof a === typeof b && _objectIs(a.valueOf(), b.valueOf()))) {
+            return false;
+          }
+          break;
+        case "Date":
+          if (!_objectIs(a.valueOf(), b.valueOf())) {
+            return false;
+          }
+          break;
+        case "Error":
+          return a.name === b.name && a.message === b.message;
+        case "RegExp":
+          if (!(a.source === b.source && a.global === b.global && a.ignoreCase === b.ignoreCase && a.multiline === b.multiline && a.sticky === b.sticky && a.unicode === b.unicode)) {
+            return false;
+          }
+          break;
+      }
+      var idx = stackA.length - 1;
+      while (idx >= 0) {
+        if (stackA[idx] === a) {
+          return stackB[idx] === b;
+        }
+        idx -= 1;
+      }
+      switch (typeA) {
+        case "Map":
+          if (a.size !== b.size) {
+            return false;
+          }
+          return _uniqContentEquals(a.entries(), b.entries(), stackA.concat([a]), stackB.concat([b]));
+        case "Set":
+          if (a.size !== b.size) {
+            return false;
+          }
+          return _uniqContentEquals(a.values(), b.values(), stackA.concat([a]), stackB.concat([b]));
+        case "Arguments":
+        case "Array":
+        case "Object":
+        case "Boolean":
+        case "Number":
+        case "String":
+        case "Date":
+        case "Error":
+        case "RegExp":
+        case "Int8Array":
+        case "Uint8Array":
+        case "Uint8ClampedArray":
+        case "Int16Array":
+        case "Uint16Array":
+        case "Int32Array":
+        case "Uint32Array":
+        case "Float32Array":
+        case "Float64Array":
+        case "ArrayBuffer":
+          break;
+        default:
+          return false;
+      }
+      var keysA = keys(a);
+      if (keysA.length !== keys(b).length) {
+        return false;
+      }
+      var extendedStackA = stackA.concat([a]);
+      var extendedStackB = stackB.concat([b]);
+      idx = keysA.length - 1;
+      while (idx >= 0) {
+        var key = keysA[idx];
+        if (!(_has(key, b) && _equals(b[key], a[key], extendedStackA, extendedStackB))) {
+          return false;
+        }
+        idx -= 1;
+      }
+      return true;
+    }
+    module2.exports = _equals;
+  }
+});
+
+// node_modules/ramda/src/equals.js
+var require_equals3 = __commonJS({
+  "node_modules/ramda/src/equals.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _equals = require_equals2();
+    var equals = /* @__PURE__ */ _curry2(function equals2(a, b) {
+      return _equals(a, b, [], []);
+    });
+    module2.exports = equals;
+  }
+});
+
+// node_modules/ramda/src/internal/_indexOf.js
+var require_indexOf = __commonJS({
+  "node_modules/ramda/src/internal/_indexOf.js"(exports2, module2) {
+    var equals = require_equals3();
+    function _indexOf(list, a, idx) {
+      var inf, item;
+      if (typeof list.indexOf === "function") {
+        switch (typeof a) {
+          case "number":
+            if (a === 0) {
+              inf = 1 / a;
+              while (idx < list.length) {
+                item = list[idx];
+                if (item === 0 && 1 / item === inf) {
+                  return idx;
+                }
+                idx += 1;
+              }
+              return -1;
+            } else if (a !== a) {
+              while (idx < list.length) {
+                item = list[idx];
+                if (typeof item === "number" && item !== item) {
+                  return idx;
+                }
+                idx += 1;
+              }
+              return -1;
+            }
+            return list.indexOf(a, idx);
+          case "string":
+          case "boolean":
+          case "function":
+          case "undefined":
+            return list.indexOf(a, idx);
+          case "object":
+            if (a === null) {
+              return list.indexOf(a, idx);
+            }
+        }
+      }
+      while (idx < list.length) {
+        if (equals(list[idx], a)) {
+          return idx;
+        }
+        idx += 1;
+      }
+      return -1;
+    }
+    module2.exports = _indexOf;
+  }
+});
+
+// node_modules/ramda/src/internal/_includes.js
+var require_includes = __commonJS({
+  "node_modules/ramda/src/internal/_includes.js"(exports2, module2) {
+    var _indexOf = require_indexOf();
+    function _includes(a, list) {
+      return _indexOf(list, a, 0) >= 0;
+    }
+    module2.exports = _includes;
+  }
+});
+
+// node_modules/ramda/src/internal/_quote.js
+var require_quote = __commonJS({
+  "node_modules/ramda/src/internal/_quote.js"(exports2, module2) {
+    function _quote(s) {
+      var escaped = s.replace(/\\/g, "\\\\").replace(/[\b]/g, "\\b").replace(/\f/g, "\\f").replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t").replace(/\v/g, "\\v").replace(/\0/g, "\\0");
+      return '"' + escaped.replace(/"/g, '\\"') + '"';
+    }
+    module2.exports = _quote;
+  }
+});
+
+// node_modules/ramda/src/internal/_toISOString.js
+var require_toISOString = __commonJS({
+  "node_modules/ramda/src/internal/_toISOString.js"(exports2, module2) {
+    var pad = function pad2(n) {
+      return (n < 10 ? "0" : "") + n;
+    };
+    var _toISOString = typeof Date.prototype.toISOString === "function" ? function _toISOString2(d) {
+      return d.toISOString();
+    } : function _toISOString2(d) {
+      return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()) + "T" + pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()) + ":" + pad(d.getUTCSeconds()) + "." + (d.getUTCMilliseconds() / 1e3).toFixed(3).slice(2, 5) + "Z";
+    };
+    module2.exports = _toISOString;
+  }
+});
+
+// node_modules/ramda/src/internal/_complement.js
+var require_complement2 = __commonJS({
+  "node_modules/ramda/src/internal/_complement.js"(exports2, module2) {
+    function _complement(f) {
+      return function() {
+        return !f.apply(this, arguments);
+      };
+    }
+    module2.exports = _complement;
+  }
+});
+
+// node_modules/ramda/src/internal/_filter.js
+var require_filter = __commonJS({
+  "node_modules/ramda/src/internal/_filter.js"(exports2, module2) {
+    function _filter(fn, list) {
+      var idx = 0;
+      var len = list.length;
+      var result = [];
+      while (idx < len) {
+        if (fn(list[idx])) {
+          result[result.length] = list[idx];
+        }
+        idx += 1;
+      }
+      return result;
+    }
+    module2.exports = _filter;
+  }
+});
+
+// node_modules/ramda/src/internal/_isObject.js
+var require_isObject = __commonJS({
+  "node_modules/ramda/src/internal/_isObject.js"(exports2, module2) {
+    function _isObject(x) {
+      return Object.prototype.toString.call(x) === "[object Object]";
+    }
+    module2.exports = _isObject;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfilter.js
+var require_xfilter = __commonJS({
+  "node_modules/ramda/src/internal/_xfilter.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XFilter = /* @__PURE__ */ function() {
+      function XFilter2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XFilter2.prototype["@@transducer/init"] = _xfBase.init;
+      XFilter2.prototype["@@transducer/result"] = _xfBase.result;
+      XFilter2.prototype["@@transducer/step"] = function(result, input) {
+        return this.f(input) ? this.xf["@@transducer/step"](result, input) : result;
+      };
+      return XFilter2;
+    }();
+    var _xfilter = /* @__PURE__ */ _curry2(function _xfilter2(f, xf) {
+      return new XFilter(f, xf);
+    });
+    module2.exports = _xfilter;
+  }
+});
+
+// node_modules/ramda/src/filter.js
+var require_filter2 = __commonJS({
+  "node_modules/ramda/src/filter.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _filter = require_filter();
+    var _isObject = require_isObject();
+    var _reduce = require_reduce();
+    var _xfilter = require_xfilter();
+    var keys = require_keys();
+    var filter = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["filter"], _xfilter, function(pred, filterable) {
+      return _isObject(filterable) ? _reduce(function(acc, key) {
+        if (pred(filterable[key])) {
+          acc[key] = filterable[key];
+        }
+        return acc;
+      }, {}, keys(filterable)) : _filter(pred, filterable);
+    }));
+    module2.exports = filter;
+  }
+});
+
+// node_modules/ramda/src/reject.js
+var require_reject = __commonJS({
+  "node_modules/ramda/src/reject.js"(exports2, module2) {
+    var _complement = require_complement2();
+    var _curry2 = require_curry2();
+    var filter = require_filter2();
+    var reject = /* @__PURE__ */ _curry2(function reject2(pred, filterable) {
+      return filter(_complement(pred), filterable);
+    });
+    module2.exports = reject;
+  }
+});
+
+// node_modules/ramda/src/internal/_toString.js
+var require_toString = __commonJS({
+  "node_modules/ramda/src/internal/_toString.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _map = require_map();
+    var _quote = require_quote();
+    var _toISOString = require_toISOString();
+    var keys = require_keys();
+    var reject = require_reject();
+    function _toString(x, seen) {
+      var recur = function recur2(y) {
+        var xs = seen.concat([x]);
+        return _includes(y, xs) ? "<Circular>" : _toString(y, xs);
+      };
+      var mapPairs = function(obj, keys2) {
+        return _map(function(k) {
+          return _quote(k) + ": " + recur(obj[k]);
+        }, keys2.slice().sort());
+      };
+      switch (Object.prototype.toString.call(x)) {
+        case "[object Arguments]":
+          return "(function() { return arguments; }(" + _map(recur, x).join(", ") + "))";
+        case "[object Array]":
+          return "[" + _map(recur, x).concat(mapPairs(x, reject(function(k) {
+            return /^\d+$/.test(k);
+          }, keys(x)))).join(", ") + "]";
+        case "[object Boolean]":
+          return typeof x === "object" ? "new Boolean(" + recur(x.valueOf()) + ")" : x.toString();
+        case "[object Date]":
+          return "new Date(" + (isNaN(x.valueOf()) ? recur(NaN) : _quote(_toISOString(x))) + ")";
+        case "[object Null]":
+          return "null";
+        case "[object Number]":
+          return typeof x === "object" ? "new Number(" + recur(x.valueOf()) + ")" : 1 / x === -Infinity ? "-0" : x.toString(10);
+        case "[object String]":
+          return typeof x === "object" ? "new String(" + recur(x.valueOf()) + ")" : _quote(x);
+        case "[object Undefined]":
+          return "undefined";
+        default:
+          if (typeof x.toString === "function") {
+            var repr = x.toString();
+            if (repr !== "[object Object]") {
+              return repr;
+            }
+          }
+          return "{" + mapPairs(x, keys(x)).join(", ") + "}";
+      }
+    }
+    module2.exports = _toString;
+  }
+});
+
+// node_modules/ramda/src/toString.js
+var require_toString2 = __commonJS({
+  "node_modules/ramda/src/toString.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _toString = require_toString();
+    var toString = /* @__PURE__ */ _curry1(function toString2(val) {
+      return _toString(val, []);
+    });
+    module2.exports = toString;
+  }
+});
+
+// node_modules/ramda/src/concat.js
+var require_concat3 = __commonJS({
+  "node_modules/ramda/src/concat.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isArray = require_isArray();
+    var _isFunction = require_isFunction();
+    var _isString = require_isString();
+    var toString = require_toString2();
+    var concat = /* @__PURE__ */ _curry2(function concat2(a, b) {
+      if (_isArray(a)) {
+        if (_isArray(b)) {
+          return a.concat(b);
+        }
+        throw new TypeError(toString(b) + " is not an array");
+      }
+      if (_isString(a)) {
+        if (_isString(b)) {
+          return a + b;
+        }
+        throw new TypeError(toString(b) + " is not a string");
+      }
+      if (a != null && _isFunction(a["fantasy-land/concat"])) {
+        return a["fantasy-land/concat"](b);
+      }
+      if (a != null && _isFunction(a.concat)) {
+        return a.concat(b);
+      }
+      throw new TypeError(toString(a) + ' does not have a method named "concat" or "fantasy-land/concat"');
+    });
+    module2.exports = concat;
+  }
+});
+
+// node_modules/ramda/src/cond.js
+var require_cond = __commonJS({
+  "node_modules/ramda/src/cond.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry1 = require_curry1();
+    var map = require_map2();
+    var max = require_max();
+    var reduce = require_reduce2();
+    var cond = /* @__PURE__ */ _curry1(function cond2(pairs) {
+      var arity = reduce(max, 0, map(function(pair) {
+        return pair[0].length;
+      }, pairs));
+      return _arity(arity, function() {
+        var idx = 0;
+        while (idx < pairs.length) {
+          if (pairs[idx][0].apply(this, arguments)) {
+            return pairs[idx][1].apply(this, arguments);
+          }
+          idx += 1;
+        }
+      });
+    });
+    module2.exports = cond;
+  }
+});
+
+// node_modules/ramda/src/constructN.js
+var require_constructN = __commonJS({
+  "node_modules/ramda/src/constructN.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var curry = require_curry();
+    var nAry = require_nAry();
+    var constructN = /* @__PURE__ */ _curry2(function constructN2(n, Fn) {
+      if (n > 10) {
+        throw new Error("Constructor with greater than ten arguments");
+      }
+      if (n === 0) {
+        return function() {
+          return new Fn();
+        };
+      }
+      return curry(nAry(n, function($0, $1, $2, $3, $4, $5, $6, $7, $8, $9) {
+        switch (arguments.length) {
+          case 1:
+            return new Fn($0);
+          case 2:
+            return new Fn($0, $1);
+          case 3:
+            return new Fn($0, $1, $2);
+          case 4:
+            return new Fn($0, $1, $2, $3);
+          case 5:
+            return new Fn($0, $1, $2, $3, $4);
+          case 6:
+            return new Fn($0, $1, $2, $3, $4, $5);
+          case 7:
+            return new Fn($0, $1, $2, $3, $4, $5, $6);
+          case 8:
+            return new Fn($0, $1, $2, $3, $4, $5, $6, $7);
+          case 9:
+            return new Fn($0, $1, $2, $3, $4, $5, $6, $7, $8);
+          case 10:
+            return new Fn($0, $1, $2, $3, $4, $5, $6, $7, $8, $9);
+        }
+      }));
+    });
+    module2.exports = constructN;
+  }
+});
+
+// node_modules/ramda/src/construct.js
+var require_construct = __commonJS({
+  "node_modules/ramda/src/construct.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var constructN = require_constructN();
+    var construct = /* @__PURE__ */ _curry1(function construct2(Fn) {
+      return constructN(Fn.length, Fn);
+    });
+    module2.exports = construct;
+  }
+});
+
+// node_modules/ramda/src/contains.js
+var require_contains = __commonJS({
+  "node_modules/ramda/src/contains.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _curry2 = require_curry2();
+    var contains = /* @__PURE__ */ _curry2(_includes);
+    module2.exports = contains;
+  }
+});
+
+// node_modules/ramda/src/converge.js
+var require_converge = __commonJS({
+  "node_modules/ramda/src/converge.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _map = require_map();
+    var curryN = require_curryN2();
+    var max = require_max();
+    var pluck = require_pluck();
+    var reduce = require_reduce2();
+    var converge = /* @__PURE__ */ _curry2(function converge2(after, fns) {
+      return curryN(reduce(max, 0, pluck("length", fns)), function() {
+        var args = arguments;
+        var context = this;
+        return after.apply(context, _map(function(fn) {
+          return fn.apply(context, args);
+        }, fns));
+      });
+    });
+    module2.exports = converge;
+  }
+});
+
+// node_modules/ramda/src/internal/_xreduceBy.js
+var require_xreduceBy = __commonJS({
+  "node_modules/ramda/src/internal/_xreduceBy.js"(exports2, module2) {
+    var _curryN = require_curryN();
+    var _has = require_has();
+    var _xfBase = require_xfBase();
+    var XReduceBy = /* @__PURE__ */ function() {
+      function XReduceBy2(valueFn, valueAcc, keyFn, xf) {
+        this.valueFn = valueFn;
+        this.valueAcc = valueAcc;
+        this.keyFn = keyFn;
+        this.xf = xf;
+        this.inputs = {};
+      }
+      XReduceBy2.prototype["@@transducer/init"] = _xfBase.init;
+      XReduceBy2.prototype["@@transducer/result"] = function(result) {
+        var key;
+        for (key in this.inputs) {
+          if (_has(key, this.inputs)) {
+            result = this.xf["@@transducer/step"](result, this.inputs[key]);
+            if (result["@@transducer/reduced"]) {
+              result = result["@@transducer/value"];
+              break;
+            }
+          }
+        }
+        this.inputs = null;
+        return this.xf["@@transducer/result"](result);
+      };
+      XReduceBy2.prototype["@@transducer/step"] = function(result, input) {
+        var key = this.keyFn(input);
+        this.inputs[key] = this.inputs[key] || [key, this.valueAcc];
+        this.inputs[key][1] = this.valueFn(this.inputs[key][1], input);
+        return result;
+      };
+      return XReduceBy2;
+    }();
+    var _xreduceBy = /* @__PURE__ */ _curryN(4, [], function _xreduceBy2(valueFn, valueAcc, keyFn, xf) {
+      return new XReduceBy(valueFn, valueAcc, keyFn, xf);
+    });
+    module2.exports = _xreduceBy;
+  }
+});
+
+// node_modules/ramda/src/reduceBy.js
+var require_reduceBy = __commonJS({
+  "node_modules/ramda/src/reduceBy.js"(exports2, module2) {
+    var _clone = require_clone2();
+    var _curryN = require_curryN();
+    var _dispatchable = require_dispatchable();
+    var _has = require_has();
+    var _reduce = require_reduce();
+    var _xreduceBy = require_xreduceBy();
+    var reduceBy = /* @__PURE__ */ _curryN(4, [], /* @__PURE__ */ _dispatchable([], _xreduceBy, function reduceBy2(valueFn, valueAcc, keyFn, list) {
+      return _reduce(function(acc, elt) {
+        var key = keyFn(elt);
+        acc[key] = valueFn(_has(key, acc) ? acc[key] : _clone(valueAcc, [], [], false), elt);
+        return acc;
+      }, {}, list);
+    }));
+    module2.exports = reduceBy;
+  }
+});
+
+// node_modules/ramda/src/countBy.js
+var require_countBy = __commonJS({
+  "node_modules/ramda/src/countBy.js"(exports2, module2) {
+    var reduceBy = require_reduceBy();
+    var countBy = /* @__PURE__ */ reduceBy(function(acc, elem) {
+      return acc + 1;
+    }, 0);
+    module2.exports = countBy;
+  }
+});
+
+// node_modules/ramda/src/dec.js
+var require_dec = __commonJS({
+  "node_modules/ramda/src/dec.js"(exports2, module2) {
+    var add = require_add4();
+    var dec = /* @__PURE__ */ add(-1);
+    module2.exports = dec;
+  }
+});
+
+// node_modules/ramda/src/defaultTo.js
+var require_defaultTo = __commonJS({
+  "node_modules/ramda/src/defaultTo.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var defaultTo = /* @__PURE__ */ _curry2(function defaultTo2(d, v) {
+      return v == null || v !== v ? d : v;
+    });
+    module2.exports = defaultTo;
+  }
+});
+
+// node_modules/ramda/src/descend.js
+var require_descend = __commonJS({
+  "node_modules/ramda/src/descend.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var descend = /* @__PURE__ */ _curry3(function descend2(fn, a, b) {
+      var aa = fn(a);
+      var bb = fn(b);
+      return aa > bb ? -1 : aa < bb ? 1 : 0;
+    });
+    module2.exports = descend;
+  }
+});
+
+// node_modules/ramda/src/internal/_Set.js
+var require_Set = __commonJS({
+  "node_modules/ramda/src/internal/_Set.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _Set = /* @__PURE__ */ function() {
+      function _Set2() {
+        this._nativeSet = typeof Set === "function" ? new Set() : null;
+        this._items = {};
+      }
+      _Set2.prototype.add = function(item) {
+        return !hasOrAdd(item, true, this);
+      };
+      _Set2.prototype.has = function(item) {
+        return hasOrAdd(item, false, this);
+      };
+      return _Set2;
+    }();
+    function hasOrAdd(item, shouldAdd, set) {
+      var type = typeof item;
+      var prevSize, newSize;
+      switch (type) {
+        case "string":
+        case "number":
+          if (item === 0 && 1 / item === -Infinity) {
+            if (set._items["-0"]) {
+              return true;
+            } else {
+              if (shouldAdd) {
+                set._items["-0"] = true;
+              }
+              return false;
+            }
+          }
+          if (set._nativeSet !== null) {
+            if (shouldAdd) {
+              prevSize = set._nativeSet.size;
+              set._nativeSet.add(item);
+              newSize = set._nativeSet.size;
+              return newSize === prevSize;
+            } else {
+              return set._nativeSet.has(item);
+            }
+          } else {
+            if (!(type in set._items)) {
+              if (shouldAdd) {
+                set._items[type] = {};
+                set._items[type][item] = true;
+              }
+              return false;
+            } else if (item in set._items[type]) {
+              return true;
+            } else {
+              if (shouldAdd) {
+                set._items[type][item] = true;
+              }
+              return false;
+            }
+          }
+        case "boolean":
+          if (type in set._items) {
+            var bIdx = item ? 1 : 0;
+            if (set._items[type][bIdx]) {
+              return true;
+            } else {
+              if (shouldAdd) {
+                set._items[type][bIdx] = true;
+              }
+              return false;
+            }
+          } else {
+            if (shouldAdd) {
+              set._items[type] = item ? [false, true] : [true, false];
+            }
+            return false;
+          }
+        case "function":
+          if (set._nativeSet !== null) {
+            if (shouldAdd) {
+              prevSize = set._nativeSet.size;
+              set._nativeSet.add(item);
+              newSize = set._nativeSet.size;
+              return newSize === prevSize;
+            } else {
+              return set._nativeSet.has(item);
+            }
+          } else {
+            if (!(type in set._items)) {
+              if (shouldAdd) {
+                set._items[type] = [item];
+              }
+              return false;
+            }
+            if (!_includes(item, set._items[type])) {
+              if (shouldAdd) {
+                set._items[type].push(item);
+              }
+              return false;
+            }
+            return true;
+          }
+        case "undefined":
+          if (set._items[type]) {
+            return true;
+          } else {
+            if (shouldAdd) {
+              set._items[type] = true;
+            }
+            return false;
+          }
+        case "object":
+          if (item === null) {
+            if (!set._items["null"]) {
+              if (shouldAdd) {
+                set._items["null"] = true;
+              }
+              return false;
+            }
+            return true;
+          }
+        default:
+          type = Object.prototype.toString.call(item);
+          if (!(type in set._items)) {
+            if (shouldAdd) {
+              set._items[type] = [item];
+            }
+            return false;
+          }
+          if (!_includes(item, set._items[type])) {
+            if (shouldAdd) {
+              set._items[type].push(item);
+            }
+            return false;
+          }
+          return true;
+      }
+    }
+    module2.exports = _Set;
+  }
+});
+
+// node_modules/ramda/src/difference.js
+var require_difference = __commonJS({
+  "node_modules/ramda/src/difference.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _Set = require_Set();
+    var difference = /* @__PURE__ */ _curry2(function difference2(first, second) {
+      var out = [];
+      var idx = 0;
+      var firstLen = first.length;
+      var secondLen = second.length;
+      var toFilterOut = new _Set();
+      for (var i = 0; i < secondLen; i += 1) {
+        toFilterOut.add(second[i]);
+      }
+      while (idx < firstLen) {
+        if (toFilterOut.add(first[idx])) {
+          out[out.length] = first[idx];
+        }
+        idx += 1;
+      }
+      return out;
+    });
+    module2.exports = difference;
+  }
+});
+
+// node_modules/ramda/src/differenceWith.js
+var require_differenceWith = __commonJS({
+  "node_modules/ramda/src/differenceWith.js"(exports2, module2) {
+    var _includesWith = require_includesWith();
+    var _curry3 = require_curry3();
+    var differenceWith = /* @__PURE__ */ _curry3(function differenceWith2(pred, first, second) {
+      var out = [];
+      var idx = 0;
+      var firstLen = first.length;
+      while (idx < firstLen) {
+        if (!_includesWith(pred, first[idx], second) && !_includesWith(pred, first[idx], out)) {
+          out.push(first[idx]);
+        }
+        idx += 1;
+      }
+      return out;
+    });
+    module2.exports = differenceWith;
+  }
+});
+
+// node_modules/ramda/src/dissoc.js
+var require_dissoc = __commonJS({
+  "node_modules/ramda/src/dissoc.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var dissoc = /* @__PURE__ */ _curry2(function dissoc2(prop, obj) {
+      var result = {};
+      for (var p in obj) {
+        result[p] = obj[p];
+      }
+      delete result[prop];
+      return result;
+    });
+    module2.exports = dissoc;
+  }
+});
+
+// node_modules/ramda/src/remove.js
+var require_remove2 = __commonJS({
+  "node_modules/ramda/src/remove.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var remove = /* @__PURE__ */ _curry3(function remove2(start, count, list) {
+      var result = Array.prototype.slice.call(list, 0);
+      result.splice(start, count);
+      return result;
+    });
+    module2.exports = remove;
+  }
+});
+
+// node_modules/ramda/src/update.js
+var require_update = __commonJS({
+  "node_modules/ramda/src/update.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var adjust = require_adjust();
+    var always = require_always();
+    var update = /* @__PURE__ */ _curry3(function update2(idx, x, list) {
+      return adjust(idx, always(x), list);
+    });
+    module2.exports = update;
+  }
+});
+
+// node_modules/ramda/src/dissocPath.js
+var require_dissocPath = __commonJS({
+  "node_modules/ramda/src/dissocPath.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isInteger = require_isInteger();
+    var _isArray = require_isArray();
+    var assoc = require_assoc();
+    var dissoc = require_dissoc();
+    var remove = require_remove2();
+    var update = require_update();
+    var dissocPath = /* @__PURE__ */ _curry2(function dissocPath2(path, obj) {
+      switch (path.length) {
+        case 0:
+          return obj;
+        case 1:
+          return _isInteger(path[0]) && _isArray(obj) ? remove(path[0], 1, obj) : dissoc(path[0], obj);
+        default:
+          var head = path[0];
+          var tail = Array.prototype.slice.call(path, 1);
+          if (obj[head] == null) {
+            return obj;
+          } else if (_isInteger(head) && _isArray(obj)) {
+            return update(head, dissocPath2(tail, obj[head]), obj);
+          } else {
+            return assoc(head, dissocPath2(tail, obj[head]), obj);
+          }
+      }
+    });
+    module2.exports = dissocPath;
+  }
+});
+
+// node_modules/ramda/src/divide.js
+var require_divide = __commonJS({
+  "node_modules/ramda/src/divide.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var divide = /* @__PURE__ */ _curry2(function divide2(a, b) {
+      return a / b;
+    });
+    module2.exports = divide;
+  }
+});
+
+// node_modules/ramda/src/internal/_xdrop.js
+var require_xdrop = __commonJS({
+  "node_modules/ramda/src/internal/_xdrop.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XDrop = /* @__PURE__ */ function() {
+      function XDrop2(n, xf) {
+        this.xf = xf;
+        this.n = n;
+      }
+      XDrop2.prototype["@@transducer/init"] = _xfBase.init;
+      XDrop2.prototype["@@transducer/result"] = _xfBase.result;
+      XDrop2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.n > 0) {
+          this.n -= 1;
+          return result;
+        }
+        return this.xf["@@transducer/step"](result, input);
+      };
+      return XDrop2;
+    }();
+    var _xdrop = /* @__PURE__ */ _curry2(function _xdrop2(n, xf) {
+      return new XDrop(n, xf);
+    });
+    module2.exports = _xdrop;
+  }
+});
+
+// node_modules/ramda/src/drop.js
+var require_drop = __commonJS({
+  "node_modules/ramda/src/drop.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xdrop = require_xdrop();
+    var slice = require_slice();
+    var drop = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["drop"], _xdrop, function drop2(n, xs) {
+      return slice(Math.max(0, n), Infinity, xs);
+    }));
+    module2.exports = drop;
+  }
+});
+
+// node_modules/ramda/src/internal/_xtake.js
+var require_xtake = __commonJS({
+  "node_modules/ramda/src/internal/_xtake.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XTake = /* @__PURE__ */ function() {
+      function XTake2(n, xf) {
+        this.xf = xf;
+        this.n = n;
+        this.i = 0;
+      }
+      XTake2.prototype["@@transducer/init"] = _xfBase.init;
+      XTake2.prototype["@@transducer/result"] = _xfBase.result;
+      XTake2.prototype["@@transducer/step"] = function(result, input) {
+        this.i += 1;
+        var ret = this.n === 0 ? result : this.xf["@@transducer/step"](result, input);
+        return this.n >= 0 && this.i >= this.n ? _reduced(ret) : ret;
+      };
+      return XTake2;
+    }();
+    var _xtake = /* @__PURE__ */ _curry2(function _xtake2(n, xf) {
+      return new XTake(n, xf);
+    });
+    module2.exports = _xtake;
+  }
+});
+
+// node_modules/ramda/src/take.js
+var require_take = __commonJS({
+  "node_modules/ramda/src/take.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xtake = require_xtake();
+    var slice = require_slice();
+    var take = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["take"], _xtake, function take2(n, xs) {
+      return slice(0, n < 0 ? Infinity : n, xs);
+    }));
+    module2.exports = take;
+  }
+});
+
+// node_modules/ramda/src/internal/_dropLast.js
+var require_dropLast = __commonJS({
+  "node_modules/ramda/src/internal/_dropLast.js"(exports2, module2) {
+    var take = require_take();
+    function dropLast(n, xs) {
+      return take(n < xs.length ? xs.length - n : 0, xs);
+    }
+    module2.exports = dropLast;
+  }
+});
+
+// node_modules/ramda/src/internal/_xdropLast.js
+var require_xdropLast = __commonJS({
+  "node_modules/ramda/src/internal/_xdropLast.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XDropLast = /* @__PURE__ */ function() {
+      function XDropLast2(n, xf) {
+        this.xf = xf;
+        this.pos = 0;
+        this.full = false;
+        this.acc = new Array(n);
+      }
+      XDropLast2.prototype["@@transducer/init"] = _xfBase.init;
+      XDropLast2.prototype["@@transducer/result"] = function(result) {
+        this.acc = null;
+        return this.xf["@@transducer/result"](result);
+      };
+      XDropLast2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.full) {
+          result = this.xf["@@transducer/step"](result, this.acc[this.pos]);
+        }
+        this.store(input);
+        return result;
+      };
+      XDropLast2.prototype.store = function(input) {
+        this.acc[this.pos] = input;
+        this.pos += 1;
+        if (this.pos === this.acc.length) {
+          this.pos = 0;
+          this.full = true;
+        }
+      };
+      return XDropLast2;
+    }();
+    var _xdropLast = /* @__PURE__ */ _curry2(function _xdropLast2(n, xf) {
+      return new XDropLast(n, xf);
+    });
+    module2.exports = _xdropLast;
+  }
+});
+
+// node_modules/ramda/src/dropLast.js
+var require_dropLast2 = __commonJS({
+  "node_modules/ramda/src/dropLast.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _dropLast = require_dropLast();
+    var _xdropLast = require_xdropLast();
+    var dropLast = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropLast, _dropLast));
+    module2.exports = dropLast;
+  }
+});
+
+// node_modules/ramda/src/internal/_dropLastWhile.js
+var require_dropLastWhile = __commonJS({
+  "node_modules/ramda/src/internal/_dropLastWhile.js"(exports2, module2) {
+    var slice = require_slice();
+    function dropLastWhile(pred, xs) {
+      var idx = xs.length - 1;
+      while (idx >= 0 && pred(xs[idx])) {
+        idx -= 1;
+      }
+      return slice(0, idx + 1, xs);
+    }
+    module2.exports = dropLastWhile;
+  }
+});
+
+// node_modules/ramda/src/internal/_xdropLastWhile.js
+var require_xdropLastWhile = __commonJS({
+  "node_modules/ramda/src/internal/_xdropLastWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduce = require_reduce();
+    var _xfBase = require_xfBase();
+    var XDropLastWhile = /* @__PURE__ */ function() {
+      function XDropLastWhile2(fn, xf) {
+        this.f = fn;
+        this.retained = [];
+        this.xf = xf;
+      }
+      XDropLastWhile2.prototype["@@transducer/init"] = _xfBase.init;
+      XDropLastWhile2.prototype["@@transducer/result"] = function(result) {
+        this.retained = null;
+        return this.xf["@@transducer/result"](result);
+      };
+      XDropLastWhile2.prototype["@@transducer/step"] = function(result, input) {
+        return this.f(input) ? this.retain(result, input) : this.flush(result, input);
+      };
+      XDropLastWhile2.prototype.flush = function(result, input) {
+        result = _reduce(this.xf["@@transducer/step"], result, this.retained);
+        this.retained = [];
+        return this.xf["@@transducer/step"](result, input);
+      };
+      XDropLastWhile2.prototype.retain = function(result, input) {
+        this.retained.push(input);
+        return result;
+      };
+      return XDropLastWhile2;
+    }();
+    var _xdropLastWhile = /* @__PURE__ */ _curry2(function _xdropLastWhile2(fn, xf) {
+      return new XDropLastWhile(fn, xf);
+    });
+    module2.exports = _xdropLastWhile;
+  }
+});
+
+// node_modules/ramda/src/dropLastWhile.js
+var require_dropLastWhile2 = __commonJS({
+  "node_modules/ramda/src/dropLastWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _dropLastWhile = require_dropLastWhile();
+    var _xdropLastWhile = require_xdropLastWhile();
+    var dropLastWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropLastWhile, _dropLastWhile));
+    module2.exports = dropLastWhile;
+  }
+});
+
+// node_modules/ramda/src/internal/_xdropRepeatsWith.js
+var require_xdropRepeatsWith = __commonJS({
+  "node_modules/ramda/src/internal/_xdropRepeatsWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XDropRepeatsWith = /* @__PURE__ */ function() {
+      function XDropRepeatsWith2(pred, xf) {
+        this.xf = xf;
+        this.pred = pred;
+        this.lastValue = void 0;
+        this.seenFirstValue = false;
+      }
+      XDropRepeatsWith2.prototype["@@transducer/init"] = _xfBase.init;
+      XDropRepeatsWith2.prototype["@@transducer/result"] = _xfBase.result;
+      XDropRepeatsWith2.prototype["@@transducer/step"] = function(result, input) {
+        var sameAsLast = false;
+        if (!this.seenFirstValue) {
+          this.seenFirstValue = true;
+        } else if (this.pred(this.lastValue, input)) {
+          sameAsLast = true;
+        }
+        this.lastValue = input;
+        return sameAsLast ? result : this.xf["@@transducer/step"](result, input);
+      };
+      return XDropRepeatsWith2;
+    }();
+    var _xdropRepeatsWith = /* @__PURE__ */ _curry2(function _xdropRepeatsWith2(pred, xf) {
+      return new XDropRepeatsWith(pred, xf);
+    });
+    module2.exports = _xdropRepeatsWith;
+  }
+});
+
+// node_modules/ramda/src/last.js
+var require_last = __commonJS({
+  "node_modules/ramda/src/last.js"(exports2, module2) {
+    var nth = require_nth();
+    var last2 = /* @__PURE__ */ nth(-1);
+    module2.exports = last2;
+  }
+});
+
+// node_modules/ramda/src/dropRepeatsWith.js
+var require_dropRepeatsWith = __commonJS({
+  "node_modules/ramda/src/dropRepeatsWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xdropRepeatsWith = require_xdropRepeatsWith();
+    var last2 = require_last();
+    var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
+      var result = [];
+      var idx = 1;
+      var len = list.length;
+      if (len !== 0) {
+        result[0] = list[0];
+        while (idx < len) {
+          if (!pred(last2(result), list[idx])) {
+            result[result.length] = list[idx];
+          }
+          idx += 1;
+        }
+      }
+      return result;
+    }));
+    module2.exports = dropRepeatsWith;
+  }
+});
+
+// node_modules/ramda/src/dropRepeats.js
+var require_dropRepeats = __commonJS({
+  "node_modules/ramda/src/dropRepeats.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _dispatchable = require_dispatchable();
+    var _xdropRepeatsWith = require_xdropRepeatsWith();
+    var dropRepeatsWith = require_dropRepeatsWith();
+    var equals = require_equals3();
+    var dropRepeats = /* @__PURE__ */ _curry1(/* @__PURE__ */ _dispatchable([], /* @__PURE__ */ _xdropRepeatsWith(equals), /* @__PURE__ */ dropRepeatsWith(equals)));
+    module2.exports = dropRepeats;
+  }
+});
+
+// node_modules/ramda/src/internal/_xdropWhile.js
+var require_xdropWhile = __commonJS({
+  "node_modules/ramda/src/internal/_xdropWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XDropWhile = /* @__PURE__ */ function() {
+      function XDropWhile2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XDropWhile2.prototype["@@transducer/init"] = _xfBase.init;
+      XDropWhile2.prototype["@@transducer/result"] = _xfBase.result;
+      XDropWhile2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.f) {
+          if (this.f(input)) {
+            return result;
+          }
+          this.f = null;
+        }
+        return this.xf["@@transducer/step"](result, input);
+      };
+      return XDropWhile2;
+    }();
+    var _xdropWhile = /* @__PURE__ */ _curry2(function _xdropWhile2(f, xf) {
+      return new XDropWhile(f, xf);
+    });
+    module2.exports = _xdropWhile;
+  }
+});
+
+// node_modules/ramda/src/dropWhile.js
+var require_dropWhile = __commonJS({
+  "node_modules/ramda/src/dropWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xdropWhile = require_xdropWhile();
+    var slice = require_slice();
+    var dropWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["dropWhile"], _xdropWhile, function dropWhile2(pred, xs) {
+      var idx = 0;
+      var len = xs.length;
+      while (idx < len && pred(xs[idx])) {
+        idx += 1;
+      }
+      return slice(idx, Infinity, xs);
+    }));
+    module2.exports = dropWhile;
+  }
+});
+
+// node_modules/ramda/src/or.js
+var require_or = __commonJS({
+  "node_modules/ramda/src/or.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var or = /* @__PURE__ */ _curry2(function or2(a, b) {
+      return a || b;
+    });
+    module2.exports = or;
+  }
+});
+
+// node_modules/ramda/src/either.js
+var require_either = __commonJS({
+  "node_modules/ramda/src/either.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isFunction = require_isFunction();
+    var lift = require_lift();
+    var or = require_or();
+    var either = /* @__PURE__ */ _curry2(function either2(f, g) {
+      return _isFunction(f) ? function _either() {
+        return f.apply(this, arguments) || g.apply(this, arguments);
+      } : lift(or)(f, g);
+    });
+    module2.exports = either;
+  }
+});
+
+// node_modules/ramda/src/empty.js
+var require_empty2 = __commonJS({
+  "node_modules/ramda/src/empty.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _isArguments = require_isArguments();
+    var _isArray = require_isArray();
+    var _isObject = require_isObject();
+    var _isString = require_isString();
+    var empty = /* @__PURE__ */ _curry1(function empty2(x) {
+      return x != null && typeof x["fantasy-land/empty"] === "function" ? x["fantasy-land/empty"]() : x != null && x.constructor != null && typeof x.constructor["fantasy-land/empty"] === "function" ? x.constructor["fantasy-land/empty"]() : x != null && typeof x.empty === "function" ? x.empty() : x != null && x.constructor != null && typeof x.constructor.empty === "function" ? x.constructor.empty() : _isArray(x) ? [] : _isString(x) ? "" : _isObject(x) ? {} : _isArguments(x) ? function() {
+        return arguments;
+      }() : void 0;
+    });
+    module2.exports = empty;
+  }
+});
+
+// node_modules/ramda/src/takeLast.js
+var require_takeLast = __commonJS({
+  "node_modules/ramda/src/takeLast.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var drop = require_drop();
+    var takeLast = /* @__PURE__ */ _curry2(function takeLast2(n, xs) {
+      return drop(n >= 0 ? xs.length - n : 0, xs);
+    });
+    module2.exports = takeLast;
+  }
+});
+
+// node_modules/ramda/src/endsWith.js
+var require_endsWith = __commonJS({
+  "node_modules/ramda/src/endsWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var equals = require_equals3();
+    var takeLast = require_takeLast();
+    var endsWith = /* @__PURE__ */ _curry2(function(suffix, list) {
+      return equals(takeLast(suffix.length, list), suffix);
+    });
+    module2.exports = endsWith;
+  }
+});
+
+// node_modules/ramda/src/eqBy.js
+var require_eqBy = __commonJS({
+  "node_modules/ramda/src/eqBy.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var equals = require_equals3();
+    var eqBy = /* @__PURE__ */ _curry3(function eqBy2(f, x, y) {
+      return equals(f(x), f(y));
+    });
+    module2.exports = eqBy;
+  }
+});
+
+// node_modules/ramda/src/eqProps.js
+var require_eqProps = __commonJS({
+  "node_modules/ramda/src/eqProps.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var equals = require_equals3();
+    var eqProps = /* @__PURE__ */ _curry3(function eqProps2(prop, obj1, obj2) {
+      return equals(obj1[prop], obj2[prop]);
+    });
+    module2.exports = eqProps;
+  }
+});
+
+// node_modules/ramda/src/evolve.js
+var require_evolve = __commonJS({
+  "node_modules/ramda/src/evolve.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var evolve = /* @__PURE__ */ _curry2(function evolve2(transformations, object) {
+      var result = object instanceof Array ? [] : {};
+      var transformation, key, type;
+      for (key in object) {
+        transformation = transformations[key];
+        type = typeof transformation;
+        result[key] = type === "function" ? transformation(object[key]) : transformation && type === "object" ? evolve2(transformation, object[key]) : object[key];
+      }
+      return result;
+    });
+    module2.exports = evolve;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfind.js
+var require_xfind = __commonJS({
+  "node_modules/ramda/src/internal/_xfind.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XFind = /* @__PURE__ */ function() {
+      function XFind2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+        this.found = false;
+      }
+      XFind2.prototype["@@transducer/init"] = _xfBase.init;
+      XFind2.prototype["@@transducer/result"] = function(result) {
+        if (!this.found) {
+          result = this.xf["@@transducer/step"](result, void 0);
+        }
+        return this.xf["@@transducer/result"](result);
+      };
+      XFind2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.f(input)) {
+          this.found = true;
+          result = _reduced(this.xf["@@transducer/step"](result, input));
+        }
+        return result;
+      };
+      return XFind2;
+    }();
+    var _xfind = /* @__PURE__ */ _curry2(function _xfind2(f, xf) {
+      return new XFind(f, xf);
+    });
+    module2.exports = _xfind;
+  }
+});
+
+// node_modules/ramda/src/find.js
+var require_find = __commonJS({
+  "node_modules/ramda/src/find.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xfind = require_xfind();
+    var find = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["find"], _xfind, function find2(fn, list) {
+      var idx = 0;
+      var len = list.length;
+      while (idx < len) {
+        if (fn(list[idx])) {
+          return list[idx];
+        }
+        idx += 1;
+      }
+    }));
+    module2.exports = find;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfindIndex.js
+var require_xfindIndex = __commonJS({
+  "node_modules/ramda/src/internal/_xfindIndex.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XFindIndex = /* @__PURE__ */ function() {
+      function XFindIndex2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+        this.idx = -1;
+        this.found = false;
+      }
+      XFindIndex2.prototype["@@transducer/init"] = _xfBase.init;
+      XFindIndex2.prototype["@@transducer/result"] = function(result) {
+        if (!this.found) {
+          result = this.xf["@@transducer/step"](result, -1);
+        }
+        return this.xf["@@transducer/result"](result);
+      };
+      XFindIndex2.prototype["@@transducer/step"] = function(result, input) {
+        this.idx += 1;
+        if (this.f(input)) {
+          this.found = true;
+          result = _reduced(this.xf["@@transducer/step"](result, this.idx));
+        }
+        return result;
+      };
+      return XFindIndex2;
+    }();
+    var _xfindIndex = /* @__PURE__ */ _curry2(function _xfindIndex2(f, xf) {
+      return new XFindIndex(f, xf);
+    });
+    module2.exports = _xfindIndex;
+  }
+});
+
+// node_modules/ramda/src/findIndex.js
+var require_findIndex = __commonJS({
+  "node_modules/ramda/src/findIndex.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xfindIndex = require_xfindIndex();
+    var findIndex = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindIndex, function findIndex2(fn, list) {
+      var idx = 0;
+      var len = list.length;
+      while (idx < len) {
+        if (fn(list[idx])) {
+          return idx;
+        }
+        idx += 1;
+      }
+      return -1;
+    }));
+    module2.exports = findIndex;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfindLast.js
+var require_xfindLast = __commonJS({
+  "node_modules/ramda/src/internal/_xfindLast.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XFindLast = /* @__PURE__ */ function() {
+      function XFindLast2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XFindLast2.prototype["@@transducer/init"] = _xfBase.init;
+      XFindLast2.prototype["@@transducer/result"] = function(result) {
+        return this.xf["@@transducer/result"](this.xf["@@transducer/step"](result, this.last));
+      };
+      XFindLast2.prototype["@@transducer/step"] = function(result, input) {
+        if (this.f(input)) {
+          this.last = input;
+        }
+        return result;
+      };
+      return XFindLast2;
+    }();
+    var _xfindLast = /* @__PURE__ */ _curry2(function _xfindLast2(f, xf) {
+      return new XFindLast(f, xf);
+    });
+    module2.exports = _xfindLast;
+  }
+});
+
+// node_modules/ramda/src/findLast.js
+var require_findLast = __commonJS({
+  "node_modules/ramda/src/findLast.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xfindLast = require_xfindLast();
+    var findLast = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindLast, function findLast2(fn, list) {
+      var idx = list.length - 1;
+      while (idx >= 0) {
+        if (fn(list[idx])) {
+          return list[idx];
+        }
+        idx -= 1;
+      }
+    }));
+    module2.exports = findLast;
+  }
+});
+
+// node_modules/ramda/src/internal/_xfindLastIndex.js
+var require_xfindLastIndex = __commonJS({
+  "node_modules/ramda/src/internal/_xfindLastIndex.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XFindLastIndex = /* @__PURE__ */ function() {
+      function XFindLastIndex2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+        this.idx = -1;
+        this.lastIdx = -1;
+      }
+      XFindLastIndex2.prototype["@@transducer/init"] = _xfBase.init;
+      XFindLastIndex2.prototype["@@transducer/result"] = function(result) {
+        return this.xf["@@transducer/result"](this.xf["@@transducer/step"](result, this.lastIdx));
+      };
+      XFindLastIndex2.prototype["@@transducer/step"] = function(result, input) {
+        this.idx += 1;
+        if (this.f(input)) {
+          this.lastIdx = this.idx;
+        }
+        return result;
+      };
+      return XFindLastIndex2;
+    }();
+    var _xfindLastIndex = /* @__PURE__ */ _curry2(function _xfindLastIndex2(f, xf) {
+      return new XFindLastIndex(f, xf);
+    });
+    module2.exports = _xfindLastIndex;
+  }
+});
+
+// node_modules/ramda/src/findLastIndex.js
+var require_findLastIndex = __commonJS({
+  "node_modules/ramda/src/findLastIndex.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xfindLastIndex = require_xfindLastIndex();
+    var findLastIndex = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xfindLastIndex, function findLastIndex2(fn, list) {
+      var idx = list.length - 1;
+      while (idx >= 0) {
+        if (fn(list[idx])) {
+          return idx;
+        }
+        idx -= 1;
+      }
+      return -1;
+    }));
+    module2.exports = findLastIndex;
+  }
+});
+
+// node_modules/ramda/src/flatten.js
+var require_flatten = __commonJS({
+  "node_modules/ramda/src/flatten.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _makeFlat = require_makeFlat();
+    var flatten = /* @__PURE__ */ _curry1(/* @__PURE__ */ _makeFlat(true));
+    module2.exports = flatten;
+  }
+});
+
+// node_modules/ramda/src/flip.js
+var require_flip = __commonJS({
+  "node_modules/ramda/src/flip.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var flip = /* @__PURE__ */ _curry1(function flip2(fn) {
+      return curryN(fn.length, function(a, b) {
+        var args = Array.prototype.slice.call(arguments, 0);
+        args[0] = b;
+        args[1] = a;
+        return fn.apply(this, args);
+      });
+    });
+    module2.exports = flip;
+  }
+});
+
+// node_modules/ramda/src/forEach.js
+var require_forEach = __commonJS({
+  "node_modules/ramda/src/forEach.js"(exports2, module2) {
+    var _checkForMethod = require_checkForMethod();
+    var _curry2 = require_curry2();
+    var forEach = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("forEach", function forEach2(fn, list) {
+      var len = list.length;
+      var idx = 0;
+      while (idx < len) {
+        fn(list[idx]);
+        idx += 1;
+      }
+      return list;
+    }));
+    module2.exports = forEach;
+  }
+});
+
+// node_modules/ramda/src/forEachObjIndexed.js
+var require_forEachObjIndexed = __commonJS({
+  "node_modules/ramda/src/forEachObjIndexed.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var keys = require_keys();
+    var forEachObjIndexed = /* @__PURE__ */ _curry2(function forEachObjIndexed2(fn, obj) {
+      var keyList = keys(obj);
+      var idx = 0;
+      while (idx < keyList.length) {
+        var key = keyList[idx];
+        fn(obj[key], key, obj);
+        idx += 1;
+      }
+      return obj;
+    });
+    module2.exports = forEachObjIndexed;
+  }
+});
+
+// node_modules/ramda/src/fromPairs.js
+var require_fromPairs = __commonJS({
+  "node_modules/ramda/src/fromPairs.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var fromPairs = /* @__PURE__ */ _curry1(function fromPairs2(pairs) {
+      var result = {};
+      var idx = 0;
+      while (idx < pairs.length) {
+        result[pairs[idx][0]] = pairs[idx][1];
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = fromPairs;
+  }
+});
+
+// node_modules/ramda/src/groupBy.js
+var require_groupBy = __commonJS({
+  "node_modules/ramda/src/groupBy.js"(exports2, module2) {
+    var _checkForMethod = require_checkForMethod();
+    var _curry2 = require_curry2();
+    var reduceBy = require_reduceBy();
+    var groupBy = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("groupBy", /* @__PURE__ */ reduceBy(function(acc, item) {
+      if (acc == null) {
+        acc = [];
+      }
+      acc.push(item);
+      return acc;
+    }, null)));
+    module2.exports = groupBy;
+  }
+});
+
+// node_modules/ramda/src/groupWith.js
+var require_groupWith = __commonJS({
+  "node_modules/ramda/src/groupWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var groupWith = /* @__PURE__ */ _curry2(function(fn, list) {
+      var res = [];
+      var idx = 0;
+      var len = list.length;
+      while (idx < len) {
+        var nextidx = idx + 1;
+        while (nextidx < len && fn(list[nextidx - 1], list[nextidx])) {
+          nextidx += 1;
+        }
+        res.push(list.slice(idx, nextidx));
+        idx = nextidx;
+      }
+      return res;
+    });
+    module2.exports = groupWith;
+  }
+});
+
+// node_modules/ramda/src/gt.js
+var require_gt = __commonJS({
+  "node_modules/ramda/src/gt.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var gt = /* @__PURE__ */ _curry2(function gt2(a, b) {
+      return a > b;
+    });
+    module2.exports = gt;
+  }
+});
+
+// node_modules/ramda/src/gte.js
+var require_gte = __commonJS({
+  "node_modules/ramda/src/gte.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var gte = /* @__PURE__ */ _curry2(function gte2(a, b) {
+      return a >= b;
+    });
+    module2.exports = gte;
+  }
+});
+
+// node_modules/ramda/src/hasPath.js
+var require_hasPath = __commonJS({
+  "node_modules/ramda/src/hasPath.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _has = require_has();
+    var isNil = require_isNil();
+    var hasPath = /* @__PURE__ */ _curry2(function hasPath2(_path, obj) {
+      if (_path.length === 0 || isNil(obj)) {
+        return false;
+      }
+      var val = obj;
+      var idx = 0;
+      while (idx < _path.length) {
+        if (!isNil(val) && _has(_path[idx], val)) {
+          val = val[_path[idx]];
+          idx += 1;
+        } else {
+          return false;
+        }
+      }
+      return true;
+    });
+    module2.exports = hasPath;
+  }
+});
+
+// node_modules/ramda/src/has.js
+var require_has2 = __commonJS({
+  "node_modules/ramda/src/has.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var hasPath = require_hasPath();
+    var has = /* @__PURE__ */ _curry2(function has2(prop, obj) {
+      return hasPath([prop], obj);
+    });
+    module2.exports = has;
+  }
+});
+
+// node_modules/ramda/src/hasIn.js
+var require_hasIn = __commonJS({
+  "node_modules/ramda/src/hasIn.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var hasIn = /* @__PURE__ */ _curry2(function hasIn2(prop, obj) {
+      return prop in obj;
+    });
+    module2.exports = hasIn;
+  }
+});
+
+// node_modules/ramda/src/identical.js
+var require_identical = __commonJS({
+  "node_modules/ramda/src/identical.js"(exports2, module2) {
+    var _objectIs = require_objectIs();
+    var _curry2 = require_curry2();
+    var identical = /* @__PURE__ */ _curry2(_objectIs);
+    module2.exports = identical;
+  }
+});
+
+// node_modules/ramda/src/ifElse.js
+var require_ifElse = __commonJS({
+  "node_modules/ramda/src/ifElse.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var curryN = require_curryN2();
+    var ifElse = /* @__PURE__ */ _curry3(function ifElse2(condition, onTrue, onFalse) {
+      return curryN(Math.max(condition.length, onTrue.length, onFalse.length), function _ifElse() {
+        return condition.apply(this, arguments) ? onTrue.apply(this, arguments) : onFalse.apply(this, arguments);
+      });
+    });
+    module2.exports = ifElse;
+  }
+});
+
+// node_modules/ramda/src/inc.js
+var require_inc = __commonJS({
+  "node_modules/ramda/src/inc.js"(exports2, module2) {
+    var add = require_add4();
+    var inc = /* @__PURE__ */ add(1);
+    module2.exports = inc;
+  }
+});
+
+// node_modules/ramda/src/includes.js
+var require_includes2 = __commonJS({
+  "node_modules/ramda/src/includes.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _curry2 = require_curry2();
+    var includes = /* @__PURE__ */ _curry2(_includes);
+    module2.exports = includes;
+  }
+});
+
+// node_modules/ramda/src/indexBy.js
+var require_indexBy = __commonJS({
+  "node_modules/ramda/src/indexBy.js"(exports2, module2) {
+    var reduceBy = require_reduceBy();
+    var indexBy = /* @__PURE__ */ reduceBy(function(acc, elem) {
+      return elem;
+    }, null);
+    module2.exports = indexBy;
+  }
+});
+
+// node_modules/ramda/src/indexOf.js
+var require_indexOf2 = __commonJS({
+  "node_modules/ramda/src/indexOf.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _indexOf = require_indexOf();
+    var _isArray = require_isArray();
+    var indexOf = /* @__PURE__ */ _curry2(function indexOf2(target, xs) {
+      return typeof xs.indexOf === "function" && !_isArray(xs) ? xs.indexOf(target) : _indexOf(xs, target, 0);
+    });
+    module2.exports = indexOf;
+  }
+});
+
+// node_modules/ramda/src/init.js
+var require_init = __commonJS({
+  "node_modules/ramda/src/init.js"(exports2, module2) {
+    var slice = require_slice();
+    var init = /* @__PURE__ */ slice(0, -1);
+    module2.exports = init;
+  }
+});
+
+// node_modules/ramda/src/innerJoin.js
+var require_innerJoin = __commonJS({
+  "node_modules/ramda/src/innerJoin.js"(exports2, module2) {
+    var _includesWith = require_includesWith();
+    var _curry3 = require_curry3();
+    var _filter = require_filter();
+    var innerJoin = /* @__PURE__ */ _curry3(function innerJoin2(pred, xs, ys) {
+      return _filter(function(x) {
+        return _includesWith(pred, x, ys);
+      }, xs);
+    });
+    module2.exports = innerJoin;
+  }
+});
+
+// node_modules/ramda/src/insert.js
+var require_insert = __commonJS({
+  "node_modules/ramda/src/insert.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var insert = /* @__PURE__ */ _curry3(function insert2(idx, elt, list) {
+      idx = idx < list.length && idx >= 0 ? idx : list.length;
+      var result = Array.prototype.slice.call(list, 0);
+      result.splice(idx, 0, elt);
+      return result;
+    });
+    module2.exports = insert;
+  }
+});
+
+// node_modules/ramda/src/insertAll.js
+var require_insertAll = __commonJS({
+  "node_modules/ramda/src/insertAll.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var insertAll = /* @__PURE__ */ _curry3(function insertAll2(idx, elts, list) {
+      idx = idx < list.length && idx >= 0 ? idx : list.length;
+      return [].concat(Array.prototype.slice.call(list, 0, idx), elts, Array.prototype.slice.call(list, idx));
+    });
+    module2.exports = insertAll;
+  }
+});
+
+// node_modules/ramda/src/uniqBy.js
+var require_uniqBy = __commonJS({
+  "node_modules/ramda/src/uniqBy.js"(exports2, module2) {
+    var _Set = require_Set();
+    var _curry2 = require_curry2();
+    var uniqBy = /* @__PURE__ */ _curry2(function uniqBy2(fn, list) {
+      var set = new _Set();
+      var result = [];
+      var idx = 0;
+      var appliedItem, item;
+      while (idx < list.length) {
+        item = list[idx];
+        appliedItem = fn(item);
+        if (set.add(appliedItem)) {
+          result.push(item);
+        }
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = uniqBy;
+  }
+});
+
+// node_modules/ramda/src/uniq.js
+var require_uniq = __commonJS({
+  "node_modules/ramda/src/uniq.js"(exports2, module2) {
+    var identity = require_identity2();
+    var uniqBy = require_uniqBy();
+    var uniq = /* @__PURE__ */ uniqBy(identity);
+    module2.exports = uniq;
+  }
+});
+
+// node_modules/ramda/src/intersection.js
+var require_intersection = __commonJS({
+  "node_modules/ramda/src/intersection.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _curry2 = require_curry2();
+    var _filter = require_filter();
+    var flip = require_flip();
+    var uniq = require_uniq();
+    var intersection = /* @__PURE__ */ _curry2(function intersection2(list1, list2) {
+      var lookupList, filteredList;
+      if (list1.length > list2.length) {
+        lookupList = list1;
+        filteredList = list2;
+      } else {
+        lookupList = list2;
+        filteredList = list1;
+      }
+      return uniq(_filter(flip(_includes)(lookupList), filteredList));
+    });
+    module2.exports = intersection;
+  }
+});
+
+// node_modules/ramda/src/intersperse.js
+var require_intersperse = __commonJS({
+  "node_modules/ramda/src/intersperse.js"(exports2, module2) {
+    var _checkForMethod = require_checkForMethod();
+    var _curry2 = require_curry2();
+    var intersperse = /* @__PURE__ */ _curry2(/* @__PURE__ */ _checkForMethod("intersperse", function intersperse2(separator, list) {
+      var out = [];
+      var idx = 0;
+      var length = list.length;
+      while (idx < length) {
+        if (idx === length - 1) {
+          out.push(list[idx]);
+        } else {
+          out.push(list[idx], separator);
+        }
+        idx += 1;
+      }
+      return out;
+    }));
+    module2.exports = intersperse;
+  }
+});
+
+// node_modules/ramda/src/internal/_objectAssign.js
+var require_objectAssign = __commonJS({
+  "node_modules/ramda/src/internal/_objectAssign.js"(exports2, module2) {
+    var _has = require_has();
+    function _objectAssign(target) {
+      if (target == null) {
+        throw new TypeError("Cannot convert undefined or null to object");
+      }
+      var output = Object(target);
+      var idx = 1;
+      var length = arguments.length;
+      while (idx < length) {
+        var source = arguments[idx];
+        if (source != null) {
+          for (var nextKey in source) {
+            if (_has(nextKey, source)) {
+              output[nextKey] = source[nextKey];
+            }
+          }
+        }
+        idx += 1;
+      }
+      return output;
+    }
+    module2.exports = typeof Object.assign === "function" ? Object.assign : _objectAssign;
+  }
+});
+
+// node_modules/ramda/src/objOf.js
+var require_objOf = __commonJS({
+  "node_modules/ramda/src/objOf.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var objOf = /* @__PURE__ */ _curry2(function objOf2(key, val) {
+      var obj = {};
+      obj[key] = val;
+      return obj;
+    });
+    module2.exports = objOf;
+  }
+});
+
+// node_modules/ramda/src/internal/_stepCat.js
+var require_stepCat = __commonJS({
+  "node_modules/ramda/src/internal/_stepCat.js"(exports2, module2) {
+    var _objectAssign = require_objectAssign();
+    var _identity = require_identity();
+    var _isArrayLike = require_isArrayLike();
+    var _isTransformer = require_isTransformer();
+    var objOf = require_objOf();
+    var _stepCatArray = {
+      "@@transducer/init": Array,
+      "@@transducer/step": function(xs, x) {
+        xs.push(x);
+        return xs;
+      },
+      "@@transducer/result": _identity
+    };
+    var _stepCatString = {
+      "@@transducer/init": String,
+      "@@transducer/step": function(a, b) {
+        return a + b;
+      },
+      "@@transducer/result": _identity
+    };
+    var _stepCatObject = {
+      "@@transducer/init": Object,
+      "@@transducer/step": function(result, input) {
+        return _objectAssign(result, _isArrayLike(input) ? objOf(input[0], input[1]) : input);
+      },
+      "@@transducer/result": _identity
+    };
+    function _stepCat(obj) {
+      if (_isTransformer(obj)) {
+        return obj;
+      }
+      if (_isArrayLike(obj)) {
+        return _stepCatArray;
+      }
+      if (typeof obj === "string") {
+        return _stepCatString;
+      }
+      if (typeof obj === "object") {
+        return _stepCatObject;
+      }
+      throw new Error("Cannot create transformer for " + obj);
+    }
+    module2.exports = _stepCat;
+  }
+});
+
+// node_modules/ramda/src/into.js
+var require_into = __commonJS({
+  "node_modules/ramda/src/into.js"(exports2, module2) {
+    var _clone = require_clone2();
+    var _curry3 = require_curry3();
+    var _isTransformer = require_isTransformer();
+    var _reduce = require_reduce();
+    var _stepCat = require_stepCat();
+    var into = /* @__PURE__ */ _curry3(function into2(acc, xf, list) {
+      return _isTransformer(acc) ? _reduce(xf(acc), acc["@@transducer/init"](), list) : _reduce(xf(_stepCat(acc)), _clone(acc, [], [], false), list);
+    });
+    module2.exports = into;
+  }
+});
+
+// node_modules/ramda/src/invert.js
+var require_invert = __commonJS({
+  "node_modules/ramda/src/invert.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _has = require_has();
+    var keys = require_keys();
+    var invert = /* @__PURE__ */ _curry1(function invert2(obj) {
+      var props = keys(obj);
+      var len = props.length;
+      var idx = 0;
+      var out = {};
+      while (idx < len) {
+        var key = props[idx];
+        var val = obj[key];
+        var list = _has(val, out) ? out[val] : out[val] = [];
+        list[list.length] = key;
+        idx += 1;
+      }
+      return out;
+    });
+    module2.exports = invert;
+  }
+});
+
+// node_modules/ramda/src/invertObj.js
+var require_invertObj = __commonJS({
+  "node_modules/ramda/src/invertObj.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var keys = require_keys();
+    var invertObj = /* @__PURE__ */ _curry1(function invertObj2(obj) {
+      var props = keys(obj);
+      var len = props.length;
+      var idx = 0;
+      var out = {};
+      while (idx < len) {
+        var key = props[idx];
+        out[obj[key]] = key;
+        idx += 1;
+      }
+      return out;
+    });
+    module2.exports = invertObj;
+  }
+});
+
+// node_modules/ramda/src/invoker.js
+var require_invoker = __commonJS({
+  "node_modules/ramda/src/invoker.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isFunction = require_isFunction();
+    var curryN = require_curryN2();
+    var toString = require_toString2();
+    var invoker = /* @__PURE__ */ _curry2(function invoker2(arity, method) {
+      return curryN(arity + 1, function() {
+        var target = arguments[arity];
+        if (target != null && _isFunction(target[method])) {
+          return target[method].apply(target, Array.prototype.slice.call(arguments, 0, arity));
+        }
+        throw new TypeError(toString(target) + ' does not have a method named "' + method + '"');
+      });
+    });
+    module2.exports = invoker;
+  }
+});
+
+// node_modules/ramda/src/is.js
+var require_is = __commonJS({
+  "node_modules/ramda/src/is.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var is = /* @__PURE__ */ _curry2(function is2(Ctor, val) {
+      return val != null && val.constructor === Ctor || val instanceof Ctor;
+    });
+    module2.exports = is;
+  }
+});
+
+// node_modules/ramda/src/isEmpty.js
+var require_isEmpty = __commonJS({
+  "node_modules/ramda/src/isEmpty.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var empty = require_empty2();
+    var equals = require_equals3();
+    var isEmpty = /* @__PURE__ */ _curry1(function isEmpty2(x) {
+      return x != null && equals(x, empty(x));
+    });
+    module2.exports = isEmpty;
+  }
+});
+
+// node_modules/ramda/src/join.js
+var require_join = __commonJS({
+  "node_modules/ramda/src/join.js"(exports2, module2) {
+    var invoker = require_invoker();
+    var join5 = /* @__PURE__ */ invoker(1, "join");
+    module2.exports = join5;
+  }
+});
+
+// node_modules/ramda/src/juxt.js
+var require_juxt = __commonJS({
+  "node_modules/ramda/src/juxt.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var converge = require_converge();
+    var juxt = /* @__PURE__ */ _curry1(function juxt2(fns) {
+      return converge(function() {
+        return Array.prototype.slice.call(arguments, 0);
+      }, fns);
+    });
+    module2.exports = juxt;
+  }
+});
+
+// node_modules/ramda/src/keysIn.js
+var require_keysIn = __commonJS({
+  "node_modules/ramda/src/keysIn.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var keysIn = /* @__PURE__ */ _curry1(function keysIn2(obj) {
+      var prop;
+      var ks = [];
+      for (prop in obj) {
+        ks[ks.length] = prop;
+      }
+      return ks;
+    });
+    module2.exports = keysIn;
+  }
+});
+
+// node_modules/ramda/src/lastIndexOf.js
+var require_lastIndexOf = __commonJS({
+  "node_modules/ramda/src/lastIndexOf.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isArray = require_isArray();
+    var equals = require_equals3();
+    var lastIndexOf = /* @__PURE__ */ _curry2(function lastIndexOf2(target, xs) {
+      if (typeof xs.lastIndexOf === "function" && !_isArray(xs)) {
+        return xs.lastIndexOf(target);
+      } else {
+        var idx = xs.length - 1;
+        while (idx >= 0) {
+          if (equals(xs[idx], target)) {
+            return idx;
+          }
+          idx -= 1;
+        }
+        return -1;
+      }
+    });
+    module2.exports = lastIndexOf;
+  }
+});
+
+// node_modules/ramda/src/internal/_isNumber.js
+var require_isNumber = __commonJS({
+  "node_modules/ramda/src/internal/_isNumber.js"(exports2, module2) {
+    function _isNumber(x) {
+      return Object.prototype.toString.call(x) === "[object Number]";
+    }
+    module2.exports = _isNumber;
+  }
+});
+
+// node_modules/ramda/src/length.js
+var require_length4 = __commonJS({
+  "node_modules/ramda/src/length.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _isNumber = require_isNumber();
+    var length = /* @__PURE__ */ _curry1(function length2(list) {
+      return list != null && _isNumber(list.length) ? list.length : NaN;
+    });
+    module2.exports = length;
+  }
+});
+
+// node_modules/ramda/src/lens.js
+var require_lens = __commonJS({
+  "node_modules/ramda/src/lens.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var map = require_map2();
+    var lens = /* @__PURE__ */ _curry2(function lens2(getter, setter) {
+      return function(toFunctorFn) {
+        return function(target) {
+          return map(function(focus) {
+            return setter(focus, target);
+          }, toFunctorFn(getter(target)));
+        };
+      };
+    });
+    module2.exports = lens;
+  }
+});
+
+// node_modules/ramda/src/lensIndex.js
+var require_lensIndex = __commonJS({
+  "node_modules/ramda/src/lensIndex.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var lens = require_lens();
+    var nth = require_nth();
+    var update = require_update();
+    var lensIndex = /* @__PURE__ */ _curry1(function lensIndex2(n) {
+      return lens(nth(n), update(n));
+    });
+    module2.exports = lensIndex;
+  }
+});
+
+// node_modules/ramda/src/lensPath.js
+var require_lensPath = __commonJS({
+  "node_modules/ramda/src/lensPath.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var assocPath = require_assocPath();
+    var lens = require_lens();
+    var path = require_path();
+    var lensPath = /* @__PURE__ */ _curry1(function lensPath2(p) {
+      return lens(path(p), assocPath(p));
+    });
+    module2.exports = lensPath;
+  }
+});
+
+// node_modules/ramda/src/lensProp.js
+var require_lensProp = __commonJS({
+  "node_modules/ramda/src/lensProp.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var assoc = require_assoc();
+    var lens = require_lens();
+    var prop = require_prop();
+    var lensProp = /* @__PURE__ */ _curry1(function lensProp2(k) {
+      return lens(prop(k), assoc(k));
+    });
+    module2.exports = lensProp;
+  }
+});
+
+// node_modules/ramda/src/lt.js
+var require_lt = __commonJS({
+  "node_modules/ramda/src/lt.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var lt = /* @__PURE__ */ _curry2(function lt2(a, b) {
+      return a < b;
+    });
+    module2.exports = lt;
+  }
+});
+
+// node_modules/ramda/src/lte.js
+var require_lte = __commonJS({
+  "node_modules/ramda/src/lte.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var lte = /* @__PURE__ */ _curry2(function lte2(a, b) {
+      return a <= b;
+    });
+    module2.exports = lte;
+  }
+});
+
+// node_modules/ramda/src/mapAccum.js
+var require_mapAccum = __commonJS({
+  "node_modules/ramda/src/mapAccum.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var mapAccum = /* @__PURE__ */ _curry3(function mapAccum2(fn, acc, list) {
+      var idx = 0;
+      var len = list.length;
+      var result = [];
+      var tuple = [acc];
+      while (idx < len) {
+        tuple = fn(tuple[0], list[idx]);
+        result[idx] = tuple[1];
+        idx += 1;
+      }
+      return [tuple[0], result];
+    });
+    module2.exports = mapAccum;
+  }
+});
+
+// node_modules/ramda/src/mapAccumRight.js
+var require_mapAccumRight = __commonJS({
+  "node_modules/ramda/src/mapAccumRight.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var mapAccumRight = /* @__PURE__ */ _curry3(function mapAccumRight2(fn, acc, list) {
+      var idx = list.length - 1;
+      var result = [];
+      var tuple = [acc];
+      while (idx >= 0) {
+        tuple = fn(tuple[0], list[idx]);
+        result[idx] = tuple[1];
+        idx -= 1;
+      }
+      return [tuple[0], result];
+    });
+    module2.exports = mapAccumRight;
+  }
+});
+
+// node_modules/ramda/src/mapObjIndexed.js
+var require_mapObjIndexed = __commonJS({
+  "node_modules/ramda/src/mapObjIndexed.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduce = require_reduce();
+    var keys = require_keys();
+    var mapObjIndexed = /* @__PURE__ */ _curry2(function mapObjIndexed2(fn, obj) {
+      return _reduce(function(acc, key) {
+        acc[key] = fn(obj[key], key, obj);
+        return acc;
+      }, {}, keys(obj));
+    });
+    module2.exports = mapObjIndexed;
+  }
+});
+
+// node_modules/ramda/src/match.js
+var require_match = __commonJS({
+  "node_modules/ramda/src/match.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var match = /* @__PURE__ */ _curry2(function match2(rx, str) {
+      return str.match(rx) || [];
+    });
+    module2.exports = match;
+  }
+});
+
+// node_modules/ramda/src/mathMod.js
+var require_mathMod = __commonJS({
+  "node_modules/ramda/src/mathMod.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isInteger = require_isInteger();
+    var mathMod = /* @__PURE__ */ _curry2(function mathMod2(m, p) {
+      if (!_isInteger(m)) {
+        return NaN;
+      }
+      if (!_isInteger(p) || p < 1) {
+        return NaN;
+      }
+      return (m % p + p) % p;
+    });
+    module2.exports = mathMod;
+  }
+});
+
+// node_modules/ramda/src/maxBy.js
+var require_maxBy = __commonJS({
+  "node_modules/ramda/src/maxBy.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var maxBy = /* @__PURE__ */ _curry3(function maxBy2(f, a, b) {
+      return f(b) > f(a) ? b : a;
+    });
+    module2.exports = maxBy;
+  }
+});
+
+// node_modules/ramda/src/sum.js
+var require_sum = __commonJS({
+  "node_modules/ramda/src/sum.js"(exports2, module2) {
+    var add = require_add4();
+    var reduce = require_reduce2();
+    var sum = /* @__PURE__ */ reduce(add, 0);
+    module2.exports = sum;
+  }
+});
+
+// node_modules/ramda/src/mean.js
+var require_mean = __commonJS({
+  "node_modules/ramda/src/mean.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var sum = require_sum();
+    var mean = /* @__PURE__ */ _curry1(function mean2(list) {
+      return sum(list) / list.length;
+    });
+    module2.exports = mean;
+  }
+});
+
+// node_modules/ramda/src/median.js
+var require_median = __commonJS({
+  "node_modules/ramda/src/median.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var mean = require_mean();
+    var median = /* @__PURE__ */ _curry1(function median2(list) {
+      var len = list.length;
+      if (len === 0) {
+        return NaN;
+      }
+      var width = 2 - len % 2;
+      var idx = (len - width) / 2;
+      return mean(Array.prototype.slice.call(list, 0).sort(function(a, b) {
+        return a < b ? -1 : a > b ? 1 : 0;
+      }).slice(idx, idx + width));
+    });
+    module2.exports = median;
+  }
+});
+
+// node_modules/ramda/src/memoizeWith.js
+var require_memoizeWith = __commonJS({
+  "node_modules/ramda/src/memoizeWith.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry2 = require_curry2();
+    var _has = require_has();
+    var memoizeWith = /* @__PURE__ */ _curry2(function memoizeWith2(mFn, fn) {
+      var cache = {};
+      return _arity(fn.length, function() {
+        var key = mFn.apply(this, arguments);
+        if (!_has(key, cache)) {
+          cache[key] = fn.apply(this, arguments);
+        }
+        return cache[key];
+      });
+    });
+    module2.exports = memoizeWith;
+  }
+});
+
+// node_modules/ramda/src/merge.js
+var require_merge = __commonJS({
+  "node_modules/ramda/src/merge.js"(exports2, module2) {
+    var _objectAssign = require_objectAssign();
+    var _curry2 = require_curry2();
+    var merge = /* @__PURE__ */ _curry2(function merge2(l, r) {
+      return _objectAssign({}, l, r);
+    });
+    module2.exports = merge;
+  }
+});
+
+// node_modules/ramda/src/mergeAll.js
+var require_mergeAll = __commonJS({
+  "node_modules/ramda/src/mergeAll.js"(exports2, module2) {
+    var _objectAssign = require_objectAssign();
+    var _curry1 = require_curry1();
+    var mergeAll = /* @__PURE__ */ _curry1(function mergeAll2(list) {
+      return _objectAssign.apply(null, [{}].concat(list));
+    });
+    module2.exports = mergeAll;
+  }
+});
+
+// node_modules/ramda/src/mergeWithKey.js
+var require_mergeWithKey = __commonJS({
+  "node_modules/ramda/src/mergeWithKey.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var _has = require_has();
+    var mergeWithKey = /* @__PURE__ */ _curry3(function mergeWithKey2(fn, l, r) {
+      var result = {};
+      var k;
+      for (k in l) {
+        if (_has(k, l)) {
+          result[k] = _has(k, r) ? fn(k, l[k], r[k]) : l[k];
+        }
+      }
+      for (k in r) {
+        if (_has(k, r) && !_has(k, result)) {
+          result[k] = r[k];
+        }
+      }
+      return result;
+    });
+    module2.exports = mergeWithKey;
+  }
+});
+
+// node_modules/ramda/src/mergeDeepWithKey.js
+var require_mergeDeepWithKey = __commonJS({
+  "node_modules/ramda/src/mergeDeepWithKey.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var _isObject = require_isObject();
+    var mergeWithKey = require_mergeWithKey();
+    var mergeDeepWithKey = /* @__PURE__ */ _curry3(function mergeDeepWithKey2(fn, lObj, rObj) {
+      return mergeWithKey(function(k, lVal, rVal) {
+        if (_isObject(lVal) && _isObject(rVal)) {
+          return mergeDeepWithKey2(fn, lVal, rVal);
+        } else {
+          return fn(k, lVal, rVal);
+        }
+      }, lObj, rObj);
+    });
+    module2.exports = mergeDeepWithKey;
+  }
+});
+
+// node_modules/ramda/src/mergeDeepLeft.js
+var require_mergeDeepLeft = __commonJS({
+  "node_modules/ramda/src/mergeDeepLeft.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var mergeDeepWithKey = require_mergeDeepWithKey();
+    var mergeDeepLeft = /* @__PURE__ */ _curry2(function mergeDeepLeft2(lObj, rObj) {
+      return mergeDeepWithKey(function(k, lVal, rVal) {
+        return lVal;
+      }, lObj, rObj);
+    });
+    module2.exports = mergeDeepLeft;
+  }
+});
+
+// node_modules/ramda/src/mergeDeepRight.js
+var require_mergeDeepRight = __commonJS({
+  "node_modules/ramda/src/mergeDeepRight.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var mergeDeepWithKey = require_mergeDeepWithKey();
+    var mergeDeepRight = /* @__PURE__ */ _curry2(function mergeDeepRight2(lObj, rObj) {
+      return mergeDeepWithKey(function(k, lVal, rVal) {
+        return rVal;
+      }, lObj, rObj);
+    });
+    module2.exports = mergeDeepRight;
+  }
+});
+
+// node_modules/ramda/src/mergeDeepWith.js
+var require_mergeDeepWith = __commonJS({
+  "node_modules/ramda/src/mergeDeepWith.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var mergeDeepWithKey = require_mergeDeepWithKey();
+    var mergeDeepWith = /* @__PURE__ */ _curry3(function mergeDeepWith2(fn, lObj, rObj) {
+      return mergeDeepWithKey(function(k, lVal, rVal) {
+        return fn(lVal, rVal);
+      }, lObj, rObj);
+    });
+    module2.exports = mergeDeepWith;
+  }
+});
+
+// node_modules/ramda/src/mergeLeft.js
+var require_mergeLeft = __commonJS({
+  "node_modules/ramda/src/mergeLeft.js"(exports2, module2) {
+    var _objectAssign = require_objectAssign();
+    var _curry2 = require_curry2();
+    var mergeLeft = /* @__PURE__ */ _curry2(function mergeLeft2(l, r) {
+      return _objectAssign({}, r, l);
+    });
+    module2.exports = mergeLeft;
+  }
+});
+
+// node_modules/ramda/src/mergeRight.js
+var require_mergeRight = __commonJS({
+  "node_modules/ramda/src/mergeRight.js"(exports2, module2) {
+    var _objectAssign = require_objectAssign();
+    var _curry2 = require_curry2();
+    var mergeRight = /* @__PURE__ */ _curry2(function mergeRight2(l, r) {
+      return _objectAssign({}, l, r);
+    });
+    module2.exports = mergeRight;
+  }
+});
+
+// node_modules/ramda/src/mergeWith.js
+var require_mergeWith = __commonJS({
+  "node_modules/ramda/src/mergeWith.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var mergeWithKey = require_mergeWithKey();
+    var mergeWith = /* @__PURE__ */ _curry3(function mergeWith2(fn, l, r) {
+      return mergeWithKey(function(_, _l, _r) {
+        return fn(_l, _r);
+      }, l, r);
+    });
+    module2.exports = mergeWith;
+  }
+});
+
+// node_modules/ramda/src/min.js
+var require_min = __commonJS({
+  "node_modules/ramda/src/min.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var min = /* @__PURE__ */ _curry2(function min2(a, b) {
+      return b < a ? b : a;
+    });
+    module2.exports = min;
+  }
+});
+
+// node_modules/ramda/src/minBy.js
+var require_minBy = __commonJS({
+  "node_modules/ramda/src/minBy.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var minBy = /* @__PURE__ */ _curry3(function minBy2(f, a, b) {
+      return f(b) < f(a) ? b : a;
+    });
+    module2.exports = minBy;
+  }
+});
+
+// node_modules/ramda/src/modulo.js
+var require_modulo = __commonJS({
+  "node_modules/ramda/src/modulo.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var modulo = /* @__PURE__ */ _curry2(function modulo2(a, b) {
+      return a % b;
+    });
+    module2.exports = modulo;
+  }
+});
+
+// node_modules/ramda/src/move.js
+var require_move3 = __commonJS({
+  "node_modules/ramda/src/move.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var move = /* @__PURE__ */ _curry3(function(from, to, list) {
+      var length = list.length;
+      var result = list.slice();
+      var positiveFrom = from < 0 ? length + from : from;
+      var positiveTo = to < 0 ? length + to : to;
+      var item = result.splice(positiveFrom, 1);
+      return positiveFrom < 0 || positiveFrom >= list.length || positiveTo < 0 || positiveTo >= list.length ? list : [].concat(result.slice(0, positiveTo)).concat(item).concat(result.slice(positiveTo, list.length));
+    });
+    module2.exports = move;
+  }
+});
+
+// node_modules/ramda/src/multiply.js
+var require_multiply = __commonJS({
+  "node_modules/ramda/src/multiply.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var multiply = /* @__PURE__ */ _curry2(function multiply2(a, b) {
+      return a * b;
+    });
+    module2.exports = multiply;
+  }
+});
+
+// node_modules/ramda/src/negate.js
+var require_negate = __commonJS({
+  "node_modules/ramda/src/negate.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var negate = /* @__PURE__ */ _curry1(function negate2(n) {
+      return -n;
+    });
+    module2.exports = negate;
+  }
+});
+
+// node_modules/ramda/src/none.js
+var require_none = __commonJS({
+  "node_modules/ramda/src/none.js"(exports2, module2) {
+    var _complement = require_complement2();
+    var _curry2 = require_curry2();
+    var all2 = require_all();
+    var none = /* @__PURE__ */ _curry2(function none2(fn, input) {
+      return all2(_complement(fn), input);
+    });
+    module2.exports = none;
+  }
+});
+
+// node_modules/ramda/src/nthArg.js
+var require_nthArg = __commonJS({
+  "node_modules/ramda/src/nthArg.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var curryN = require_curryN2();
+    var nth = require_nth();
+    var nthArg = /* @__PURE__ */ _curry1(function nthArg2(n) {
+      var arity = n < 0 ? 1 : n + 1;
+      return curryN(arity, function() {
+        return nth(n, arguments);
+      });
+    });
+    module2.exports = nthArg;
+  }
+});
+
+// node_modules/ramda/src/o.js
+var require_o = __commonJS({
+  "node_modules/ramda/src/o.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var o = /* @__PURE__ */ _curry3(function o2(f, g, x) {
+      return f(g(x));
+    });
+    module2.exports = o;
+  }
+});
+
+// node_modules/ramda/src/internal/_of.js
+var require_of = __commonJS({
+  "node_modules/ramda/src/internal/_of.js"(exports2, module2) {
+    function _of(x) {
+      return [x];
+    }
+    module2.exports = _of;
+  }
+});
+
+// node_modules/ramda/src/of.js
+var require_of2 = __commonJS({
+  "node_modules/ramda/src/of.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _of = require_of();
+    var of = /* @__PURE__ */ _curry1(_of);
+    module2.exports = of;
+  }
+});
+
+// node_modules/ramda/src/omit.js
+var require_omit = __commonJS({
+  "node_modules/ramda/src/omit.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var omit = /* @__PURE__ */ _curry2(function omit2(names, obj) {
+      var result = {};
+      var index = {};
+      var idx = 0;
+      var len = names.length;
+      while (idx < len) {
+        index[names[idx]] = 1;
+        idx += 1;
+      }
+      for (var prop in obj) {
+        if (!index.hasOwnProperty(prop)) {
+          result[prop] = obj[prop];
+        }
+      }
+      return result;
+    });
+    module2.exports = omit;
+  }
+});
+
+// node_modules/ramda/src/once.js
+var require_once = __commonJS({
+  "node_modules/ramda/src/once.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry1 = require_curry1();
+    var once = /* @__PURE__ */ _curry1(function once2(fn) {
+      var called = false;
+      var result;
+      return _arity(fn.length, function() {
+        if (called) {
+          return result;
+        }
+        called = true;
+        result = fn.apply(this, arguments);
+        return result;
+      });
+    });
+    module2.exports = once;
+  }
+});
+
+// node_modules/ramda/src/internal/_assertPromise.js
+var require_assertPromise = __commonJS({
+  "node_modules/ramda/src/internal/_assertPromise.js"(exports2, module2) {
+    var _isFunction = require_isFunction();
+    var _toString = require_toString();
+    function _assertPromise(name, p) {
+      if (p == null || !_isFunction(p.then)) {
+        throw new TypeError("`" + name + "` expected a Promise, received " + _toString(p, []));
+      }
+    }
+    module2.exports = _assertPromise;
+  }
+});
+
+// node_modules/ramda/src/otherwise.js
+var require_otherwise = __commonJS({
+  "node_modules/ramda/src/otherwise.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _assertPromise = require_assertPromise();
+    var otherwise = /* @__PURE__ */ _curry2(function otherwise2(f, p) {
+      _assertPromise("otherwise", p);
+      return p.then(null, f);
+    });
+    module2.exports = otherwise;
+  }
+});
+
+// node_modules/ramda/src/over.js
+var require_over = __commonJS({
+  "node_modules/ramda/src/over.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var Identity = function(x) {
+      return {
+        value: x,
+        map: function(f) {
+          return Identity(f(x));
+        }
+      };
+    };
+    var over = /* @__PURE__ */ _curry3(function over2(lens, f, x) {
+      return lens(function(y) {
+        return Identity(f(y));
+      })(x).value;
+    });
+    module2.exports = over;
+  }
+});
+
+// node_modules/ramda/src/pair.js
+var require_pair = __commonJS({
+  "node_modules/ramda/src/pair.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var pair = /* @__PURE__ */ _curry2(function pair2(fst, snd) {
+      return [fst, snd];
+    });
+    module2.exports = pair;
+  }
+});
+
+// node_modules/ramda/src/internal/_createPartialApplicator.js
+var require_createPartialApplicator = __commonJS({
+  "node_modules/ramda/src/internal/_createPartialApplicator.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _curry2 = require_curry2();
+    function _createPartialApplicator(concat) {
+      return _curry2(function(fn, args) {
+        return _arity(Math.max(0, fn.length - args.length), function() {
+          return fn.apply(this, concat(args, arguments));
+        });
+      });
+    }
+    module2.exports = _createPartialApplicator;
+  }
+});
+
+// node_modules/ramda/src/partial.js
+var require_partial = __commonJS({
+  "node_modules/ramda/src/partial.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _createPartialApplicator = require_createPartialApplicator();
+    var partial = /* @__PURE__ */ _createPartialApplicator(_concat);
+    module2.exports = partial;
+  }
+});
+
+// node_modules/ramda/src/partialRight.js
+var require_partialRight = __commonJS({
+  "node_modules/ramda/src/partialRight.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _createPartialApplicator = require_createPartialApplicator();
+    var flip = require_flip();
+    var partialRight = /* @__PURE__ */ _createPartialApplicator(/* @__PURE__ */ flip(_concat));
+    module2.exports = partialRight;
+  }
+});
+
+// node_modules/ramda/src/partition.js
+var require_partition = __commonJS({
+  "node_modules/ramda/src/partition.js"(exports2, module2) {
+    var filter = require_filter2();
+    var juxt = require_juxt();
+    var reject = require_reject();
+    var partition = /* @__PURE__ */ juxt([filter, reject]);
+    module2.exports = partition;
+  }
+});
+
+// node_modules/ramda/src/pathEq.js
+var require_pathEq = __commonJS({
+  "node_modules/ramda/src/pathEq.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var equals = require_equals3();
+    var path = require_path();
+    var pathEq = /* @__PURE__ */ _curry3(function pathEq2(_path, val, obj) {
+      return equals(path(_path, obj), val);
+    });
+    module2.exports = pathEq;
+  }
+});
+
+// node_modules/ramda/src/pathOr.js
+var require_pathOr = __commonJS({
+  "node_modules/ramda/src/pathOr.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var defaultTo = require_defaultTo();
+    var path = require_path();
+    var pathOr = /* @__PURE__ */ _curry3(function pathOr2(d, p, obj) {
+      return defaultTo(d, path(p, obj));
+    });
+    module2.exports = pathOr;
+  }
+});
+
+// node_modules/ramda/src/pathSatisfies.js
+var require_pathSatisfies = __commonJS({
+  "node_modules/ramda/src/pathSatisfies.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var path = require_path();
+    var pathSatisfies = /* @__PURE__ */ _curry3(function pathSatisfies2(pred, propPath, obj) {
+      return pred(path(propPath, obj));
+    });
+    module2.exports = pathSatisfies;
+  }
+});
+
+// node_modules/ramda/src/pick.js
+var require_pick = __commonJS({
+  "node_modules/ramda/src/pick.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var pick = /* @__PURE__ */ _curry2(function pick2(names, obj) {
+      var result = {};
+      var idx = 0;
+      while (idx < names.length) {
+        if (names[idx] in obj) {
+          result[names[idx]] = obj[names[idx]];
+        }
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = pick;
+  }
+});
+
+// node_modules/ramda/src/pickAll.js
+var require_pickAll = __commonJS({
+  "node_modules/ramda/src/pickAll.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var pickAll = /* @__PURE__ */ _curry2(function pickAll2(names, obj) {
+      var result = {};
+      var idx = 0;
+      var len = names.length;
+      while (idx < len) {
+        var name = names[idx];
+        result[name] = obj[name];
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = pickAll;
+  }
+});
+
+// node_modules/ramda/src/pickBy.js
+var require_pickBy = __commonJS({
+  "node_modules/ramda/src/pickBy.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var pickBy = /* @__PURE__ */ _curry2(function pickBy2(test, obj) {
+      var result = {};
+      for (var prop in obj) {
+        if (test(obj[prop], prop, obj)) {
+          result[prop] = obj[prop];
+        }
+      }
+      return result;
+    });
+    module2.exports = pickBy;
+  }
+});
+
+// node_modules/ramda/src/pipeK.js
+var require_pipeK = __commonJS({
+  "node_modules/ramda/src/pipeK.js"(exports2, module2) {
+    var composeK = require_composeK();
+    var reverse2 = require_reverse();
+    function pipeK() {
+      if (arguments.length === 0) {
+        throw new Error("pipeK requires at least one argument");
+      }
+      return composeK.apply(this, reverse2(arguments));
+    }
+    module2.exports = pipeK;
+  }
+});
+
+// node_modules/ramda/src/prepend.js
+var require_prepend = __commonJS({
+  "node_modules/ramda/src/prepend.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var prepend = /* @__PURE__ */ _curry2(function prepend2(el, list) {
+      return _concat([el], list);
+    });
+    module2.exports = prepend;
+  }
+});
+
+// node_modules/ramda/src/product.js
+var require_product = __commonJS({
+  "node_modules/ramda/src/product.js"(exports2, module2) {
+    var multiply = require_multiply();
+    var reduce = require_reduce2();
+    var product = /* @__PURE__ */ reduce(multiply, 1);
+    module2.exports = product;
+  }
+});
+
+// node_modules/ramda/src/useWith.js
+var require_useWith = __commonJS({
+  "node_modules/ramda/src/useWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var curryN = require_curryN2();
+    var useWith = /* @__PURE__ */ _curry2(function useWith2(fn, transformers) {
+      return curryN(transformers.length, function() {
+        var args = [];
+        var idx = 0;
+        while (idx < transformers.length) {
+          args.push(transformers[idx].call(this, arguments[idx]));
+          idx += 1;
+        }
+        return fn.apply(this, args.concat(Array.prototype.slice.call(arguments, transformers.length)));
+      });
+    });
+    module2.exports = useWith;
+  }
+});
+
+// node_modules/ramda/src/project.js
+var require_project = __commonJS({
+  "node_modules/ramda/src/project.js"(exports2, module2) {
+    var _map = require_map();
+    var identity = require_identity2();
+    var pickAll = require_pickAll();
+    var useWith = require_useWith();
+    var project = /* @__PURE__ */ useWith(_map, [pickAll, identity]);
+    module2.exports = project;
+  }
+});
+
+// node_modules/ramda/src/propEq.js
+var require_propEq = __commonJS({
+  "node_modules/ramda/src/propEq.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var equals = require_equals3();
+    var propEq = /* @__PURE__ */ _curry3(function propEq2(name, val, obj) {
+      return equals(val, obj[name]);
+    });
+    module2.exports = propEq;
+  }
+});
+
+// node_modules/ramda/src/propIs.js
+var require_propIs = __commonJS({
+  "node_modules/ramda/src/propIs.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var is = require_is();
+    var propIs = /* @__PURE__ */ _curry3(function propIs2(type, name, obj) {
+      return is(type, obj[name]);
+    });
+    module2.exports = propIs;
+  }
+});
+
+// node_modules/ramda/src/propOr.js
+var require_propOr = __commonJS({
+  "node_modules/ramda/src/propOr.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var pathOr = require_pathOr();
+    var propOr = /* @__PURE__ */ _curry3(function propOr2(val, p, obj) {
+      return pathOr(val, [p], obj);
+    });
+    module2.exports = propOr;
+  }
+});
+
+// node_modules/ramda/src/propSatisfies.js
+var require_propSatisfies = __commonJS({
+  "node_modules/ramda/src/propSatisfies.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var propSatisfies = /* @__PURE__ */ _curry3(function propSatisfies2(pred, name, obj) {
+      return pred(obj[name]);
+    });
+    module2.exports = propSatisfies;
+  }
+});
+
+// node_modules/ramda/src/props.js
+var require_props = __commonJS({
+  "node_modules/ramda/src/props.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var path = require_path();
+    var props = /* @__PURE__ */ _curry2(function props2(ps, obj) {
+      return ps.map(function(p) {
+        return path([p], obj);
+      });
+    });
+    module2.exports = props;
+  }
+});
+
+// node_modules/ramda/src/range.js
+var require_range = __commonJS({
+  "node_modules/ramda/src/range.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _isNumber = require_isNumber();
+    var range = /* @__PURE__ */ _curry2(function range2(from, to) {
+      if (!(_isNumber(from) && _isNumber(to))) {
+        throw new TypeError("Both arguments to range must be numbers");
+      }
+      var result = [];
+      var n = from;
+      while (n < to) {
+        result.push(n);
+        n += 1;
+      }
+      return result;
+    });
+    module2.exports = range;
+  }
+});
+
+// node_modules/ramda/src/reduceRight.js
+var require_reduceRight = __commonJS({
+  "node_modules/ramda/src/reduceRight.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var reduceRight = /* @__PURE__ */ _curry3(function reduceRight2(fn, acc, list) {
+      var idx = list.length - 1;
+      while (idx >= 0) {
+        acc = fn(list[idx], acc);
+        idx -= 1;
+      }
+      return acc;
+    });
+    module2.exports = reduceRight;
+  }
+});
+
+// node_modules/ramda/src/reduceWhile.js
+var require_reduceWhile = __commonJS({
+  "node_modules/ramda/src/reduceWhile.js"(exports2, module2) {
+    var _curryN = require_curryN();
+    var _reduce = require_reduce();
+    var _reduced = require_reduced();
+    var reduceWhile = /* @__PURE__ */ _curryN(4, [], function _reduceWhile(pred, fn, a, list) {
+      return _reduce(function(acc, x) {
+        return pred(acc, x) ? fn(acc, x) : _reduced(acc);
+      }, a, list);
+    });
+    module2.exports = reduceWhile;
+  }
+});
+
+// node_modules/ramda/src/reduced.js
+var require_reduced2 = __commonJS({
+  "node_modules/ramda/src/reduced.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _reduced = require_reduced();
+    var reduced = /* @__PURE__ */ _curry1(_reduced);
+    module2.exports = reduced;
+  }
+});
+
+// node_modules/ramda/src/times.js
+var require_times = __commonJS({
+  "node_modules/ramda/src/times.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var times = /* @__PURE__ */ _curry2(function times2(fn, n) {
+      var len = Number(n);
+      var idx = 0;
+      var list;
+      if (len < 0 || isNaN(len)) {
+        throw new RangeError("n must be a non-negative number");
+      }
+      list = new Array(len);
+      while (idx < len) {
+        list[idx] = fn(idx);
+        idx += 1;
+      }
+      return list;
+    });
+    module2.exports = times;
+  }
+});
+
+// node_modules/ramda/src/repeat.js
+var require_repeat = __commonJS({
+  "node_modules/ramda/src/repeat.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var always = require_always();
+    var times = require_times();
+    var repeat = /* @__PURE__ */ _curry2(function repeat2(value, n) {
+      return times(always(value), n);
+    });
+    module2.exports = repeat;
+  }
+});
+
+// node_modules/ramda/src/replace.js
+var require_replace2 = __commonJS({
+  "node_modules/ramda/src/replace.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var replace = /* @__PURE__ */ _curry3(function replace2(regex, replacement, str) {
+      return str.replace(regex, replacement);
+    });
+    module2.exports = replace;
+  }
+});
+
+// node_modules/ramda/src/scan.js
+var require_scan2 = __commonJS({
+  "node_modules/ramda/src/scan.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var scan = /* @__PURE__ */ _curry3(function scan2(fn, acc, list) {
+      var idx = 0;
+      var len = list.length;
+      var result = [acc];
+      while (idx < len) {
+        acc = fn(acc, list[idx]);
+        result[idx + 1] = acc;
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = scan;
+  }
+});
+
+// node_modules/ramda/src/sequence.js
+var require_sequence = __commonJS({
+  "node_modules/ramda/src/sequence.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var ap = require_ap();
+    var map = require_map2();
+    var prepend = require_prepend();
+    var reduceRight = require_reduceRight();
+    var sequence = /* @__PURE__ */ _curry2(function sequence2(of, traversable) {
+      return typeof traversable.sequence === "function" ? traversable.sequence(of) : reduceRight(function(x, acc) {
+        return ap(map(prepend, x), acc);
+      }, of([]), traversable);
+    });
+    module2.exports = sequence;
+  }
+});
+
+// node_modules/ramda/src/set.js
+var require_set2 = __commonJS({
+  "node_modules/ramda/src/set.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var always = require_always();
+    var over = require_over();
+    var set = /* @__PURE__ */ _curry3(function set2(lens, v, x) {
+      return over(lens, always(v), x);
+    });
+    module2.exports = set;
+  }
+});
+
+// node_modules/ramda/src/sort.js
+var require_sort = __commonJS({
+  "node_modules/ramda/src/sort.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var sort = /* @__PURE__ */ _curry2(function sort2(comparator, list) {
+      return Array.prototype.slice.call(list, 0).sort(comparator);
+    });
+    module2.exports = sort;
+  }
+});
+
+// node_modules/ramda/src/sortBy.js
+var require_sortBy = __commonJS({
+  "node_modules/ramda/src/sortBy.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var sortBy2 = /* @__PURE__ */ _curry2(function sortBy3(fn, list) {
+      return Array.prototype.slice.call(list, 0).sort(function(a, b) {
+        var aa = fn(a);
+        var bb = fn(b);
+        return aa < bb ? -1 : aa > bb ? 1 : 0;
+      });
+    });
+    module2.exports = sortBy2;
+  }
+});
+
+// node_modules/ramda/src/sortWith.js
+var require_sortWith = __commonJS({
+  "node_modules/ramda/src/sortWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var sortWith = /* @__PURE__ */ _curry2(function sortWith2(fns, list) {
+      return Array.prototype.slice.call(list, 0).sort(function(a, b) {
+        var result = 0;
+        var i = 0;
+        while (result === 0 && i < fns.length) {
+          result = fns[i](a, b);
+          i += 1;
+        }
+        return result;
+      });
+    });
+    module2.exports = sortWith;
+  }
+});
+
+// node_modules/ramda/src/split.js
+var require_split = __commonJS({
+  "node_modules/ramda/src/split.js"(exports2, module2) {
+    var invoker = require_invoker();
+    var split = /* @__PURE__ */ invoker(1, "split");
+    module2.exports = split;
+  }
+});
+
+// node_modules/ramda/src/splitAt.js
+var require_splitAt = __commonJS({
+  "node_modules/ramda/src/splitAt.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var length = require_length4();
+    var slice = require_slice();
+    var splitAt = /* @__PURE__ */ _curry2(function splitAt2(index, array) {
+      return [slice(0, index, array), slice(index, length(array), array)];
+    });
+    module2.exports = splitAt;
+  }
+});
+
+// node_modules/ramda/src/splitEvery.js
+var require_splitEvery = __commonJS({
+  "node_modules/ramda/src/splitEvery.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var slice = require_slice();
+    var splitEvery = /* @__PURE__ */ _curry2(function splitEvery2(n, list) {
+      if (n <= 0) {
+        throw new Error("First argument to splitEvery must be a positive integer");
+      }
+      var result = [];
+      var idx = 0;
+      while (idx < list.length) {
+        result.push(slice(idx, idx += n, list));
+      }
+      return result;
+    });
+    module2.exports = splitEvery;
+  }
+});
+
+// node_modules/ramda/src/splitWhen.js
+var require_splitWhen = __commonJS({
+  "node_modules/ramda/src/splitWhen.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var splitWhen = /* @__PURE__ */ _curry2(function splitWhen2(pred, list) {
+      var idx = 0;
+      var len = list.length;
+      var prefix = [];
+      while (idx < len && !pred(list[idx])) {
+        prefix.push(list[idx]);
+        idx += 1;
+      }
+      return [prefix, Array.prototype.slice.call(list, idx)];
+    });
+    module2.exports = splitWhen;
+  }
+});
+
+// node_modules/ramda/src/startsWith.js
+var require_startsWith = __commonJS({
+  "node_modules/ramda/src/startsWith.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var equals = require_equals3();
+    var take = require_take();
+    var startsWith = /* @__PURE__ */ _curry2(function(prefix, list) {
+      return equals(take(prefix.length, list), prefix);
+    });
+    module2.exports = startsWith;
+  }
+});
+
+// node_modules/ramda/src/subtract.js
+var require_subtract = __commonJS({
+  "node_modules/ramda/src/subtract.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var subtract = /* @__PURE__ */ _curry2(function subtract2(a, b) {
+      return Number(a) - Number(b);
+    });
+    module2.exports = subtract;
+  }
+});
+
+// node_modules/ramda/src/symmetricDifference.js
+var require_symmetricDifference = __commonJS({
+  "node_modules/ramda/src/symmetricDifference.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var concat = require_concat3();
+    var difference = require_difference();
+    var symmetricDifference = /* @__PURE__ */ _curry2(function symmetricDifference2(list1, list2) {
+      return concat(difference(list1, list2), difference(list2, list1));
+    });
+    module2.exports = symmetricDifference;
+  }
+});
+
+// node_modules/ramda/src/symmetricDifferenceWith.js
+var require_symmetricDifferenceWith = __commonJS({
+  "node_modules/ramda/src/symmetricDifferenceWith.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var concat = require_concat3();
+    var differenceWith = require_differenceWith();
+    var symmetricDifferenceWith = /* @__PURE__ */ _curry3(function symmetricDifferenceWith2(pred, list1, list2) {
+      return concat(differenceWith(pred, list1, list2), differenceWith(pred, list2, list1));
+    });
+    module2.exports = symmetricDifferenceWith;
+  }
+});
+
+// node_modules/ramda/src/takeLastWhile.js
+var require_takeLastWhile = __commonJS({
+  "node_modules/ramda/src/takeLastWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var slice = require_slice();
+    var takeLastWhile = /* @__PURE__ */ _curry2(function takeLastWhile2(fn, xs) {
+      var idx = xs.length - 1;
+      while (idx >= 0 && fn(xs[idx])) {
+        idx -= 1;
+      }
+      return slice(idx + 1, Infinity, xs);
+    });
+    module2.exports = takeLastWhile;
+  }
+});
+
+// node_modules/ramda/src/internal/_xtakeWhile.js
+var require_xtakeWhile = __commonJS({
+  "node_modules/ramda/src/internal/_xtakeWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _reduced = require_reduced();
+    var _xfBase = require_xfBase();
+    var XTakeWhile = /* @__PURE__ */ function() {
+      function XTakeWhile2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XTakeWhile2.prototype["@@transducer/init"] = _xfBase.init;
+      XTakeWhile2.prototype["@@transducer/result"] = _xfBase.result;
+      XTakeWhile2.prototype["@@transducer/step"] = function(result, input) {
+        return this.f(input) ? this.xf["@@transducer/step"](result, input) : _reduced(result);
+      };
+      return XTakeWhile2;
+    }();
+    var _xtakeWhile = /* @__PURE__ */ _curry2(function _xtakeWhile2(f, xf) {
+      return new XTakeWhile(f, xf);
+    });
+    module2.exports = _xtakeWhile;
+  }
+});
+
+// node_modules/ramda/src/takeWhile.js
+var require_takeWhile = __commonJS({
+  "node_modules/ramda/src/takeWhile.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xtakeWhile = require_xtakeWhile();
+    var slice = require_slice();
+    var takeWhile = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable(["takeWhile"], _xtakeWhile, function takeWhile2(fn, xs) {
+      var idx = 0;
+      var len = xs.length;
+      while (idx < len && fn(xs[idx])) {
+        idx += 1;
+      }
+      return slice(0, idx, xs);
+    }));
+    module2.exports = takeWhile;
+  }
+});
+
+// node_modules/ramda/src/internal/_xtap.js
+var require_xtap = __commonJS({
+  "node_modules/ramda/src/internal/_xtap.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _xfBase = require_xfBase();
+    var XTap = /* @__PURE__ */ function() {
+      function XTap2(f, xf) {
+        this.xf = xf;
+        this.f = f;
+      }
+      XTap2.prototype["@@transducer/init"] = _xfBase.init;
+      XTap2.prototype["@@transducer/result"] = _xfBase.result;
+      XTap2.prototype["@@transducer/step"] = function(result, input) {
+        this.f(input);
+        return this.xf["@@transducer/step"](result, input);
+      };
+      return XTap2;
+    }();
+    var _xtap = /* @__PURE__ */ _curry2(function _xtap2(f, xf) {
+      return new XTap(f, xf);
+    });
+    module2.exports = _xtap;
+  }
+});
+
+// node_modules/ramda/src/tap.js
+var require_tap = __commonJS({
+  "node_modules/ramda/src/tap.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _dispatchable = require_dispatchable();
+    var _xtap = require_xtap();
+    var tap = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xtap, function tap2(fn, x) {
+      fn(x);
+      return x;
+    }));
+    module2.exports = tap;
+  }
+});
+
+// node_modules/ramda/src/internal/_isRegExp.js
+var require_isRegExp = __commonJS({
+  "node_modules/ramda/src/internal/_isRegExp.js"(exports2, module2) {
+    function _isRegExp(x) {
+      return Object.prototype.toString.call(x) === "[object RegExp]";
+    }
+    module2.exports = _isRegExp;
+  }
+});
+
+// node_modules/ramda/src/test.js
+var require_test = __commonJS({
+  "node_modules/ramda/src/test.js"(exports2, module2) {
+    var _cloneRegExp = require_cloneRegExp();
+    var _curry2 = require_curry2();
+    var _isRegExp = require_isRegExp();
+    var toString = require_toString2();
+    var test = /* @__PURE__ */ _curry2(function test2(pattern, str) {
+      if (!_isRegExp(pattern)) {
+        throw new TypeError("\u2018test\u2019 requires a value of type RegExp as its first argument; received " + toString(pattern));
+      }
+      return _cloneRegExp(pattern).test(str);
+    });
+    module2.exports = test;
+  }
+});
+
+// node_modules/ramda/src/andThen.js
+var require_andThen = __commonJS({
+  "node_modules/ramda/src/andThen.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _assertPromise = require_assertPromise();
+    var andThen = /* @__PURE__ */ _curry2(function andThen2(f, p) {
+      _assertPromise("andThen", p);
+      return p.then(f);
+    });
+    module2.exports = andThen;
+  }
+});
+
+// node_modules/ramda/src/toLower.js
+var require_toLower = __commonJS({
+  "node_modules/ramda/src/toLower.js"(exports2, module2) {
+    var invoker = require_invoker();
+    var toLower = /* @__PURE__ */ invoker(0, "toLowerCase");
+    module2.exports = toLower;
+  }
+});
+
+// node_modules/ramda/src/toPairs.js
+var require_toPairs = __commonJS({
+  "node_modules/ramda/src/toPairs.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var _has = require_has();
+    var toPairs = /* @__PURE__ */ _curry1(function toPairs2(obj) {
+      var pairs = [];
+      for (var prop in obj) {
+        if (_has(prop, obj)) {
+          pairs[pairs.length] = [prop, obj[prop]];
+        }
+      }
+      return pairs;
+    });
+    module2.exports = toPairs;
+  }
+});
+
+// node_modules/ramda/src/toPairsIn.js
+var require_toPairsIn = __commonJS({
+  "node_modules/ramda/src/toPairsIn.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var toPairsIn = /* @__PURE__ */ _curry1(function toPairsIn2(obj) {
+      var pairs = [];
+      for (var prop in obj) {
+        pairs[pairs.length] = [prop, obj[prop]];
+      }
+      return pairs;
+    });
+    module2.exports = toPairsIn;
+  }
+});
+
+// node_modules/ramda/src/toUpper.js
+var require_toUpper = __commonJS({
+  "node_modules/ramda/src/toUpper.js"(exports2, module2) {
+    var invoker = require_invoker();
+    var toUpper = /* @__PURE__ */ invoker(0, "toUpperCase");
+    module2.exports = toUpper;
+  }
+});
+
+// node_modules/ramda/src/transduce.js
+var require_transduce = __commonJS({
+  "node_modules/ramda/src/transduce.js"(exports2, module2) {
+    var _reduce = require_reduce();
+    var _xwrap = require_xwrap();
+    var curryN = require_curryN2();
+    var transduce = /* @__PURE__ */ curryN(4, function transduce2(xf, fn, acc, list) {
+      return _reduce(xf(typeof fn === "function" ? _xwrap(fn) : fn), acc, list);
+    });
+    module2.exports = transduce;
+  }
+});
+
+// node_modules/ramda/src/transpose.js
+var require_transpose = __commonJS({
+  "node_modules/ramda/src/transpose.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var transpose = /* @__PURE__ */ _curry1(function transpose2(outerlist) {
+      var i = 0;
+      var result = [];
+      while (i < outerlist.length) {
+        var innerlist = outerlist[i];
+        var j = 0;
+        while (j < innerlist.length) {
+          if (typeof result[j] === "undefined") {
+            result[j] = [];
+          }
+          result[j].push(innerlist[j]);
+          j += 1;
+        }
+        i += 1;
+      }
+      return result;
+    });
+    module2.exports = transpose;
+  }
+});
+
+// node_modules/ramda/src/traverse.js
+var require_traverse = __commonJS({
+  "node_modules/ramda/src/traverse.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var map = require_map2();
+    var sequence = require_sequence();
+    var traverse = /* @__PURE__ */ _curry3(function traverse2(of, f, traversable) {
+      return typeof traversable["fantasy-land/traverse"] === "function" ? traversable["fantasy-land/traverse"](f, of) : sequence(of, map(f, traversable));
+    });
+    module2.exports = traverse;
+  }
+});
+
+// node_modules/ramda/src/trim.js
+var require_trim = __commonJS({
+  "node_modules/ramda/src/trim.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var ws = "	\n\v\f\r \xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF";
+    var zeroWidth = "\u200B";
+    var hasProtoTrim = typeof String.prototype.trim === "function";
+    var trim = !hasProtoTrim || /* @__PURE__ */ ws.trim() || !/* @__PURE__ */ zeroWidth.trim() ? /* @__PURE__ */ _curry1(function trim2(str) {
+      var beginRx = new RegExp("^[" + ws + "][" + ws + "]*");
+      var endRx = new RegExp("[" + ws + "][" + ws + "]*$");
+      return str.replace(beginRx, "").replace(endRx, "");
+    }) : /* @__PURE__ */ _curry1(function trim2(str) {
+      return str.trim();
+    });
+    module2.exports = trim;
+  }
+});
+
+// node_modules/ramda/src/tryCatch.js
+var require_tryCatch = __commonJS({
+  "node_modules/ramda/src/tryCatch.js"(exports2, module2) {
+    var _arity = require_arity();
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var tryCatch = /* @__PURE__ */ _curry2(function _tryCatch(tryer, catcher) {
+      return _arity(tryer.length, function() {
+        try {
+          return tryer.apply(this, arguments);
+        } catch (e) {
+          return catcher.apply(this, _concat([e], arguments));
+        }
+      });
+    });
+    module2.exports = tryCatch;
+  }
+});
+
+// node_modules/ramda/src/unapply.js
+var require_unapply = __commonJS({
+  "node_modules/ramda/src/unapply.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var unapply = /* @__PURE__ */ _curry1(function unapply2(fn) {
+      return function() {
+        return fn(Array.prototype.slice.call(arguments, 0));
+      };
+    });
+    module2.exports = unapply;
+  }
+});
+
+// node_modules/ramda/src/unary.js
+var require_unary = __commonJS({
+  "node_modules/ramda/src/unary.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var nAry = require_nAry();
+    var unary = /* @__PURE__ */ _curry1(function unary2(fn) {
+      return nAry(1, fn);
+    });
+    module2.exports = unary;
+  }
+});
+
+// node_modules/ramda/src/uncurryN.js
+var require_uncurryN = __commonJS({
+  "node_modules/ramda/src/uncurryN.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var curryN = require_curryN2();
+    var uncurryN = /* @__PURE__ */ _curry2(function uncurryN2(depth, fn) {
+      return curryN(depth, function() {
+        var currentDepth = 1;
+        var value = fn;
+        var idx = 0;
+        var endIdx;
+        while (currentDepth <= depth && typeof value === "function") {
+          endIdx = currentDepth === depth ? arguments.length : idx + value.length;
+          value = value.apply(this, Array.prototype.slice.call(arguments, idx, endIdx));
+          currentDepth += 1;
+          idx = endIdx;
+        }
+        return value;
+      });
+    });
+    module2.exports = uncurryN;
+  }
+});
+
+// node_modules/ramda/src/unfold.js
+var require_unfold = __commonJS({
+  "node_modules/ramda/src/unfold.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var unfold = /* @__PURE__ */ _curry2(function unfold2(fn, seed) {
+      var pair = fn(seed);
+      var result = [];
+      while (pair && pair.length) {
+        result[result.length] = pair[0];
+        pair = fn(pair[1]);
+      }
+      return result;
+    });
+    module2.exports = unfold;
+  }
+});
+
+// node_modules/ramda/src/union.js
+var require_union = __commonJS({
+  "node_modules/ramda/src/union.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry2 = require_curry2();
+    var compose = require_compose();
+    var uniq = require_uniq();
+    var union = /* @__PURE__ */ _curry2(/* @__PURE__ */ compose(uniq, _concat));
+    module2.exports = union;
+  }
+});
+
+// node_modules/ramda/src/uniqWith.js
+var require_uniqWith = __commonJS({
+  "node_modules/ramda/src/uniqWith.js"(exports2, module2) {
+    var _includesWith = require_includesWith();
+    var _curry2 = require_curry2();
+    var uniqWith = /* @__PURE__ */ _curry2(function uniqWith2(pred, list) {
+      var idx = 0;
+      var len = list.length;
+      var result = [];
+      var item;
+      while (idx < len) {
+        item = list[idx];
+        if (!_includesWith(pred, item, result)) {
+          result[result.length] = item;
+        }
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = uniqWith;
+  }
+});
+
+// node_modules/ramda/src/unionWith.js
+var require_unionWith = __commonJS({
+  "node_modules/ramda/src/unionWith.js"(exports2, module2) {
+    var _concat = require_concat2();
+    var _curry3 = require_curry3();
+    var uniqWith = require_uniqWith();
+    var unionWith = /* @__PURE__ */ _curry3(function unionWith2(pred, list1, list2) {
+      return uniqWith(pred, _concat(list1, list2));
+    });
+    module2.exports = unionWith;
+  }
+});
+
+// node_modules/ramda/src/unless.js
+var require_unless = __commonJS({
+  "node_modules/ramda/src/unless.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var unless = /* @__PURE__ */ _curry3(function unless2(pred, whenFalseFn, x) {
+      return pred(x) ? x : whenFalseFn(x);
+    });
+    module2.exports = unless;
+  }
+});
+
+// node_modules/ramda/src/unnest.js
+var require_unnest = __commonJS({
+  "node_modules/ramda/src/unnest.js"(exports2, module2) {
+    var _identity = require_identity();
+    var chain = require_chain();
+    var unnest = /* @__PURE__ */ chain(_identity);
+    module2.exports = unnest;
+  }
+});
+
+// node_modules/ramda/src/until.js
+var require_until = __commonJS({
+  "node_modules/ramda/src/until.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var until = /* @__PURE__ */ _curry3(function until2(pred, fn, init) {
+      var val = init;
+      while (!pred(val)) {
+        val = fn(val);
+      }
+      return val;
+    });
+    module2.exports = until;
+  }
+});
+
+// node_modules/ramda/src/valuesIn.js
+var require_valuesIn = __commonJS({
+  "node_modules/ramda/src/valuesIn.js"(exports2, module2) {
+    var _curry1 = require_curry1();
+    var valuesIn = /* @__PURE__ */ _curry1(function valuesIn2(obj) {
+      var prop;
+      var vs = [];
+      for (prop in obj) {
+        vs[vs.length] = obj[prop];
+      }
+      return vs;
+    });
+    module2.exports = valuesIn;
+  }
+});
+
+// node_modules/ramda/src/view.js
+var require_view = __commonJS({
+  "node_modules/ramda/src/view.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var Const = function(x) {
+      return {
+        value: x,
+        "fantasy-land/map": function() {
+          return this;
+        }
+      };
+    };
+    var view = /* @__PURE__ */ _curry2(function view2(lens, x) {
+      return lens(Const)(x).value;
+    });
+    module2.exports = view;
+  }
+});
+
+// node_modules/ramda/src/when.js
+var require_when = __commonJS({
+  "node_modules/ramda/src/when.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var when = /* @__PURE__ */ _curry3(function when2(pred, whenTrueFn, x) {
+      return pred(x) ? whenTrueFn(x) : x;
+    });
+    module2.exports = when;
+  }
+});
+
+// node_modules/ramda/src/where.js
+var require_where = __commonJS({
+  "node_modules/ramda/src/where.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var _has = require_has();
+    var where = /* @__PURE__ */ _curry2(function where2(spec, testObj) {
+      for (var prop in spec) {
+        if (_has(prop, spec) && !spec[prop](testObj[prop])) {
+          return false;
+        }
+      }
+      return true;
+    });
+    module2.exports = where;
+  }
+});
+
+// node_modules/ramda/src/whereEq.js
+var require_whereEq = __commonJS({
+  "node_modules/ramda/src/whereEq.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var equals = require_equals3();
+    var map = require_map2();
+    var where = require_where();
+    var whereEq = /* @__PURE__ */ _curry2(function whereEq2(spec, testObj) {
+      return where(map(equals, spec), testObj);
+    });
+    module2.exports = whereEq;
+  }
+});
+
+// node_modules/ramda/src/without.js
+var require_without = __commonJS({
+  "node_modules/ramda/src/without.js"(exports2, module2) {
+    var _includes = require_includes();
+    var _curry2 = require_curry2();
+    var flip = require_flip();
+    var reject = require_reject();
+    var without = /* @__PURE__ */ _curry2(function(xs, list) {
+      return reject(flip(_includes)(xs), list);
+    });
+    module2.exports = without;
+  }
+});
+
+// node_modules/ramda/src/xor.js
+var require_xor = __commonJS({
+  "node_modules/ramda/src/xor.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var xor = /* @__PURE__ */ _curry2(function xor2(a, b) {
+      return Boolean(!a ^ !b);
+    });
+    module2.exports = xor;
+  }
+});
+
+// node_modules/ramda/src/xprod.js
+var require_xprod = __commonJS({
+  "node_modules/ramda/src/xprod.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var xprod = /* @__PURE__ */ _curry2(function xprod2(a, b) {
+      var idx = 0;
+      var ilen = a.length;
+      var j;
+      var jlen = b.length;
+      var result = [];
+      while (idx < ilen) {
+        j = 0;
+        while (j < jlen) {
+          result[result.length] = [a[idx], b[j]];
+          j += 1;
+        }
+        idx += 1;
+      }
+      return result;
+    });
+    module2.exports = xprod;
+  }
+});
+
+// node_modules/ramda/src/zip.js
+var require_zip = __commonJS({
+  "node_modules/ramda/src/zip.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var zip2 = /* @__PURE__ */ _curry2(function zip3(a, b) {
+      var rv = [];
+      var idx = 0;
+      var len = Math.min(a.length, b.length);
+      while (idx < len) {
+        rv[idx] = [a[idx], b[idx]];
+        idx += 1;
+      }
+      return rv;
+    });
+    module2.exports = zip2;
+  }
+});
+
+// node_modules/ramda/src/zipObj.js
+var require_zipObj = __commonJS({
+  "node_modules/ramda/src/zipObj.js"(exports2, module2) {
+    var _curry2 = require_curry2();
+    var zipObj = /* @__PURE__ */ _curry2(function zipObj2(keys, values) {
+      var idx = 0;
+      var len = Math.min(keys.length, values.length);
+      var out = {};
+      while (idx < len) {
+        out[keys[idx]] = values[idx];
+        idx += 1;
+      }
+      return out;
+    });
+    module2.exports = zipObj;
+  }
+});
+
+// node_modules/ramda/src/zipWith.js
+var require_zipWith = __commonJS({
+  "node_modules/ramda/src/zipWith.js"(exports2, module2) {
+    var _curry3 = require_curry3();
+    var zipWith = /* @__PURE__ */ _curry3(function zipWith2(fn, a, b) {
+      var rv = [];
+      var idx = 0;
+      var len = Math.min(a.length, b.length);
+      while (idx < len) {
+        rv[idx] = fn(a[idx], b[idx]);
+        idx += 1;
+      }
+      return rv;
+    });
+    module2.exports = zipWith;
+  }
+});
+
+// node_modules/ramda/src/thunkify.js
+var require_thunkify = __commonJS({
+  "node_modules/ramda/src/thunkify.js"(exports2, module2) {
+    var curryN = require_curryN2();
+    var _curry1 = require_curry1();
+    var thunkify = /* @__PURE__ */ _curry1(function thunkify2(fn) {
+      return curryN(fn.length, function createThunk() {
+        var fnArgs = arguments;
+        return function invokeThunk() {
+          return fn.apply(this, fnArgs);
+        };
+      });
+    });
+    module2.exports = thunkify;
+  }
+});
+
+// node_modules/ramda/src/index.js
+var require_src33 = __commonJS({
+  "node_modules/ramda/src/index.js"(exports2, module2) {
+    module2.exports = {};
+    module2.exports.F = require_F();
+    module2.exports.T = require_T();
+    module2.exports.__ = require__();
+    module2.exports.add = require_add4();
+    module2.exports.addIndex = require_addIndex();
+    module2.exports.adjust = require_adjust();
+    module2.exports.all = require_all();
+    module2.exports.allPass = require_allPass();
+    module2.exports.always = require_always();
+    module2.exports.and = require_and();
+    module2.exports.any = require_any();
+    module2.exports.anyPass = require_anyPass();
+    module2.exports.ap = require_ap();
+    module2.exports.aperture = require_aperture2();
+    module2.exports.append = require_append();
+    module2.exports.apply = require_apply2();
+    module2.exports.applySpec = require_applySpec();
+    module2.exports.applyTo = require_applyTo();
+    module2.exports.ascend = require_ascend();
+    module2.exports.assoc = require_assoc();
+    module2.exports.assocPath = require_assocPath();
+    module2.exports.binary = require_binary();
+    module2.exports.bind = require_bind();
+    module2.exports.both = require_both();
+    module2.exports.call = require_call();
+    module2.exports.chain = require_chain();
+    module2.exports.clamp = require_clamp();
+    module2.exports.clone = require_clone3();
+    module2.exports.comparator = require_comparator();
+    module2.exports.complement = require_complement();
+    module2.exports.compose = require_compose();
+    module2.exports.composeK = require_composeK();
+    module2.exports.composeP = require_composeP();
+    module2.exports.composeWith = require_composeWith();
+    module2.exports.concat = require_concat3();
+    module2.exports.cond = require_cond();
+    module2.exports.construct = require_construct();
+    module2.exports.constructN = require_constructN();
+    module2.exports.contains = require_contains();
+    module2.exports.converge = require_converge();
+    module2.exports.countBy = require_countBy();
+    module2.exports.curry = require_curry();
+    module2.exports.curryN = require_curryN2();
+    module2.exports.dec = require_dec();
+    module2.exports.defaultTo = require_defaultTo();
+    module2.exports.descend = require_descend();
+    module2.exports.difference = require_difference();
+    module2.exports.differenceWith = require_differenceWith();
+    module2.exports.dissoc = require_dissoc();
+    module2.exports.dissocPath = require_dissocPath();
+    module2.exports.divide = require_divide();
+    module2.exports.drop = require_drop();
+    module2.exports.dropLast = require_dropLast2();
+    module2.exports.dropLastWhile = require_dropLastWhile2();
+    module2.exports.dropRepeats = require_dropRepeats();
+    module2.exports.dropRepeatsWith = require_dropRepeatsWith();
+    module2.exports.dropWhile = require_dropWhile();
+    module2.exports.either = require_either();
+    module2.exports.empty = require_empty2();
+    module2.exports.endsWith = require_endsWith();
+    module2.exports.eqBy = require_eqBy();
+    module2.exports.eqProps = require_eqProps();
+    module2.exports.equals = require_equals3();
+    module2.exports.evolve = require_evolve();
+    module2.exports.filter = require_filter2();
+    module2.exports.find = require_find();
+    module2.exports.findIndex = require_findIndex();
+    module2.exports.findLast = require_findLast();
+    module2.exports.findLastIndex = require_findLastIndex();
+    module2.exports.flatten = require_flatten();
+    module2.exports.flip = require_flip();
+    module2.exports.forEach = require_forEach();
+    module2.exports.forEachObjIndexed = require_forEachObjIndexed();
+    module2.exports.fromPairs = require_fromPairs();
+    module2.exports.groupBy = require_groupBy();
+    module2.exports.groupWith = require_groupWith();
+    module2.exports.gt = require_gt();
+    module2.exports.gte = require_gte();
+    module2.exports.has = require_has2();
+    module2.exports.hasIn = require_hasIn();
+    module2.exports.hasPath = require_hasPath();
+    module2.exports.head = require_head();
+    module2.exports.identical = require_identical();
+    module2.exports.identity = require_identity2();
+    module2.exports.ifElse = require_ifElse();
+    module2.exports.inc = require_inc();
+    module2.exports.includes = require_includes2();
+    module2.exports.indexBy = require_indexBy();
+    module2.exports.indexOf = require_indexOf2();
+    module2.exports.init = require_init();
+    module2.exports.innerJoin = require_innerJoin();
+    module2.exports.insert = require_insert();
+    module2.exports.insertAll = require_insertAll();
+    module2.exports.intersection = require_intersection();
+    module2.exports.intersperse = require_intersperse();
+    module2.exports.into = require_into();
+    module2.exports.invert = require_invert();
+    module2.exports.invertObj = require_invertObj();
+    module2.exports.invoker = require_invoker();
+    module2.exports.is = require_is();
+    module2.exports.isEmpty = require_isEmpty();
+    module2.exports.isNil = require_isNil();
+    module2.exports.join = require_join();
+    module2.exports.juxt = require_juxt();
+    module2.exports.keys = require_keys();
+    module2.exports.keysIn = require_keysIn();
+    module2.exports.last = require_last();
+    module2.exports.lastIndexOf = require_lastIndexOf();
+    module2.exports.length = require_length4();
+    module2.exports.lens = require_lens();
+    module2.exports.lensIndex = require_lensIndex();
+    module2.exports.lensPath = require_lensPath();
+    module2.exports.lensProp = require_lensProp();
+    module2.exports.lift = require_lift();
+    module2.exports.liftN = require_liftN();
+    module2.exports.lt = require_lt();
+    module2.exports.lte = require_lte();
+    module2.exports.map = require_map2();
+    module2.exports.mapAccum = require_mapAccum();
+    module2.exports.mapAccumRight = require_mapAccumRight();
+    module2.exports.mapObjIndexed = require_mapObjIndexed();
+    module2.exports.match = require_match();
+    module2.exports.mathMod = require_mathMod();
+    module2.exports.max = require_max();
+    module2.exports.maxBy = require_maxBy();
+    module2.exports.mean = require_mean();
+    module2.exports.median = require_median();
+    module2.exports.memoizeWith = require_memoizeWith();
+    module2.exports.merge = require_merge();
+    module2.exports.mergeAll = require_mergeAll();
+    module2.exports.mergeDeepLeft = require_mergeDeepLeft();
+    module2.exports.mergeDeepRight = require_mergeDeepRight();
+    module2.exports.mergeDeepWith = require_mergeDeepWith();
+    module2.exports.mergeDeepWithKey = require_mergeDeepWithKey();
+    module2.exports.mergeLeft = require_mergeLeft();
+    module2.exports.mergeRight = require_mergeRight();
+    module2.exports.mergeWith = require_mergeWith();
+    module2.exports.mergeWithKey = require_mergeWithKey();
+    module2.exports.min = require_min();
+    module2.exports.minBy = require_minBy();
+    module2.exports.modulo = require_modulo();
+    module2.exports.move = require_move3();
+    module2.exports.multiply = require_multiply();
+    module2.exports.nAry = require_nAry();
+    module2.exports.negate = require_negate();
+    module2.exports.none = require_none();
+    module2.exports.not = require_not();
+    module2.exports.nth = require_nth();
+    module2.exports.nthArg = require_nthArg();
+    module2.exports.o = require_o();
+    module2.exports.objOf = require_objOf();
+    module2.exports.of = require_of2();
+    module2.exports.omit = require_omit();
+    module2.exports.once = require_once();
+    module2.exports.or = require_or();
+    module2.exports.otherwise = require_otherwise();
+    module2.exports.over = require_over();
+    module2.exports.pair = require_pair();
+    module2.exports.partial = require_partial();
+    module2.exports.partialRight = require_partialRight();
+    module2.exports.partition = require_partition();
+    module2.exports.path = require_path();
+    module2.exports.paths = require_paths();
+    module2.exports.pathEq = require_pathEq();
+    module2.exports.pathOr = require_pathOr();
+    module2.exports.pathSatisfies = require_pathSatisfies();
+    module2.exports.pick = require_pick();
+    module2.exports.pickAll = require_pickAll();
+    module2.exports.pickBy = require_pickBy();
+    module2.exports.pipe = require_pipe2();
+    module2.exports.pipeK = require_pipeK();
+    module2.exports.pipeP = require_pipeP2();
+    module2.exports.pipeWith = require_pipeWith();
+    module2.exports.pluck = require_pluck();
+    module2.exports.prepend = require_prepend();
+    module2.exports.product = require_product();
+    module2.exports.project = require_project();
+    module2.exports.prop = require_prop();
+    module2.exports.propEq = require_propEq();
+    module2.exports.propIs = require_propIs();
+    module2.exports.propOr = require_propOr();
+    module2.exports.propSatisfies = require_propSatisfies();
+    module2.exports.props = require_props();
+    module2.exports.range = require_range();
+    module2.exports.reduce = require_reduce2();
+    module2.exports.reduceBy = require_reduceBy();
+    module2.exports.reduceRight = require_reduceRight();
+    module2.exports.reduceWhile = require_reduceWhile();
+    module2.exports.reduced = require_reduced2();
+    module2.exports.reject = require_reject();
+    module2.exports.remove = require_remove2();
+    module2.exports.repeat = require_repeat();
+    module2.exports.replace = require_replace2();
+    module2.exports.reverse = require_reverse();
+    module2.exports.scan = require_scan2();
+    module2.exports.sequence = require_sequence();
+    module2.exports.set = require_set2();
+    module2.exports.slice = require_slice();
+    module2.exports.sort = require_sort();
+    module2.exports.sortBy = require_sortBy();
+    module2.exports.sortWith = require_sortWith();
+    module2.exports.split = require_split();
+    module2.exports.splitAt = require_splitAt();
+    module2.exports.splitEvery = require_splitEvery();
+    module2.exports.splitWhen = require_splitWhen();
+    module2.exports.startsWith = require_startsWith();
+    module2.exports.subtract = require_subtract();
+    module2.exports.sum = require_sum();
+    module2.exports.symmetricDifference = require_symmetricDifference();
+    module2.exports.symmetricDifferenceWith = require_symmetricDifferenceWith();
+    module2.exports.tail = require_tail2();
+    module2.exports.take = require_take();
+    module2.exports.takeLast = require_takeLast();
+    module2.exports.takeLastWhile = require_takeLastWhile();
+    module2.exports.takeWhile = require_takeWhile();
+    module2.exports.tap = require_tap();
+    module2.exports.test = require_test();
+    module2.exports.andThen = require_andThen();
+    module2.exports.times = require_times();
+    module2.exports.toLower = require_toLower();
+    module2.exports.toPairs = require_toPairs();
+    module2.exports.toPairsIn = require_toPairsIn();
+    module2.exports.toString = require_toString2();
+    module2.exports.toUpper = require_toUpper();
+    module2.exports.transduce = require_transduce();
+    module2.exports.transpose = require_transpose();
+    module2.exports.traverse = require_traverse();
+    module2.exports.trim = require_trim();
+    module2.exports.tryCatch = require_tryCatch();
+    module2.exports.type = require_type();
+    module2.exports.unapply = require_unapply();
+    module2.exports.unary = require_unary();
+    module2.exports.uncurryN = require_uncurryN();
+    module2.exports.unfold = require_unfold();
+    module2.exports.union = require_union();
+    module2.exports.unionWith = require_unionWith();
+    module2.exports.uniq = require_uniq();
+    module2.exports.uniqBy = require_uniqBy();
+    module2.exports.uniqWith = require_uniqWith();
+    module2.exports.unless = require_unless();
+    module2.exports.unnest = require_unnest();
+    module2.exports.until = require_until();
+    module2.exports.update = require_update();
+    module2.exports.useWith = require_useWith();
+    module2.exports.values = require_values();
+    module2.exports.valuesIn = require_valuesIn();
+    module2.exports.view = require_view();
+    module2.exports.when = require_when();
+    module2.exports.where = require_where();
+    module2.exports.whereEq = require_whereEq();
+    module2.exports.without = require_without();
+    module2.exports.xor = require_xor();
+    module2.exports.xprod = require_xprod();
+    module2.exports.zip = require_zip();
+    module2.exports.zipObj = require_zipObj();
+    module2.exports.zipWith = require_zipWith();
+    module2.exports.thunkify = require_thunkify();
+  }
+});
+
 // node_modules/p-try/index.js
 var require_p_try = __commonJS({
   "node_modules/p-try/index.js"(exports2, module2) {
@@ -48749,1180 +49777,6 @@ var require_p_limit = __commonJS({
     };
     module2.exports = pLimit;
     module2.exports.default = pLimit;
-  }
-});
-
-// node_modules/commander/index.js
-var require_commander = __commonJS({
-  "node_modules/commander/index.js"(exports2, module2) {
-    var EventEmitter2 = require("events").EventEmitter;
-    var childProcess = require("child_process");
-    var path = require("path");
-    var fs = require("fs");
-    var Help = class {
-      constructor() {
-        this.helpWidth = void 0;
-        this.sortSubcommands = false;
-        this.sortOptions = false;
-      }
-      visibleCommands(cmd) {
-        const visibleCommands = cmd.commands.filter((cmd2) => !cmd2._hidden);
-        if (cmd._hasImplicitHelpCommand()) {
-          const args = cmd._helpCommandnameAndArgs.split(/ +/);
-          const helpCommand = cmd.createCommand(args.shift()).helpOption(false);
-          helpCommand.description(cmd._helpCommandDescription);
-          helpCommand._parseExpectedArgs(args);
-          visibleCommands.push(helpCommand);
-        }
-        if (this.sortSubcommands) {
-          visibleCommands.sort((a, b) => {
-            return a.name().localeCompare(b.name());
-          });
-        }
-        return visibleCommands;
-      }
-      visibleOptions(cmd) {
-        const visibleOptions = cmd.options.filter((option) => !option.hidden);
-        const showShortHelpFlag = cmd._hasHelpOption && cmd._helpShortFlag && !cmd._findOption(cmd._helpShortFlag);
-        const showLongHelpFlag = cmd._hasHelpOption && !cmd._findOption(cmd._helpLongFlag);
-        if (showShortHelpFlag || showLongHelpFlag) {
-          let helpOption;
-          if (!showShortHelpFlag) {
-            helpOption = cmd.createOption(cmd._helpLongFlag, cmd._helpDescription);
-          } else if (!showLongHelpFlag) {
-            helpOption = cmd.createOption(cmd._helpShortFlag, cmd._helpDescription);
-          } else {
-            helpOption = cmd.createOption(cmd._helpFlags, cmd._helpDescription);
-          }
-          visibleOptions.push(helpOption);
-        }
-        if (this.sortOptions) {
-          const getSortKey = (option) => {
-            return option.short ? option.short.replace(/^-/, "") : option.long.replace(/^--/, "");
-          };
-          visibleOptions.sort((a, b) => {
-            return getSortKey(a).localeCompare(getSortKey(b));
-          });
-        }
-        return visibleOptions;
-      }
-      visibleArguments(cmd) {
-        if (cmd._argsDescription && cmd._args.length) {
-          return cmd._args.map((argument) => {
-            return {term: argument.name, description: cmd._argsDescription[argument.name] || ""};
-          }, 0);
-        }
-        return [];
-      }
-      subcommandTerm(cmd) {
-        const args = cmd._args.map((arg) => humanReadableArgName(arg)).join(" ");
-        return cmd._name + (cmd._aliases[0] ? "|" + cmd._aliases[0] : "") + (cmd.options.length ? " [options]" : "") + (args ? " " + args : "");
-      }
-      optionTerm(option) {
-        return option.flags;
-      }
-      longestSubcommandTermLength(cmd, helper) {
-        return helper.visibleCommands(cmd).reduce((max, command) => {
-          return Math.max(max, helper.subcommandTerm(command).length);
-        }, 0);
-      }
-      longestOptionTermLength(cmd, helper) {
-        return helper.visibleOptions(cmd).reduce((max, option) => {
-          return Math.max(max, helper.optionTerm(option).length);
-        }, 0);
-      }
-      longestArgumentTermLength(cmd, helper) {
-        return helper.visibleArguments(cmd).reduce((max, argument) => {
-          return Math.max(max, argument.term.length);
-        }, 0);
-      }
-      commandUsage(cmd) {
-        let cmdName = cmd._name;
-        if (cmd._aliases[0]) {
-          cmdName = cmdName + "|" + cmd._aliases[0];
-        }
-        let parentCmdNames = "";
-        for (let parentCmd = cmd.parent; parentCmd; parentCmd = parentCmd.parent) {
-          parentCmdNames = parentCmd.name() + " " + parentCmdNames;
-        }
-        return parentCmdNames + cmdName + " " + cmd.usage();
-      }
-      commandDescription(cmd) {
-        return cmd.description();
-      }
-      subcommandDescription(cmd) {
-        return cmd.description();
-      }
-      optionDescription(option) {
-        if (option.negate) {
-          return option.description;
-        }
-        const extraInfo = [];
-        if (option.argChoices) {
-          extraInfo.push(`choices: ${option.argChoices.map((choice) => JSON.stringify(choice)).join(", ")}`);
-        }
-        if (option.defaultValue !== void 0) {
-          extraInfo.push(`default: ${option.defaultValueDescription || JSON.stringify(option.defaultValue)}`);
-        }
-        if (extraInfo.length > 0) {
-          return `${option.description} (${extraInfo.join(", ")})`;
-        }
-        return option.description;
-      }
-      formatHelp(cmd, helper) {
-        const termWidth = helper.padWidth(cmd, helper);
-        const helpWidth = helper.helpWidth || 80;
-        const itemIndentWidth = 2;
-        const itemSeparatorWidth = 2;
-        function formatItem(term, description) {
-          if (description) {
-            const fullText = `${term.padEnd(termWidth + itemSeparatorWidth)}${description}`;
-            return helper.wrap(fullText, helpWidth - itemIndentWidth, termWidth + itemSeparatorWidth);
-          }
-          return term;
-        }
-        ;
-        function formatList(textArray) {
-          return textArray.join("\n").replace(/^/gm, " ".repeat(itemIndentWidth));
-        }
-        let output = [`Usage: ${helper.commandUsage(cmd)}`, ""];
-        const commandDescription = helper.commandDescription(cmd);
-        if (commandDescription.length > 0) {
-          output = output.concat([commandDescription, ""]);
-        }
-        const argumentList = helper.visibleArguments(cmd).map((argument) => {
-          return formatItem(argument.term, argument.description);
-        });
-        if (argumentList.length > 0) {
-          output = output.concat(["Arguments:", formatList(argumentList), ""]);
-        }
-        const optionList = helper.visibleOptions(cmd).map((option) => {
-          return formatItem(helper.optionTerm(option), helper.optionDescription(option));
-        });
-        if (optionList.length > 0) {
-          output = output.concat(["Options:", formatList(optionList), ""]);
-        }
-        const commandList = helper.visibleCommands(cmd).map((cmd2) => {
-          return formatItem(helper.subcommandTerm(cmd2), helper.subcommandDescription(cmd2));
-        });
-        if (commandList.length > 0) {
-          output = output.concat(["Commands:", formatList(commandList), ""]);
-        }
-        return output.join("\n");
-      }
-      padWidth(cmd, helper) {
-        return Math.max(helper.longestOptionTermLength(cmd, helper), helper.longestSubcommandTermLength(cmd, helper), helper.longestArgumentTermLength(cmd, helper));
-      }
-      wrap(str, width, indent, minColumnWidth = 40) {
-        if (str.match(/[\n]\s+/))
-          return str;
-        const columnWidth = width - indent;
-        if (columnWidth < minColumnWidth)
-          return str;
-        const leadingStr = str.substr(0, indent);
-        const columnText = str.substr(indent);
-        const indentString = " ".repeat(indent);
-        const regex = new RegExp(".{1," + (columnWidth - 1) + "}([\\s\u200B]|$)|[^\\s\u200B]+?([\\s\u200B]|$)", "g");
-        const lines = columnText.match(regex) || [];
-        return leadingStr + lines.map((line, i) => {
-          if (line.slice(-1) === "\n") {
-            line = line.slice(0, line.length - 1);
-          }
-          return (i > 0 ? indentString : "") + line.trimRight();
-        }).join("\n");
-      }
-    };
-    var Option = class {
-      constructor(flags, description) {
-        this.flags = flags;
-        this.description = description || "";
-        this.required = flags.includes("<");
-        this.optional = flags.includes("[");
-        this.variadic = /\w\.\.\.[>\]]$/.test(flags);
-        this.mandatory = false;
-        const optionFlags = _parseOptionFlags(flags);
-        this.short = optionFlags.shortFlag;
-        this.long = optionFlags.longFlag;
-        this.negate = false;
-        if (this.long) {
-          this.negate = this.long.startsWith("--no-");
-        }
-        this.defaultValue = void 0;
-        this.defaultValueDescription = void 0;
-        this.parseArg = void 0;
-        this.hidden = false;
-        this.argChoices = void 0;
-      }
-      default(value, description) {
-        this.defaultValue = value;
-        this.defaultValueDescription = description;
-        return this;
-      }
-      argParser(fn) {
-        this.parseArg = fn;
-        return this;
-      }
-      makeOptionMandatory(mandatory = true) {
-        this.mandatory = !!mandatory;
-        return this;
-      }
-      hideHelp(hide = true) {
-        this.hidden = !!hide;
-        return this;
-      }
-      _concatValue(value, previous) {
-        if (previous === this.defaultValue || !Array.isArray(previous)) {
-          return [value];
-        }
-        return previous.concat(value);
-      }
-      choices(values) {
-        this.argChoices = values;
-        this.parseArg = (arg, previous) => {
-          if (!values.includes(arg)) {
-            throw new InvalidOptionArgumentError(`Allowed choices are ${values.join(", ")}.`);
-          }
-          if (this.variadic) {
-            return this._concatValue(arg, previous);
-          }
-          return arg;
-        };
-        return this;
-      }
-      name() {
-        if (this.long) {
-          return this.long.replace(/^--/, "");
-        }
-        return this.short.replace(/^-/, "");
-      }
-      attributeName() {
-        return camelcase(this.name().replace(/^no-/, ""));
-      }
-      is(arg) {
-        return this.short === arg || this.long === arg;
-      }
-    };
-    var CommanderError = class extends Error {
-      constructor(exitCode, code, message) {
-        super(message);
-        Error.captureStackTrace(this, this.constructor);
-        this.name = this.constructor.name;
-        this.code = code;
-        this.exitCode = exitCode;
-        this.nestedError = void 0;
-      }
-    };
-    var InvalidOptionArgumentError = class extends CommanderError {
-      constructor(message) {
-        super(1, "commander.invalidOptionArgument", message);
-        Error.captureStackTrace(this, this.constructor);
-        this.name = this.constructor.name;
-      }
-    };
-    var Command = class extends EventEmitter2 {
-      constructor(name) {
-        super();
-        this.commands = [];
-        this.options = [];
-        this.parent = null;
-        this._allowUnknownOption = false;
-        this._allowExcessArguments = true;
-        this._args = [];
-        this.rawArgs = null;
-        this._scriptPath = null;
-        this._name = name || "";
-        this._optionValues = {};
-        this._storeOptionsAsProperties = false;
-        this._actionResults = [];
-        this._actionHandler = null;
-        this._executableHandler = false;
-        this._executableFile = null;
-        this._defaultCommandName = null;
-        this._exitCallback = null;
-        this._aliases = [];
-        this._combineFlagAndOptionalValue = true;
-        this._description = "";
-        this._argsDescription = void 0;
-        this._enablePositionalOptions = false;
-        this._passThroughOptions = false;
-        this._outputConfiguration = {
-          writeOut: (str) => process.stdout.write(str),
-          writeErr: (str) => process.stderr.write(str),
-          getOutHelpWidth: () => process.stdout.isTTY ? process.stdout.columns : void 0,
-          getErrHelpWidth: () => process.stderr.isTTY ? process.stderr.columns : void 0,
-          outputError: (str, write) => write(str)
-        };
-        this._hidden = false;
-        this._hasHelpOption = true;
-        this._helpFlags = "-h, --help";
-        this._helpDescription = "display help for command";
-        this._helpShortFlag = "-h";
-        this._helpLongFlag = "--help";
-        this._addImplicitHelpCommand = void 0;
-        this._helpCommandName = "help";
-        this._helpCommandnameAndArgs = "help [command]";
-        this._helpCommandDescription = "display help for command";
-        this._helpConfiguration = {};
-      }
-      command(nameAndArgs, actionOptsOrExecDesc, execOpts) {
-        let desc = actionOptsOrExecDesc;
-        let opts = execOpts;
-        if (typeof desc === "object" && desc !== null) {
-          opts = desc;
-          desc = null;
-        }
-        opts = opts || {};
-        const args = nameAndArgs.split(/ +/);
-        const cmd = this.createCommand(args.shift());
-        if (desc) {
-          cmd.description(desc);
-          cmd._executableHandler = true;
-        }
-        if (opts.isDefault)
-          this._defaultCommandName = cmd._name;
-        cmd._outputConfiguration = this._outputConfiguration;
-        cmd._hidden = !!(opts.noHelp || opts.hidden);
-        cmd._hasHelpOption = this._hasHelpOption;
-        cmd._helpFlags = this._helpFlags;
-        cmd._helpDescription = this._helpDescription;
-        cmd._helpShortFlag = this._helpShortFlag;
-        cmd._helpLongFlag = this._helpLongFlag;
-        cmd._helpCommandName = this._helpCommandName;
-        cmd._helpCommandnameAndArgs = this._helpCommandnameAndArgs;
-        cmd._helpCommandDescription = this._helpCommandDescription;
-        cmd._helpConfiguration = this._helpConfiguration;
-        cmd._exitCallback = this._exitCallback;
-        cmd._storeOptionsAsProperties = this._storeOptionsAsProperties;
-        cmd._combineFlagAndOptionalValue = this._combineFlagAndOptionalValue;
-        cmd._allowExcessArguments = this._allowExcessArguments;
-        cmd._enablePositionalOptions = this._enablePositionalOptions;
-        cmd._executableFile = opts.executableFile || null;
-        this.commands.push(cmd);
-        cmd._parseExpectedArgs(args);
-        cmd.parent = this;
-        if (desc)
-          return this;
-        return cmd;
-      }
-      createCommand(name) {
-        return new Command(name);
-      }
-      createHelp() {
-        return Object.assign(new Help(), this.configureHelp());
-      }
-      configureHelp(configuration) {
-        if (configuration === void 0)
-          return this._helpConfiguration;
-        this._helpConfiguration = configuration;
-        return this;
-      }
-      configureOutput(configuration) {
-        if (configuration === void 0)
-          return this._outputConfiguration;
-        Object.assign(this._outputConfiguration, configuration);
-        return this;
-      }
-      addCommand(cmd, opts) {
-        if (!cmd._name)
-          throw new Error("Command passed to .addCommand() must have a name");
-        function checkExplicitNames(commandArray) {
-          commandArray.forEach((cmd2) => {
-            if (cmd2._executableHandler && !cmd2._executableFile) {
-              throw new Error(`Must specify executableFile for deeply nested executable: ${cmd2.name()}`);
-            }
-            checkExplicitNames(cmd2.commands);
-          });
-        }
-        checkExplicitNames(cmd.commands);
-        opts = opts || {};
-        if (opts.isDefault)
-          this._defaultCommandName = cmd._name;
-        if (opts.noHelp || opts.hidden)
-          cmd._hidden = true;
-        this.commands.push(cmd);
-        cmd.parent = this;
-        return this;
-      }
-      arguments(desc) {
-        return this._parseExpectedArgs(desc.split(/ +/));
-      }
-      addHelpCommand(enableOrNameAndArgs, description) {
-        if (enableOrNameAndArgs === false) {
-          this._addImplicitHelpCommand = false;
-        } else {
-          this._addImplicitHelpCommand = true;
-          if (typeof enableOrNameAndArgs === "string") {
-            this._helpCommandName = enableOrNameAndArgs.split(" ")[0];
-            this._helpCommandnameAndArgs = enableOrNameAndArgs;
-          }
-          this._helpCommandDescription = description || this._helpCommandDescription;
-        }
-        return this;
-      }
-      _hasImplicitHelpCommand() {
-        if (this._addImplicitHelpCommand === void 0) {
-          return this.commands.length && !this._actionHandler && !this._findCommand("help");
-        }
-        return this._addImplicitHelpCommand;
-      }
-      _parseExpectedArgs(args) {
-        if (!args.length)
-          return;
-        args.forEach((arg) => {
-          const argDetails = {
-            required: false,
-            name: "",
-            variadic: false
-          };
-          switch (arg[0]) {
-            case "<":
-              argDetails.required = true;
-              argDetails.name = arg.slice(1, -1);
-              break;
-            case "[":
-              argDetails.name = arg.slice(1, -1);
-              break;
-          }
-          if (argDetails.name.length > 3 && argDetails.name.slice(-3) === "...") {
-            argDetails.variadic = true;
-            argDetails.name = argDetails.name.slice(0, -3);
-          }
-          if (argDetails.name) {
-            this._args.push(argDetails);
-          }
-        });
-        this._args.forEach((arg, i) => {
-          if (arg.variadic && i < this._args.length - 1) {
-            throw new Error(`only the last argument can be variadic '${arg.name}'`);
-          }
-        });
-        return this;
-      }
-      exitOverride(fn) {
-        if (fn) {
-          this._exitCallback = fn;
-        } else {
-          this._exitCallback = (err) => {
-            if (err.code !== "commander.executeSubCommandAsync") {
-              throw err;
-            } else {
-            }
-          };
-        }
-        return this;
-      }
-      _exit(exitCode, code, message) {
-        if (this._exitCallback) {
-          this._exitCallback(new CommanderError(exitCode, code, message));
-        }
-        process.exit(exitCode);
-      }
-      action(fn) {
-        const listener = (args) => {
-          const expectedArgsCount = this._args.length;
-          const actionArgs = args.slice(0, expectedArgsCount);
-          if (this._storeOptionsAsProperties) {
-            actionArgs[expectedArgsCount] = this;
-          } else {
-            actionArgs[expectedArgsCount] = this.opts();
-          }
-          actionArgs.push(this);
-          const actionResult = fn.apply(this, actionArgs);
-          let rootCommand = this;
-          while (rootCommand.parent) {
-            rootCommand = rootCommand.parent;
-          }
-          rootCommand._actionResults.push(actionResult);
-        };
-        this._actionHandler = listener;
-        return this;
-      }
-      createOption(flags, description) {
-        return new Option(flags, description);
-      }
-      addOption(option) {
-        const oname = option.name();
-        const name = option.attributeName();
-        let defaultValue = option.defaultValue;
-        if (option.negate || option.optional || option.required || typeof defaultValue === "boolean") {
-          if (option.negate) {
-            const positiveLongFlag = option.long.replace(/^--no-/, "--");
-            defaultValue = this._findOption(positiveLongFlag) ? this._getOptionValue(name) : true;
-          }
-          if (defaultValue !== void 0) {
-            this._setOptionValue(name, defaultValue);
-          }
-        }
-        this.options.push(option);
-        this.on("option:" + oname, (val) => {
-          const oldValue = this._getOptionValue(name);
-          if (val !== null && option.parseArg) {
-            try {
-              val = option.parseArg(val, oldValue === void 0 ? defaultValue : oldValue);
-            } catch (err) {
-              if (err.code === "commander.invalidOptionArgument") {
-                const message = `error: option '${option.flags}' argument '${val}' is invalid. ${err.message}`;
-                this._displayError(err.exitCode, err.code, message);
-              }
-              throw err;
-            }
-          } else if (val !== null && option.variadic) {
-            val = option._concatValue(val, oldValue);
-          }
-          if (typeof oldValue === "boolean" || typeof oldValue === "undefined") {
-            if (val == null) {
-              this._setOptionValue(name, option.negate ? false : defaultValue || true);
-            } else {
-              this._setOptionValue(name, val);
-            }
-          } else if (val !== null) {
-            this._setOptionValue(name, option.negate ? false : val);
-          }
-        });
-        return this;
-      }
-      _optionEx(config, flags, description, fn, defaultValue) {
-        const option = this.createOption(flags, description);
-        option.makeOptionMandatory(!!config.mandatory);
-        if (typeof fn === "function") {
-          option.default(defaultValue).argParser(fn);
-        } else if (fn instanceof RegExp) {
-          const regex = fn;
-          fn = (val, def) => {
-            const m = regex.exec(val);
-            return m ? m[0] : def;
-          };
-          option.default(defaultValue).argParser(fn);
-        } else {
-          option.default(fn);
-        }
-        return this.addOption(option);
-      }
-      option(flags, description, fn, defaultValue) {
-        return this._optionEx({}, flags, description, fn, defaultValue);
-      }
-      requiredOption(flags, description, fn, defaultValue) {
-        return this._optionEx({mandatory: true}, flags, description, fn, defaultValue);
-      }
-      combineFlagAndOptionalValue(combine = true) {
-        this._combineFlagAndOptionalValue = !!combine;
-        return this;
-      }
-      allowUnknownOption(allowUnknown = true) {
-        this._allowUnknownOption = !!allowUnknown;
-        return this;
-      }
-      allowExcessArguments(allowExcess = true) {
-        this._allowExcessArguments = !!allowExcess;
-        return this;
-      }
-      enablePositionalOptions(positional = true) {
-        this._enablePositionalOptions = !!positional;
-        return this;
-      }
-      passThroughOptions(passThrough = true) {
-        this._passThroughOptions = !!passThrough;
-        if (!!this.parent && passThrough && !this.parent._enablePositionalOptions) {
-          throw new Error("passThroughOptions can not be used without turning on enablePositionalOptions for parent command(s)");
-        }
-        return this;
-      }
-      storeOptionsAsProperties(storeAsProperties = true) {
-        this._storeOptionsAsProperties = !!storeAsProperties;
-        if (this.options.length) {
-          throw new Error("call .storeOptionsAsProperties() before adding options");
-        }
-        return this;
-      }
-      _setOptionValue(key, value) {
-        if (this._storeOptionsAsProperties) {
-          this[key] = value;
-        } else {
-          this._optionValues[key] = value;
-        }
-      }
-      _getOptionValue(key) {
-        if (this._storeOptionsAsProperties) {
-          return this[key];
-        }
-        return this._optionValues[key];
-      }
-      parse(argv, parseOptions) {
-        if (argv !== void 0 && !Array.isArray(argv)) {
-          throw new Error("first parameter to parse must be array or undefined");
-        }
-        parseOptions = parseOptions || {};
-        if (argv === void 0) {
-          argv = process.argv;
-          if (process.versions && process.versions.electron) {
-            parseOptions.from = "electron";
-          }
-        }
-        this.rawArgs = argv.slice();
-        let userArgs;
-        switch (parseOptions.from) {
-          case void 0:
-          case "node":
-            this._scriptPath = argv[1];
-            userArgs = argv.slice(2);
-            break;
-          case "electron":
-            if (process.defaultApp) {
-              this._scriptPath = argv[1];
-              userArgs = argv.slice(2);
-            } else {
-              userArgs = argv.slice(1);
-            }
-            break;
-          case "user":
-            userArgs = argv.slice(0);
-            break;
-          default:
-            throw new Error(`unexpected parse option { from: '${parseOptions.from}' }`);
-        }
-        if (!this._scriptPath && require.main) {
-          this._scriptPath = require.main.filename;
-        }
-        this._name = this._name || this._scriptPath && path.basename(this._scriptPath, path.extname(this._scriptPath));
-        this._parseCommand([], userArgs);
-        return this;
-      }
-      parseAsync(argv, parseOptions) {
-        this.parse(argv, parseOptions);
-        return Promise.all(this._actionResults).then(() => this);
-      }
-      _executeSubCommand(subcommand, args) {
-        args = args.slice();
-        let launchWithNode = false;
-        const sourceExt = [".js", ".ts", ".tsx", ".mjs", ".cjs"];
-        this._checkForMissingMandatoryOptions();
-        let scriptPath = this._scriptPath;
-        if (!scriptPath && require.main) {
-          scriptPath = require.main.filename;
-        }
-        let baseDir;
-        try {
-          const resolvedLink = fs.realpathSync(scriptPath);
-          baseDir = path.dirname(resolvedLink);
-        } catch (e) {
-          baseDir = ".";
-        }
-        let bin = path.basename(scriptPath, path.extname(scriptPath)) + "-" + subcommand._name;
-        if (subcommand._executableFile) {
-          bin = subcommand._executableFile;
-        }
-        const localBin = path.join(baseDir, bin);
-        if (fs.existsSync(localBin)) {
-          bin = localBin;
-        } else {
-          sourceExt.forEach((ext) => {
-            if (fs.existsSync(`${localBin}${ext}`)) {
-              bin = `${localBin}${ext}`;
-            }
-          });
-        }
-        launchWithNode = sourceExt.includes(path.extname(bin));
-        let proc;
-        if (process.platform !== "win32") {
-          if (launchWithNode) {
-            args.unshift(bin);
-            args = incrementNodeInspectorPort(process.execArgv).concat(args);
-            proc = childProcess.spawn(process.argv[0], args, {stdio: "inherit"});
-          } else {
-            proc = childProcess.spawn(bin, args, {stdio: "inherit"});
-          }
-        } else {
-          args.unshift(bin);
-          args = incrementNodeInspectorPort(process.execArgv).concat(args);
-          proc = childProcess.spawn(process.execPath, args, {stdio: "inherit"});
-        }
-        const signals = ["SIGUSR1", "SIGUSR2", "SIGTERM", "SIGINT", "SIGHUP"];
-        signals.forEach((signal) => {
-          process.on(signal, () => {
-            if (proc.killed === false && proc.exitCode === null) {
-              proc.kill(signal);
-            }
-          });
-        });
-        const exitCallback = this._exitCallback;
-        if (!exitCallback) {
-          proc.on("close", process.exit.bind(process));
-        } else {
-          proc.on("close", () => {
-            exitCallback(new CommanderError(process.exitCode || 0, "commander.executeSubCommandAsync", "(close)"));
-          });
-        }
-        proc.on("error", (err) => {
-          if (err.code === "ENOENT") {
-            const executableMissing = `'${bin}' does not exist
- - if '${subcommand._name}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
- - if the default executable name is not suitable, use the executableFile option to supply a custom name`;
-            throw new Error(executableMissing);
-          } else if (err.code === "EACCES") {
-            throw new Error(`'${bin}' not executable`);
-          }
-          if (!exitCallback) {
-            process.exit(1);
-          } else {
-            const wrappedError = new CommanderError(1, "commander.executeSubCommandAsync", "(error)");
-            wrappedError.nestedError = err;
-            exitCallback(wrappedError);
-          }
-        });
-        this.runningCommand = proc;
-      }
-      _dispatchSubcommand(commandName, operands, unknown) {
-        const subCommand = this._findCommand(commandName);
-        if (!subCommand)
-          this.help({error: true});
-        if (subCommand._executableHandler) {
-          this._executeSubCommand(subCommand, operands.concat(unknown));
-        } else {
-          subCommand._parseCommand(operands, unknown);
-        }
-      }
-      _parseCommand(operands, unknown) {
-        const parsed = this.parseOptions(unknown);
-        operands = operands.concat(parsed.operands);
-        unknown = parsed.unknown;
-        this.args = operands.concat(unknown);
-        if (operands && this._findCommand(operands[0])) {
-          this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
-        } else if (this._hasImplicitHelpCommand() && operands[0] === this._helpCommandName) {
-          if (operands.length === 1) {
-            this.help();
-          } else {
-            this._dispatchSubcommand(operands[1], [], [this._helpLongFlag]);
-          }
-        } else if (this._defaultCommandName) {
-          outputHelpIfRequested(this, unknown);
-          this._dispatchSubcommand(this._defaultCommandName, operands, unknown);
-        } else {
-          if (this.commands.length && this.args.length === 0 && !this._actionHandler && !this._defaultCommandName) {
-            this.help({error: true});
-          }
-          outputHelpIfRequested(this, parsed.unknown);
-          this._checkForMissingMandatoryOptions();
-          const checkForUnknownOptions = () => {
-            if (parsed.unknown.length > 0) {
-              this.unknownOption(parsed.unknown[0]);
-            }
-          };
-          const commandEvent = `command:${this.name()}`;
-          if (this._actionHandler) {
-            checkForUnknownOptions();
-            const args = this.args.slice();
-            this._args.forEach((arg, i) => {
-              if (arg.required && args[i] == null) {
-                this.missingArgument(arg.name);
-              } else if (arg.variadic) {
-                args[i] = args.splice(i);
-                args.length = Math.min(i + 1, args.length);
-              }
-            });
-            if (args.length > this._args.length) {
-              this._excessArguments(args);
-            }
-            this._actionHandler(args);
-            if (this.parent)
-              this.parent.emit(commandEvent, operands, unknown);
-          } else if (this.parent && this.parent.listenerCount(commandEvent)) {
-            checkForUnknownOptions();
-            this.parent.emit(commandEvent, operands, unknown);
-          } else if (operands.length) {
-            if (this._findCommand("*")) {
-              this._dispatchSubcommand("*", operands, unknown);
-            } else if (this.listenerCount("command:*")) {
-              this.emit("command:*", operands, unknown);
-            } else if (this.commands.length) {
-              this.unknownCommand();
-            } else {
-              checkForUnknownOptions();
-            }
-          } else if (this.commands.length) {
-            this.help({error: true});
-          } else {
-            checkForUnknownOptions();
-          }
-        }
-      }
-      _findCommand(name) {
-        if (!name)
-          return void 0;
-        return this.commands.find((cmd) => cmd._name === name || cmd._aliases.includes(name));
-      }
-      _findOption(arg) {
-        return this.options.find((option) => option.is(arg));
-      }
-      _checkForMissingMandatoryOptions() {
-        for (let cmd = this; cmd; cmd = cmd.parent) {
-          cmd.options.forEach((anOption) => {
-            if (anOption.mandatory && cmd._getOptionValue(anOption.attributeName()) === void 0) {
-              cmd.missingMandatoryOptionValue(anOption);
-            }
-          });
-        }
-      }
-      parseOptions(argv) {
-        const operands = [];
-        const unknown = [];
-        let dest = operands;
-        const args = argv.slice();
-        function maybeOption(arg) {
-          return arg.length > 1 && arg[0] === "-";
-        }
-        let activeVariadicOption = null;
-        while (args.length) {
-          const arg = args.shift();
-          if (arg === "--") {
-            if (dest === unknown)
-              dest.push(arg);
-            dest.push(...args);
-            break;
-          }
-          if (activeVariadicOption && !maybeOption(arg)) {
-            this.emit(`option:${activeVariadicOption.name()}`, arg);
-            continue;
-          }
-          activeVariadicOption = null;
-          if (maybeOption(arg)) {
-            const option = this._findOption(arg);
-            if (option) {
-              if (option.required) {
-                const value = args.shift();
-                if (value === void 0)
-                  this.optionMissingArgument(option);
-                this.emit(`option:${option.name()}`, value);
-              } else if (option.optional) {
-                let value = null;
-                if (args.length > 0 && !maybeOption(args[0])) {
-                  value = args.shift();
-                }
-                this.emit(`option:${option.name()}`, value);
-              } else {
-                this.emit(`option:${option.name()}`);
-              }
-              activeVariadicOption = option.variadic ? option : null;
-              continue;
-            }
-          }
-          if (arg.length > 2 && arg[0] === "-" && arg[1] !== "-") {
-            const option = this._findOption(`-${arg[1]}`);
-            if (option) {
-              if (option.required || option.optional && this._combineFlagAndOptionalValue) {
-                this.emit(`option:${option.name()}`, arg.slice(2));
-              } else {
-                this.emit(`option:${option.name()}`);
-                args.unshift(`-${arg.slice(2)}`);
-              }
-              continue;
-            }
-          }
-          if (/^--[^=]+=/.test(arg)) {
-            const index = arg.indexOf("=");
-            const option = this._findOption(arg.slice(0, index));
-            if (option && (option.required || option.optional)) {
-              this.emit(`option:${option.name()}`, arg.slice(index + 1));
-              continue;
-            }
-          }
-          if (maybeOption(arg)) {
-            dest = unknown;
-          }
-          if ((this._enablePositionalOptions || this._passThroughOptions) && operands.length === 0 && unknown.length === 0) {
-            if (this._findCommand(arg)) {
-              operands.push(arg);
-              if (args.length > 0)
-                unknown.push(...args);
-              break;
-            } else if (arg === this._helpCommandName && this._hasImplicitHelpCommand()) {
-              operands.push(arg);
-              if (args.length > 0)
-                operands.push(...args);
-              break;
-            } else if (this._defaultCommandName) {
-              unknown.push(arg);
-              if (args.length > 0)
-                unknown.push(...args);
-              break;
-            }
-          }
-          if (this._passThroughOptions) {
-            dest.push(arg);
-            if (args.length > 0)
-              dest.push(...args);
-            break;
-          }
-          dest.push(arg);
-        }
-        return {operands, unknown};
-      }
-      opts() {
-        if (this._storeOptionsAsProperties) {
-          const result = {};
-          const len = this.options.length;
-          for (let i = 0; i < len; i++) {
-            const key = this.options[i].attributeName();
-            result[key] = key === this._versionOptionName ? this._version : this[key];
-          }
-          return result;
-        }
-        return this._optionValues;
-      }
-      _displayError(exitCode, code, message) {
-        this._outputConfiguration.outputError(`${message}
-`, this._outputConfiguration.writeErr);
-        this._exit(exitCode, code, message);
-      }
-      missingArgument(name) {
-        const message = `error: missing required argument '${name}'`;
-        this._displayError(1, "commander.missingArgument", message);
-      }
-      optionMissingArgument(option) {
-        const message = `error: option '${option.flags}' argument missing`;
-        this._displayError(1, "commander.optionMissingArgument", message);
-      }
-      missingMandatoryOptionValue(option) {
-        const message = `error: required option '${option.flags}' not specified`;
-        this._displayError(1, "commander.missingMandatoryOptionValue", message);
-      }
-      unknownOption(flag) {
-        if (this._allowUnknownOption)
-          return;
-        const message = `error: unknown option '${flag}'`;
-        this._displayError(1, "commander.unknownOption", message);
-      }
-      _excessArguments(receivedArgs) {
-        if (this._allowExcessArguments)
-          return;
-        const expected = this._args.length;
-        const s = expected === 1 ? "" : "s";
-        const forSubcommand = this.parent ? ` for '${this.name()}'` : "";
-        const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${receivedArgs.length}.`;
-        this._displayError(1, "commander.excessArguments", message);
-      }
-      unknownCommand() {
-        const partCommands = [this.name()];
-        for (let parentCmd = this.parent; parentCmd; parentCmd = parentCmd.parent) {
-          partCommands.unshift(parentCmd.name());
-        }
-        const fullCommand = partCommands.join(" ");
-        const message = `error: unknown command '${this.args[0]}'.` + (this._hasHelpOption ? ` See '${fullCommand} ${this._helpLongFlag}'.` : "");
-        this._displayError(1, "commander.unknownCommand", message);
-      }
-      version(str, flags, description) {
-        if (str === void 0)
-          return this._version;
-        this._version = str;
-        flags = flags || "-V, --version";
-        description = description || "output the version number";
-        const versionOption = this.createOption(flags, description);
-        this._versionOptionName = versionOption.attributeName();
-        this.options.push(versionOption);
-        this.on("option:" + versionOption.name(), () => {
-          this._outputConfiguration.writeOut(`${str}
-`);
-          this._exit(0, "commander.version", str);
-        });
-        return this;
-      }
-      description(str, argsDescription) {
-        if (str === void 0 && argsDescription === void 0)
-          return this._description;
-        this._description = str;
-        this._argsDescription = argsDescription;
-        return this;
-      }
-      alias(alias) {
-        if (alias === void 0)
-          return this._aliases[0];
-        let command = this;
-        if (this.commands.length !== 0 && this.commands[this.commands.length - 1]._executableHandler) {
-          command = this.commands[this.commands.length - 1];
-        }
-        if (alias === command._name)
-          throw new Error("Command alias can't be the same as its name");
-        command._aliases.push(alias);
-        return this;
-      }
-      aliases(aliases) {
-        if (aliases === void 0)
-          return this._aliases;
-        aliases.forEach((alias) => this.alias(alias));
-        return this;
-      }
-      usage(str) {
-        if (str === void 0) {
-          if (this._usage)
-            return this._usage;
-          const args = this._args.map((arg) => {
-            return humanReadableArgName(arg);
-          });
-          return [].concat(this.options.length || this._hasHelpOption ? "[options]" : [], this.commands.length ? "[command]" : [], this._args.length ? args : []).join(" ");
-        }
-        this._usage = str;
-        return this;
-      }
-      name(str) {
-        if (str === void 0)
-          return this._name;
-        this._name = str;
-        return this;
-      }
-      helpInformation(contextOptions) {
-        const helper = this.createHelp();
-        if (helper.helpWidth === void 0) {
-          helper.helpWidth = contextOptions && contextOptions.error ? this._outputConfiguration.getErrHelpWidth() : this._outputConfiguration.getOutHelpWidth();
-        }
-        return helper.formatHelp(this, helper);
-      }
-      _getHelpContext(contextOptions) {
-        contextOptions = contextOptions || {};
-        const context = {error: !!contextOptions.error};
-        let write;
-        if (context.error) {
-          write = (arg) => this._outputConfiguration.writeErr(arg);
-        } else {
-          write = (arg) => this._outputConfiguration.writeOut(arg);
-        }
-        context.write = contextOptions.write || write;
-        context.command = this;
-        return context;
-      }
-      outputHelp(contextOptions) {
-        let deprecatedCallback;
-        if (typeof contextOptions === "function") {
-          deprecatedCallback = contextOptions;
-          contextOptions = void 0;
-        }
-        const context = this._getHelpContext(contextOptions);
-        const groupListeners = [];
-        let command = this;
-        while (command) {
-          groupListeners.push(command);
-          command = command.parent;
-        }
-        groupListeners.slice().reverse().forEach((command2) => command2.emit("beforeAllHelp", context));
-        this.emit("beforeHelp", context);
-        let helpInformation = this.helpInformation(context);
-        if (deprecatedCallback) {
-          helpInformation = deprecatedCallback(helpInformation);
-          if (typeof helpInformation !== "string" && !Buffer.isBuffer(helpInformation)) {
-            throw new Error("outputHelp callback must return a string or a Buffer");
-          }
-        }
-        context.write(helpInformation);
-        this.emit(this._helpLongFlag);
-        this.emit("afterHelp", context);
-        groupListeners.forEach((command2) => command2.emit("afterAllHelp", context));
-      }
-      helpOption(flags, description) {
-        if (typeof flags === "boolean") {
-          this._hasHelpOption = flags;
-          return this;
-        }
-        this._helpFlags = flags || this._helpFlags;
-        this._helpDescription = description || this._helpDescription;
-        const helpFlags = _parseOptionFlags(this._helpFlags);
-        this._helpShortFlag = helpFlags.shortFlag;
-        this._helpLongFlag = helpFlags.longFlag;
-        return this;
-      }
-      help(contextOptions) {
-        this.outputHelp(contextOptions);
-        let exitCode = process.exitCode || 0;
-        if (exitCode === 0 && contextOptions && typeof contextOptions !== "function" && contextOptions.error) {
-          exitCode = 1;
-        }
-        this._exit(exitCode, "commander.help", "(outputHelp)");
-      }
-      addHelpText(position, text) {
-        const allowedValues = ["beforeAll", "before", "after", "afterAll"];
-        if (!allowedValues.includes(position)) {
-          throw new Error(`Unexpected value for position to addHelpText.
-Expecting one of '${allowedValues.join("', '")}'`);
-        }
-        const helpEvent = `${position}Help`;
-        this.on(helpEvent, (context) => {
-          let helpStr;
-          if (typeof text === "function") {
-            helpStr = text({error: context.error, command: context.command});
-          } else {
-            helpStr = text;
-          }
-          if (helpStr) {
-            context.write(`${helpStr}
-`);
-          }
-        });
-        return this;
-      }
-    };
-    exports2 = module2.exports = new Command();
-    exports2.program = exports2;
-    exports2.Command = Command;
-    exports2.Option = Option;
-    exports2.CommanderError = CommanderError;
-    exports2.InvalidOptionArgumentError = InvalidOptionArgumentError;
-    exports2.Help = Help;
-    function camelcase(flag) {
-      return flag.split("-").reduce((str, word) => {
-        return str + word[0].toUpperCase() + word.slice(1);
-      });
-    }
-    function outputHelpIfRequested(cmd, args) {
-      const helpOption = cmd._hasHelpOption && args.find((arg) => arg === cmd._helpLongFlag || arg === cmd._helpShortFlag);
-      if (helpOption) {
-        cmd.outputHelp();
-        cmd._exit(0, "commander.helpDisplayed", "(outputHelp)");
-      }
-    }
-    function humanReadableArgName(arg) {
-      const nameOutput = arg.name + (arg.variadic === true ? "..." : "");
-      return arg.required ? "<" + nameOutput + ">" : "[" + nameOutput + "]";
-    }
-    function _parseOptionFlags(flags) {
-      let shortFlag;
-      let longFlag;
-      const flagParts = flags.split(/[ |,]+/);
-      if (flagParts.length > 1 && !/^[[<]/.test(flagParts[1]))
-        shortFlag = flagParts.shift();
-      longFlag = flagParts.shift();
-      if (!shortFlag && /^-[^-]$/.test(longFlag)) {
-        shortFlag = longFlag;
-        longFlag = void 0;
-      }
-      return {shortFlag, longFlag};
-    }
-    function incrementNodeInspectorPort(args) {
-      return args.map((arg) => {
-        if (!arg.startsWith("--inspect")) {
-          return arg;
-        }
-        let debugOption;
-        let debugHost = "127.0.0.1";
-        let debugPort = "9229";
-        let match;
-        if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
-          debugOption = match[1];
-        } else if ((match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null) {
-          debugOption = match[1];
-          if (/^\d+$/.test(match[3])) {
-            debugPort = match[3];
-          } else {
-            debugHost = match[3];
-          }
-        } else if ((match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null) {
-          debugOption = match[1];
-          debugHost = match[3];
-          debugPort = match[4];
-        }
-        if (debugOption && debugPort !== "0") {
-          return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
-        }
-        return arg;
-      });
-    }
   }
 });
 
@@ -50417,8 +50271,187 @@ var require_lib5 = __commonJS({
   }
 });
 
-// src/backend/ipfsWatch.js
-var import_file_watch_iterator = __toModule(require_file_watch_iterator());
+// node_modules/browser-or-node/lib/index.js
+var require_lib6 = __commonJS({
+  "node_modules/browser-or-node/lib/index.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", {
+      value: true
+    });
+    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
+      return typeof obj;
+    } : function(obj) {
+      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+    };
+    var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+    var isWebWorker = (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
+    var isNode2 = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
+    var isJsDom = function isJsDom2() {
+      return typeof window !== "undefined" && window.name === "nodejs" || navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
+    };
+    exports2.isBrowser = isBrowser;
+    exports2.isWebWorker = isWebWorker;
+    exports2.isNode = isNode2;
+    exports2.isJsDom = isJsDom;
+  }
+});
+
+// node_modules/event-iterator/lib/event-iterator.js
+var require_event_iterator = __commonJS({
+  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", {value: true});
+    var EventQueue = class {
+      constructor() {
+        this.pullQueue = [];
+        this.pushQueue = [];
+        this.eventHandlers = {};
+        this.isPaused = false;
+        this.isStopped = false;
+      }
+      push(value) {
+        if (this.isStopped)
+          return;
+        const resolution = {value, done: false};
+        if (this.pullQueue.length) {
+          const placeholder = this.pullQueue.shift();
+          if (placeholder)
+            placeholder.resolve(resolution);
+        } else {
+          this.pushQueue.push(Promise.resolve(resolution));
+          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
+            this.isPaused = true;
+            if (this.eventHandlers.highWater) {
+              this.eventHandlers.highWater();
+            } else if (console) {
+              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
+            }
+          }
+        }
+      }
+      stop() {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        for (const placeholder of this.pullQueue) {
+          placeholder.resolve({value: void 0, done: true});
+        }
+        this.pullQueue.length = 0;
+      }
+      fail(error) {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        if (this.pullQueue.length) {
+          for (const placeholder of this.pullQueue) {
+            placeholder.reject(error);
+          }
+          this.pullQueue.length = 0;
+        } else {
+          const rejection = Promise.reject(error);
+          rejection.catch(() => {
+          });
+          this.pushQueue.push(rejection);
+        }
+      }
+      remove() {
+        Promise.resolve().then(() => {
+          if (this.removeCallback)
+            this.removeCallback();
+        });
+      }
+      [Symbol.asyncIterator]() {
+        return {
+          next: (value) => {
+            const result = this.pushQueue.shift();
+            if (result) {
+              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
+                this.isPaused = false;
+                if (this.eventHandlers.lowWater) {
+                  this.eventHandlers.lowWater();
+                }
+              }
+              return result;
+            } else if (this.isStopped) {
+              return Promise.resolve({value: void 0, done: true});
+            } else {
+              return new Promise((resolve, reject) => {
+                this.pullQueue.push({resolve, reject});
+              });
+            }
+          },
+          return: () => {
+            this.isStopped = true;
+            this.pushQueue.length = 0;
+            this.remove();
+            return Promise.resolve({value: void 0, done: true});
+          }
+        };
+      }
+    };
+    var EventIterator = class {
+      constructor(listen, {highWaterMark = 100, lowWaterMark = 1} = {}) {
+        const queue = new EventQueue();
+        queue.highWaterMark = highWaterMark;
+        queue.lowWaterMark = lowWaterMark;
+        queue.removeCallback = listen({
+          push: (value) => queue.push(value),
+          stop: () => queue.stop(),
+          fail: (error) => queue.fail(error),
+          on: (event, fn) => {
+            queue.eventHandlers[event] = fn;
+          }
+        }) || (() => {
+        });
+        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
+        Object.freeze(this);
+      }
+    };
+    exports2.EventIterator = EventIterator;
+    exports2.default = EventIterator;
+  }
+});
+
+// node_modules/event-iterator/lib/node.js
+var require_node3 = __commonJS({
+  "node_modules/event-iterator/lib/node.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", {value: true});
+    var event_iterator_1 = require_event_iterator();
+    exports2.EventIterator = event_iterator_1.EventIterator;
+    function stream2(evOptions) {
+      return new event_iterator_1.EventIterator((queue) => {
+        this.addListener("data", queue.push);
+        this.addListener("end", queue.stop);
+        this.addListener("error", queue.fail);
+        queue.on("highWater", () => this.pause());
+        queue.on("lowWater", () => this.resume());
+        return () => {
+          this.removeListener("data", queue.push);
+          this.removeListener("end", queue.stop);
+          this.removeListener("error", queue.fail);
+          if (this.destroy) {
+            this.destroy();
+          } else if (typeof this.close == "function") {
+            ;
+            this.close();
+          }
+        };
+      }, evOptions);
+    }
+    exports2.stream = stream2;
+    exports2.default = event_iterator_1.EventIterator;
+  }
+});
+
+// src/backend/pollinate-cli.js
+__markAsModule(exports);
+__export(exports, {
+  debug: () => debug7,
+  rootPath: () => rootPath
+});
 
 // node_modules/p-queue/dist/index.js
 var import_eventemitter3 = __toModule(require_eventemitter3());
@@ -50434,16 +50467,23 @@ var TimeoutError = class extends Error {
 // node_modules/p-queue/dist/index.js
 var timeoutError = new TimeoutError();
 
-// src/backend/ipfsWatch.js
-var import_debug5 = __toModule(require_src());
-var import_await_sleep2 = __toModule(require_await_sleep());
-var import_ramda3 = __toModule(require_src2());
-var import_process = __toModule(require("process"));
+// src/backend/pollinate-cli.js
+var import_debug7 = __toModule(require_src());
+var import_await_sleep3 = __toModule(require_await_sleep());
+var import_process2 = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
-var import_event_iterator = __toModule(require_node2());
+
+// src/backend/options.js
+var import_commander = __toModule(require_commander());
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 200).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
+import_commander.program.parse(process.argv);
+var options_default = import_commander.program.opts();
+
+// src/backend/ipfs/sender.js
+var import_file_watch_iterator = __toModule(require_file_watch_iterator());
 
 // src/network/ipfsConnector.js
-var import_ipfs_http_client = __toModule(require_src31());
+var import_ipfs_http_client = __toModule(require_src30());
 
 // src/network/utils.js
 var import_react = __toModule(require_react());
@@ -50461,25 +50501,13 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
-var callLogger = (f, name = null) => (...args) => {
-  if (!name)
-    name = f.name;
-  const _debug = debug.extend(name);
-  _debug("--- Calling ", name, "with input", ...args);
-  _debug("--- In:", ...args);
-  const output = f(...args);
-  if (output instanceof Promise)
-    output.then((out) => _debug("--- Out:", name, ":", out));
-  else
-    _debug("--- Out:", name, ":", output);
-  return output;
-};
+var noop = () => null;
 
 // src/network/ipfsConnector.js
-var import_cids2 = __toModule(require_src33());
+var import_cids2 = __toModule(require_src32());
 
 // src/network/contentCache.js
-var import_cids = __toModule(require_src33());
+var import_cids = __toModule(require_src32());
 var import_debug2 = __toModule(require_src());
 var import_debounce = __toModule(require_debounce());
 var debug2 = (0, import_debug2.default)("contentCache");
@@ -50497,11 +50525,11 @@ var cleanCIDs = (cidFunc) => async (cidOrFile, ...args) => {
 
 // src/network/ipfsConnector.js
 var import_is_port_reachable = __toModule(require_is_port_reachable());
-var import_native_abort_controller = __toModule(require_src13());
+var import_native_abort_controller = __toModule(require_src12());
 var import_it_all = __toModule(require_it_all());
 var import_debug3 = __toModule(require_src());
 var import_callback_to_async_iterator = __toModule(require_dist());
-var import_ramda = __toModule(require_src2());
+var import_ramda = __toModule(require_src33());
 
 // src/utils/concurrency.js
 var import_p_limit = __toModule(require_p_limit());
@@ -50511,26 +50539,31 @@ var concurrency_default = limit;
 
 // src/network/ipfsConnector.js
 var import_path = __toModule(require("path"));
-
-// src/backend/options.js
-var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 1500);
-import_commander.program.parse(process.argv);
-var options_default = import_commander.program.opts();
-
-// src/network/ipfsConnector.js
 var import_queueable = __toModule(require_lib5());
 var import_await_sleep = __toModule(require_await_sleep());
+var import_browser_or_node = __toModule(require_lib6());
 var asyncify = typeof import_callback_to_async_iterator.default === "function" ? import_callback_to_async_iterator.default : import_callback_to_async_iterator.default.default;
 var debug3 = (0, import_debug3.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
-var mfsRoot = `/`;
+var mfsRoot = `/tmp_${Math.round(Math.random() * 1e4)}/`;
+var localIPFSAvailable = async () => {
+  if (import_browser_or_node.isNode) {
+    return await (0, import_is_port_reachable.default)(5001);
+  } else {
+    try {
+      await fetch("http://localhost:5001", {mode: "no-cors"});
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+};
 var getIPFSDaemonURL = async () => {
-  if (await (0, import_is_port_reachable.default)(5001)) {
-    debug3("Localhost:5001 is reachable. Connecting...");
+  if (await localIPFSAvailable()) {
+    debug3("Ipfs at localhost:5001 is reachable. Connecting...");
     return "http://localhost:5001";
   }
-  debug3("Localhost:5001 is not reachable. Connecting to", IPFS_HOST);
+  debug3("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
 var ipfsDaemonURL = getIPFSDaemonURL();
@@ -50546,13 +50579,18 @@ var getWebURL = (cid, name = null) => {
 };
 var stripSlashIPFS = (cidString) => cidString.replace("/ipfs/", "");
 var firstLine = (s) => s.split("\n")[0];
-var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : import_cids2.default.isCID(file) ? file.toString() : file));
+var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : import_cids2.default.isCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
 var _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
-var _ipfsLs = async (cid) => (await toPromise((await client).ls(stringCID(cid)))).filter(({type, name}) => type !== "unknown" && name !== void 0).map(_normalizeIPFS);
-var ipfsLs = callLogger(_ipfsLs, "ipfsls");
+var ipfsLs = async (cid) => {
+  debug3("calling ipfs ls with cid", cid);
+  const result = (await toPromise((await client).ls(stringCID(cid)))).filter(({type, name}) => type !== "unknown" && name !== void 0).map(_normalizeIPFS);
+  debug3("got ipfs ls result", result);
+  return result;
+};
 var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options = {}) => {
   const _client = await client;
   ipfsPath = (0, import_path.join)(mfsRoot, ipfsPath);
+  debug3("adding", ipfsPath, "options", options);
   const cid = stringCID(await _client.add(content, options));
   debug3("added", cid, "size", content);
   try {
@@ -50663,30 +50701,104 @@ function subscribeCIDCallback(_nodeID = null, callback) {
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path, {nocache: true}))));
 
-// src/network/ipfsState.js
-var import_debug4 = __toModule(require_src());
-var import_ramda2 = __toModule(require_src2());
+// src/backend/ipfs/sender.js
 var import_path2 = __toModule(require("path"));
+var import_fs = __toModule(require("fs"));
+var import_debug4 = __toModule(require_src());
+var import_ramda2 = __toModule(require_src33());
+var import_await_sleep2 = __toModule(require_await_sleep());
+var debug4 = (0, import_debug4.default)("ipfs/sender");
+var sender = ({path: watchPath, debounce: debounce2, ipns, once}) => {
+  let processing = Promise.resolve(true);
+  async function start() {
+    if (!(0, import_fs.existsSync)(watchPath)) {
+      debug4("Local: Root directory does not exist. Creating", watchPath);
+      (0, import_fs.mkdirSync)(watchPath, {recursive: true});
+    }
+    await ipfsMkdir("/");
+    debug4("IPFS: Created root IPFS path (if it did not exist)");
+    debug4("Local: Watching", watchPath);
+    const watch$ = (0, import_file_watch_iterator.default)(".", {
+      ignored: /(^|[\/\\])\../,
+      cwd: watchPath,
+      awaitWriteFinish: true
+    }, {debounce: debounce2});
+    for await (const files of watch$) {
+      let done = null;
+      processing = new Promise((resolve) => done = resolve);
+      const changed = getSortedChangedFiles(files);
+      await Promise.all(changed.map(async ({event, file}) => {
+        const localPath = (0, import_path2.join)(watchPath, file);
+        const ipfsPath = file;
+        if (event === "addDir") {
+          await ipfsMkdir(ipfsPath);
+        }
+        if (event === "add") {
+          await ipfsAddFile(ipfsPath, localPath);
+        }
+        if (event === "unlink" || event === "unlinkDir") {
+          debug4("removing", file, event);
+          await ipfsRm(ipfsPath);
+        }
+        if (event === "change") {
+          debug4("changing", file);
+          await ipfsAddFile(ipfsPath, localPath);
+        }
+      }));
+      const newContentID = await contentID("/");
+      console.log(newContentID);
+      if (ipns) {
+        debug4("publish", newContentID);
+        await publish(newContentID);
+      }
+      done();
+      if (once) {
+        break;
+      }
+    }
+  }
+  return {start, processing: () => processing};
+};
+function getSortedChangedFiles(files) {
+  const changed = files.toArray().filter(({changed: changed2, file}) => changed2 && file.length > 0).map((_a) => {
+    var _b = _a, {changed: changed2} = _b, rest = __objRest(_b, ["changed"]);
+    return rest;
+  });
+  const changedOrdered = order(changed);
+  debug4("Changed files", changedOrdered);
+  return changedOrdered;
+}
+var _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];
+var eventOrder = ({event}) => _eventOrder.indexOf(event);
+var order = (events) => (0, import_ramda2.sortBy)(eventOrder, (0, import_ramda2.reverse)(events));
+
+// src/backend/ipfs/receiver.js
+var import_process = __toModule(require("process"));
+
+// src/network/ipfsState.js
+var import_debug5 = __toModule(require_src());
+var import_ramda3 = __toModule(require_src33());
+var import_path3 = __toModule(require("path"));
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var debug4 = (0, import_debug4.default)("ipfsState");
+var debug5 = (0, import_debug5.default)("ipfsState");
 var getIPFSState = (contentID2, processFile2, rootName = "root") => {
-  debug4("Getting state for CID", contentID2);
+  debug5("Getting state for CID", contentID2);
   return _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2}, processFile2);
 };
 var _getIPFSState = cacheOutput(async ({cid, type, name, path, rootCID}, processFile2) => {
   cid = stringCID(cid);
-  const _debug = debug4.extend(`_getIPFSState(${path})`);
+  const _debug = debug5.extend(`_getIPFSState(${path})`);
   _debug("Getting state for", type, name, cid);
   if (type === "dir") {
     const files = await ipfsLs(cid);
     _debug("Got files for", name, cid, files);
     const filenames = files.map(({name: name2}) => name2);
-    const contents = await PromiseAllProgress(path, files.map((file) => _getIPFSState(__spreadProps(__spreadValues({}, file), {path: (0, import_path2.join)(path, file.name), rootCID}), processFile2)));
-    const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
+    const contents = await PromiseAllProgress(path, files.map((file) => _getIPFSState(__spreadProps(__spreadValues({}, file), {path: (0, import_path3.join)(path, file.name), rootCID}), processFile2)));
+    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
     _debug("contents", contentResult);
     return contentResult;
   }
@@ -50698,86 +50810,42 @@ var _getIPFSState = cacheOutput(async ({cid, type, name, path, rootCID}, process
   throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
 });
 
-// src/backend/ipfsWatch.js
-var import_fs = __toModule(require("fs"));
-var import_path3 = __toModule(require("path"));
+// src/backend/ipfs/receiver.js
+var import_path4 = __toModule(require("path"));
+var import_debug6 = __toModule(require_src());
+var import_event_iterator = __toModule(require_node3());
 var import_fs2 = __toModule(require("fs"));
+var import_path5 = __toModule(require("path"));
+var import_fs3 = __toModule(require("fs"));
 var {stream} = import_event_iterator.default;
-var {writeFile, mkdir} = import_fs.promises;
-var debug5 = (0, import_debug5.default)("ipfsWatch");
-var readline = import_readline.default.createInterface({
-  input: import_process.default.stdin,
-  output: import_process.default.stdout
-});
-debug5("CLI options", options_default);
-var watchPath = options_default.path;
-var enableSend = !options_default.receive;
-var enableReceive = !options_default.send;
+var {writeFile, mkdir} = import_fs2.promises;
+var debug6 = (0, import_debug6.default)("ipfs/sender");
 var _lastContentID2 = null;
 var isSameContentID = (cid) => {
   if (_lastContentID2 === cid) {
-    debug5("contentid was the same. probably skipping");
+    debug6("contentid was the same. probably skipping");
     return true;
   }
   _lastContentID2 = cid;
   return false;
 };
-if (!(0, import_fs2.existsSync)(watchPath)) {
-  debug5("Local: Root directory does not exist. Creating", watchPath);
-  (0, import_fs2.mkdirSync)(watchPath, {recursive: true});
-}
-var incrementalUpdate = async (watchPath2) => {
-  await ipfsMkdir("/");
-  debug5("IPFS: Created root IPFS path (if it did not exist)");
-  debug5("Local: Watching", watchPath2);
-  const watch$ = (0, import_file_watch_iterator.default)(".", {
-    ignored: /(^|[\/\\])\../,
-    cwd: watchPath2,
-    awaitWriteFinish: true
-  }, {debounce: options_default.debounce});
-  for await (const files of watch$) {
-    const changed = getSortedChangedFiles(files);
-    await Promise.all(changed.map(async ({event, file}) => {
-      const localPath = (0, import_path3.join)(watchPath2, file);
-      const ipfsPath = file;
-      if (event === "addDir") {
-        await ipfsMkdir(ipfsPath);
-      }
-      if (event === "add") {
-        await ipfsAddFile(ipfsPath, localPath);
-      }
-      if (event === "unlink" || event === "unlinkDir") {
-        debug5("removing", file, event);
-        await ipfsRm(ipfsPath);
-      }
-      if (event === "change") {
-        debug5("changing", file);
-        await ipfsAddFile(ipfsPath, localPath);
-      }
-    }));
-    const newContentID = await contentID("/");
-    console.log(newContentID);
-    if (options_default.ipns) {
-      debug5("publish", newContentID);
-      await publish(newContentID);
-    }
-    if (options_default.once) {
-      break;
-    }
-  }
-  await (0, import_await_sleep2.default)(500);
-  import_process.default.exit(0);
+var writeFileAndCreateFolder = async (path, content) => {
+  debug6("creating folder if it does not exist", (0, import_path5.dirname)(path));
+  await mkdir((0, import_path5.dirname)(path), {recursive: true});
+  debug6("writing file of length", content.size, "to folder", path);
+  (0, import_fs3.writeFileSync)(path, content);
+  return path;
 };
-async function processRemoteCID(contentID2) {
+async function processRemoteCID(contentID2, rootPath2) {
   if (isSameContentID(stringCID(contentID2)))
     return;
-  debug5("Processing remote CID", contentID2);
-  debug5("got remote state", await getIPFSState(contentID2, processFile));
+  debug6("Processing remote CID", contentID2);
+  debug6("got remote state", await getIPFSState(contentID2, (file) => processFile(file, rootPath2)));
 }
-async function processFile({path, cid}) {
-  const _debug = debug5.extend(`processFile(${path})`);
+async function processFile({path, cid}, rootPath2) {
+  const _debug = debug6.extend(`processFile(${path})`);
   _debug("started");
-  const destPath = (0, import_path3.join)(watchPath, path);
+  const destPath = (0, import_path4.join)(rootPath2, path);
   _debug("writeFile", destPath, cid, "queued");
   const content = await ipfsGet(cid, {stream: true});
   _debug("writefile content", content.length);
@@ -50785,55 +50853,89 @@ async function processFile({path, cid}) {
   _debug("done");
   return destPath;
 }
-function getSortedChangedFiles(files) {
-  const changed = files.toArray().filter(({changed: changed2, file}) => changed2 && file.length > 0).map((_a) => {
-    var _b = _a, {changed: changed2} = _b, rest = __objRest(_b, ["changed"]);
-    return rest;
-  });
-  const changedOrdered = order(changed);
-  debug5("Changed files", changedOrdered);
-  return changedOrdered;
-}
-var _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];
-var eventOrder = ({event}) => _eventOrder.indexOf(event);
-var order = (events) => (0, import_ramda3.sortBy)(eventOrder, (0, import_ramda3.reverse)(events));
-if (enableSend)
-  incrementalUpdate(watchPath);
-if (enableReceive) {
-  (async function() {
-    if (options_default.ipns) {
-      debug5("IPNS activated. subscring to CIDs from /input");
-      const [cidStream, unsubscribe] = await subscribeCID(null, "/input");
-      for await (let remoteCID of await cidStream) {
-        debug5("remoteCID from pubsub", remoteCID);
-        await processRemoteCID(stringCID(remoteCID));
-        if (options_default.once) {
-          unsubscribe();
-          break;
-        }
-      }
-      ;
-    } else {
-      for await (let remoteCID of stream.call(import_process.default.stdin)) {
-        remoteCID = remoteCID.toString();
-        if (remoteCID.startsWith("/ipns/"))
-          remoteCID = await ipfsResolve(remoteCID);
-        await processRemoteCID(remoteCID);
-        console.log(remoteCID);
-        if (options_default.once)
-          break;
-      }
+var receive = async function({ipns, once, path: rootPath2}) {
+  const [cidStream, unsubscribe] = ipns ? await subscribeCID(null, "/input") : [stream.call(import_process.default.stdin), noop];
+  let remoteCID = null;
+  for await (remoteCID of await cidStream) {
+    debug6("received CID", remoteCID);
+    remoteCID = stringCID(remoteCID);
+    debug6("remoteCID", remoteCID);
+    if (remoteCID.startsWith("/ipns/"))
+      remoteCID = await ipfsResolve(remoteCID);
+    await processRemoteCID(stringCID(remoteCID), rootPath2);
+    if (once) {
+      unsubscribe();
+      break;
     }
-    import_process.default.exit(0);
-  })();
-}
-var writeFileAndCreateFolder = async (path, content) => {
-  debug5("creating folder if it does not exist", (0, import_path3.dirname)(path));
-  await mkdir((0, import_path3.dirname)(path), {recursive: true});
-  debug5("writing file of length", content.size, "to folder", path);
-  (0, import_fs2.writeFileSync)(path, content);
-  return path;
+  }
+  ;
+  return remoteCID;
 };
+
+// src/backend/pollinate-cli.js
+var import_child_process = __toModule(require("child_process"));
+var import_fs4 = __toModule(require("fs"));
+var debug7 = (0, import_debug7.default)("pollinate");
+var readline = import_readline.default.createInterface({
+  input: import_process2.default.stdin,
+  output: import_process2.default.stdout
+});
+debug7("CLI options", options_default);
+var rootPath = options_default.path;
+var enableSend = !options_default.receive;
+var enableReceive = !options_default.send;
+var executeCommand = options_default.execute;
+var sleepBeforeExit = options_default.debounce * 2;
+var execute = async (command, logfile = null) => new Promise((resolve, reject) => {
+  debug7("Executing command", command);
+  const childProc = (0, import_child_process.exec)(command, (err) => {
+    if (err)
+      reject(err);
+    else
+      resolve();
+  });
+  childProc.stdout.pipe(import_process2.default.stderr);
+  childProc.stderr.pipe(import_process2.default.stderr);
+  if (logfile) {
+    debug7("creating a write stream to ", logfile);
+    const logout = (0, import_fs4.createWriteStream)(logfile, {"flags": "a"});
+    childProc.stdout.pipe(logout);
+    childProc.stderr.pipe(logout);
+  }
+});
+if (executeCommand)
+  (async () => {
+    const {start, processing} = sender(__spreadProps(__spreadValues({}, options_default), {once: false}));
+    start();
+    await execute(executeCommand, options_default.logout);
+    debug7("done executing", executeCommand, ". Waiting...");
+    await (0, import_await_sleep3.default)(sleepBeforeExit);
+    debug7("awaiting termination of state sync");
+    await processing();
+    debug7("state sync done. exiting");
+    import_process2.default.exit(0);
+  })();
+else {
+  if (enableSend)
+    (async () => {
+      const {start, processing} = await sender(options_default);
+      await start();
+      await (0, import_await_sleep3.default)(sleepBeforeExit);
+      await processing();
+      import_process2.default.exit(0);
+    })();
+  if (enableReceive) {
+    (async () => {
+      await receive(options_default);
+      import_process2.default.exit(0);
+    })();
+  }
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  debug,
+  rootPath
+});
 /*
 object-assign
 (c) Sindre Sorhus

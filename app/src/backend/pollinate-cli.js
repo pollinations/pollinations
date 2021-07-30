@@ -34,14 +34,14 @@ const sleepBeforeExit = options.debounce * 2;
 const execute = async command => 
   new Promise((resolve,reject) => {
     debug("Executing command", command);
-    const process = exec(command, err => {
+    const childProc = exec(command, err => {
       if (err) 
         reject(err);
       else 
         resolve();
     });
-    //process.stdout.pipe(process.stdout);
-    //process.stderr.pipe(process.stderr);
+    childProc.stdout.pipe(process.stdout);
+    childProc.stderr.pipe(process.stderr);
   });
 
 

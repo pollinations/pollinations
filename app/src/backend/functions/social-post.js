@@ -1,7 +1,7 @@
 
 import SocialPost from "social-post-api"; 
 import { IPFSState } from "../../network/ipfsClient.js";
-import readMetadata from "../notebookMetadata.js";
+import readMetadata from "../../utils/notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "../../data/media.js";
 import { dissoc } from "ramda";
 

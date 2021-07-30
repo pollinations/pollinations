@@ -9,7 +9,7 @@ import Readline from 'readline';
 import options from "./options.js";
 import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
-
+import { exec } from "child_process";
 
 export const debug = Debug("pollinate")
 
@@ -29,25 +29,50 @@ const enableReceive = !options.send;
 
 
 const executeCommand = options.execute;
+const sleepBeforeExit = options.debounce * 2;
+
+const execute = async command => 
+  new Promise((resolve,reject) => {
+    debug("Executing command", command);
+    const process = exec(command, err => {
+      if (err) 
+        reject(err);
+      else 
+        resolve();
+    });
+    //process.stdout.pipe(process.stdout);
+    //process.stderr.pipe(process.stderr);
+  });
 
 
 if (executeCommand) 
   (async () => {
+    
     const receivedCID = await receive({...options, once: true});
     debug("received IPFS content", receivedCID);
-    sender({...options, once: false });
-    debug("executing command", executeCommand);
-    await exec(executeCommand);
+    
+    const {start, processing} = sender({...options, once: false });
+    
+    start();
+    
+    await execute(executeCommand);
     debug("done executing", executeCommand,". Waiting...");
-    await awaitSleep(500);
+
+    await awaitSleep(sleepBeforeExit);
+    debug("awaiting termination of state sync");
+    await processing(); 
+    
+    debug("state sync done. exiting");
     process.exit(0);
   })();
 
 else {
   if (enableSend)
     (async () => {
-      await sender(options);
-      await awaitSleep(1000);
+      const { start, processing } = await sender(options);
+      await start();
+      await awaitSleep(sleepBeforeExit);
+      await processing();
       process.exit(0);
     })();
 

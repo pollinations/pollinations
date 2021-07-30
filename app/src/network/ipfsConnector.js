@@ -1,6 +1,6 @@
 
 import { create, globSource } from "ipfs-http-client";
-import { toPromise, callLogger, toPromise1, noop } from "./utils.js";
+import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
 import CID from "cids";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
@@ -108,7 +108,9 @@ export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) 
     const _client = await client;
     ipfsPath = join(mfsRoot, ipfsPath);
     debug("adding", ipfsPath, "options",options);
-    const cid = stringCID(await _client.add(content, options));
+    const cid = stringCID(await retryException(
+        async () => await _client.add(content, options)
+    ));
     debug("added", cid, "size", content);
 
 

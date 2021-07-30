@@ -76,3 +76,13 @@ export const callLogger = (f,name = null) => (...args) => {
     return output;
   }
   
+  export const retryException = async (f, n=5) => {
+      while (n-- > 0) {
+        try {
+            return await f();
+        } catch (e) {
+            debug("retryException", e);
+        }
+      }
+      throw new Error("Too many retries");
+    }

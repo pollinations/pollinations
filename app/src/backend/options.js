@@ -7,8 +7,9 @@ program
 .option('-o, --once', 'run once and exit', false)
 .option('-i, --ipns', 'publish to /ipns/pollinations.ai', false)
 .option('-n, --nodeid <nodeid>', 'local node id', null)
-.option('-d, --debounce <ms>', 'file watch debounce time', 1500)
+.option('-d, --debounce <ms>', 'file watch debounce time', 200)
 .option('-e, --execute <command>', 'run command on receive and stream back to ipfs', null)
+.option('-l, --logout <path>', 'log to file', null);
 
 program.parse(process.argv);
 

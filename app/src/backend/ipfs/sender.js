@@ -4,64 +4,78 @@ import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
 import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
+import awaitSleep from "await-sleep";
 
 const debug = Debug("ipfs/sender");
 
-export const sender = async ({ path: watchPath, debounce, ipns, once }) => {
-  if (!existsSync(watchPath)) {
-    debug("Local: Root directory does not exist. Creating", watchPath);
-    mkdirSync(watchPath, { recursive: true });
-  }
-  await ipfsMkdir("/");
-  debug("IPFS: Created root IPFS path (if it did not exist)");
-  debug("Local: Watching", watchPath);
-  const watch$ = watch(".", {
-    ignored: /(^|[\/\\])\../,
-    cwd: watchPath,
-    awaitWriteFinish: true,
-  }, { debounce });
+export const sender = ({ path: watchPath, debounce, ipns, once }) => {
+  
+  let processing = Promise.resolve(true);
 
-  for await (const files of watch$) {
+  async function start() {
 
-    const changed = getSortedChangedFiles(files);
-    await Promise.all(changed.map(async ({ event, file }) => {
-      const localPath = join(watchPath, file);
-      const ipfsPath = file;
-
-      if (event === "addDir") {
-        await ipfsMkdir(ipfsPath);
-      }
-
-      if (event === "add") {
-        await ipfsAddFile(ipfsPath, localPath);
-      }
-
-      if (event === "unlink" || event === "unlinkDir") {
-        debug("removing", file, event);
-        await ipfsRm(ipfsPath);
-      }
-
-      if (event === "change") {
-        debug("changing", file);
-        await ipfsAddFile(ipfsPath, localPath);
-      }
-    }));
-    // for (const { event, file } of changed) {
-    // }
-    // console.error("PUBLISHIIING")
-    const newContentID = await contentID("/");
-    console.log(newContentID);
-    if (ipns) {
-      debug("publish", newContentID);
-      // if (!isSameContentID(stringCID(newContentID)))
-      await publish(newContentID);
+    if (!existsSync(watchPath)) {
+      debug("Local: Root directory does not exist. Creating", watchPath);
+      mkdirSync(watchPath, { recursive: true });
     }
+    await ipfsMkdir("/");
+    debug("IPFS: Created root IPFS path (if it did not exist)");
+    debug("Local: Watching", watchPath);
+    
+    const watch$ = watch(".", {
+      ignored: /(^|[\/\\])\../,
+      cwd: watchPath,
+      awaitWriteFinish: true,
+    }, { debounce });
+    
+    for await (const files of watch$) {
+      
+      let done=null;
 
-    if (once) {
-      break;
+      processing = new Promise(resolve => done = resolve);
+      
+      const changed = getSortedChangedFiles(files);
+      await Promise.all(changed.map(async ({ event, file }) => {
+        const localPath = join(watchPath, file);
+        const ipfsPath = file;
+
+        if (event === "addDir") {
+          await ipfsMkdir(ipfsPath);
+        }
+
+        if (event === "add") {
+          await ipfsAddFile(ipfsPath, localPath);
+        }
+
+        if (event === "unlink" || event === "unlinkDir") {
+          debug("removing", file, event);
+          await ipfsRm(ipfsPath);
+        }
+
+        if (event === "change") {
+          debug("changing", file);
+          await ipfsAddFile(ipfsPath, localPath);
+        }
+      }));
+      // for (const { event, file } of changed) {
+      // }
+      // console.error("PUBLISHIIING")
+      const newContentID = await contentID("/");
+      console.log(newContentID);
+      if (ipns) {
+        debug("publish", newContentID);
+        // if (!isSameContentID(stringCID(newContentID)))
+        await publish(newContentID);
+      }
+
+      done();
+
+      if (once) {
+        break;
+      }
     }
   }
-
+  return {start, processing: () => processing};
 };
 
 

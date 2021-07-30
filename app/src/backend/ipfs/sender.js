@@ -25,7 +25,7 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
     const watch$ = watch(".", {
       ignored: /(^|[\/\\])\../,
       cwd: watchPath,
-      awaitWriteFinish: true,
+      awaitWriteFinish: false,
     }, { debounce });
     
     for await (const files of watch$) {

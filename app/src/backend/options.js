@@ -10,7 +10,7 @@ program
 .option('-d, --debounce <ms>', 'file watch debounce time', 200)
 .option('-e, --execute <command>', 'run command on receive and stream back to ipfs', null)
 .option('-l, --logout <path>', 'log to file', null);
-acxc
+
 program.parse(process.argv);
 
 export default program.opts();

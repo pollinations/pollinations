@@ -5,7 +5,7 @@ import Markdown from 'markdown-to-jsx';
 
 
 import useColab from "../network/useColab"
-import readMetadata from "../backend/notebookMetadata";
+import readMetadata from "../utils/notebookMetadata";
 import HelpModal from "../components/HelpModal";
 import Debug from "debug";
 

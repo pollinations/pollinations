@@ -26,7 +26,14 @@ const notebookList = [{
     path: "/p/Qma1zZwTYTX5rKoGpyBY4DWCK7ERXGpto4pNKfmHAEFoVM",
     category: "Text-to-Image",
     Icon: WallpaperIcon
-},];
+},
+{
+    name: "DALL-E Mini",
+    path: "/p/Qmf6RPQKAQQ3TzB7wDii88NkXPFgnnzzrdA81uM5pRZh2i",
+    category: "Text-to-Image",
+    Icon: WallpaperIcon
+},
+];
 
 // guided diffusion /p/Qma1zZwTYTX5rKoGpyBY4DWCK7ERXGpto4pNKfmHAEFoVM
 

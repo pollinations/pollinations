@@ -24,6 +24,7 @@ export const NotebookProgress = ({output, metadata}) => {
         )}%`}</Typography>
       </Box>
       </Box>
+      {progress > 0 && <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>}
     </>
 }
 

@@ -29,7 +29,7 @@ const notebookList = [{
 },
 {
     name: "DALL-E Mini",
-    path: "/p/Qmf6RPQKAQQ3TzB7wDii88NkXPFgnnzzrdA81uM5pRZh2i",
+    path: "/p/QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
     category: "Text-to-Image",
     Icon: WallpaperIcon
 },

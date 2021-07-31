@@ -3,6 +3,6 @@ const words = ["nude","4r5e","5h1t","5hit","a55","anal","anus","ar5e","arrse","a
 
 const repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n-1)
 
-const mature = text => words.reduce((word,text) => text.replace(word, repeatChar("*", word.length)), text);
+const mature = text => words.reduce((text,word) => text.replace(word, repeatChar("*", word.length)), text);
 
 export default mature;

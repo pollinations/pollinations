@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import Debug from "debug";
+import awaitSleep from "await-sleep";
 const debug = Debug("utils")
 
 export const toPromise = async asyncGen => {
@@ -76,12 +77,13 @@ export const callLogger = (f,name = null) => (...args) => {
     return output;
   }
   
-  export const retryException = async (f, n=5) => {
+  export const retryException = async (f, n=10) => {
       while (n-- > 0) {
         try {
             return await f();
         } catch (e) {
             debug("retryException", e);
+            await awaitSleep(1000)
         }
       }
       throw new Error("Too many retries");

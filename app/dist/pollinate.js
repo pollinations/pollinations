@@ -50469,7 +50469,7 @@ var timeoutError = new TimeoutError();
 
 // src/backend/pollinate-cli.js
 var import_debug7 = __toModule(require_src());
-var import_await_sleep3 = __toModule(require_await_sleep());
+var import_await_sleep4 = __toModule(require_await_sleep());
 var import_process2 = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
 
@@ -50488,6 +50488,7 @@ var import_ipfs_http_client = __toModule(require_src30());
 // src/network/utils.js
 var import_react = __toModule(require_react());
 var import_debug = __toModule(require_src());
+var import_await_sleep = __toModule(require_await_sleep());
 var debug = (0, import_debug.default)("utils");
 var toPromise = async (asyncGen) => {
   let contents = [];
@@ -50502,12 +50503,13 @@ var toPromise = async (asyncGen) => {
   return contents;
 };
 var noop = () => null;
-var retryException = async (f, n = 5) => {
+var retryException = async (f, n = 10) => {
   while (n-- > 0) {
     try {
       return await f();
     } catch (e) {
       debug("retryException", e);
+      await (0, import_await_sleep.default)(1e3);
     }
   }
   throw new Error("Too many retries");
@@ -50550,7 +50552,7 @@ var concurrency_default = limit;
 // src/network/ipfsConnector.js
 var import_path = __toModule(require("path"));
 var import_queueable = __toModule(require_lib5());
-var import_await_sleep = __toModule(require_await_sleep());
+var import_await_sleep2 = __toModule(require_await_sleep());
 var import_browser_or_node = __toModule(require_lib6());
 var asyncify = typeof import_callback_to_async_iterator.default === "function" ? import_callback_to_async_iterator.default : import_callback_to_async_iterator.default.default;
 var debug3 = (0, import_debug3.default)("ipfsConnector");
@@ -50681,7 +50683,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     const onError = async (...errorArgs) => {
       debug3("onError", ...errorArgs, "aborting");
       abort.abort();
-      await (0, import_await_sleep.default)(300);
+      await (0, import_await_sleep2.default)(300);
       debug3("resubscribing");
       await doSub();
     };
@@ -50698,7 +50700,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
         }
         if (e.message?.startsWith("Already subscribed"))
           return;
-        await (0, import_await_sleep.default)(300);
+        await (0, import_await_sleep2.default)(300);
         doSub();
       }
     };
@@ -50716,7 +50718,7 @@ var import_path2 = __toModule(require("path"));
 var import_fs = __toModule(require("fs"));
 var import_debug4 = __toModule(require_src());
 var import_ramda2 = __toModule(require_src33());
-var import_await_sleep2 = __toModule(require_await_sleep());
+var import_await_sleep3 = __toModule(require_await_sleep());
 var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = ({path: watchPath, debounce: debounce2, ipns, once}) => {
   let processing = Promise.resolve(true);
@@ -50919,7 +50921,7 @@ if (executeCommand)
     start();
     await execute(executeCommand, options_default.logout);
     debug7("done executing", executeCommand, ". Waiting...");
-    await (0, import_await_sleep3.default)(sleepBeforeExit);
+    await (0, import_await_sleep4.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");
     await processing();
     debug7("state sync done. exiting");
@@ -50930,7 +50932,7 @@ else {
     (async () => {
       const {start, processing} = await sender(options_default);
       await start();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
+      await (0, import_await_sleep4.default)(sleepBeforeExit);
       await processing();
       import_process2.default.exit(0);
     })();

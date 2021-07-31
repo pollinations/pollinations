@@ -11,20 +11,20 @@ export const NotebookProgress = ({output, metadata}) => {
     const progress = getProgress(output.log, metadata.numCells)*100;
     debug(progress);
     
-    if (progress >= 100 || progress <= 1)
+    if (progress >= 100)
       return null;
 
-    return  <Box display="flex" alignItems="center">
-    <Box width="100%" mr={1}>
-        <LinearProgress value={progress} variant="determinate" color="secondary" />
-    </Box>
-    <Box minWidth={35}>
-      <Typography variant="body2" color="textSecondary">{`${Math.floor(
-        progress
-      )}%`}</Typography>
-    </Box>
-  </Box>
-    
+    return  <><Box display="flex" alignItems="center">
+      <Box width="100%" mr={1}>
+          <LinearProgress value={progress} variant="determinate" color="secondary" />
+      </Box>
+      <Box minWidth={35}>
+        <Typography variant="body2" color="textSecondary">{`${Math.floor(
+          progress
+        )}%`}</Typography>
+      </Box>
+      </Box>
+    </>
 }
 
 

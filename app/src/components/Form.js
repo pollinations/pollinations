@@ -2,7 +2,7 @@ import React from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
-import { Box } from "@material-ui/core";
+import { Box, Typography } from "@material-ui/core";
 import HelpModal from "./HelpModal";
 
 const debug = Debug("Form");
@@ -36,9 +36,10 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         disabled={formDisabled || colabState === "running"}
     >
         <Box m={1}>
-            { showSubmit &&   <Button type="submit" disabled={formDisabled} >
+            { showSubmit ? <Button type="submit" disabled={formDisabled} >
                         [ {inProgress ? "Submitting..." : "Submit" } ] 
                     </Button>
+                : <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>
             }
                     
             { showCancel && <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
@@ -50,6 +51,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
             {/* {!showCancel && !showSubmit && <Button href="/">
                         [ Reset ]
                     </Button> } */}
+            
         </Box>
     </Form>
 }

@@ -4,9 +4,11 @@ import { Button, Container, Typography, Link } from "@material-ui/core"
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 import GitHubIcon from '@material-ui/icons/GitHub';
+import NotebookSelector from './components/NotebookSelector';
 
 function App() {
     return <Router>
+        <NotebookSelector />
         <Container maxWidth="md">
 
             <Switch

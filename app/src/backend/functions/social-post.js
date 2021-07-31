@@ -14,14 +14,14 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-  const inputs = JSON.stringify(input,null, 4);
+  const inputs = mature(JSON.stringify(input,null, 4));
   
-  const isMature = await mature(inputs);
+  // const fixedMature = await mature(inputs);
 
-  if (isMature) {
-    console.error("Not posting due to dubious words...");
-    return;
-  }
+  // if (isMature) {
+  //   console.error("Not posting due to dubious words...");
+  //   return;
+  // }
   
   // TODO: this shouldn't need to be hard coded
   // change inputs from object to list to get order
@@ -73,6 +73,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
 
 function formatPostAndTitle(modelTitle, input, inputs, url) {
+  input = mature(input);
   const title = `${modelTitle}: ${input}`;
 
   const post = `# ${title}

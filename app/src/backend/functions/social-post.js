@@ -54,7 +54,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
     const res2 = social.post({
       ...shareConfig,
-      post: `${title} ${url} #pollinations`,
+      post: `${title} ${url} #pollinations #generative #art #machinelearning`,
       "mediaUrls": [coverImage],
       "platforms": ["twitter","instagram","telegram"]
     }).catch(e => console.error("errror",e));
@@ -74,7 +74,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
 function formatPostAndTitle(modelTitle, input, inputs, url) {
   input = mature(input);
-  const title = `${modelTitle}: ${input}`;
+  const title = `${input} - ${modelTitle}`;
 
   const post = `# ${title}
 

@@ -10,10 +10,6 @@ Pollinations is an effort to make generative art more approachable. There are th
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
-## Old Finite State Machine-based flow. Needs to be redesigned
-![FSM](fsm.svg)
-
-
 
 # ⚒️ Development Setup
 

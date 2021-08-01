@@ -21,7 +21,7 @@ export const IpfsLog = ({state}) => {
         {log && <CardContent>
             <Typography
                 variant="body2"
-                color="textPrimary"
+                color="textSecondary"
                 component="pre">
                     <Ansi>
                 {

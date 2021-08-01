@@ -149,10 +149,9 @@ export const ipfsGet = limit(cleanCIDs((async (cid, { onlyLink = false }) => {
     return contentArray;
 })));
 
-export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) => {
+export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) => 
+    await retryException(async () => await ipfsAdd(ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
 
-    await ipfsAdd(ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }));
-}
 
 export async function ipfsMkdir(path = "/") {
     const withMfsRoot = join(mfsRoot, path);

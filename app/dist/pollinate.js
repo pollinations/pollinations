@@ -50922,6 +50922,9 @@ if (executeCommand)
     await (0, import_await_sleep4.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");
     await processing();
+    await (0, import_await_sleep4.default)(sleepBeforeExit);
+    debug7("awaiting termination of state sync");
+    await processing();
     debug7("state sync done. exiting");
     import_process2.default.exit(0);
   })();

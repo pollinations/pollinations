@@ -68,7 +68,9 @@ if (executeCommand)
     await awaitSleep(sleepBeforeExit);
     debug("awaiting termination of state sync");
     await processing(); 
-    
+    await awaitSleep(sleepBeforeExit);
+    debug("awaiting termination of state sync");
+    await processing(); 
     debug("state sync done. exiting");
     process.exit(0);
   })();

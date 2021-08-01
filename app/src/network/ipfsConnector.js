@@ -173,7 +173,7 @@ export async function ipfsRm(ipfsPath) {
 export async function contentID(mfsPath = "/") {
     const _client = await client;
     mfsPath = join(mfsRoot, mfsPath);
-    return stringCID(retryException(async () => await _client.files.stat(mfsPath)));
+    return stringCID(await retryException(async () => await _client.files.stat(mfsPath)));
 }
 
 let _lastContentID = null;

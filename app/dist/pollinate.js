@@ -50649,7 +50649,7 @@ async function ipfsRm(ipfsPath) {
 async function contentID(mfsPath = "/") {
   const _client = await client;
   mfsPath = (0, import_path.join)(mfsRoot, mfsPath);
-  return stringCID(retryException(async () => await _client.files.stat(mfsPath)));
+  return stringCID(await retryException(async () => await _client.files.stat(mfsPath)));
 }
 var _lastContentID = null;
 async function publish(rootCID, suffix = "/output") {

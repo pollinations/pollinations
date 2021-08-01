@@ -10,6 +10,10 @@ Pollinations is an effort to make generative art more approachable. There are th
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
+## Old Finite State Machine-based flow. Needs to be redesigned
+![FSM](fsm.svg)
+
+
 
 # ⚒️ Development Setup
 
@@ -37,3 +41,7 @@ After IPFS migrated, to start development environment,
 ## ⚙️ Configuration
 
 IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every time the docker containers are started, the config file under `tmp/ipfs/config` is overwritten with this json file.
+
+## 📇 Architecture Diagram
+
+![Architecture Diagram](pollinations.png)

@@ -46,7 +46,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
                         [ {inProgress ? "Stopping...": "Stop"} ]
                     </Button>
             }
-            {!showSubmit && <HelpModal/>}
+            {!showSubmit || formDisabled && <HelpModal/>}
 
             {/* {!showCancel && !showSubmit && <Button href="/">
                         [ Reset ]

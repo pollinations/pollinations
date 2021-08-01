@@ -41,3 +41,7 @@ After IPFS migrated, to start development environment,
 ## ⚙️ Configuration
 
 IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every time the docker containers are started, the config file under `tmp/ipfs/config` is overwritten with this json file.
+
+## 📇 Architecture Diagram
+
+![Architecture Diagram](pollinations.png)

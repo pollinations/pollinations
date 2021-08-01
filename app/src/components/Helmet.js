@@ -15,10 +15,9 @@ export const SEOMetadata= ({title, description}) => {
     description = removeMarkdown(description);
     return  <Helmet>
                 <title children={title} />
-                <meta property="og:title" content={title} />
                 <meta property="og:type" content="image" />
+                <meta property="og:title" content={title} />
                 <meta property="twitter:title" content={title} />
-                <meta property="og:description" content={description} />
                 <meta property="og:description" content={description} />
                 <meta name="description" content={description} />
                 <meta property="twitter:creator" content="pollinations_ai" />

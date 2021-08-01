@@ -23,3 +23,7 @@ a {
   color: whitesmoke;
   padding: 10px 0;
 }
+
+.MuiContainer-root{
+  padding-top: 24px;
+}

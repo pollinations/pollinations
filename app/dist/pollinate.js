@@ -50630,9 +50630,7 @@ var ipfsGet = concurrency_default(cleanCIDs(async (cid, {onlyLink = false}) => {
   _debug("Received content length:", contentArray.length);
   return contentArray;
 }));
-var ipfsAddFile = async (ipfsPath, localPath, options = {size: null}) => {
-  await ipfsAdd(ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, {preserveMtime: true, preserveMode: true}));
-};
+var ipfsAddFile = async (ipfsPath, localPath, options = {size: null}) => await retryException(async () => await ipfsAdd(ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, {preserveMtime: true, preserveMode: true})));
 async function ipfsMkdir(path = "/") {
   const withMfsRoot = (0, import_path.join)(mfsRoot, path);
   debug3("Creating folder", withMfsRoot);
@@ -50651,7 +50649,7 @@ async function ipfsRm(ipfsPath) {
 async function contentID(mfsPath = "/") {
   const _client = await client;
   mfsPath = (0, import_path.join)(mfsRoot, mfsPath);
-  return stringCID(await _client.files.stat(mfsPath));
+  return stringCID(retryException(async () => await _client.files.stat(mfsPath)));
 }
 var _lastContentID = null;
 async function publish(rootCID, suffix = "/output") {

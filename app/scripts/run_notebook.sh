@@ -14,8 +14,8 @@ for path in $IPFS_ROOT/input/*; do
     if [[ "$key" = "notebook.ipynb" ]]; then
         continue
     fi
-    value=$(<$path)
-    #value=$(printf '%q' "$value_raw")
+    value_raw=$(<$path)
+    value=$(printf '%q' "$value_raw")
 
     PARAMS+=" -p ${key} ${value}"
 done

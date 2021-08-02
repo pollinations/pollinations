@@ -4,7 +4,7 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
-PARAMS="hello"
+PARAMS=""
 for path in $IPFS_ROOT/input/*; do
 
     key=$(basename $path)

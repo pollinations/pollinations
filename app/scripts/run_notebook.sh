@@ -36,7 +36,7 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 # --- Run
 
 echo "📗: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
+papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output 
 
 
 # --- Cleanup

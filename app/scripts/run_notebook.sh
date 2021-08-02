@@ -8,6 +8,9 @@ PARAMS=""
 for path in $IPFS_ROOT/input/*; do
 
     key=$(basename $path)
+    if [[ "$key" = "notebook.ipynb" ]]; then
+        continue
+    fi
     value_raw=$(<$path)
     value=$(printf '%q' "$value_raw")
 

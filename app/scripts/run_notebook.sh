@@ -17,7 +17,7 @@ for path in $IPFS_ROOT/input/*; do
     value=$(<$path)
     #value=$(printf '%q' "$value_raw")
 
-    PARAMS+=" -p ""${key}"" ""${value}"
+    PARAMS+=" -p ${key} ${value}"
 done
 
 echo "📗 PARAMS:" "$PARAMS"

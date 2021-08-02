@@ -50895,7 +50895,7 @@ var rootPath = options_default.path;
 var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
-var sleepBeforeExit = options_default.debounce * 2;
+var sleepBeforeExit = options_default.debounce * 2 + 1e4;
 var execute = async (command, logfile = null) => new Promise((resolve, reject) => {
   debug7("Executing command", command);
   const childProc = (0, import_child_process.exec)(command, (err) => {

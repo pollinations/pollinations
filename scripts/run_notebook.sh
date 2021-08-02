@@ -22,8 +22,11 @@ rm -rv $IPFS_ROOT/output/*
 echo "📗: Setting colab status to 'running'"
 echo -n running > $IPFS_ROOT/output/status
 
+echo "📗: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
+python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
+
 echo "📗: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
+echo papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
 
 echo "📗: Setting colab status to waiting"
 echo -n waiting > $IPFS_ROOT/output/status

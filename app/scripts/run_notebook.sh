@@ -26,8 +26,11 @@ echo "📗 PARAMS:" "$PARAMS"
 echo "📗: Removing last run output if there was any."
 rm -rv $IPFS_ROOT/output/*
 
+
 echo "📗: Setting colab status to 'running'"
 echo -n running > $IPFS_ROOT/output/status
+echo "Starting notebook..." > $ipfs_root/output/log
+
 
 echo "📗: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH

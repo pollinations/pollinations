@@ -74,7 +74,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
 
 function formatPostAndTitle(modelTitle, input, inputs, url) {
   input = mature(input);
-  const title = `${input} - ${modelTitle}`;
+  const title = `"${input}" - ${modelTitle}`;
 
   const post = `# ${title}
 

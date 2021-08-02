@@ -4,7 +4,10 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
-PARAMS=""
+# --- Construct Parameters
+
+PARAMS="-p output_path $IPFS_ROOT/output"
+
 for path in $IPFS_ROOT/input/*; do
 
     key=$(basename $path)
@@ -14,10 +17,11 @@ for path in $IPFS_ROOT/input/*; do
     value_raw=$(<$path)
     value=$(printf '%q' "$value_raw")
 
-    PARAMS+=" -p ""${key}""=""${value}"
+    PARAMS+=" -p ""${key}"" ""${value}"
 done
 
 echo "📗 PARAMS:" "$PARAMS"
+
 
 echo "📗: Removing last run output if there was any."
 rm -rv $IPFS_ROOT/output/*
@@ -28,8 +32,14 @@ echo -n running > $IPFS_ROOT/output/status
 echo "📗: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
+
+# --- Run
+
 echo "📗: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
 papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
+
+
+# --- Cleanup
 
 echo "📗: Setting colab status to waiting"
 echo -n waiting > $IPFS_ROOT/output/status

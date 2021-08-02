@@ -14,10 +14,10 @@ for path in $IPFS_ROOT/input/*; do
     if [[ "$key" = "notebook.ipynb" ]]; then
         continue
     fi
-    value_raw=$(<$path)
-    value=$(printf '%q' "$value_raw")
+    value=$(<$path)
+    #value=$(printf '%q' "$value_raw")
 
-    PARAMS+=" -p ""${key}"" ""${value}"
+    PARAMS+=" -p ${key} ${value}"
 done
 
 echo "📗 PARAMS:" "$PARAMS"
@@ -36,7 +36,7 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 # --- Run
 
 echo "📗: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output 
+eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output 
 
 
 # --- Cleanup

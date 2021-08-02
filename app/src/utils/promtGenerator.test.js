@@ -1,6 +1,7 @@
-const buildPrompt = require("./promptGenerator")
+import {buildPrompt} from "./promptGenerator"
 
 test("promt generator can generate prompts", ()=>{
-    const hello = buildPrompt()
-    console.log(hello)
+    const prompt = buildPrompt()
+    expect(prompt.length > 0)
 });
+

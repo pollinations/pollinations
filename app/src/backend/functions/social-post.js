@@ -55,7 +55,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}) {
     const res2 = social.post({
       ...shareConfig,
       post: `${title} ${url}`,
-      "mediaUrls": [coverImage],
+      // "mediaUrls": [coverImage],
       "platforms": ["twitter","instagram","telegram"]
     }).catch(e => console.error("errror",e));
     

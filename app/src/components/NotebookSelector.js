@@ -23,7 +23,7 @@ const notebookList = [{
 },
 {
     name: "CLIP-guided Diffusion",
-    path: "/p/QmPdAKgqA2pZpBoBFHwWXJgMTUC4GNp5ujN9jxUGY5Hajm",
+    path: "/p/QmRPjy8qiwy977hFvkx99pBWQNxTHxtfJQ2fxWPVuFHD7W",
     category: "Text-to-Image",
     Icon: WallpaperIcon
 },

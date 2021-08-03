@@ -10,10 +10,6 @@ export let routes = [
     { 
         exact: true,
         path: "/",
-        children: <Redirect to="/p/QmSeaCzpgm3BP1FgEEUXuW5bW7aYRhrbmemdpKENmdu1Yg" />,
+        children: <Redirect to="/p/QmPdAKgqA2pZpBoBFHwWXJgMTUC4GNp5ujN9jxUGY5Hajm" />,
     }
 ]
-
-// CLIP+VQGan /p/QmXJnK2FUHEDjR5aFLYELChU6JqdfSxNsoZpy1yHiMXNoK
-
-// guided diffusion /p/Qma1zZwTYTX5rKoGpyBY4DWCK7ERXGpto4pNKfmHAEFoVM

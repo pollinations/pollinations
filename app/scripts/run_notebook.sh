@@ -29,7 +29,7 @@ rm -rv $IPFS_ROOT/output/*
 
 echo "📗: Setting colab status to 'running'"
 echo -n running > $IPFS_ROOT/output/status
-#echo "Starting notebook..." > $IPFS_ROOT/output/log
+echo "Starting notebook..." > $IPFS_ROOT/output/log
 
 
 echo "📗: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"

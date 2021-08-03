@@ -74,6 +74,7 @@ const toSchema = (key, enabled) => {
         ["file_","file"],
         ["num_","updown"],
         ["save_","radio"],
+        ["super_resolution","radio"],
         ["","text"]
     ];
 

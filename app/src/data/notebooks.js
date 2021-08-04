@@ -3,13 +3,13 @@ import { not } from "ramda";
 export const notebooks = [
     {
       name: "CLIP-guided Diffusion",
-      path: "/p/QmZdn5xrFvQvB6bWLCc7JcmpohpDRBhYau11XLz9wF4cdM",
+      path: "/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J",
       category: "Text-to-Image",
       Icon: WallpaperIcon
     },  
     {
       name: "CLIP-guided VQGan",
-      path: "/p/QmXJnK2FUHEDjR5aFLYELChU6JqdfSxNsoZpy1yHiMXNoK",
+      path: "/p/QmdA2759ErfqJT8qtrJNsYgwUXsTrg69bVdGFW2i3ibXDP",
       category: "Text-to-Image",
       Icon: WallpaperIcon
   },

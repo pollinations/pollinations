@@ -15,27 +15,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 
 import { noop } from '../network/utils';
 
-const notebookList = [{
-    name: "CLIP-guided VQGan",
-    path: "/p/QmXJnK2FUHEDjR5aFLYELChU6JqdfSxNsoZpy1yHiMXNoK",
-    category: "Text-to-Image",
-    Icon: WallpaperIcon
-},
-{
-    name: "CLIP-guided Diffusion",
-    path: "/p/QmRPjy8qiwy977hFvkx99pBWQNxTHxtfJQ2fxWPVuFHD7W",
-    category: "Text-to-Image",
-    Icon: WallpaperIcon
-},
-{
-    name: "DALL-E Mini",
-    path: "/p/QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
-    category: "Text-to-Image",
-    Icon: WallpaperIcon
-},
-];
-
-// guided diffusion /p/Qma1zZwTYTX5rKoGpyBY4DWCK7ERXGpto4pNKfmHAEFoVM
+import notebooks from "../data/notebooks.js";
 
 export default function NotebookSelector() {
     const [visible, setVisible] = useState(false);
@@ -60,7 +40,7 @@ export default function NotebookSelector() {
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>
           <List>
-        {notebookList.map(({name, category, Icon, path}) => (
+        {notebooks.map(({name, category, Icon, path}) => (
           <ListItem button key={name} component="a" href={path}>
             <ListItemIcon> <Icon /> </ListItemIcon>
             <ListItemText primary={`${category} - ${name}`} />

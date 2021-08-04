@@ -15,7 +15,7 @@ import MenuIcon from '@material-ui/icons/Menu';
 
 import { noop } from '../network/utils';
 
-import notebooks from "../data/notebooks.js";
+import { notebooks } from "../data/notebooks.js";
 
 export default function NotebookSelector() {
     const [visible, setVisible] = useState(false);

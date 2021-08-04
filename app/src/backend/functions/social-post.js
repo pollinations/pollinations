@@ -7,98 +7,18 @@ import { dissoc } from "ramda";
 
 import mature from "../mature.js";
 
-
-async function doPost({input, modelTitle, videoURL, coverImage, url}) {
-
-  // Live API Key
-  console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
-  const social = new SocialPost(process.env["AYRSHARE_KEY"]);
-
-  const inputs = mature(JSON.stringify(input,null, 4));
-  
-  // const fixedMature = await mature(inputs);
-
-  // if (isMature) {
-  //   console.error("Not posting due to dubious words...");
-  //   return;
-  // }
-  
-  // TODO: this shouldn't need to be hard coded
-  // change inputs from object to list to get order
-  const principal_input = input["text_input"];
-
-  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
-
-  const shareConfig = {
-    post,
-    title,
-    // Required if platform includes "reddit." Subreddit to post.
-    //subreddit: "MediaSynthesis",
-    youTubeOptions: {
-      title,       // required: Video Title
-      youTubeVisibility: "public", // optional: "public", "unlisted", or "private" - default "private"
-      /** Important Thumbnail information below **/
-      thumbNail: coverImage, // optional: URL of a JPEG or PNG and less than 2MB
-      // playListId: "PLrav6EfwgDX5peD7Ni-pOKa7B13WjLyUB" // optional: Playlist ID to add the video
-    },
-    shortenLinks: false,
-    "mediaUrls": [videoURL]
-  };
-
-  const res1 = 
-     social.post({
-      ...shareConfig,
-      "platforms": ["facebook","youtube","linkedin"]
-    }).catch(console.error);
-
-
-    const res2 = social.post({
-      ...shareConfig,
-      post: `${title} ${url}`,
-      "mediaUrls": [coverImage],
-      "platforms": ["twitter","instagram","telegram"]
-    }).catch(e => console.error("errror",e));
-    
-    // const res3 = social.post({
-    //   ...shareConfig,
-    //   post: `${title} ${url} #pollinations`,
-    //   "platforms": ["instagram"],
-    //   "mediaUrls": [coverImage]
-    // }).catch(e => console.error("errror",e));
-    
-  return Promise.all([res1,res2]);
-}
-
-// console.log(postResult)
-
-
-function formatPostAndTitle(modelTitle, input, inputs, url) {
-  input = mature(input);
-  const title = `"${input}" - ${modelTitle}  #pollinations #generative #art #machinelearning`;
-
-  const post = `# ${title}
-
-## Inputs
-${inputs}
-
-## Results
-${url}
-
-${followText}`;
-  return { post, title };
-}
-
-
+const hashTags =  "#pollinations #generative #art #machinelearning";
 
 
 export const handler = async ({path}) => {
 
     const cid = path.split("/").slice(-1)[0];
+    const platform = path.split("/").slice(-2)[0];
     // your server-side functionality
-    console.log("cid",cid);
+    console.log("platform",platform,"cid",cid,". Fetching IPFS state");
     const ipfs = await IPFSState(cid);
-    console.log("Starting async post but returning already");
-    const res = await postAsync(ipfs, cid).catch((e) => console.error("posterror",e));
+
+    const res = await postAsync(ipfs, cid, platform).catch((e) => console.error("posterror",e));
     console.log("res",JSON.stringify(res,null,4));
     return {
       statusCode: 200,
@@ -122,7 +42,7 @@ https://instagram.com/pollinations_ai
 `;
 
 
-async function postAsync(ipfs, cid) {
+async function postAsync(ipfs, cid, platform) {
   const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
   const input = dissoc("notebook.ipynb", ipfs.input);
   const coverImage = getCoverImage(ipfs.output)[1];
@@ -132,37 +52,66 @@ async function postAsync(ipfs, cid) {
 
 
   console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
-  const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url });
+  const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url }, platform);
   return postResult;
 }
-// {
-//   "faceBookOptions": {
-//     "carousel": {
-//       "link": "URL of See More At...",
-//       "items": [
-//         {
-//           "name": "Image name",
-//           "link": "URL when image clicked",
-//           "picture": "URL of image"
-//         },
-//         {
-//           "name": "Image name",
-//           "link": "URL when image clicked",
-//           "picture": "URL of image"
-//         }
-//       ]
-//     }
-//   }
-// }
 
 
-// {
-//   "faceBookOptions": {
-//     "mediaCaptions": ["This is my best pic", "😃 here is the next one"]
-//   }
-// }
+
+async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) {
+
+  // Live API Key
+  console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
+  const social = new SocialPost(process.env["AYRSHARE_KEY"]);
+
+  const inputs = mature(JSON.stringify(input,null, 4));
+
+  const principal_input = input["text_input"];
+
+  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
+
+  const shareConfig = {
+    post: platform === "twitter" ? `${title} ${url} ${hashTags}` : post,
+    title,
+    youTubeOptions: {
+      title,       // required: Video Title
+      youTubeVisibility: "public", // optional: "public", "unlisted", or "private" - default "private"
+      thumbNail: coverImage, // optional: URL of a JPEG or PNG and less than 2MB
+      // playListId: "PLrav6EfwgDX5peD7Ni-pOKa7B13WjLyUB" // optional: Playlist ID to add the video
+    },
+    shortenLinks: false,
+    "mediaUrls": [videoURL],
+    "platforms": [platform]
+  };
+
+  const postResponse = await social.post(shareConfig).catch(console.error);
+  console.log("postResponse", postResponse);
+  return postResponse;
+}
+
+
+function formatPostAndTitle(modelTitle, input, inputs, url) {
+  input = mature(input);
+  const title = `"${input}" - ${modelTitle} ${hashTags}`;
+
+  const post = `# ${title}
+
+## Inputs
+${inputs}
+
+## Results
+${url}
+
+${followText}`;
+  return { post, title };
+}
+
 
 
 // You can mention another Facebook Page by including the following in the post text. Note, Premium or Business Plan required for mentions.
 // @[page-id]
 
+
+if (process.argv.length > 2) {
+  handler({path: process.argv[2]});
+}

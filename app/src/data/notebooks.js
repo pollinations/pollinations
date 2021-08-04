@@ -1,4 +1,4 @@
-import { not } from "ramda";
+import WallpaperIcon from '@material-ui/icons/Wallpaper';
 
 export const notebooks = [
     {

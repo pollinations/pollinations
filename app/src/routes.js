@@ -1,5 +1,6 @@
 import Model from "./pages/Model";
 import { Redirect } from "react-router-dom";
+import { defaultNotebook } from "./data/notebooks.js";
 
 export let routes = [
     {
@@ -10,6 +11,6 @@ export let routes = [
     { 
         exact: true,
         path: "/",
-        children: <Redirect to="/p/QmRPjy8qiwy977hFvkx99pBWQNxTHxtfJQ2fxWPVuFHD7W" />,
+        children: <Redirect to={defaultNotebook.path} />,
     }
 ]

@@ -1,11 +1,11 @@
 
 
-import { toPromise, toPromise1, noop, zip, useHash } from "./utils"
+import { toPromise, toPromise1, noop, zip, useHash } from "./utils.js"
 import { client, getWebURL, ipfsResolve, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
-import { getIPFSState } from "./ipfsState";
+import { getIPFSState } from "./ipfsState.js";
 import { parse } from "json5";
 import fetch from "node-fetch";
 

@@ -59,13 +59,11 @@ export default React.memo(FormView)
 function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
-    debug("properties", metadata);
     const allParams = Object.fromEntries(Object.entries(metadata.form.properties).map(
         ([formKey, prop]) => [formKey, formKey in ipfs ? {...prop, "default": ipfs[formKey]} : prop]));
 
     // TODO: Carry it to state so users can disable it.
     const easyMode = true;
-    // debug("all params", fil);
     if(easyMode){
         return filter((param) => (param.title === metadata.primaryInput), allParams);
     }else{

@@ -1,13 +1,9 @@
 import {words} from "./matureWords.json";
 
 // replace all mature words by *
-const mature = raw_input => words.reduce((text, word) => text.replace(word, repeatChar("*", word.length)), raw_input);
+const mature = raw_input => words.reduce((text, word) => text.replace(new RegExp(`\\b${word}\\b`,'g'), repeatChar("*", word.length-1)), raw_input);
 
 // create a string of * of length n
 const repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n - 1)
 
-// replace non-alphanumeric characters by spaces
-const clean = raw_input => raw_input.replace(/[^a-zA-Z0-9]/g, " ");
-
-
-export default text => mature(clean(text));
+export default text => mature(text);

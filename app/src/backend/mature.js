@@ -1,6 +1,4 @@
-import readJson from "../utils/readJson"
-
-const matureWords = readJson("src/backend/matureWords.json")["words"];
+import matureWords from "./matureWords.json"
 
 const repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n - 1)
 

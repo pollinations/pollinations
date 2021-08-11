@@ -141,3 +141,6 @@ node_modules/
 
 # Tmp folder
 tmp
+
+# Jetbrains
+.idea

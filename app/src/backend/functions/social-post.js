@@ -71,7 +71,7 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
   const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
 
   const shareConfig = {
-    post: platform === "twitter" ? `${title} ${url} ${hashTags}` : post,
+    post: platform === "twitter" ? formatPostForTwitter(title, url) : post,
     title,
     youTubeOptions: {
       title,       // required: Video Title
@@ -89,6 +89,12 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
   return postResponse;
 }
 
+
+function formatPostForTwitter(title, url) {
+  if (title.length > 220)
+    title = title.slice(0, 220) + "...";
+  return `${title} ${url} ${hashTags}`;
+}
 
 function formatPostAndTitle(modelTitle, input, inputs, url) {
   input = mature(input);

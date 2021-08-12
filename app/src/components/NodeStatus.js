@@ -20,7 +20,7 @@ export default ({ nodeID, contentID, status, ipfs }) => {
                     <TableBody>
                         <TableRow>
                             <TableCell><b>NodeID</b></TableCell>
-                            <TableCell>{nodeID ? <Link href={getIPNSURL(nodeID)} target="_blank">{displayContentID(nodeID)}</Link> : <ColabConnectButton />}</TableCell>
+                            <TableCell>{nodeID ? displayContentID(nodeID) : <ColabConnectButton />}</TableCell>
                         </TableRow>
                         <TableRow>
                         <TableCell ><b>ContentID</b></TableCell>

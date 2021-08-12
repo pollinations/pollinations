@@ -68,10 +68,10 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
 
   const principal_input = input["text_input"];
 
-  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url);
+  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url, platform);
 
   const shareConfig = {
-    post: platform === "twitter" ? formatPostForTwitter(title, url) : post,
+    post,
     title,
     youTubeOptions: {
       title,       // required: Video Title
@@ -90,14 +90,26 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
 }
 
 
-function formatPostForTwitter(title, url) {
-  if (title.length > 220)
-    title = title.slice(0, 220) + "...";
+// Shorten string and add ellipsis
+function shorten(str, maxLength) {
+  if (str.length > maxLength) 
+    return `${str.substr(0, maxLength - 3)}...`;
+  return str;
+}
+
+
+function formatPostForTwitter(title, modelTitle, url) {
+  title = shorten(title, 100);
+  modelTitle = shorten(modelTitle, 70);
   return `${title} ${url} ${hashTags}`;
 }
 
-function formatPostAndTitle(modelTitle, input, inputs, url) {
+function formatPostAndTitle(modelTitle, input, inputs, url, platform) {
   input = mature(input);
+  if (platform === "twitter") {
+    const post = formatPostForTwitter(input, modelTitle, url);
+    return { post };
+  }
   const title = `"${input}" - ${modelTitle} ${hashTags}`;
 
   const post = `# ${title}

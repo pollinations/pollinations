@@ -1,0 +1,1 @@
+module.exports = require('./src/src/backend/functions/social-post.js')

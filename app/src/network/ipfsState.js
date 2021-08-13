@@ -11,9 +11,9 @@ import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 //import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
 // const map = parallelMap(30);
-export const getIPFSState = (contentID, processFile, rootName="root") => {
+export const getIPFSState = (contentID, callback, rootName="root") => {
     debug("Getting state for CID", contentID)
-    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, processFile)
+    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback)
 }
 
 const _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, processFile) => {

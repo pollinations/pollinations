@@ -10,34 +10,50 @@ Pollinations is an effort to make generative art more approachable. There are th
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
+<details>
+  <summary>Development of Pollinations.AI Web App</summary>
+
+    Enable logging:
+    `localStorage.debug = "*"`
+
+    You can start the makefile on the root project for managing your environment.
+
+    `make up` to start relevant services.
+    `make dev` to start the development server of web app.% 
+</details>
+  
 
 
-# ⚒️ Development Setup
+<details>
+  <summary>Development with Local IPFS node</summary>
 
-Development environment requires `docker` & `docker-compose` for running a loca IPFS node. For docker installation, please navigate to https://docs.docker.com/get-docker/.
+    Development environment requires `docker` & `docker-compose` for running a loca IPFS node. For docker installation, please navigate to https://docs.docker.com/get-docker/.
 
-After docker is setup, `make` is used for managing the IPFS and development environment.
+    After docker is setup, `make` is used for managing the IPFS and development environment.
 
-## 🟡 Initialization
+    ## 🟡 Initialization
 
-To run pollinations development environment first time,
+    To run pollinations development environment first time,
 
-- Run `make init`, this will initialize start the IPFS docker image and fill `tmp/ipfs` folder by migrating IPFS.
+    - Run `make init`, this will initialize start the IPFS docker image and fill `tmp/ipfs` folder by migrating IPFS.
 
-## 🟢 Running
+    ## 🟢 Running
 
-After IPFS migrated, to start development environment,
-- Run `make up`, this will start the dockerized IPFS instance and detach.
-- Run `make dev` to start the react application living under `/app`
+    After IPFS migrated, to start development environment,
+    - Run `make up`, this will start the dockerized IPFS instance and detach.
+    - Run `make dev` to start the react application living under `/app`
 
-## 🔴 Stopping
+    ## 🔴 Stopping
 
-- Run `make down` to stop running IPFS instance.
-- Run `make clean` to remove the `tmp` folder and its contents.
+    - Run `make down` to stop running IPFS instance.
+    - Run `make clean` to remove the `tmp` folder and its contents.
 
-## ⚙️ Configuration
+    ## ⚙️ Configuration
 
-IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every time the docker containers are started, the config file under `tmp/ipfs/config` is overwritten with this json file.
+    IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every time the docker containers are started, the config file under `tmp/ipfs/config` is overwritten with this json file.
+
+</details>
+
 
 ## 📇 Architecture Diagram
 

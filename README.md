@@ -19,8 +19,15 @@ Pollinations is an effort to make generative art more approachable. There are th
 
     You can start the makefile on the root project for managing your environment.
 
-    `make up` to start relevant services.
     `make dev` to start the development server of web app.% 
+
+    ## Optionally it is possible to develop with a local IPFS node
+    
+    Enable connect to local IPFS:
+    `localStorage.localIFS = true
+
+    `make up` to start the releant services. See next section for details
+  
 </details>
 
 <details>

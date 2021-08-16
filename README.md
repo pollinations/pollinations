@@ -41,4 +41,4 @@ IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every 
 
 ## 📇 Architecture Diagram
 
-![Architecture Diagram](pollinations_architecture.png)
+![Architecture Diagram](pollinations.png)

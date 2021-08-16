@@ -97,7 +97,7 @@ function useContentHash() {
     debug("location pathname", params);
 
     const hash = params?.hash;
-    const setHash = h => history.push(`/p/${h}`);
+    const setHash = h => history.push(`/p/#${h}`);
     
     return { hash, setHash };
 }

@@ -41,4 +41,8 @@ IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every 
 
 ## 📇 Architecture Diagram
 
+The following diagram has an editable copy embedded. Use https://draw.io/#Hpollinations/pollinations/master/pollinations_architecture.png to edit the file.
+
+Export the results as PNG with "Include a copy of my diagram" option selected and replace the current diagram.
+
 ![Architecture Diagram](pollinations_architecture.png)

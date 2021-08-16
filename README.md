@@ -10,6 +10,7 @@ Pollinations is an effort to make generative art more approachable. There are th
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 
+## �👩‍💻 Development
 <details>
   <summary>Development of Pollinations.AI Web App</summary>
 
@@ -21,8 +22,6 @@ Pollinations is an effort to make generative art more approachable. There are th
     `make up` to start relevant services.
     `make dev` to start the development server of web app.% 
 </details>
-  
-
 
 <details>
   <summary>Development with Local IPFS node</summary>
@@ -55,10 +54,14 @@ Pollinations is an effort to make generative art more approachable. There are th
 </details>
 
 
-## 📇 Architecture Diagram
+<details>
+  <summary>Architecture Diagram</summary>
 
-The following diagram has an editable copy embedded. Use https://draw.io/#Hpollinations/pollinations/master/pollinations_architecture.png to edit the file.
+  The following diagram has an editable copy embedded. Use https://draw.io/#Hpollinations/pollinations/master/pollinations_architecture.png to edit the file.
 
-Export the results as PNG with "Include a copy of my diagram" option selected and replace the current diagram.
+  Export the results as PNG with "Include a copy of my diagram" option selected and replace the current diagram.
 
-![Architecture Diagram](pollinations_architecture.png)
+  ![Architecture Diagram](pollinations_architecture.png)
+  
+ </details>
+

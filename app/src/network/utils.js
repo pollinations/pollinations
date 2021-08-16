@@ -55,7 +55,7 @@ export const useHash = () => {
     const setHash = hash => {
         //const title = "Pollinations - "+ displayContentID(hash);
         const title=undefined;
-        window.history.replaceState(undefined, title, "#"+hash);
+        // window.history.replaceState(undefined, title, "#"+hash);
         //window.title = title;
         setHashState(hash);
     }

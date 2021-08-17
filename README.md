@@ -2,8 +2,8 @@
 
 Pollinations is an effort to make generative art more approachable. There are three main components.
 - A React frontend
-- An IPFS server for pubsub and storage
-- Notebooks running on Google Collab
+- IPFS for pubsub and storage
+- Notebooks running on Google Collab to use the free cloud GPUs
 
 ## 🔗 Links
 

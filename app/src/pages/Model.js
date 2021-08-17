@@ -17,6 +17,7 @@ import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import NodeStatus from "../components/NodeStatus";
 import { SEO, SEOMetadata } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
+import { PostSocial } from "../components/Social";
 
 const debug = Debug("Model");
 
@@ -74,6 +75,7 @@ export default React.memo(function Model() {
             output={ipfs.output}  
             metadata={metadata}
            />
+           {ipfs?.output?.done && <PostSocial contentID={contentID} />}
         </div>
 
       {/* previews */}

@@ -6,14 +6,17 @@ import FacebookIcon from '@material-ui/icons/Facebook';
 import TwitterIcon from '@material-ui/icons/Twitter';
 import LinkedInIcon from '@material-ui/icons/LinkedIn';
 import InstagramIcon from '@material-ui/icons/Instagram';
-import YoutubeIcon from '@material-ui/icons/Youtube';
+import YoutubeIcon from '@material-ui/icons/YouTube';
 import TelegramIcon from '@material-ui/icons/Telegram';
+import { Link } from "@material-ui/core";
 
 const debug = Debug("Social");
 
-const platforms = ["twitter","instagram","telegram","facebook","youtube","linkedin"];
+//const platforms = ["twitter","instagram","telegram","facebook","youtube","linkedin"];
 
-const platformIcons = {
+const platforms = ["facebook"];
+
+  const platformIcons = {
   "twitter": TwitterIcon,
   "facebook": FacebookIcon,
   "linkedin": LinkedInIcon,
@@ -22,20 +25,30 @@ const platformIcons = {
   "telegram": TelegramIcon
 };
 
-export function PostSocial(contentID) {
-  
-}
+const platformIcon = index => platformIcons[platforms[index]];
 
-function usePostSocial(platform, contentID) {
-  const [postResult, setPostResult] = useState(null);
-  
-  useEffect(async () => {
-    setPostResult(await postToPlatform(platform, contentID));
-  },[platform, contentID]);
- 
-  return postResult;
-}
+export const PostSocial = React.memo(({ contentID }) => {
+  const posts = usePostSocial(contentID);
 
+  if (posts.length === 0)
+    return "Posting to social media...";
+
+  return posts
+        .filter(p => p)
+        .map((postResult,index) => <Link key={index} href={"#"}>{platformIcon(index)}</Link>); 
+});
+
+function usePostSocial(contentID) {
+  const [results, setResults] = useState({});
+  useEffect(() => {
+    for (const platform of platforms) {
+      postToPlatform(platform, contentID).then(result =>
+        setResults(results => ({...results, [platform]: result}))
+      );
+    }
+  },[contentID]);
+  return Object.values(results);
+}
 
 async function postToPlatform(platform, contentID) {
   

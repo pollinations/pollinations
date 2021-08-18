@@ -17,15 +17,14 @@ const debug = Debug("Social");
 const platforms = ["facebook"];
 
   const platformIcons = {
-  "twitter": TwitterIcon,
-  "facebook": FacebookIcon,
-  "linkedin": LinkedInIcon,
-  "instagram": InstagramIcon,
-  "youtube": YoutubeIcon,
-  "telegram": TelegramIcon
+  "twitter": <TwitterIcon />,
+  "facebook": <FacebookIcon />,
+  "linkedin": <LinkedInIcon />,
+  "instagram": <InstagramIcon />,
+  "youtube": <YoutubeIcon />,
+  "telegram": <TelegramIcon />
 };
 
-const platformIcon = index => platformIcons[platforms[index]];
 
 export const PostSocial = React.memo(({ contentID }) => {
   const posts = usePostSocial(contentID);
@@ -35,8 +34,20 @@ export const PostSocial = React.memo(({ contentID }) => {
 
   return posts
         .filter(p => p)
-        .map((postResult,index) => <Link key={index} href={"#"}>{platformIcon(index)}</Link>); 
+        .map((postResult,index) => PostResultLink(postResult, index)); 
 });
+
+
+const PlatformIcon = ({index}) => platformIcons[platforms[index]];
+
+const PostResultLink = ({status, message},index) => {
+  const color = status === "error" ? "error" : "primary";
+  return <Link key={`link_${index}`} href={"#"} color={color} title={message}>
+      <PlatformIcon index={index} />
+    </Link>;
+}
+
+
 
 function usePostSocial(contentID) {
   const [results, setResults] = useState({});

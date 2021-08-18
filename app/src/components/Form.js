@@ -14,7 +14,8 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     if (!filledForm)
         return null;
 
-    debug("colabState",colabState)
+    debug("colabState", colabState);
+    debug("filledForm", filledForm);
 
     const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
     const showCancel = false; //!showSubmit && input.formAction !== "cancel";

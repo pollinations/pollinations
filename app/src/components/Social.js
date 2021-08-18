@@ -48,7 +48,6 @@ const PostResultLink = ({status, message},index) => {
 }
 
 
-
 function usePostSocial(contentID) {
   const [results, setResults] = useState({});
   useEffect(() => {
@@ -57,9 +56,10 @@ function usePostSocial(contentID) {
         setResults(results => ({...results, [platform]: result}))
       );
     }
-  },[contentID]);
+  }, [contentID]);
   return Object.values(results);
 }
+
 
 async function postToPlatform(platform, contentID) {
   

@@ -22,6 +22,9 @@ if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
         
         # Do post
         curl $social_post_url > $IPFS_ROOT/output/social/$platform &
+        
+        # Slap a sleep to avoid timing out  (this was Copilot's idea)
+        sleep 5
     done
 
 fi

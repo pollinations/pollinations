@@ -14,13 +14,14 @@ Pollinations is an effort to make generative art more approachable. There are th
 <details>
   <summary>Development of Pollinations.AI Web App</summary>
 
+    `make dev` to start the development server of web app.% 
+
     Enable logging:
     `localStorage.debug = "*"`
 
-    You can start the makefile on the root project for managing your environment.
-
-    `make dev` to start the development server of web app.% 
-
+    If logs don't appear in Chrome enable logging "All Aevels" (including Verbose)
+  
+ 
     ## Optionally it is possible to develop with a local IPFS node
     
     Enable connect to local IPFS:

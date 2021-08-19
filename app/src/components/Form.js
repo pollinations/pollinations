@@ -10,22 +10,25 @@ const debug = Debug("Form");
 const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCancel}) => {
 
     debug("metadata", metadata);
-    
-    const filledFormNoSocial = getFormInputs(input, metadata);
 
+    // some variables for conditionally rendering the form parts
+    // TODO: has a lot of redundancy. refactor this
+    const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
+    const showCancel = false; //!showSubmit && input.formAction !== "cancel";
+    const inProgress = false//!!(input && input.formAction);
+    const formDisabled = status === "disconnected" || inProgress;
+
+
+    // Fill in the form inputs and override default values if they are in the ipfs object
+    const filledFormNoSocial = getFormInputs(input, metadata);
     if (!filledFormNoSocial)
         return null;
 
-    const filledForm = addSocialCheckbox(filledFormNoSocial);
+    const filledForm = showSubmit ?  addSocialCheckbox(filledFormNoSocial) : filledFormNoSocial;
 
     debug("colabState", colabState);
     debug("filledForm", filledForm);
 
-    const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running" ;
-    const showCancel = false; //!showSubmit && input.formAction !== "cancel";
-
-    const inProgress = false//!!(input && input.formAction);
-    const formDisabled = status === "disconnected" || inProgress;
 
     debug("nodeID",nodeID, formDisabled)
     const uiSchema = getUISchema(filledForm, metadata?.form?.properties, showSubmit)
@@ -57,9 +60,10 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     </Form>
 }
 
-export default React.memo(FormView)
+export default React.memo(FormView);
 
 
+// Add a social checkbox to the form
 const addSocialCheckbox = (filledFormNoSocial) => 
     ({
         ...filledFormNoSocial,
@@ -69,6 +73,8 @@ const addSocialCheckbox = (filledFormNoSocial) =>
             default: true }
     });
 
+
+// Get the form inputs from the ipfs object. Use the metadata to find default values
 function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
@@ -78,12 +84,14 @@ function getFormInputs(ipfs, metadata) {
 }
 
 
+// Get the ui schema for the form
 const getUISchema = (filledForm, enabled) => {
     debug("getUISchema", filledForm, enabled);
     return Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key,filledForm[key].type, enabled)]))
 };    
 
 
+// Convert the form input type to the ui schema type
 const toSchema = (key, type, enabled) => {
     const typeMappings = {
         "boolean": "radio",

@@ -4,6 +4,9 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
+echo "IPFS_ROOT: $IPFS_ROOT"
+
+
 # --- Construct Parameters
 
 PARAMS="-p output_path $IPFS_ROOT/output"
@@ -44,8 +47,20 @@ eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output
 
 # --- Cleanup
 
-echo "🐝: Setting colab status to waiting"
-echo -n waiting > $IPFS_ROOT/output/status
 echo "🐝: Setting the state to signify the run has ended"
 echo -n true > $IPFS_ROOT/output/done
 rm -v $IPFS_ROOT/input/formAction
+
+
+# --- Post to social media
+
+post_social.sh $IPFS_ROOT
+
+# -- Done
+echo "🐝: Setting colab status to waiting"
+rm -v $IPFS_ROOT/output/status
+echo -n waiting > $IPFS_ROOT/output/status
+
+# -- Sleep
+echo "🐝: Sleeping to make sure synchronization finished"
+sleep 10

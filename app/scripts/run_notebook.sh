@@ -70,6 +70,7 @@ if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
         echo "🐝: Posting to URL: $social_post_url" 
 
         mkdir -p $IPFS_ROOT/output/social
+        
         # Do post
         curl $social_post_url > $IPFS_ROOT/output/social/$platform &
     done

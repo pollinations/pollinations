@@ -8,7 +8,7 @@ echo "🐝: Checking if social media posting is enabled"
 if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
 
     echo "🐝: Initializing social media posts to $SOCIAL_PLATFORMS"
-    for platform in "twitter" "instagram" "telegram" "facebook" "youtube" "linkedin"; do
+    for platform in "twitter" "instagram" "telegram" "facebook" "youtube" ; do
 
         # Get ContentID
         cid=`tail -1 $CONTENTID_PATH`

@@ -3,30 +3,9 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
+CONTENTID_PATH=/content/cid
 
 echo "IPFS_ROOT: $IPFS_ROOT"
-
-if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
-
-    echo "🐝: Initializing social media posts to $SOCIAL_PLATFORMS"
-    for platform in "twitter" "instagram" "telegram" "facebook" "youtube" "linkedin"; do
-
-        # Get ContentID
-        cid=`tail -1 cid`
-        
-        # Initiate post
-        echo "🐝: Posting to $platform with cid: $cid"
-        social_post_url="https://pollinations.ai/.netlify/functions/social-post/$platform/$cid"
-        echo "🐝: Posting to URL: $social_post_url" 
-
-        mkdir -p $IPFS_ROOT/output/social
-        # Do post
-        curl $social_post_url > $IPFS_ROOT/output/social/$platform &
-    done
-    
-fi
-
-sleep 10000
 
 # --- Construct Parameters
 PARAMS="-p output_path $IPFS_ROOT/output"
@@ -83,7 +62,7 @@ if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
     for platform in "twitter" "instagram" "telegram" "facebook" "youtube" "linkedin"; do
 
         # Get ContentID
-        cid=`tail -1 cid`
+        cid=`tail -1 $CONTENTID_PATH`
         
         # Initiate post
         echo "🐝: Posting to $platform with cid: $cid"

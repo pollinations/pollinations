@@ -76,11 +76,15 @@ export default React.memo(function Model() {
             metadata={metadata}
            />
         </div>
-        <div style={{ width: '100%'}}>
-          <h3>Social</h3>
-          <br />
-          {ipfs?.output?.social && <SocialPostStatus results={ipfs?.output?.social} />}
-        </div>
+        { 
+        ipfs?.output?.social && 
+          (<div style={{ width: '100%'}}>
+            <h3>Social</h3>
+            <br />
+            <SocialPostStatus results={ipfs?.output?.social} />
+          </div>)
+        }
+
       {/* previews */}
       { ipfs.output && <div >
                           <ImageViewer output={ipfs.output} contentID={contentID}/>

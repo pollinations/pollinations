@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import fetch from "node-fetch";
+import React from "react";
+
 import Debug from "debug";
 
 import FacebookIcon from '@material-ui/icons/Facebook';
@@ -12,11 +12,7 @@ import { Link } from "@material-ui/core";
 
 const debug = Debug("Social");
 
-//const platforms = ["twitter","instagram","telegram","facebook","youtube","linkedin"];
-
-const platforms = ["facebook"];
-
-  const platformIcons = {
+const platformIcons = {
   "twitter": <TwitterIcon />,
   "facebook": <FacebookIcon />,
   "linkedin": <LinkedInIcon />,
@@ -25,52 +21,20 @@ const platforms = ["facebook"];
   "telegram": <TelegramIcon />
 };
 
-
-export const PostSocial = React.memo(({ contentID }) => {
-  const posts = usePostSocial(contentID);
-
-  if (posts.length === 0)
-    return "Posting to social media...";
-
-  return posts
-        .filter(p => p)
-        .map((postResult,index) => PostResultLink(postResult, index)); 
-});
+export const SocialPostStatus = ({ results }) => 
+  Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
 
 
-const PlatformIcon = ({index}) => platformIcons[platforms[index]];
+const PostResultLink = ({status, message, errors, postIds, errorMessage}, platform) => {
+  
+  const errorMsg = errorMessage || message || (errors && errors[0] && errors[0].message);
+  const color = status === "error" || errorMsg ? "error" : "inherit";
 
-const PostResultLink = ({status, message},index) => {
-  const color = status === "error" ? "error" : "primary";
-  return <Link key={`link_${index}`} href={"#"} color={color} title={message}>
-      <PlatformIcon index={index} />
-    </Link>;
+  const postURL = postIds && postIds[0]?.postUrl;
+
+  return  <Link key={`link_${platform}`} href={postURL} target="_blank" color={color} title={errorMsg}>
+            {platformIcons[platform]}
+          </Link>;
 }
 
-
-function usePostSocial(contentID) {
-  const [results, setResults] = useState({});
-  useEffect(() => {
-    for (const platform of platforms) {
-      postToPlatform(platform, contentID).then(result =>
-        setResults(results => ({...results, [platform]: result}))
-      );
-    }
-  }, [contentID]);
-  return Object.values(results);
-}
-
-
-async function postToPlatform(platform, contentID) {
-  
-  debug(`Posting ${contentID} to ${platform}.`);
-  const postFunctionURL = `https://pollinations.ai/.netlify/functions/social-post/${platform}/${contentID}`;
-  
-  const res = await fetch(postFunctionURL);
-  const postResult = await res.json();
-  
-  debug(`Posted ${contentID} to ${platform}. with result:`, postResult);
-
-  return postResult;
-}
 

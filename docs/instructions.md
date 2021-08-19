@@ -12,6 +12,6 @@
 
  *Note: This is run using Google Colab's spare computing resources, and will not run quickly or sometimes you need to retry a few times during heavy usage.*
 
- *Note 2: There are some bugs in the code of Pollinations which result in it becoming desyncronized with Colab. Often one has to go to the Colab tab and click "Runtime -> Factory Reset Runtime", then "Runtime -> Run All" and to be on the save side visit the homepage of [Pollinations.AI](https://pollinations.ai) to get started again. This whole process will become much easier in the near future.*
+ *Note 2: There are some bugs in the code of Pollinations which result in it becoming desyncronized with Colab. Sometimes one has to go to the Colab tab and click "Runtime -> Run All".*
  
- *Note 3: A bot is posting all the finished Pollinations to Twitter and a few other social networks. Data is stored on the Interplanetary Filesystem. No information about the user is stored. Ideally one should be able to chose not to post something. There should be a button soon.*
+ *Note 3: A bot is posting all the finished Pollinations to Twitter and a few other social networks. Data is stored on the Interplanetary Filesystem. No information about the user is saved. There is a button to deactivate posting.*

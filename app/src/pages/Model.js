@@ -75,7 +75,7 @@ export default React.memo(function Model() {
             output={ipfs.output}  
             metadata={metadata}
            />
-           {ipfs?.output?.done && <PostSocial contentID={contentID} />}
+           {ipfs?.output?.social && <PostSocial results={ipfs?.output?.social} />}
         </div>
 
       {/* previews */}

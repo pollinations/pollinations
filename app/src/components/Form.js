@@ -35,8 +35,6 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
-
-
     return <Form
         schema={{properties: filledForm}}
         uiSchema={uiSchema}

@@ -59,3 +59,7 @@ post_social.sh $IPFS_ROOT
 # -- Done
 echo "🐝: Setting colab status to waiting"
 echo -n waiting > $IPFS_ROOT/output/status
+
+# -- Sleep
+echo "🐝: Sleeping to make sure synchronization finished"
+sleep 10

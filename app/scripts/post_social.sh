@@ -4,14 +4,14 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 
 CONTENTID_PATH="/content/cid"
 
+# Get ContentID
+cid=`tail -1 $CONTENTID_PATH`
+
 echo "🐝: Checking if social media posting is enabled"
 if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
 
     echo "🐝: Initializing social media posts to $SOCIAL_PLATFORMS"
     for platform in "twitter" "instagram" "telegram" "facebook" "youtube" ; do
-
-        # Get ContentID
-        cid=`tail -1 $CONTENTID_PATH`
         
         # Initiate post
         echo "🐝: Posting to $platform with cid: $cid"

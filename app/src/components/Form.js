@@ -9,10 +9,14 @@ const debug = Debug("Form");
 
 const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCancel}) => {
 
-    const filledForm = getFormInputs(input, metadata);
+    debug("metadata", metadata);
+    
+    const filledFormNoSocial = getFormInputs(input, metadata);
 
-    if (!filledForm)
+    if (!filledFormNoSocial)
         return null;
+
+    const filledForm = {...filledFormNoSocial, social: { type: "boolean", title: "Post to Social Media", default: true}};
 
     debug("colabState", colabState);
     debug("filledForm", filledForm);
@@ -24,7 +28,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     const formDisabled = status === "disconnected" || inProgress;
 
     debug("nodeID",nodeID, formDisabled)
-    const uiSchema = getUISchema(filledForm, showSubmit)
+    const uiSchema = getUISchema(filledForm, metadata?.form?.properties, showSubmit)
     
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
@@ -65,22 +69,31 @@ function getFormInputs(ipfs, metadata) {
 }
 
 
-const getUISchema = (filledForm, enabled) =>
-    Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key, enabled)]))
+const getUISchema = (filledForm, enabled) => {
+    debug("getUISchema", filledForm, enabled);
+    return Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key,filledForm[key].type, enabled)]))
+};    
 
 
-const toSchema = (key, enabled) => {
-    const mappings = [
-        ["text_","text"],
-        ["file_","file"],
-        ["num_","updown"],
-        ["save_","radio"],
-        ["super_resolution","radio"],
-        ["","text"]
-    ];
+const toSchema = (key, type, enabled) => {
+    const typeMappings = {
+        "boolean": "radio",
+        "string": "text",
+        "number": "updown",
+    };
+    
+    const prefixMappings = {
+        "file_":"file",
+        "num_":"updown"
+    };
+    
+    // TODO: enable prefixMappings
 
+    debug("Got type",type,"Looking for", key);
+    
+    const widget = typeMappings[type] || "text";
     return { 
-        "ui:widget": mappings.find(([keyPrefix, _]) => key.toLowerCase().startsWith(keyPrefix))[1],
+        "ui:widget": widget,
         "ui_disabled": !enabled
     }
 

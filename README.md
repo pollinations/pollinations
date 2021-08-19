@@ -1,9 +1,11 @@
 ## 🌸 Pollinations
 
 Pollinations is an effort to make generative art more approachable. There are three main components.
-- A React frontend
-- IPFS for pubsub and storage
-- Notebooks running on Google Collab (for the cloud GPUs)
+- A frontend hosting a variety of notebooks that allow creating and experimenting with generative art.
+- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage
+- Pollinations are run on Google Colab at the moment (for the free cloud GPUs)
+
+[Instructions](docs/instructions.md) on using Pollinations.AI.
 
 ## 🔗 Links
 

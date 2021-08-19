@@ -9,6 +9,12 @@ import mature from "../mature.js";
 
 const hashTags =  "#pollinations #generative #art #machinelearning";
 
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTION'
+};
+
 
 export const handler = async ({path}) => {
 
@@ -22,7 +28,8 @@ export const handler = async ({path}) => {
     console.log("res",JSON.stringify(res,null,4));
     return {
       statusCode: 200,
-      body: JSON.stringify(res, null, 4)
+      body: JSON.stringify(res, null, 4),
+      headers
     };
 
 }
@@ -97,7 +104,7 @@ function shorten(str, maxLength) {
   return str;
 }
 
-
+// Twitter posts need shorter text
 function formatPostForTwitter(title, modelTitle, url) {
   title = shorten(title, 100);
   modelTitle = shorten(modelTitle, 70);

@@ -21,16 +21,18 @@ const platformIcons = {
   "telegram": <TelegramIcon />
 };
 
-
-export const PostSocial = ({ results }) => 
+export const SocialPostStatus = ({ results }) => 
   Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
 
 
+const PostResultLink = ({status, message, errors, postIds, errorMessage}, platform) => {
+  
+  const errorMsg = errorMessage || message || (errors && errors[0] && errors[0].message);
+  const color = status === "error" || errorMsg ? "error" : "inherit";
 
+  const postURL = postIds && postIds[0]?.postUrl;
 
-const PostResultLink = ({status, message}, platform) => {
-  const color = status === "error" ? "error" : "primary";
-  return  <Link key={`link_${platform}`} href={"#"} color={color} title={message}>
+  return  <Link key={`link_${platform}`} href={postURL} color={color} title={errorMsg}>
             {platformIcons[platform]}
           </Link>;
 }

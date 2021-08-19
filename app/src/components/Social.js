@@ -32,7 +32,7 @@ const PostResultLink = ({status, message, errors, postIds, errorMessage}, platfo
 
   const postURL = postIds && postIds[0]?.postUrl;
 
-  return  <Link key={`link_${platform}`} href={postURL} color={color} title={errorMsg}>
+  return  <Link key={`link_${platform}`} href={postURL} target="_blank" color={color} title={errorMsg}>
             {platformIcons[platform]}
           </Link>;
 }

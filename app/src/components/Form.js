@@ -16,7 +16,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     if (!filledFormNoSocial)
         return null;
 
-    const filledForm = {...filledFormNoSocial, social: { type: "boolean", title: "Post to Social Media", default: true}};
+    const filledForm = addSocialCheckbox(filledFormNoSocial);
 
     debug("colabState", colabState);
     debug("filledForm", filledForm);
@@ -60,6 +60,15 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
 export default React.memo(FormView)
 
 
+const addSocialCheckbox = (filledFormNoSocial) => 
+    ({
+        ...filledFormNoSocial,
+        social: { 
+            type: "boolean", 
+            title: "Post to Pollinations' social media feeds", 
+            default: true }
+    });
+
 function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
@@ -90,7 +99,7 @@ const toSchema = (key, type, enabled) => {
     // TODO: enable prefixMappings
 
     debug("Got type",type,"Looking for", key);
-    
+
     const widget = typeMappings[type] || "text";
     return { 
         "ui:widget": widget,

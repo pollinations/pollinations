@@ -32,12 +32,12 @@ export default ({ nodeID, contentID, status, ipfs }) => {
                                 : <p children="Not connected..." />}
                         </TableCell>
                         </TableRow>
-                        <TableRow>
+                        {/* <TableRow>
                             <TableCell><b>Status</b></TableCell>
                             <TableCell>
                                 {colabState}
                             </TableCell>
-                        </TableRow>
+                        </TableRow> */}
                     </TableBody>
                 </Table>
             </Box>;

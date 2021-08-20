@@ -53,13 +53,13 @@ export default React.memo(function Model() {
   return <>
        {/* Nav Bar */}
        <NotebookSelector {...state} />   
-       <Alert severity="warning">
+       {/* <Alert severity="warning">
           Google recently reduced the capacity of their free Cloud GPUs. Pollinations depends on these to do the computations. 
         <br/> <br/>
         Image generation may fail intermittently. We are working on a fix. Discussion on <Link href="https://github.com/pollinations/pollinations/issues/62">Github</Link>.
         <br /><br/>
         The <Link href="/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J">CLIP-Guided Diffusion model</Link> seems to be working and we made it the default for the time being.
-       </Alert>
+       </Alert> */}
        <Container maxWidth="md">
       <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />

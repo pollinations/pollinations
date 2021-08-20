@@ -6,6 +6,8 @@ NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
 echo "IPFS_ROOT: $IPFS_ROOT"
 
+# --- Log GPU info ---
+nvidia-smi > $IPFS_ROOt/output/gpu
 
 # --- Construct Parameters
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Container, Paper, Typography } from "@material-ui/core"
-
+import { Button, Container, Link, Paper, Typography } from "@material-ui/core";
+import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
 import GitHubIcon from '@material-ui/icons/GitHub';
 
@@ -53,6 +53,9 @@ export default React.memo(function Model() {
   return <>
        {/* Nav Bar */}
        <NotebookSelector {...state} />   
+       <Alert severity="warning">Google recently significantly reduced the memory available to free Cloud GPUs. Pollinations depends on these to do the computations. 
+       <br/> <br/>
+       Image generation may fail intermittently. We are working on a fix. Discussion on <Link href="https://github.com/pollinations/pollinations/issues/62">Github</Link>.</Alert>
        <Container maxWidth="md">
       <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />

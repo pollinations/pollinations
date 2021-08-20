@@ -56,6 +56,8 @@ export default React.memo(function Model() {
        <Alert severity="warning">Google recently significantly reduced the memory available to free Cloud GPUs. Pollinations depends on these to do the computations. 
        <br/> <br/>
        Image generation may fail intermittently. We are working on a fix. Discussion on <Link href="https://github.com/pollinations/pollinations/issues/62">Github</Link>.</Alert>
+       <br /><br/>
+       The <Link href="/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J">CLIP-Guided Diffusion model</Link> seems to be working and it is the default one to use for now.
        <Container maxWidth="md">
       <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />

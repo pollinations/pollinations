@@ -7,6 +7,7 @@
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.60",
     "@rjsf/core": "^2.5.1",
     "@rjsf/material-ui": "^2.5.1",
     "ansi-to-react": "^6.1.5",

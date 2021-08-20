@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Paper } from "@material-ui/core"
+import { Button, Container, Paper, Typography } from "@material-ui/core"
 
 import Markdown from 'markdown-to-jsx';
+import GitHubIcon from '@material-ui/icons/GitHub';
 
 
 import useColab from "../network/useColab"
@@ -18,6 +19,7 @@ import NodeStatus from "../components/NodeStatus";
 import { SEO, SEOMetadata } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
+import NotebookSelector from "../components/NotebookSelector";
 
 const debug = Debug("Model");
 
@@ -49,8 +51,9 @@ export default React.memo(function Model() {
   const cancelForm = () => dispatchInputState({...state.inputs, formAction: "cancel" })
 
   return <>
-        {/* status */}      
-          <NodeStatus {...state} />
+       {/* Nav Bar */}
+       <NotebookSelector {...state} />   
+       <Container maxWidth="md">
       <div style={{display:'flex', flexWrap: 'wrap'}}>
       <SEO metadata={metadata} output={ipfs.output} />
       {/* control panel */}
@@ -97,5 +100,7 @@ export default React.memo(function Model() {
 
 
     </div>
-    </>
+    <Typography align="right" > Get help and contribute on<Button href="https://github.com/pollinations/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
+    </Container>
+  </>
 });

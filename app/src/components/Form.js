@@ -68,7 +68,7 @@ const addSocialCheckbox = (filledFormNoSocial) =>
         social: { 
             type: "boolean", 
             title: "Post to Pollinations' social media feeds", 
-            default: true }
+            default: false }
     });
 
 

@@ -48,7 +48,7 @@ function readMetadata(notebookJSON) {
 
 const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
 
-const parseHandleSpecial = (val, type) => type === "boolean" ? parse(`"${val}"`.toLowerCase()) : parse(val)
+const parseHandleSpecial = (val, type) => type === "boolean" ? parse(val.toLowerCase()) : parse(val)
 
 const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parseHandleSpecial(defaultVal, type), title: name}];
 

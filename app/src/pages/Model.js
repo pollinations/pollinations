@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Container, Link, Paper, Typography } from "@material-ui/core";
+import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
 import GitHubIcon from '@material-ui/icons/GitHub';
@@ -107,7 +107,7 @@ export default React.memo(function Model() {
 
 
     </div>
-    <Typography align="right" > Get help and contribute on<Button href="https://github.com/pollinations/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
+    <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/5bMm4Egw" target="_blank">[ Discord ]</Link>.</Box>
     </Container>
   </>
 });

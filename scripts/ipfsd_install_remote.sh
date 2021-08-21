@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # IPFS
-wget https://dist.ipfs.io/go-ipfs/v0.8.0/go-ipfs_v0.8.0_linux-amd64.tar.gz
-tar -xvzf go-ipfs_v0.8.0_linux-amd64.tar.gz
+wget https://dist.ipfs.io/go-ipfs/v0.9.1/go-ipfs_v0.9.1_linux-amd64.tar.gz
+tar -xvzf go-ipfs_v0.9.1_linux-amd64.tar.gz
 cd go-ipfs
 sudo bash install.sh
 cd -
@@ -11,7 +11,7 @@ ipfs bootstrap rm --all
 ipfs config Addresses.Swarm /ip4/0.0.0.0/tcp/4001
 ipfs config Addresses.API /ip4/0.0.0.0/tcp/5001
 ipfs config Addresses.Gateway /ip4/0.0.0.0/tcp/8080
-ipfs config Pubsub.Router floodsub
+# ipfs config Pubsub.Router floodsub
 ipfs config --json Pubsub.DisableSigning true
 ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
 # sudo apt update

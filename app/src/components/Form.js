@@ -20,11 +20,10 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
 
 
     // Fill in the form inputs and override default values if they are in the ipfs object
-    const filledFormNoSocial = getFormInputs(input, metadata);
-    if (!filledFormNoSocial)
+    const filledForm = getFormInputs(input, metadata);
+    if (!filledForm)
         return null;
 
-    const filledForm = showSubmit ?  addSocialCheckbox(filledFormNoSocial) : filledFormNoSocial;
 
     debug("colabState", colabState);
     debug("filledForm", filledForm);
@@ -77,7 +76,9 @@ function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
 
-    return Object.fromEntries(Object.entries(metadata.form.properties).map(
+    const propertiesWithSocial = addSocialCheckbox(metadata.form.properties);
+    
+    return Object.fromEntries(Object.entries(propertiesWithSocial).map(
             ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
 }
 

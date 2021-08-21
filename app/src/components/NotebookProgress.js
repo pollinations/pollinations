@@ -9,10 +9,10 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!output?.log?.split)
         return null;
     const progress = getProgress(output.log, metadata.numCells)*100;
-    debug(progress);
-    
-    const inProgress =  progress >= 0 && !output?.done && !progress >= 100;
 
+    
+    const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
+    debug("progress", progress, inProgress);
     if (!inProgress)
       return null;
 

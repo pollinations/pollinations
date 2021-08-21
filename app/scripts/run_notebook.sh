@@ -6,8 +6,6 @@ NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
 echo "IPFS_ROOT: $IPFS_ROOT"
 
-# --- Log GPU info ---
-nvidia-smi > $IPFS_ROOt/output/gpu
 
 # --- Construct Parameters
 
@@ -31,6 +29,9 @@ echo "🐝 PARAMS:" "$PARAMS"
 echo "🐝: Removing last run output if there was any."
 rm -rv $IPFS_ROOT/output/*
 
+# --- Log GPU info ---
+echo "🐝: Logging GPU info."
+nvidia-smi > $IPFS_ROOt/output/gpu
 
 echo "🐝: Setting colab status to 'running'"
 echo -n running > $IPFS_ROOT/output/status
@@ -44,7 +45,7 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 # --- Run
 
 echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output 
+eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output |& tee $IPFS_ROOT/output/log
 
 
 # --- Cleanup

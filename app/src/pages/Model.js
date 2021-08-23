@@ -44,32 +44,33 @@ export default React.memo(function Model() {
 
   const dispatchForm = async inputs => dispatchInputState({
     ...inputs,
-    ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"] , 
+    ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
     formAction: "submit"
   });
 
-  const cancelForm = () => dispatchInputState({...state.inputs, formAction: "cancel" })
+  const cancelForm = () => dispatchInputState({ ...state.inputs, formAction: "cancel" })
 
   return <>
-       {/* Nav Bar */}
-       <NotebookSelector {...state} />   
-       {/* <Alert severity="warning">
+    {/* Nav Bar */}
+    <NotebookSelector {...state} />
+    {/* <Alert severity="warning">
           Google recently reduced the capacity of their free Cloud GPUs. Pollinations depends on these to do the computations. 
         <br/> <br/>
         Image generation may fail intermittently. We are working on a fix. Discussion on <Link href="https://github.com/pollinations/pollinations/issues/62">Github</Link>.
         <br /><br/>
         The <Link href="/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J">CLIP-Guided Diffusion model</Link> seems to be working and we made it the default for the time being.
        </Alert> */}
-       <Container maxWidth="md">
-      <div style={{display:'flex', flexWrap: 'wrap'}}>
-      <SEO metadata={metadata} output={ipfs.output} />
-      {/* control panel */}
+    <Container maxWidth="md">
+      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+        <SEO metadata={metadata} output={ipfs.output} />
+        {/* control panel */}
 
         {/* just in case */}
-        {metadata && metadata.description ?<div style={{ width: '100%'}}><Markdown>{metadata.description}</Markdown></div> : null}
+        {metadata && metadata.description ? <div style={{ width: '100%' }}><Markdown>{metadata.description}</Markdown></div> : null}
 
         {/* inputs */}
-        <div style={{ width: '100%'}}>
+        <div style={{ width: '100%' }}>
+          <Alert severity="info">The inputs are <b>disabled</b> because <b>colab node is not running</b>! Please refer to "Help" for instructions.</Alert>
           <h3>Inputs</h3>
 
           <FormView
@@ -78,36 +79,36 @@ export default React.memo(function Model() {
             colabState={ipfs?.output?.status}
             metadata={metadata}
             nodeID={nodeID}
-            onSubmit={dispatchForm} 
+            onSubmit={dispatchForm}
             onCancel={cancelForm}
-            />
-          <NotebookProgress 
-            output={ipfs.output}  
+          />
+          <NotebookProgress
+            output={ipfs.output}
             metadata={metadata}
-           />
+          />
         </div>
-        { 
-        ipfs?.output?.social && 
-          (<div style={{ width: '100%'}}>
+        {
+          ipfs?.output?.social &&
+          (<div style={{ width: '100%' }}>
             <h3>Social</h3>
             <br />
             <SocialPostStatus results={ipfs?.output?.social} />
           </div>)
         }
 
-      {/* previews */}
-      { ipfs.output && <div >
-                          <ImageViewer output={ipfs.output} contentID={contentID}/>
-                        </div>
-      }
+        {/* previews */}
+        {ipfs.output && <div >
+          <ImageViewer output={ipfs.output} contentID={contentID} />
+        </div>
+        }
 
-      <div style={{ width: '100%'}}>
-          <IpfsLog state={state}/>
+        <div style={{ width: '100%' }}>
+          <IpfsLog state={state} />
+        </div>
+
+
       </div>
-
-
-    </div>
-    <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/5bMm4Egw" target="_blank">[ Discord ]</Link>.</Box>
+      <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/5bMm4Egw" target="_blank">[ Discord ]</Link>.</Box>
     </Container>
   </>
 });

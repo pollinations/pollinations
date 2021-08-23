@@ -70,7 +70,7 @@ export default React.memo(function Model() {
 
         {/* inputs */}
         <div style={{ width: '100%' }}>
-          <Alert severity="info">The inputs are <b>disabled</b> because <b>colab node is not running</b>! Please refer to "Help" for instructions.</Alert>
+          <Alert severity="warning">The inputs are <b>disabled</b> because <b>colab node is not running</b>! Please refer to "Help" for instructions.</Alert>
           <h3>Inputs</h3>
 
           <FormView

@@ -13,3 +13,5 @@ debug-docker:
 	docker-compose up --remove-orphans
 clean:
 	rm -rf tmp
+start_ipfs_server:
+	

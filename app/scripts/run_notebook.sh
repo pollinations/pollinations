@@ -46,7 +46,7 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 status=1
 while [ $status -ne 0 ]; do
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-    eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output |& tee $IPFS_ROOT/output/log
+    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" --log-output |& tee $IPFS_ROOT/output/log
     status=$?
     echo "🐝: Papermill exited with status: $status. Re-running if not 0."
 done

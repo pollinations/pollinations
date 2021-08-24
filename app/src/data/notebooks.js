@@ -9,7 +9,7 @@ export const notebooks = [
   },
   {
     name: "PixelDraw",
-    path: "/p/QmTMmGYB5RDPEwN9tm5fRSMz2EzrtZsQmPE7BEjzAmSV9G",
+    path: "/p/QmPFMKEZjsYTZ7mNVRtJUaSyuJTrV6KnPj74NWAeDGDYnP",
     category: "Text-to-Image",
     Icon: WallpaperIcon
   },

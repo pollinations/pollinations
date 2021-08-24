@@ -50,13 +50,13 @@ https://instagram.com/pollinations_ai
 
 
 async function postAsync(ipfs, cid, platform) {
-  const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
-  const input = dissoc("notebook.ipynb", ipfs.input);
+  const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
+  
+  const input = ipfs.input[primaryInput];
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
-
 
   console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
   const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url }, platform);

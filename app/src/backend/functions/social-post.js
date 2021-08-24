@@ -94,7 +94,7 @@ function shorten(str, maxLength) {
 function formatPostForTwitter(title, modelTitle, url) {
   title = shorten(title, 100);
   modelTitle = shorten(modelTitle, 70);
-  return `${title} ${url} ${hashTags}`;
+  return `"${title}" ${url} ${hashTags}`;
 }
 
 function formatPostAndTitle(modelTitle, input, url, platform) {

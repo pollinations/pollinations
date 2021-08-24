@@ -8,6 +8,12 @@ export const notebooks = [
     Icon: WallpaperIcon
   },
   {
+    name: "PixelDraw",
+    path: "/p/QmRam7czS6bCo1gLtEzNXjbcDv3d5PomFxtJTeX3tkwEQW",
+    category: "Text-to-Image",
+    Icon: WallpaperIcon
+  },
+  {
     name: "CLIP-guided Diffusion",
     path: "/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J",
     category: "Text-to-Image",
@@ -20,6 +26,6 @@ export const notebooks = [
       Icon: WallpaperIcon
   }
 ];
-  
+
 export const defaultNotebook = notebooks[0];
  

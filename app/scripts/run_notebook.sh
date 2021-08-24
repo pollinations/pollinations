@@ -4,12 +4,16 @@ IPFS_ROOT=${1:-"/content/ipfs"}
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
+NOTEBOOK_PARAMS_FILE=/content/params.yaml
+
 echo "IPFS_ROOT: $IPFS_ROOT"
 
 
 # --- Construct Parameters
 
-PARAMS="-p output_path $IPFS_ROOT/output"
+
+echo "---" > $NOTEBOOK_PARAMS_FILE
+echo "output_path : $IPFS_ROOT/output" >> $NOTEBOOK_PARAMS_FILE
 
 for path in $IPFS_ROOT/input/*; do
 
@@ -20,10 +24,11 @@ for path in $IPFS_ROOT/input/*; do
     value=$(<$path)
     #value=$(printf '%q' "$value_raw")
 
-    PARAMS+=" -p ${key} ${value}"
+    echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done
 
-echo "🐝 PARAMS:" "$PARAMS"
+echo "🐝 --- PARAMS ---" 
+cat $NOTEBOOK_PARAMS_FILE
 
 
 echo "🐝: Removing last run output if there was any."
@@ -45,8 +50,8 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 # --- Run
 status=1
 while [ $status -ne 0 ]; do
-    echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" $PARAMS --log-output 
-    eval papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" "$PARAMS" --log-output |& tee $IPFS_ROOT/output/log
+    echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output 
+    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
     status=$?
     echo "🐝: Papermill exited with status: $status. Re-running if not 0."
 done

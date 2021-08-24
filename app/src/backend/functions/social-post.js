@@ -36,18 +36,6 @@ export const handler = async ({path}) => {
 
 
 
-const followText =
-`## Create
-https://pollinations.ai
-
-## Follow
-https://fb.com/pollinations
-https://twitter.com/pollinations_ai
-https://instagram.com/pollinations_ai
-
-#pollinations
-`;
-
 
 async function postAsync(ipfs, cid, platform) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
@@ -71,11 +59,9 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-  const inputs = mature(JSON.stringify(input,null, 4));
+  const principal_input = mature(input);
 
-  const principal_input = input["text_input"];
-
-  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url, platform);
+  const { post, title } = formatPostAndTitle(modelTitle, principal_input, url, platform);
 
   const shareConfig = {
     post,
@@ -111,30 +97,30 @@ function formatPostForTwitter(title, modelTitle, url) {
   return `${title} ${url} ${hashTags}`;
 }
 
-function formatPostAndTitle(modelTitle, input, inputs, url, platform) {
+function formatPostAndTitle(modelTitle, input, url, platform) {
   input = mature(input);
-  if (platform === "twitter") {
-    const post = formatPostForTwitter(input, modelTitle, url);
-    return { post };
-  }
+
+  const post = formatPostForTwitter(input, modelTitle, url);
+
   const title = `"${input}" - ${modelTitle} ${hashTags}`;
 
-  const post = `# ${title}
-
-## Inputs
-${inputs}
-
-## Results
-${url}
-
-${followText}`;
   return { post, title };
+
 }
 
 
+const followText =
+`## Create
+https://pollinations.ai
 
-// You can mention another Facebook Page by including the following in the post text. Note, Premium or Business Plan required for mentions.
-// @[page-id]
+## Follow
+https://fb.com/pollinations
+https://twitter.com/pollinations_ai
+https://instagram.com/pollinations_ai
+
+#pollinations
+`;
+
 
 
 if (process.argv.length > 2) {

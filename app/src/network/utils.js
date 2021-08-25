@@ -46,23 +46,6 @@ const shortenHash = (hash) => {
 
 export const displayContentID = contentID => contentID ? shortenHash(contentID.toString()) : "None";
 
-export const useHash = () => {
-    console.log("history", window.history, "hash", window.location.hash);
-    //history.replaceState(undefined, undefined, "#hash_value")
-    const locationHash = window.location.hash.replace("#","");
-    const [hash,setHashState] = useState(locationHash || null);
-    debug("hash", hash);
-    const setHash = hash => {
-        //const title = "Pollinations - "+ displayContentID(hash);
-        const title=undefined;
-        // window.history.replaceState(undefined, title, "#"+hash);
-        //window.title = title;
-        setHashState(hash);
-    }
-    return [hash, setHash];
-};
-
-
 export const callLogger = (f,name = null) => (...args) => {
     if (!name)
       name = f.name;

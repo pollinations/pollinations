@@ -23,24 +23,14 @@ import NotebookSelector from "../components/NotebookSelector";
 
 const debug = Debug("Model");
 
-// for backward compatibility we check if the notebook.ipynb is at / or at /input
-// the new "correct" way is to save the notebook.ipynb to /input
-
-const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
 export default React.memo(function Model() {
 
-  const { state, dispatch: dispatchInputState, setStatus } = useColab(); // {state:{ipfs:{},contentID: null, nodeID:null}, dispatch: noop}
+  const { state, dispatch: dispatchInputState, setStatus } = useColab(isDone);
 
   const { ipfs, nodeID, status, contentID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
-
-  //debug("images", images)
-  useEffect(() => {
-    debug("First model render. We have a problem if you see this twice.")
-  }, []);
-
 
   const dispatchForm = async inputs => dispatchInputState({
     ...inputs,
@@ -115,3 +105,16 @@ export default React.memo(function Model() {
     </Container>
   </>
 });
+
+
+// function that returns true when the run has finished
+// will change URL hash
+
+const isDone = (state) => state?.ipfs?.output?.done;
+
+
+// for backward compatibility we check if the notebook.ipynb is at / or at /input
+// the new "correct" way is to save the notebook.ipynb to /input
+
+const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
+

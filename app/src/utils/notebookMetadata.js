@@ -46,11 +46,10 @@ function readMetadata(notebookJSON) {
 
 };
 
+// Extracts the parameters from a Colab parameter row
 const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
 
-const parseHandleSpecial = (val, type) => type === "boolean" ? parse(`"${val}"`) : parse(val)
-
-const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parseHandleSpecial(defaultVal, type), title: name}];
+const mapToJSONFormField = ([_text, name, defaultVal, type]) => [name, {type, default: parse(defaultVal.toString().toLowerCase()), title: name}];
 
 const isParameterCell = cell => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
 

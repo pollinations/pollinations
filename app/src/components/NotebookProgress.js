@@ -9,9 +9,11 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!output?.log?.split)
         return null;
     const progress = getProgress(output.log, metadata.numCells)*100;
-    debug(progress);
+
     
-    if (progress >= 100)
+    const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
+    debug("progress", progress, inProgress);
+    if (!inProgress)
       return null;
 
     return  <><Box display="flex" alignItems="center">
@@ -24,7 +26,7 @@ export const NotebookProgress = ({output, metadata}) => {
         )}%`}</Typography>
       </Box>
       </Box>
-      {progress >= 0 && <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>}
+       <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>
     </>
 }
 

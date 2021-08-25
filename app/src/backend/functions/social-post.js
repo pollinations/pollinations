@@ -9,6 +9,12 @@ import mature from "../mature.js";
 
 const hashTags =  "#pollinations #generative #art #machinelearning";
 
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTION'
+};
+
 
 export const handler = async ({path}) => {
 
@@ -22,34 +28,23 @@ export const handler = async ({path}) => {
     console.log("res",JSON.stringify(res,null,4));
     return {
       statusCode: 200,
-      body: JSON.stringify(res, null, 4)
+      body: JSON.stringify(res, null, 4),
+      headers
     };
 
 }
 
 
 
-const followText =
-`## Create
-https://pollinations.ai
-
-## Follow
-https://fb.com/pollinations
-https://twitter.com/pollinations_ai
-https://instagram.com/pollinations_ai
-
-#pollinations
-`;
-
 
 async function postAsync(ipfs, cid, platform) {
-  const { name } = readMetadata(ipfs.input["notebook.ipynb"]);
-  const input = dissoc("notebook.ipynb", ipfs.input);
+  const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
+  
+  const input = ipfs.input[primaryInput];
   const coverImage = getCoverImage(ipfs.output)[1];
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
   const url = `https://pollinations.ai/p/${cid}`;
-
 
   console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
   const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url }, platform);
@@ -64,11 +59,9 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-  const inputs = mature(JSON.stringify(input,null, 4));
+  const principal_input = mature(input);
 
-  const principal_input = input["text_input"];
-
-  const { post, title } = formatPostAndTitle(modelTitle, principal_input, inputs, url, platform);
+  const { post, title } = formatPostAndTitle(modelTitle, principal_input, url, platform);
 
   const shareConfig = {
     post,
@@ -97,37 +90,37 @@ function shorten(str, maxLength) {
   return str;
 }
 
-
+// Twitter posts need shorter text
 function formatPostForTwitter(title, modelTitle, url) {
   title = shorten(title, 100);
   modelTitle = shorten(modelTitle, 70);
-  return `${title} ${url} ${hashTags}`;
+  return `"${title}" ${url} ${hashTags}`;
 }
 
-function formatPostAndTitle(modelTitle, input, inputs, url, platform) {
+function formatPostAndTitle(modelTitle, input, url, platform) {
   input = mature(input);
-  if (platform === "twitter") {
-    const post = formatPostForTwitter(input, modelTitle, url);
-    return { post };
-  }
+
+  const post = formatPostForTwitter(input, modelTitle, url);
+
   const title = `"${input}" - ${modelTitle} ${hashTags}`;
 
-  const post = `# ${title}
-
-## Inputs
-${inputs}
-
-## Results
-${url}
-
-${followText}`;
   return { post, title };
+
 }
 
 
+const followText =
+`## Create
+https://pollinations.ai
 
-// You can mention another Facebook Page by including the following in the post text. Note, Premium or Business Plan required for mentions.
-// @[page-id]
+## Follow
+https://fb.com/pollinations
+https://twitter.com/pollinations_ai
+https://instagram.com/pollinations_ai
+
+#pollinations
+`;
+
 
 
 if (process.argv.length > 2) {

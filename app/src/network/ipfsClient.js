@@ -1,6 +1,6 @@
 
 
-import { toPromise, toPromise1, noop, zip, useHash } from "./utils.js"
+import { toPromise } from "./utils.js"
 import { client, getWebURL, ipfsResolve, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
 import { extname } from "path";
 

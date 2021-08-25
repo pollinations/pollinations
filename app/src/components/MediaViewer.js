@@ -20,7 +20,7 @@ function ImageViewer({output, contentID}) {
     const firstFilename = images[0][0];
     const firstURL = images[0][1];
     images.shift();
-    images = every_nth(images, Math.floor(images.length / 20));
+    images = every_nth(images, Math.max(1,Math.floor(images.length / 20)));
     debug("images", images);
     debug("first",firstFilename, firstURL)
     return (

@@ -1,15 +1,12 @@
 import { routes } from './routes'
 
-import { Button, Container, Typography, Link } from "@material-ui/core"
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
-import GitHubIcon from '@material-ui/icons/GitHub';
-import NotebookSelector from './components/NotebookSelector';
+
 
 function App() {
     return <Router>
-        <NotebookSelector />
-        <Container maxWidth="md">
+
 
             <Switch
                 children={
@@ -21,8 +18,6 @@ function App() {
                     ))
                 }/>
 
-            <Typography align="right" > Get help and contribute on<Button href="https://github.com/pollinations/pollinations"> Github&nbsp;<GitHubIcon /></Button></Typography>
-        </Container>
     </Router>
 }
 

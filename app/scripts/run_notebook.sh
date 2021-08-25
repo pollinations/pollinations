@@ -36,7 +36,7 @@ rm -rv $IPFS_ROOT/output/*
 
 # --- Log GPU info ---
 echo "🐝: Logging GPU info."
-nvidia-smi > $IPFS_ROOT/output/gpu &
+nvidia-smi > $IPFS_ROOT/output/gpu 
 #NVIDIA_SMI_PID=$!
 
 echo "🐝: Setting colab status to 'running'"

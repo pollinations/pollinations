@@ -27,7 +27,7 @@ function ImageViewer({output, contentID}) {
     const firstURL = firstImage[1];
     
     // if more than 20 images take every nth image
-    images = every_nth(images, Math.ceil(images.length / 20));
+    images = every_nth(images, Math.max(1,Math.floor(images.length / 20)));
 
     debug("images", images);
     debug("first",firstFilename, firstURL)

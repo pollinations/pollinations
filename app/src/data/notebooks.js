@@ -21,7 +21,7 @@ export const notebooks = [
  }, 
   {
       name: "DALL-E Mini",
-      path: "/p/QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
+      path: "/p/#QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
       category: "Text-to-Image",
       Icon: WallpaperIcon
   }

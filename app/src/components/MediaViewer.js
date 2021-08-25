@@ -12,7 +12,7 @@ const MediaDisplay = ({filename, ...props}) =>
   filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
 function ImageViewer({output, contentID}) {
-    const images = getMedia(output);
+    let images = getMedia(output);
 
     if (!images || images.length === 0)
       return null;
@@ -20,7 +20,7 @@ function ImageViewer({output, contentID}) {
     const firstFilename = images[0][0];
     const firstURL = images[0][1];
     images.shift();
-
+    images = every_nth(images, Math.floor(images.length / 20));
     debug("images", images);
     debug("first",firstFilename, firstURL)
     return (
@@ -48,3 +48,5 @@ function ImageViewer({output, contentID}) {
 
 
 export default ImageViewer;
+
+const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1);

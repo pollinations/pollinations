@@ -36,7 +36,8 @@ rm -rv $IPFS_ROOT/output/*
 
 # --- Log GPU info ---
 echo "🐝: Logging GPU info."
-nvidia-smi > $IPFS_ROOt/output/gpu
+nvidia-smi -l 10 > $IPFS_ROOT/output/gpu &
+NVIDIA_SMI_PID=$!
 
 echo "🐝: Setting colab status to 'running'"
 echo -n running > $IPFS_ROOT/output/status
@@ -79,6 +80,9 @@ post_social.sh $IPFS_ROOT
 echo "🐝: Setting colab status to waiting"
 rm -v $IPFS_ROOT/output/status
 echo -n waiting > $IPFS_ROOT/output/status
+
+# --- Cleanup
+kill $NVIDIA_SMI_PID
 
 # -- Sleep
 echo "🐝: Sleeping to make sure synchronization finished"

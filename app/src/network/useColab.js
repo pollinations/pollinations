@@ -94,10 +94,11 @@ function useContentHash() {
     const params  = useParams()
     const history = useHistory()
 
-    debug("location pathname", params);
+    debug("location pathname", params, "history",history);
 
     const hash = params?.hash;
-    const setHash = h => history.push(`/p/${h}`);
+
+    const setHash = (newHash, replace=true) => replace ? history.replace(`/p/${newHash}`) : history.push(`/p/${newHash}`);
     
     return { hash, setHash };
 }

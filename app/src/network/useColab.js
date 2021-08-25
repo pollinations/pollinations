@@ -9,7 +9,10 @@ import { useParams, useHistory } from "react-router-dom";
 
 const debug = Debug("useColab")
 
-const useColab = () => {
+// updateHashCondition function can be optionally 
+// passed to only update the hash when a run has finished
+
+const useColab = (updateHashCondition = () => true) => {
     const [state, dispatchState] = useReducer(...stateReducer);
     const { hash, setHash } = useContentHash();
 
@@ -42,14 +45,6 @@ const useColab = () => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            // resolve(state.nodeID).then(cid => { 
-            //     debug("resolved IPNS to cid",cid);
-            //     if (cid !== EMPTYCID) {
-            //         setContentID(cid);
-            //     } else {
-            //         debug("Skipping since empty.");
-            //     }
-            // });
             return subscribe(state.nodeID, setContentID);
         }
     , [state.nodeID]);
@@ -57,8 +52,12 @@ const useColab = () => {
 
     useEffect(() => {
         if (state.contentID && state.contentID !== hash) {
-            debug("contentID changed to", state.contentID,"updating hash")
-            setHash(state.contentID);
+            if (updateHashCondition(state)) {
+                debug("contentID changed to", state.contentID,"updating hash")
+                setHash(state.contentID);
+            } else {
+                debug("ContentID changed but not updating hash");
+            }
         }
     },[state]);
 
@@ -89,7 +88,6 @@ const useColab = () => {
     };
 };
 
-
 function useContentHash() {
     const params  = useParams()
     const history = useHistory()
@@ -102,6 +100,5 @@ function useContentHash() {
     
     return { hash, setHash };
 }
-
 
 export default useColab;

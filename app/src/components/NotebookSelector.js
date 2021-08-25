@@ -15,8 +15,9 @@ import MenuIcon from '@material-ui/icons/Menu';
 import { noop } from '../network/utils';
 
 import { notebooks } from "../data/notebooks.js";
+import NodeStatus from './NodeStatus';
 
-export default function NotebookSelector() {
+export default function NotebookSelector(state) {
     const [visible, setVisible] = useState(false);
     
     return <>
@@ -35,6 +36,7 @@ export default function NotebookSelector() {
           <Typography variant="h6" noWrap>
             Pollinations
           </Typography>
+          <NodeStatus {...state} />
         </Toolbar>
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>

@@ -16,6 +16,7 @@ import { noop } from '../network/utils';
 
 import { notebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
+import { SocialLinks } from './Social';
 
 export default function NotebookSelector(state) {
     const [visible, setVisible] = useState(false);
@@ -34,8 +35,9 @@ export default function NotebookSelector(state) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            Pollinations
+            Pollinations&nbsp;
           </Typography>
+          <SocialLinks />
           <NodeStatus {...state} />
         </Toolbar>
       </AppBar>

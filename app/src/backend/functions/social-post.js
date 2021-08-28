@@ -1,13 +1,8 @@
 
 import SocialPost from "social-post-api"; 
 import { IPFSState } from "../../network/ipfsClient.js";
-import readMetadata from "../../utils/notebookMetadata.js";
-import { getCoverImage, getCoverVideo } from "../../data/media.js";
-import { dissoc } from "ramda";
 
-import mature from "../mature.js";
-
-const hashTags =  "#pollinations #generative #art #machinelearning";
+import { getPostData } from "../../data/summaryData";
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -24,44 +19,35 @@ export const handler = async ({path}) => {
     console.log("platform",platform,"cid",cid,". Fetching IPFS state");
     const ipfs = await IPFSState(cid);
 
-    const res = await postAsync(ipfs, cid, platform).catch((e) => console.error("posterror",e));
-    console.log("res",JSON.stringify(res,null,4));
-    return {
-      statusCode: 200,
-      body: JSON.stringify(res, null, 4),
-      headers
-    };
+    const data =  getPostData(ipfs, cid, platform);
+    
+    try {
+      const res = await doPost(data, platform);
+      console.log("res",JSON.stringify(res,null,4));
+      return {
+        statusCode: 200,
+        body: JSON.stringify(res, null, 4),
+        headers
+      };
+
+    } catch (e) {
+      console.error("error",e);
+      return {
+        statusCode: 500,
+        body: JSON.stringify(e, null, 4),
+        headers
+      };
+    }
 
 }
 
 
-
-
-async function postAsync(ipfs, cid, platform) {
-  const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
-  
-  const input = ipfs.input[primaryInput];
-  const coverImage = getCoverImage(ipfs.output)[1];
-  const vid = getCoverVideo(ipfs.output);
-  const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
-  const url = `https://pollinations.ai/p/${cid}`;
-
-  console.log("Calling post", { modelTitle: name, input, videoURL, coverImage, url });
-  const postResult = await doPost({ modelTitle: name, input, videoURL, coverImage, url }, platform);
-  return postResult;
-}
-
-
-
-async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) {
+async function doPost({post, title, videoURL, coverImage, url}, platform) {
 
   // Live API Key
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-  const principal_input = mature(input);
-
-  const { post, title } = formatPostAndTitle(modelTitle, principal_input, url, platform);
 
   const shareConfig = {
     post,
@@ -82,31 +68,6 @@ async function doPost({input, modelTitle, videoURL, coverImage, url}, platform) 
   return postResponse;
 }
 
-
-// Shorten string and add ellipsis
-function shorten(str, maxLength) {
-  if (str.length > maxLength) 
-    return `${str.substr(0, maxLength - 3)}...`;
-  return str;
-}
-
-// Twitter posts need shorter text
-function formatPostForTwitter(title, modelTitle, url) {
-  title = shorten(title, 100);
-  modelTitle = shorten(modelTitle, 70);
-  return `"${title}" ${url} ${hashTags}`;
-}
-
-function formatPostAndTitle(modelTitle, input, url, platform) {
-  input = mature(input);
-
-  const post = formatPostForTwitter(input, modelTitle, url);
-
-  const title = `"${input}" - ${modelTitle} ${hashTags}`;
-
-  return { post, title };
-
-}
 
 
 const followText =

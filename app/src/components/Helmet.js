@@ -36,7 +36,7 @@ export const SEO = ({ipfs, cid}) => {
     if (!ipfs?.output) 
         return null;
     
-    const { coverImage, title, post: description, url } = getPostData(ipfs, cid);
+    const { coverImage, title, post: description, url } = getPostData(ipfs, cid, true);
     debug("SEO", {coverImage, title, description, url});
     return <>
         <SEOMetadata title={title} description={description} url={url} />

@@ -3,7 +3,7 @@ import { getCoverImage, getCoverVideo } from "./media.js";
 import mature from "../backend/mature.js";
 
 
-export function getPostData(ipfs, cid, platform = null) {
+export function getPostData(ipfs, cid, shortenPost=true) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
 
   const input = ipfs.input[primaryInput];
@@ -16,7 +16,7 @@ export function getPostData(ipfs, cid, platform = null) {
 
   const principal_input = mature(input);
 
-  const { post, title } = formatPostAndTitle(name, principal_input, url, platform);
+  const { post, title } = formatPostAndTitle(name, principal_input, url, shortenPost);
 
 
   return { post, title, videoURL, coverImage, url };
@@ -33,19 +33,24 @@ function shorten(str, maxLength) {
 }
 
 // Twitter posts need shorter text
-function formatPostForTwitter(title, modelTitle, url) {
-  title = shorten(title, 100);
-  modelTitle = shorten(modelTitle, 70);
-  return `"${title}" ${url} ${hashTags}`;
+function formatPostForTwitter(title, modelTitle, url, shortenPost) {
+
 }
 
-function formatPostAndTitle(modelTitle, input, url, platform) {
+function formatPostAndTitle(modelTitle, input, url, shortenPost) {
+
+  // Replace mature words with ***'s
   input = mature(input);
 
-  const post = formatPostForTwitter(input, modelTitle, url);
+  // For twitter and open graph tags we need to shorten long titles/posts
+  if (shortenPost) {
+    input = shorten(input, 100);
+    modelTitle = shorten(modelTitle, 70);
+  }
 
-  const title = `"${input}" - ${modelTitle} ${hashTags}`;
-
+  const title = `"${input}"`;
+  const post = `"${title}" ${url} ${hashTags}`;
+    
   return { post, title };
 
 }

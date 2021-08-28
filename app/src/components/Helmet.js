@@ -1,6 +1,10 @@
 import { Helmet } from "react-helmet";
 import removeMarkdown from "markdown-to-text";
 import { getCoverImage } from "../data/media";
+import { getPostData } from "../data/summaryData";
+import Debug from "debug";
+
+const debug = Debug("Helmet");
 
 export const SEOImage = ({url}) => 
     (<Helmet >
@@ -9,9 +13,9 @@ export const SEOImage = ({url}) =>
          <meta property="twitter:image" content={url} />
     </Helmet>);
 
-export const SEOMetadata= ({title, description}) => {
+const SEOMetadata= ({title, description, url}) => {
     title = `Pollinations - ${title}`;
-    title = title.slice(0,60);
+    // title = title.slice(0,60);
     description = removeMarkdown(description);
     return  <Helmet>
                 <title children={title} />
@@ -23,17 +27,19 @@ export const SEOMetadata= ({title, description}) => {
                 <meta name="description" content={description} />
                 <meta property="twitter:creator" content="pollinations_ai" />
                 <meta property="twitter:description" content={description} />
-                <meta property="og:url" content={window.location.toString()} />                
+                <meta property="og:url" content={url} />                
             </Helmet>;
 }
 
-export const SEO = ({metadata, output}) => {
-    if (!metadata)
+export const SEO = ({ipfs, cid}) => {
+    
+    if (!ipfs?.output) 
         return null;
-    const coverImage = getCoverImage(output);
-    const description = coverImage ? coverImage[0] : metadata.description;
+    
+    const { coverImage, title, post: description, url } = getPostData(ipfs, cid);
+    debug("SEO", {coverImage, title, description, url});
     return <>
-        <SEOMetadata title={metadata.name} description={description} />
+        <SEOMetadata title={title} description={description} url={url} />
         {coverImage && <SEOImage url={coverImage[1]} /> }
     </>;  
 }

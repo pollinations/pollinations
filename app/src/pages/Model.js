@@ -16,7 +16,7 @@ import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import NodeStatus from "../components/NodeStatus";
-import { SEO, SEOMetadata } from "../components/Helmet";
+import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
 import NotebookSelector from "../components/NotebookSelector";
@@ -52,7 +52,7 @@ export default React.memo(function Model() {
        </Alert> */}
     <Container maxWidth="md">
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-        <SEO metadata={metadata} output={ipfs.output} />
+        <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
 
         {/* just in case */}

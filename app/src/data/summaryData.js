@@ -2,7 +2,9 @@ import readMetadata from "../utils/notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "./media.js";
 import mature from "../backend/mature.js";
 
-
+// Get summary data that will be used for SEO, crawlers and social posts
+// Replaces mature words with ***'s
+// shortenPost is useful for twitter, title and open graph tags
 export function getPostData(ipfs, cid, shortenPost=true) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
 
@@ -25,17 +27,6 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 
 const hashTags =  "#pollinations #generative #art #machinelearning";
 
-// Shorten string and add ellipsis
-function shorten(str, maxLength) {
-  if (str.length > maxLength)
-    return `${str.substr(0, maxLength - 3)}...`;
-  return str;
-}
-
-// Twitter posts need shorter text
-function formatPostForTwitter(title, modelTitle, url, shortenPost) {
-
-}
 
 function formatPostAndTitle(modelTitle, input, url, shortenPost) {
 
@@ -53,4 +44,13 @@ function formatPostAndTitle(modelTitle, input, url, shortenPost) {
     
   return { post, title };
 
+}
+
+
+
+// Shorten string and add ellipsis
+function shorten(str, maxLength) {
+  if (str.length > maxLength)
+    return `${str.substr(0, maxLength - 3)}...`;
+  return str;
 }

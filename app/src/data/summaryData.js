@@ -9,19 +9,20 @@ export function getPostData(ipfs, cid, shortenPost=true) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
 
   const input = ipfs.input[primaryInput];
-  const coverImage = getCoverImage(ipfs.output)[1];
+  const coverImage = getCoverImage(ipfs.output);
+  const coverImageURL = coverImage ? coverImage[1] : null; 
   const vid = getCoverVideo(ipfs.output);
-  const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImage;
+  const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
   const url = `https://pollinations.ai/p/${cid}`;
 
-  console.log("Calling post", { name, input, videoURL, coverImage, url });
+  console.log("Calling post", { name, input, videoURL, coverImage: coverImageURL, url });
 
   const principal_input = mature(input);
 
   const { post, title } = formatPostAndTitle(name, principal_input, url, shortenPost);
 
 
-  return { post, title, videoURL, coverImage, url };
+  return { post, title, videoURL, coverImage: coverImageURL, url };
 
 }
 

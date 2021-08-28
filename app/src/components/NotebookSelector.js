@@ -16,6 +16,8 @@ import { noop } from '../network/utils';
 
 import { notebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
+import { SocialLinks } from './Social';
+import { Box } from '@material-ui/core';
 
 export default function NotebookSelector(state) {
     const [visible, setVisible] = useState(false);
@@ -36,6 +38,9 @@ export default function NotebookSelector(state) {
           <Typography variant="h6" noWrap>
             Pollinations
           </Typography>
+          <Box marginLeft="15"> 
+            <SocialLinks />
+          </Box>
           <NodeStatus {...state} />
         </Toolbar>
       </AppBar>

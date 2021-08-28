@@ -12,18 +12,27 @@ import { Link } from "@material-ui/core";
 
 const debug = Debug("Social");
 
-const platformIcons = {
-  "twitter": <TwitterIcon />,
-  "facebook": <FacebookIcon />,
-  "linkedin": <LinkedInIcon />,
-  "instagram": <InstagramIcon />,
-  "youtube": <YoutubeIcon />,
-  "telegram": <TelegramIcon />
+const platforms = {
+  "twitter": { icon: <TwitterIcon />, url: "https://twitter.com/pollinations_ai" },
+  "facebook": { icon: <FacebookIcon />, url: "https://facebook.com/pollinations"},
+  "linkedin": { icon: <LinkedInIcon />, url: "https://linkedin.com/company/pollinations-ai"},
+  "instagram": { icon: <InstagramIcon />, url: "https://instagram.com/pollinations_ai" },
+  "youtube": { icon: <YoutubeIcon />, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
+  "telegram": { icon: <TelegramIcon />, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
 };
 
 export const SocialPostStatus = ({ results }) => 
   Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
 
+export const SocialLinks = () => 
+  Object.keys(platforms).map(PlatformLink);
+
+const PlatformLink = platform => {
+    return  <Link key={`plt_link_${platform}`} href={platforms[platform].url} target="_blank" title={platform}>
+              {platforms[platform].icon}
+            </Link>;
+  }
+  
 
 const PostResultLink = ({status, message, errors, postIds, errorMessage}, platform) => {
   
@@ -33,7 +42,7 @@ const PostResultLink = ({status, message, errors, postIds, errorMessage}, platfo
   const postURL = postIds && postIds[0]?.postUrl;
 
   return  <Link key={`link_${platform}`} href={postURL} target="_blank" color={color} title={errorMsg}>
-            {platformIcons[platform]}
+            {platforms[platform].icon}
           </Link>;
 }
 

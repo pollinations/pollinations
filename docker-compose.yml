@@ -9,7 +9,7 @@ services:
       - ./ipfsdata:/ipfsdata
     ports:
       - "4001:4001"
-      - "127.0.0.1:8080:8080"
-      - "127.0.0.1:8081:8081"
-      - "127.0.0.1:5001:5001"
+      - "8080:8080"
+      - "8081:8081"
+      - "5001:5001"
     entrypoint: ipfs daemon --enable-namesys-pubsub --enable-pubsub-experiment

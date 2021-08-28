@@ -14,4 +14,6 @@ debug-docker:
 clean:
 	rm -rf tmp
 start_ipfs_server:
-	
+	mkdir -p ipfsdata
+	cp ./docker/ipfs/config.json ./ipfsdata/config
+	docker-compose up --remove-orphans -d

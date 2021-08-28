@@ -3,13 +3,13 @@ import WallpaperIcon from '@material-ui/icons/Wallpaper';
 export const notebooks = [
   {
     name: "CLIP-guided VQGan HQ",
-    path: "/p/QmWt1Z2tN4pwEgHaSvRjBfztWyDUfDNhQhNiGQmjrpBt7d",
+    path: "/p/QmZsPGjzMbQvbNz9TWfTYBRRXpWCMYoWPFNvuJMjF1z7mb",
     category: "Text-to-Image",
     Icon: WallpaperIcon
   },
   {
     name: "PixelDraw",
-    path: "/p/QmT7jxcVtm1vcRbDYLpMwiXYwQxTtFQHZAJt669xxLhVhM",
+    path: "/p/QmZy8RzwsnfTvRsPZ9ifGchF2L317mienHsS4WDCP576rs",
     category: "Text-to-Image",
     Icon: WallpaperIcon
   },
@@ -21,7 +21,7 @@ export const notebooks = [
  }, 
   {
       name: "DALL-E Mini",
-      path: "/p/QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
+      path: "/p/#QmQBzUpwF21ynVfSU3tW2WiWZfNjS94aq58verfghDLpWV",
       category: "Text-to-Image",
       Icon: WallpaperIcon
   }

@@ -54,11 +54,21 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
 
 export default React.memo(FormView)
 
+// Add a social checkbox to the form
+const addSocialCheckbox = (filledFormNoSocial) =>
+({
+    ...filledFormNoSocial,
+    social: {
+        type: "boolean",
+        title: "Post to Pollinations' social media feeds",
+        default: true
+    }
+});
 
 function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
-
+    const propertiesWithSocial = addSocialCheckbox(propertiesWithSocial);
     return Object.fromEntries(Object.entries(metadata.form.properties).map(
             ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
 }

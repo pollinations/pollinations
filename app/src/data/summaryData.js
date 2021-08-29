@@ -40,7 +40,7 @@ function formatPostAndTitle(modelTitle, input, url, shortenPost) {
     modelTitle = shorten(modelTitle, 70);
   }
 
-  const title = `"${input}"`;
+  const title = `${input}`;
   const post = `"${title}" ${url} ${hashTags}`;
     
   return { post, title };

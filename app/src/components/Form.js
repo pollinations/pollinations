@@ -69,7 +69,7 @@ function getFormInputs(ipfs, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
     ipfs = ipfs || {};
     const propertiesWithSocial = addSocialCheckbox(propertiesWithSocial);
-    return Object.fromEntries(Object.entries(metadata.form.properties).map(
+    return Object.fromEntries(Object.entries(propertiesWithSocial).map(
             ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
 }
 

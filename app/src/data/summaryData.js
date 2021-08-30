@@ -36,7 +36,7 @@ function formatPostAndTitle(modelTitle, input, url, shortenPost) {
 
   // For twitter and open graph tags we need to shorten long titles/posts
   if (shortenPost) {
-    input = shorten(input, 100);
+    input = shorten(input, 160);
     modelTitle = shorten(modelTitle, 70);
   }
 

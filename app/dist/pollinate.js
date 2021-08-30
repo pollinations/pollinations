@@ -43225,264 +43225,6 @@ var require_is_port_reachable = __commonJS({
   }
 });
 
-// node_modules/iterall/index.js
-var require_iterall = __commonJS({
-  "node_modules/iterall/index.js"(exports2) {
-    "use strict";
-    exports2.isIterable = isIterable;
-    exports2.isArrayLike = isArrayLike;
-    exports2.isCollection = isCollection;
-    exports2.getIterator = getIterator;
-    exports2.getIteratorMethod = getIteratorMethod;
-    exports2.createIterator = createIterator;
-    exports2.forEach = forEach;
-    exports2.isAsyncIterable = isAsyncIterable;
-    exports2.getAsyncIterator = getAsyncIterator;
-    exports2.getAsyncIteratorMethod = getAsyncIteratorMethod;
-    exports2.createAsyncIterator = createAsyncIterator;
-    exports2.forAwaitEach = forAwaitEach;
-    var SYMBOL = typeof Symbol === "function" ? Symbol : void 0;
-    var SYMBOL_ITERATOR = SYMBOL && SYMBOL.iterator;
-    var $$iterator = exports2.$$iterator = SYMBOL_ITERATOR || "@@iterator";
-    function isIterable(obj) {
-      return !!getIteratorMethod(obj);
-    }
-    function isArrayLike(obj) {
-      var length = obj != null && obj.length;
-      return typeof length === "number" && length >= 0 && length % 1 === 0;
-    }
-    function isCollection(obj) {
-      return Object(obj) === obj && (isArrayLike(obj) || isIterable(obj));
-    }
-    function getIterator(iterable) {
-      var method = getIteratorMethod(iterable);
-      if (method) {
-        return method.call(iterable);
-      }
-    }
-    function getIteratorMethod(iterable) {
-      if (iterable != null) {
-        var method = SYMBOL_ITERATOR && iterable[SYMBOL_ITERATOR] || iterable["@@iterator"];
-        if (typeof method === "function") {
-          return method;
-        }
-      }
-    }
-    function createIterator(collection) {
-      if (collection != null) {
-        var iterator = getIterator(collection);
-        if (iterator) {
-          return iterator;
-        }
-        if (isArrayLike(collection)) {
-          return new ArrayLikeIterator(collection);
-        }
-      }
-    }
-    function ArrayLikeIterator(obj) {
-      this._o = obj;
-      this._i = 0;
-    }
-    ArrayLikeIterator.prototype[$$iterator] = function() {
-      return this;
-    };
-    ArrayLikeIterator.prototype.next = function() {
-      if (this._o === void 0 || this._i >= this._o.length) {
-        this._o = void 0;
-        return {value: void 0, done: true};
-      }
-      return {value: this._o[this._i++], done: false};
-    };
-    function forEach(collection, callback, thisArg) {
-      if (collection != null) {
-        if (typeof collection.forEach === "function") {
-          return collection.forEach(callback, thisArg);
-        }
-        var i = 0;
-        var iterator = getIterator(collection);
-        if (iterator) {
-          var step;
-          while (!(step = iterator.next()).done) {
-            callback.call(thisArg, step.value, i++, collection);
-            if (i > 9999999) {
-              throw new TypeError("Near-infinite iteration.");
-            }
-          }
-        } else if (isArrayLike(collection)) {
-          for (; i < collection.length; i++) {
-            if (collection.hasOwnProperty(i)) {
-              callback.call(thisArg, collection[i], i, collection);
-            }
-          }
-        }
-      }
-    }
-    var SYMBOL_ASYNC_ITERATOR = SYMBOL && SYMBOL.asyncIterator;
-    var $$asyncIterator = exports2.$$asyncIterator = SYMBOL_ASYNC_ITERATOR || "@@asyncIterator";
-    function isAsyncIterable(obj) {
-      return !!getAsyncIteratorMethod(obj);
-    }
-    function getAsyncIterator(asyncIterable) {
-      var method = getAsyncIteratorMethod(asyncIterable);
-      if (method) {
-        return method.call(asyncIterable);
-      }
-    }
-    function getAsyncIteratorMethod(asyncIterable) {
-      if (asyncIterable != null) {
-        var method = SYMBOL_ASYNC_ITERATOR && asyncIterable[SYMBOL_ASYNC_ITERATOR] || asyncIterable["@@asyncIterator"];
-        if (typeof method === "function") {
-          return method;
-        }
-      }
-    }
-    function createAsyncIterator(source) {
-      if (source != null) {
-        var asyncIterator = getAsyncIterator(source);
-        if (asyncIterator) {
-          return asyncIterator;
-        }
-        var iterator = createIterator(source);
-        if (iterator) {
-          return new AsyncFromSyncIterator(iterator);
-        }
-      }
-    }
-    function AsyncFromSyncIterator(iterator) {
-      this._i = iterator;
-    }
-    AsyncFromSyncIterator.prototype[$$asyncIterator] = function() {
-      return this;
-    };
-    AsyncFromSyncIterator.prototype.next = function(value) {
-      return unwrapAsyncFromSync(this._i, "next", value);
-    };
-    AsyncFromSyncIterator.prototype.return = function(value) {
-      return this._i.return ? unwrapAsyncFromSync(this._i, "return", value) : Promise.resolve({value, done: true});
-    };
-    AsyncFromSyncIterator.prototype.throw = function(value) {
-      return this._i.throw ? unwrapAsyncFromSync(this._i, "throw", value) : Promise.reject(value);
-    };
-    function unwrapAsyncFromSync(iterator, fn, value) {
-      var step;
-      return new Promise(function(resolve) {
-        step = iterator[fn](value);
-        resolve(step.value);
-      }).then(function(value2) {
-        return {value: value2, done: step.done};
-      });
-    }
-    function forAwaitEach(source, callback, thisArg) {
-      var asyncIterator = createAsyncIterator(source);
-      if (asyncIterator) {
-        var i = 0;
-        return new Promise(function(resolve, reject) {
-          function next() {
-            asyncIterator.next().then(function(step) {
-              if (!step.done) {
-                Promise.resolve(callback.call(thisArg, step.value, i++, source)).then(next).catch(reject);
-              } else {
-                resolve();
-              }
-              return null;
-            }).catch(reject);
-            return null;
-          }
-          next();
-        });
-      }
-    }
-  }
-});
-
-// node_modules/callback-to-async-iterator/dist/index.js
-var require_dist = __commonJS({
-  "node_modules/callback-to-async-iterator/dist/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {
-      value: true
-    });
-    var _iterall = require_iterall();
-    var defaultOnError = (err) => {
-      throw new Error(err);
-    };
-    function callbackToAsyncIterator(listener, options = {}) {
-      var _options$onError = options.onError;
-      const onError = _options$onError === void 0 ? defaultOnError : _options$onError;
-      var _options$buffering = options.buffering;
-      const buffering = _options$buffering === void 0 ? true : _options$buffering, onClose = options.onClose;
-      try {
-        let pushValue = function(value) {
-          if (pullQueue.length !== 0) {
-            pullQueue.shift()({value, done: false});
-          } else if (buffering === true) {
-            pushQueue.push(value);
-          }
-        }, pullValue = function() {
-          return new Promise((resolve) => {
-            if (pushQueue.length !== 0) {
-              resolve({value: pushQueue.shift(), done: false});
-            } else {
-              pullQueue.push(resolve);
-            }
-          });
-        }, emptyQueue = function() {
-          if (listening) {
-            listening = false;
-            pullQueue.forEach((resolve) => resolve({value: void 0, done: true}));
-            pullQueue = [];
-            pushQueue = [];
-            onClose && onClose(listenerReturnValue);
-          }
-        };
-        let pullQueue = [];
-        let pushQueue = [];
-        let listening = true;
-        let listenerReturnValue;
-        listener((value) => pushValue(value)).then((a) => {
-          listenerReturnValue = a;
-        }).catch((err) => {
-          onError(err);
-        });
-        return {
-          next() {
-            return listening ? pullValue() : this.return();
-          },
-          return() {
-            emptyQueue();
-            return Promise.resolve({value: void 0, done: true});
-          },
-          throw(error) {
-            emptyQueue();
-            onError(error);
-            return Promise.reject(error);
-          },
-          [_iterall.$$asyncIterator]() {
-            return this;
-          }
-        };
-      } catch (err) {
-        onError(err);
-        return {
-          next() {
-            return Promise.reject(err);
-          },
-          return() {
-            return Promise.reject(err);
-          },
-          throw(error) {
-            return Promise.reject(error);
-          },
-          [_iterall.$$asyncIterator]() {
-            return this;
-          }
-        };
-      }
-    }
-    exports2.default = callbackToAsyncIterator;
-  }
-});
-
 // node_modules/ramda/src/F.js
 var require_F = __commonJS({
   "node_modules/ramda/src/F.js"(exports2, module2) {
@@ -50540,7 +50282,6 @@ var import_is_port_reachable = __toModule(require_is_port_reachable());
 var import_native_abort_controller = __toModule(require_src12());
 var import_it_all = __toModule(require_it_all());
 var import_debug3 = __toModule(require_src());
-var import_callback_to_async_iterator = __toModule(require_dist());
 var import_ramda = __toModule(require_src33());
 
 // src/utils/concurrency.js
@@ -50554,10 +50295,9 @@ var import_path = __toModule(require("path"));
 var import_queueable = __toModule(require_lib5());
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_browser_or_node = __toModule(require_lib6());
-var asyncify = typeof import_callback_to_async_iterator.default === "function" ? import_callback_to_async_iterator.default : import_callback_to_async_iterator.default.default;
 var debug3 = (0, import_debug3.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e4)}/`;
+var mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}/`;
 var localIPFSAvailable = async () => {
   if (import_browser_or_node.isNode) {
     return await (0, import_is_port_reachable.default)(5001);
@@ -50797,9 +50537,9 @@ var PromiseAllProgress = (name, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
 var debug5 = (0, import_debug5.default)("ipfsState");
-var getIPFSState = (contentID2, processFile2, rootName = "root") => {
+var getIPFSState = (contentID2, callback, rootName = "root") => {
   debug5("Getting state for CID", contentID2);
-  return _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2}, processFile2);
+  return _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2}, callback);
 };
 var _getIPFSState = cacheOutput(async ({cid, type, name, path, rootCID}, processFile2) => {
   cid = stringCID(cid);

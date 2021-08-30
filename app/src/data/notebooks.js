@@ -3,7 +3,7 @@ import WallpaperIcon from '@material-ui/icons/Wallpaper';
 export const notebooks = [
   {
     name: "CLIP-guided VQGan HQ",
-    path: "/p/Qmdhx65hUFgMPCoYLdJ85MxaPh5Rqn4EWaY1sCvALix6pH",
+    path: "/p/QmdYrxSkdSVb3gcLTJpdfkDQJdKgwmRSA9FEM2iJFqGqec",
     category: "Text-to-Image",
     Icon: WallpaperIcon
   },

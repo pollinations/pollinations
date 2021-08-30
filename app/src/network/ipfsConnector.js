@@ -8,8 +8,6 @@ import { AbortController } from 'native-abort-controller';
 import all from "it-all";
 
 import Debug from "debug";
-import Asyncify from 'callback-to-async-iterator';
-
 import { last } from "ramda";
 
 import limit from "../utils/concurrency.js";
@@ -21,8 +19,6 @@ import { Channel } from 'queueable';
 import awaitSleep from "await-sleep";
 import { isNode } from "browser-or-node";
 
-const asyncify = typeof Asyncify === "function" ? Asyncify : Asyncify.default;
-
 export const ipfsGlobSource = globSource;
 
 const debug = Debug("ipfsConnector")
@@ -30,7 +26,7 @@ const debug = Debug("ipfsConnector")
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
-export const mfsRoot = `/tmp_${Math.round(Math.random()*10000)}/`;
+export const mfsRoot = `/tmp_${Math.round(Math.random()*100000)}/`;
 
 
 const localIPFSAvailable = async () => {

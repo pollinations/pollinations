@@ -71,15 +71,15 @@ echo "🐝: Setting the state to signify the run has ended"
 echo -n true > $IPFS_ROOT/output/done
 rm -v $IPFS_ROOT/input/formAction
 
+# -- Done
+echo "🐝: Setting colab status to waiting"
+rm -v $IPFS_ROOT/output/status
+echo -n waiting > $IPFS_ROOT/output/status
 
 # --- Post to social media
 
 post_social.sh $IPFS_ROOT
 
-# -- Done
-echo "🐝: Setting colab status to waiting"
-rm -v $IPFS_ROOT/output/status
-echo -n waiting > $IPFS_ROOT/output/status
 
 # --- Cleanup
 #kill $NVIDIA_SMI_PID

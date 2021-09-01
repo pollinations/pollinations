@@ -20,7 +20,7 @@ const SEOMetadata= ({title, description, url}) => {
     return  <Helmet>
                 <title children={title} />
                 <meta property="og:title" content={title} />
-                <meta property="og:type" content="image" />
+                <meta property="og:type" content="website" />
                 <meta property="twitter:title" content={title} />
                 <meta property="og:description" content={description} />
                 <meta property="og:description" content={description} />

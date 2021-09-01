@@ -40,6 +40,6 @@ export const SEO = ({ipfs, cid}) => {
     debug("SEO", {coverImage, title, description, url});
     return <>
         <SEOMetadata title={title} description={description} url={url} />
-        {coverImage && <SEOImage url={coverImage[1]} /> }
+        {coverImage && <SEOImage url={coverImage} /> }
     </>;  
 }

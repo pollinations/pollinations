@@ -18,7 +18,7 @@ export const handler = async ({path}) => {
     // Convert to buffer and return the compressed content
     return {
         statusCode: 200,
-        body:  buffer.from(compressed).toString('base64'),
+        body:  Buffer.from(compressed).toString('base64'),
         isBase64Encoded: true,
         headers: {
             'Content-Type': contentType,

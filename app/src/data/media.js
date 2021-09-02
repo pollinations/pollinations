@@ -38,6 +38,6 @@ export function getMedia(output, type="all") {
 
 const gzipProxy = path => {
   const cid = last(path.split("/"));
-  return `https://pollinations.ai/.netlify/functions/gzip-proxy/${cid}`;
+  return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
 }
   

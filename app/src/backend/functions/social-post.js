@@ -19,7 +19,7 @@ export const handler = async ({path}) => {
     console.log("platform",platform,"cid",cid,". Fetching IPFS state");
     const ipfs = await IPFSState(cid);
 
-    const data =  getPostData(ipfs, cid, platform);
+    const data =  getPostData(ipfs, cid, true);
     
     try {
       const res = await doPost(data, platform);

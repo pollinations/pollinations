@@ -1,11 +1,26 @@
-import { any, identity } from "ramda";
+import { any, identity, last } from "ramda";
 
+// recognized media types
 const _mediaTypeMap = {
     "all": [".jpg", ".png", ".mp4",".webm"],
     "video": [".mp4",".webm"],
     "image": [".jpg", ".png"]
   }
   
+// get first image for social media and other stuff    
+export const getCoverImage = output => output && getMedia(output, "image")[0];
+
+// get first video for social media and other stuff
+export const getCoverVideo = output => output && getMedia(output, "video")[0];
+
+
+// get all images and videos from ipfs output folder
+//
+// the parameter output is of the form 
+// { 
+//  "example1.jpg":"/ipfs/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s", 
+//  ...
+// }
 export function getMedia(output, type="all") {
   
     const extensions = _mediaTypeMap[type];
@@ -16,13 +31,13 @@ export function getMedia(output, type="all") {
     const imageFilenames = output ? Object.keys(output)
       .filter(filterByExtensions) : [];
   
-    const images = imageFilenames.map(filename => [filename, output[filename]]);
+    const images = imageFilenames.map(filename => [filename, gzipProxy(output[filename])]);
     images.reverse();
     return images
   }
-  
-  export const getCoverImage = output => output && getMedia(output, "image")[0];
-  
-  export const getCoverVideo = output => output && getMedia(output, "video")[0];
 
+const gzipProxy = path => {
+  const cid = last(path.split("/"));
+  return `https://pollinations.ai/.netlify/functions/gzip-proxy/${cid}`;
+}
   

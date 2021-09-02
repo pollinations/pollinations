@@ -18,7 +18,8 @@ export const handler = async ({path}) => {
     // Convert to buffer and return the compressed content
     return {
         statusCode: 200,
-        body:  Buffer.from(compressed),
+        body:  buffer.from(compressed).toString('base64'),
+        isBase64Encoded: true,
         headers: {
             'Content-Type': contentType,
             'Content-Encoding': 'gzip'
@@ -38,4 +39,4 @@ function gzip(buffer) {
     }));
 }
 
-handler({path: "/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s"})
+handler({path: "/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s"}).then(res => console.log(res))

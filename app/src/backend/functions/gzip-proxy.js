@@ -16,7 +16,7 @@ export const handler = async ({path}) => {
     const compressed = await  gzip(buffer)
 
     // Convert to buffer and return the compressed content
-    const response = {
+    return {
         statusCode: 200,
         body:  Buffer.from(compressed),
         headers: {
@@ -37,3 +37,5 @@ function gzip(buffer) {
             resolve(zipped);
     }));
 }
+
+handler({path: "/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s"})

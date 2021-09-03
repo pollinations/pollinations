@@ -39,7 +39,7 @@ const useColab = (updateHashCondition = () => true) => {
     
             if (nodeID) {
                 debug("setting new nodeID",nodeID);
-                dispatchState({ nodeID, gpu });
+                dispatchState({ nodeID, gpu, status: "ready" });
             }
         });
     },[]);

@@ -11,7 +11,7 @@
   publish = "build/"
 
   # Default build command.
-  command = "yarn install && yarn run build"
+  command = "npm install && npm run build"
 
 [functions]
   node_bundler = "esbuild"

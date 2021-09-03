@@ -46,8 +46,8 @@ export default ({ nodeID, contentID,  gpu }) => {
 
 
 const gpuSmilie = {
-    "Tesla T4" : "😴",
-    "Tesla K80" : "😐",
+    "Tesla T4" : "😐",
+    "Tesla K80" : "😴",
     "Tesla P100" : "😀",
     "Tesla V100" : "😍",
 }

@@ -1,4 +1,4 @@
-import CID from "cids";
+import { CID } from "multiformats/cid";
 import { stringCID } from "./ipfsConnector.js";
 
 import Debug from "debug";

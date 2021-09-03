@@ -5,7 +5,7 @@ up:
 	cp docker/ipfs/config.json tmp/ipfs/config
 	docker-compose up --remove-orphans -d
 dev:
-	cd app && yarn install && yarn start
+	cd app && npm install && npm start
 down:
 	docker-compose down
 debug-docker:

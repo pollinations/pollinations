@@ -39313,9 +39313,9 @@ function cacheInput(funcThatGeneratesCID) {
   return funcThatGeneratesCID;
 }
 var cleanCIDs = (cidFunc) => async (cidOrFile, ...args) => {
-  const cidOrFileCleaned = CID.isCID(cidOrFile) ? cidOrFile.toString() : cidOrFile;
+  const cidOrFileCleaned = CID.asCID(cidOrFile) ? cidOrFile.toString() : cidOrFile;
   const result = await cidFunc(cidOrFileCleaned, ...args);
-  return CID.isCID(result) ? result.toString() : result;
+  return CID.asCID(result) ? result.toString() : result;
 };
 
 // src/network/ipfsConnector.js
@@ -39377,7 +39377,7 @@ var stripSlashIPFS = (cidString) => {
   return cidString.replace("/ipfs/", "");
 };
 var firstLine = (s) => s.split("\n")[0];
-var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : CID.isCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
+var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : CID.asCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
 var _normalizeIPFS = ({name, path, cid, type}) => ({name, path, cid: stringCID(cid), type});
 var ipfsLs = async (cid) => {
   debug3("calling ipfs ls with cid", cid);

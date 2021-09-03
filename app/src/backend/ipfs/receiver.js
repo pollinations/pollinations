@@ -13,7 +13,7 @@ import { writeFileSync } from 'fs';
 const { stream } = eventit;
 const { writeFile, mkdir } = fsPromises;
 
-const debug = Debug("ipfs/sender");
+const debug = Debug("ipfs/receiver");
 
 let _lastContentID = null;
 const isSameContentID = cid => {

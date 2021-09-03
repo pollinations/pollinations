@@ -7,14 +7,6 @@ const debug = Debug("NodeStatus");
 
 const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
 
-const TableCell = withStyles({
-    root: {
-      borderBottom: "none",
-      padding: "2px"
-    }
-  })(MuiTableCell);
-
-
 // Display the connection status to colab and currect IPFS hash
 export default ({ nodeID, contentID, ipfs }) => {
     
@@ -67,4 +59,12 @@ const parseGPU = (ipfs)  =>
 
 
 const ColabConnectButton = () => <Button color="secondary" href={colabURL} target="_blank">[ Launch ]</Button>;
+
+
+const TableCell = withStyles({
+    root: {
+      borderBottom: "none",
+      padding: "2px"
+    }
+  })(MuiTableCell);
 

@@ -18,14 +18,19 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="output">...Inside Colab....</div>
     <script>
-        const search = window.location.search;
-        const link = search.split("=")[1];
-        
+
+        const params = new URLSearchParams(window.location.search);
+
+        const data = {
+          nodeID: params.get('node'),
+          gpu: params.get('gpu'),
+        }
+
         const frontendChannel = new BroadcastChannel("colabconnection")
         
         const sendNodeIDToFrontent = () => {
-          console.log("Sending nodeID", link, "to frontend.");
-          frontendChannel.postMessage(link);
+          console.log("Sending data", data, "to frontend.");
+          frontendChannel.postMessage(data);
         }
     
         frontendChannel.onmessage = sendNodeIDToFrontent;

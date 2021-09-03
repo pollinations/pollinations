@@ -39476,7 +39476,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     const doSub = async () => {
       try {
         debug3("Executing subscribe", _nodeID);
-        await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal});
+        await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal, timeout: "1h"});
       } catch (e) {
         debug3("subscribe error", e, e.name);
         if (e.name === "DOMException") {
@@ -39486,10 +39486,10 @@ function subscribeCIDCallback(_nodeID = null, callback) {
         if (e.message?.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
-        doSub();
+        await doSub();
       }
     };
-    doSub();
+    await doSub();
   })();
   return () => {
     debug3("subscribe abort was called");

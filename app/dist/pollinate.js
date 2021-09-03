@@ -50606,6 +50606,7 @@ async function processFile({path, cid}, rootPath2) {
   return destPath;
 }
 var receive = async function({ipns, once, path: rootPath2}) {
+  debug6("receiver subscribing", ipns);
   const [cidStream, unsubscribe] = ipns ? await subscribeCID(null, "/input") : [stream.call(import_process.default.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {

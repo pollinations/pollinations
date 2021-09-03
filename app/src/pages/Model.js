@@ -61,7 +61,7 @@ export default React.memo(function Model() {
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-            status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to HELP for further instructions.</Alert>
+            status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to HELP for further instructions.</Alert>
           }
 
           <h3>Inputs</h3>

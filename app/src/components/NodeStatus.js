@@ -55,7 +55,7 @@ const gpuSmilie = {
 // extract GPU name from ipfs
 // the GPU was written to ipfs by running `nvidia-smi` on colab
 const parseGPU = gpu  => 
-    gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.trim();
+    gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
 const ColabConnectButton = () => <Button color="secondary" href={colabURL} target="_blank">[ Launch ]</Button>;

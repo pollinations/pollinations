@@ -39441,6 +39441,7 @@ async function contentID(mfsPath = "/") {
   return stringCID(await retryException(async () => await _client.files.stat(mfsPath)));
 }
 var _lastContentID = null;
+var abortPublish = null;
 async function publish(rootCID, suffix = "/output") {
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
@@ -39449,7 +39450,24 @@ async function publish(rootCID, suffix = "/output") {
   _lastContentID = rootCID;
   const _client = await client;
   debug3("publish pubsub", await nodeID, rootCID);
-  await _client.pubsub.publish(await nodeID + suffix, rootCID);
+  if (await nodeID === "ipns")
+    await experimentalIPNSPublish(rootCID, _client);
+  else
+    await _client.pubsub.publish(await nodeID + suffix, rootCID);
+}
+async function experimentalIPNSPublish(rootCID, _client = null) {
+  if (!_client)
+    _client = await client;
+  debug3("publishing to ipns...", rootCID);
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller.AbortController();
+  await _client.name.publish(rootCID, {signal: abortPublish.signal, allowOffline: false}).then(() => {
+    debug3("published...", rootCID);
+    abortPublish = null;
+  }).catch((e) => {
+    debug3("exception on publish.", e);
+  });
 }
 async function subscribeCID(_nodeID = null, suffix = "/input") {
   if (_nodeID === null)

@@ -194,17 +194,24 @@ export async function publish(rootCID, suffix = "/output") {
     _lastContentID = rootCID;
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
-    await _client.pubsub.publish((await nodeID) + suffix, rootCID)
-    // experimentalIPNSPublish(rootCID, _client);
+    
+
+    if (await nodeID === "ipns") 
+        await experimentalIPNSPublish(rootCID, _client);
+    else
+        await _client.pubsub.publish((await nodeID) + suffix, rootCID)
+    
 }
 
 
-function experimentalIPNSPublish(rootCID, _client) {
+async function experimentalIPNSPublish(rootCID, _client = null) {
+    if (!_client)
+        _client = await client;
     debug("publishing to ipns...", rootCID);
     if (abortPublish)
         abortPublish.abort();
     abortPublish = new AbortController();
-    _client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true })
+    await _client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false })
         .then(() => {
             debug("published...", rootCID);
             abortPublish = null;

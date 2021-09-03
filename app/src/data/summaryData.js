@@ -1,6 +1,8 @@
 import readMetadata from "../utils/notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "./media.js";
 import mature from "../backend/mature.js";
+import debug from "debug";
+
 
 // Get summary data that will be used for SEO, crawlers and social posts
 // Replaces mature words with ***'s
@@ -51,7 +53,14 @@ function formatPostAndTitle(modelTitle, input, url, shortenPost) {
 
 // Shorten string and add ellipsis
 function shorten(str, maxLength) {
+  
+  debug("shortening",str, maxLength);
+  
+  if (!str) 
+    return "";
+
   if (str.length > maxLength)
     return `${str.substr(0, maxLength - 3)}...`;
   return str;
+
 }

@@ -19,7 +19,7 @@ export default ({ nodeID, contentID,  gpu }) => {
         <Table size="small" aria-label="a dense table" >
                     <TableBody>
                         <TableRow>
-                            <TableCell><b>Node</b></TableCell>
+                            <TableCell><b>GPU</b></TableCell>
                             <TableCell>{ nodeID ? gpuInfo || displayContentID(nodeID) : <ColabConnectButton />}</TableCell>
                         </TableRow>
                         <TableRow>

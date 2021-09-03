@@ -62,7 +62,7 @@ export const receive = async function ({ ipns, once, path: rootPath }) {
   const [cidStream, unsubscribe] = ipns ?
     await subscribeCID(null, "/input")
     : [stream.call(process.stdin), noop];
-
+  debug("receiver subscribed")
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug("received CID",remoteCID);

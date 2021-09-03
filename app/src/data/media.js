@@ -1,4 +1,7 @@
 import { any, identity, last } from "ramda";
+import Debug from "debug";
+
+const debug = Debug("media");
 
 // recognized media types
 const _mediaTypeMap = {
@@ -8,7 +11,11 @@ const _mediaTypeMap = {
   }
   
 // get first image for social media and other stuff    
-export const getCoverImage = output => output && getMedia(output, "image")[0];
+export const getCoverImage = output => { 
+  const image = output && getMedia(output, "image")[0];
+  debug("coverImage", image);
+  return image ? [image[0], gzipProxy(image[1])] : null;
+}
 
 // get first video for social media and other stuff
 export const getCoverVideo = output => output && getMedia(output, "video")[0];
@@ -31,7 +38,7 @@ export function getMedia(output, type="all") {
     const imageFilenames = output ? Object.keys(output)
       .filter(filterByExtensions) : [];
   
-    const images = imageFilenames.map(filename => [filename, gzipProxy(output[filename])]);
+    const images = imageFilenames.map(filename => [filename, output[filename]]);
     images.reverse();
     return images
   }

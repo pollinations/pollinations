@@ -1,4 +1,4 @@
-import CID from "cids";
+import { CID } from "multiformats/cid";
 import { stringCID } from "./ipfsConnector.js";
 
 import Debug from "debug";
@@ -91,9 +91,9 @@ export default function cacheInput(funcThatGeneratesCID) {
 }
 
 export const cleanCIDs = cidFunc => async (cidOrFile, ...args) => {
-    const cidOrFileCleaned = CID.isCID(cidOrFile) ? cidOrFile.toString() : cidOrFile;
+    const cidOrFileCleaned = CID.asCID(cidOrFile) ? cidOrFile.toString() : cidOrFile;
     const result = await cidFunc(cidOrFileCleaned, ...args);
-    return CID.isCID(result) ? result.toString() : result;
+    return CID.asCID(result) ? result.toString() : result;
 }
 
 

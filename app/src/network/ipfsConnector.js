@@ -1,7 +1,7 @@
 
 import { create, globSource } from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
-import CID from "cids";
+import { CID } from "multiformats/cid";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
 import { AbortController } from 'native-abort-controller';
@@ -90,10 +90,10 @@ export const getIPNSURL = (id) => {
     return `https://pollinations.ai/ipns/${id}`;
 };
 
-const stripSlashIPFS = cidString => cidString.replace("/ipfs/", "");
+const stripSlashIPFS = cidString => {debug("stripSlash",cidString);return cidString.replace("/ipfs/", "")};
 const firstLine = s => s.split("\n")[0];
 
-export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.isCID(file) ? file.toString() : (file instanceof Buffer ? file.toString():file ))));
+export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.asCID(file) ? file.toString() : (file instanceof Buffer ? file.toString():file ))));
 
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
@@ -101,6 +101,7 @@ export const ipfsLs = async cid => {
     debug("calling ipfs ls with cid", cid);
     const result = (await toPromise((await client).ls(stringCID(cid))))
     .filter(({ type, name }) => type !== "unknown" && name !== undefined)
+    .map(lsResult => {debug("lsResult", lsResult); return lsResult})
     .map(_normalizeIPFS);
     debug("got ipfs ls result",result);
     return result;
@@ -216,10 +217,10 @@ function experimentalIPNSPublish(rootCID, _client) {
 export async function subscribeCID(_nodeID = null, suffix = "/input") {
     if (_nodeID === null)
         _nodeID = await nodeID;
-
+        
     const channel = new Channel();
     const topic = _nodeID + suffix;
-    debug("Subscribing to pubsub events from", topic);
+    // debug("Subscribing to pubsub events from", topic);
     const unsubscribe = subscribeCIDCallback(topic,
         cid => channel.push(cid)
     );
@@ -235,9 +236,6 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
         if (_nodeID === null)
             _nodeID = await nodeID;
 
-
-        debug("Subscribing to pubsub events from", _nodeID);
-
         const onError = async (...errorArgs) => {
             debug("onError", ...errorArgs, "aborting");
             abort.abort();
@@ -251,7 +249,7 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
         const doSub = async () => {
             try {
                 debug("Executing subscribe", _nodeID)
-                await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal });
+                await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal,timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {
@@ -262,10 +260,10 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
                 if (e.message?.startsWith("Already subscribed"))
                     return;
                 await awaitSleep(300);
-                doSub();
+                await doSub();
             }
         };
-        doSub();
+        await doSub();
     })();
 
     return () => {

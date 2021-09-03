@@ -13,7 +13,32 @@ import { writeFileSync } from 'fs';
 const { stream } = eventit;
 const { writeFile, mkdir } = fsPromises;
 
-const debug = Debug("ipfs/sender");
+const debug = Debug("ipfs/receiver");
+
+export const receive = async function ({ ipns, once, path: rootPath }) {
+
+  // subscribe to content id updates either via IPNS or stdin
+  const [cidStream, unsubscribe] = ipns ?
+    await subscribeCID(null, "/input")
+    : [stream.call(process.stdin), noop];
+
+  let remoteCID = null;
+  for await (remoteCID of await cidStream) {
+    debug("received CID",remoteCID);
+    remoteCID = stringCID(remoteCID);
+    debug("remoteCID", remoteCID);
+    if (remoteCID.startsWith("/ipns/"))
+      remoteCID = await ipfsResolve(remoteCID);
+    await processRemoteCID(stringCID(remoteCID), rootPath);
+    if (once) {
+      unsubscribe();
+      break;
+    }
+  };
+  return remoteCID;
+};
+
+
 
 let _lastContentID = null;
 const isSameContentID = cid => {
@@ -56,24 +81,4 @@ async function processFile({ path, cid }, rootPath) {
   // });
   return destPath;
 }
-export const receive = async function ({ ipns, once, path: rootPath }) {
 
-  const [cidStream, unsubscribe] = ipns ?
-    await subscribeCID(null, "/input")
-    : [stream.call(process.stdin), noop];
-
-  let remoteCID = null;
-  for await (remoteCID of await cidStream) {
-    debug("received CID",remoteCID);
-    remoteCID = stringCID(remoteCID);
-    debug("remoteCID", remoteCID);
-    if (remoteCID.startsWith("/ipns/"))
-      remoteCID = await ipfsResolve(remoteCID);
-    await processRemoteCID(stringCID(remoteCID), rootPath);
-    if (once) {
-      unsubscribe();
-      break;
-    }
-  };
-  return remoteCID;
-};

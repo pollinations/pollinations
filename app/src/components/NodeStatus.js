@@ -7,11 +7,11 @@ const debug = Debug("NodeStatus");
 
 const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
 
-// Display the connection status to colab and currect IPFS hash
-export default ({ nodeID, contentID, ipfs }) => {
+// Display the connection status to colab and currect IPFS content ID
+export default ({ nodeID, contentID,  gpu }) => {
     
-    const gpu = parseGPU(ipfs);
-    debug("parsed GPU", gpu)
+    gpu = parseGPU(gpu);
+    debug("parsed GPU", gpu);
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
@@ -54,8 +54,8 @@ const gpuSmilie = {
 
 // extract GPU name from ipfs
 // the GPU was written to ipfs by running `nvidia-smi` on colab
-const parseGPU = (ipfs)  => 
- ipfs?.output?.gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.trim();
+const parseGPU = gpu  => 
+    gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.trim();
 
 
 const ColabConnectButton = () => <Button color="secondary" href={colabURL} target="_blank">[ Launch ]</Button>;

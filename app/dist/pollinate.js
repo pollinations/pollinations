@@ -50571,7 +50571,7 @@ var import_path5 = __toModule(require("path"));
 var import_fs3 = __toModule(require("fs"));
 var {stream} = import_event_iterator.default;
 var {writeFile, mkdir} = import_fs2.promises;
-var debug6 = (0, import_debug6.default)("ipfs/sender");
+var debug6 = (0, import_debug6.default)("ipfs/receiver");
 var _lastContentID2 = null;
 var isSameContentID = (cid) => {
   if (_lastContentID2 === cid) {
@@ -50608,6 +50608,7 @@ async function processFile({path, cid}, rootPath2) {
 var receive = async function({ipns, once, path: rootPath2}) {
   debug6("receiver subscribing", ipns);
   const [cidStream, unsubscribe] = ipns ? await subscribeCID(null, "/input") : [stream.call(import_process.default.stdin), noop];
+  debug6("receiver subscribed");
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug6("received CID", remoteCID);

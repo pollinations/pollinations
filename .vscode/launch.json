@@ -8,7 +8,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "runtimeExecutable": "yarn",
+            "runtimeExecutable": "npm",
             "cwd": "${workspaceFolder}",
             "runtimeArgs": ["dev"],
         },

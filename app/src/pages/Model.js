@@ -15,7 +15,6 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
-import NodeStatus from "../components/NodeStatus";
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";

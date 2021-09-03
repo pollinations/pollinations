@@ -6,6 +6,7 @@ import {IPFSState, stateReducer, getInputContent, publish, subscribe, setStatusN
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
+import { nodeID } from "./ipfsConnector";
 
 const debug = Debug("useColab")
 
@@ -26,18 +27,21 @@ const useColab = (updateHashCondition = () => true) => {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }
-    }, [state]);
+    }, [state]);;
 
-    const setNodeID = useCallback(async nodeID => {
-        debug("setNodeID", nodeID);
-        if (nodeID && nodeID !== state.nodeID) {
-            debug("setting new nodeID",nodeID);
-            dispatchState({ nodeID, status: "ready" });
-        }
-    }, [state]);
 
     useEffect(() => {
-        colabConnectionManager(setNodeID);
+        colabConnectionManager(nodeData => {
+            
+            debug("nodeData", nodeData);
+            
+            const {nodeID, gpu} = nodeData;
+    
+            if (nodeID) {
+                debug("setting new nodeID",nodeID);
+                dispatchState({ nodeID, gpu });
+            }
+        });
     },[]);
 
     useEffect(

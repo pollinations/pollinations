@@ -1,7 +1,7 @@
 {
   "name": "pollinations",
   "homepage": "https://pollinations.ai",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": false,
   "type":"module",
   "dependencies": {

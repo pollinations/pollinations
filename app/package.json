@@ -85,7 +85,7 @@
     "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v scripts/*.sh /usr/local/bin"
   },
   "bin": {
-    "pollinate": "./dist/backend/pollinate-cli.js"
+    "pollinate": "./src/backend/pollinate-cli.js"
   },
   "eslintConfig": {
     "extends": [

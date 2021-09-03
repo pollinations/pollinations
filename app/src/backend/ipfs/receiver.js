@@ -58,6 +58,7 @@ async function processFile({ path, cid }, rootPath) {
 }
 export const receive = async function ({ ipns, once, path: rootPath }) {
 
+  debug("receiver subscribing", ipns);
   const [cidStream, unsubscribe] = ipns ?
     await subscribeCID(null, "/input")
     : [stream.call(process.stdin), noop];

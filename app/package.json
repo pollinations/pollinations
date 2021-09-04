@@ -1,7 +1,7 @@
 {
   "name": "pollinations",
   "homepage": "https://pollinations.ai",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "private": false,
   "type": "module",
   "dependencies": {
@@ -83,12 +83,6 @@
   },
   "bin": {
     "pollinate": "./src/backend/pollinate-cli.js"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [

@@ -1,16 +1,19 @@
-import { routes } from './routes'
+import React, {useEffect, useState} from 'react'
+import { getRoutes } from './routes'
 
 
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 
 
 function App() {
+    const [fetchedRoutes, setFetchedRoutes] = useState([]);
+    useEffect(async () => {
+        setFetchedRoutes(await getRoutes());
+    }, [])
     return <Router>
-
-
             <Switch
                 children={
-                    routes.map(route => (
+                    fetchedRoutes.map(route => (
                         <Route 
                             {...route}
                             key={route.path}

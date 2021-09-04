@@ -1,3 +1,4 @@
+import React from "react";
 import { Helmet } from "react-helmet";
 import removeMarkdown from "markdown-to-text";
 import { getCoverImage } from "../data/media";

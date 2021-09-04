@@ -75,6 +75,7 @@ const useColab = (updateHashCondition = () => true) => {
     return {
         state, 
         dispatch: async inputState => {
+            debug("dispatching", inputState)
             const newInputContentID = await getInputContent(inputState);
             debug("adding input",inputState,"got cid", newInputContentID,"to state",state.contentID)
             const newContentID = await addInput(newInputContentID, state.contentID);
@@ -90,7 +91,7 @@ function useContentHash() {
     const params  = useParams()
     const history = useHistory()
 
-    debug("location pathname", params, "history",history);
+    debug("location pathname", params);
 
     const hash = params?.hash;
 

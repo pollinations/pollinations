@@ -21,6 +21,7 @@
     "debug": "^4.3.1",
     "event-iterator": "^2.0.0",
     "file-watch-iterator": "^0.7.0",
+    "ipfs-client": "^0.6.4",
     "ipfs-http-client": "^52.0.3",
     "is-ipfs": "^6.0.2",
     "is-port-reachable": "^3.0.0",

@@ -36832,7 +36832,7 @@ var getIPFSDaemonURL = async () => {
   return IPFS_HOST;
 };
 var ipfsDaemonURL = getIPFSDaemonURL();
-var client = ipfsDaemonURL.then(import_ipfs_http_client.create);
+var client = ipfsDaemonURL.then((url) => (0, import_ipfs_http_client.create)({url, timeout: "2h"}));
 var nodeID = client.then(async (client2) => options_default.nodeid || (await client2.id()).id);
 (async () => {
   debug3("NodeID", await nodeID);
@@ -36891,14 +36891,15 @@ var ipfsGet = concurrency_default(cleanCIDs(async (cid, {onlyLink = false}) => {
 }));
 var ipfsAddFile = async (ipfsPath, localPath, options = {size: null}) => await retryException(async () => await ipfsAdd(ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, {preserveMtime: true, preserveMode: true})));
 async function ipfsMkdir(path = "/") {
+  const _client = await client;
   const withMfsRoot = (0, import_path.join)(mfsRoot, path);
   debug3("Creating folder", withMfsRoot);
   try {
-    await (await client).files.mkdir(withMfsRoot, {parents: true});
+    await _client.files.mkdir(withMfsRoot, {parents: true});
   } catch (e) {
     debug3("couldn't create folder because it probably already exists", e);
   }
-  return path;
+  return await _client.files.stat(withMfsRoot);
 }
 async function ipfsRm(ipfsPath) {
   ipfsPath = (0, import_path.join)(mfsRoot, ipfsPath);
@@ -36949,7 +36950,6 @@ async function subscribeCID(_nodeID = null, suffix = "/input") {
 }
 function subscribeCIDCallback(_nodeID = null, callback) {
   const abort = new import_native_abort_controller.AbortController();
-  let interval = null;
   (async () => {
     const _client = await client;
     if (_nodeID === null)
@@ -36980,15 +36980,10 @@ function subscribeCIDCallback(_nodeID = null, callback) {
       }
     };
     doSub();
-    if (interval)
-      clearInterval(interval);
-    interval = setInterval(doSub, 3e4);
   })();
   return () => {
     debug3("subscribe abort was called");
     abort.abort();
-    if (interval)
-      clearInterval(interval);
   };
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path, {nocache: true}))));

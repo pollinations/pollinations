@@ -36965,8 +36965,6 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     const doSub = async () => {
       try {
         abort.abort();
-        if (interval)
-          clearInterval(interval);
         debug3("Executing subscribe", _nodeID);
         await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), {onError, signal: abort.signal, timeout: "1h"});
       } catch (e) {
@@ -36982,6 +36980,8 @@ function subscribeCIDCallback(_nodeID = null, callback) {
       }
     };
     doSub();
+    if (interval)
+      clearInterval(interval);
     interval = setInterval(doSub, 3e4);
   })();
   return () => {

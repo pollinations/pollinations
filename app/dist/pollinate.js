@@ -36949,6 +36949,7 @@ async function subscribeCID(_nodeID = null, suffix = "/input") {
 }
 function subscribeCIDCallback(_nodeID = null, callback) {
   const abort = new import_native_abort_controller.AbortController();
+  let interval = null;
   (async () => {
     const _client = await client;
     if (_nodeID === null)
@@ -36963,7 +36964,11 @@ function subscribeCIDCallback(_nodeID = null, callback) {
     const handler = ({data}) => callback(new TextDecoder().decode(data));
     const doSub = async () => {
       try {
+        abort.abort();
+        if (interval)
+          clearInterval(interval);
         debug3("Executing subscribe", _nodeID);
+        setInterval();
         await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal, timeout: "1h"});
       } catch (e) {
         debug3("subscribe error", e, e.name);
@@ -36977,11 +36982,13 @@ function subscribeCIDCallback(_nodeID = null, callback) {
         await doSub();
       }
     };
-    await doSub();
+    interval = setInterval(doSub, 3e4);
   })();
   return () => {
     debug3("subscribe abort was called");
     abort.abort();
+    if (interval)
+      clearInterval(interval);
   };
 }
 var ipfsResolve = async (path) => stringCID((0, import_ramda.last)(await toPromise((await client).name.resolve(path, {nocache: true}))));

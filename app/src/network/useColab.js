@@ -83,12 +83,6 @@ const useColab = (updateHashCondition = () => true) => {
             debug("Publishing contentID to colab", newContentID);
             publish(state.nodeID, newInputContentID);
         }
-        // ,
-        // setStatus: async name => {
-        //     const newContentID = await setStatusName(state.contentID, name);
-        //     setContentID(newContentID);
-        //     publish(state.nodeID, newContentID);
-        // }
     };
 };
 

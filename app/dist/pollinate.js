@@ -58,7 +58,7 @@ var __toModule = (module2) => {
 var require_eventemitter3 = __commonJS({
   "node_modules/eventemitter3/index.js"(exports2, module2) {
     "use strict";
-    var has = Object.prototype.hasOwnProperty;
+    var has2 = Object.prototype.hasOwnProperty;
     var prefix = "~";
     function Events() {
     }
@@ -100,7 +100,7 @@ var require_eventemitter3 = __commonJS({
       if (this._eventsCount === 0)
         return names;
       for (name in events = this._events) {
-        if (has.call(events, name))
+        if (has2.call(events, name))
           names.push(prefix ? name.slice(1) : name);
       }
       if (Object.getOwnPropertySymbols) {
@@ -4138,9 +4138,9 @@ var require_stringify = __commonJS({
   }
 });
 
-// node_modules/is-number/index.js
+// node_modules/to-regex-range/node_modules/is-number/index.js
 var require_is_number = __commonJS({
-  "node_modules/is-number/index.js"(exports2, module2) {
+  "node_modules/to-regex-range/node_modules/is-number/index.js"(exports2, module2) {
     "use strict";
     module2.exports = function(num) {
       if (typeof num === "number") {
@@ -5464,9 +5464,9 @@ var require_nodefs_handler = __commonJS({
       container.add(item);
     };
     var clearItem = (cont) => (key) => {
-      const set = cont[key];
-      if (set instanceof Set) {
-        set.clear();
+      const set2 = cont[key];
+      if (set2 instanceof Set) {
+        set2.clear();
       } else {
         delete cont[key];
       }
@@ -9645,9 +9645,9 @@ var require_minimatch = __commonJS({
     var twoStarNoDot = "(?:(?!(?:\\/|^)\\.).)*?";
     var reSpecials = charSet("().*{}+?[]^$\\!");
     function charSet(s) {
-      return s.split("").reduce(function(set, c) {
-        set[c] = true;
-        return set;
+      return s.split("").reduce(function(set2, c) {
+        set2[c] = true;
+        return set2;
       }, {});
     }
     var slashSplit = /\/+/;
@@ -9739,23 +9739,23 @@ var require_minimatch = __commonJS({
         return;
       }
       this.parseNegate();
-      var set = this.globSet = this.braceExpand();
+      var set2 = this.globSet = this.braceExpand();
       if (options.debug)
         this.debug = console.error;
-      this.debug(this.pattern, set);
-      set = this.globParts = set.map(function(s) {
+      this.debug(this.pattern, set2);
+      set2 = this.globParts = set2.map(function(s) {
         return s.split(slashSplit);
       });
-      this.debug(this.pattern, set);
-      set = set.map(function(s, si, set2) {
+      this.debug(this.pattern, set2);
+      set2 = set2.map(function(s, si, set3) {
         return s.map(this.parse, this);
       }, this);
-      this.debug(this.pattern, set);
-      set = set.filter(function(s) {
+      this.debug(this.pattern, set2);
+      set2 = set2.filter(function(s) {
         return s.indexOf(false) === -1;
       });
-      this.debug(this.pattern, set);
-      this.set = set;
+      this.debug(this.pattern, set2);
+      this.set = set2;
     }
     Minimatch.prototype.parseNegate = parseNegate;
     function parseNegate() {
@@ -10034,15 +10034,15 @@ var require_minimatch = __commonJS({
     function makeRe() {
       if (this.regexp || this.regexp === false)
         return this.regexp;
-      var set = this.set;
-      if (!set.length) {
+      var set2 = this.set;
+      if (!set2.length) {
         this.regexp = false;
         return this.regexp;
       }
       var options = this.options;
       var twoStar = options.noglobstar ? star : options.dot ? twoStarDot : twoStarNoDot;
       var flags = options.nocase ? "i" : "";
-      var re = set.map(function(pattern) {
+      var re = set2.map(function(pattern) {
         return pattern.map(function(p) {
           return p === GLOBSTAR ? twoStar : typeof p === "string" ? regExpEscape(p) : p._src;
         }).join("\\/");
@@ -10083,8 +10083,8 @@ var require_minimatch = __commonJS({
       }
       f = f.split(slashSplit);
       this.debug(this.pattern, "split", f);
-      var set = this.set;
-      this.debug(this.pattern, "set", set);
+      var set2 = this.set;
+      this.debug(this.pattern, "set", set2);
       var filename;
       var i;
       for (i = f.length - 1; i >= 0; i--) {
@@ -10092,8 +10092,8 @@ var require_minimatch = __commonJS({
         if (filename)
           break;
       }
-      for (i = 0; i < set.length; i++) {
-        var pattern = set[i];
+      for (i = 0; i < set2.length; i++) {
+        var pattern = set2[i];
         var file = f;
         if (options.matchBase && pattern.length === 1) {
           file = [filename];
@@ -19061,7 +19061,7 @@ var require_uint = __commonJS({
       } else {
         const buint = BigInt(uint);
         if (buint < uintBoundaries[4]) {
-          const set = [
+          const set2 = [
             major | 27,
             0,
             0,
@@ -19073,21 +19073,21 @@ var require_uint = __commonJS({
           ];
           let lo = Number(buint & BigInt(4294967295));
           let hi = Number(buint >> BigInt(32) & BigInt(4294967295));
-          set[8] = lo & 255;
+          set2[8] = lo & 255;
           lo = lo >> 8;
-          set[7] = lo & 255;
+          set2[7] = lo & 255;
           lo = lo >> 8;
-          set[6] = lo & 255;
+          set2[6] = lo & 255;
           lo = lo >> 8;
-          set[5] = lo & 255;
-          set[4] = hi & 255;
+          set2[5] = lo & 255;
+          set2[4] = hi & 255;
           hi = hi >> 8;
-          set[3] = hi & 255;
+          set2[3] = hi & 255;
           hi = hi >> 8;
-          set[2] = hi & 255;
+          set2[2] = hi & 255;
           hi = hi >> 8;
-          set[1] = hi & 255;
-          buf.push(set);
+          set2[1] = hi & 255;
+          buf.push(set2);
         } else {
           throw new Error(`${common.decodeErrPrefix} encountered BigInt larger than allowable range`);
         }
@@ -23424,7 +23424,7 @@ var require_get = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      async function get(cid, options = {}) {
+      async function get2(cid, options = {}) {
         const res = await api.post("block/get", {
           signal: options.signal,
           searchParams: toUrlSearchParams(__spreadValues({
@@ -23434,7 +23434,7 @@ var require_get = __commonJS({
         });
         return new Uint8Array(await res.arrayBuffer());
       }
-      return get;
+      return get2;
     });
   }
 });
@@ -23752,7 +23752,7 @@ var require_get2 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      const get = async (key, options = {}) => {
+      const get2 = async (key, options = {}) => {
         if (!key) {
           throw new Error("key argument is required");
         }
@@ -23766,7 +23766,7 @@ var require_get2 = __commonJS({
         const data = await res.json();
         return data.Value;
       };
-      return get;
+      return get2;
     });
   }
 });
@@ -23778,7 +23778,7 @@ var require_set = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      const set = async (key, value, options = {}) => {
+      const set2 = async (key, value, options = {}) => {
         if (typeof key !== "string") {
           throw new Error("Invalid key type");
         }
@@ -23790,7 +23790,7 @@ var require_set = __commonJS({
         });
         await res.text();
       };
-      return set;
+      return set2;
     });
     var encodeParam = (key, value) => {
       switch (typeof value) {
@@ -23997,7 +23997,7 @@ var require_get3 = __commonJS({
     module2.exports = (codecs, options) => {
       const fn = configure((api, opts) => {
         const getBlock = require_get()(opts);
-        const get = async (cid, options2 = {}) => {
+        const get2 = async (cid, options2 = {}) => {
           if (options2.path) {
             const entry = options2.localResolve ? await first(resolve(cid, options2.path, codecs, getBlock, options2)) : await last2(resolve(cid, options2.path, codecs, getBlock, options2));
             const result = entry;
@@ -24014,7 +24014,7 @@ var require_get3 = __commonJS({
             remainderPath: ""
           };
         };
-        return get;
+        return get2;
       });
       return fn(options);
     };
@@ -24161,7 +24161,7 @@ var require_get4 = __commonJS({
     var {fromString: uint8ArrayFromString} = require_from_string();
     var {toString: uint8ArrayToString} = require_to_string();
     module2.exports = configure((api) => {
-      async function get(key, options = {}) {
+      async function get2(key, options = {}) {
         const res = await api.post("dht/get", {
           signal: options.signal,
           searchParams: toUrlSearchParams(__spreadValues({
@@ -24176,7 +24176,7 @@ var require_get4 = __commonJS({
         }
         throw new Error("not found");
       }
-      return get;
+      return get2;
     });
   }
 });
@@ -24840,7 +24840,7 @@ var require_get5 = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      async function* get(path, options = {}) {
+      async function* get2(path, options = {}) {
         const opts = __spreadValues({
           arg: `${path instanceof Uint8Array ? CID2.decode(path) : path}`
         }, options);
@@ -24855,7 +24855,7 @@ var require_get5 = __commonJS({
         });
         yield* res.iterator();
       }
-      return get;
+      return get2;
     });
   }
 });
@@ -25446,7 +25446,7 @@ var require_get6 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var {fromString: uint8ArrayFromString} = require_from_string();
     module2.exports = configure((api) => {
-      async function get(cid, options = {}) {
+      async function get2(cid, options = {}) {
         const res = await api.post("object/get", {
           signal: options.signal,
           searchParams: toUrlSearchParams(__spreadValues({
@@ -25465,7 +25465,7 @@ var require_get6 = __commonJS({
           }))
         };
       }
-      return get;
+      return get2;
     });
   }
 });
@@ -28526,9 +28526,9 @@ var require_react_development = __commonJS({
         }
         function checkPropTypes(typeSpecs, values, location2, componentName, element) {
           {
-            var has = Function.call.bind(Object.prototype.hasOwnProperty);
+            var has2 = Function.call.bind(Object.prototype.hasOwnProperty);
             for (var typeSpecName in typeSpecs) {
-              if (has(typeSpecs, typeSpecName)) {
+              if (has2(typeSpecs, typeSpecName)) {
                 var error$1 = void 0;
                 try {
                   if (typeof typeSpecs[typeSpecName] !== "function") {
@@ -31469,103 +31469,103 @@ var require_Set = __commonJS({
       };
       return _Set2;
     }();
-    function hasOrAdd(item, shouldAdd, set) {
+    function hasOrAdd(item, shouldAdd, set2) {
       var type = typeof item;
       var prevSize, newSize;
       switch (type) {
         case "string":
         case "number":
           if (item === 0 && 1 / item === -Infinity) {
-            if (set._items["-0"]) {
+            if (set2._items["-0"]) {
               return true;
             } else {
               if (shouldAdd) {
-                set._items["-0"] = true;
+                set2._items["-0"] = true;
               }
               return false;
             }
           }
-          if (set._nativeSet !== null) {
+          if (set2._nativeSet !== null) {
             if (shouldAdd) {
-              prevSize = set._nativeSet.size;
-              set._nativeSet.add(item);
-              newSize = set._nativeSet.size;
+              prevSize = set2._nativeSet.size;
+              set2._nativeSet.add(item);
+              newSize = set2._nativeSet.size;
               return newSize === prevSize;
             } else {
-              return set._nativeSet.has(item);
+              return set2._nativeSet.has(item);
             }
           } else {
-            if (!(type in set._items)) {
+            if (!(type in set2._items)) {
               if (shouldAdd) {
-                set._items[type] = {};
-                set._items[type][item] = true;
+                set2._items[type] = {};
+                set2._items[type][item] = true;
               }
               return false;
-            } else if (item in set._items[type]) {
+            } else if (item in set2._items[type]) {
               return true;
             } else {
               if (shouldAdd) {
-                set._items[type][item] = true;
+                set2._items[type][item] = true;
               }
               return false;
             }
           }
         case "boolean":
-          if (type in set._items) {
+          if (type in set2._items) {
             var bIdx = item ? 1 : 0;
-            if (set._items[type][bIdx]) {
+            if (set2._items[type][bIdx]) {
               return true;
             } else {
               if (shouldAdd) {
-                set._items[type][bIdx] = true;
+                set2._items[type][bIdx] = true;
               }
               return false;
             }
           } else {
             if (shouldAdd) {
-              set._items[type] = item ? [false, true] : [true, false];
+              set2._items[type] = item ? [false, true] : [true, false];
             }
             return false;
           }
         case "function":
-          if (set._nativeSet !== null) {
+          if (set2._nativeSet !== null) {
             if (shouldAdd) {
-              prevSize = set._nativeSet.size;
-              set._nativeSet.add(item);
-              newSize = set._nativeSet.size;
+              prevSize = set2._nativeSet.size;
+              set2._nativeSet.add(item);
+              newSize = set2._nativeSet.size;
               return newSize === prevSize;
             } else {
-              return set._nativeSet.has(item);
+              return set2._nativeSet.has(item);
             }
           } else {
-            if (!(type in set._items)) {
+            if (!(type in set2._items)) {
               if (shouldAdd) {
-                set._items[type] = [item];
+                set2._items[type] = [item];
               }
               return false;
             }
-            if (!_includes(item, set._items[type])) {
+            if (!_includes(item, set2._items[type])) {
               if (shouldAdd) {
-                set._items[type].push(item);
+                set2._items[type].push(item);
               }
               return false;
             }
             return true;
           }
         case "undefined":
-          if (set._items[type]) {
+          if (set2._items[type]) {
             return true;
           } else {
             if (shouldAdd) {
-              set._items[type] = true;
+              set2._items[type] = true;
             }
             return false;
           }
         case "object":
           if (item === null) {
-            if (!set._items["null"]) {
+            if (!set2._items["null"]) {
               if (shouldAdd) {
-                set._items["null"] = true;
+                set2._items["null"] = true;
               }
               return false;
             }
@@ -31573,15 +31573,15 @@ var require_Set = __commonJS({
           }
         default:
           type = Object.prototype.toString.call(item);
-          if (!(type in set._items)) {
+          if (!(type in set2._items)) {
             if (shouldAdd) {
-              set._items[type] = [item];
+              set2._items[type] = [item];
             }
             return false;
           }
-          if (!_includes(item, set._items[type])) {
+          if (!_includes(item, set2._items[type])) {
             if (shouldAdd) {
-              set._items[type].push(item);
+              set2._items[type].push(item);
             }
             return false;
           }
@@ -32564,10 +32564,10 @@ var require_has2 = __commonJS({
   "node_modules/ramda/src/has.js"(exports2, module2) {
     var _curry2 = require_curry2();
     var hasPath = require_hasPath();
-    var has = /* @__PURE__ */ _curry2(function has2(prop, obj) {
+    var has2 = /* @__PURE__ */ _curry2(function has3(prop, obj) {
       return hasPath([prop], obj);
     });
-    module2.exports = has;
+    module2.exports = has2;
   }
 });
 
@@ -32705,14 +32705,14 @@ var require_uniqBy = __commonJS({
     var _Set = require_Set();
     var _curry2 = require_curry2();
     var uniqBy = /* @__PURE__ */ _curry2(function uniqBy2(fn, list) {
-      var set = new _Set();
+      var set2 = new _Set();
       var result = [];
       var idx = 0;
       var appliedItem, item;
       while (idx < list.length) {
         item = list[idx];
         appliedItem = fn(item);
-        if (set.add(appliedItem)) {
+        if (set2.add(appliedItem)) {
           result.push(item);
         }
         idx += 1;
@@ -34100,10 +34100,10 @@ var require_set2 = __commonJS({
     var _curry3 = require_curry3();
     var always = require_always();
     var over = require_over();
-    var set = /* @__PURE__ */ _curry3(function set2(lens, v, x) {
+    var set2 = /* @__PURE__ */ _curry3(function set3(lens, v, x) {
       return over(lens, always(v), x);
     });
-    module2.exports = set;
+    module2.exports = set2;
   }
 });
 
@@ -35155,11 +35155,9 @@ var require_src10 = __commonJS({
 var require_p_try = __commonJS({
   "node_modules/p-try/index.js"(exports2, module2) {
     "use strict";
-    var pTry = (fn, ...arguments_) => new Promise((resolve) => {
-      resolve(fn(...arguments_));
+    module2.exports = (cb) => new Promise((resolve) => {
+      resolve(cb());
     });
-    module2.exports = pTry;
-    module2.exports.default = pTry;
   }
 });
 
@@ -35168,9 +35166,9 @@ var require_p_limit = __commonJS({
   "node_modules/p-limit/index.js"(exports2, module2) {
     "use strict";
     var pTry = require_p_try();
-    var pLimit = (concurrency) => {
-      if (!((Number.isInteger(concurrency) || concurrency === Infinity) && concurrency > 0)) {
-        return Promise.reject(new TypeError("Expected `concurrency` to be a number from 1 and up"));
+    module2.exports = (concurrency) => {
+      if (concurrency < 1) {
+        throw new TypeError("Expected `concurrency` to be a number from 1 and up");
       }
       const queue = [];
       let activeCount = 0;
@@ -35180,37 +35178,24 @@ var require_p_limit = __commonJS({
           queue.shift()();
         }
       };
-      const run = (fn, resolve, ...args) => {
-        activeCount++;
-        const result = pTry(fn, ...args);
-        resolve(result);
-        result.then(next, next);
-      };
-      const enqueue = (fn, resolve, ...args) => {
+      return (fn) => new Promise((resolve, reject) => {
+        const run = () => {
+          activeCount++;
+          pTry(fn).then((val) => {
+            resolve(val);
+            next();
+          }, (err) => {
+            reject(err);
+            next();
+          });
+        };
         if (activeCount < concurrency) {
-          run(fn, resolve, ...args);
+          run();
         } else {
-          queue.push(run.bind(null, fn, resolve, ...args));
-        }
-      };
-      const generator = (fn, ...args) => new Promise((resolve) => enqueue(fn, resolve, ...args));
-      Object.defineProperties(generator, {
-        activeCount: {
-          get: () => activeCount
-        },
-        pendingCount: {
-          get: () => queue.length
-        },
-        clearQueue: {
-          value: () => {
-            queue.length = 0;
-          }
+          queue.push(run);
         }
       });
-      return generator;
     };
-    module2.exports = pLimit;
-    module2.exports.default = pLimit;
   }
 });
 
@@ -36753,8 +36738,31 @@ if (cid) {
 var import_debug2 = __toModule(require_src());
 var import_debounce = __toModule(require_debounce());
 var debug2 = (0, import_debug2.default)("contentCache");
+var _contentCache = new Map();
+var set = (cid, content) => {
+  _contentCache.set(cid, content);
+};
+var get = (cid) => {
+  return _contentCache.get(cid);
+};
+var has = (cid) => {
+  return _contentCache.has(cid);
+};
 function cacheOutput(funcThatFetchesCID) {
   return funcThatFetchesCID;
+  const cachingFunc = async (cidOrFile, ...args) => {
+    const cid = stringCID(cidOrFile);
+    debug2("cacheOutput, checking if cache contains:", cid);
+    if (has(cid)) {
+      debug2("cacheOutput. Cache HIT.");
+      return get(cid);
+    }
+    debug2("Cache MISS. Running function...", funcThatFetchesCID.name, "with cid", cidOrFile);
+    const result = await Promise.resolve(funcThatFetchesCID(cidOrFile, ...args));
+    set(cid, result);
+    return result;
+  };
+  return cleanCIDs(cachingFunc);
 }
 function cacheInput(funcThatGeneratesCID) {
   return funcThatGeneratesCID;
@@ -37047,9 +37055,13 @@ var PromiseAllProgress = (name, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
 var debug5 = (0, import_debug5.default)("ipfsState");
-var getIPFSState = (contentID2, callback, rootName = "root") => {
+var getIPFSState = async (contentID2, callback, rootName = "root") => {
   debug5("Getting state for CID", contentID2);
-  return _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2}, callback);
+  const isFolder = (await ipfsLs(contentID2)).length > 0;
+  if (isFolder)
+    return await _getIPFSState({cid: contentID2, name: rootName, type: "dir", path: "/", rootCID: contentID2}, callback);
+  else
+    return await _getIPFSState({cid: contentID2, name: rootName, type: "file", path: "/", rootCID: contentID2}, callback);
 };
 var _getIPFSState = cacheOutput(async ({cid, type, name, path, rootCID}, processFile2) => {
   cid = stringCID(cid);

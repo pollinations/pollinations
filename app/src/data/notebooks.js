@@ -1,6 +1,17 @@
 import WallpaperIcon from '@material-ui/icons/Wallpaper';
+import { getIPFSState } from '../network/ipfsState';
+import Debug from 'debug';
 
-export const notebooks = [
+const debug = Debug('notebooks');
+
+export const getNotebooks = async (ipfsPath="/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888") => {
+  // debug("ipfs notebooks",await getIPFSState(ipfsPath));
+  return notebooks;
+}
+
+export const getDefaultNotebook = async () => (await getNotebooks())[0];
+ 
+const notebooks = [
   {
     name: "CLIP-guided VQGan HQ",
     path: "/p/QmPvWkYmLgHXGEhcrTy7BLj42PEMuZSVdf5K5JKdi8Ch3f",
@@ -26,6 +37,3 @@ export const notebooks = [
       Icon: WallpaperIcon
   }
 ];
-
-export const defaultNotebook = notebooks[0];
- 

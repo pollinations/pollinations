@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Drawer from '@material-ui/core/Drawer';
 import Button from '@material-ui/core/Button';
 import List from '@material-ui/core/List';
@@ -14,14 +14,18 @@ import MenuIcon from '@material-ui/icons/Menu';
 
 import { noop } from '../network/utils';
 
-import { notebooks } from "../data/notebooks.js";
+import { getNotebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
 import { SocialLinks } from './Social';
 import { Box } from '@material-ui/core';
 
+
 export default function NotebookSelector(state) {
     const [visible, setVisible] = useState(false);
     
+    const [notebooks,setNotebooks] = useState([]);
+    useEffect(async () => setNotebooks(await getNotebooks()),[]);
+
     return <>
          <AppBar
         position="static"

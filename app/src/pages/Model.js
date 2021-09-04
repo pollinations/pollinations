@@ -26,9 +26,9 @@ const debug = Debug("Model");
 
 export default React.memo(function Model() {
 
-  const { state, dispatch: dispatchInputState, setStatus } = useColab(isDone);
+  const { state, dispatch: dispatchInputState} = useColab(isDone);
 
-  const { ipfs, nodeID, status, contentID } = state;
+  let { ipfs, nodeID, status, contentID } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
@@ -39,7 +39,7 @@ export default React.memo(function Model() {
   });
 
   const cancelForm = () => dispatchInputState({ ...state.inputs, formAction: "cancel" })
-
+  debug("ipfs state before rendering model", ipfs)
   return <>
     {/* Nav Bar */}
     <NotebookSelector {...state} />

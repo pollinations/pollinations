@@ -252,10 +252,14 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
         };
 
         const handler = ({ data }) => callback(new TextDecoder().decode(data));
-
+        let interval = null;
         const doSub = async () => {
             try {
+                abort.abort();
+                if (interval)
+                    clearInterval(interval);
                 debug("Executing subscribe", _nodeID)
+                setInterval()
                 await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal,timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
@@ -270,7 +274,7 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
                 await doSub();
             }
         };
-        await doSub();
+        interval = setInterval(doSub, 30000);
     })();
 
     return () => {

@@ -36968,7 +36968,6 @@ function subscribeCIDCallback(_nodeID = null, callback) {
         if (interval)
           clearInterval(interval);
         debug3("Executing subscribe", _nodeID);
-        setInterval();
         await _client.pubsub.subscribe(_nodeID, handler, {onError, signal: abort.signal, timeout: "1h"});
       } catch (e) {
         debug3("subscribe error", e, e.name);

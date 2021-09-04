@@ -12,7 +12,7 @@ export let getRoutes = async () => {
         { 
             exact: true,
             path: "/",
-            children: <Redirect to={(await  getDefaultNotebook()).path} />,
+            children: <Redirect to={(await  getDefaultNotebook())?.path} />,
         }
     ];
 };

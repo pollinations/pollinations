@@ -9,23 +9,24 @@ const debug = Debug('notebooks');
 // get list of notebooks from IPNS path
 export const getNotebooks = async (ipfsPath="/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888") => {
   const ipfsNotebooks = await getIPFSState(ipfsPath, async ({cid}) => cid);
-  debug('getNotebooks1', ipfsNotebooks);
+  debug('getNotebooks ipfs state', ipfsNotebooks);
 
   // filter out files that are not folders
-  const notebooks2 = Object.entries(ipfsNotebooks)
+  const notebooks = Object.entries(ipfsNotebooks)
     .filter(([_, value]) => typeof value !== "string")
     .map(([category,notebooks]) => 
       Object.entries(notebooks)
+            .filter(([name, _]) => name.endsWith(".ipynb"))
             .map(([name,cid]) => ({
               category, 
-              name, 
+              name: name.replace(".ipynb",""), 
               path:`/p/${cid}`, 
               Icon: WallpaperIcon
             }))
     )
     .flat();
   
-    debug('getNotebooks2', notebooks2);
+  debug('getNotebooks parsed', notebooks);
   return notebooks;
 }
 

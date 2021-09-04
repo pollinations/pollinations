@@ -1,3 +1,4 @@
+import React from "react";
 import Model from "./pages/Model";
 import { Redirect } from "react-router-dom";
 import { getDefaultNotebook } from "./data/notebooks.js";

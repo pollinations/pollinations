@@ -26,7 +26,7 @@ const debug = Debug("ipfsConnector")
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
-export const mfsRoot = `/tmp_${Math.round(Math.random()*100000)}/`;
+export const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}/`;
 
 
 const localIPFSAvailable = async () => {
@@ -90,20 +90,20 @@ export const getIPNSURL = (id) => {
     return `https://pollinations.ai/ipns/${id}`;
 };
 
-const stripSlashIPFS = cidString => {debug("stripSlash",cidString);return cidString.replace("/ipfs/", "")};
+const stripSlashIPFS = cidString => { debug("stripSlash", cidString); return cidString.replace("/ipfs/", "") };
 const firstLine = s => s.split("\n")[0];
 
-export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.asCID(file) ? file.toString() : (file instanceof Buffer ? file.toString():file ))));
+export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.asCID(file) ? file.toString() : (file instanceof Buffer ? file.toString() : file))));
 
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
 export const ipfsLs = async cid => {
     debug("calling ipfs ls with cid", cid);
     const result = (await toPromise((await client).ls(stringCID(cid))))
-    .filter(({ type, name }) => type !== "unknown" && name !== undefined)
-    .map(lsResult => {debug("lsResult", lsResult); return lsResult})
-    .map(_normalizeIPFS);
-    debug("got ipfs ls result",result);
+        .filter(({ type, name }) => type !== "unknown" && name !== undefined)
+        .map(lsResult => { debug("lsResult", lsResult); return lsResult })
+        .map(_normalizeIPFS);
+    debug("got ipfs ls result", result);
     return result;
 };
 
@@ -112,7 +112,7 @@ export const ipfsLs = async cid => {
 export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) => {
     const _client = await client;
     ipfsPath = join(mfsRoot, ipfsPath);
-    debug("adding", ipfsPath, "options",options);
+    debug("adding", ipfsPath, "options", options);
     const cid = stringCID(await retryException(
         async () => await _client.add(content, options)
     ));
@@ -154,7 +154,7 @@ export const ipfsGet = limit(cleanCIDs((async (cid, { onlyLink = false }) => {
     return contentArray;
 })));
 
-export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) => 
+export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) =>
     await retryException(async () => await ipfsAdd(ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
 
 
@@ -194,13 +194,13 @@ export async function publish(rootCID, suffix = "/output") {
     _lastContentID = rootCID;
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
-    
 
-    if (await nodeID === "ipns") 
+
+    if (await nodeID === "ipns")
         await experimentalIPNSPublish(rootCID, _client);
     else
         await _client.pubsub.publish((await nodeID) + suffix, rootCID)
-    
+
 }
 
 
@@ -224,7 +224,7 @@ async function experimentalIPNSPublish(rootCID, _client = null) {
 export async function subscribeCID(_nodeID = null, suffix = "/input") {
     if (_nodeID === null)
         _nodeID = await nodeID;
-        
+
     const channel = new Channel();
     const topic = _nodeID + suffix;
     // debug("Subscribing to pubsub events from", topic);
@@ -256,10 +256,8 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
         const doSub = async () => {
             try {
                 abort.abort();
-                if (interval)
-                    clearInterval(interval);
                 debug("Executing subscribe", _nodeID)
-                await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), { onError, signal: abort.signal,timeout: "1h" });
+                await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {
@@ -274,6 +272,8 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
             }
         };
         doSub();
+        if (interval)
+            clearInterval(interval);
         interval = setInterval(doSub, 30000);
     })();
 

@@ -273,6 +273,7 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
                 await doSub();
             }
         };
+        doSub();
         interval = setInterval(doSub, 30000);
     })();
 

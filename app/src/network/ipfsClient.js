@@ -1,7 +1,7 @@
 
 
 import { toPromise } from "./utils.js"
-import { client, getWebURL, ipfsResolve, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
+import { client, getWebURL, ipfsMkdir, ipfsResolve, stringCID, subscribeCIDCallback } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
@@ -100,7 +100,9 @@ export const adddOutput = async (outputCID, contentID) => {
 }; 
 
 export const getInputContent = async inputs => {
+    debug("getInputContent", inputs);
     const _client = await client;
+    debug("got client", _client);
     let inputCID = stringCID(await _client.object.new({template:"unixfs-dir"}));
     debug("Triggered dispatch. Inputs:", inputs, "cid before", inputCID);
     for (const [key, val] of Object.entries(inputs)) {

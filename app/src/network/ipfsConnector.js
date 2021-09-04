@@ -64,7 +64,8 @@ const getIPFSDaemonURL = async () => {
 
 const ipfsDaemonURL = getIPFSDaemonURL();
 
-export const client = ipfsDaemonURL.then(create);
+export const client = ipfsDaemonURL.then(url => create({url, timeout: "2h"}));
+
 export const nodeID = client.then(async client => options.nodeid || (await client.id()).id);
 
 (async () => {
@@ -159,14 +160,15 @@ export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null })
 
 
 export async function ipfsMkdir(path = "/") {
+    const _client = await client;
     const withMfsRoot = join(mfsRoot, path);
     debug("Creating folder", withMfsRoot);
     try {
-        await (await client).files.mkdir(withMfsRoot, { parents: true });
+        await _client.files.mkdir(withMfsRoot, { parents: true });
     } catch (e) {
         debug("couldn't create folder because it probably already exists", e)
     }
-    return path;
+    return await _client.files.stat(withMfsRoot);
 }
 
 export async function ipfsRm(ipfsPath) {
@@ -237,7 +239,7 @@ export async function subscribeCID(_nodeID = null, suffix = "/input") {
 
 export function subscribeCIDCallback(_nodeID = null, callback) {
     const abort = new AbortController();
-    let interval = null;
+    // let interval = null;
     (async () => {
         const _client = await client;
         if (_nodeID === null)
@@ -272,16 +274,16 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
             }
         };
         doSub();
-        if (interval)
-            clearInterval(interval);
-        interval = setInterval(doSub, 30000);
+        // if (interval)
+        //     clearInterval(interval);
+        // interval = setInterval(doSub, 30000);
     })();
 
     return () => {
         debug("subscribe abort was called");
         abort.abort();
-        if (interval)
-            clearInterval(interval);
+        // if (interval)
+        //     clearInterval(interval);
     };
 }
 

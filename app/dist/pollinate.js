@@ -35155,9 +35155,11 @@ var require_src10 = __commonJS({
 var require_p_try = __commonJS({
   "node_modules/p-try/index.js"(exports2, module2) {
     "use strict";
-    module2.exports = (cb) => new Promise((resolve) => {
-      resolve(cb());
+    var pTry = (fn, ...arguments_) => new Promise((resolve) => {
+      resolve(fn(...arguments_));
     });
+    module2.exports = pTry;
+    module2.exports.default = pTry;
   }
 });
 
@@ -35166,9 +35168,9 @@ var require_p_limit = __commonJS({
   "node_modules/p-limit/index.js"(exports2, module2) {
     "use strict";
     var pTry = require_p_try();
-    module2.exports = (concurrency) => {
-      if (concurrency < 1) {
-        throw new TypeError("Expected `concurrency` to be a number from 1 and up");
+    var pLimit = (concurrency) => {
+      if (!((Number.isInteger(concurrency) || concurrency === Infinity) && concurrency > 0)) {
+        return Promise.reject(new TypeError("Expected `concurrency` to be a number from 1 and up"));
       }
       const queue = [];
       let activeCount = 0;
@@ -35178,24 +35180,37 @@ var require_p_limit = __commonJS({
           queue.shift()();
         }
       };
-      return (fn) => new Promise((resolve, reject) => {
-        const run = () => {
-          activeCount++;
-          pTry(fn).then((val) => {
-            resolve(val);
-            next();
-          }, (err) => {
-            reject(err);
-            next();
-          });
-        };
+      const run = (fn, resolve, ...args) => {
+        activeCount++;
+        const result = pTry(fn, ...args);
+        resolve(result);
+        result.then(next, next);
+      };
+      const enqueue = (fn, resolve, ...args) => {
         if (activeCount < concurrency) {
-          run();
+          run(fn, resolve, ...args);
         } else {
-          queue.push(run);
+          queue.push(run.bind(null, fn, resolve, ...args));
+        }
+      };
+      const generator = (fn, ...args) => new Promise((resolve) => enqueue(fn, resolve, ...args));
+      Object.defineProperties(generator, {
+        activeCount: {
+          get: () => activeCount
+        },
+        pendingCount: {
+          get: () => queue.length
+        },
+        clearQueue: {
+          value: () => {
+            queue.length = 0;
+          }
         }
       });
+      return generator;
     };
+    module2.exports = pLimit;
+    module2.exports.default = pLimit;
   }
 });
 

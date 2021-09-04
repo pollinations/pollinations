@@ -32,24 +32,23 @@ export default React.memo(function Model() {
 
   const metadata = getNotebookMetadata(ipfs);
 
-  const dispatchForm = async inputs => dispatchInputState({
-    ...inputs,
-    ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
-    formAction: "submit"
-  });
+  const dispatchForm = async inputs => {
+    debug("dispatchForm", inputs);
+    await dispatchInputState({
+      ...inputs,
+      ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
+      formAction: "submit"
+    });
+  debug("dispatched Form");
+};
 
   const cancelForm = () => dispatchInputState({ ...state.inputs, formAction: "cancel" })
   debug("ipfs state before rendering model", ipfs)
   return <>
     {/* Nav Bar */}
     <NotebookSelector {...state} />
-    {/* <Alert severity="warning">
-          Google recently reduced the capacity of their free Cloud GPUs. Pollinations depends on these to do the computations. 
-        <br/> <br/>
-        Image generation may fail intermittently. We are working on a fix. Discussion on <Link href="https://github.com/pollinations/pollinations/issues/62">Github</Link>.
-        <br /><br/>
-        The <Link href="/p/QmTBUAGsqWzJsF1Ccuzk9W5STkzGa8bK6QcPpj7JrT4a6J">CLIP-Guided Diffusion model</Link> seems to be working and we made it the default for the time being.
-       </Alert> */}
+
+
     <Container maxWidth="md">
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>

@@ -259,7 +259,7 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
                 if (interval)
                     clearInterval(interval);
                 debug("Executing subscribe", _nodeID)
-                await _client.pubsub.subscribe(_nodeID, handler, { onError, signal: abort.signal,timeout: "1h" });
+                await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), { onError, signal: abort.signal,timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {

@@ -34,6 +34,15 @@ Pollinations is an effort to make generative art more approachable. There are th
 </details>
 
 <details>
+  <summary>Development of Notebooks</summary>
+
+   All notebooks at [pollinations/hive](https://github.com/pollinations/hive) are automatically deployed to Pollinations. 
+   
+   We will add an easy way to include custom notebooks. For now, to use an external notebook it needs to be uploaded to IPFS wrapped in a folder in the form `input/notebook.ipynb`. The resulting IPFS hash can be used directly like so: `https://pollinations.ai/p/[hash]`
+  
+</details>
+
+<details>
   <summary>Development with Local IPFS node</summary>
 
     Development environment requires `docker` & `docker-compose` for running a loca IPFS node. For docker installation, please navigate to https://docs.docker.com/get-docker/.

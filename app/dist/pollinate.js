@@ -36981,6 +36981,7 @@ function subscribeCIDCallback(_nodeID = null, callback) {
         await doSub();
       }
     };
+    doSub();
     interval = setInterval(doSub, 3e4);
   })();
   return () => {

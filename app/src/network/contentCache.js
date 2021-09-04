@@ -22,7 +22,7 @@ const STATE_PATH = '/tmp/ipfsState.json';
 // }
 
 
-// let _contentCache = new Map(load());
+let _contentCache = new Map();
 
 // let _inverseContentCache = new Map([..._contentCache].map(([cid,path]) => [path,cid]));
 
@@ -33,46 +33,39 @@ const STATE_PATH = '/tmp/ipfsState.json';
 //     writeFile(STATE_PATH, JSON.stringify(contentCacheJSON), 'utf-8'); 
 // }, 50);
 
-// const set = (cid, content) => {
-//     persist();
-//     _contentCache.set(cid,content);
-//     // TODO: only save paths
-//     if (content instanceof String)
-//         _inverseContentCache.set(content, cid);
-// }
+const set = (cid, content) => {
+    // persist();
+    _contentCache.set(cid,content);
+    // TODO: only save paths
+    // if (content instanceof String)
+    //     _inverseContentCache.set(content, cid);
+}
 
-// const get = (cid,inverse=false) => {
-//     if (inverse) {
-//         return cid instanceof String && _inverseContentCache.get(cid);
-//     }
-//    return _contentCache.get(cid);
-// }
+const get = cid => {
+   return _contentCache.get(cid);
+}
 
-// const has = (cid,inverse=false) => {
-//     if (inverse) {
-        
-//         const result = _inverseContentCache.has(cid);
-//         debug("Inverse: checking if exists",cid,":",result);
-//         return result;
-//     }
-//     return _contentCache.has(cid);
-// }
+const has = cid => {
+    return _contentCache.has(cid);
+}
 
 export function cacheOutput(funcThatFetchesCID) {
     return funcThatFetchesCID;
-    // const cachingFunc = async (cidOrFile, ...args) => {
-    //         const cid = stringCID(cidOrFile);
-    //         debug("cacheOutput, checking if cache contains:",cid,"arguments:",...args);
-    //         if (has(cid)) {
-    //             debug("cacheOutput. Cache HIT.");
-    //             return get(cid);
-    //         }
-    //         debug("Cache MISS. Running function...",funcThatFetchesCID.name,"with cid", cidOrFile, "and args", ...args);
-    //         const result = await Promise.resolve(funcThatFetchesCID(cidOrFile, ...args));
-    //         set(cid, result);
-    //         return result
-    // };
-    // return cleanCIDs(cachingFunc);
+
+    // TODO: reenable caching. problem is with different `processFile` functions but with same global cache
+    const cachingFunc = async (cidOrFile, ...args) => {
+            const cid = stringCID(cidOrFile);
+            debug("cacheOutput, checking if cache contains:",cid)
+            if (has(cid)) {
+                debug("cacheOutput. Cache HIT.");
+                return get(cid);
+            }
+            debug("Cache MISS. Running function...",funcThatFetchesCID.name,"with cid", cidOrFile);
+            const result = await Promise.resolve(funcThatFetchesCID(cidOrFile, ...args));
+            set(cid, result);
+            return result
+    };
+    return cleanCIDs(cachingFunc);
 }
 
 export default function cacheInput(funcThatGeneratesCID) {

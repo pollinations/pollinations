@@ -46,11 +46,11 @@ const fetchAndMakeURL = async ({ name, cid }) => {
     }
 }
 
+// Return IPFS state. Converts all JSON/text content to objects and binary cids to URLs.
 export const IPFSState = contentID => {
     debug("Getting state for CID", contentID)
     return getIPFSState(contentID, fetchAndMakeURL);
 }
-
 
 export const stateReducer = [
     (state, newState) => {

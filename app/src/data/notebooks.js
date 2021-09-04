@@ -1,11 +1,31 @@
 import WallpaperIcon from '@material-ui/icons/Wallpaper';
-import { getIPFSState } from '../network/ipfsState';
+
 import Debug from 'debug';
+
+import { getIPFSState } from '../network/ipfsState';
 
 const debug = Debug('notebooks');
 
+// get list of notebooks from IPNS path
 export const getNotebooks = async (ipfsPath="/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888") => {
-  // debug("ipfs notebooks",await getIPFSState(ipfsPath));
+  const ipfsNotebooks = await getIPFSState(ipfsPath, async ({cid}) => cid);
+  debug('getNotebooks1', ipfsNotebooks);
+
+  // filter out files that are not folders
+  const notebooks2 = Object.entries(ipfsNotebooks)
+    .filter(([_, value]) => typeof value !== "string")
+    .map(([category,notebooks]) => 
+      Object.entries(notebooks)
+            .map(([name,cid]) => ({
+              category, 
+              name, 
+              path:`/p/${cid}`, 
+              Icon: WallpaperIcon
+            }))
+    )
+    .flat();
+  
+    debug('getNotebooks2', notebooks2);
   return notebooks;
 }
 

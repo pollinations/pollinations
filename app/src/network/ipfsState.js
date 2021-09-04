@@ -10,10 +10,14 @@ import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 
 //import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
-// const map = parallelMap(30);
-export const getIPFSState = (contentID, callback, rootName="root") => {
+
+export const getIPFSState = async (contentID, callback, rootName="root") => {
     debug("Getting state for CID", contentID)
-    return _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback)
+    const isFolder = (await ipfsLs(contentID)).length > 0;
+    if (isFolder) 
+        return await _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
+    else
+        return await _getIPFSState({ cid: contentID, name: rootName, type: "file", path: "/", rootCID: contentID}, callback);
 }
 
 const _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, processFile) => {

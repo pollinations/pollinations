@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useCallback } from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
 import { Box, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import HelpModal from "./HelpModal";
+import { useDropzone } from 'react-dropzone'
+import { client } from "../network/ipfsConnector";
+import { CID } from "ipfs-http-client";
 
 const debug = Debug("Form");
 
@@ -41,6 +44,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         onSubmit={({ formData }) => onSubmit(formData)}
         disabled={formDisabled || colabState === "running"}
     >
+        <FileUpload />
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
                 [ {inProgress ? "Submitting..." : "Submit"} ]
@@ -117,3 +121,30 @@ const toSchema = (key, type, enabled) => {
     }
 
 }
+
+
+function FileUpload() {
+    const onDrop = useCallback(async acceptedFiles => {
+      // Do something with the files
+      const _client = await client;
+      debug("dropped files", acceptedFiles);
+      const file = acceptedFiles[0];
+      const {cid} = await _client.add({content: file.stream(), path: file.path});
+
+      
+      
+    }, []);
+
+    const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+  
+    return (
+      <div {...getRootProps()}>
+        <input {...getInputProps()} />
+        {
+          isDragActive ?
+            <p>Drop the files here ...</p> :
+            <p>Drag 'n' drop some files here, or click to select files</p>
+        }
+      </div>
+    )
+  }

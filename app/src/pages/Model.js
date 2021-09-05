@@ -55,7 +55,13 @@ export default React.memo(function Model() {
         {/* control panel */}
 
         {/* just in case */}
-        {metadata && metadata.description ? <div style={{ width: '100%' }}><Markdown>{metadata.description}</Markdown></div> : null}
+        {metadata && metadata.description ? 
+          <Box m={2} style={{ width: '100%' }}>
+              <Typography variant="h5" component="h5" gutterBottom>
+                {metadata.name.replace(".ipynb","")}
+              </Typography>
+              <Markdown>{metadata.description}</Markdown>
+          </Box> : null}
 
         {/* inputs */}
         <div style={{ width: '100%' }}>

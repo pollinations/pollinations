@@ -76,6 +76,10 @@ echo "🐝: Setting colab status to waiting"
 rm -v $IPFS_ROOT/output/status
 echo -n waiting > $IPFS_ROOT/output/status
 
+# -- Sleep to make sure files are uploaded
+echo "🐝: Sleeping 10 seconds"
+sleep 10
+
 # --- Post to social media
 
 post_social.sh $IPFS_ROOT

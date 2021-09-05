@@ -1,6 +1,6 @@
 import LimitConcurrency from "p-limit";
 
-const concurrencyLimiter = LimitConcurrency(10);
+const concurrencyLimiter = LimitConcurrency(1);
 
 const limit = f => (...args) => concurrencyLimiter(() => f(...args));
 

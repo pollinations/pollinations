@@ -45,7 +45,7 @@ export default function NotebookSelector(state) {
           <Box marginLeft="15"> 
             <SocialLinks />
           </Box>
-          <NodeStatus {...state} />
+          {state.contentID && <NodeStatus {...state} /> }
         </Toolbar>
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>

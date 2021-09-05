@@ -117,7 +117,7 @@ export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) 
     const cid = stringCID(await retryException(
         async () => await _client.add(content, options)
     ));
-    debug("added", cid, "size", content);
+    debug("added", cid);
 
 
     try {

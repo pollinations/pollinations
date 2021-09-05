@@ -12,7 +12,7 @@ import fetch from "node-fetch";
 const debug = Debug("ipfsClient")
 
 
-const fetchAndMakeURL = async ({ name, cid }) => {
+export const fetchAndMakeURL = async ({ name, cid }) => {
 
     const ext = extname(name);
     const importOrURL = shouldImport(ext);

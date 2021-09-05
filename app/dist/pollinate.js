@@ -36839,8 +36839,7 @@ var nodeID = client.then(async (client2) => options_default.nodeid || (await cli
 })();
 var getWebURL = (cid, name = null) => {
   const filename = name ? `?filename=${name}` : "";
-  const imgFBFixHack = name && name.toLowerCase().endsWith(".png") ? "/image.png" : "";
-  return `https://pollinations.ai/ipfs/${cid}${imgFBFixHack}${filename}`;
+  return `https://pollinations.ai/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   debug3("stripSlash", cidString);

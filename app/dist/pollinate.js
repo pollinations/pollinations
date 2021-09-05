@@ -36797,7 +36797,7 @@ var import_ramda = __toModule(require_src10());
 
 // src/utils/concurrency.js
 var import_p_limit = __toModule(require_p_limit());
-var concurrencyLimiter = (0, import_p_limit.default)(10);
+var concurrencyLimiter = (0, import_p_limit.default)(1);
 var limit = (f) => (...args) => concurrencyLimiter(() => f(...args));
 var concurrency_default = limit;
 
@@ -36863,7 +36863,7 @@ var ipfsAdd = cacheInput(concurrency_default(async (ipfsPath, content, options =
   ipfsPath = (0, import_path.join)(mfsRoot, ipfsPath);
   debug3("adding", ipfsPath, "options", options);
   const cid = stringCID(await retryException(async () => await _client.add(content, options)));
-  debug3("added", cid, "size", content);
+  debug3("added", cid);
   try {
     debug3("Trying to delete", ipfsPath);
     await _client.files.rm(ipfsPath, {recursive: true});

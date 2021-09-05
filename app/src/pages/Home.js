@@ -3,6 +3,7 @@ import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import NotebookSelector from "../components/NotebookSelector";
 import { Box, Button, Card, CardActions, CardContent, Container, Typography, Link, CardHeader } from "@material-ui/core";
+import Markdown from "markdown-to-jsx";
 
 
 const debug = Debug("home");
@@ -26,16 +27,13 @@ export default function Home() {
 
 
 const NotebookCard = ({notebook}) => {
-    const {category, name, path, Icon} = notebook;
+    const {category, name, path, Icon, description} = notebook;
     return  <Box m={5}>
                 <Card>
-                <CardHeader subheader={category} action={<Icon />} />
+                <CardHeader subheader={category} title={<Link href={path}>{name}</Link>} action={<Button href={path}><Icon /></Button>} />
                     <CardContent>
-                        <Typography variant="h6" component="h6">
-                            <Link href={path}> {name} </Link>    
-                        </Typography>
+                        <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
                     </CardContent>
-
                 </Card>
             </Box>;
 }
@@ -57,7 +55,5 @@ const NotebookCard = ({notebook}) => {
     {'"a benevolent smile"'}
   </Typography>
 </CardContent>
-<CardActions>
-  <Button size="small">Learn More</Button>
-</CardActions>
+
 </Card> */}

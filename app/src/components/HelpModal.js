@@ -28,7 +28,7 @@ export default function SimpleModal() {
     return (
         <>
         <Button type="button" color="secondary" onClick={() => setOpen(true)}>
-          [ Help ]
+          [ Instructions ]
         </Button>
         <Modal
           open={open}

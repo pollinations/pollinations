@@ -50,18 +50,20 @@ export default React.memo(function Model() {
 
 
     <Container maxWidth="md">
+      <Box my={2}>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
 
         {/* just in case */}
         {metadata && metadata.description ? 
-          <Box m={2} style={{ width: '100%' }}>
+          <>
               <Typography variant="h5" component="h5" gutterBottom>
                 {metadata.name.replace(".ipynb","")}
               </Typography>
               <Markdown>{metadata.description}</Markdown>
-          </Box> : null}
+          </>
+           : null}
 
         {/* inputs */}
         <div style={{ width: '100%' }}>
@@ -107,6 +109,7 @@ export default React.memo(function Model() {
 
       </div>
       <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/5bMm4Egw" target="_blank">[ Discord ]</Link>.</Box>
+      </Box>
     </Container>
   </>
 });

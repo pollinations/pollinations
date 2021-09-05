@@ -2,7 +2,7 @@ import React from "react";
 import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import NotebookSelector from "../components/NotebookSelector";
-import { Box, Button, Card, CardActions, CardContent, Container, Typography, Link } from "@material-ui/core";
+import { Box, Button, Card, CardActions, CardContent, Container, Typography, Link, CardHeader } from "@material-ui/core";
 
 
 const debug = Debug("home");
@@ -13,6 +13,12 @@ export default function Home() {
     return  <>
                 <NotebookSelector />
                     <Container maxWidth="md">
+                        {/* title */}
+                        <Box m={5}>
+                        <Typography variant="h4" component="h1" gutterBottom>
+                            Select a model
+                        </Typography>
+                        </Box>
                         {notebooks.map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)}
                     </Container>
             </>;
@@ -20,13 +26,11 @@ export default function Home() {
 
 
 const NotebookCard = ({notebook}) => {
-    const {category, name, path} = notebook;
+    const {category, name, path, Icon} = notebook;
     return  <Box m={5}>
                 <Card>
+                <CardHeader subheader={category} action={<Icon />} />
                     <CardContent>
-                        <Typography color="textSecondary" gutterBottom>
-                            {category}
-                        </Typography>
                         <Typography variant="h6" component="h6">
                             <Link href={path}> {name} </Link>    
                         </Typography>

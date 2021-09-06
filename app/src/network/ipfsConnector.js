@@ -238,7 +238,7 @@ export async function subscribeCID(_nodeID = null, suffix = "/input") {
 
 export function subscribeCIDCallback(_nodeID = null, callback) {
     const abort = new AbortController();
-    let interval = null;
+    // let interval = null;
     (async () => {
         const _client = await client;
         if (_nodeID === null)
@@ -273,16 +273,16 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
             }
         };
         doSub();
-        if (interval)
-            clearInterval(interval);
-        interval = setInterval(doSub, 30000);
+        // if (interval)
+        //     clearInterval(interval);
+        // interval = setInterval(doSub, 30000);
     })();
 
     return () => {
         debug("subscribe abort was called");
         abort.abort();
-        if (interval)
-            clearInterval(interval);
+        // if (interval)
+        //     clearInterval(interval);
     };
 }
 

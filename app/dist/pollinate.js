@@ -15922,7 +15922,7 @@ var require_lib3 = __commonJS({
           let error = new AbortError("The user aborted a request.");
           reject(error);
           if (request.body && request.body instanceof Stream.Readable) {
-            destroyStream(request.body, error);
+            request.body.destroy(error);
           }
           if (!response || !response.body)
             return;
@@ -15957,29 +15957,8 @@ var require_lib3 = __commonJS({
         }
         req.on("error", function(err) {
           reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, "system", err));
-          if (response && response.body) {
-            destroyStream(response.body, err);
-          }
           finalize();
         });
-        fixResponseChunkedTransferBadEnding(req, function(err) {
-          if (signal && signal.aborted) {
-            return;
-          }
-          destroyStream(response.body, err);
-        });
-        if (parseInt(process.version.substring(1)) < 14) {
-          req.on("socket", function(s) {
-            s.addListener("close", function(hadError) {
-              const hasDataListener = s.listenerCount("data") > 0;
-              if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
-                const err = new Error("Premature close");
-                err.code = "ERR_STREAM_PREMATURE_CLOSE";
-                response.body.emit("error", err);
-              }
-            });
-          });
-        }
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
@@ -16090,33 +16069,6 @@ var require_lib3 = __commonJS({
         });
         writeToStream(req, request);
       });
-    }
-    function fixResponseChunkedTransferBadEnding(request, errorCallback) {
-      let socket;
-      request.on("socket", function(s) {
-        socket = s;
-      });
-      request.on("response", function(response) {
-        const headers = response.headers;
-        if (headers["transfer-encoding"] === "chunked" && !headers["content-length"]) {
-          response.once("close", function(hadError) {
-            const hasDataListener = socket.listenerCount("data") > 0;
-            if (hasDataListener && !hadError) {
-              const err = new Error("Premature close");
-              err.code = "ERR_STREAM_PREMATURE_CLOSE";
-              errorCallback(err);
-            }
-          });
-        }
-      });
-    }
-    function destroyStream(stream2, err) {
-      if (stream2.destroy) {
-        stream2.destroy(err);
-      } else {
-        stream2.emit("error", err);
-        stream2.end();
-      }
     }
     fetch2.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
@@ -36809,6 +36761,7 @@ var import_browser_or_node = __toModule(require_lib5());
 var debug3 = (0, import_debug3.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}/`;
+var HEARTBEAT_FREQUENCY = 15;
 var localIPFSAvailable = async () => {
   if (import_browser_or_node.isNode) {
     return await (0, import_is_port_reachable.default)(5001);
@@ -36911,8 +36864,31 @@ async function contentID(mfsPath = "/") {
   return stringCID(await retryException(async () => await _client.files.stat(mfsPath)));
 }
 var _lastContentID = null;
-var abortPublish = null;
-async function publish(rootCID, suffix = "/output") {
+function publisher(nodeID2 = null, suffix = "/output") {
+  debug3("Creating publisher for", nodeID2, suffix);
+  const _publish = async (cid) => {
+    await publish(cid, suffix, nodeID2);
+  };
+  const handle = setInterval(() => {
+    publishHeartbeat(suffix, nodeID2);
+  }, HEARTBEAT_FREQUENCY * 1e3);
+  const close = () => {
+    clearInterval(handle);
+  };
+  return {publish: _publish, close};
+}
+async function publishHeartbeat(suffix, _nodeID) {
+  if (_nodeID === null)
+    _nodeID = await nodeID;
+  if (_nodeID === "ipns")
+    return;
+  debug3("publishing heartbeat to", nodeID + suffix);
+  const _client = await client;
+  await _client.pubsub.publish(_nodeID + suffix, "HEARTBEAT");
+}
+async function publish(rootCID, suffix = "/output", _nodeID = null) {
+  if (_nodeID === null)
+    _nodeID = await nodeID;
   if (_lastContentID === rootCID) {
     debug3("Skipping publish of rootCID since its the same as before", rootCID);
     return;
@@ -36920,11 +36896,12 @@ async function publish(rootCID, suffix = "/output") {
   _lastContentID = rootCID;
   const _client = await client;
   debug3("publish pubsub", await nodeID, rootCID);
-  if (await nodeID === "ipns")
+  if (_nodeID === "ipns")
     await experimentalIPNSPublish(rootCID, _client);
   else
-    await _client.pubsub.publish(await nodeID + suffix, rootCID);
+    await _client.pubsub.publish(_nodeID + suffix, rootCID);
 }
+var abortPublish = null;
 async function experimentalIPNSPublish(rootCID, _client = null) {
   if (!_client)
     _client = await client;
@@ -36939,15 +36916,19 @@ async function experimentalIPNSPublish(rootCID, _client = null) {
     debug3("exception on publish.", e);
   });
 }
-async function subscribeCID(_nodeID = null, suffix = "/input") {
-  if (_nodeID === null)
-    _nodeID = await nodeID;
-  const channel = new import_queueable.Channel();
-  const topic = _nodeID + suffix;
-  const unsubscribe = subscribeCIDCallback(topic, (cid) => channel.push(cid));
-  return [channel, unsubscribe];
+function subscribeCID(_nodeID = null, callback) {
+  let lastHeartbeatTime = 0;
+  return subscribeCallback(_nodeID, (message) => {
+    if (message === "HEARTBEAT") {
+      const time = new Date().getTime();
+      debug3("Heartbeat from Pollinator. Time since last:", (time - lastHeartbeatTime) / 1e3);
+      lastHeartbeatTime = time;
+    } else {
+      callback(message);
+    }
+  });
 }
-function subscribeCIDCallback(_nodeID = null, callback) {
+function subscribeCallback(_nodeID = null, callback) {
   const abort = new import_native_abort_controller.AbortController();
   (async () => {
     const _client = await client;
@@ -36960,7 +36941,10 @@ function subscribeCIDCallback(_nodeID = null, callback) {
       debug3("resubscribing");
       await doSub();
     };
-    const handler = ({data}) => callback(new TextDecoder().decode(data));
+    const handler = ({data}) => {
+      const message = new TextDecoder().decode(data);
+      callback(message);
+    };
     const doSub = async () => {
       try {
         abort.abort();
@@ -37009,6 +36993,7 @@ var sender = ({path: watchPath, debounce: debounce2, ipns, once}) => {
       cwd: watchPath,
       awaitWriteFinish: true
     }, {debounce: debounce2});
+    const {publish: publish2, close} = publisher(null, "/output");
     for await (const files of watch$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -37035,13 +37020,14 @@ var sender = ({path: watchPath, debounce: debounce2, ipns, once}) => {
       console.log(newContentID);
       if (ipns) {
         debug4("publish", newContentID);
-        await publish(newContentID);
+        await publish2(newContentID);
       }
       done();
       if (once) {
         break;
       }
     }
+    close();
   }
   return {start, processing: () => processing};
 };

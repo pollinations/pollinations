@@ -21,10 +21,17 @@ const useColab = (updateHashCondition = () => true) => {
     debug("state", state); 
 
     const setContentID = useCallback(async contentID => {
+        
         debug("setContentID", contentID);
+        
         if ( typeof contentID === "function")
            throw new Error("ContentID shouldnt be a function"); 
-        if (contentID && contentID !== state.contentID && contentID !== "HEARTBEAT") {
+
+        if (contentID === "HEARTBEAT") {
+            console.error("The HEARTBEAT message should not have reached here. Check the code...");
+            return;
+        }
+        if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }

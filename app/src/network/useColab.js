@@ -1,12 +1,12 @@
 
-import {useCallback, useEffect, useMemo, useReducer} from "react";
+import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState, stateReducer, getInputContent, publisher, subscribe, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
+import {IPFSState, stateReducer, getInputContent, subscribe as subscribeCID, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-import { nodeID } from "./ipfsConnector";
+import { nodeID, publisher } from "./ipfsConnector";
 
 const debug = Debug("useColab")
 
@@ -51,7 +51,7 @@ const useColab = (updateHashCondition = () => true) => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            return subscribe(state.nodeID, setContentID);
+            return subscribeCID(state.nodeID, setContentID);
         }
     , [state.nodeID]);
 
@@ -60,8 +60,8 @@ const useColab = (updateHashCondition = () => true) => {
         if (!state.nodeID)
             return;
         debug("nodeID change to", state.nodeID, "creating publisher")
-        const { publish, close } = publisher(state.nodeID);
-        setPublish(publish);
+        const { publish, close } = publisher(state.nodeID, "/input");
+        setPublish(() => publish);
         return close;
     }, [state.nodeID]);
 
@@ -95,7 +95,7 @@ const useColab = (updateHashCondition = () => true) => {
             debug("determined new contentID", newContentID)
             setContentID(newContentID)
             debug("Publishing contentID to colab", newContentID);
-            publish(state.nodeID, newInputContentID);
+            publish(newInputContentID);
         }
     };
 };

@@ -194,29 +194,38 @@ let _lastContentID = null;
 // create a publisher that sends periodic heartbeats as well as contentid updates
 export function publisher(nodeID=null, suffix = "/output") {
     
-    const _publish = cid => {
-        publish(cid, suffix);
+    debug("Creating publisher for", nodeID, suffix);
+
+    const _publish = async cid => {
+        await publish(cid, suffix, nodeID);
     };
 
     const handle = setInterval(() => {
-        debug("publishing heartbeat to", nodeID+suffix);
-        publish("HEARTBEAT", suffix, nodeID);
+        publishHeartbeat(suffix, nodeID);
     }, HEARTBEAT_FREQUENCY * 1000);
 
-    const close = {
+    const close = () => {
         clearInterval(handle);
-    }
+    };
 
     return { publish: _publish, close };
 }
 
-
-export async function publish(rootCID, suffix = "/output", _nodeID = null) {
-    
+async function publishHeartbeat(suffix, _nodeID) {
     if (_nodeID === null) 
         _nodeID = await nodeID;
+    if (_nodeID === "ipns") 
+        return;
+    
+    debug("publishing heartbeat to", nodeID+suffix);
+    const _client = await client;
+    await _client.pubsub.publish(_nodeID + suffix, "HEARTBEAT");
+}
 
-    if (rootCID)
+export async function publish(rootCID, suffix = "/output", _nodeID = null) {
+
+    if (_nodeID === null) 
+        _nodeID = await nodeID;
 
     if (_lastContentID === rootCID) {
         debug("Skipping publish of rootCID since its the same as before", rootCID)
@@ -262,15 +271,13 @@ export async function subscribeGenerator(_nodeID = null, suffix = "/input") {
    
     debug("Subscribing to pubsub events from", topic);
 
-    const unsubscribe = subscribe(topic,
+    const unsubscribe = subscribeCID(topic,
         cid => channel.push(cid)
     );
     return [channel, unsubscribe];
 }
 
-export function subscribe(_nodeID = null, callback) {
-    if (_nodeID === null)
-        _nodeID = await nodeID;
+export function subscribeCID(_nodeID = null, callback) {
     
     let lastHeartbeatTime = 0;
 

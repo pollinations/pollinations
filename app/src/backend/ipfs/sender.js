@@ -1,5 +1,5 @@
 import watch from 'file-watch-iterator';
-import { ipfsMkdir, ipfsAddFile, contentID, ipfsRm, publish } from "../../network/ipfsConnector.js";
+import { ipfsMkdir, ipfsAddFile, contentID, ipfsRm, publisher } from "../../network/ipfsConnector.js";
 import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
 import Debug from 'debug';
@@ -28,6 +28,8 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
       awaitWriteFinish: true,
     }, { debounce });
     
+    const { publish, close } = publisher(null,"/output");
+
     for await (const files of watch$) {
       
       let done=null;
@@ -74,6 +76,7 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
         break;
       }
     }
+    close();
   }
   return {start, processing: () => processing};
 };

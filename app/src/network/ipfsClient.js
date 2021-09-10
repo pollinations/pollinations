@@ -1,7 +1,7 @@
 
 
 import { toPromise } from "./utils.js"
-import { client, getWebURL, ipfsMkdir, ipfsResolve, stringCID, subscribe, publish } from "./ipfsConnector.js"
+import { client, getWebURL, ipfsMkdir, ipfsResolve, stringCID, subscribeCID, publish } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
@@ -118,14 +118,14 @@ export const getInputContent = async inputs => {
 
 };
 
-//TODO: use ipfsConnector's publish
-export const publishCID = async (nodeID, newContentID) => {
-    await publish(newContentID,"/input", nodeID);
-}
+// //TODO: use ipfsConnector's publish
+// export const publishCID = async (nodeID, newContentID) => {
+//     await publish(newContentID,"/input", nodeID);
+// }
 
 export const resolve = nodeID => ipfsResolve(`/ipns/${nodeID}`)
 
-export const subscribe = (nodeID, callback) => subscribe(nodeID+"/output", callback);
+export const subscribe = (nodeID, callback) => subscribeCID(nodeID+"/output", callback);
 
 export const getCidOfPath = async (dirCid, path) => {
     debug("getCifOfPath", dirCid, path);

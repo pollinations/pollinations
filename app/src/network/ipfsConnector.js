@@ -29,6 +29,10 @@ const IPFS_HOST = "https://ipfs.pollinations.ai";
 export const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}/`;
 
 
+// frequency at which to send heartbeats vis pubsub
+const HEARTBEAT_FREQUENCY = 15;
+
+
 const localIPFSAvailable = async () => {
     if (isNode) {
         return await reachable(5001);
@@ -185,25 +189,61 @@ export async function contentID(mfsPath = "/") {
 let _lastContentID = null;
 
 
-let abortPublish = null;
 
-export async function publish(rootCID, suffix = "/output") {
+
+// create a publisher that sends periodic heartbeats as well as contentid updates
+export function publisher(nodeID=null, suffix = "/output") {
+    
+    debug("Creating publisher for", nodeID, suffix);
+
+    const _publish = async cid => {
+        await publish(cid, suffix, nodeID);
+    };
+
+    const handle = setInterval(() => {
+        publishHeartbeat(suffix, nodeID);
+    }, HEARTBEAT_FREQUENCY * 1000);
+
+    const close = () => {
+        clearInterval(handle);
+    };
+
+    return { publish: _publish, close };
+}
+
+async function publishHeartbeat(suffix, _nodeID) {
+    if (_nodeID === null) 
+        _nodeID = await nodeID;
+    if (_nodeID === "ipns") 
+        return;
+    
+    debug("publishing heartbeat to", _nodeID,suffix);
+    const _client = await client;
+    await _client.pubsub.publish(_nodeID + suffix, "HEARTBEAT");
+}
+
+export async function publish(rootCID, suffix = "/output", _nodeID = null) {
+
+    if (_nodeID === null) 
+        _nodeID = await nodeID;
+
     if (_lastContentID === rootCID) {
         debug("Skipping publish of rootCID since its the same as before", rootCID)
         return;
     }
     _lastContentID = rootCID;
+    
     const _client = await client;
     debug("publish pubsub", await nodeID, rootCID);
 
-
-    if (await nodeID === "ipns")
+    if (_nodeID === "ipns")
         await experimentalIPNSPublish(rootCID, _client);
     else
-        await _client.pubsub.publish((await nodeID) + suffix, rootCID)
-
+        await _client.pubsub.publish(_nodeID + suffix, rootCID)
 }
 
+
+let abortPublish = null;
 
 async function experimentalIPNSPublish(rootCID, _client = null) {
     if (!_client)
@@ -222,21 +262,37 @@ async function experimentalIPNSPublish(rootCID, _client = null) {
         });
 }
 
-export async function subscribeCID(_nodeID = null, suffix = "/input") {
+export async function subscribeGenerator(_nodeID = null, suffix = "/input") {
     if (_nodeID === null)
         _nodeID = await nodeID;
 
     const channel = new Channel();
     const topic = _nodeID + suffix;
-    // debug("Subscribing to pubsub events from", topic);
-    const unsubscribe = subscribeCIDCallback(topic,
+   
+    debug("Subscribing to pubsub events from", topic);
+
+    const unsubscribe = subscribeCID(topic,
         cid => channel.push(cid)
     );
     return [channel, unsubscribe];
 }
 
+export function subscribeCID(_nodeID = null, callback) {
+    
+    let lastHeartbeatTime = new Date().getTime();
 
-export function subscribeCIDCallback(_nodeID = null, callback) {
+    return subscribeCallback(_nodeID, message => {
+        if (message === "HEARTBEAT") {
+            const time = new Date().getTime();
+            debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
+            lastHeartbeatTime = time;
+        } else {
+            callback(message);
+        }
+    });
+};
+
+function subscribeCallback(_nodeID = null, callback) {
     const abort = new AbortController();
     // let interval = null;
     (async () => {
@@ -252,12 +308,15 @@ export function subscribeCIDCallback(_nodeID = null, callback) {
             await doSub();
         };
 
-        const handler = ({ data }) => callback(new TextDecoder().decode(data));
+        const handler = ({ data }) => {
+            const message = new TextDecoder().decode(data)
+            callback(message);
+        }
 
         const doSub = async () => {
             try {
                 abort.abort();
-                debug("Executing subscribe", _nodeID)
+                debug("Executing subscribe", _nodeID);
                 await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);

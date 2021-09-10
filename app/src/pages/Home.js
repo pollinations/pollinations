@@ -21,8 +21,8 @@ export default function Home() {
                     <Typography variant="h6" component="h6" gutterBottom>
                     🌸 Pollinations
                     </Typography>
-                     Pollinations is an effort to make generative art more approachable. There are three main components.  
-                  <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art.</ListItem>
+                     Pollinations are an effort to make generative art more approachable. There are three main components.  
+                  <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art (this page).</ListItem>
                   <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage</ListItem>
                   <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
                   <ListItem></ListItem>

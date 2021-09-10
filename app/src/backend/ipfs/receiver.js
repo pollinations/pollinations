@@ -1,6 +1,6 @@
 import process from "process";
 import { getIPFSState } from '../../network/ipfsState.js';
-import { stringCID, ipfsGet, ipfsResolve, subscribeCID } from "../../network/ipfsConnector.js";
+import { stringCID, ipfsGet, ipfsResolve, subscribeGenerator } from "../../network/ipfsConnector.js";
 import { join } from "path";
 import { noop } from '../../network/utils.js';
 import Debug from 'debug';
@@ -19,7 +19,7 @@ export const receive = async function ({ ipns, once, path: rootPath }) {
 
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
-    await subscribeCID(null, "/input")
+    await subscribeGenerator(null, "/input")
     : [stream.call(process.stdin), noop];
 
   let remoteCID = null;

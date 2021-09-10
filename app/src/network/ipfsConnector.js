@@ -217,7 +217,7 @@ async function publishHeartbeat(suffix, _nodeID) {
     if (_nodeID === "ipns") 
         return;
     
-    debug("publishing heartbeat to", nodeID+suffix);
+    debug("publishing heartbeat to", _nodeID,suffix);
     const _client = await client;
     await _client.pubsub.publish(_nodeID + suffix, "HEARTBEAT");
 }
@@ -279,12 +279,12 @@ export async function subscribeGenerator(_nodeID = null, suffix = "/input") {
 
 export function subscribeCID(_nodeID = null, callback) {
     
-    let lastHeartbeatTime = 0;
+    let lastHeartbeatTime = new Date().getTime();
 
     return subscribeCallback(_nodeID, message => {
         if (message === "HEARTBEAT") {
             const time = new Date().getTime();
-            debug("Heartbeat from Pollinator. Time since last:", (time - lastHeartbeatTime) / 1000);
+            debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
             lastHeartbeatTime = time;
         } else {
             callback(message);

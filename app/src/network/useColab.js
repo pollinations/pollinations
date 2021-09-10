@@ -1,12 +1,12 @@
 
-import {useCallback, useEffect, useMemo, useReducer} from "react";
+import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState, stateReducer, getInputContent, publish, subscribe, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
+import {IPFSState, stateReducer, getInputContent, subscribe as subscribeCID, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-import { nodeID } from "./ipfsConnector";
+import { nodeID, publisher } from "./ipfsConnector";
 
 const debug = Debug("useColab")
 
@@ -16,6 +16,7 @@ const debug = Debug("useColab")
 const useColab = (updateHashCondition = () => true) => {
     const [state, dispatchState] = useReducer(...stateReducer);
     const { hash, setHash } = useContentHash();
+    const [ publish, setPublish ] = useState(null);
 
     debug("state", state); 
 
@@ -27,7 +28,7 @@ const useColab = (updateHashCondition = () => true) => {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }
-    }, [state]);;
+    }, [state]);
 
 
     useEffect(() => {
@@ -44,16 +45,28 @@ const useColab = (updateHashCondition = () => true) => {
         });
     },[]);
 
+    // Subscribe to updates from node when the nodeID changes
     useEffect(
         () => { 
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            return subscribe(state.nodeID, setContentID);
+            return subscribeCID(state.nodeID, setContentID);
         }
     , [state.nodeID]);
 
+    // Create a publisher to the node when the nodeID changes
+    useEffect(() => {
+        if (!state.nodeID)
+            return;
+        debug("nodeID change to", state.nodeID, "creating publisher")
+        const { publish, close } = publisher(state.nodeID, "/input");
+        setPublish(() => publish);
+        return close;
+    }, [state.nodeID]);
 
+    // Update the hash when the content ID changes and the updateHashCondition is met
+    // We don't update the hash on each CID change to not pollute the browser history
     useEffect(() => {
         if (state.contentID && state.contentID !== hash) {
             if (updateHashCondition(state)) {
@@ -65,11 +78,11 @@ const useColab = (updateHashCondition = () => true) => {
         }
     },[state]);
 
+    // Set the content ID from the hash provided in the URL
     useEffect(() => {
         debug("HASH",hash);
         if (hash && hash !== state.contentID)
             setContentID(hash);
-
     },[hash]);
 
     return {
@@ -82,7 +95,7 @@ const useColab = (updateHashCondition = () => true) => {
             debug("determined new contentID", newContentID)
             setContentID(newContentID)
             debug("Publishing contentID to colab", newContentID);
-            publish(state.nodeID, newInputContentID);
+            publish(newInputContentID);
         }
     };
 };

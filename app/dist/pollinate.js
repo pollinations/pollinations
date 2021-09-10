@@ -36916,6 +36916,15 @@ async function experimentalIPNSPublish(rootCID, _client = null) {
     debug3("exception on publish.", e);
   });
 }
+async function subscribeGenerator(_nodeID = null, suffix = "/input") {
+  if (_nodeID === null)
+    _nodeID = await nodeID;
+  const channel = new import_queueable.Channel();
+  const topic = _nodeID + suffix;
+  debug3("Subscribing to pubsub events from", topic);
+  const unsubscribe = subscribeCID(topic, (cid) => channel.push(cid));
+  return [channel, unsubscribe];
+}
 function subscribeCID(_nodeID = null, callback) {
   let lastHeartbeatTime = 0;
   return subscribeCallback(_nodeID, (message) => {
@@ -37097,7 +37106,7 @@ var {stream} = import_event_iterator.default;
 var {writeFile, mkdir} = import_fs2.promises;
 var debug6 = (0, import_debug6.default)("ipfs/receiver");
 var receive = async function({ipns, once, path: rootPath2}) {
-  const [cidStream, unsubscribe] = ipns ? await subscribeCID(null, "/input") : [stream.call(import_process.default.stdin), noop];
+  const [cidStream, unsubscribe] = ipns ? await subscribeGenerator(null, "/input") : [stream.call(import_process.default.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug6("received CID", remoteCID);

@@ -108,7 +108,7 @@ export default React.memo(function Model() {
 
 
       </div>
-      <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/5bMm4Egw" target="_blank">[ Discord ]</Link>.</Box>
+      <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/jgH9y2p7" target="_blank">[ Discord ]</Link>.</Box>
       </Box>
     </Container>
   </>

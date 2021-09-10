@@ -6,7 +6,7 @@ import {IPFSState, stateReducer, getInputContent, subscribe as subscribeCID, set
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-import { nodeID, publisher } from "./ipfsConnector";
+import { publisher } from "./ipfsConnector";
 
 const debug = Debug("useColab")
 
@@ -24,7 +24,7 @@ const useColab = (updateHashCondition = () => true) => {
         debug("setContentID", contentID);
         if ( typeof contentID === "function")
            throw new Error("ContentID shouldnt be a function"); 
-        if (contentID && contentID !== state.contentID) {
+        if (contentID && contentID !== state.contentID && contentID !== "HEARTBEAT") {
             debug("dispatching new contentID",contentID, state.contentID)
             dispatchState({ contentID, ipfs: await IPFSState( contentID)});
         }

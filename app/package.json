@@ -5,6 +5,7 @@
   "private": false,
   "type": "module",
   "dependencies": {
+    "@cto.af/textdecoder": "0.0.0",
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.60",
@@ -68,14 +69,20 @@
     "workbox-strategies": "^6.1.5",
     "workbox-streams": "^6.1.5"
   },
+  "jest": {
+    "transform": {
+      "\\.js?$": "esbuild-jest"
+    }
+  },
   "devDependencies": {
-    "esbuild": "^0.11.23",
+    "esbuild": "^0.12.26",
+    "esbuild-jest": "^0.5.0",
     "gh-pages": "^3.1.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && npm run build_backend",
-    "test": "react-scripts test",
+    "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "build_backend": "mkdir -p build && esbuild src/backend/pollinate-cli.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js && mkdir -p dist && cp -v build/pollinate.js dist/pollinate.js && chmod ugoa+x dist/pollinate.js",

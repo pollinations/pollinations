@@ -5,15 +5,12 @@ import { CID } from "multiformats/cid";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
 import { AbortController } from 'native-abort-controller';
-import all from "it-all";
+
 
 import Debug from "debug";
 import { last } from "ramda";
 
-import limit from "../utils/concurrency.js";
 import { join } from "path";
-
-import options from "../backend/options.js";
 
 import { Channel } from 'queueable';
 import awaitSleep from "await-sleep";
@@ -26,12 +23,73 @@ const debug = Debug("ipfsConnector")
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
-export const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}/`;
+
+// create a new IPFS session
+export async function getClient() {
+    const url = await getIPFSDaemonURL();
+    debug("Got daemon URL", url);
+    const client = create({ url, timeout: "2h" });
+    return client;
+}
+
+// basic IPFS read access
+export async function reader(client) {
+    return {
+        ls: async cid => await ipfsLsCID(client, cid),
+        get: async cid => await ipfsGet(client, cid),
+    }
+}
+
+// const nodeID =  nodeid || (await client.id()).id;
+    
+// debug("NodeID", nodeID);
+
+
+export async function writer(client, initialRootCID=null) {
+    
+    const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
+    
+    const joinPath = path => join(mfsRoot, path);
+
+    const getRootCID = async () => await getCID(client, mfsRoot);
+
+    let rootCid = await getRootCID();
+
+    debug("existing root CID", rootCid);
+    if (rootCid === null) {
+        if (initialRootCID === null) {
+            debug("Creating mfs root since it did not exist.");
+            await ipfsMkdir(client, mfsRoot);
+        } else {
+            debug("Copying supplied rootCID", initialRootCID,"to MFS root.");
+            await ipfsCp(client, initialRootCID, mfsRoot);
+        }
+        rootCid = await getRootCID();
+        debug("new root CID", rootCid);
+    } else {
+        debug("Checking if supplied cid is the same as root cid")
+        if (rootCid !== initialRootCID) {
+            debug("CIDs are different. Removing existing  MFS root");
+            await ipfsRm(client, mfsRoot);
+            debug("Copying", rootCid, "to mfs root.")
+            await ipfsCp(client, rootCid, mfsRoot);
+        }
+    }
+
+    const returnRootCID = func =>(...args) => func(...args).then(getRootCID);
+
+    return {
+        add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
+        rm:  returnRootCID(async path => await ipfsRm(client, joinPath(path))),
+        mkdir: returnRootCID(async path => await ipfsMkdir(client, joinPath(path))),
+        cid: getRootCID,
+        close: async () => await ipfsRm(client, mfsRoot),
+    }
+}
 
 
 // frequency at which to send heartbeats vis pubsub
 const HEARTBEAT_FREQUENCY = 15;
-
 
 const localIPFSAvailable = async () => {
     if (isNode) {
@@ -66,23 +124,11 @@ const getIPFSDaemonURL = async () => {
 }
 
 
-const ipfsDaemonURL = getIPFSDaemonURL();
-
-export const client = ipfsDaemonURL.then(url => create({url, timeout: "2h"}));
-
-export const nodeID = client.then(async client => options.nodeid || (await client.id()).id);
-
-(async () => {
-    debug("NodeID", await nodeID);
-    // window.client = await client;
-})();
-
-export async function getCID(ipfsPath = "/") {
-    ipfsPath = join(mfsRoot, ipfsPath);
-    const cid = stringCID(await client.files.stat(ipfsPath));
-    debug("Got CID", cid, "for path", ipfsPath);
-    return cid;
+const ipfsCp = async (client, cid, ipfsPath) => {
+  debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
+  return await retryException(async () => await client.files.cp(`/ipfs/${cid}`, ipfsPath));
 }
+
 
 
 export const getWebURL = (cid, name = null) => {
@@ -101,44 +147,42 @@ export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object
 
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
-export const ipfsLs = async cid => {
+const ipfsLsCID = async (client, cid) => {
     debug("calling ipfs ls with cid", cid);
-    const result = (await toPromise((await client).ls(stringCID(cid))))
+    const result = (await toPromise(client.ls(stringCID(cid))))
         .filter(({ type, name }) => type !== "unknown" && name !== undefined)
-        .map(lsResult => { debug("lsResult", lsResult); return lsResult })
         .map(_normalizeIPFS);
     debug("got ipfs ls result", result);
     return result;
 };
 
+const ipfsLs = async (client, path) => ipfsLsCID(client, await getCID(path));
 
 
-export const ipfsAdd = cacheInput(limit(async (ipfsPath, content, options = {}) => {
-    const _client = await client;
-    ipfsPath = join(mfsRoot, ipfsPath);
-    debug("adding", ipfsPath, "options", options);
+const ipfsAdd = async (client, path, content, options = {}) => {
+    debug("adding", path, "options", options);
     const cid = stringCID(await retryException(
-        async () => await _client.add(content, options)
+        async () => await client.add(content, options)
     ));
     debug("added", cid);
 
 
     try {
-        debug("Trying to delete", ipfsPath);
-        await _client.files.rm(ipfsPath, { recursive: true });
+        debug("Trying to delete", path);
+        await client.files.rm(path, { recursive: true });
     } catch {
         debug("Could not delete. Probably did not exist.")
     };
-    debug("copying to", ipfsPath);
+    debug("copying to", path);
     try {
-        await _client.files.cp(`/ipfs/${cid}`, ipfsPath, { create: true });
+        await client.files.cp(`/ipfs/${cid}`, path, { create: true });
     } catch (e) {
         debug("couldn't copy. file probably existed for some reason");
     }
     return cid;
-}));
+};
 
-export const ipfsGet = limit(cleanCIDs((async (cid, { onlyLink = false }) => {
+export const ipfsGet = cleanCIDs((async (client, cid, { onlyLink = false }) => {
 
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
@@ -146,7 +190,7 @@ export const ipfsGet = limit(cleanCIDs((async (cid, { onlyLink = false }) => {
     if (onlyLink)
         return getWebURL(cid);
 
-    const chunks = await all((await client).cat(cid))
+    const chunks = await all(client.cat(cid))
 
     _debug("Got all chunks. Total:", chunks.length);
 
@@ -156,34 +200,34 @@ export const ipfsGet = limit(cleanCIDs((async (cid, { onlyLink = false }) => {
     _debug("Received content length:", contentArray.length);
     // debug("Content type",contentArray)
     return contentArray;
-})));
+}));
 
-export const ipfsAddFile = async (ipfsPath, localPath, options = { size: null }) =>
-    await retryException(async () => await ipfsAdd(ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
+const ipfsAddFile = async (client, mfsRoot, ipfsPath, localPath, options = { size: null }) =>
+    await retryException(async () => await ipfsAdd(client, mfsRoot, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
 
 
-export async function ipfsMkdir(path = "/") {
-    const _client = await client;
-    const withMfsRoot = join(mfsRoot, path);
-    debug("Creating folder", withMfsRoot);
+async function ipfsMkdir(client, path) {
+    debug("Creating folder", path);
     try {
-        await _client.files.mkdir(withMfsRoot, { parents: true });
+        await client.files.mkdir(path, { parents: true });
     } catch (e) {
         debug("couldn't create folder because it probably already exists", e)
     }
-    return await _client.files.stat(withMfsRoot);
+    return await client.files.stat(path);
 }
 
-export async function ipfsRm(ipfsPath) {
-    ipfsPath = join(mfsRoot, ipfsPath);
-    debug("Deleting", ipfsPath);
-    await (await client).files.rm(ipfsPath, { force: true })
+async function ipfsRm(client, path) {
+    debug("Deleting", path);
+    await client.files.rm(path,{ force: true, recursive: true });
 }
 
-export async function contentID(mfsPath = "/") {
-    const _client = await client;
-    mfsPath = join(mfsRoot, mfsPath);
-    return stringCID(await retryException(async () => await _client.files.stat(mfsPath)));
+async function getCID(client, path = "/") {
+    try {
+        return stringCID(await client.files.stat(path));
+    } catch (e) {
+        debug("Couldn't get CID for path", path,". Assuming it doesn't exist and returning null");
+        return null;
+    }
 }
 
 let _lastContentID = null;
@@ -192,16 +236,16 @@ let _lastContentID = null;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
-export function publisher(nodeID=null, suffix = "/output") {
+export function publisher(client, nodeID=null, suffix = "/output") {
     
     debug("Creating publisher for", nodeID, suffix);
 
     const _publish = async cid => {
-        await publish(cid, suffix, nodeID);
+        await publish(client, nodeID, cid, suffix, nodeID);
     };
 
     const handle = setInterval(() => {
-        publishHeartbeat(suffix, nodeID);
+        publishHeartbeat(client, suffix, nodeID);
     }, HEARTBEAT_FREQUENCY * 1000);
 
     const close = () => {
@@ -211,48 +255,42 @@ export function publisher(nodeID=null, suffix = "/output") {
     return { publish: _publish, close };
 }
 
-async function publishHeartbeat(suffix, _nodeID) {
-    if (_nodeID === null) 
-        _nodeID = await nodeID;
-    if (_nodeID === "ipns") 
+async function publishHeartbeat(client, suffix, nodeID) {
+
+    if (nodeID === "ipns") 
         return;
     
-    debug("publishing heartbeat to", _nodeID,suffix);
-    const _client = await client;
-    await _client.pubsub.publish(_nodeID + suffix, "HEARTBEAT");
+    debug("publishing heartbeat to", nodeID, suffix);
+
+    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
 }
 
-export async function publish(rootCID, suffix = "/output", _nodeID = null) {
+async function publish(client, nodeID, rootCID, suffix = "/output") {
 
-    if (_nodeID === null) 
-        _nodeID = await nodeID;
 
     if (_lastContentID === rootCID) {
         debug("Skipping publish of rootCID since its the same as before", rootCID)
         return;
     }
     _lastContentID = rootCID;
-    
-    const _client = await client;
-    debug("publish pubsub", await nodeID, rootCID);
 
-    if (_nodeID === "ipns")
-        await experimentalIPNSPublish(rootCID, _client);
+    debug("publish pubsub", nodeID, rootCID);
+
+    if (nodeID === "ipns")
+        await experimentalIPNSPublish(client, rootCID);
     else
-        await _client.pubsub.publish(_nodeID + suffix, rootCID)
+        await client.pubsub.publish(nodeID + suffix, rootCID)
 }
 
 
 let abortPublish = null;
 
-async function experimentalIPNSPublish(rootCID, _client = null) {
-    if (!_client)
-        _client = await client;
+async function experimentalIPNSPublish(client, rootCID) {
     debug("publishing to ipns...", rootCID);
     if (abortPublish)
         abortPublish.abort();
     abortPublish = new AbortController();
-    await _client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false })
+    await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false })
         .then(() => {
             debug("published...", rootCID);
             abortPublish = null;
@@ -262,26 +300,24 @@ async function experimentalIPNSPublish(rootCID, _client = null) {
         });
 }
 
-export async function subscribeGenerator(_nodeID = null, suffix = "/input") {
-    if (_nodeID === null)
-        _nodeID = await nodeID;
+export async function subscribeGenerator(client, nodeID = null, suffix = "/input") {
 
     const channel = new Channel();
-    const topic = _nodeID + suffix;
+    const topic = nodeID + suffix;
    
     debug("Subscribing to pubsub events from", topic);
 
-    const unsubscribe = subscribeCID(topic,
+    const unsubscribe = subscribeCID(client, topic,
         cid => channel.push(cid)
     );
     return [channel, unsubscribe];
 }
 
-export function subscribeCID(_nodeID = null, callback) {
+export function subscribeCID(client, nodeID = null, callback) {
     
     let lastHeartbeatTime = new Date().getTime();
 
-    return subscribeCallback(_nodeID, message => {
+    return subscribeCallback(client, nodeID, message => {
         if (message === "HEARTBEAT") {
             const time = new Date().getTime();
             debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
@@ -292,14 +328,10 @@ export function subscribeCID(_nodeID = null, callback) {
     });
 };
 
-function subscribeCallback(_nodeID = null, callback) {
+function subscribeCallback(client, nodeID, callback) {
     const abort = new AbortController();
     // let interval = null;
     (async () => {
-        const _client = await client;
-        if (_nodeID === null)
-            _nodeID = await nodeID;
-
         const onError = async (...errorArgs) => {
             debug("onError", ...errorArgs, "aborting");
             abort.abort();
@@ -317,7 +349,7 @@ function subscribeCallback(_nodeID = null, callback) {
             try {
                 abort.abort();
                 debug("Executing subscribe", _nodeID);
-                await _client.pubsub.subscribe(_nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+                await client.pubsub.subscribe(nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {
@@ -346,9 +378,8 @@ function subscribeCallback(_nodeID = null, callback) {
 }
 
 
-export const ipfsResolve = async path =>
-    stringCID(last(await toPromise((await client).name.resolve(path, { nocache: true }))));
+const ipfsResolve = async (client,path) =>
+    stringCID(last(await toPromise(client.name.resolve(path, { nocache: true }))));
 
 
-
-
+// test();

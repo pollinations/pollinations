@@ -48,8 +48,6 @@ export async function reader(client) {
 export async function writer(client, initialRootCID=null) {
     
     const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
-    
-    const joinPath = path => join(mfsRoot, path);
 
     const getRootCID = async () => await getCID(client, mfsRoot);
 
@@ -76,15 +74,26 @@ export async function writer(client, initialRootCID=null) {
         }
     }
 
-    const returnRootCID = func =>(...args) => func(...args).then(getRootCID);
+    return getWriter(client, mfsRoot);
+}
+
+
+function getWriter(client, mfsRoot) {
+
+    const joinPath = path => join(mfsRoot, path);
+
+    const returnRootCID = func => async (...args) => {
+        await func(...args);
+        return await getCID(client, mfsRoot);
+    };
 
     return {
         add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
-        rm:  returnRootCID(async path => await ipfsRm(client, joinPath(path))),
-        mkdir: returnRootCID(async path => await ipfsMkdir(client, joinPath(path))),
-        cid: getRootCID,
+        rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
+        mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
+        cid:  async () => await getCID(client, mfsRoot),
         close: async () => await ipfsRm(client, mfsRoot),
-    }
+    };
 }
 
 

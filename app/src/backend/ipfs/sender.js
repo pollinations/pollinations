@@ -1,5 +1,5 @@
 import watch from 'file-watch-iterator';
-import { ipfsMkdir, ipfsAddFile, contentID, ipfsRm, publisher } from "../../network/ipfsConnector.js";
+import { writer, publisher, getClient } from "../../network/ipfsConnector.js";
 import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
 import Debug from 'debug';
@@ -11,6 +11,8 @@ const debug = Debug("ipfs/sender");
 export const sender = ({ path: watchPath, debounce, ipns, once }) => {
   
   let processing = Promise.resolve(true);
+  
+  const { addFile, mkDir, rm, cid } = writer(getClient());
 
   async function start() {
 
@@ -18,8 +20,7 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
       debug("Local: Root directory does not exist. Creating", watchPath);
       mkdirSync(watchPath, { recursive: true });
     }
-    await ipfsMkdir("/");
-    debug("IPFS: Created root IPFS path (if it did not exist)");
+    
     debug("Local: Watching", watchPath);
     
     const watch$ = watch(".", {
@@ -42,27 +43,21 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
         const ipfsPath = file;
 
         if (event === "addDir") {
-          await ipfsMkdir(ipfsPath);
+          await mkDir(ipfsPath);
         }
 
-        if (event === "add") {
-          await ipfsAddFile(ipfsPath, localPath);
+        if (event === "add" || event === "change") {
+          await addFile(ipfsPath, localPath);
         }
 
         if (event === "unlink" || event === "unlinkDir") {
           debug("removing", file, event);
-          await ipfsRm(ipfsPath);
+          await rm(ipfsPath);
         }
 
-        if (event === "change") {
-          debug("changing", file);
-          await ipfsAddFile(ipfsPath, localPath);
-        }
       }));
-      // for (const { event, file } of changed) {
-      // }
-      // console.error("PUBLISHIIING")
-      const newContentID = await contentID("/");
+  
+      const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
         debug("publish", newContentID);

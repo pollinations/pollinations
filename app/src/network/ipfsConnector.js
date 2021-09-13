@@ -89,6 +89,7 @@ function getWriter(client, mfsRoot) {
 
     return {
         add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
+        addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
         rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
         mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
         cid:  async () => await getCID(client, mfsRoot),
@@ -211,7 +212,7 @@ export const ipfsGet = cleanCIDs((async (client, cid, { onlyLink = false }) => {
     return contentArray;
 }));
 
-const ipfsAddFile = async (client, mfsRoot, ipfsPath, localPath, options = { size: null }) =>
+const ipfsAddFile = async (client, mfsRoot, ipfsPath, localPath) =>
     await retryException(async () => await ipfsAdd(client, mfsRoot, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
 
 

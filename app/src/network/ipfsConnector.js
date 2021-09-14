@@ -12,13 +12,14 @@ import { last } from "ramda";
 
 import { join } from "path";
 
-import { Channel } from 'queueable';
+import {Channel} from 'queueable';
 import awaitSleep from "await-sleep";
 import { isNode } from "browser-or-node";
 
-export const ipfsGlobSource = globSource;
-
 const debug = Debug("ipfsConnector")
+
+
+export const ipfsGlobSource = globSource;
 
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
@@ -212,9 +213,10 @@ export const ipfsGet = cleanCIDs((async (client, cid, { onlyLink = false }) => {
     return contentArray;
 }));
 
-const ipfsAddFile = async (client, mfsRoot, ipfsPath, localPath) =>
-    await retryException(async () => await ipfsAdd(client, mfsRoot, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
-
+const ipfsAddFile = async (client,  ipfsPath, localPath) => {
+    debug("Adding file", localPath, "to", ipfsPath);
+    await retryException(async () => await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
+}
 
 async function ipfsMkdir(client, path) {
     debug("Creating folder", path);

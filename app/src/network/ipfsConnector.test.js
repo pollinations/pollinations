@@ -1,6 +1,7 @@
 import Debug from "debug";
-import {getClient, writer, reader} from "./ipfsConnector"
+import {getClient, writer, reader} from "./ipfsConnector.js"
 import assert from "assert";
+import { writeFileSync } from "fs";
 const debug = Debug("ipfsConnector:test");
 
 // RUN until getting create-react-app tests to work:
@@ -20,7 +21,7 @@ testAddingAndRemovingFileYieldsSameCID();
 
 
 // test that when we add a file the CID changes and when we remove it again the CID is the same as before
-async function testAddRemove(client, startCID,filepath) {
+async function testAddRemove(client, startCID, filepath) {
     const { add, rm, cid, close } = await writer(client, startCID);
     const initialCid = await cid();
     assert(startCID === null || initialCid === startCID);
@@ -59,3 +60,34 @@ async function testNestedAdd(client, startCID, folder="/folder") {
     await close();
 
 }
+
+
+async function testAddFileFromFS() {
+    const client = await getClient();
+    const { addFile, cid, close } = await writer(client);
+    const content = "testString";
+    const filepath = "/tmp/_pollinationsTestUpload"
+    writeFileSync(filepath, content);
+    await addFile("test",filepath)
+    assert(await cid() === "QmX6ceFQPT6ghgHbzskeCHpakjYrgQwjCE8RKEE57a3nFw");    
+    await close();
+}
+
+testAddFileFromFS();
+
+
+// test('adding and removing file yields same CID', async () => {
+//     const { addFile, cid, close } = await getWriter();
+//     const content = "testString";
+//     const filepath = "/tmp/_pollinationsTestUpload"
+//     writeFileSync(filepath, content);
+//     await addFile("test",filepath)
+//     expect(await cid()).toBe("QmX6ceFQPT6ghgHbzskeCHpakjYrgQwjCE8RKEE57a3nFw");    
+//     await close();
+// });
+
+
+// const getWriter = async () => {
+//     const client = await getClient();
+//     return await writer(client);
+// }

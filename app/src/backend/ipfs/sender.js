@@ -8,11 +8,11 @@ import awaitSleep from "await-sleep";
 
 const debug = Debug("ipfs/sender");
 
-export const sender = ({ path: watchPath, debounce, ipns, once }) => {
+export const sender = async ({client, path: watchPath, debounce, ipns, once }) => {
   
   let processing = Promise.resolve(true);
   
-  const { addFile, mkDir, rm, cid } = writer(getClient());
+  const { addFile, mkDir, rm, cid, close } = await writer(client);
 
   async function start() {
 
@@ -29,7 +29,7 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
       awaitWriteFinish: true,
     }, { debounce });
     
-    const { publish, close } = publisher(null,"/output");
+    // const { publish, close } = publisher(null,"/output");
 
     for await (const files of watch$) {
       
@@ -38,7 +38,10 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
       processing = new Promise(resolve => done = resolve);
       
       const changed = getSortedChangedFiles(files);
-      await Promise.all(changed.map(async ({ event, file }) => {
+      
+      // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
+      for (const { event, file } of changed) {
+        debug("Local:", event, file, changed);
         const localPath = join(watchPath, file);
         const ipfsPath = file;
 
@@ -54,8 +57,12 @@ export const sender = ({ path: watchPath, debounce, ipns, once }) => {
           debug("removing", file, event);
           await rm(ipfsPath);
         }
+      }
 
-      }));
+      // await Promise.all(changed.map(async ({ event, file }) => {
+     
+
+      // }));
   
       const newContentID = await cid();
       console.log(newContentID);

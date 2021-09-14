@@ -71,7 +71,11 @@
   },
   "jest": {
     "transform": {
-      "\\.js?$": "esbuild-jest"
+      "\\.js$": ["esbuild-jest",
+        {
+          "target": "node15" 
+        }
+      ]
     }
   },
   "devDependencies": {
@@ -85,7 +89,7 @@
     "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "build_backend": "mkdir -p build && esbuild src/backend/pollinate-cli.js --platform=node --target=node16 --bundle --external:fsevents --external:electron > build/pollinate.js && mkdir -p dist && cp -v build/pollinate.js dist/pollinate.js && chmod ugoa+x dist/pollinate.js",
+    "build_backend": "mkdir -p build && esbuild src/backend/pollinate-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > build/pollinate.js && mkdir -p dist && cp -v build/pollinate.js dist/pollinate.js && chmod ugoa+x dist/pollinate.js",
     "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v scripts/*.sh /usr/local/bin"
   },
   "bin": {

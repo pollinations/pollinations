@@ -41,7 +41,7 @@ export const sender = async ({client, path: watchPath, debounce, ipns, once }) =
       
       // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
       for (const { event, file } of changed) {
-        debug("Local:", event, file, changed);
+        debug("Local:", event, file);
         const localPath = join(watchPath, file);
         const ipfsPath = file;
 

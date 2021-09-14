@@ -1,6 +1,6 @@
 import process from "process";
 import { getIPFSState } from '../../network/ipfsState.js';
-import { stringCID, ipfsGet, ipfsResolve, subscribeGenerator } from "../../network/ipfsConnector.js";
+import { stringCID, ipfsResolve, subscribeGenerator } from "../../network/ipfsConnector.js";
 import { join } from "path";
 import { noop } from '../../network/utils.js';
 import Debug from 'debug';

@@ -4,7 +4,7 @@ import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils
 import { CID } from "multiformats/cid";
 import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
-import { AbortController } from 'native-abort-controller';
+import all from "it-all";
 
 
 import Debug from "debug";
@@ -24,20 +24,24 @@ export const ipfsGlobSource = globSource;
 
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
+let _client = null;
 
 // create a new IPFS session
-export async function getClient() {
-    const url = await getIPFSDaemonURL();
-    debug("Got daemon URL", url);
-    const client = create({ url, timeout: "2h" });
-    return client;
+async function getClient() {
+    if (!_client) {
+        const url = await getIPFSDaemonURL();
+        debug("Got daemon URL", url);
+        _client = create({ url, timeout: "2h" });
+    }
+    return _client;
 }
 
 // basic IPFS read access
-export async function reader(client) {
+export async function reader() {
+    const client = await getClient();
     return {
         ls: async cid => await ipfsLsCID(client, cid),
-        get: async cid => await ipfsGet(client, cid),
+        get: async (cid, options={}) => await ipfsGet(client, cid, options),
     }
 }
 
@@ -46,8 +50,8 @@ export async function reader(client) {
 // debug("NodeID", nodeID);
 
 
-export async function writer(client, initialRootCID=null) {
-    
+export async function writer(initialRootCID=null) {
+    const client = await getClient();    
     const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
 
     const getRootCID = async () => await getCID(client, mfsRoot);
@@ -151,7 +155,13 @@ export const getIPNSURL = (id) => {
     return `https://pollinations.ai/ipns/${id}`;
 };
 
-const stripSlashIPFS = cidString => { debug("stripSlash", cidString); return cidString.replace("/ipfs/", "") };
+const stripSlashIPFS = cidString => { 
+    debug("stripSlash", cidString); 
+    if (!cidString) 
+        throw new Error("CID is falsy");
+    return cidString.replace("/ipfs/", "")
+};
+
 const firstLine = s => s.split("\n")[0];
 
 export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : (CID.asCID(file) ? file.toString() : (file instanceof Buffer ? file.toString() : file))));
@@ -193,19 +203,20 @@ const ipfsAdd = async (client, path, content, options = {}) => {
     return cid;
 };
 
-export const ipfsGet = cleanCIDs((async (client, cid, { onlyLink = false }) => {
+const ipfsGet = cleanCIDs((async (client, cid, { onlyLink=false }) => {
 
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
+    if (cid.startsWith("/ipns"))
+        cid = await ipfsResolve(client, cid);
 
-    if (onlyLink)
-        return getWebURL(cid);
+    const chunkArrays = await all(client.cat(cid));
 
-    const chunks = await all(client.cat(cid))
+    const chunks = chunkArrays.map(Buffer.from);
 
-    _debug("Got all chunks. Total:", chunks.length);
+    _debug("Got all chunks. Total:", chunks);
 
-    const contentArray = Buffer.concat(chunks);
+    const contentArray = chunks.length > 1 ? Buffer.concat(chunks) : chunks[0];
 
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
     _debug("Received content length:", contentArray.length);
@@ -243,151 +254,6 @@ async function getCID(client, path = "/") {
 }
 
 let _lastContentID = null;
-
-
-
-
-// create a publisher that sends periodic heartbeats as well as contentid updates
-export function publisher(client, nodeID=null, suffix = "/output") {
-    
-    debug("Creating publisher for", nodeID, suffix);
-
-    const _publish = async cid => {
-        await publish(client, nodeID, cid, suffix, nodeID);
-    };
-
-    const handle = setInterval(() => {
-        publishHeartbeat(client, suffix, nodeID);
-    }, HEARTBEAT_FREQUENCY * 1000);
-
-    const close = () => {
-        clearInterval(handle);
-    };
-
-    return { publish: _publish, close };
-}
-
-async function publishHeartbeat(client, suffix, nodeID) {
-
-    if (nodeID === "ipns") 
-        return;
-    
-    debug("publishing heartbeat to", nodeID, suffix);
-
-    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
-}
-
-async function publish(client, nodeID, rootCID, suffix = "/output") {
-
-
-    if (_lastContentID === rootCID) {
-        debug("Skipping publish of rootCID since its the same as before", rootCID)
-        return;
-    }
-    _lastContentID = rootCID;
-
-    debug("publish pubsub", nodeID, rootCID);
-
-    if (nodeID === "ipns")
-        await experimentalIPNSPublish(client, rootCID);
-    else
-        await client.pubsub.publish(nodeID + suffix, rootCID)
-}
-
-
-let abortPublish = null;
-
-async function experimentalIPNSPublish(client, rootCID) {
-    debug("publishing to ipns...", rootCID);
-    if (abortPublish)
-        abortPublish.abort();
-    abortPublish = new AbortController();
-    await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false })
-        .then(() => {
-            debug("published...", rootCID);
-            abortPublish = null;
-        })
-        .catch(e => {
-            debug("exception on publish.", e);
-        });
-}
-
-export async function subscribeGenerator(client, nodeID = null, suffix = "/input") {
-
-    const channel = new Channel();
-    const topic = nodeID + suffix;
-   
-    debug("Subscribing to pubsub events from", topic);
-
-    const unsubscribe = subscribeCID(client, topic,
-        cid => channel.push(cid)
-    );
-    return [channel, unsubscribe];
-}
-
-export function subscribeCID(client, nodeID = null, callback) {
-    
-    let lastHeartbeatTime = new Date().getTime();
-
-    return subscribeCallback(client, nodeID, message => {
-        if (message === "HEARTBEAT") {
-            const time = new Date().getTime();
-            debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
-            lastHeartbeatTime = time;
-        } else {
-            callback(message);
-        }
-    });
-};
-
-function subscribeCallback(client, nodeID, callback) {
-    const abort = new AbortController();
-    // let interval = null;
-    (async () => {
-        const onError = async (...errorArgs) => {
-            debug("onError", ...errorArgs, "aborting");
-            abort.abort();
-            await awaitSleep(300);
-            debug("resubscribing")
-            await doSub();
-        };
-
-        const handler = ({ data }) => {
-            const message = new TextDecoder().decode(data)
-            callback(message);
-        }
-
-        const doSub = async () => {
-            try {
-                abort.abort();
-                debug("Executing subscribe", _nodeID);
-                await client.pubsub.subscribe(nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
-            } catch (e) {
-                debug("subscribe error", e, e.name);
-                if (e.name === "DOMException") {
-                    debug("subscription was aborted. returning");
-                    return;
-                }
-
-                if (e.message?.startsWith("Already subscribed"))
-                    return;
-                await awaitSleep(300);
-                await doSub();
-            }
-        };
-        doSub();
-        // if (interval)
-        //     clearInterval(interval);
-        // interval = setInterval(doSub, 30000);
-    })();
-
-    return () => {
-        debug("subscribe abort was called");
-        abort.abort();
-        // if (interval)
-        //     clearInterval(interval);
-    };
-}
 
 
 const ipfsResolve = async (client,path) =>

@@ -1,14 +1,14 @@
 import watch from 'file-watch-iterator';
-import { writer, publisher, getClient } from "../../network/ipfsConnector.js";
+import { writer } from "../../network/ipfsConnector.js";
+import { publisher } from "../../network/ipfsPubSub.js";
 import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
 import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
-import awaitSleep from "await-sleep";
 
 const debug = Debug("ipfs/sender");
 
-export const sender = async ({client, path: watchPath, debounce, ipns, once }) => {
+export const sender = async (client, { path: watchPath, debounce, ipns, once }) => {
   
   let processing = Promise.resolve(true);
   

@@ -1,7 +1,7 @@
 
 
 import { toPromise } from "./utils.js"
-import { client, getWebURL, ipfsMkdir, ipfsResolve, stringCID, subscribeCID, publish } from "./ipfsConnector.js"
+import {  getWebURL, ipfsMkdir, stringCID } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
@@ -9,7 +9,7 @@ import { getIPFSState } from "./ipfsState.js";
 import { parse } from "json5";
 import fetch from "node-fetch";
 
-const debug = Debug("ipfsClient")
+const debug = Debug("ipfsWebClient")
 
 
 export const fetchAndMakeURL = async ({ name, cid }) => {
@@ -117,13 +117,6 @@ export const getInputContent = async inputs => {
     return inputCID;
 
 };
-
-// //TODO: use ipfsConnector's publish
-// export const publishCID = async (nodeID, newContentID) => {
-//     await publish(newContentID,"/input", nodeID);
-// }
-
-export const resolve = nodeID => ipfsResolve(`/ipns/${nodeID}`)
 
 export const subscribe = (nodeID, callback) => subscribeCID(nodeID+"/output", callback);
 

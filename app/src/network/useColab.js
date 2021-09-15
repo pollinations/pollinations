@@ -2,11 +2,11 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState, stateReducer, getInputContent, subscribe as subscribeCID, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsClient";
+import {IPFSState, stateReducer, getInputContent, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsWebClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
-import { publisher } from "./ipfsConnector";
+import { publisher, subscribeCID } from "./ipfsPubSub";
 
 const debug = Debug("useColab")
 

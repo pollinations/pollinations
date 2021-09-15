@@ -8,7 +8,7 @@ import Readline from 'readline';
 
 import options from "./options.js";
 import { sender } from './ipfs/sender.js';
-// import { receive } from "./ipfs/receiver.js";
+import { receive } from "./ipfs/receiver.js";
 import { exec } from "child_process";
 import { createWriteStream } from "fs";
 import { getClient } from "../network/ipfsConnector.js";
@@ -79,8 +79,7 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const client = await getClient();
-      const { start, processing } = await sender({client,...options});
+      const { start, processing } = await sender(options);
       await start();
       await awaitSleep(sleepBeforeExit);
       await processing();

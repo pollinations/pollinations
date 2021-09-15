@@ -14,7 +14,7 @@ const debug = Debug("ipfsState");
 
 export const getIPFSState = async (contentID, callback, rootName="root") => {
     const ipfsReader = await reader();
-    debug("Getting state for CID", contentID)
+    debug("Getting state for CID", contentID);
     const isFolder = (await ipfsReader.ls(contentID)).length > 0;
     if (isFolder) 
         return await _getIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
@@ -23,9 +23,7 @@ export const getIPFSState = async (contentID, callback, rootName="root") => {
 }
 
 
-const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile = null) => {
-    if (!processFile)
-        processFile = lazyFetch;
+const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile = f=>f) => {
         
     const {ls, get} = ipfsReader;
     cid = stringCID(cid);
@@ -41,13 +39,21 @@ const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, pro
 
         const contentResult = Object.fromEntries(zip(filenames, contents));
         _debug("contents",contentResult);
+        // Add non-enumerable property .cid to each "folder" in object
+        Object.defineProperty(contentResult, ".cid", { value: cid });
         return contentResult;
     }
      
 
     if (type === "file") {
-        const fileResult = await processFile({ cid, path, name, rootCID }, ipfsReader);
-        _debug("got result of processFile length", fileResult?.length);
+        const fileResult = await processFile({ 
+            cid, 
+            path, 
+            name, 
+            rootCID, 
+            ...dataFetchers(cid, ipfsReader)
+        }, ipfsReader);
+        //_debug("got result of processFile length", fileResult?.length);
         return fileResult;
     }
 
@@ -55,9 +61,8 @@ const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, pro
 };
 
 // Provide functions similar to http response for getting contents of a file on IPFS
-const lazyFetch = ({cid, name},{get}) => (
-    { cid, 
-      name, 
+const dataFetchers = ({cid},{get}) => (
+    {
       json: async () => parse((await get(cid)).toString()),
       text: async () => (await get(cid)).toString(),
       buffer: async () => await get(cid)

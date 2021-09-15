@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState, stateReducer, getInputContent, setStatusName, resolve, combineInputOutput, addInput } from "./ipfsWebClient";
+import {IPFSState,  getInputContent, addInput } from "./ipfsWebClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
@@ -120,4 +120,24 @@ function useContentHash() {
     return { hash, setHash };
 }
 
+const stateReducer = [
+    (state, newState) => {
+        debug("Merging", newState, "into", state);
+        let mergedState = {
+            ...state,
+            ...newState,
+            ipfs: {...state.ipfs, ...newState.ipfs}
+        };
+        debug("Merging result", mergedState);
+        return mergedState;
+    }, {
+        nodeID: null,
+        contentID: null,
+        ipfs: { },
+        status: "disconnected"
+    }];
+
+
 export default useColab;
+
+

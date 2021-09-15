@@ -12,7 +12,7 @@ import fetch from "node-fetch";
 const debug = Debug("ipfsWebClient")
 
 
-export const fetchAndMakeURL = async ({ name, cid }) => {
+const fetchAndMakeURL = async ({ name, cid }) => {
 
     const ext = extname(name);
     const importOrURL = shouldImport(ext);
@@ -52,50 +52,10 @@ export const IPFSState = contentID => {
     return getIPFSState(contentID, fetchAndMakeURL);
 }
 
-export const stateReducer = [
-    (state, newState) => {
-        debug("Merging", newState, "into", state);
-        let mergedState = {
-            ...state,
-            ...newState,
-            ipfs: {...state.ipfs, ...newState.ipfs}
-        };
-        debug("Merging result", mergedState);
-        return mergedState;
-    }, {
-        nodeID: null,
-        contentID: null,
-        ipfs: { },
-        status: "disconnected"
-    }];
-
-export const setStatusName = async (contentID, name) => {
-    const _client = await client;
-    const statusCID = await getCidOfPath(contentID, "status");
-    let newStatusCID;
-    if (!statusCID) {
-        newStatusCID = stringCID(await _client.add({content: JSON.stringify(name), path: "name"}, {wrapWithDirectory: true}));
-    } else {
-        const { cid: addedCid } = await _client.add(JSON.stringify(name));
-        newStatusCID = stringCID(await _client.object.patch.addLink(statusCID.cid, { Hash: addedCid, name: "name" }));
-        contentID = await _client.object.patch.rmLink(contentID, { name: "status" });
-    }
-    debug("addLink",contentID, { Hash: newStatusCID, name: "status" })
-    contentID = stringCID(await _client.object.patch.addLink(contentID, { Hash: newStatusCID, name: "status" }));
-    return contentID;
-}
-
 export const addInput = async (inputCID, contentID) => {
     const _client = await client;
     contentID = contentID || stringCID(await _client.object.new());
     contentID =  await _client.object.patch.addLink(contentID, { Hash: inputCID, name: "input" });
-    return contentID;
-}; 
-
-export const adddOutput = async (outputCID, contentID) => {
-    const _client = await client;
-    contentID = contentID || stringCID(await _client.object.new());
-    contentID =  await _client.object.patch.addLink(contentID, { Hash: outputCID, name: "output" });
     return contentID;
 }; 
 

@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState,  getInputContent, addInput } from "./ipfsWebClient";
+import {IPFSState,  updateInput, getInputWriter } from "./ipfsWebClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
@@ -17,6 +17,7 @@ const useColab = (updateHashCondition = () => true) => {
     const [state, dispatchState] = useReducer(...stateReducer);
     const { hash, setHash } = useContentHash();
     const [ publish, setPublish ] = useState(null);
+    const [ inputWriter, setInputWriter] = useState(null);
 
     debug("state", state); 
 
@@ -92,11 +93,22 @@ const useColab = (updateHashCondition = () => true) => {
             setContentID(hash);
     },[hash]);
 
+    useEffect(() => {
+        debug("creating input writer");
+        let close = null;
+        (async () => {
+            const writer = await getInputWriter(state.contentID);
+            close = writer.close;
+            setInputWriter(writer);
+        })();
+        return () => close && close();
+    }, [state.contentID]);
+
     return {
         state, 
         dispatch: async inputState => {
             debug("dispatching", inputState)
-            const newInputContentID = await getInputContent(inputState);
+            const newInputContentID = await updateInput(inputWriter, inputState);
             debug("adding input",inputState,"got cid", newInputContentID,"to state",state.contentID)
             const newContentID = await addInput(newInputContentID, state.contentID);
             debug("determined new contentID", newContentID)

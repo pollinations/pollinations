@@ -61,9 +61,11 @@ const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, pro
 };
 
 // Provide functions similar to http response for getting contents of a file on IPFS
-const dataFetchers = ({cid},{get}) => (
-    {
+const dataFetchers = (cid,{get}) => {
+    debug("creating data fetchers for cid",cid);
+    return{
       json: async () => parse((await get(cid)).toString()),
       text: async () => (await get(cid)).toString(),
       buffer: async () => await get(cid)
-    })
+    };
+};

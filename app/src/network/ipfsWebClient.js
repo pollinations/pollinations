@@ -1,7 +1,7 @@
 
 
 import { toPromise } from "./utils.js"
-import {  getWebURL, ipfsMkdir, stringCID } from "./ipfsConnector.js"
+import {  getWebURL, ipfsMkdir, stringCID, writer } from "./ipfsConnector.js"
 import { extname } from "path";
 
 import Debug from "debug";
@@ -12,15 +12,15 @@ import fetch from "node-fetch";
 const debug = Debug("ipfsWebClient")
 
 
-const fetchAndMakeURL = async ({ name, cid }) => {
+const fetchAndMakeURL = async ({ name, cid, text }) => {
 
     const ext = extname(name);
     const importOrURL = shouldImport(ext);
     debug("ext", ext, "extIsJSON", importOrURL);
     const webURL = getWebURL(cid, name);
     if (importOrURL) {
-        const response = await fetch(webURL);
-        const textContent = await response.text();
+
+        const textContent = await text();
 
         // const { content } = await toPromise1((await client).get(cid))
         // const contentArrays = await toPromise(content);
@@ -50,6 +50,12 @@ const fetchAndMakeURL = async ({ name, cid }) => {
 export const IPFSState = contentID => {
     debug("Getting state for CID", contentID)
     return getIPFSState(contentID, fetchAndMakeURL);
+}
+
+export const getInputWriter = async (rootCID) => {
+    const { input } = await getIPFSState(rootCID);
+    debug("getting input writer for cid", input[".cid"]);
+    return writer(input[".cid"]);
 }
 
 export const addInput = async (inputCID, contentID) => {

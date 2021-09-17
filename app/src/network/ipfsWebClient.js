@@ -58,30 +58,15 @@ export const getInputWriter = async (rootCID) => {
     return writer(input[".cid"]);
 }
 
-export const addInput = async (inputCID, contentID) => {
-    const _client = await client;
-    contentID = contentID || stringCID(await _client.object.new());
-    contentID =  await _client.object.patch.addLink(contentID, { Hash: inputCID, name: "input" });
-    return contentID;
-}; 
+// Update /input of ipfs state with new inputs (from form probably)
+export const updateInput = async (inputWriter, inputs) => {
+    debug("updateInput", inputs);
 
-export const getInputContent = async inputs => {
-    debug("getInputContent", inputs);
-    const _client = await client;
-    debug("got client", _client);
-    let inputCID = stringCID(await _client.object.new({template:"unixfs-dir"}));
     debug("Triggered dispatch. Inputs:", inputs, "cid before", inputCID);
     for (const [key, val] of Object.entries(inputs)) {
-
-        const { cid: addedCid } = await _client.add(JSON.stringify(val));
-        //debug("AddedCID", addedCid, tmpInputCid)
-        //debug("LsInput", await toPromise(client.ls(tmpInputCid)))
-        debug("adding", inputCID, { Hash: addedCid, name: key })
-        inputCID = stringCID(await _client.object.patch.addLink(inputCID, { Hash: addedCid, name: key }));
-    
+        await inputWriter.add(key, JSON.stringify(val))
     };
-    return inputCID;
-
+    return await inputWriter.cid();
 };
 
 export const subscribe = (nodeID, callback) => subscribeCID(nodeID+"/output", callback);

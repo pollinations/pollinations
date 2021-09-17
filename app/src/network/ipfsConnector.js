@@ -95,10 +95,6 @@ function getWriter(client, mfsRoot) {
     };
 }
 
-
-// frequency at which to send heartbeats vis pubsub
-const HEARTBEAT_FREQUENCY = 15;
-
 const localIPFSAvailable = async () => {
     if (isNode) {
         return await reachable(5001);

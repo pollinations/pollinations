@@ -48,6 +48,7 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
+  social.
 
   const shareConfig = {
     post,
@@ -60,7 +61,11 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
     },
     shortenLinks: false,
     "mediaUrls": [videoURL],
-    "platforms": [platform]
+    "platforms": [platform],
+    autoHashtag: {
+      max: 2,
+      position: "auto"
+    }
   };
 
   const postResponse = await social.post(shareConfig).catch(console.error);

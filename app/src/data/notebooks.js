@@ -29,6 +29,7 @@ export const getNotebooks = async (ipfsPath=DEFAULT_HIVE_PATH) => {
   
     return notebooks.map(async ([name, notebookFolder]) => {
       const cid = notebookFolder[".cid"];
+      debug("got cid for",name,notebookFolder,":", cid);
       const {json} = notebookFolder["input"]["notebook.ipynb"];
       const notebookJSON = await json();
       debug("getting metadata for", notebookJSON);

@@ -12,8 +12,6 @@ import { last } from "ramda";
 
 import { join } from "path";
 
-import {Channel} from 'queueable';
-import awaitSleep from "await-sleep";
 import { isNode } from "browser-or-node";
 
 const debug = Debug("ipfsConnector")
@@ -41,14 +39,9 @@ export async function reader() {
     const client = await getClient();
     return {
         ls: async cid => await ipfsLsCID(client, cid),
-        get: async (cid, options={}) => await ipfsGet(client, cid, options),
+        get: async (cid, options={}) => await ipfsGet(client, cid, options)
     }
 }
-
-// const nodeID =  nodeid || (await client.id()).id;
-    
-// debug("NodeID", nodeID);
-
 
 export async function writer(initialRootCID=null) {
     const client = await getClient();    

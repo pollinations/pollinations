@@ -17,6 +17,9 @@ export function publisher(nodeID=null, suffix = "/output") {
     debug("Creating publisher for", nodeID, suffix);
 
     const _publish = async cid => {
+
+        _lastContentID = rootCID;
+    
         const client = await getClient();
         await publish(client, nodeID, cid, suffix, nodeID);
     };
@@ -30,7 +33,10 @@ export function publisher(nodeID=null, suffix = "/output") {
         clearInterval(handle);
     };
 
-    return { publish: _publish, close };
+    return { 
+        publish: skipRepeatCalls(_publish), 
+        close 
+    };
 }
 
 async function publishHeartbeat(client, suffix, nodeID) {
@@ -44,13 +50,6 @@ async function publishHeartbeat(client, suffix, nodeID) {
 }
 
 async function publish(client, nodeID, rootCID, suffix = "/output") {
-
-
-    if (_lastContentID === rootCID) {
-        debug("Skipping publish of rootCID since its the same as before", rootCID)
-        return;
-    }
-    _lastContentID = rootCID;
 
     debug("publish pubsub", nodeID, rootCID);
 
@@ -153,4 +152,15 @@ function subscribeCallback(client, nodeID, callback) {
         // if (interval)
         //     clearInterval(interval);
     };
+}
+
+
+const skipRepeatCalls = f => {
+    let lastValue = null;
+    return (value) => {
+        if (lastValue !== value) {
+            f(value);
+            lastValue = value;
+        };  
+    }
 }

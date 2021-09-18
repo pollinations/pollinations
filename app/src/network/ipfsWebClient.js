@@ -62,7 +62,7 @@ export const getInputWriter = async (rootCID) => {
 export const updateInput = async (inputWriter, inputs) => {
     debug("updateInput", inputs);
 
-    debug("Triggered dispatch. Inputs:", inputs, "cid before", inputCID);
+    debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
     for (const [key, val] of Object.entries(inputs)) {
         await inputWriter.add(key, JSON.stringify(val))
     };

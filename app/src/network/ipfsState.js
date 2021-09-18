@@ -15,6 +15,7 @@ const debug = Debug("ipfsState");
 export const getIPFSState = async (contentID, callback, rootName="root") => {
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);
+    // console.trace("statecid")
     const isFolder = (await ipfsReader.ls(contentID)).length > 0;
     if (isFolder) 
         return await _getIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);

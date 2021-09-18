@@ -48,8 +48,6 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-  social.
-
   const shareConfig = {
     post,
     title,

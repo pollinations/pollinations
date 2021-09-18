@@ -99,7 +99,7 @@ const useColab = (updateHashCondition = () => true) => {
         debug("creating input writer for", state.contentID);
         let close = null;
         (async () => {
-            const writer = await getInputWriter(state.contentID);
+            const writer = await getInputWriter(`${state.contentID}/input`);
             close = writer.close;
             setInputWriter(writer);
         })();
@@ -112,8 +112,7 @@ const useColab = (updateHashCondition = () => true) => {
             debug("dispatching", inputState)
             const newInputContentID = await updateInput(inputWriter, inputState);
             debug("added input",inputState,"got cid", newInputContentID,"to state",state.contentID)
-            // const newContentID = await addInput(newInputContentID, state.contentID);
-            setContentID(newInputContentID)
+            // setContentID(newInputContentID)
             debug("Publishing contentID to colab", newInputContentID);
             publish(newInputContentID);
         }

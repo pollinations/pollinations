@@ -17,9 +17,6 @@ export function publisher(nodeID=null, suffix = "/output") {
     debug("Creating publisher for", nodeID, suffix);
 
     const _publish = async cid => {
-
-        _lastContentID = rootCID;
-    
         const client = await getClient();
         await publish(client, nodeID, cid, suffix, nodeID);
     };
@@ -90,11 +87,11 @@ export async function subscribeGenerator(client, nodeID = null, suffix = "/input
     return [channel, unsubscribe];
 }
 
-export async function subscribeCID(nodeID, callback) {
+export async function subscribeCID(nodeID, suffix = "/input", callback) {
     const client = await getClient();
     let lastHeartbeatTime = new Date().getTime();
 
-    return subscribeCallback(client, nodeID, message => {
+    return subscribeCallback(client, nodeID+suffix, message => {
         if (message === "HEARTBEAT") {
             const time = new Date().getTime();
             debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);

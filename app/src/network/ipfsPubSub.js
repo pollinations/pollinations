@@ -2,6 +2,7 @@ import { AbortController } from 'native-abort-controller';
 
 import awaitSleep from 'await-sleep';
 import Debug from 'debug';
+import { getClient } from './ipfsConnector';
 
 const debug = Debug('ipfs:pubsub');
 
@@ -11,15 +12,17 @@ const HEARTBEAT_FREQUENCY = 15;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
-export function publisher(client, nodeID=null, suffix = "/output") {
-    
+export function publisher(nodeID=null, suffix = "/output") {
+
     debug("Creating publisher for", nodeID, suffix);
 
     const _publish = async cid => {
+        const client = await getClient();
         await publish(client, nodeID, cid, suffix, nodeID);
     };
 
-    const handle = setInterval(() => {
+    const handle = setInterval(async () => {
+        const client = await getClient();
         publishHeartbeat(client, suffix, nodeID);
     }, HEARTBEAT_FREQUENCY * 1000);
 
@@ -88,8 +91,8 @@ export async function subscribeGenerator(client, nodeID = null, suffix = "/input
     return [channel, unsubscribe];
 }
 
-export function subscribeCID(client, nodeID, callback) {
-    
+export async function subscribeCID(nodeID, callback) {
+    const client = await getClient();
     let lastHeartbeatTime = new Date().getTime();
 
     return subscribeCallback(client, nodeID, message => {

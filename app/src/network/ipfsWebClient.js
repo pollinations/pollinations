@@ -53,7 +53,7 @@ export const IPFSState = contentID => {
 }
 
 export const getInputWriter = async (rootCID) => {
-    const { input } = await getIPFSState(rootCID);
+    const input  = await getIPFSState(rootCID);
     debug("getting input writer for cid", input[".cid"]);
     return writer(input[".cid"]);
 }

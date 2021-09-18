@@ -94,7 +94,9 @@ const useColab = (updateHashCondition = () => true) => {
     },[hash]);
 
     useEffect(() => {
-        debug("creating input writer");
+        if (!state.contentID)
+            return;
+        debug("creating input writer for", state.contentID);
         let close = null;
         (async () => {
             const writer = await getInputWriter(state.contentID);

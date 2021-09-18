@@ -25,7 +25,7 @@ const IPFS_HOST = "https://ipfs.pollinations.ai";
 let _client = null;
 
 // create a new IPFS session
-async function getClient() {
+export async function getClient() {
     if (!_client) {
         const url = await getIPFSDaemonURL();
         debug("Got daemon URL", url);

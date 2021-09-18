@@ -87,7 +87,7 @@ export async function subscribeGenerator(client, nodeID = null, suffix = "/input
     return [channel, unsubscribe];
 }
 
-export async function subscribeCID(nodeID, suffix = "/input", callback) {
+export async function subscribeCID(nodeID, suffix = "", callback) {
     const client = await getClient();
     let lastHeartbeatTime = new Date().getTime();
 

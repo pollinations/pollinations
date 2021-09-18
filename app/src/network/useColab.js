@@ -111,11 +111,10 @@ const useColab = (updateHashCondition = () => true) => {
         dispatch: async inputState => {
             debug("dispatching", inputState)
             const newInputContentID = await updateInput(inputWriter, inputState);
-            debug("adding input",inputState,"got cid", newInputContentID,"to state",state.contentID)
-            const newContentID = await addInput(newInputContentID, state.contentID);
-            debug("determined new contentID", newContentID)
-            setContentID(newContentID)
-            debug("Publishing contentID to colab", newContentID);
+            debug("added input",inputState,"got cid", newInputContentID,"to state",state.contentID)
+            // const newContentID = await addInput(newInputContentID, state.contentID);
+            setContentID(newInputContentID)
+            debug("Publishing contentID to colab", newInputContentID);
             publish(newInputContentID);
         }
     };

@@ -59,7 +59,7 @@ const useColab = (updateHashCondition = () => true) => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            return subscribeCID(state.nodeID, setContentID);
+            return subscribeCID(state.nodeID, "/output", setContentID);
         }
     , [state.nodeID]);
 

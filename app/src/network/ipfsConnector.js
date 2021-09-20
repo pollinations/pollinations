@@ -2,7 +2,6 @@
 import { create, globSource } from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
 import { CID } from "multiformats/cid";
-import cacheInput, { cacheOutput, cleanCIDs } from "./contentCache.js";
 import reachable from "is-port-reachable";
 import all from "it-all";
 
@@ -192,7 +191,7 @@ const ipfsAdd = async (client, path, content, options = {}) => {
     return cid;
 };
 
-const ipfsGet = cleanCIDs((async (client, cid, { onlyLink=false }) => {
+const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
@@ -211,7 +210,7 @@ const ipfsGet = cleanCIDs((async (client, cid, { onlyLink=false }) => {
     _debug("Received content length:", contentArray.length);
     // debug("Content type",contentArray)
     return contentArray;
-}));
+};
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);

@@ -22,18 +22,6 @@ const fetchAndMakeURL = async ({ name, cid, text }) => {
 
         const textContent = await text();
 
-        // const { content } = await toPromise1((await client).get(cid))
-        // const contentArrays = await toPromise(content);
-
-        // if (!contentArrays || !contentArrays[0])
-        //     return null;        
-
-        // // TODO: use typedarrays for more performance
-        // const contentArray = contentArrays.reduce((acc, c) => [...acc, ...c], []);
-        // const textContent = new TextDecoder().decode(new Uint8Array(contentArray));
-        // debug("got json chunks", contentArrays.length, "concatenated length", contentArray.length,"textcontent length", textContent.length);
-
-        
         try {
             return parse(textContent);
         } catch (_e) {

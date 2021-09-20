@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Button, GridListTileBar } from "@material-ui/core"
+import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Button, GridListTileBar, ImageListItem } from "@material-ui/core"
 import Debug from "debug";
 
 // Icons
@@ -47,9 +47,9 @@ function ImageViewer({output, contentID}) {
             
           <GridList cellHeight={200} cols={4}
             children={images.map(([filename, url]) => (
-              <GridListTile key={filename} cols={1}>
+              <ImageListItem key={filename} cols={1}>
                 <MediaDisplay src={url} filename={filename} style={{ margin:"5px", height:"100%" }} />
-              </GridListTile>
+              </ImageListItem>
             ))}/>
 
         </div>

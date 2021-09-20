@@ -1,6 +1,6 @@
 import process from "process";
 import { getIPFSState } from '../../network/ipfsState.js';
-import { stringCID, ipfsResolve } from "../../network/ipfsConnector.js";
+import { stringCID } from "../../network/ipfsConnector.js";
 import { subscribeGenerator } from "../../network/ipfsPubSub.js";
 import { join } from "path";
 import { noop } from '../../network/utils.js';
@@ -25,8 +25,6 @@ export const receive = async function ({ ipns, once, path: rootPath }) {
     debug("received CID",remoteCID);
     remoteCID = stringCID(remoteCID);
     debug("remoteCID", remoteCID);
-    if (remoteCID.startsWith("/ipns/"))
-      remoteCID = await ipfsResolve(remoteCID);
     await processRemoteCID(stringCID(remoteCID), rootPath);
     if (once) {
       unsubscribe();

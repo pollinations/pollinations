@@ -1,6 +1,6 @@
 
 
-import  { stringCID, reader, getWebURL } from "./ipfsConnector.js";
+import  { stringCID, reader } from "./ipfsConnector.js";
 import Debug from "debug";
 import { toPromise } from "./utils.js";
 import { zip } from "ramda";

@@ -132,8 +132,6 @@ const ipfsCp = async (client, cid, ipfsPath) => {
   return await retryException(async () => await client.files.cp(`/ipfs/${cid}`, ipfsPath));
 }
 
-
-
 export const getWebURL = (cid, name = null) => {
     const filename = name ? `?filename=${name}` : '';
     return `https://pollinations.ai/ipfs/${cid}${filename}`
@@ -157,6 +155,7 @@ export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
 const ipfsLsCID = async (client, cid) => {
+    cid = optionallyResolveIPNS(cid);
     debug("calling ipfs ls with cid", cid);
     const result = (await toPromise(client.ls(stringCID(cid))))
         .filter(({ type, name }) => type !== "unknown" && name !== undefined)
@@ -195,8 +194,7 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
-    if (cid.startsWith("/ipns"))
-        cid = await ipfsResolve(client, cid);
+    cid = await optionallyResolveIPNS(cid, client);
 
     const chunkArrays = await all(client.cat(cid));
 
@@ -215,6 +213,12 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
     await retryException(async () => await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
+}
+
+async function optionallyResolveIPNS(cid, client) {
+    if (cid.startsWith("/ipns"))
+        cid = await ipfsResolve(client, cid);
+    return cid;
 }
 
 async function ipfsMkdir(client, path) {

@@ -15,11 +15,10 @@ const debug = Debug("ipfsWebClient")
 const fetchAndMakeURL = async ({ name, cid, text }) => {
 
     const ext = extname(name);
-    const importOrURL = shouldImport(ext);
-    debug("ext", ext, "extIsJSON", importOrURL);
+    const doImport = shouldImport(ext);
+    debug("ext", ext, "extIsJSON", doImport);
     const webURL = getWebURL(cid, name);
-    if (importOrURL) {
-
+    if (doImport) {
         const textContent = await text();
 
         try {
@@ -57,20 +56,8 @@ export const updateInput = async (inputWriter, inputs) => {
     return await inputWriter.cid();
 };
 
-export const subscribe = (nodeID, callback) => subscribeCID(nodeID+"/output", callback);
-
-export const getCidOfPath = async (dirCid, path) => {
-    debug("getCifOfPath", dirCid, path);
-    try {
-        return (await toPromise((await client).ls(dirCid))).find(({ name }) => name === path);
-    } catch {
-        debug("couldn't get cid of path", path);
-        return null;
-    }
-}
-
-
+// only download json files, notebooks and files without extension (such as logs, text, etc)
 function shouldImport(ext) {
     return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb";
 }
-// export default ueColab;
+

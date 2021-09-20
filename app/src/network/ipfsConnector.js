@@ -155,7 +155,7 @@ export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
 const ipfsLsCID = async (client, cid) => {
-    cid = optionallyResolveIPNS(cid);
+    cid = await optionallyResolveIPNS(client, cid);
     debug("calling ipfs ls with cid", cid);
     const result = (await toPromise(client.ls(stringCID(cid))))
         .filter(({ type, name }) => type !== "unknown" && name !== undefined)
@@ -194,7 +194,7 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
     const _debug = debug.extend(`ipfsGet(${cid})`);
 
-    cid = await optionallyResolveIPNS(cid, client);
+    cid = await optionallyResolveIPNS(client, cid);
 
     const chunkArrays = await all(client.cat(cid));
 
@@ -215,7 +215,8 @@ const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     await retryException(async () => await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
 }
 
-async function optionallyResolveIPNS(cid, client) {
+async function optionallyResolveIPNS(client, cid) {
+    debug("Trying to resolve CID", cid)
     if (cid.startsWith("/ipns"))
         cid = await ipfsResolve(client, cid);
     return cid;

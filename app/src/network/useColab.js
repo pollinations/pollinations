@@ -34,7 +34,7 @@ const useColab = (updateHashCondition = () => true) => {
         }
         if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID, state.contentID)
-            dispatchState({ contentID, ipfs: await IPFSState( contentID)});
+            dispatchState({ contentID, ipfs: await IPFSState(contentID)});
         }
     }, [state]);
 

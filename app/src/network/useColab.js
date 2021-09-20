@@ -93,18 +93,20 @@ const useColab = (updateHashCondition = () => true) => {
             setContentID(hash);
     },[hash]);
 
+    const inputCID = state.ipfs?.input && state.ipfs?.input[".cid"];
     useEffect(() => {
-        if (!state.contentID)
+        if (!inputCID)
             return;
-        debug("creating input writer for", state.contentID);
+        
+        debug("creating input writer for", inputCID);
         let close = null;
         (async () => {
-            const writer = await getInputWriter(`${state.contentID}/input`);
+            const writer = await getInputWriter(inputCID);
             close = writer.close;
             setInputWriter(writer);
         })();
         return () => close && close();
-    }, [state.contentID]);
+    }, [inputCID]);
 
     return {
         state, 

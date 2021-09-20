@@ -35360,7 +35360,7 @@ var firstLine = (s) => s.split("\n")[0];
 var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : CID.asCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
 var _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 var ipfsLsCID = async (client, cid) => {
-  cid = optionallyResolveIPNS(cid);
+  cid = await optionallyResolveIPNS(client, cid);
   debug2("calling ipfs ls with cid", cid);
   const result = (await toPromise(client.ls(stringCID(cid)))).filter(({ type, name }) => type !== "unknown" && name !== void 0).map(_normalizeIPFS);
   debug2("got ipfs ls result", result);
@@ -35387,7 +35387,7 @@ var ipfsAdd = async (client, path, content, options = {}) => {
 };
 var ipfsGet = async (client, cid, { onlyLink = false }) => {
   const _debug = debug2.extend(`ipfsGet(${cid})`);
-  cid = await optionallyResolveIPNS(cid, client);
+  cid = await optionallyResolveIPNS(client, cid);
   const chunkArrays = await (0, import_it_all.default)(client.cat(cid));
   const chunks = chunkArrays.map(Buffer.from);
   _debug("Got all chunks. Total:", chunks);
@@ -35399,7 +35399,8 @@ var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug2("Adding file", localPath, "to", ipfsPath);
   await retryException(async () => await ipfsAdd(client, ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, { preserveMtime: true, preserveMode: true })));
 };
-async function optionallyResolveIPNS(cid, client) {
+async function optionallyResolveIPNS(client, cid) {
+  debug2("Trying to resolve CID", cid);
   if (cid.startsWith("/ipns"))
     cid = await ipfsResolve(client, cid);
   return cid;

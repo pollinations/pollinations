@@ -47,9 +47,9 @@ function ImageViewer({output, contentID}) {
             
           <GridList cellHeight={200} cols={4}
             children={images.map(([filename, url]) => (
-              <ImageListItem key={filename} cols={1}>
+              <GridListTile key={filename} cols={1}>
                 <MediaDisplay src={url} filename={filename} style={{ margin:"5px", height:"100%" }} />
-              </ImageListItem>
+              </GridListTile>
             ))}/>
 
         </div>

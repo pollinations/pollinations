@@ -1,6 +1,6 @@
 
 import SocialPost from "social-post-api"; 
-import { IPFSState } from "../../network/ipfsClient.js";
+import { IPFSState } from "../../network/ipfsWebClient.js";
 
 import { getPostData } from "../../data/summaryData";
 

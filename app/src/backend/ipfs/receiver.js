@@ -15,10 +15,10 @@ const { stream } = eventit;
 const debug = Debug("ipfs/receiver");
 
 // Receives a stream of updates from IPFS pubsub or stdin and writes them to disk
-export const receive = async function ({ ipns, once, path: rootPath }) {
+export const receive = async function ({ ipns, nodeid, once, path: rootPath }) {
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
-    await subscribeGenerator(null, "/input")
+    await subscribeGenerator(nodeid, "/input")
     : [stream.call(process.stdin), noop];
 
   let remoteCID = null;

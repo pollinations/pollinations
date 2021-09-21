@@ -18,7 +18,7 @@ const debug = Debug("ipfs/receiver");
 export const receive = async function ({ ipns, nodeid, once, path: rootPath }) {
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
-    await subscribeGenerator(nodeid, "/input")
+    subscribeGenerator(nodeid, "/input")
     : [stream.call(process.stdin), noop];
 
   let remoteCID = null;

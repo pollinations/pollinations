@@ -35924,7 +35924,7 @@ var import_debug3 = __toModule(require_src());
 var import_queueable = __toModule(require_lib5());
 var debug3 = (0, import_debug3.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
-function publisher(nodeID = null, suffix = "/output") {
+function publisher(nodeID, suffix = "/output") {
   debug3("Creating publisher for", nodeID, suffix);
   const _publish = async (cid) => {
     const client = await getClient();
@@ -35968,16 +35968,15 @@ async function experimentalIPNSPublish(client, rootCID) {
     debug3("exception on publish.", e);
   });
 }
-async function subscribeGenerator(nodeID = null, suffix = "/input") {
+function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
-  debug3("Subscribing to pubsub events from", nodeid, suffix);
+  debug3("Subscribing to pubsub events from", nodeID, suffix);
   const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
-async function subscribeCID(nodeID, suffix = "", callback) {
-  const client = await getClient();
+function subscribeCID(nodeID, suffix = "", callback) {
   let lastHeartbeatTime = new Date().getTime();
-  return subscribeCallback(client, nodeID + suffix, (message) => {
+  return subscribeCallback(nodeID + suffix, (message) => {
     if (message === "HEARTBEAT") {
       const time = new Date().getTime();
       debug3("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1e3);
@@ -35987,7 +35986,7 @@ async function subscribeCID(nodeID, suffix = "", callback) {
     }
   });
 }
-function subscribeCallback(client, nodeID, callback) {
+function subscribeCallback(topic, callback) {
   const abort = new import_native_abort_controller.AbortController();
   (async () => {
     const onError = async (...errorArgs) => {
@@ -36002,10 +36001,11 @@ function subscribeCallback(client, nodeID, callback) {
       callback(message);
     };
     const doSub = async () => {
+      const client = await getClient();
       try {
         abort.abort();
-        debug3("Executing subscribe", nodeID);
-        await client.pubsub.subscribe(nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+        debug3("Executing subscribe", topic);
+        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
       } catch (e) {
         debug3("subscribe error", e, e.name);
         if (e.name === "DOMException") {
@@ -36042,7 +36042,7 @@ var import_fs = __toModule(require("fs"));
 var import_debug4 = __toModule(require_src());
 var import_ramda2 = __toModule(require_src10());
 var debug4 = (0, import_debug4.default)("ipfs/sender");
-var sender = async ({ path: watchPath, debounce, ipns, once }) => {
+var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close } = await writer();
   async function start() {
@@ -36056,7 +36056,7 @@ var sender = async ({ path: watchPath, debounce, ipns, once }) => {
       cwd: watchPath,
       awaitWriteFinish: true
     }, { debounce });
-    const { publish: publish2, close: close2 } = publisher(null, "/output");
+    const { publish: publish2, close: close2 } = publisher(nodeid, "/input");
     for await (const files of watch$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -36170,8 +36170,8 @@ var import_path5 = __toModule(require("path"));
 var import_fs2 = __toModule(require("fs"));
 var { stream } = import_event_iterator.default;
 var debug6 = (0, import_debug6.default)("ipfs/receiver");
-var receive = async function({ ipns, nodeid: nodeid2, once, path: rootPath2 }) {
-  const [cidStream, unsubscribe] = ipns ? await subscribeGenerator(nodeid2, "/input") : [stream.call(import_process.default.stdin), noop];
+var receive = async function({ ipns, nodeid, once, path: rootPath2 }) {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, "/input") : [stream.call(import_process.default.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug6("received CID", remoteCID);

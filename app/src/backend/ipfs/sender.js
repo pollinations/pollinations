@@ -8,7 +8,7 @@ import { sortBy, reverse } from "ramda";
 
 const debug = Debug("ipfs/sender");
 
-export const sender = async ({ path: watchPath, debounce, ipns, once }) => {
+export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
   
   let processing = Promise.resolve(true);
   
@@ -29,7 +29,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once }) => {
       awaitWriteFinish: true,
     }, { debounce });
     
-    const { publish, close } = publisher(null,"/output");
+    const { publish, close } = publisher(nodeid,"/input");
 
     for await (const files of watch$) {
       

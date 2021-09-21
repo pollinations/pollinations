@@ -42,12 +42,15 @@ export async function reader() {
     }
 }
 
+// randomly assign a temporary folder in the IPFS mutable filesystem
+// in the future ideally we'd be running nodes in the browser and on colab and could work in the root
+const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
+
 // Create a writer to modify the IPFS state
 // It creates a temporary folder in the IPFS mutable filesystem 
 // so calling close is important
 export async function writer(initialRootCID=null) {
     const client = await getClient();    
-    const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
 
     const getRootCID = async () => await getCID(client, mfsRoot);
 

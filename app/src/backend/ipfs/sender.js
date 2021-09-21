@@ -8,6 +8,8 @@ import { sortBy, reverse } from "ramda";
 
 const debug = Debug("ipfs/sender");
 
+// Watch local path and and update IPFS incrementally.
+// Optionally send updates via PubSub.
 export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
   
   let processing = Promise.resolve(true);
@@ -29,7 +31,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
       awaitWriteFinish: true,
     }, { debounce });
     
-    const { publish, close } = publisher(nodeid,"/input");
+    const { publish, close } = publisher(nodeid,"/output");
 
     for await (const files of watch$) {
       
@@ -84,7 +86,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
 };
 
 
-
+// Return files sorted by event type. Can't remember why we need to do it this way.
 function getSortedChangedFiles(files) {
   const changed = files.toArray()
     .filter(({ changed, file }) => changed && file.length > 0)
@@ -98,5 +100,4 @@ function getSortedChangedFiles(files) {
 // TODO: check why unlink is twice in ordering
 const _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];//.reverse();
 const eventOrder = ({ event }) => _eventOrder.indexOf(event);
-
 const order = events => sortBy(eventOrder, reverse(events));

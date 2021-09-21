@@ -14,6 +14,7 @@ const { stream } = eventit;
 
 const debug = Debug("ipfs/receiver");
 
+// Receives a stream of updates from IPFS pubsub or stdin and writes them to disk
 export const receive = async function ({ ipns, once, path: rootPath }) {
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
@@ -35,7 +36,7 @@ export const receive = async function ({ ipns, once, path: rootPath }) {
 };
 
 
-
+// Easy way to skip duplicate content updates
 let _lastContentID = null;
 const isSameContentID = cid => {
   if (_lastContentID === cid) {
@@ -55,7 +56,7 @@ export const writeFileAndCreateFolder = async (path, content) => {
   };
   
 
-  
+// Fetch the IPFS state and write to disk  
 async function processRemoteCID(contentID, rootPath) {
   if (isSameContentID(stringCID(contentID)))
     return;
@@ -64,7 +65,7 @@ async function processRemoteCID(contentID, rootPath) {
   debug("got remote state", ipfsState);
 }
 
-
+// Writes all files to disk coming from the IPFS state
 async function processFile({ path, cid }, rootPath, { get }) {
   const _debug = debug.extend(`processFile(${path})`);
   _debug("started");

@@ -17282,10 +17282,8 @@ var require_src6 = __commonJS({
     } else {
       impl = require_abort_controller();
     }
-    module2.exports = {
-      AbortController: impl.AbortController,
-      AbortSignal: impl.AbortSignal
-    };
+    module2.exports.AbortSignal = impl.AbortSignal;
+    module2.exports.AbortController = impl.AbortController;
   }
 });
 
@@ -35433,6 +35431,51 @@ var import_native_abort_controller = __toModule(require_src6());
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug3 = __toModule(require_src());
 var debug3 = (0, import_debug3.default)("ipfs:pubsub");
+var HEARTBEAT_FREQUENCY = 15;
+function publisher(nodeID = null, suffix = "/output") {
+  debug3("Creating publisher for", nodeID, suffix);
+  const _publish = async (cid) => {
+    const client = await getClient();
+    await publish(client, nodeID, cid, suffix, nodeID);
+  };
+  const handle = setInterval(async () => {
+    const client = await getClient();
+    publishHeartbeat(client, suffix, nodeID);
+  }, HEARTBEAT_FREQUENCY * 1e3);
+  const close = () => {
+    clearInterval(handle);
+  };
+  return {
+    publish: skipRepeatCalls(_publish),
+    close
+  };
+}
+async function publishHeartbeat(client, suffix, nodeID) {
+  if (nodeID === "ipns")
+    return;
+  debug3("publishing heartbeat to", nodeID, suffix);
+  await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+}
+async function publish(client, nodeID, rootCID, suffix = "/output") {
+  debug3("publish pubsub", nodeID, rootCID);
+  if (nodeID === "ipns")
+    await experimentalIPNSPublish(client, rootCID);
+  else
+    await client.pubsub.publish(nodeID + suffix, rootCID);
+}
+var abortPublish = null;
+async function experimentalIPNSPublish(client, rootCID) {
+  debug3("publishing to ipns...", rootCID);
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller.AbortController();
+  await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false }).then(() => {
+    debug3("published...", rootCID);
+    abortPublish = null;
+  }).catch((e) => {
+    debug3("exception on publish.", e);
+  });
+}
 async function subscribeGenerator(client, nodeID = null, suffix = "/input") {
   const channel = new Channel();
   const topic = nodeID + suffix;
@@ -35491,6 +35534,16 @@ function subscribeCallback(client, nodeID, callback) {
     abort.abort();
   };
 }
+var skipRepeatCalls = (f) => {
+  let lastValue = null;
+  return (value) => {
+    if (lastValue !== value) {
+      f(value);
+      lastValue = value;
+    }
+    ;
+  };
+};
 
 // src/backend/ipfs/sender.js
 var import_path2 = __toModule(require("path"));
@@ -35498,9 +35551,9 @@ var import_fs = __toModule(require("fs"));
 var import_debug4 = __toModule(require_src());
 var import_ramda2 = __toModule(require_src10());
 var debug4 = (0, import_debug4.default)("ipfs/sender");
-var sender = async (client, { path: watchPath, debounce, ipns, once }) => {
+var sender = async ({ path: watchPath, debounce, ipns, once }) => {
   let processing = Promise.resolve(true);
-  const { addFile, mkDir, rm, cid, close } = await writer(client);
+  const { addFile, mkDir, rm, cid, close } = await writer();
   async function start() {
     if (!(0, import_fs.existsSync)(watchPath)) {
       debug4("Local: Root directory does not exist. Creating", watchPath);
@@ -35512,6 +35565,7 @@ var sender = async (client, { path: watchPath, debounce, ipns, once }) => {
       cwd: watchPath,
       awaitWriteFinish: true
     }, { debounce });
+    const { publish: publish2, close: close2 } = publisher(null, "/output");
     for await (const files of watch$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -35535,14 +35589,14 @@ var sender = async (client, { path: watchPath, debounce, ipns, once }) => {
       console.log(newContentID);
       if (ipns) {
         debug4("publish", newContentID);
-        await publish(newContentID);
+        await publish2(newContentID);
       }
       done();
       if (once) {
         break;
       }
     }
-    close();
+    close2();
   }
   return { start, processing: () => processing };
 };
@@ -35661,7 +35715,8 @@ async function processRemoteCID(contentID, rootPath2) {
   if (isSameContentID(stringCID(contentID)))
     return;
   debug6("Processing remote CID", contentID);
-  debug6("got remote state", await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2)));
+  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2));
+  debug6("got remote state", ipfsState);
 }
 async function processFile({ path, cid }, rootPath2, { get }) {
   const _debug = debug6.extend(`processFile(${path})`);

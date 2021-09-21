@@ -3,6 +3,7 @@ import { AbortController } from 'native-abort-controller';
 import awaitSleep from 'await-sleep';
 import Debug from 'debug';
 import { getClient } from './ipfsConnector';
+import { Channel } from 'queueable';
 
 const debug = Debug('ipfs:pubsub');
 
@@ -74,19 +75,22 @@ async function experimentalIPNSPublish(client, rootCID) {
         });
 }
 
-export async function subscribeGenerator(client, nodeID = null, suffix = "/input") {
+// Generate an async iterable by subscribing to CIDs from a specific node id and suffix
+export async function subscribeGenerator(nodeID, suffix = "/input") {
 
     const channel = new Channel();
-    const topic = nodeID + suffix;
    
-    debug("Subscribing to pubsub events from", topic);
+    debug("Subscribing to pubsub events from", nodeid, suffix);
 
-    const unsubscribe = subscribeCID(client, topic,
+    const unsubscribe = subscribeCID(nodeID,suffix,
         cid => channel.push(cid)
     );
     return [channel, unsubscribe];
 }
 
+
+// Subscribe to a content ids from a nodeID and suffix. Callback is called with the content ids
+// Also receives and logs heartbeats received from the publisher
 export async function subscribeCID(nodeID, suffix = "", callback) {
     const client = await getClient();
     let lastHeartbeatTime = new Date().getTime();
@@ -102,9 +106,9 @@ export async function subscribeCID(nodeID, suffix = "", callback) {
     });
 };
 
-function subscribeCallback(client, nodeID, callback) {
+// Subscribe to an ipfs topic with some rather ugly code to handle errors that probably don't even occur
+function subscribeCallback(client, topic, callback) {
     const abort = new AbortController();
-    // let interval = null;
     (async () => {
         const onError = async (...errorArgs) => {
             debug("onError", ...errorArgs, "aborting");
@@ -122,8 +126,8 @@ function subscribeCallback(client, nodeID, callback) {
         const doSub = async () => {
             try {
                 abort.abort();
-                debug("Executing subscribe", nodeID);
-                await client.pubsub.subscribe(nodeID, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+                debug("Executing subscribe", topic);
+                await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {
@@ -138,20 +142,16 @@ function subscribeCallback(client, nodeID, callback) {
             }
         };
         doSub();
-        // if (interval)
-        //     clearInterval(interval);
-        // interval = setInterval(doSub, 30000);
     })();
 
     return () => {
         debug("subscribe abort was called");
         abort.abort();
-        // if (interval)
-        //     clearInterval(interval);
     };
 }
 
 
+// Skips repeated calls to the same function with the same arguments
 const skipRepeatCalls = f => {
     let lastValue = null;
     return (value) => {

@@ -36056,7 +36056,7 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
       cwd: watchPath,
       awaitWriteFinish: true
     }, { debounce });
-    const { publish: publish2, close: close2 } = publisher(nodeid, "/input");
+    const { publish: publish2, close: close2 } = publisher(nodeid, "/output");
     for await (const files of watch$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);

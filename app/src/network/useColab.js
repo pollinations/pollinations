@@ -105,7 +105,7 @@ const useColab = (updateHashCondition = () => true) => {
             close = writer.close;
             
             // try to close the writer when window is closed
-            window.onbeforeunload = () => close();
+            window.onbeforeunload = () => { close(); return undefined; };
 
             setInputWriter(writer);
         })();

@@ -35915,7 +35915,7 @@ async function getCID(client, path = "/") {
     return null;
   }
 }
-var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await toPromise(client.name.resolve(path, { nocache: true }))));
+var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await toPromise(client.name.resolve(path))));
 
 // src/network/ipfsPubSub.js
 var import_native_abort_controller = __toModule(require_src6());

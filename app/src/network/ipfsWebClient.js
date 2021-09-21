@@ -11,7 +11,7 @@ import fetch from "node-fetch";
 
 const debug = Debug("ipfsWebClient")
 
-
+// fetch json and texts files. convert media and other files to URLs pointing to the IPFS gateway
 const fetchAndMakeURL = async ({ name, cid, text }) => {
 
     const ext = extname(name);
@@ -34,7 +34,7 @@ const fetchAndMakeURL = async ({ name, cid, text }) => {
 }
 
 // Return IPFS state. Converts all JSON/text content to objects and binary cids to URLs.
-export const IPFSState = contentID => {
+export const IPFSWebState = contentID => {
     debug("Getting state for CID", contentID)
     return getIPFSState(contentID, fetchAndMakeURL);
 }

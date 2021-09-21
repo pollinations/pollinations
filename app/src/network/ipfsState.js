@@ -2,16 +2,16 @@
 
 import  { stringCID, reader } from "./ipfsConnector.js";
 import Debug from "debug";
-import { toPromise } from "./utils.js";
 import { zip } from "ramda";
 
 import { extname, join } from "path";
 import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 import { parse } from "json5";
 
-//import concatLimit from 'async/concatLimit.js';
 const debug = Debug("ipfsState");
 
+// Recursively get the IPFS content and transform it into a JS object.
+// The callback is called for each file in the directories which can fetch or process them further
 export const getIPFSState = async (contentID, callback, rootName="root") => {
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);
@@ -23,7 +23,7 @@ export const getIPFSState = async (contentID, callback, rootName="root") => {
         return await _getIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "file", path: "/", rootCID: contentID}, callback);
 }
 
-
+// Do the actual work
 const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile = f=>f) => {
         
     const {ls, get} = ipfsReader;

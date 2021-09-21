@@ -1,6 +1,6 @@
 
 import SocialPost from "social-post-api"; 
-import { IPFSState } from "../../network/ipfsWebClient.js";
+import { IPFSWebState } from "../../network/ipfsWebClient.js";
 
 import { getPostData } from "../../data/summaryData";
 
@@ -17,7 +17,7 @@ export const handler = async ({path}) => {
     const platform = path.split("/").slice(-2)[0];
     // your server-side functionality
     console.log("platform",platform,"cid",cid,". Fetching IPFS state");
-    const ipfs = await IPFSState(cid);
+    const ipfs = await IPFSWebState(cid);
 
     const data =  getPostData(ipfs, cid, true);
     

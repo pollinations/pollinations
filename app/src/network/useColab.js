@@ -103,6 +103,10 @@ const useColab = (updateHashCondition = () => true) => {
         (async () => {
             const writer = await getInputWriter(inputCID);
             close = writer.close;
+            
+            // try to close the writer when window is closed
+            window.onbeforeunload = () => close();
+
             setInputWriter(writer);
         })();
         return () => close && close();

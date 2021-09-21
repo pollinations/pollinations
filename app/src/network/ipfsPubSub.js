@@ -13,7 +13,7 @@ const HEARTBEAT_FREQUENCY = 15;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
-export function publisher(nodeID=null, suffix = "/output") {
+export function publisher(nodeID, suffix = "/output") {
 
     debug("Creating publisher for", nodeID, suffix);
 
@@ -76,11 +76,11 @@ async function experimentalIPNSPublish(client, rootCID) {
 }
 
 // Generate an async iterable by subscribing to CIDs from a specific node id and suffix
-export async function subscribeGenerator(nodeID, suffix = "/input") {
+export function subscribeGenerator(nodeID, suffix = "/input") {
 
     const channel = new Channel();
    
-    debug("Subscribing to pubsub events from", nodeid, suffix);
+    debug("Subscribing to pubsub events from", nodeID, suffix);
 
     const unsubscribe = subscribeCID(nodeID,suffix,
         cid => channel.push(cid)
@@ -91,11 +91,10 @@ export async function subscribeGenerator(nodeID, suffix = "/input") {
 
 // Subscribe to a content ids from a nodeID and suffix. Callback is called with the content ids
 // Also receives and logs heartbeats received from the publisher
-export async function subscribeCID(nodeID, suffix = "", callback) {
-    const client = await getClient();
+export function subscribeCID(nodeID, suffix = "", callback) {
     let lastHeartbeatTime = new Date().getTime();
 
-    return subscribeCallback(client, nodeID+suffix, message => {
+    return subscribeCallback(nodeID+suffix, message => {
         if (message === "HEARTBEAT") {
             const time = new Date().getTime();
             debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
@@ -107,7 +106,7 @@ export async function subscribeCID(nodeID, suffix = "", callback) {
 };
 
 // Subscribe to an ipfs topic with some rather ugly code to handle errors that probably don't even occur
-function subscribeCallback(client, topic, callback) {
+function subscribeCallback(topic, callback) {
     const abort = new AbortController();
     (async () => {
         const onError = async (...errorArgs) => {
@@ -124,6 +123,7 @@ function subscribeCallback(client, topic, callback) {
         }
 
         const doSub = async () => {
+            const client = await getClient();
             try {
                 abort.abort();
                 debug("Executing subscribe", topic);

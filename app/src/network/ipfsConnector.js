@@ -42,6 +42,9 @@ export async function reader() {
     }
 }
 
+// Create a writer to modify the IPFS state
+// It creates a temporary folder in the IPFS mutable filesystem 
+// so calling close is important
 export async function writer(initialRootCID=null) {
     const client = await getClient();    
     const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
@@ -74,7 +77,7 @@ export async function writer(initialRootCID=null) {
     return getWriter(client, mfsRoot);
 }
 
-
+// getWriter just wraps the individual ipfs functions passing in the client
 function getWriter(client, mfsRoot) {
 
     const joinPath = path => join(mfsRoot, path);
@@ -246,11 +249,8 @@ async function getCID(client, path = "/") {
     }
 }
 
-let _lastContentID = null;
-
-
 const ipfsResolve = async (client,path) =>
-    stringCID(last(await toPromise(client.name.resolve(path, { nocache: true }))));
+    stringCID(last(await toPromise(client.name.resolve(path))));
 
 
 // test();

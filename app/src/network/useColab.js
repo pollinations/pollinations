@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSState,  updateInput, getInputWriter } from "./ipfsWebClient";
+import {IPFSWebState,  updateInput, getInputWriter } from "./ipfsWebClient";
 import Debug from "debug";
 import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
@@ -34,7 +34,7 @@ const useColab = (updateHashCondition = () => true) => {
         }
         if (contentID && contentID !== state.contentID) {
             debug("dispatching new contentID",contentID, state.contentID)
-            dispatchState({ contentID, ipfs: await IPFSState(contentID)});
+            dispatchState({ contentID, ipfs: await IPFSWebState(contentID)});
         }
     }, [state]);
 
@@ -47,7 +47,7 @@ const useColab = (updateHashCondition = () => true) => {
             const {nodeID, gpu} = nodeData;
     
             if (nodeID) {
-                debug("setting new nodeID",nodeID);
+                debug("setting new nodeID", nodeID);
                 dispatchState({ nodeID, gpu, status: "ready" });
             }
         });

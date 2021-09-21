@@ -1,50 +1,85 @@
 
 
-import  { stringCID, ipfsLs } from "./ipfsConnector.js";
+import  { stringCID, reader } from "./ipfsConnector.js";
 import Debug from "debug";
-import { toPromise } from "./utils.js";
 import { zip } from "ramda";
-import { cacheOutput } from "./contentCache.js";
-import { join } from "path";
-import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 
-//import concatLimit from 'async/concatLimit.js';
+import { extname, join } from "path";
+import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
+import { parse } from "json5";
+
 const debug = Debug("ipfsState");
 
-export const getIPFSState = async (contentID, callback, rootName="root") => {
-    debug("Getting state for CID", contentID)
-    const isFolder = (await ipfsLs(contentID)).length > 0;
-    if (isFolder) 
-        return await _getIPFSState({ cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
-    else
-        return await _getIPFSState({ cid: contentID, name: rootName, type: "file", path: "/", rootCID: contentID}, callback);
+
+// Recursively get the IPFS content and transform it into a JS object.
+// The callback is called for each file in the directories which can fetch or process them further
+export const getIPFSState = async (contentID, callback=f=>f, rootName="root") => {
+    const ipfsReader = await reader();
+    debug("Getting state for CID", contentID);
+    // console.trace("statecid")
+    const isFolder = (await ipfsReader.ls(contentID)).length > 0;
+
+        return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
+ }
+
+
+// Caching
+
+const cache = {};
+const cachedIPFSState = async (ipfsReader, {cid, ...rest}, processFile ) => {
+    const key = `${cid} - ${processFile.toString()}`;
+    if (!cache[key]) {
+        debug("cache miss",cid);
+        cache[key] = await _getIPFSState(ipfsReader, {cid, ...rest}, processFile);
+    } else
+        debug("cache hit",cid);
+    return cache[key];
 }
 
-const _getIPFSState = cacheOutput(async ({ cid, type, name, path, rootCID }, processFile) => {
+// Do the actual work
+const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile) => {
+    debug("ipfs state getter callback name",processFile.toString())
+    const {ls, get} = ipfsReader;
     cid = stringCID(cid);
     const _debug = debug.extend(`_getIPFSState(${path})`);
     _debug("Getting state for", type, name, cid);
     if (type === "dir") {
-        const files = await ipfsLs(cid);
+        const files = await ls(cid);
         _debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
         const contents = await PromiseAllProgress(path, files.map(
-            file => _getIPFSState({...file, path:join(path,file.name), rootCID}, processFile)
+            file => cachedIPFSState(ipfsReader, {...file, path:join(path,file.name), rootCID}, processFile)
             ));
 
         const contentResult = Object.fromEntries(zip(filenames, contents));
         _debug("contents",contentResult);
+        // Add non-enumerable property .cid to each "folder" in object
+        Object.defineProperty(contentResult, ".cid", { value: cid });
         return contentResult;
     }
      
 
     if (type === "file") {
-        const fileResult = await processFile({ cid, path, name, rootCID });
-        _debug("got result of processFile length", fileResult?.length);
+        const fileResult = await processFile({ 
+            cid, 
+            path, 
+            name, 
+            rootCID, 
+            ...dataFetchers(cid, ipfsReader)
+        }, ipfsReader);
+        //_debug("got result of processFile length", fileResult?.length);
         return fileResult;
     }
 
     throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
-});
+};
 
-
+// Provide functions similar to http response for getting contents of a file on IPFS
+const dataFetchers = (cid,{get}) => {
+    debug("creating data fetchers for cid",cid);
+    return{
+      json: async () => parse((await get(cid)).toString()),
+      text: async () => (await get(cid)).toString(),
+      buffer: async () => await get(cid)
+    };
+};

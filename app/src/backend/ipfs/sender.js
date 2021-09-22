@@ -110,15 +110,17 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     cwd: watchPath,
   });
 
-  const sendQueuedFiles =  throttle(debounceTime, false, async () => {
+  const sendQueuedFiles =  debounce(debounceTime, false, async () => {
     const files = changeQueue;
     changeQueue = [];
     channel$.push(files);
   });
 
   watcher.on("all", async (event, path) => {
-    changeQueue.push({ event, path });
-    sendQueuedFiles();
+    if (path !== '') {
+      changeQueue.push({ event, path });
+      sendQueuedFiles();
+    }
   });
 
   return channel$;

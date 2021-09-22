@@ -35849,10 +35849,13 @@ function throttle(delay, noTrailing, callback, debounceMode) {
   wrapper.cancel = cancel;
   return wrapper;
 }
+function debounce(delay, atBegin, callback) {
+  return callback === void 0 ? throttle(delay, atBegin, false) : throttle(delay, callback, atBegin !== false);
+}
 
 // src/backend/ipfs/sender.js
 var debug4 = (0, import_debug4.default)("ipfs/sender");
-var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
+var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   async function start() {
@@ -35872,7 +35875,7 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
     });
     const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
     let _lastCID = null;
-    const sendCIDUpdate = throttle(debounce, false, async () => {
+    const sendCIDUpdate = debounce(debounceTime, false, async () => {
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {

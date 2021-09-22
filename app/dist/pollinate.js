@@ -7979,26 +7979,26 @@ var require_cid = __commonJS({
         }
       }
     };
-    var toStringV02 = (bytes2, cache, base2) => {
+    var toStringV02 = (bytes2, cache2, base2) => {
       const { prefix } = base2;
       if (prefix !== base58.base58btc.prefix) {
         throw Error(`Cannot string encode V0 in ${base2.name} encoding`);
       }
-      const cid = cache.get(prefix);
+      const cid = cache2.get(prefix);
       if (cid == null) {
         const cid2 = base2.encode(bytes2).slice(1);
-        cache.set(prefix, cid2);
+        cache2.set(prefix, cid2);
         return cid2;
       } else {
         return cid;
       }
     };
-    var toStringV12 = (bytes2, cache, base2) => {
+    var toStringV12 = (bytes2, cache2, base2) => {
       const { prefix } = base2;
-      const cid = cache.get(prefix);
+      const cid = cache2.get(prefix);
       if (cid == null) {
         const cid2 = base2.encode(bytes2);
-        cache.set(prefix, cid2);
+        cache2.set(prefix, cid2);
         return cid2;
       } else {
         return cid;
@@ -31261,13 +31261,13 @@ var require_memoizeWith = __commonJS({
     var _curry2 = require_curry2();
     var _has = require_has();
     var memoizeWith = /* @__PURE__ */ _curry2(function memoizeWith2(mFn, fn) {
-      var cache = {};
+      var cache2 = {};
       return _arity(fn.length, function() {
         var key = mFn.apply(this, arguments);
-        if (!_has(key, cache)) {
-          cache[key] = fn.apply(this, arguments);
+        if (!_has(key, cache2)) {
+          cache2[key] = fn.apply(this, arguments);
         }
-        return cache[key];
+        return cache2[key];
       });
     });
     module2.exports = memoizeWith;
@@ -35675,26 +35675,26 @@ var parseCIDtoBytes = (source, base2) => {
     }
   }
 };
-var toStringV0 = (bytes, cache, base2) => {
+var toStringV0 = (bytes, cache2, base2) => {
   const { prefix } = base2;
   if (prefix !== base58btc.prefix) {
     throw Error(`Cannot string encode V0 in ${base2.name} encoding`);
   }
-  const cid = cache.get(prefix);
+  const cid = cache2.get(prefix);
   if (cid == null) {
     const cid2 = base2.encode(bytes).slice(1);
-    cache.set(prefix, cid2);
+    cache2.set(prefix, cid2);
     return cid2;
   } else {
     return cid;
   }
 };
-var toStringV1 = (bytes, cache, base2) => {
+var toStringV1 = (bytes, cache2, base2) => {
   const { prefix } = base2;
-  const cid = cache.get(prefix);
+  const cid = cache2.get(prefix);
   if (cid == null) {
     const cid2 = base2.encode(bytes);
-    cache.set(prefix, cid2);
+    cache2.set(prefix, cid2);
     return cid2;
   } else {
     return cid;
@@ -35771,9 +35771,9 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
+var mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}`;
 async function writer(initialRootCID = null) {
   const client = await getClient();
-  const mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}`;
   const getRootCID = async () => await getCID(client, mfsRoot);
   let rootCid = await getRootCID();
   debug2("existing root CID", rootCid);
@@ -35798,19 +35798,19 @@ async function writer(initialRootCID = null) {
   }
   return getWriter(client, mfsRoot);
 }
-function getWriter(client, mfsRoot) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
+function getWriter(client, mfsRoot2) {
+  const joinPath = (path) => (0, import_path.join)(mfsRoot2, path);
   const returnRootCID = (func) => async (...args) => {
     await func(...args);
-    return await getCID(client, mfsRoot);
+    return await getCID(client, mfsRoot2);
   };
   return {
     add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
     addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
     rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
     mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
-    cid: async () => await getCID(client, mfsRoot),
-    close: async () => await ipfsRm(client, mfsRoot)
+    cid: async () => await getCID(client, mfsRoot2),
+    close: async () => await ipfsRm(client, mfsRoot2)
   };
 }
 var localIPFSAvailable = async () => {
@@ -36118,16 +36118,25 @@ var PromiseAllProgress = (name, promises) => Promise.all(promises);
 // src/network/ipfsState.js
 var import_json5 = __toModule(require_lib6());
 var debug5 = (0, import_debug5.default)("ipfsState");
-var getIPFSState = async (contentID, callback, rootName = "root") => {
+var getIPFSState = async (contentID, callback = (f) => f, rootName = "root") => {
   const ipfsReader = await reader();
   debug5("Getting state for CID", contentID);
   const isFolder = (await ipfsReader.ls(contentID)).length > 0;
-  if (isFolder)
-    return await _getIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID }, callback);
-  else
-    return await _getIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "file", path: "/", rootCID: contentID }, callback);
+  return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID }, callback);
 };
-var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile2 = (f) => f) => {
+var cache = {};
+var cachedIPFSState = async (ipfsReader, _a, processFile2) => {
+  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
+  const key = `${cid} - ${processFile2.toString()}`;
+  if (!cache[key]) {
+    debug5("cache miss", cid);
+    cache[key] = await _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2);
+  } else
+    debug5("cache hit", cid);
+  return cache[key];
+};
+var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile2) => {
+  debug5("ipfs state getter callback name", processFile2.toString());
   const { ls, get } = ipfsReader;
   cid = stringCID(cid);
   const _debug = debug5.extend(`_getIPFSState(${path})`);
@@ -36136,7 +36145,7 @@ var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, proce
     const files = await ls(cid);
     _debug("Got files for", name, cid, files);
     const filenames = files.map(({ name: name2 }) => name2);
-    const contents = await PromiseAllProgress(path, files.map((file) => _getIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path3.join)(path, file.name), rootCID }), processFile2)));
+    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path3.join)(path, file.name), rootCID }), processFile2)));
     const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });

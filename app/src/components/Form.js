@@ -6,7 +6,6 @@ import { Box, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import HelpModal from "./HelpModal";
 import { useDropzone } from 'react-dropzone'
-import { client } from "../network/ipfsConnector";
 import { CID } from "ipfs-http-client";
 
 const debug = Debug("Form");

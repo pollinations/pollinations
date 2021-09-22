@@ -35800,6 +35800,57 @@ var import_fs = __toModule(require("fs"));
 var import_debug4 = __toModule(require_src());
 var import_chokidar = __toModule(require_chokidar());
 var import_queueable2 = __toModule(require_lib5());
+
+// node_modules/throttle-debounce/esm/index.js
+function throttle(delay, noTrailing, callback, debounceMode) {
+  var timeoutID;
+  var cancelled = false;
+  var lastExec = 0;
+  function clearExistingTimeout() {
+    if (timeoutID) {
+      clearTimeout(timeoutID);
+    }
+  }
+  function cancel() {
+    clearExistingTimeout();
+    cancelled = true;
+  }
+  if (typeof noTrailing !== "boolean") {
+    debounceMode = callback;
+    callback = noTrailing;
+    noTrailing = void 0;
+  }
+  function wrapper() {
+    for (var _len = arguments.length, arguments_ = new Array(_len), _key = 0; _key < _len; _key++) {
+      arguments_[_key] = arguments[_key];
+    }
+    var self2 = this;
+    var elapsed = Date.now() - lastExec;
+    if (cancelled) {
+      return;
+    }
+    function exec2() {
+      lastExec = Date.now();
+      callback.apply(self2, arguments_);
+    }
+    function clear() {
+      timeoutID = void 0;
+    }
+    if (debounceMode && !timeoutID) {
+      exec2();
+    }
+    clearExistingTimeout();
+    if (debounceMode === void 0 && elapsed > delay) {
+      exec2();
+    } else if (noTrailing !== true) {
+      timeoutID = setTimeout(debounceMode ? clear : exec2, debounceMode === void 0 ? delay - elapsed : delay);
+    }
+  }
+  wrapper.cancel = cancel;
+  return wrapper;
+}
+
+// src/backend/ipfs/sender.js
 var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
@@ -35820,6 +35871,15 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
       channel$.push({ event, path });
     });
     const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+    let _lastCID = null;
+    const sendCIDUpdate = throttle(debounce, false, async () => {
+      const newContentID = await cid();
+      console.log(newContentID);
+      if (ipns) {
+        debug4("publish", newContentID);
+        await publish2(newContentID);
+      }
+    });
     for await (const { event, path: file } of channel$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -35836,12 +35896,7 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
         debug4("removing", file, event);
         await rm(ipfsPath);
       }
-      const newContentID = await cid();
-      console.log(newContentID);
-      if (ipns) {
-        debug4("publish", newContentID);
-        await publish2(newContentID);
-      }
+      await sendCIDUpdate();
       done();
       if (once) {
         break;

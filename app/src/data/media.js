@@ -7,7 +7,8 @@ const debug = Debug("media");
 const _mediaTypeMap = {
     "all": [".jpg", ".png", ".mp4",".webm"],
     "video": [".mp4",".webm"],
-    "image": [".jpg", ".png"]
+    "image": [".jpg", ".png"],
+    "text": [".md", ".txt"]
   }
   
 // get first image for social media and other stuff    

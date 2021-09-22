@@ -24,7 +24,6 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 
   const { post, title } = formatPostAndTitle(name, principal_input, url, shortenPost);
 
-
   return { post, title, videoURL, coverImage: coverImageURL, url };
 
 }
@@ -40,11 +39,11 @@ function formatPostAndTitle(modelTitle, input, url, shortenPost) {
   // For twitter and open graph tags we need to shorten long titles/posts
   if (shortenPost) {
     input = shorten(input, 160);
-    modelTitle = shorten(modelTitle, 70);
+    modelTitle = ""//shorten(modelTitle, 70);
   }
 
   const title = `${input}`;
-  const post = `"${title}" ${url} ${hashTags}`;
+  const post = `${modelTitle} "${title}" ${url} ${hashTags}`;
     
   return { post, title };
 

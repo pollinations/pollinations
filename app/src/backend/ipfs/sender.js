@@ -7,7 +7,7 @@ import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
 import chokidar from "chokidar";
 import { Channel } from "queueable";
-import { debounce } from "throttle-debounce";
+import { debounce, throttle } from "throttle-debounce";
 
 const debug = Debug("ipfs/sender");
 
@@ -110,7 +110,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     cwd: watchPath,
   });
 
-  const sendQueuedFiles =  debounce(debounceTime, false, async () => {
+  const sendQueuedFiles =  throttle(debounceTime, false, async () => {
     const files = changeQueue;
     changeQueue = [];
     channel$.push(files);

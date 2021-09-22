@@ -7,7 +7,6 @@ import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
 import chokidar from "chokidar";
 import { Channel } from "queueable";
-import { throttle } from "throttle-debounce";
 
 const debug = Debug("ipfs/sender");
 
@@ -41,18 +40,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
 
     
     const { publish, close: closePublisher } = publisher(nodeid,"/output");
-    
-    let _lastCID = null;
-    const sendCIDUpdate = throttle(debounce, false, async () => {
-      const newContentID = await cid();
-      console.log(newContentID);
-      if (ipns) {
-        debug("publish", newContentID);
-        // if (!isSameContentID(stringCID(newContentID)))
-        await publish(newContentID);
-      }
-    });
-    
+
     for await (const { event, path: file } of channel$) {
       
       let done=null;
@@ -80,9 +68,17 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
 
       // await Promise.all(changed.map(async ({ event, file }) => {
      
-      await sendCIDUpdate();
+
       // }));
   
+      const newContentID = await cid();
+      console.log(newContentID);
+      if (ipns) {
+        debug("publish", newContentID);
+        // if (!isSameContentID(stringCID(newContentID)))
+        await publish(newContentID);
+      }
+
       done();
 
       if (once) {

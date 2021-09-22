@@ -255,7 +255,7 @@ async function getCID(client, path = "/") {
 }
 
 const ipfsResolve = async (client,path) =>
-    stringCID(last(await toPromise(client.name.resolve(path))));
+    stringCID(last(await toPromise(client.name.resolve(path, { nocache: true } ))));
 
 
 // test();

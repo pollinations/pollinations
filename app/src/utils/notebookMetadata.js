@@ -63,8 +63,14 @@ const extractParametersWithComment = (text,i,codeRows) => {
 const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
 
 const mapToJSONFormField = ([_text, name, defaultVal, type, description]) => {
-  if (defaultVal === "True" || defaultVal === "False")
-    defaultVal = defaultVal.toLowerCase();  
+  
+  // If the regex were better we would not need to trim here
+  defaultVal = defaultVal.trim();
+
+  if (defaultVal == "True" || defaultVal == "False") 
+    defaultVal = defaultVal.toLowerCase();
+
+  debug("Parsing JSON:",{ defaultVal }, defaultVal === "True");
   return [name, {type, default: parse(defaultVal), title: description || name}];
 }
 

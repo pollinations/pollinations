@@ -36044,7 +36044,7 @@ var import_ramda2 = __toModule(require_src10());
 var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
-  const { addFile, mkDir, rm, cid, close } = await writer();
+  const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   async function start() {
     if (!(0, import_fs.existsSync)(watchPath)) {
       debug4("Local: Root directory does not exist. Creating", watchPath);
@@ -36056,7 +36056,7 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
       cwd: watchPath,
       awaitWriteFinish: true
     }, { debounce });
-    const { publish: publish2, close: close2 } = publisher(nodeid, "/output");
+    const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
     for await (const files of watch$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -36087,7 +36087,8 @@ var sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
         break;
       }
     }
-    close2();
+    await closeWriter();
+    closePublisher();
   }
   return { start, processing: () => processing };
 };
@@ -36263,7 +36264,7 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
 });
 if (executeCommand)
   (async () => {
-    const { start, processing } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    const { start, processing } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
     start();
     await execute(executeCommand, options_default.logout);
     debug7("done executing", executeCommand, ". Waiting...");

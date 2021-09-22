@@ -11,6 +11,7 @@ import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
 import { exec } from "child_process";
 import { createWriteStream } from "fs";
+import { getClient } from "../network/ipfsConnector.js";
 
 export const debug = Debug("pollinate")
 
@@ -58,7 +59,7 @@ if (executeCommand)
     // const receivedCID = await receive({...options, once: true});
     // debug("received IPFS content", receivedCID);
     
-    const {start, processing} = sender({...options, once: false });
+    const {start, processing} = await sender({...options, once: false });
     
     start();
     

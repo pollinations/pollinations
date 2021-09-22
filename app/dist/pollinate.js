@@ -35880,6 +35880,8 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
   const chunkArrays = await (0, import_it_all.default)(client.cat(cid));
   const chunks = chunkArrays.map(Buffer.from);
   _debug("Got all chunks. Total:", chunks);
+  if (chunks.length === 0)
+    return Buffer.from([]);
   const contentArray = chunks.length > 1 ? Buffer.concat(chunks) : chunks[0];
   _debug("Received content length:", contentArray.length);
   return contentArray;

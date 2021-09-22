@@ -14,7 +14,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
   
   let processing = Promise.resolve(true);
   
-  const { addFile, mkDir, rm, cid, close } = await writer();
+  const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
 
   async function start() {
 
@@ -31,7 +31,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
       awaitWriteFinish: true,
     }, { debounce });
     
-    const { publish, close } = publisher(nodeid,"/output");
+    const { publish, close: closePublisher } = publisher(nodeid,"/output");
 
     for await (const files of watch$) {
       
@@ -80,7 +80,8 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
         break;
       }
     }
-    close();
+    await closeWriter();
+    closePublisher();
   }
   return {start, processing: () => processing};
 };

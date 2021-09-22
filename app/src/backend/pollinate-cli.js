@@ -59,7 +59,7 @@ if (executeCommand)
     // const receivedCID = await receive({...options, once: true});
     // debug("received IPFS content", receivedCID);
     
-    const {start, processing} = sender({...options, once: false });
+    const {start, processing} = await sender({...options, once: false });
     
     start();
     

@@ -169,18 +169,19 @@ const ipfsLsCID = async (client, cid) => {
         .map(_normalizeIPFS);
     debug("got ipfs ls result", result);
     return result;
-};
-
-const ipfsLs = async (client, path) => ipfsLsCID(client, await getCID(path));
+}
 
 
 const ipfsAdd = async (client, path, content, options = {}) => {
     debug("adding", path, "options", options);
-    const cid = stringCID(
-        //await retryException(async () => 
-        await client.add(content, options)
-        // )
-        );
+    let cid = null;
+    try {
+        cid = stringCID(await client.add(content, options));
+    } catch (e) {
+        debug("could not add file",path,"becaus of",e.message,". Maybe the content was deleted before it could be added?");
+        return null;
+    }
+    
     debug("added", cid);
 
 

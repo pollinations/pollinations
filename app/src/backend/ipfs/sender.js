@@ -26,39 +26,18 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
       mkdirSync(watchPath, { recursive: true });
     }
     
-    debug("Local: Watching", watchPath);
-    const channel$ = new Channel();
-    
-    const watcher = chokidar.watch(watchPath, { 
-      awaitWriteFinish: true, 
-      ignored: /(^|[\/\\])\../,
-      cwd: watchPath,
-    });
 
-    watcher.on("all", async (event, path) => {
-      channel$.push({ event, path });
-    });
-
+    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     
     const { publish, close: closePublisher } = publisher(nodeid,"/output");
-    
-    let _lastCID = null;
-    const sendCIDUpdate = debounce(debounceTime, false, async () => {
-      const newContentID = await cid();
-      console.log(newContentID);
-      if (ipns) {
-        debug("publish", newContentID);
-        // if (!isSameContentID(stringCID(newContentID)))
-        await publish(newContentID);
-      }
-    });
-    
-    for await (const { event, path: file } of channel$) {
+
+    for await (const changed of changedFiles$) {
       
       let done=null;
 
       processing = new Promise(resolve => done = resolve);
-
+      debug("Changed files", changed);
+      for (const  { event, path: file } of changed) {
       // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
         const localPath = join(watchPath, file);
@@ -77,10 +56,16 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
           await rm(ipfsPath);
     
         }
-
+      }
       // await Promise.all(changed.map(async ({ event, file }) => {
      
-      await sendCIDUpdate();
+      const newContentID = await cid();
+      console.log(newContentID);
+      if (ipns) {
+        debug("publish", newContentID);
+        // if (!isSameContentID(stringCID(newContentID)))
+        await publish(newContentID);
+      }
       // }));
   
       done();
@@ -111,3 +96,30 @@ function getSortedChangedFiles(files) {
 const _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];//.reverse();
 const eventOrder = ({ event }) => _eventOrder.indexOf(event);
 const order = events => sortBy(eventOrder, reverse(events));
+
+
+const chunkedFilewatcher = (watchPath, debounceTime) => {
+  debug("Local: Watching", watchPath);
+  const channel$ = new Channel();
+  
+  let changeQueue = [];
+
+  const watcher = chokidar.watch(watchPath, { 
+    awaitWriteFinish: true, 
+    ignored: /(^|[\/\\])\../,
+    cwd: watchPath,
+  });
+
+  const sendQueuedFiles =  debounce(debounceTime, false, async () => {
+    const files = changeQueue;
+    changeQueue = [];
+    channel$.push(files);
+  });
+
+  watcher.on("all", async (event, path) => {
+    changeQueue.push({ event, path });
+    sendQueuedFiles();
+  });
+
+  return channel$;
+}

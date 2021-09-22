@@ -1,7 +1,6 @@
 import React from "react";
 import Model from "./pages/Model";
-import { Redirect } from "react-router-dom";
-import { getDefaultNotebook } from "./data/notebooks.js";
+import Home from "./pages/Home";
 
 export let getRoutes = async () => { 
     return [
@@ -13,7 +12,7 @@ export let getRoutes = async () => {
         { 
             exact: true,
             path: "/",
-            children: <Redirect to={(await  getDefaultNotebook())?.path} />,
+            children: <Home />,
         }
     ];
 };

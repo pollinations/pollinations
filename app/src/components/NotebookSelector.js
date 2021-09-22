@@ -17,7 +17,7 @@ import { noop } from '../network/utils';
 import { getNotebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
 import { SocialLinks } from './Social';
-import { Box } from '@material-ui/core';
+import { Box, Link } from '@material-ui/core';
 
 
 export default function NotebookSelector(state) {
@@ -40,12 +40,12 @@ export default function NotebookSelector(state) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            Pollinations
+            <Link href="/">Pollinations</Link>
           </Typography>
           <Box marginLeft="15"> 
             <SocialLinks />
           </Box>
-          <NodeStatus {...state} />
+          {state.contentID && <NodeStatus {...state} /> }
         </Toolbar>
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>

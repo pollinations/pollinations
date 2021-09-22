@@ -1,6 +1,6 @@
 
 import SocialPost from "social-post-api"; 
-import { IPFSState } from "../../network/ipfsClient.js";
+import { IPFSWebState } from "../../network/ipfsWebClient.js";
 
 import { getPostData } from "../../data/summaryData";
 
@@ -17,7 +17,7 @@ export const handler = async ({path}) => {
     const platform = path.split("/").slice(-2)[0];
     // your server-side functionality
     console.log("platform",platform,"cid",cid,". Fetching IPFS state");
-    const ipfs = await IPFSState(cid);
+    const ipfs = await IPFSWebState(cid);
 
     const data =  getPostData(ipfs, cid, true);
     
@@ -48,7 +48,6 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
 
-
   const shareConfig = {
     post,
     title,
@@ -60,7 +59,11 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
     },
     shortenLinks: false,
     "mediaUrls": [videoURL],
-    "platforms": [platform]
+    "platforms": [platform],
+    autoHashtag: {
+      max: 2,
+      position: "auto"
+    }
   };
 
   const postResponse = await social.post(shareConfig).catch(console.error);

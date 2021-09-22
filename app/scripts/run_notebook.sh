@@ -14,6 +14,8 @@ echo "IPFS_ROOT: $IPFS_ROOT"
 
 echo "---" > $NOTEBOOK_PARAMS_FILE
 echo "output_path : $IPFS_ROOT/output" >> $NOTEBOOK_PARAMS_FILE
+echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
+
 
 for path in $IPFS_ROOT/input/*; do
 

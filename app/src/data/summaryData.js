@@ -1,8 +1,8 @@
 import readMetadata from "../utils/notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "./media.js";
 import mature from "../backend/mature.js";
-import debug from "debug";
-
+import Debug from "debug";
+const debug = Debug("summaryData");
 
 // Get summary data that will be used for SEO, crawlers and social posts
 // Replaces mature words with ***'s
@@ -12,12 +12,13 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 
   const input = ipfs.input[primaryInput];
   const coverImage = getCoverImage(ipfs.output);
+  debug("got coverImage", coverImage);
   const coverImageURL = coverImage ? coverImage[1] : null; 
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
   const url = `https://pollinations.ai/p/${cid}`;
 
-  console.log("Calling post", { name, input, videoURL, coverImage: coverImageURL, url });
+  debug("Calling post", { name, input, videoURL, coverImage: coverImageURL, url });
 
   const principal_input = mature(input);
 

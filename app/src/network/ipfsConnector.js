@@ -133,7 +133,10 @@ const getIPFSDaemonURL = async () => {
 
 const ipfsCp = async (client, cid, ipfsPath) => {
   debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
-  return await retryException(async () => await client.files.cp(`/ipfs/${cid}`, ipfsPath));
+  return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+    //await retryException(async () => 
+    
+    //);
 }
 
 export const getWebURL = (cid, name = null) => {
@@ -173,9 +176,11 @@ const ipfsLs = async (client, path) => ipfsLsCID(client, await getCID(path));
 
 const ipfsAdd = async (client, path, content, options = {}) => {
     debug("adding", path, "options", options);
-    const cid = stringCID(await retryException(
-        async () => await client.add(content, options)
-    ));
+    const cid = stringCID(
+        //await retryException(async () => 
+        await client.add(content, options)
+        // )
+        );
     debug("added", cid);
 
 
@@ -218,7 +223,9 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
-    await retryException(async () => await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
+    // await retryException(async () =>
+     await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }))
+    //  );
 }
 
 async function optionallyResolveIPNS(client, cid) {

@@ -7,13 +7,13 @@ import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
 import chokidar from "chokidar";
 import { Channel } from "queueable";
-import { throttle } from "throttle-debounce";
+import { debounce } from "throttle-debounce";
 
 const debug = Debug("ipfs/sender");
 
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
-export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) => {
+export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, once, nodeid }) => {
   
   let processing = Promise.resolve(true);
   
@@ -43,7 +43,7 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
     const { publish, close: closePublisher } = publisher(nodeid,"/output");
     
     let _lastCID = null;
-    const sendCIDUpdate = throttle(debounce, false, async () => {
+    const sendCIDUpdate = debounce(debounceTime, false, async () => {
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {

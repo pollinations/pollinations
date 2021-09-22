@@ -207,7 +207,9 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
     const chunks = chunkArrays.map(Buffer.from);
 
     _debug("Got all chunks. Total:", chunks);
-
+    if (chunks.length === 0)
+        return Buffer.from([]);
+        
     const contentArray = chunks.length > 1 ? Buffer.concat(chunks) : chunks[0];
 
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));

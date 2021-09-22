@@ -1,12 +1,10 @@
-
+import watch from 'file-watch-iterator';
 import { writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
 import Debug from 'debug';
 import { sortBy, reverse } from "ramda";
-import chokidar from "chokidar";
-import { Channel } from "queueable";
 
 const debug = Debug("ipfs/sender");
 
@@ -26,28 +24,25 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
     }
     
     debug("Local: Watching", watchPath);
-    const channel$ = new Channel();
     
-    const watcher = chokidar.watch(watchPath, { 
-      awaitWriteFinish: true, 
+    const watch$ = watch(".", {
       ignored: /(^|[\/\\])\../,
       cwd: watchPath,
-    });
-
-    watcher.on("all", async (event, path) => {
-      channel$.push({ event, path });
-    });
-
+      awaitWriteFinish: true,
+    }, { debounce });
     
     const { publish, close: closePublisher } = publisher(nodeid,"/output");
 
-    for await (const { event, path: file } of channel$) {
+    for await (const files of watch$) {
       
       let done=null;
 
       processing = new Promise(resolve => done = resolve);
-
+      
+      const changed = getSortedChangedFiles(files);
+      
       // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
+      for (const { event, file } of changed) {
         debug("Local:", event, file);
         const localPath = join(watchPath, file);
         const ipfsPath = file;
@@ -63,8 +58,8 @@ export const sender = async ({ path: watchPath, debounce, ipns, once, nodeid }) 
         if (event === "unlink" || event === "unlinkDir") {
           debug("removing", file, event);
           await rm(ipfsPath);
-    
         }
+      }
 
       // await Promise.all(changed.map(async ({ event, file }) => {
      

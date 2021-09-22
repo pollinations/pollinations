@@ -35879,7 +35879,7 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
   cid = await optionallyResolveIPNS(client, cid);
   const chunkArrays = await (0, import_it_all.default)(client.cat(cid));
   const chunks = chunkArrays.map(Buffer.from);
-  _debug("Got all chunks. Total:", chunks);
+  _debug("Got all chunks. Total:", chunks.length);
   const contentArray = chunks.length > 1 ? Buffer.concat(chunks) : chunks[0];
   _debug("Received content length:", contentArray.length);
   return contentArray;

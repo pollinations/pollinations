@@ -35863,43 +35863,33 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
       debug4("Local: Root directory does not exist. Creating", watchPath);
       (0, import_fs.mkdirSync)(watchPath, { recursive: true });
     }
-    debug4("Local: Watching", watchPath);
-    const channel$ = new import_queueable2.Channel();
-    const watcher = import_chokidar.default.watch(watchPath, {
-      awaitWriteFinish: true,
-      ignored: /(^|[\/\\])\../,
-      cwd: watchPath
-    });
-    watcher.on("all", async (event, path) => {
-      channel$.push({ event, path });
-    });
+    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-    let _lastCID = null;
-    const sendCIDUpdate = debounce(debounceTime, false, async () => {
+    for await (const changed of changedFiles$) {
+      let done = null;
+      processing = new Promise((resolve) => done = resolve);
+      debug4("Changed files", changed);
+      for (const { event, path: file } of changed) {
+        debug4("Local:", event, file);
+        const localPath = (0, import_path2.join)(watchPath, file);
+        const ipfsPath = file;
+        if (event === "addDir") {
+          await mkDir(ipfsPath);
+        }
+        if (event === "add" || event === "change") {
+          await addFile(ipfsPath, localPath);
+        }
+        if (event === "unlink" || event === "unlinkDir") {
+          debug4("removing", file, event);
+          await rm(ipfsPath);
+        }
+      }
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
         debug4("publish", newContentID);
         await publish2(newContentID);
       }
-    });
-    for await (const { event, path: file } of channel$) {
-      let done = null;
-      processing = new Promise((resolve) => done = resolve);
-      debug4("Local:", event, file);
-      const localPath = (0, import_path2.join)(watchPath, file);
-      const ipfsPath = file;
-      if (event === "addDir") {
-        await mkDir(ipfsPath);
-      }
-      if (event === "add" || event === "change") {
-        await addFile(ipfsPath, localPath);
-      }
-      if (event === "unlink" || event === "unlinkDir") {
-        debug4("removing", file, event);
-        await rm(ipfsPath);
-      }
-      await sendCIDUpdate();
       done();
       if (once) {
         break;
@@ -35909,6 +35899,26 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
     closePublisher();
   }
   return { start, processing: () => processing };
+};
+var chunkedFilewatcher = (watchPath, debounceTime) => {
+  debug4("Local: Watching", watchPath);
+  const channel$ = new import_queueable2.Channel();
+  let changeQueue = [];
+  const watcher = import_chokidar.default.watch(watchPath, {
+    awaitWriteFinish: true,
+    ignored: /(^|[\/\\])\../,
+    cwd: watchPath
+  });
+  const sendQueuedFiles = debounce(debounceTime, false, async () => {
+    const files = changeQueue;
+    changeQueue = [];
+    channel$.push(files);
+  });
+  watcher.on("all", async (event, path) => {
+    changeQueue.push({ event, path });
+    sendQueuedFiles();
+  });
+  return channel$;
 };
 
 // src/backend/ipfs/receiver.js

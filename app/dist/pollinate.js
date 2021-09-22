@@ -35602,7 +35602,13 @@ var ipfsLsCID = async (client, cid) => {
 };
 var ipfsAdd = async (client, path, content, options = {}) => {
   debug2("adding", path, "options", options);
-  const cid = stringCID(await client.add(content, options));
+  let cid = null;
+  try {
+    cid = stringCID(await client.add(content, options));
+  } catch (e) {
+    debug2("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
+    return null;
+  }
   debug2("added", cid);
   try {
     debug2("Trying to delete", path);

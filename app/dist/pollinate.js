@@ -34692,17 +34692,6 @@ var toPromise = async (asyncGen) => {
   return contents;
 };
 var noop = () => null;
-var retryException = async (f, n = 10) => {
-  while (n-- > 0) {
-    try {
-      return await f();
-    } catch (e) {
-      debug("retryException", e);
-      await (0, import_await_sleep.default)(1e3);
-    }
-  }
-  throw new Error("Too many retries");
-};
 
 // node_modules/multiformats/esm/vendor/varint.js
 var encode_1 = encode;
@@ -35593,7 +35582,7 @@ var getIPFSDaemonURL = async () => {
 };
 var ipfsCp = async (client, cid, ipfsPath) => {
   debug2("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
-  return await retryException(async () => await client.files.cp(`/ipfs/${cid}`, ipfsPath));
+  return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
 };
 var stripSlashIPFS = (cidString) => {
   debug2("stripSlash", cidString);
@@ -35613,7 +35602,13 @@ var ipfsLsCID = async (client, cid) => {
 };
 var ipfsAdd = async (client, path, content, options = {}) => {
   debug2("adding", path, "options", options);
-  const cid = stringCID(await retryException(async () => await client.add(content, options)));
+  let cid = null;
+  try {
+    cid = stringCID(await client.add(content, options));
+  } catch (e) {
+    debug2("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
+    return null;
+  }
   debug2("added", cid);
   try {
     debug2("Trying to delete", path);
@@ -35644,7 +35639,7 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
 };
 var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug2("Adding file", localPath, "to", ipfsPath);
-  await retryException(async () => await ipfsAdd(client, ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, { preserveMtime: true, preserveMode: true })));
+  await ipfsAdd(client, ipfsPath, (0, import_ipfs_http_client.globSource)(localPath, { preserveMtime: true, preserveMode: true }));
 };
 async function optionallyResolveIPNS(client, cid) {
   debug2("Trying to resolve CID", cid);
@@ -35915,8 +35910,10 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     channel$.push(files);
   });
   watcher.on("all", async (event, path) => {
-    changeQueue.push({ event, path });
-    sendQueuedFiles();
+    if (path !== "") {
+      changeQueue.push({ event, path });
+      sendQueuedFiles();
+    }
   });
   return channel$;
 };

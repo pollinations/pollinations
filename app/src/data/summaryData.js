@@ -21,7 +21,7 @@ export function getPostData(ipfs, cid, shortenPost=true) {
   // Check if a text was output by the run. Otherwise use the input text
   // In the future we may want to refactor this to be more flexible. E.g. when we have image inputs
   const possibleText = getMedia(ipfs.output, "text")[0];
-  const text =  possibleText ? "\n\n" + possibleText[1] : ipfs.input[primaryInput];
+  const text =  possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
 
   // Replace mature words with ***'s
   const maturityFilteredText = mature(text);
@@ -37,17 +37,21 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 const hashTags =  "#pollinations #generative #art #machinelearning";
 
 
+const formatText = (shortenPost, possibleText) =>
+  (shortenPost ? "\n\n" : "") + possibleText[1];
+
+
 function formatPostAndTitle(modelTitle, text, url, shortenPost) {
 
 
   // For twitter and open graph tags we need to shorten long titles/posts
   if (shortenPost) {
     text = shorten(text, 160);
-    modelTitle = ""//shorten(modelTitle, 70);
+    modelTitle = shorten(modelTitle, 70);
   }
 
-  const title = `${text}`;
-  const post = `${modelTitle} - "${title}" ${url} ${hashTags}`;
+
+  const post = `${modelTitle} - "${text}" ${url} ${hashTags}`;
     
   return { post, title };
 

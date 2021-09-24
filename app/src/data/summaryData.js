@@ -38,7 +38,7 @@ const hashTags =  "#pollinations #generative #art #machinelearning";
 
 
 const formatText = (shortenPost, possibleText) =>
-  (shortenPost ? "\n\n" : "") + possibleText[1];
+  shortenPost ? possibleText[1] : `\n\n${possibleText[1]}\n\n`;
 
 
 function formatPostAndTitle(modelTitle, text, url, shortenPost) {
@@ -50,8 +50,9 @@ function formatPostAndTitle(modelTitle, text, url, shortenPost) {
     modelTitle = shorten(modelTitle, 70);
   }
 
-
-  const post = `${modelTitle} - ${text} ${url} ${hashTags}`;
+  // For short posts omit the model title
+  const post = shortenPost ? 
+    `${text} ${url} ${hashTags}` : `${modelTitle} - ${text} ${url} ${hashTags}`;
     
   return { post, text };
 

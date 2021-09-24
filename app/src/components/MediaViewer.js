@@ -18,9 +18,6 @@ function ImageViewer({output}) {
 
     if (!images || images.length === 0)
       return null;
-
-    
-
     
     // remove first image for large display
     const firstImage = images.shift();

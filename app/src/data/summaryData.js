@@ -10,7 +10,7 @@ const debug = Debug("summaryData");
 export function getPostData(ipfs, cid, shortenPost=true) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
 
-
+  // get cover image and video
   const coverImage = getCoverImage(ipfs.output);
   debug("got coverImage", coverImage);
   const coverImageURL = coverImage ? coverImage[1] : null; 
@@ -18,14 +18,17 @@ export function getPostData(ipfs, cid, shortenPost=true) {
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
   const url = `https://pollinations.ai/p/${cid}`;
 
+  // Check if a text was output by the run. Otherwise use the input text
+  // In the future we may want to refactor this to be more flexible. E.g. when we have image inputs
   const possibleTextOutput = getMedia(ipfs.output, "text")
-  const input = possibleTextOutput[0] || ipfs.input[primaryInput];
+  const text = possibleTextOutput[0][1] || ipfs.input[primaryInput];
 
-  debug("Calling post", { name, input, videoURL, coverImage: coverImageURL, url });
+  // Replace mature words with ***'s
+  const maturityFilteredText = mature(text);
 
-  const principal_input = mature(input);
+  const { post, title } = formatPostAndTitle(name, maturityFilteredText, url, shortenPost);
 
-  const { post, title } = formatPostAndTitle(name, principal_input, url, shortenPost);
+  debug("Created post data", { name, text, videoURL, coverImage: coverImageURL, url });
 
   return { post, title, videoURL, coverImage: coverImageURL, url };
 
@@ -34,19 +37,17 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 const hashTags =  "#pollinations #generative #art #machinelearning";
 
 
-function formatPostAndTitle(modelTitle, input, url, shortenPost) {
+function formatPostAndTitle(modelTitle, text, url, shortenPost) {
 
-  // Replace mature words with ***'s
-  input = mature(input);
 
   // For twitter and open graph tags we need to shorten long titles/posts
   if (shortenPost) {
-    input = shorten(input, 160);
+    text = shorten(text, 160);
     modelTitle = ""//shorten(modelTitle, 70);
   }
 
-  const title = `${input}`;
-  const post = `${modelTitle} "${title}" ${url} ${hashTags}`;
+  const title = `${text}`;
+  const post = `${modelTitle} - "${title}" ${url} ${hashTags}`;
     
   return { post, title };
 

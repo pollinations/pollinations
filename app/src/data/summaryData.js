@@ -20,8 +20,8 @@ export function getPostData(ipfs, cid, shortenPost=true) {
 
   // Check if a text was output by the run. Otherwise use the input text
   // In the future we may want to refactor this to be more flexible. E.g. when we have image inputs
-  const possibleTextOutput = getMedia(ipfs.output, "text")
-  const text = possibleTextOutput[0][1] || ipfs.input[primaryInput];
+  const possibleText = getMedia(ipfs.output, "text")[0];
+  const text =  possibleText ? "\n\n" + possibleText[1] : ipfs.input[primaryInput];
 
   // Replace mature words with ***'s
   const maturityFilteredText = mature(text);

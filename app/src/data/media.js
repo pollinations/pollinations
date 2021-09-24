@@ -36,12 +36,12 @@ export function getMedia(output, type="all") {
     const filterByExtensions = filename => 
       any(identity, extensions.map(ext => filename.toLowerCase().endsWith(ext)));
   
-    const imageFilenames = output ? Object.keys(output)
+    const mediaFilenames = output ? Object.keys(output)
       .filter(filterByExtensions) : [];
   
-    const images = imageFilenames.map(filename => [filename, output[filename]]);
-    images.reverse();
-    return images
+    const media = mediaFilenames.map(filename => [filename, output[filename]]);
+    media.reverse();
+    return media;
   }
 
 const gzipProxy = path => {

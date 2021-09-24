@@ -51,7 +51,7 @@ function formatPostAndTitle(modelTitle, text, url, shortenPost) {
   }
 
 
-  const post = `${modelTitle} - "${text}" ${url} ${hashTags}`;
+  const post = `${modelTitle} - ${text} ${url} ${hashTags}`;
     
   return { post, text };
 

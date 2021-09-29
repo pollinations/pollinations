@@ -24,11 +24,9 @@ const IPFS_HOST = "https://ipfs.pollinations.ai";
 let _client = null;
 
 // create a new IPFS session
-export async function getClient() {
+export function getClient() {
     if (!_client) {
-        const url = await getIPFSDaemonURL();
-        debug("Got daemon URL", url);
-        _client = create({ url, timeout: "2h" });
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h"}))
     }
     return _client;
 }
@@ -52,53 +50,79 @@ const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
 export async function writer(initialRootCID=null) {
     const client = await getClient();    
 
-    const getRootCID = async () => await getCID(client, mfsRoot);
-
-    let rootCid = await getRootCID();
-
-    debug("existing root CID", rootCid);
-    if (rootCid === null) {
-        if (initialRootCID === null) {
-            debug("Creating mfs root since it did not exist.");
-            await ipfsMkdir(client, mfsRoot);
-        } else {
-            debug("Copying supplied rootCID", initialRootCID,"to MFS root.");
-            await ipfsCp(client, initialRootCID, mfsRoot);
-        }
-        rootCid = await getRootCID();
-        debug("new root CID", rootCid);
-    } else {
-        debug("Checking if supplied cid is the same as root cid")
-        if (rootCid !== initialRootCID) {
-            debug("CIDs are different. Removing existing  MFS root");
-            await ipfsRm(client, mfsRoot);
-            debug("Copying", rootCid, "to mfs root.")
-            await ipfsCp(client, rootCid, mfsRoot);
-        }
-    }
-
-    return getWriter(client, mfsRoot);
+    return getWriter(client, mfsRoot, initialRootCID);
 }
 
 // getWriter just wraps the individual ipfs functions passing in the client
-function getWriter(client, mfsRoot) {
+function getWriter(client, mfsRoot, initialRootCID) {
 
     const joinPath = path => join(mfsRoot, path);
-
+    
+    let initializedFolder = false;
+    
+    // initialize the writer lazily, calls the function and finally return the root CID
     const returnRootCID = func => async (...args) => {
+        
+        // lazily initialize the MFS folder
+        if (!initializedFolder) {
+            await initializeMFSFolder(client,  initialRootCID);
+            initializedFolder = true;
+        }
+
+        // execute function
         await func(...args);
+
+        // return the root CID
         return await getCID(client, mfsRoot);
     };
-
+    
     return {
         add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
         addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
         rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
         mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
-        cid:  async () => await getCID(client, mfsRoot),
-        close: async () => await ipfsRm(client, mfsRoot),
+        cid:  async () => {
+            if (!initializedFolder)
+                return null;
+            return await getCID(client, mfsRoot)
+        },
+        close: async () => {
+            debug("closing input writer. Deleting", mfsRoot)
+            if (initializedFolder)
+                await ipfsRm(client, mfsRoot)
+        },
     };
 }
+
+// Initializes a folder in `mfsRoot` with the given CID
+async function initializeMFSFolder(client, initialRootCID) {
+    
+    const getRootCID = async () => await getCID(client, mfsRoot);
+    
+    let rootCid = await getRootCID();
+    debug("existing root CID", rootCid);
+    
+    if (rootCid === null) {
+        if (initialRootCID === null) {
+            debug("Creating mfs root since it did not exist.");
+            await ipfsMkdir(client, mfsRoot);
+        } else {
+            debug("Copying supplied rootCID", initialRootCID, "to MFS root.");
+            await ipfsCp(client, initialRootCID, mfsRoot);
+        }
+        rootCid = await getRootCID();
+        debug("new root CID", rootCid);
+    } else {
+        debug("Checking if supplied cid is the same as root cid");
+        if (rootCid !== initialRootCID) {
+            debug("CIDs are different. Removing existing  MFS root");
+            await ipfsRm(client, mfsRoot);
+            debug("Copying", rootCid, "to mfs root.");
+            await ipfsCp(client, rootCid, mfsRoot);
+        }
+    }
+}
+
 
 const localIPFSAvailable = async () => {
     if (isNode) {
@@ -135,7 +159,10 @@ const getIPFSDaemonURL = async () => {
 
 const ipfsCp = async (client, cid, ipfsPath) => {
   debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
-  return await retryException(async () => await client.files.cp(`/ipfs/${cid}`, ipfsPath));
+  return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+    //await retryException(async () => 
+    
+    //);
 }
 
 export const getWebURL = (cid, name = null) => {
@@ -168,16 +195,19 @@ const ipfsLsCID = async (client, cid) => {
         .map(_normalizeIPFS);
     debug("got ipfs ls result", result);
     return result;
-};
-
-const ipfsLs = async (client, path) => ipfsLsCID(client, await getCID(path));
+}
 
 
 const ipfsAdd = async (client, path, content, options = {}) => {
     debug("adding", path, "options", options);
-    const cid = stringCID(await retryException(
-        async () => await client.add(content, options)
-    ));
+    let cid = null;
+    try {
+        cid = stringCID(await client.add(content, options));
+    } catch (e) {
+        debug("could not add file",path,"becaus of",e.message,". Maybe the content was deleted before it could be added?");
+        return null;
+    }
+    
     debug("added", cid);
 
 
@@ -207,7 +237,9 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
     const chunks = chunkArrays.map(Buffer.from);
 
     _debug("Got all chunks. Total:", chunks);
-
+    if (chunks.length === 0)
+        return Buffer.from([]);
+        
     const contentArray = chunks.length > 1 ? Buffer.concat(chunks) : chunks[0];
 
     // const contentArray = Buffer.concat(await toPromise(client.get(cid)));
@@ -218,7 +250,9 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
-    await retryException(async () => await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true })));
+    // await retryException(async () =>
+     await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }))
+    //  );
 }
 
 async function optionallyResolveIPNS(client, cid) {
@@ -253,7 +287,7 @@ async function getCID(client, path = "/") {
 }
 
 const ipfsResolve = async (client,path) =>
-    stringCID(last(await toPromise(client.name.resolve(path))));
+    stringCID(last(await toPromise(client.name.resolve(path, { nocache: true } ))));
 
 
 // test();

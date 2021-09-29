@@ -50,8 +50,7 @@ export const getNotebooks = async (ipfsPath=DEFAULT_HIVE_PATH) => {
   return allNotebooks;
 }
 
-export const getDefaultNotebook = async () => (await getNotebooks())[0];
-
+// react hook that fetches notebooks from IPNS and IPFS
 export const useNotebooks = () => {
   const [notebooks, setNotebooks] = useState([]);
 

@@ -74,7 +74,11 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
         break;
       }
     }
+
+    debug("closing the writer");
     await closeWriter();
+    
+    debug("closing the publisher");
     closePublisher();
   }
   return {start, processing: () => processing};

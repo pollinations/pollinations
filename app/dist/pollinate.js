@@ -35868,13 +35868,17 @@ var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
+  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+  const close = executeOnce(async () => {
+    await closeWriter();
+    await closePublisher();
+  });
   async function start() {
     if (!(0, import_fs.existsSync)(watchPath)) {
       debug4("Local: Root directory does not exist. Creating", watchPath);
       (0, import_fs.mkdirSync)(watchPath, { recursive: true });
     }
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
-    const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
     for await (const changed of changedFiles$) {
       let done = null;
       processing = new Promise((resolve) => done = resolve);
@@ -35905,10 +35909,13 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
         break;
       }
     }
-    await closeWriter();
-    closePublisher();
+    await close();
   }
-  return { start, processing: () => processing };
+  return {
+    start,
+    processing: () => processing,
+    close
+  };
 };
 var chunkedFilewatcher = (watchPath, debounceTime) => {
   debug4("Local: Watching", watchPath);
@@ -35931,6 +35938,15 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     }
   });
   return channel$;
+};
+var executeOnce = (f) => {
+  let executed = false;
+  return async () => {
+    if (!executed) {
+      executed = true;
+      await f();
+    }
+  };
 };
 
 // src/backend/ipfs/receiver.js
@@ -36091,7 +36107,7 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
 });
 if (executeCommand)
   (async () => {
-    const { start, processing } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    const { start, processing, close } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
     start();
     await execute(executeCommand, options_default.logout);
     debug7("done executing", executeCommand, ". Waiting...");
@@ -36101,16 +36117,19 @@ if (executeCommand)
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");
     await processing();
+    debug7("calling sender's close function.");
+    await close();
     debug7("state sync done. exiting");
     import_process2.default.exit(0);
   })();
 else {
   if (enableSend)
     (async () => {
-      const { start, processing } = await sender(options_default);
+      const { start, processing, close } = await sender(options_default);
       await start();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       await processing();
+      await close();
       import_process2.default.exit(0);
     })();
   if (enableReceive) {

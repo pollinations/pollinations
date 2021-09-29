@@ -18,6 +18,14 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
   let processing = Promise.resolve(true);
   
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
+  const { publish, close: closePublisher } = publisher(nodeid,"/output");
+
+  // Close function closes both the writer and the publisher.
+  // executeOnce makes sure it is called only once
+  const close = executeOnce(async () => {
+    await closeWriter();
+    await closePublisher();
+  });
 
   async function start() {
 
@@ -25,11 +33,9 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
       debug("Local: Root directory does not exist. Creating", watchPath);
       mkdirSync(watchPath, { recursive: true });
     }
-    
 
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     
-    const { publish, close: closePublisher } = publisher(nodeid,"/output");
 
     for await (const changed of changedFiles$) {
       
@@ -73,29 +79,20 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
       if (once) {
         break;
       }
+    
     }
-    await closeWriter();
-    closePublisher();
+    
+    await close();
   }
-  return {start, processing: () => processing};
+
+  return {
+      start, 
+      processing: () => processing, 
+      close
+  };
+
 };
 
-
-// Return files sorted by event type. Can't remember why we need to do it this way.
-function getSortedChangedFiles(files) {
-  const changed = files.toArray()
-    .filter(({ changed, file }) => changed && file.length > 0)
-    .map(({ changed, ...rest }) => rest);
-  const changedOrdered = order(changed);
-  debug("Changed files", changedOrdered);
-  return changedOrdered;
-}
-
-
-// TODO: check why unlink is twice in ordering
-const _eventOrder = ["unlink", "addDir", "add", "unlink", "unlinkDir"];//.reverse();
-const eventOrder = ({ event }) => _eventOrder.indexOf(event);
-const order = events => sortBy(eventOrder, reverse(events));
 
 
 const chunkedFilewatcher = (watchPath, debounceTime) => {
@@ -124,4 +121,15 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   });
 
   return channel$;
+}
+
+
+const executeOnce = f => {
+  let executed = false;
+  return async () => {
+    if (!executed) {
+      executed = true;
+      await f();
+    }
+  }
 }

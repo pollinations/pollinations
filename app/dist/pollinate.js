@@ -35519,6 +35519,37 @@ async function reader() {
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}`;
 async function writer(initialRootCID = null) {
   const client = await getClient();
+  return getWriter(client, mfsRoot, initialRootCID);
+}
+function getWriter(client, mfsRoot2, initialRootCID) {
+  const joinPath = (path) => (0, import_path.join)(mfsRoot2, path);
+  let initializedFolder = false;
+  const returnRootCID = (func) => async (...args) => {
+    if (!initializedFolder) {
+      await initializeMFSFolder(client, initialRootCID);
+      initializedFolder = true;
+    }
+    await func(...args);
+    return await getCID(client, mfsRoot2);
+  };
+  return {
+    add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
+    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
+    rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
+    mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
+    cid: async () => {
+      if (!initializedFolder)
+        return null;
+      return await getCID(client, mfsRoot2);
+    },
+    close: async () => {
+      debug2("closing input writer. Deleting", mfsRoot2);
+      if (initializedFolder)
+        await ipfsRm(client, mfsRoot2);
+    }
+  };
+}
+async function initializeMFSFolder(client, initialRootCID) {
   const getRootCID = async () => await getCID(client, mfsRoot);
   let rootCid = await getRootCID();
   debug2("existing root CID", rootCid);
@@ -35541,22 +35572,6 @@ async function writer(initialRootCID = null) {
       await ipfsCp(client, rootCid, mfsRoot);
     }
   }
-  return getWriter(client, mfsRoot);
-}
-function getWriter(client, mfsRoot2) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot2, path);
-  const returnRootCID = (func) => async (...args) => {
-    await func(...args);
-    return await getCID(client, mfsRoot2);
-  };
-  return {
-    add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
-    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
-    rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
-    mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
-    cid: async () => await getCID(client, mfsRoot2),
-    close: async () => await ipfsRm(client, mfsRoot2)
-  };
 }
 var localIPFSAvailable = async () => {
   if (import_browser_or_node.isNode) {

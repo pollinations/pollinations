@@ -100,7 +100,7 @@ const getUISchema = (filledForm, enabled) => {
 const toSchema = (key, type, enabled) => {
     const typeMappings = {
         "boolean": "radio",
-        "string": "text",
+        "string": "textarea",
         "number": "updown",
     };
 

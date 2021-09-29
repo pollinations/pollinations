@@ -55,6 +55,6 @@ export const updateInput = async (inputWriter, inputs) => {
 
 // only download json files, notebooks and files without extension (such as logs, text, etc)
 function shouldImport(ext) {
-    return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb";
+    return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb" || ext.toLowerCase() === ".md";
 }
 

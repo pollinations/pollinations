@@ -14,23 +14,22 @@ const debug = Debug("ipfsState");
 // Recursively get the IPFS content and transform it into a JS object.
 // The callback is called for each file in the directories which can fetch or process them further
 export const getIPFSState = async (contentID, callback=f=>f, rootName="root") => {
+    
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);
-    // console.trace("statecid")
-    const isFolder = (await ipfsReader.ls(contentID)).length > 0;
 
-        return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
+    return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
  }
 
 
 // Caching
 
 const cache = {};
-const cachedIPFSState = async (ipfsReader, {cid, ...rest}, processFile ) => {
+const cachedIPFSState = (ipfsReader, {cid, ...rest}, processFile ) => {
     const key = `${cid} - ${processFile.toString()}`;
     if (!cache[key]) {
         debug("cache miss",cid);
-        cache[key] = await _getIPFSState(ipfsReader, {cid, ...rest}, processFile);
+        cache[key] = _getIPFSState(ipfsReader, {cid, ...rest}, processFile);
     } else
         debug("cache hit",cid);
     return cache[key];

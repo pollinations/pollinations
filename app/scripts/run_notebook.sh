@@ -14,6 +14,8 @@ echo "IPFS_ROOT: $IPFS_ROOT"
 
 echo "---" > $NOTEBOOK_PARAMS_FILE
 echo "output_path : $IPFS_ROOT/output" >> $NOTEBOOK_PARAMS_FILE
+echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
+
 
 for path in $IPFS_ROOT/input/*; do
 
@@ -75,6 +77,10 @@ rm -v $IPFS_ROOT/input/formAction
 echo "🐝: Setting colab status to waiting"
 rm -v $IPFS_ROOT/output/status
 echo -n waiting > $IPFS_ROOT/output/status
+
+# -- Sleep to make sure files are uploaded
+echo "🐝: Sleeping 10 seconds"
+sleep 10
 
 # --- Post to social media
 

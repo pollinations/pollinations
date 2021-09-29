@@ -1,5 +1,6 @@
 import React from "react";
-import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Button, GridListTileBar, ImageListItem } from "@material-ui/core"
+import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Button, GridListTileBar, ImageListItem, Paper, Box } from "@material-ui/core"
+import Markdown from 'markdown-to-jsx';
 import Debug from "debug";
 
 // Icons
@@ -12,14 +13,11 @@ const debug = Debug("ImageViewer");
 const MediaDisplay = ({filename, ...props}) => 
   filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
 
-function ImageViewer({output, contentID}) {
+function ImageViewer({output}) {
     let images = getMedia(output);
 
     if (!images || images.length === 0)
       return null;
-
-    
-
     
     // remove first image for large display
     const firstImage = images.shift();
@@ -35,11 +33,6 @@ function ImageViewer({output, contentID}) {
 
     return (
         <div style={{width:"100%"}}>
-          <h3>Output [<Button
-                href={getWebURL(`${contentID}/output`)} 
-                target="_blank">
-                  Open Folder
-            </Button>]</h3>
           <div style={{ maxWidth:'500px', margin: '20px auto' }}>
             <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />
             {firstFilename}
@@ -56,7 +49,24 @@ function ImageViewer({output, contentID}) {
     )
 }
 
+function MarkdownViewer({output}) {
+  let documents = getMedia(output,"text");
 
-export default ImageViewer;
+  if (!documents || documents.length === 0)
+    return null;
+  
+  return documents.map((([filename, markdown]) => (<Paper><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper>)));
+  
+}
+
+export default ({output, contentID}) => <>
+    <h3>Output [<Button
+        href={getWebURL(`${contentID}/output`)} 
+        target="_blank">
+          Open Folder
+    </Button>]</h3>
+    <ImageViewer output={output}  />
+    <MarkdownViewer output={output} />
+  </>;
 
 const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1);

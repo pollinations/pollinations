@@ -19,7 +19,7 @@ export const handler = async ({path}) => {
     console.log("platform",platform,"cid",cid,". Fetching IPFS state");
     const ipfs = await IPFSWebState(cid);
 
-    const data =  getPostData(ipfs, cid, true);
+    const data =  getPostData(ipfs, cid, platform==="twitter");
     
     try {
       const res = await doPost(data, platform);

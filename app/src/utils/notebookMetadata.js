@@ -62,7 +62,17 @@ const extractParametersWithComment = (text,i,codeRows) => {
 // Extracts the parameters from a Colab parameter row
 const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
 
-const mapToJSONFormField = ([_text, name, defaultVal, type, description]) => [name, {type, default: parse(defaultVal.toString().toLowerCase()), title: description || name}];
+const mapToJSONFormField = ([_text, name, defaultVal, type, description]) => {
+  
+  // If the regex were better we would not need to trim here
+  defaultVal = defaultVal.trim();
+
+  if (defaultVal == "True" || defaultVal == "False") 
+    defaultVal = defaultVal.toLowerCase();
+
+  debug("Parsing JSON:",{ defaultVal }, defaultVal === "True");
+  return [name, {type, default: parse(defaultVal), title: description || name}];
+}
 
 // finds the first cell that contains code and the string #@param
 const isParameterCell = cell => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");

@@ -71,8 +71,6 @@ export default React.memo(function Model() {
             status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
 
-          <h3>Inputs</h3>
-
           <FormView
             input={ipfs.input}
             status={status}

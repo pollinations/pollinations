@@ -2,17 +2,17 @@ import React from "react";
 import Model from "./pages/Model";
 import Home from "./pages/Home";
 
-export let getRoutes = async () => { 
+export let getRoutes =  () => { 
     return [
         {
             exact: false,
             path: '/p/:hash',
-            children: <Model />,
+            Page: Model,
         },
         { 
             exact: true,
             path: "/",
-            children: <Home />,
+            Page: Home,
         }
     ];
 };

@@ -47,12 +47,12 @@ function readMetadata(notebookJSON) {
 
 // Extract parameter with preceding comment (to override form description with something more meaningful)
 const extractParametersWithComment = (text,i,codeRows) => {
-  const params = extractParameters(text);
+  const params = extractParameters(text) || extractEnumerableParameters(text);
   
   const previousRow = codeRows[i-1];
   if (params && previousRow && previousRow.trim().startsWith("#") && !previousRow.includes("#@param")) {
     const description = previousRow.trim().slice(1).trim();
-    return [...params, description]
+    return {...params, description}
   }
 
   return params;
@@ -60,9 +60,25 @@ const extractParametersWithComment = (text,i,codeRows) => {
 
 
 // Extracts the parameters from a Colab parameter row
-const extractParameters = text => text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
+const extractParameters = text => {
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
+  if (!match)
+    return null;
+  const [_text, name, defaultVal, type] = match;
+  return { name, defaultVal, type};
+}
 
-const mapToJSONFormField = ([_text, name, defaultVal, type, description]) => {
+// Extracts the enumerable parameters from a Colab parameter row
+const extractEnumerableParameters = text => {
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s*(.*)\s*#@param\s*(\[.*\])/);
+  if (!match)
+    return null;
+  const [_text, name, defaultVal, enumString] = match;
+  debug("Parsing options string", enumString)
+  return { name, defaultVal, type: "string", enumOptions: parse(enumString)};
+}
+
+const mapToJSONFormField = ({name, defaultVal, type, description, enumOptions}) => {
   
   // If the regex were better we would not need to trim here
   defaultVal = defaultVal.trim();
@@ -70,8 +86,8 @@ const mapToJSONFormField = ([_text, name, defaultVal, type, description]) => {
   if (defaultVal == "True" || defaultVal == "False") 
     defaultVal = defaultVal.toLowerCase();
 
-  debug("Parsing JSON:",{ defaultVal }, defaultVal === "True");
-  return [name, {type, default: parse(defaultVal), title: description || name}];
+  debug("Parsing JSON:",{ defaultVal, enumOptions });
+  return [name, {enum: enumOptions, type, default: parse(defaultVal), title: description || name}];
 }
 
 // finds the first cell that contains code and the string #@param

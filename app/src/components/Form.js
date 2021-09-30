@@ -136,8 +136,7 @@ function FileUpload() {
       const _client = await client;
       debug("dropped files", acceptedFiles);
       const file = acceptedFiles[0];
-      const {cid} = await _client.add({content: file.stream(), path: file.path});
-
+      
       
       
     }, []);

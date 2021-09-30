@@ -2,12 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
-import GitHubIcon from '@material-ui/icons/GitHub';
 
-
-import useColab from "../network/useColab"
 import readMetadata from "../utils/notebookMetadata";
-import HelpModal from "../components/HelpModal";
 import Debug from "debug";
 
 
@@ -15,26 +11,22 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
-import NodeStatus from "../components/NodeStatus";
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
-import NotebookSelector from "../components/NotebookSelector";
 
 const debug = Debug("Model");
 
 
-export default React.memo(function Model() {
+export default React.memo(function Model(state) {
 
-  const { state, dispatch: dispatchInputState} = useColab(isDone);
-
-  let { ipfs, nodeID, status, contentID } = state;
+  let { ipfs, nodeID, status, contentID, dispatchInput } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
   const dispatchForm = async inputs => {
     debug("dispatchForm", inputs);
-    await dispatchInputState({
+    await dispatchInput({
       ...inputs,
       ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
       formAction: "submit"
@@ -42,13 +34,9 @@ export default React.memo(function Model() {
   debug("dispatched Form");
 };
 
-  const cancelForm = () => dispatchInputState({ ...state.inputs, formAction: "cancel" })
+  const cancelForm = () => dispatchInput({ ...ipfs.input, formAction: "cancel" })
   debug("ipfs state before rendering model", ipfs)
   return <>
-    {/* Nav Bar */}
-    <NotebookSelector {...state} />
-
-
     <Container maxWidth="md">
       <Box my={2}>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -61,7 +49,7 @@ export default React.memo(function Model() {
               <Typography variant="h5" component="h5" gutterBottom>
                 {metadata.name.replace(".ipynb","")}
               </Typography>
-              <Markdown>{metadata.description}</Markdown>
+              <Typography color="textSecondary"><Markdown>{metadata.description}</Markdown></Typography>
           </>
            : null}
 
@@ -106,7 +94,6 @@ export default React.memo(function Model() {
 
 
       </div>
-      <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/jgH9y2p7" target="_blank">[ Discord ]</Link>.</Box>
       </Box>
     </Container>
   </>

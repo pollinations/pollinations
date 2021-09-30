@@ -55,7 +55,7 @@ function MarkdownViewer({output}) {
   if (!documents || documents.length === 0)
     return null;
   
-  return documents.map((([filename, markdown]) => (<Paper><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper>)));
+  return documents.map((([filename, markdown]) => (<Box m={2}><Paper variant="outlined"><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper></Box>)));
   
 }
 

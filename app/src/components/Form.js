@@ -3,10 +3,8 @@ import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
 import { Box, Paper, Typography } from "@material-ui/core";
-import Alert from '@material-ui/lab/Alert';
 import HelpModal from "./HelpModal";
 import { useDropzone } from 'react-dropzone'
-import { CID } from "ipfs-http-client";
 
 const debug = Debug("Form");
 
@@ -43,7 +41,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         onSubmit={({ formData }) => onSubmit(formData)}
         disabled={formDisabled || colabState === "running"}
     >
-        {/* <FileUpload /> */}
+        {/* <FileUpload />  */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
                 [ {inProgress ? "Submitting..." : "Submit"} ]
@@ -98,20 +96,16 @@ const getUISchema = (filledForm, enabled) => {
 
 // Convert the form input type to the ui schema type
 const toSchema = (key, props, enabled) => {
-
-
-    debug("toSchema", key, props);
+    // TODO: enable prefixMappings
     const typeMappings = {
         "boolean": () => "radio",
         "string": mapStringType,
         "number": () => "updown",
-        "integer": () => "updown",
+        "integer": () => "updown"
     };
-
-    const overrideThroughPrefix = Object.entries(prefixMappings).find(([prefix]) => key.startsWith(prefix));
-
+    
     return {
-        "ui:widget":  overrideThroughPrefix ? overrideThroughPrefix[1] : typeMappings[props.type](props),
+        "ui:widget":  typeMappings[props.type](props),
         "ui_disabled": !enabled
     }
 
@@ -140,16 +134,14 @@ function FileUpload() {
       // Do something with the files
       debug("dropped files", acceptedFiles);
       const file = acceptedFiles[0];
-      const reader = new FileReader();
-      const arrayBuffer = reader.readAsArrayBuffer(file);
+      const { cid } = await _client.add({content: file.stream(), path: file.path});
       
       
     }, []);
 
     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
   
-    return (
-      <Paper variant={isDragActive ? "outlined" : "elevated"}>
+    return (<Paper variant={isDragActive ? "outlined":"elevation"}>
       <div {...getRootProps()}>
         <input {...getInputProps()} />
         {

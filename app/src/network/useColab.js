@@ -121,7 +121,8 @@ const useColab = (updateHashCondition = () => true) => {
             // setContentID(newInputContentID)
             debug("Publishing contentID to colab", newInputContentID);
             publish(newInputContentID);
-        }
+        },
+        inputWriter
     };
 };
 

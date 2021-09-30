@@ -12,8 +12,6 @@ export default function Home() {
     const notebooks = useNotebooks();
     debug("got notebooks", notebooks);
     return  <>
-                <NotebookSelector />
-
                 <Container maxWidth="md">
                     {/* title */}
                     <Box m={5}>

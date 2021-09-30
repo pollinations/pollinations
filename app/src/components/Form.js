@@ -2,11 +2,9 @@ import React, { useCallback } from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
-import { Box, Typography } from "@material-ui/core";
-import Alert from '@material-ui/lab/Alert';
+import { Box, Paper, Typography } from "@material-ui/core";
 import HelpModal from "./HelpModal";
 import { useDropzone } from 'react-dropzone'
-import { CID } from "ipfs-http-client";
 
 const debug = Debug("Form");
 
@@ -43,7 +41,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         onSubmit={({ formData }) => onSubmit(formData)}
         disabled={formDisabled || colabState === "running"}
     >
-        {/* <FileUpload /> */}
+        {/* <FileUpload />  */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
                 [ {inProgress ? "Submitting..." : "Submit"} ]
@@ -133,18 +131,16 @@ function textOrTextarea(defaultVal) {
 function FileUpload() {
     const onDrop = useCallback(async acceptedFiles => {
       // Do something with the files
-      const _client = await client;
       debug("dropped files", acceptedFiles);
       const file = acceptedFiles[0];
-      const {cid} = await _client.add({content: file.stream(), path: file.path});
-
+      const { cid } = await _client.add({content: file.stream(), path: file.path});
       
       
     }, []);
 
     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
   
-    return (
+    return (<Paper variant={isDragActive ? "outlined":"elevation"}>
       <div {...getRootProps()}>
         <input {...getInputProps()} />
         {
@@ -153,6 +149,7 @@ function FileUpload() {
             <p>Drag 'n' drop some files here, or click to select files</p>
         }
       </div>
+      </Paper>
     )
   }
 

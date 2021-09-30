@@ -31,7 +31,7 @@ export default ({ nodeID, contentID,  gpu }) => {
                                     children={displayContentID(contentID)}
                                     target="_blank"
                                 />
-                                : <p children="Not connected..." />}
+                                : <p children="N/A" />}
                         </TableCell>
                         </TableRow>
                         {/* <TableRow>

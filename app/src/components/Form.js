@@ -101,6 +101,7 @@ const toSchema = (key, props, enabled) => {
         "boolean": () => "radio",
         "string": mapStringType,
         "number": () => "updown",
+        "integer": () => "updown"
     };
     
     return {

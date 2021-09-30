@@ -24,11 +24,9 @@ import NotebookSelector from "../components/NotebookSelector";
 const debug = Debug("Model");
 
 
-export default React.memo(function Model() {
+export default React.memo(function Model(state) {
 
-  const { state, dispatch: dispatchInputState} = useColab(isDone);
-
-  let { ipfs, nodeID, status, contentID } = state;
+  let { ipfs, nodeID, status, contentID, dispatchInput } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
@@ -42,13 +40,9 @@ export default React.memo(function Model() {
   debug("dispatched Form");
 };
 
-  const cancelForm = () => dispatchInputState({ ...state.inputs, formAction: "cancel" })
+  const cancelForm = () => dispatchInput({ ...ipfs.input, formAction: "cancel" })
   debug("ipfs state before rendering model", ipfs)
   return <>
-    {/* Nav Bar */}
-    <NotebookSelector {...state} />
-
-
     <Container maxWidth="md">
       <Box my={2}>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -106,7 +100,6 @@ export default React.memo(function Model() {
 
 
       </div>
-      <Box align="right" fontStyle="italic"> Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/jgH9y2p7" target="_blank">[ Discord ]</Link>.</Box>
       </Box>
     </Container>
   </>

@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import Form from "@rjsf/material-ui";
 import Button from '@material-ui/core/Button'
 import Debug from "debug";
-import { Box, Typography } from "@material-ui/core";
+import { Box, Paper, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import HelpModal from "./HelpModal";
 import { useDropzone } from 'react-dropzone'
@@ -98,15 +98,20 @@ const getUISchema = (filledForm, enabled) => {
 
 // Convert the form input type to the ui schema type
 const toSchema = (key, props, enabled) => {
-    // TODO: enable prefixMappings
+
+
+    debug("toSchema", key, props);
     const typeMappings = {
         "boolean": () => "radio",
         "string": mapStringType,
         "number": () => "updown",
+        "integer": () => "updown",
     };
-    
+
+    const overrideThroughPrefix = Object.entries(prefixMappings).find(([prefix]) => key.startsWith(prefix));
+
     return {
-        "ui:widget":  typeMappings[props.type](props),
+        "ui:widget":  overrideThroughPrefix ? overrideThroughPrefix[1] : typeMappings[props.type](props),
         "ui_disabled": !enabled
     }
 
@@ -133,10 +138,10 @@ function textOrTextarea(defaultVal) {
 function FileUpload() {
     const onDrop = useCallback(async acceptedFiles => {
       // Do something with the files
-      const _client = await client;
       debug("dropped files", acceptedFiles);
       const file = acceptedFiles[0];
-      
+      const reader = new FileReader();
+      const arrayBuffer = reader.readAsArrayBuffer(file);
       
       
     }, []);
@@ -144,6 +149,7 @@ function FileUpload() {
     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
   
     return (
+      <Paper variant={isDragActive ? "outlined" : "elevated"}>
       <div {...getRootProps()}>
         <input {...getInputProps()} />
         {
@@ -152,6 +158,7 @@ function FileUpload() {
             <p>Drag 'n' drop some files here, or click to select files</p>
         }
       </div>
+      </Paper>
     )
   }
 

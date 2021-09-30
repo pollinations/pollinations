@@ -33,7 +33,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
 
 
     debug("nodeID", nodeID, formDisabled)
-    const uiSchema = getUISchema(filledForm, metadata?.form?.properties, showSubmit)
+    const uiSchema = getUISchema(filledForm, showSubmit)
 
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
@@ -78,48 +78,50 @@ const addSocialCheckbox = (filledFormNoSocial) =>
 
 
 // Get the form inputs from the ipfs object. Use the metadata to find default values
-function getFormInputs(ipfs, metadata) {
+function getFormInputs(ipfsInput, metadata) {
     if ((metadata === undefined) || (metadata === null)) return;
-    ipfs = ipfs || {};
+    ipfsInput = ipfsInput || {};
 
     const propertiesWithSocial = addSocialCheckbox(metadata.form.properties);
-
+    
     return Object.fromEntries(Object.entries(propertiesWithSocial).map(
-        ([formKey, prop]) => [formKey, formKey in ipfs ? { ...prop, "default": ipfs[formKey] } : prop]))
+        ([formKey, prop]) => [formKey, formKey in ipfsInput ? { ...prop,"enum": prop.enum, "default": ipfsInput[formKey] } : prop]))
 }
 
 
 // Get the ui schema for the form
 const getUISchema = (filledForm, enabled) => {
     debug("getUISchema", filledForm, enabled);
-    return Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key, filledForm[key].type, enabled)]))
+    return Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key, filledForm[key], enabled)]))
 };
 
 
 // Convert the form input type to the ui schema type
-const toSchema = (key, type, enabled) => {
-    const typeMappings = {
-        "boolean": "radio",
-        "string": "textarea",
-        "number": "updown",
-    };
-
-    const prefixMappings = {
-        "file_": "file",
-        "num_": "updown"
-    };
+const toSchema = (key, { type, enum: enumOptions }, enabled) => {
 
     // TODO: enable prefixMappings
 
-    debug("Got type", type, "Looking for", key);
+    debug("Got type", type, enumOptions, "Looking for", key);
 
-    const widget = typeMappings[type] || "text";
+    const widget = enumOptions ? "select" : typeMappings[type] || "text";
     return {
         "ui:widget": widget,
         "ui_disabled": !enabled
     }
 
 }
+
+const typeMappings = {
+    "boolean": "radio",
+    "string": "textarea",
+    "number": "updown",
+};
+
+const prefixMappings = {
+    "file_": "file",
+    "num_": "updown"
+};
+
 
 
 function FileUpload() {
@@ -147,3 +149,4 @@ function FileUpload() {
       </div>
     )
   }
+

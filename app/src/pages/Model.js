@@ -2,12 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
-import GitHubIcon from '@material-ui/icons/GitHub';
 
-
-import useColab from "../network/useColab"
 import readMetadata from "../utils/notebookMetadata";
-import HelpModal from "../components/HelpModal";
 import Debug from "debug";
 
 
@@ -15,11 +11,9 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
-import NodeStatus from "../components/NodeStatus";
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
-import NotebookSelector from "../components/NotebookSelector";
 
 const debug = Debug("Model");
 
@@ -32,7 +26,7 @@ export default React.memo(function Model(state) {
 
   const dispatchForm = async inputs => {
     debug("dispatchForm", inputs);
-    await dispatchInputState({
+    await dispatchInput({
       ...inputs,
       ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
       formAction: "submit"
@@ -55,7 +49,7 @@ export default React.memo(function Model(state) {
               <Typography variant="h5" component="h5" gutterBottom>
                 {metadata.name.replace(".ipynb","")}
               </Typography>
-              <Markdown>{metadata.description}</Markdown>
+              <Typography color="textSecondary"><Markdown>{metadata.description}</Markdown></Typography>
           </>
            : null}
 

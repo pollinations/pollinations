@@ -9,7 +9,7 @@ const debug = Debug("AppContainer");
 export const AppContainer = ({ Page }) => {
 
     console.error("need to pass in whether to update hash somehow to useColab")
-    const { state, dispatch} = useColab(false);
+    const { state, dispatch} = useColab(() => true);
 
 
     return <>

@@ -12,8 +12,6 @@ import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu';
 
-import { noop } from '../network/utils';
-
 import { getNotebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
 import { SocialLinks } from './Social';
@@ -45,7 +43,7 @@ export default function NotebookSelector(state) {
           <Box marginLeft="15"> 
             <SocialLinks />
           </Box>
-          {state.contentID && <NodeStatus {...state} /> }
+          {<NodeStatus {...state} /> }
         </Toolbar>
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>

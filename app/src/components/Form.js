@@ -43,7 +43,7 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
         onSubmit={({ formData }) => onSubmit(formData)}
         disabled={formDisabled || colabState === "running"}
     >
-        <FileUpload />
+        {/* <FileUpload /> */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
                 [ {inProgress ? "Submitting..." : "Submit"} ]
@@ -97,25 +97,26 @@ const getUISchema = (filledForm, enabled) => {
 
 
 // Convert the form input type to the ui schema type
-const toSchema = (key, { type, enum: enumOptions }, enabled) => {
-
+const toSchema = (key, props, enabled) => {
     // TODO: enable prefixMappings
-
-    debug("Got type", type, enumOptions, "Looking for", key);
-
-    const widget = enumOptions ? "select" : typeMappings[type] || "text";
+    const typeMappings = {
+        "boolean": () => "radio",
+        "string": mapStringType,
+        "number": () => "updown",
+    };
+    
     return {
-        "ui:widget": widget,
+        "ui:widget":  typeMappings[props.type](props),
         "ui_disabled": !enabled
     }
 
 }
 
-const typeMappings = {
-    "boolean": "radio",
-    "string": "textarea",
-    "number": "updown",
-};
+// Map the string type to the ui schema type
+// - Handles enumerable options differently
+// - If the default text has multiple lines it becomes a textarea. Otherwise text.
+const mapStringType = ({ default: defaultVal, enum: enumOptions }) => enumOptions ? "select" : textOrTextarea(defaultVal);
+
 
 const prefixMappings = {
     "file_": "file",
@@ -123,7 +124,12 @@ const prefixMappings = {
 };
 
 
+// If the text has multiple lines return textarea, otherwise text.
+function textOrTextarea(defaultVal) {
+    return (defaultVal.split("\n").length > 1 ? "textarea" : "text");
+}
 
+// File upload widget using dropzone
 function FileUpload() {
     const onDrop = useCallback(async acceptedFiles => {
       // Do something with the files

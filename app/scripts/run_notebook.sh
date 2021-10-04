@@ -18,13 +18,14 @@ echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
 
 
 for path in $IPFS_ROOT/input/*; do
-
     key=$(basename $path)
-    if [[ "$key" = "notebook.ipynb" ]]; then
+
+    # skip if file has extension
+    if [[ $key == *.* ]]; then
         continue
     fi
+
     value=$(<$path)
-    #value=$(printf '%q' "$value_raw")
 
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done

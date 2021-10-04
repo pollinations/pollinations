@@ -21,7 +21,7 @@ for path in $IPFS_ROOT/input/*; do
     key=$(basename $path)
 
     # skip if file has extension
-    if [[ $key in *.* ]]; then
+    if [[ $key == *.* ]]; then
         continue
     fi
 

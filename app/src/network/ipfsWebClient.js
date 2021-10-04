@@ -47,7 +47,18 @@ export const updateInput = async (inputWriter, inputs) => {
     debug("updateInput", inputs);
 
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
-    for (const [key, val] of Object.entries(inputs)) {
+    for (let [key, val] of Object.entries(inputs)) {
+        // check if value is a string and base64 encoded file and convert it to a separate file input
+        if (typeof val === "string" && val.startsWith("data:")) {
+            debug("Found base64 encoded file", key, "with value", val);
+            const mimeType = val.split(";")[0].split(":")[1];
+            const filename = key + "." + mimeType.split("/")[1];
+            const fileContent = val.split(",")[1];
+            // convert fileContent to buffer
+            const buffer = Buffer.from(fileContent, "base64");
+            await inputWriter.add(filename, buffer);
+            val = `input/${filename}`;
+        }
         await inputWriter.add(key, JSON.stringify(val))
     };
     return await inputWriter.cid();

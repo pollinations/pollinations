@@ -43,7 +43,10 @@ const FormView = ({ input, status, colabState, metadata, onSubmit, onCancel }) =
     return <Form
         schema={{ properties: filledForm }}
         uiSchema={uiSchema}
-        onSubmit={({ formData }) => onSubmit(formData)}
+        onSubmit={({ formData }) => {
+            debug("submitted", formData);
+            onSubmit(formData)
+        }}
         disabled={formDisabled || colabState === "running"}
         >
         {/* <FileUpload />  */}

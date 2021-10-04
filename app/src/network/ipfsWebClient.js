@@ -56,6 +56,7 @@ export const updateInput = async (inputWriter, inputs) => {
             const fileContent = val.split(",")[1];
             // convert fileContent to buffer
             const buffer = Buffer.from(fileContent, "base64");
+            debug("Writing file", filename, "with content");
             await inputWriter.add(filename, buffer);
             val = `input/${filename}`;
         }

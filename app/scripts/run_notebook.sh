@@ -51,8 +51,12 @@ echo "Starting notebook..." > $IPFS_ROOT/output/log
 echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
-# --- Run
+# Initialize Run
 status=1
+RUN_COUNT_FILE=$IPFS_ROOT/output/run_count
+echo -n 0 > $RUN_COUNT_FILE
+
+# --- Run
 while [ $status -ne 0 ]; do
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
 
@@ -77,6 +81,8 @@ while [ $status -ne 0 ]; do
     
     echo "🐝: Papermill exited with status: $status. Re-running if not 0."
 done
+
+
 
 # --- Cleanup
 

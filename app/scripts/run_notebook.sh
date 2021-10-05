@@ -51,6 +51,8 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 
 
 # --- Run
+RUN_COUNT_FILE=$IPFS_ROOT/output/run_count
+echo -n 0 > $RUN_COUNT_FILE
 status=1
 while [ $status -ne 0 ]; do
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
@@ -64,7 +66,9 @@ while [ $status -ne 0 ]; do
     # Get exit code
     status=$?
     
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0."
+    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: " $(cat $RUN_COUNT_FILE)
+    
+    echo $(($(cat $RUN_COUNT_FILE) + 1) > $RUN_COUNT_FILE
 done
 
 # --- Cleanup

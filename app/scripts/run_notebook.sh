@@ -78,12 +78,11 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
 
     # Get exit code
     STATUS=$?
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: $RUN_COUNT"
+    echo "🐝: Papermill exited with status: $STATUS. Re-running if not 0. Run count: $RUN_COUNT"
  
     echo "🐝: Deactivating virtual environment"
     deactivate
     
-    echo $(($(cat $RUN_COUNT_FILE) + 1)) > $RUN_COUNT_FILE
 done
 
 

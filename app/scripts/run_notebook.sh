@@ -2,6 +2,7 @@
 IPFS_ROOT=${1:-"/content/ipfs"}
 
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
+NOTEBOOK_HASH=$(sha1sum $NOTEBOOK_PATH | awk '{print $1}')
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
 NOTEBOOK_PARAMS_FILE=/content/params.yaml
@@ -18,13 +19,14 @@ echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
 
 
 for path in $IPFS_ROOT/input/*; do
-
     key=$(basename $path)
-    if [[ "$key" = "notebook.ipynb" ]]; then
+
+    # skip if file has extension
+    if [[ $key == *.* ]]; then
         continue
     fi
+
     value=$(<$path)
-    #value=$(printf '%q' "$value_raw")
 
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done
@@ -49,11 +51,24 @@ echo "Starting notebook..." > $IPFS_ROOT/output/log
 echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
+# Initialize Run
+STATUS=1
+RUN_COUNT=0
 
 # --- Run
-status=1
-while [ $status -ne 0 ]; do
+while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
+
+    # Increment run counter
+    RUN_COUNT=$((RUN_COUNT+1))
+    echo -n $RUN_COUNT > $IPFS_ROOT/output/run_count
+
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
+
+    echo "🐝: Activate virtual environment"
+    bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
+
+    # Install papermill in vitual environment
+    pip install --upgrade papermill typing-extensions
 
     # If papermill fails it needs to pass the exit code along through the pipe.
     set -o pipefail
@@ -62,10 +77,15 @@ while [ $status -ne 0 ]; do
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
 
     # Get exit code
-    status=$?
+    STATUS=$?
+    echo "🐝: Papermill exited with status: $STATUS. Re-running if not 0. Run count: $RUN_COUNT"
+ 
+    echo "🐝: Deactivating virtual environment"
+    deactivate
     
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0."
 done
+
+
 
 # --- Cleanup
 

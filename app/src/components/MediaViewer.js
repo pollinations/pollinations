@@ -49,6 +49,16 @@ function ImageViewer({output}) {
     )
 }
 
+
+function AudioViewer({output}) {
+  let audio = getMedia(output,"audio");
+
+  if (!audio || audio.length === 0)
+    return null;
+  
+  return audio.map(([filename, url]) => (<audio controls src={url} />));
+}
+
 function MarkdownViewer({output}) {
   let documents = getMedia(output,"text");
 
@@ -67,6 +77,7 @@ export default ({output, contentID}) => <>
     </Button>]</h3>
     <ImageViewer output={output}  />
     <MarkdownViewer output={output} />
+    <AudioViewer output={output} />
   </>;
 
 const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1);

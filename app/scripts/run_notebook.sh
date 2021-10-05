@@ -84,7 +84,7 @@ while [ $STATUS -ne 0 && $RUN_COUNT -lt 3 ]; do
     echo "🐝: Deactivating virtual environment"
     deactivate
     
-    echo $(($(cat $RUN_COUNT_FILE) + 1) > $RUN_COUNT_FILE
+    echo $(($(cat $RUN_COUNT_FILE) + 1)) > $RUN_COUNT_FILE
 done
 
 

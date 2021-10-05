@@ -61,7 +61,7 @@ async function processRemoteCID(contentID, rootPath) {
   if (isSameContentID(stringCID(contentID)))
     return;
   debug("Processing remote CID", contentID);
-  const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader)));
+  const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));
   debug("got remote state", ipfsState);
 }
 

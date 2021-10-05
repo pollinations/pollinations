@@ -35963,16 +35963,16 @@ var PromiseAllProgress = (name, promises) => Promise.all(promises);
 // src/network/ipfsState.js
 var import_json5 = __toModule(require_lib6());
 var debug5 = (0, import_debug5.default)("ipfsState");
-var getIPFSState = async (contentID, callback = (f) => f, rootName = "root") => {
+var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
   debug5("Getting state for CID", contentID);
-  return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID }, callback);
+  return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback);
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile2) => {
+var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
   var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
-  if (!cache[key]) {
+  if (!cache[key] || skipCache) {
     debug5("cache miss", cid);
     cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2);
   } else
@@ -36059,7 +36059,7 @@ async function processRemoteCID(contentID, rootPath2) {
   if (isSameContentID(stringCID(contentID)))
     return;
   debug6("Processing remote CID", contentID);
-  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2));
+  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
   debug6("got remote state", ipfsState);
 }
 async function processFile({ path, cid }, rootPath2, { get }) {

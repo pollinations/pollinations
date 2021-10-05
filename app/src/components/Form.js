@@ -8,7 +8,7 @@ import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCancel }) => {
+const FormView = ({ input, status, colabState, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata);
 
@@ -29,18 +29,26 @@ const FormView = ({ input, status, colabState, metadata, nodeID, onSubmit, onCan
     debug("colabState", colabState);
     debug("filledForm", filledForm);
 
-
-    debug("nodeID", nodeID, formDisabled)
+    // the UI schema for the form defines which widgets are used for each input
     const uiSchema = getUISchema(filledForm, showSubmit)
 
     debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
+    // Hacky way to remove default entries for files
+    Object.entries(uiSchema).forEach(([field, prop]) => {
+        if (prop["ui:widget"] === "file")
+          filledForm[field].default = undefined;
+    });
+
     return <Form
         schema={{ properties: filledForm }}
         uiSchema={uiSchema}
-        onSubmit={({ formData }) => onSubmit(formData)}
+        onSubmit={({ formData }) => {
+            debug("submitted", formData);
+            onSubmit(formData)
+        }}
         disabled={formDisabled || colabState === "running"}
-    >
+        >
         {/* <FileUpload />  */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
@@ -96,7 +104,6 @@ const getUISchema = (filledForm, enabled) => {
 
 // Convert the form input type to the ui schema type
 const toSchema = (key, props, enabled) => {
-    // TODO: enable prefixMappings
     const typeMappings = {
         "boolean": () => "radio",
         "string": mapStringType,
@@ -104,8 +111,13 @@ const toSchema = (key, props, enabled) => {
         "integer": () => "updown"
     };
     
+    // Use custom widgets for certain prefixes such as a
+    // file uploader for inputs starting with audio_, file_
+    const prefixOverride = getPrefixOverride(key);
+    debug("after prefix override", prefixOverride);
+
     return {
-        "ui:widget":  typeMappings[props.type](props),
+        "ui:widget":  prefixOverride ? prefixOverride[1] : typeMappings[props.type](props),
         "ui_disabled": !enabled
     }
 
@@ -119,8 +131,13 @@ const mapStringType = ({ default: defaultVal, enum: enumOptions }) => enumOption
 
 const prefixMappings = {
     "file_": "file",
-    "num_": "updown"
+    "num_": "updown",
+    "audio_": "file"
 };
+
+
+const getPrefixOverride = (key) =>
+    Object.entries(prefixMappings).find(([prefix]) => key.startsWith(prefix));
 
 
 // If the text has multiple lines return textarea, otherwise text.

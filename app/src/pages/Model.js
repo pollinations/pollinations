@@ -64,7 +64,6 @@ export default React.memo(function Model(state) {
             status={status}
             colabState={ipfs?.output?.status}
             metadata={metadata}
-            nodeID={nodeID}
             onSubmit={dispatchForm}
             onCancel={cancelForm}
           />

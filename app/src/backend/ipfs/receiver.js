@@ -5,12 +5,10 @@ import { subscribeGenerator } from "../../network/ipfsPubSub.js";
 import { join } from "path";
 import { noop } from '../../network/utils.js';
 import Debug from 'debug';
-import eventit from "event-iterator"
+import { stream } from "event-iterator"
 
 import { dirname } from "path";
 import { writeFileSync, mkdirSync } from 'fs';
-
-const { stream } = eventit;
 
 const debug = Debug("ipfs/receiver");
 

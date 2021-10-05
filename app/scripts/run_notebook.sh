@@ -52,12 +52,16 @@ echo "🐝: Preparing notebook for execution with papermill. (Add params tag to 
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
 # Initialize Run
-status=1
-RUN_COUNT_FILE=$IPFS_ROOT/output/run_count
-echo -n 0 > $RUN_COUNT_FILE
+STATUS=1
+RUN_COUNT=0
 
 # --- Run
-while [ $status -ne 0 ]; do
+while [ $STATUS -ne 0 ]; do
+
+    # Increment run counter
+    RUN_COUNT=$((RUN_COUNT+1))
+    echo -n $RUN_COUNT > $RUN_COUNT_FILE
+
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
 
     # If papermill fails it needs to pass the exit code along through the pipe.
@@ -74,12 +78,13 @@ while [ $status -ne 0 ]; do
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
 
     # Get exit code
-    status=$?
-
+    STATUS=$?
+    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: " $(cat $RUN_COUNT_FILE)
+ 
     echo "🐝: Deactivating virtual environment"
     deactivate
     
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0."
+    echo $(($(cat $RUN_COUNT_FILE) + 1) > $RUN_COUNT_FILE
 done
 
 

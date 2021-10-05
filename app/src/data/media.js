@@ -8,7 +8,8 @@ const _mediaTypeMap = {
     "all": [".jpg", ".png", ".mp4",".webm"],
     "video": [".mp4",".webm"],
     "image": [".jpg", ".png"],
-    "text": [".md", ".txt"]
+    "text": [".md", ".txt"],
+    "audio": [".mp3", ".wav", ".ogg",".flac"],
   }
   
 // get first image for social media and other stuff    

@@ -87,7 +87,10 @@ const mapToJSONFormField = ({name, defaultVal, type, description, enumOptions}) 
     defaultVal = defaultVal.toLowerCase();
 
   debug("Parsing JSON:",{ defaultVal, enumOptions });
-  return [name, {enum: enumOptions, type, default: parse(defaultVal), title: description || name}];
+  return [name, {enum: enumOptions, type, default: parse(defaultVal), 
+    // title: description || name, 
+    title:name,
+    description}];
 }
 
 // finds the first cell that contains code and the string #@param

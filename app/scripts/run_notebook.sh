@@ -63,6 +63,9 @@ while [ $status -ne 0 ]; do
     echo "🐝: Activate virtual environment"
     bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
 
+    # Install papermill in vitual environment
+    pip install papermill
+    
     # Run notebook
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
 

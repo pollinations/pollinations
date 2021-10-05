@@ -69,11 +69,11 @@ while [ $status -ne 0 ]; do
     # Run notebook
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
 
-    echo "🐝: Deactivate virtual environment"
-    deactivate
-
     # Get exit code
     status=$?
+
+    echo "🐝: Deactivating virtual environment"
+    deactivate
     
     echo "🐝: Papermill exited with status: $status. Re-running if not 0."
 done

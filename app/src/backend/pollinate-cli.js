@@ -11,7 +11,7 @@ import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
 import { exec } from "child_process";
 import { createWriteStream } from "fs";
-import { getClient } from "../network/ipfsConnector.js";
+
 
 export const debug = Debug("pollinate")
 

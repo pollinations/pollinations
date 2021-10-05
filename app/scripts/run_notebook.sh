@@ -51,9 +51,6 @@ echo "Starting notebook..." > $IPFS_ROOT/output/log
 echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
-echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
-bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
-
 # --- Run
 status=1
 while [ $status -ne 0 ]; do
@@ -62,8 +59,15 @@ while [ $status -ne 0 ]; do
     # If papermill fails it needs to pass the exit code along through the pipe.
     set -o pipefail
 
+
+    echo "🐝: Activate virtual environment"
+    bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
+
     # Run notebook
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
+
+    echo "🐝: Deactivate virtual environment"
+    deactivate
 
     # Get exit code
     status=$?

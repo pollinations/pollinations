@@ -56,7 +56,7 @@ STATUS=1
 RUN_COUNT=0
 
 # --- Run
-while [ $STATUS -ne 0 && $RUN_COUNT -lt 3 ]; do
+while [ $STATUS -ne 0] && [$RUN_COUNT -lt 3 ]; do
 
     # Increment run counter
     RUN_COUNT=$((RUN_COUNT+1))

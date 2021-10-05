@@ -2,6 +2,7 @@
 IPFS_ROOT=${1:-"/content/ipfs"}
 
 NOTEBOOK_PATH=$IPFS_ROOT/input/notebook.ipynb
+NOTEBOOK_HASH=$(sha1sum $NOTEBOOK_PATH | awk '{print $1}')
 NOTEBOOK_OUTPUT_PATH=/content/notebook_out.ipynb
 
 NOTEBOOK_PARAMS_FILE=/content/params.yaml
@@ -50,6 +51,8 @@ echo "Starting notebook..." > $IPFS_ROOT/output/log
 echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
 python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PATH
 
+echo "🐝: Preparing notebook for execution with papermill. (Add params tag to paraeter cell)"
+bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
 
 # --- Run
 status=1

@@ -50,15 +50,21 @@ export const updateInput = async (inputWriter, inputs) => {
     for (let [key, val] of Object.entries(inputs)) {
         // check if value is a string and base64 encoded file and convert it to a separate file input
         if (typeof val === "string" && val.startsWith("data:")) {
+            
+            // Parse file details from data url
             debug("Found base64 encoded file", key);
             const mimeType = val.split(";")[0].split(":")[1];
             const filename = key + "." + mimeType.split("/")[1];
             const fileContent = val.split(",")[1];
+
             // convert fileContent to buffer
             const buffer = Buffer.from(fileContent, "base64");
             debug("Writing file", filename);
             await inputWriter.add(filename, buffer);
-            val = `input/${filename}`;
+
+            // We should not need to reference the absolute path here.
+            // Will fix on the pollinator side later
+            val = `/content/ipfs/input/${filename}`;
         }
         await inputWriter.add(key, JSON.stringify(val))
     };

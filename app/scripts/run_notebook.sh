@@ -56,17 +56,13 @@ STATUS=1
 RUN_COUNT=0
 
 # --- Run
-while [ $STATUS -ne 0 && $RUN_COUNT -lt 3 ]; do
+while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
 
     # Increment run counter
     RUN_COUNT=$((RUN_COUNT+1))
-    echo -n $RUN_COUNT > $RUN_COUNT_FILE
+    echo -n $RUN_COUNT > $IPFS_ROOT/output/run_count
 
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
-
-    # If papermill fails it needs to pass the exit code along through the pipe.
-    set -o pipefail
-
 
     echo "🐝: Activate virtual environment"
     bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
@@ -74,17 +70,19 @@ while [ $STATUS -ne 0 && $RUN_COUNT -lt 3 ]; do
     # Install papermill in vitual environment
     pip install --upgrade papermill typing-extensions
 
+    # If papermill fails it needs to pass the exit code along through the pipe.
+    set -o pipefail
+
     # Run notebook
     papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
 
     # Get exit code
     STATUS=$?
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: " $(cat $RUN_COUNT_FILE)
+    echo "🐝: Papermill exited with status: $STATUS. Re-running if not 0. Run count: $RUN_COUNT"
  
     echo "🐝: Deactivating virtual environment"
     deactivate
     
-    echo $(($(cat $RUN_COUNT_FILE) + 1) > $RUN_COUNT_FILE
 done
 
 

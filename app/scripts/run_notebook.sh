@@ -60,7 +60,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
 
     # Increment run counter
     RUN_COUNT=$((RUN_COUNT+1))
-    echo -n $RUN_COUNT > $RUN_COUNT_FILE
+    echo -n $RUN_COUNT > $IPFS_ROOT/output/run_count
 
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
 
@@ -79,7 +79,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
 
     # Get exit code
     STATUS=$?
-    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: " $(cat $RUN_COUNT_FILE)
+    echo "🐝: Papermill exited with status: $status. Re-running if not 0. Run count: $RUN_COUNT"
  
     echo "🐝: Deactivating virtual environment"
     deactivate

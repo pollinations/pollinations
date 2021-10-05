@@ -13,30 +13,30 @@ const debug = Debug("ipfsState");
 
 // Recursively get the IPFS content and transform it into a JS object.
 // The callback is called for each file in the directories which can fetch or process them further
-export const getIPFSState = async (contentID, callback=f=>f, rootName="root") => {
+export const getIPFSState = async (contentID, callback=f=>f, skipCache=false) => {
     
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);
 
-    return await cachedIPFSState(ipfsReader, { cid: contentID, name: rootName, type: "dir", path: "/", rootCID: contentID}, callback);
+    return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID}, callback, skipCache);
  }
 
 
 // Caching
 
 const cache = {};
-const cachedIPFSState = (ipfsReader, {cid, ...rest}, processFile ) => {
+const cachedIPFSState = (ipfsReader, {cid, ...rest}, processFile, skipCache ) => {
     const key = `${cid} - ${processFile.toString()}`;
-    if (!cache[key]) {
+    if (!cache[key] || skipCache) {
         debug("cache miss",cid);
-        cache[key] = _getIPFSState(ipfsReader, {cid, ...rest}, processFile);
+        cache[key] = _getIPFSState(ipfsReader, {cid, ...rest}, processFile, skipCache);
     } else
         debug("cache hit",cid);
     return cache[key];
 }
 
 // Do the actual work
-const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile) => {
+const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile, skipCache) => {
     debug("ipfs state getter callback name",processFile.toString())
     const {ls, get} = ipfsReader;
     cid = stringCID(cid);
@@ -47,7 +47,7 @@ const _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, pro
         _debug("Got files for", name, cid, files);
         const filenames = files.map(({ name }) => name);
         const contents = await PromiseAllProgress(path, files.map(
-            file => cachedIPFSState(ipfsReader, {...file, path:join(path,file.name), rootCID}, processFile)
+            file => cachedIPFSState(ipfsReader, {...file, path:join(path,file.name), rootCID}, processFile, skipCache)
             ));
 
         const contentResult = Object.fromEntries(zip(filenames, contents));

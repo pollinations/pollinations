@@ -6,7 +6,7 @@ export let getRoutes =  () => {
     return [
         {
             exact: false,
-            path: '/p/:hash',
+            path: '/p/:hash*',
             Page: Model,
         },
         { 

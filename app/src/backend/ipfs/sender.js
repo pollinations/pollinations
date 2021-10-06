@@ -107,7 +107,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     cwd: watchPath,
   });
 
-  const sendQueuedFiles =  debounce(debounceTime, false, async () => {
+  const sendQueuedFiles =  throttle(debounceTime, false, async () => {
     const files = changeQueue;
     changeQueue = [];
     channel$.push(files);

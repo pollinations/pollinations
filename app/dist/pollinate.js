@@ -35859,9 +35859,6 @@ function throttle(delay, noTrailing, callback, debounceMode) {
   wrapper.cancel = cancel;
   return wrapper;
 }
-function debounce(delay, atBegin, callback) {
-  return callback === void 0 ? throttle(delay, atBegin, false) : throttle(delay, callback, atBegin !== false);
-}
 
 // src/backend/ipfs/sender.js
 var debug4 = (0, import_debug4.default)("ipfs/sender");
@@ -35926,7 +35923,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath
   });
-  const sendQueuedFiles = debounce(debounceTime, false, async () => {
+  const sendQueuedFiles = throttle(debounceTime, false, async () => {
     const files = changeQueue;
     changeQueue = [];
     channel$.push(files);

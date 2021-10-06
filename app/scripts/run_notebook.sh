@@ -76,7 +76,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
     set -o pipefail
 
     # Run notebook
-    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
+    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output | pv -i 5 |& tee $IPFS_ROOT/output/log
 
     # Get exit code
     STATUS=$?

@@ -38,7 +38,7 @@ export const getNotebooks = async (ipfsPath=DEFAULT_HIVE_PATH) => {
       return {
         category, 
         name, 
-        path:`/p/${cid}`, 
+        path:`/p/${cid}/`, 
         description,
         Icon: WallpaperIcon
       };

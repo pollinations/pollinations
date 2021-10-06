@@ -8,7 +8,7 @@ import colabConnectionManager from "./localColabConnection";
 import { useParams, useHistory } from "react-router-dom";
 import { publisher, subscribeCID } from "./ipfsPubSub";
 
-const debug = Debug("useColab")
+const debug = Debug("useColab");
 
 // updateHashCondition function can be optionally 
 // passed to only update the hash when a run has finished
@@ -134,7 +134,7 @@ function useContentHash() {
 
     const hash = params?.hash;
 
-    const setHash = (newHash, replace=true) => replace ? history.replace(`/p/${newHash}`) : history.push(`/p/${newHash}`);
+    const setHash = (newHash, replace=true) => replace ? history.replace(`/p/${newHash}/`) : history.push(`/p/${newHash}/`);
     
     return { hash, setHash };
 }

@@ -16,31 +16,30 @@ export const handler = async ({path}) => {
     const cid = path.split("/").slice(-1)[0];
     const platform = path.split("/").slice(-2)[0];
     // your server-side functionality
-    console.log("platform",platform,"cid",cid,". Fetching IPFS state");
-    const ipfs = await IPFSWebState(cid);
-
-    const data =  getPostData(ipfs, cid, platform==="twitter");
-    
-    try {
-      const res = await doPost(data, platform);
-      console.log("res",JSON.stringify(res,null,4));
-      return {
-        statusCode: 200,
-        body: JSON.stringify(res, null, 4),
-        headers
-      };
-
-    } catch (e) {
-      console.error("error",e);
-      return {
-        statusCode: 500,
-        body: JSON.stringify(e, null, 4),
-        headers
-      };
-    }
-
+    let res = await socialPost(platform, cid);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(res, null, 4),
+      headers
+    };
 }
 
+
+export async function socialPost(platform, cid) {
+  console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
+  const ipfs = await IPFSWebState(cid);
+
+  const data = getPostData(ipfs, cid, platform === "twitter");
+  let res = null;
+  try {
+    res = await doPost(data, platform);
+    console.log("res", JSON.stringify(res, null, 4));
+  } catch (e) {
+    console.error("error", e);
+    res = e;
+  }
+  return res;
+}
 
 async function doPost({post, title, videoURL, coverImage, url}, platform) {
 
@@ -86,7 +85,3 @@ https://instagram.com/pollinations_ai
 `;
 
 
-
-if (process.argv.length > 2) {
-  handler({path: process.argv[2]});
-}

@@ -36089,7 +36089,7 @@ var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2 + 2e3;
 var execute = async (command, logfile = null) => new Promise((resolve, reject) => {
   debug7("Executing command", command);
-  const childProc = (0, import_child_process.exec)(command, (err) => {
+  const childProc = (0, import_child_process.exec)(command, { maxBuffer: 1024 * 1e4 }, (err) => {
     if (err)
       reject(err);
     else

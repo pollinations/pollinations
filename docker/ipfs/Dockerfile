@@ -1,1 +1,1 @@
-FROM go-ipfs:latest
+FROM ipfs/go-ipfs:latest

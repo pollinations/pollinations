@@ -1,7 +1,16 @@
 {
   "API": {
     "HTTPHeaders": {
-      "Access-Control-Allow-Origin": ["*"]
+      "Access-Control-Allow-Origin": [
+        "http://ipfs-node.zencraft.studio:5001",
+        "http://localhost:3000",
+        "http://127.0.0.1:5001",
+        "https://webui.ipfs.io"
+      ],
+      "Access-Control-Allow-Methods": [
+        "PUT",
+        "POST"
+      ]
     }
   },
   "Addresses": {
@@ -102,8 +111,12 @@
         "Range",
         "User-Agent"
       ],
-      "Access-Control-Allow-Methods": ["GET"],
-      "Access-Control-Allow-Origin": ["*"]
+      "Access-Control-Allow-Methods": [
+        "GET"
+      ],
+      "Access-Control-Allow-Origin": [
+        "*"
+      ]
     },
     "NoDNSLink": false,
     "NoFetch": false,
@@ -133,7 +146,9 @@
   "Peering": {
     "Peers": [
       {
-        "Addrs": ["/ip4/18.157.205.205/tcp/4001"]
+        "Addrs": [
+          "/ip4/18.157.205.205/tcp/4001"
+        ]
       }
     ]
   },

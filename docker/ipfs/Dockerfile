@@ -1,6 +1,6 @@
 FROM ipfs/go-ipfs:v0.10.0
-COPY docker/ipfs/config.json /data/ipfs/config.json
 RUN ipfs init
+COPY docker/ipfs/config.json ~/.ipfs/config
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/start_ipfs"]
 # Heathcheck for the container
 # QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn is the CID of empty folder

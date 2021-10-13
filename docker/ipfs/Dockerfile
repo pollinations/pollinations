@@ -7,7 +7,5 @@ ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/start_ipfs"]
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ipfs dag stat /ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn || exit 1
 
-# Remove the previous lock.
-CMD ["rm", "/data/ipfs/repo.lock"]
 # Execute the daemon subcommand by default
 CMD ["daemon", "--migrate=true", "--agent-version-suffix=docker"]

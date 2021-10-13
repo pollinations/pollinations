@@ -85,7 +85,7 @@
       "type": "mount"
     },
     "StorageGCWatermark": 90,
-    "StorageMax": "10GB"
+    "StorageMax": "50GB"
   },
   "Discovery": {
     "MDNS": {

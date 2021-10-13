@@ -1,5 +1,6 @@
 FROM ipfs/go-ipfs:v0.10.0
 RUN ipfs init
+RUN mkdir ~/.ipfs
 COPY docker/ipfs/config.json ~/.ipfs/config
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/start_ipfs"]
 # Heathcheck for the container

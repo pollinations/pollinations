@@ -66,14 +66,3 @@ export const useNotebooks = () => {
   return notebooks;
 }
 
-const getNotebookData = async ({name,cid}) => { 
-
-  const notebookJSON = ipfsGet(cid);
-  debug("notebookJSON", notebookJSON);
-  return {
-    category, 
-    name, 
-    path:`/p/${cid}`, 
-    Icon: WallpaperIcon
-  };
-}

@@ -40,7 +40,9 @@ rm -rv $IPFS_ROOT/output/*
 
 # --- Log GPU info ---
 echo "🐝: Logging GPU info."
-nvidia-smi -L > $IPFS_ROOT/output/gpu 
+nvidia-smi -L > $IPFS_ROOT/output/gpu
+nvidia-smi --query-gpu=memory.total --format=noheader,nounits,csv >> $IPFS_ROOT/output/gpu_memory
+
 #NVIDIA_SMI_PID=$!
 
 echo "🐝: Setting colab status to 'running'"
@@ -64,8 +66,8 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
 
     echo "🐝: Executing papermill" "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output
 
-    echo "🐝: Activate virtual environment"
-    bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
+    #echo "🐝: Activate virtual environment"
+    #bash /content/pollinations/app/scripts/activate_venv.sh $NOTEBOOK_HASH
 
     # Install papermill in vitual environment
     pip install --upgrade papermill typing-extensions
@@ -80,8 +82,8 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
     STATUS=$?
     echo "🐝: Papermill exited with status: $STATUS. Re-running if not 0. Run count: $RUN_COUNT"
  
-    echo "🐝: Deactivating virtual environment"
-    deactivate
+    #echo "🐝: Deactivating virtual environment"
+    #deactivate
     
 done
 

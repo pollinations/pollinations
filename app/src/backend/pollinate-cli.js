@@ -9,7 +9,7 @@ import Readline from 'readline';
 import options from "./options.js";
 import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import { createWriteStream } from "fs";
 
 
@@ -36,7 +36,8 @@ const sleepBeforeExit = options.debounce * 2+2000;
 const execute = async (command, logfile=null) => 
   new Promise((resolve,reject) => {
     debug("Executing command", command);
-    const childProc = exec(command, {maxBuffer: 1024 * 10000}, err => {
+    const childProc = spawn(command);
+    childProc.on("error", err => {
       if (err) 
         reject(err);
       else 

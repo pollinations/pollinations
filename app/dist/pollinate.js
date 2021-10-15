@@ -20251,7 +20251,7 @@ var require_publish = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     module2.exports = configure((api) => {
-      async function publish(path, options = {}) {
+      async function publish2(path, options = {}) {
         const res = await api.post("name/publish", {
           signal: options.signal,
           searchParams: toUrlSearchParams(__spreadValues({
@@ -20261,7 +20261,7 @@ var require_publish = __commonJS({
         });
         return toCamel(await res.json());
       }
-      return publish;
+      return publish2;
     });
   }
 });
@@ -21257,7 +21257,7 @@ var require_publish2 = __commonJS({
     var abortSignal = require_abort_signal();
     var { AbortController: AbortController2 } = require_src6();
     module2.exports = configure((api) => {
-      async function publish(topic, data, options = {}) {
+      async function publish2(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
           arg: topic
         }, options));
@@ -21269,7 +21269,7 @@ var require_publish2 = __commonJS({
         }, await multipartRequest(data, controller, options.headers)));
         await res.text();
       }
-      return publish;
+      return publish2;
     });
   }
 });
@@ -35694,7 +35694,7 @@ var debug3 = (0, import_debug3.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
 function publisher(nodeID, suffix = "/output") {
   debug3("Creating publisher for", nodeID, suffix);
-  const publish = async (cid) => {
+  const _publish = async (cid) => {
     const client = await getClient();
     await publish(client, nodeID, cid, suffix, nodeID);
   };
@@ -35706,7 +35706,7 @@ function publisher(nodeID, suffix = "/output") {
     clearInterval(handle);
   };
   return {
-    publish,
+    publish: _publish,
     close
   };
 }
@@ -35715,6 +35715,26 @@ async function publishHeartbeat(client, suffix, nodeID) {
     return;
   debug3("publishing heartbeat to", nodeID, suffix);
   await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+}
+async function publish(client, nodeID, rootCID, suffix = "/output") {
+  debug3("publish pubsub", nodeID + suffix, rootCID);
+  if (nodeID === "ipns")
+    await experimentalIPNSPublish(client, rootCID);
+  else
+    await client.pubsub.publish(nodeID + suffix, rootCID);
+}
+var abortPublish = null;
+async function experimentalIPNSPublish(client, rootCID) {
+  debug3("publishing to ipns...", rootCID);
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller.AbortController();
+  await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false }).then(() => {
+    debug3("published...", rootCID);
+    abortPublish = null;
+  }).catch((e) => {
+    debug3("exception on publish.", e);
+  });
 }
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
@@ -35838,7 +35858,7 @@ var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
   let processing = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
-  const { publish, close: closePublisher } = publisher(nodeid, "/output");
+  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
   const close = executeOnce(async () => {
     await closeWriter();
     await closePublisher();
@@ -35872,7 +35892,7 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
       console.log(newContentID);
       if (ipns) {
         debug4("publish", newContentID);
-        await publish(newContentID);
+        await publish2(newContentID);
       }
       done();
       if (once) {

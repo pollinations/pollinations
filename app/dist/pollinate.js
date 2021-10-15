@@ -35706,7 +35706,7 @@ function publisher(nodeID, suffix = "/output") {
     clearInterval(handle);
   };
   return {
-    publish: skipRepeatCalls(_publish),
+    publish: _publish,
     close
   };
 }
@@ -35717,7 +35717,7 @@ async function publishHeartbeat(client, suffix, nodeID) {
   await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
 }
 async function publish(client, nodeID, rootCID, suffix = "/output") {
-  debug3("publish pubsub", nodeID, rootCID);
+  debug3("publish pubsub", nodeID + suffix, rootCID);
   if (nodeID === "ipns")
     await experimentalIPNSPublish(client, rootCID);
   else
@@ -35793,16 +35793,6 @@ function subscribeCallback(topic, callback) {
     abort.abort();
   };
 }
-var skipRepeatCalls = (f) => {
-  let lastValue = null;
-  return (value) => {
-    if (lastValue !== value) {
-      f(value);
-      lastValue = value;
-    }
-    ;
-  };
-};
 
 // src/backend/ipfs/sender.js
 var import_path2 = __toModule(require("path"));
@@ -36096,6 +36086,7 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
     else
       resolve();
   });
+  childProc.on("close", resolve);
   childProc.stdout.pipe(import_process2.default.stderr);
   childProc.stderr.pipe(import_process2.default.stderr);
   if (logfile) {

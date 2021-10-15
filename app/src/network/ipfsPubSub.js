@@ -17,7 +17,7 @@ export function publisher(nodeID, suffix = "/output") {
 
     debug("Creating publisher for", nodeID, suffix);
 
-    const publish = async cid => {
+    const _publish = async cid => {
         const client = await getClient();
         await publish(client, nodeID, cid, suffix, nodeID);
     };
@@ -32,7 +32,7 @@ export function publisher(nodeID, suffix = "/output") {
     };
 
     return { 
-        publish, 
+        publish:_publish, 
         close 
     };
 }

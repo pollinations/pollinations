@@ -43,6 +43,7 @@ const execute = async (command, logfile=null) =>
       else 
         resolve();
     });
+    childProc.on("close", resolve);
     childProc.stdout.pipe(process.stderr);
     childProc.stderr.pipe(process.stderr);
     if (logfile) {

@@ -49,7 +49,7 @@ async function publishHeartbeat(client, suffix, nodeID) {
 
 async function publish(client, nodeID, rootCID, suffix = "/output") {
 
-    debug("publish pubsub", nodeID, rootCID);
+    debug("publish pubsub", nodeID+suffix, rootCID);
 
     if (nodeID === "ipns")
         await experimentalIPNSPublish(client, rootCID);

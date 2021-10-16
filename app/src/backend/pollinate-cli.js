@@ -64,6 +64,9 @@ if (executeCommand)
 
     while (true) {
       await receive({...options, once: true});
+      
+      await awaitSleep(sleepBeforeExit);
+
       const {start: startSending, processing, close} = await sender({...options, once: false });
     
       startSending();

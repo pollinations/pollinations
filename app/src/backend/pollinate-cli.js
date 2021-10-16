@@ -63,7 +63,7 @@ if (executeCommand)
     
 
     while (true) {
-      await receive({...options, once: true});
+      await receive({...options, once: true, path: options.path+"/input"});
       
       await awaitSleep(sleepBeforeExit);
 

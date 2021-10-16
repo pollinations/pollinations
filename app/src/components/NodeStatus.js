@@ -2,6 +2,7 @@ import React from "react";
 import { displayContentID } from "../network/utils";
 import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
 import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
+import WarningIcon from '@material-ui/icons/Error';
 import Debug from "debug";
 
 const debug = Debug("NodeStatus");
@@ -17,7 +18,7 @@ export default ({ nodeID, contentID,  gpu, heartbeat }) => {
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
     const disconnected = heartbeat && !heartbeat.alive;
-    const nodeInfo = !nodeID || disconnected ? (<>{disconnected ? "(disconnected)": ""}<ColabConnectButton /> </>) : gpuInfo || displayContentID(nodeID);
+    const nodeInfo = !nodeID || disconnected ? <ColabConnectButton disconnected={disconnected} />  : gpuInfo || displayContentID(nodeID);
 
     return <Box style={{width:"220px", marginLeft:"auto"}}>
         <Table size="small" aria-label="a dense table" >
@@ -62,7 +63,7 @@ const parseGPU = gpu  =>
     gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
-const ColabConnectButton = () => <Button color="secondary" href={colabURL} target="_blank">[ Launch ]</Button>;
+const ColabConnectButton = disconnected => <Button color="secondary" href={colabURL} target="colab">[ {disconnected ? <><WarningIcon />Launch</> : "Launch"} ]</Button>;
 
 
 const TableCell = withStyles({

@@ -62,10 +62,12 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
     
 
+ 
     while (true) {
+      const {start: startSending, processing, close} = await sender({...options, once: false });
+      
       await receive({...options, once: true, path: options.path+"/input"});
 
-      const {start: startSending, processing, close} = await sender({...options, once: false });
     
       startSending();
   

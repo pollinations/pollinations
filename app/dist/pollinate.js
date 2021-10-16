@@ -36129,7 +36129,6 @@ if (executeCommand)
   (async () => {
     while (true) {
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       startSending();
       await execute(executeCommand, options_default.logout);

@@ -121,7 +121,7 @@ function heartbeatChecker(heartbeatStateCallback) {
         heartbeatTimeout = setTimeout(() => {
             const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1000;
             debug("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
-            heartbeatStateCallback({ timeSinceLastHeartbeat, alive: false });
+            heartbeatStateCallback({ lastHeartbeat, alive: false });
         }, HEARTBEAT_FREQUENCY * 2 * 1000);
         debug("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
     }

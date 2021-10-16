@@ -19,7 +19,7 @@ const debug = Debug("Model");
 
 export default React.memo(function Model(state) {
 
-  let { ipfs, nodeID, status, contentID, dispatchInput } = state;
+  let { ipfs, contentID, dispatchInput, heartbeat } = state;
 
   const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
 
@@ -36,6 +36,7 @@ export default React.memo(function Model(state) {
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 
   debug("ipfs state before rendering model", ipfs)
+  const disconnected = heartbeat && !heartbeat?.alive;
   return <>
     <Container maxWidth="md">
       <Box my={2}>
@@ -56,11 +57,11 @@ export default React.memo(function Model(state) {
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-            status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
+             disconnected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
           <FormView
             input={ipfs.input}
-            status={status}
+            disconnected={disconnected}
             colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}

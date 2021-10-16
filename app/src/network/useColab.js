@@ -48,7 +48,7 @@ const useColab = (updateHashCondition = () => true) => {
     
             if (nodeID) {
                 debug("setting new nodeID", nodeID);
-                dispatchState({ nodeID, gpu, status: "ready" });
+                dispatchState({ nodeID, gpu });
             }
         });
     },[]);
@@ -157,8 +157,7 @@ const stateReducer = [
     }, {
         nodeID: null,
         contentID: null,
-        ipfs: { },
-        status: "disconnected"
+        ipfs: { }
     }];
 
 

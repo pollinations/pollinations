@@ -35698,10 +35698,12 @@ function publisher(nodeID, suffix = "/output") {
     const client = await getClient();
     await publish(client, nodeID, cid, suffix, nodeID);
   };
-  const handle = setInterval(async () => {
+  const sendHeartbeat = async () => {
     const client = await getClient();
     publishHeartbeat(client, suffix, nodeID);
-  }, HEARTBEAT_FREQUENCY * 1e3);
+  };
+  const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
+  sendHeartbeat();
   const close2 = () => {
     clearInterval(handle);
   };

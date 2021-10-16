@@ -4,6 +4,7 @@ import awaitSleep from 'await-sleep';
 import Debug from 'debug';
 import { getClient } from './ipfsConnector';
 import { Channel } from 'queueable';
+import { noop } from './utils';
 
 const debug = Debug('ipfs:pubsub');
 
@@ -91,19 +92,61 @@ export function subscribeGenerator(nodeID, suffix = "/input") {
 
 // Subscribe to a content ids from a nodeID and suffix. Callback is called with the content ids
 // Also receives and logs heartbeats received from the publisher
-export function subscribeCID(nodeID, suffix = "", callback) {
-    let lastHeartbeatTime = new Date().getTime();
+export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
 
-    return subscribeCallback(nodeID+suffix, message => {
+    const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
+
+    const unsubscribe = subscribeCallback(nodeID+suffix, message => {
         if (message === "HEARTBEAT") {
-            const time = new Date().getTime();
-            debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1000);
-            lastHeartbeatTime = time;
+            gotHeartbeat();
         } else {
             callback(message);
         }
     });
+
+    return () => {
+        unsubscribe();
+        closeHeartbeat();
+    }
 };
+
+// if we don't receive a heartbeat from the publisher in 2 x HEARTBEAT_FREQUENCY seconds, 
+// we assume the publisher is dead and call heartbeatDeadCallback
+function heartbeatChecker(heartbeatStateCallback) {
+
+    let lastHeartbeat = new Date().getTime();
+    let heartbeatTimeout = null;
+  
+    function setHeartbeatTimeout() {
+        heartbeatTimeout = setTimeout(() => {
+            const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1000;
+            debug("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
+            heartbeatStateCallback({ timeSinceLastHeartbeat, alive: false });
+        }, HEARTBEAT_FREQUENCY * 2 * 1000);
+        debug("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+    }
+    
+    const gotHeartbeat = () => {
+        const time = new Date().getTime();
+        debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1000);
+        lastHeartbeat = time;
+        if (heartbeatTimeout)
+            clearTimeout(heartbeatTimeout);
+        heartbeatStateCallback({ alive: true });
+    };
+
+    const closeHeartbeat = () => {
+        if (heartbeatTimeout)
+            clearTimeout(heartbeatTimeout);
+    };
+
+    setHeartbeatTimeout();
+    
+    return { gotHeartbeat, closeHeartbeat }
+
+
+}
+
 
 // Subscribe to an ipfs topic with some rather ugly code to handle errors that probably don't even occur
 function subscribeCallback(topic, callback) {

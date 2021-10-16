@@ -35742,17 +35742,45 @@ function subscribeGenerator(nodeID, suffix = "/input") {
   const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
-function subscribeCID(nodeID, suffix = "", callback) {
-  let lastHeartbeatTime = new Date().getTime();
-  return subscribeCallback(nodeID + suffix, (message) => {
+function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
+  const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
+  const unsubscribe = subscribeCallback(nodeID + suffix, (message) => {
     if (message === "HEARTBEAT") {
-      const time = new Date().getTime();
-      debug3("Heartbeat from pubsub. Time since last:", (time - lastHeartbeatTime) / 1e3);
-      lastHeartbeatTime = time;
+      gotHeartbeat();
     } else {
       callback(message);
     }
   });
+  return () => {
+    unsubscribe();
+    closeHeartbeat();
+  };
+}
+function heartbeatChecker(heartbeatStateCallback) {
+  let lastHeartbeat = new Date().getTime();
+  let heartbeatTimeout = null;
+  function setHeartbeatTimeout() {
+    heartbeatTimeout = setTimeout(() => {
+      const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
+      debug3("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
+      heartbeatStateCallback({ lastHeartbeat, alive: false });
+    }, HEARTBEAT_FREQUENCY * 2 * 1e3);
+    debug3("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+  }
+  const gotHeartbeat = () => {
+    const time = new Date().getTime();
+    debug3("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
+    lastHeartbeat = time;
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+    heartbeatStateCallback({ alive: true });
+  };
+  const closeHeartbeat = () => {
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+  };
+  setHeartbeatTimeout();
+  return { gotHeartbeat, closeHeartbeat };
 }
 function subscribeCallback(topic, callback) {
   const abort = new import_native_abort_controller.AbortController();
@@ -36098,13 +36126,16 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
 });
 if (executeCommand)
   (async () => {
-    const { start, processing, close } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
-    start();
-    await execute(executeCommand, options_default.logout);
-    debug7("done executing", executeCommand, ". Waiting...");
-    await (0, import_await_sleep3.default)(sleepBeforeExit);
-    debug7("awaiting termination of state sync");
-    await processing();
+    const { start: startSending, processing, close } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    startSending();
+    while (true) {
+      await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
+      await execute(executeCommand, options_default.logout);
+      debug7("done executing", executeCommand, ". Waiting...");
+      await (0, import_await_sleep3.default)(sleepBeforeExit);
+      debug7("awaiting termination of state sync");
+      await processing();
+    }
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");
     await processing();

@@ -36128,8 +36128,8 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
 if (executeCommand)
   (async () => {
     while (true) {
-      await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
       await execute(executeCommand, options_default.logout);
       debug7("done executing", executeCommand, ". Waiting...");

@@ -9,19 +9,22 @@ const debug = Debug("NodeStatus");
 const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
 
 // Display the connection status to colab and currect IPFS content ID
-export default ({ nodeID, contentID,  gpu }) => {
+export default ({ nodeID, contentID,  gpu, heartbeat }) => {
     
     gpu = parseGPU(gpu);
     debug("parsed GPU", gpu);
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
+    const disconnected = heartbeat && !heartbeat.alive;
+    const nodeInfo = !nodeID || disconnected ? (<>{disconnected ? "(disconnected)": ""}<ColabConnectButton /> </>) : gpuInfo || displayContentID(nodeID);
+
     return <Box style={{width:"220px", marginLeft:"auto"}}>
         <Table size="small" aria-label="a dense table" >
                     <TableBody>
                         <TableRow>
                             <TableCell><b>GPU</b></TableCell>
-                            <TableCell>{ nodeID ? gpuInfo || displayContentID(nodeID) : <ColabConnectButton />}</TableCell>
+                            <TableCell>{ nodeInfo}</TableCell>
                         </TableRow>
                         <TableRow>
                         <TableCell ><b>ContentID</b></TableCell>

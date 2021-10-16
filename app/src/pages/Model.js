@@ -36,7 +36,7 @@ export default React.memo(function Model(state) {
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 
   debug("ipfs state before rendering model", ipfs)
-  const disconnected = heartbeat && !heartbeat?.alive;
+  const disconnected = !heartbeat || !heartbeat?.alive;
   return <>
     <Container maxWidth="md">
       <Box my={2}>

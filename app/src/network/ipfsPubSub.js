@@ -133,6 +133,7 @@ function heartbeatChecker(heartbeatStateCallback) {
         if (heartbeatTimeout)
             clearTimeout(heartbeatTimeout);
         heartbeatStateCallback({ alive: true });
+        setHeartbeatTimeout();
     };
 
     const closeHeartbeat = () => {

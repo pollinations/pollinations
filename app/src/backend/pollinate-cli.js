@@ -64,8 +64,6 @@ if (executeCommand)
 
     while (true) {
       await receive({...options, once: true, path: options.path+"/input"});
-      
-      await awaitSleep(sleepBeforeExit);
 
       const {start: startSending, processing, close} = await sender({...options, once: false });
     

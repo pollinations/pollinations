@@ -30479,9 +30479,9 @@ var require_is_glob = __commonJS({
           return true;
         var idx = match.index + match[0].length;
         var open = match[1];
-        var close = open ? chars[open] : null;
-        if (open && close) {
-          var n = str.indexOf(close, idx);
+        var close2 = open ? chars[open] : null;
+        if (open && close2) {
+          var n = str.indexOf(close2, idx);
           if (n !== -1) {
             idx = n + 1;
           }
@@ -31945,7 +31945,7 @@ var require_nodefs_handler = __commonJS({
     var open = promisify(fs.open);
     var stat = promisify(fs.stat);
     var lstat = promisify(fs.lstat);
-    var close = promisify(fs.close);
+    var close2 = promisify(fs.close);
     var fsrealpath = promisify(fs.realpath);
     var statMethods = { lstat, stat };
     var foreach = (val, fn) => {
@@ -32024,7 +32024,7 @@ var require_nodefs_handler = __commonJS({
           if (isWindows && error.code === "EPERM") {
             try {
               const fd = await open(path, "r");
-              await close(fd);
+              await close2(fd);
               broadcastErr(error);
             } catch (err) {
             }
@@ -35702,12 +35702,12 @@ function publisher(nodeID, suffix = "/output") {
     const client = await getClient();
     publishHeartbeat(client, suffix, nodeID);
   }, HEARTBEAT_FREQUENCY * 1e3);
-  const close = () => {
+  const close2 = () => {
     clearInterval(handle);
   };
   return {
     publish: _publish,
-    close
+    close: close2
   };
 }
 async function publishHeartbeat(client, suffix, nodeID) {
@@ -35774,6 +35774,7 @@ function heartbeatChecker(heartbeatStateCallback) {
     if (heartbeatTimeout)
       clearTimeout(heartbeatTimeout);
     heartbeatStateCallback({ alive: true });
+    setHeartbeatTimeout();
   };
   const closeHeartbeat = () => {
     if (heartbeatTimeout)
@@ -35884,10 +35885,10 @@ function debounce(delay, atBegin, callback) {
 // src/backend/ipfs/sender.js
 var debug4 = (0, import_debug4.default)("ipfs/sender");
 var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
-  let processing = Promise.resolve(true);
+  let processing2 = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const close = executeOnce(async () => {
+  const close2 = executeOnce(async () => {
     await closeWriter();
     await closePublisher();
   });
@@ -35899,7 +35900,7 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     for await (const changed of changedFiles$) {
       let done = null;
-      processing = new Promise((resolve) => done = resolve);
+      processing2 = new Promise((resolve) => done = resolve);
       debug4("Changed files", changed);
       for (const { event, path: file } of changed) {
         debug4("Local:", event, file);
@@ -35927,12 +35928,12 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
         break;
       }
     }
-    await close();
+    await close2();
   }
   return {
     start,
-    processing: () => processing,
-    close
+    processing: () => processing2,
+    close: close2
   };
 };
 var chunkedFilewatcher = (watchPath, debounceTime) => {
@@ -36126,15 +36127,16 @@ var execute = async (command, logfile = null) => new Promise((resolve, reject) =
 });
 if (executeCommand)
   (async () => {
-    const { start: startSending, processing, close } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
-    startSending();
     while (true) {
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
+      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      startSending();
       await execute(executeCommand, options_default.logout);
       debug7("done executing", executeCommand, ". Waiting...");
+      await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       debug7("awaiting termination of state sync");
-      await processing();
+      await processing2();
     }
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");
@@ -36147,11 +36149,11 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = await sender(options_default);
+      const { start, processing: processing2, close: close2 } = await sender(options_default);
       await start();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
-      await processing();
-      await close();
+      await processing2();
+      await close2();
       import_process2.default.exit(0);
     })();
   if (enableReceive) {

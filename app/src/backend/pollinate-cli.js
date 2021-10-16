@@ -61,14 +61,16 @@ if (executeCommand)
     // const receivedCID = await receive({...options, once: true});
     // debug("received IPFS content", receivedCID);
     
-    const {start: startSending, processing, close} = await sender({...options, once: false });
-    
-    startSending();
 
     while (true) {
       await receive({...options, once: true});
+      const {start: startSending, processing, close} = await sender({...options, once: false });
+    
+      startSending();
+  
       await execute(executeCommand, options.logout);
       debug("done executing", executeCommand,". Waiting...");
+      await close();
     
       // This waiting logic is quite hacky. Should improve it.
       await awaitSleep(sleepBeforeExit);

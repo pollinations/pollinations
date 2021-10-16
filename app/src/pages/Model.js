@@ -17,11 +17,6 @@ import { SocialPostStatus } from "../components/Social";
 
 const debug = Debug("Model");
 
-const TestMemo  = React.memo(({ prop }) => {
-  debug("rerender testmemo");
-  return null;
-});
-
 export default React.memo(function Model(state) {
 
   let { ipfs, nodeID, status, contentID, dispatchInput } = state;
@@ -63,10 +58,6 @@ export default React.memo(function Model(state) {
           {
             status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
-          <TestMemo 
-                  //  onSubmit={dispatchForm}
-                   onCancel={cancelForm}
-          />
           <FormView
             input={ipfs.input}
             status={status}

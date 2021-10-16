@@ -23,10 +23,14 @@ export function publisher(nodeID, suffix = "/output") {
         await publish(client, nodeID, cid, suffix, nodeID);
     };
 
-    const handle = setInterval(async () => {
+    const sendHeartbeat = async () => {
         const client = await getClient();
         publishHeartbeat(client, suffix, nodeID);
-    }, HEARTBEAT_FREQUENCY * 1000);
+    };
+    
+    const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1000);
+    
+    sendHeartbeat();
 
     const close = () => {
         clearInterval(handle);

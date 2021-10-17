@@ -3,7 +3,8 @@
     "HTTPHeaders": {
       "Access-Control-Allow-Origin": [
         "http://ipfs-node.zencraft.studio:5001",
-        "https://ipfs-node.zencraft.studio:5001",
+        "http://ipfs-node.zencraft.studio:4001",
+        "http://ipfs-node.zencraft.studio:8080",
         "http://localhost:3000",
         "http://127.0.0.1:5001",
         "https://webui.ipfs.io"

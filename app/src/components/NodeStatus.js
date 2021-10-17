@@ -17,7 +17,7 @@ export default ({ nodeID, contentID,  gpu, heartbeat }) => {
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
-    const disconnected = heartbeat && !heartbeat.alive;
+    const disconnected = !heartbeat || !heartbeat.alive;
     const nodeInfo = !nodeID || disconnected ? <ColabConnectButton disconnected={disconnected} />  : gpuInfo || displayContentID(nodeID);
 
     return <Box style={{width:"220px", marginLeft:"auto"}}>

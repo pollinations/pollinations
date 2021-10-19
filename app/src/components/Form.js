@@ -132,7 +132,8 @@ const mapStringType = ({ default: defaultVal, enum: enumOptions }) => enumOption
 const prefixMappings = {
     "file_": "file",
     "num_": "updown",
-    "audio_": "file"
+    "audio_": "file",
+    "video_": "file"
 };
 
 

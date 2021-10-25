@@ -2,33 +2,55 @@ import React from "react";
 import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import NotebookSelector from "../components/NotebookSelector";
-import { Box, Button, Card, CardActions, CardContent, Container, Typography, CardHeader, List, ListItem } from "@material-ui/core";
+import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
 import Markdown from "markdown-to-jsx";
 import { Link } from 'react-router-dom'
+import useFilter from "../hooks/useFilter";
 
 const debug = Debug("home");
 
 export default function Home() {
     const notebooks = useNotebooks();
+    const { notebookList, options, option } = useFilter(notebooks)
+
     debug("got notebooks", notebooks);
     return  <>
           {/* title */}
-          <Box m={5}>
+        <Box m={5}>
           <List>
           <Typography variant="h6" component="h6" gutterBottom>
           🌸 Pollinations
           </Typography>
             Pollinations are an effort to make generative art more approachable.   
-        <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art (this page).</ListItem>
-        <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage</ListItem>
-        <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
-        <ListItem></ListItem>
-      </List>         
-          <Typography variant="h6" component="h6" gutterBottom>
-              Select a model
-          </Typography>
-          </Box>
-          {notebooks.map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)}
+            <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art (this page).</ListItem>
+            <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage</ListItem>
+            <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
+          </List>
+
+          { // Only show filter after options are loaded
+          options.length > 0 &&
+          <>     
+            <Typography 
+              variant="h6" 
+              component="h6" 
+              gutterBottom
+              children='What do you want to create?'/>
+            <div style={{display: 'flex', justifyContent:'space-around'}} children={
+              options?.map( opt => 
+                <Button 
+                  color={opt === option.selected ? 'secondary' : ''}
+                  onClick={() => option.setSelected(opt)} 
+                  children={opt} 
+                  key={opt}/>)
+            }/>
+          </>
+          }
+          
+        </Box>
+          {
+            notebookList
+            .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)
+          }
   </>;
 }
 

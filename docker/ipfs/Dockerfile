@@ -14,6 +14,8 @@ ENTRYPOINT ["/usr/bin/tini", "--"]
 EXPOSE 4001
 # Swarm UDP; should be exposed to the public
 EXPOSE 4001/udp
+# Daemon API; must not be exposed publicly but to client services under you control
+EXPOSE 5001
 # Web Gateway; can be exposed publicly with a proxy, e.g. as https://ipfs.example.org
 EXPOSE 8080
 # Execute the daemon subcommand by default

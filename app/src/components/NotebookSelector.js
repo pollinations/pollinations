@@ -15,7 +15,8 @@ import MenuIcon from '@material-ui/icons/Menu';
 import { getNotebooks } from "../data/notebooks.js";
 import NodeStatus from './NodeStatus';
 import { SocialLinks } from './Social';
-import { Box, Link } from '@material-ui/core';
+import { Box } from '@material-ui/core';
+import { Link } from 'react-router-dom'
 
 
 export default function NotebookSelector(state) {
@@ -38,7 +39,7 @@ export default function NotebookSelector(state) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap>
-            <Link href="/">Pollinations</Link>
+            <Link to="/">Pollinations</Link>
           </Typography>
           <Box marginLeft="15"> 
             <SocialLinks />
@@ -48,11 +49,12 @@ export default function NotebookSelector(state) {
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>
           <List>
-        {notebooks.map(({name, category, Icon, path}) => (
-          <ListItem button key={name} component="a" href={path}>
+        {notebooks.map(({name, category, Icon, path}) => ( <Link onClick={() => setVisible(false)} to={path}>
+          <ListItem button key={name} component="a" >
             <ListItemIcon> <Icon /> </ListItemIcon>
             <ListItemText primary={`${category} - ${name}`} />
           </ListItem>
+          </Link>
         ))}
       </List>
           </Drawer>

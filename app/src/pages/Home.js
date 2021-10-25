@@ -2,9 +2,9 @@ import React from "react";
 import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import NotebookSelector from "../components/NotebookSelector";
-import { Box, Button, Card, CardActions, CardContent, Container, Typography, Link, CardHeader, List, ListItem } from "@material-ui/core";
+import { Box, Button, Card, CardActions, CardContent, Container, Typography, CardHeader, List, ListItem } from "@material-ui/core";
 import Markdown from "markdown-to-jsx";
-
+import { Link } from 'react-router-dom'
 
 const debug = Debug("home");
 
@@ -12,26 +12,24 @@ export default function Home() {
     const notebooks = useNotebooks();
     debug("got notebooks", notebooks);
     return  <>
-                <Container maxWidth="md">
-                    {/* title */}
-                    <Box m={5}>
-                    <List>
-                    <Typography variant="h6" component="h6" gutterBottom>
-                    🌸 Pollinations
-                    </Typography>
-                     Pollinations are an effort to make generative art more approachable.   
-                  <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art (this page).</ListItem>
-                  <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage</ListItem>
-                  <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
-                  <ListItem></ListItem>
-                </List>         
-                    <Typography variant="h6" component="h6" gutterBottom>
-                        Select a model
-                    </Typography>
-                    </Box>
-                    {notebooks.map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)}
-                </Container>
-            </>;
+          {/* title */}
+          <Box m={5}>
+          <List>
+          <Typography variant="h6" component="h6" gutterBottom>
+          🌸 Pollinations
+          </Typography>
+            Pollinations are an effort to make generative art more approachable.   
+        <ListItem>- A frontend hosting a set of curated notebooks that allow creating and experimenting with generative art (this page).</ListItem>
+        <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage</ListItem>
+        <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
+        <ListItem></ListItem>
+      </List>         
+          <Typography variant="h6" component="h6" gutterBottom>
+              Select a model
+          </Typography>
+          </Box>
+          {notebooks.map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)}
+  </>;
 }
 
 
@@ -39,7 +37,7 @@ const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box m={5}>
                 <Card>
-                <CardHeader subheader={category} title={<Link href={path}>{name}</Link>} action={<Button href={path}><Icon /></Button>} />
+                <CardHeader subheader={category} title={<Link to={path}>{name}</Link>} action={<Button href={path}><Icon /></Button>} />
                     <CardContent>
                         <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
                     </CardContent>

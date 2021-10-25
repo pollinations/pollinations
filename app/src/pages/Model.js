@@ -14,30 +14,31 @@ import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
+import useColab from "../network/useColab";
 
 const debug = Debug("Model");
 
 
-export default React.memo(function Model(state) {
-
+export default React.memo(function Model() {
+  
+  const { state, dispatch} = useColab();
   let { ipfs, nodeID, status, contentID, dispatchInput } = state;
 
   const metadata = getNotebookMetadata(ipfs);
 
   const dispatchForm = async inputs => {
-    debug("dispatchForm", inputs);
+    // debug("dispatchForm", inputs);
     await dispatchInput({
       ...inputs,
       ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
       formAction: "submit"
     });
-  debug("dispatched Form");
-};
+  // debug("dispatched Form");
+  };
 
   const cancelForm = () => dispatchInput({ ...ipfs.input, formAction: "cancel" })
-  debug("ipfs state before rendering model", ipfs)
+  //  debug("ipfs state before rendering model", ipfs)
   return <>
-    <Container maxWidth="md">
       <Box my={2}>
       <div style={{ display: 'flex', flexWrap: 'wrap' }}>
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
@@ -94,7 +95,6 @@ export default React.memo(function Model(state) {
 
       </div>
       </Box>
-    </Container>
   </>
 });
 

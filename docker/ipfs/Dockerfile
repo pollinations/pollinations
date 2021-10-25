@@ -9,9 +9,9 @@ RUN ./install.sh
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--", "ipfs"]
+ENTRYPOINT ["/tini", "--"]
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD ipfs dag stat /ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn || exit 1
 
 # Execute the daemon subcommand by default
-CMD ["daemon", "--init-profile=server","--migrate=true", "--enable-namesys-pubsub", "--enable-pubsub-experiment","--enable-gc", "--agent-version-suffix=docker"]
+CMD ["ipfs", "daemon", "--init-profile=server","--migrate=true", "--enable-namesys-pubsub", "--enable-pubsub-experiment","--enable-gc", "--agent-version-suffix=docker"]

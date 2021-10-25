@@ -1,27 +1,30 @@
-import { Box, Link } from "@material-ui/core";
-import React from "react";
+import { Box, Container, Link } from "@material-ui/core";
 import NotebookSelector from "../components/NotebookSelector";
-import useColab from "../network/useColab";
-import Debug from "debug";
+import { Switch, Route } from "react-router";
+import { getRoutes } from "../routes";
 
-const debug = Debug("AppContainer");
+export const AppContainer = () => {
 
-export const AppContainer = ({ Page }) => {
-
-    console.error("need to pass in whether to update hash somehow to useColab")
-    const { state, dispatch} = useColab(() => true);
-
+    const routes = getRoutes();
 
     return <>
         {/* Nav Bar */}
-        <NotebookSelector {...state} />
+        <NotebookSelector />
 
         {/* Children that get IPFS state */}
-        { <Page {...state} dispatchInput={dispatch} /> }
+        <Container maxWidth="md">
+            <Switch children={
+            routes.map(({ Page, ...route }) => 
+                <Route {...route} 
+                    key={route.path} 
+                    component={Page}/>
+            )
+            }/>
+        </Container>
 
         {/* Footer */}
         <Box align="right" fontStyle="italic">
             Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
         </Box>
-    </>;
+    </>
 }

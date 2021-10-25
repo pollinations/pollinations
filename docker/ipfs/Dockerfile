@@ -6,10 +6,8 @@ RUN tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
 WORKDIR go-ipfs
 RUN ./install.sh
 # TINI INSTALLATION
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
+RUN apt install -y tini
+ENTRYPOINT ["/usr/bin/tini", "--"]
 #HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 #  CMD ipfs dag stat /ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn || exit 1
 

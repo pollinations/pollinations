@@ -2,9 +2,8 @@
   "API": {
     "HTTPHeaders": {
       "Access-Control-Allow-Origin": [
-        "http://ipfs-node.zencraft.studio:5001",
-        "http://ipfs-node.zencraft.studio:4001",
-        "http://ipfs-node.zencraft.studio:8080",
+        "http://ipfs-pollinations.zencraft.studio:5001",
+        "https://ipfs-pollinations.zencraft.studio:5001",
         "http://localhost:3000",
         "http://127.0.0.1:5001",
         "https://webui.ipfs.io"
@@ -129,7 +128,7 @@
   },
   "Identity": {
     "PeerID": "12D3KooWPjEFXmvXnjQjaAnfcrrJezuipgKYrLEZHATCv4agmzGW",
-    "PrivKey": "CAESQKNbrlonMZ9tzH2ElC5uAmM8JDIakHFJqjtZgQp3DRz/zrLCt7tap8HOh8vv+lSH4abFIQC3Mz8GhXsWJC3P6Lc="
+//    "PrivKey": "CAESQKNbrlonMZ9tzH2ElC5uAmM8JDIakHFJqjtZgQp3DRz/zrLCt7tap8HOh8vv+lSH4abFIQC3Mz8GhXsWJC3P6Lc="
   },
   "Ipns": {
     "RecordLifetime": "",

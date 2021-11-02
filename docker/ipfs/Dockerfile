@@ -7,7 +7,7 @@ WORKDIR go-ipfs
 RUN ./install.sh
 # TINI INSTALLATION
 RUN apt install -y tini
-ENTRYPOINT ["/usr/bin/tini", "--"]
+ENTRYPOINT ["/usr/bin/tini", "-s", "--"]
 #HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 #  CMD ipfs dag stat /ipfs/QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn || exit 1
 # Swarm TCP; should be exposed to the public

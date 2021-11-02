@@ -1,4 +1,5 @@
 FROM ubuntu:focal
+# DON'T FORGET MOUNTING FIRST dokku storage:mount ipfs-pollinations ipfs-pollinations:/.root/ipfs/
 # IPFS INSTALLATION
 RUN apt update && apt upgrade && apt install -y wget
 RUN wget https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz

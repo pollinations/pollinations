@@ -20,5 +20,4 @@ EXPOSE 5001
 # Web Gateway; can be exposed publicly with a proxy, e.g. as https://ipfs.example.org
 EXPOSE 8080
 # Execute the daemon subcommand by default
-#CMD ["ipfs", "daemon", "--init-profile=server","--migrate=true", "--enable-namesys-pubsub", "--enable-pubsub-experiment","--enable-gc", "--agent-version-suffix=docker"]
-CMD ["/bin/bash"]
+CMD ["ipfs", "daemon", "--init-profile=server","--migrate=true", "--enable-namesys-pubsub", "--enable-pubsub-experiment","--enable-gc", "--agent-version-suffix=docker"]

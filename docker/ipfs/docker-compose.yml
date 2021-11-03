@@ -1,0 +1,9 @@
+version: "3"
+services:
+  ipfs-pollinations:
+    build: .
+    volumes:
+      - ipfs-pollinations:/.root/ipfs/
+volumes:
+  ipfs-pollinations:
+    external: true

@@ -34,7 +34,7 @@ const SEOMetadata= ({title, description, url}) => {
 
 export const SEO = ({ipfs, cid}) => {
     
-    if (!ipfs?.output) 
+    if (!ipfs?.output || !ipfs?.input || !ipfs?.input["notebook.ipynb"]) 
         return null;
     
     const { coverImage, title, post: description, url } = getPostData(ipfs, cid, true);

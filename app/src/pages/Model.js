@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/core";
 import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
@@ -17,14 +17,13 @@ import { SocialPostStatus } from "../components/Social";
 
 const debug = Debug("Model");
 
-
 export default React.memo(function Model(state) {
 
-  let { ipfs, nodeID, status, contentID, dispatchInput } = state;
+  let { ipfs, contentID, dispatchInput, heartbeat } = state;
 
-  const metadata = getNotebookMetadata(ipfs);
+  const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
 
-  const dispatchForm = async inputs => {
+  const dispatchForm = useCallback(async inputs => {
     debug("dispatchForm", inputs);
     await dispatchInput({
       ...inputs,
@@ -32,10 +31,12 @@ export default React.memo(function Model(state) {
       formAction: "submit"
     });
   debug("dispatched Form");
-};
+}, [dispatchInput, ipfs?.input]);
 
-  const cancelForm = () => dispatchInput({ ...ipfs.input, formAction: "cancel" })
+  const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
+
   debug("ipfs state before rendering model", ipfs)
+  const disconnected = !heartbeat || !heartbeat?.alive;
   return <>
     <Container maxWidth="md">
       <Box my={2}>
@@ -56,12 +57,11 @@ export default React.memo(function Model(state) {
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-            status === "disconnected" && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
+             disconnected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
-
           <FormView
             input={ipfs.input}
-            status={status}
+            disconnected={disconnected}
             colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}

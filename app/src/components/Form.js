@@ -8,16 +8,16 @@ import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, status, colabState, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input, disconnected, colabState, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata);
 
     // some variables for conditionally rendering the form parts
     // TODO: has a lot of redundancy. refactor this
-    const showSubmit = status === "disconnected" || status === "ready" && colabState !== "running";
+    const showSubmit = colabState !== "running";
     const showCancel = false; //!showSubmit && input.formAction !== "cancel";
     const inProgress = false//!!(input && input.formAction);
-    const formDisabled = status === "disconnected" || inProgress;
+    const formDisabled = disconnected || inProgress;
 
 
     // Fill in the form inputs and override default values if they are in the ipfs object
@@ -132,7 +132,8 @@ const mapStringType = ({ default: defaultVal, enum: enumOptions }) => enumOption
 const prefixMappings = {
     "file_": "file",
     "num_": "updown",
-    "audio_": "file"
+    "audio_": "file",
+    "video_": "file"
 };
 
 

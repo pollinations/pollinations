@@ -35546,7 +35546,8 @@ function getWriter(client, mfsRoot2, initialRootCID) {
       debug2("closing input writer. Deleting", mfsRoot2);
       if (initializedFolder)
         await ipfsRm(client, mfsRoot2);
-    }
+    },
+    pin: async (cid) => await ipfsPin(client, cid)
   };
 }
 async function initializeMFSFolder(client, initialRootCID) {
@@ -35598,6 +35599,10 @@ var getIPFSDaemonURL = async () => {
 var ipfsCp = async (client, cid, ipfsPath) => {
   debug2("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+};
+var ipfsPin = async (client, cid) => {
+  debug2("Pinning", cid);
+  return await client.pin.add(cid);
 };
 var stripSlashIPFS = (cidString) => {
   debug2("stripSlash", cidString);

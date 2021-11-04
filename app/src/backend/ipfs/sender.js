@@ -1,5 +1,5 @@
 
-import { writer } from "../../network/ipfsConnector.js";
+import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 import { join } from "path";
 import { existsSync, mkdirSync } from 'fs';
@@ -11,6 +11,7 @@ import { debounce, throttle } from "throttle-debounce";
 
 const debug = Debug("ipfs/sender");
 
+
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
 export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, once, nodeid }) => {
@@ -20,11 +21,17 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   const { publish, close: closePublisher } = publisher(nodeid,"/output");
 
+
+  let currentContentID = null;
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
-  const close = executeOnce(async () => {
+  const close = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
+
+    // publishes a message that pollinating is done which instructs the backend to pin the result
+    if (currentContentID)
+      await publishDonePollinate(currentContentID);
   });
 
   async function start() {
@@ -67,6 +74,7 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
      
       const newContentID = await cid();
       console.log(newContentID);
+
       if (ipns) {
         debug("publish", newContentID);
         // if (!isSameContentID(stringCID(newContentID)))
@@ -123,13 +131,21 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   return channel$;
 }
 
+// publishes a message that pollinating is done which triggers pinning on the server
+const publishDonePollinate = async cid => {
+  const client = await getClient();
+  debug("Publishing done pollinate", cid);
+  await client.pubsub.publish("done_pollinate", cid);
+};
+
+
 
 const executeOnce = f => {
   let executed = false;
-  return async () => {
+  return async (...args) => {
     if (!executed) {
       executed = true;
-      await f();
+      await f(...args);
     }
   }
 }

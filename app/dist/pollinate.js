@@ -35501,11 +35501,13 @@ var import_ramda = __toModule(require_src10());
 var import_path = __toModule(require("path"));
 var import_browser_or_node = __toModule(require_lib4());
 var debug2 = (0, import_debug2.default)("ipfsConnector");
-var IPFS_HOST = "https://ipfs.pollinations.ai";
+var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
 function getClient() {
   if (!_client) {
-    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h" }));
+    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h", headers: {
+      Authorization: "Basic cG9sbGluYXRpb25zLWZyb250ZW5kOlZrRk5HaWY3Y1R0UXkz"
+    } }));
   }
   return _client;
 }
@@ -35602,7 +35604,7 @@ var ipfsCp = async (client, cid, ipfsPath) => {
 };
 var ipfsPin = async (client, cid) => {
   debug2("Pinning", cid);
-  return await client.pin.add(cid);
+  return await client.pin.add(cid, { recursive: true });
 };
 var stripSlashIPFS = (cidString) => {
   debug2("stripSlash", cidString);
@@ -35895,9 +35897,12 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
   let processing2 = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const close2 = executeOnce(async () => {
+  let currentContentID = null;
+  const close2 = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
+    if (currentContentID)
+      await publishDonePollinate(currentContentID);
   });
   async function start() {
     if (!(0, import_fs.existsSync)(watchPath)) {
@@ -35965,12 +35970,17 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   });
   return channel$;
 };
+var publishDonePollinate = async (cid) => {
+  const client = await getClient();
+  debug4("Publishing done pollinate", cid);
+  await client.pubsub.publish("done_pollinate", cid);
+};
 var executeOnce = (f) => {
   let executed = false;
-  return async () => {
+  return async (...args) => {
     if (!executed) {
       executed = true;
-      await f();
+      await f(...args);
     }
   };
 };
@@ -36138,12 +36148,18 @@ if (executeCommand)
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
-      await execute(executeCommand, options_default.logout);
-      debug7("done executing", executeCommand, ". Waiting...");
-      await close2();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
-      debug7("awaiting termination of state sync");
-      await processing2();
+      try {
+        await execute(executeCommand, options_default.logout);
+        debug7("done executing", executeCommand, ". Waiting...");
+        await close2();
+        await (0, import_await_sleep3.default)(sleepBeforeExit);
+        debug7("awaiting termination of state sync");
+        await processing2();
+      } catch (err) {
+        debug7("error executing", executeCommand, err);
+        await close2(true);
+        throw err;
+      }
     }
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug7("awaiting termination of state sync");

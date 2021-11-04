@@ -92,7 +92,7 @@ function getWriter(client, mfsRoot, initialRootCID) {
             debug("closing input writer. Deleting", mfsRoot)
             if (initializedFolder)
                 await ipfsRm(client, mfsRoot)
-        },
+        }
     };
 }
 
@@ -162,9 +162,11 @@ const getIPFSDaemonURL = async () => {
 const ipfsCp = async (client, cid, ipfsPath) => {
   debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
-    //await retryException(async () => 
-    
-    //);
+}
+
+const ipfsPin = async (client, cid) => {
+    debug("Pinning", cid);
+    return await client.pin.add(cid);
 }
 
 export const getWebURL = (cid, name = null) => {

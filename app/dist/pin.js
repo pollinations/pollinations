@@ -29767,8 +29767,8 @@ if (process.argv[2] && process.argv[3]) {
       ipns: true,
       nodeid: "done_pollination"
     }, async (cid) => {
-      await pin(cid);
+      console.log("pinning result", await pin(cid));
     }, "");
-    console.log("listening to publish of inseminated topic and posting to social");
+    console.log("listening to publish of inseminated topic and pinning");
   })();
 }

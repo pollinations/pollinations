@@ -19,14 +19,16 @@ const debug = Debug("ipfsConnector")
 export const ipfsGlobSource = globSource;
 
 
-const IPFS_HOST = "https://ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;
 
 // create a new IPFS session
 export function getClient() {
     if (!_client) {
-        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h"}))
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  headers: {
+                Authorization: "Basic cG9sbGluYXRpb25zLWZyb250ZW5kOlZrRk5HaWY3Y1R0UXkz"
+            }}))
     }
     return _client;
 }

@@ -36706,5 +36706,5 @@ if (process.argv[2] && process.argv[3]) {
       console.log("done");
     }
   });
-  console.error("Please supply a content id as argument.");
+  console.log("listening to publish of inseminated topic and posting to social");
 }

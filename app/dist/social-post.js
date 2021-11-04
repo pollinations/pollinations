@@ -35708,13 +35708,11 @@ var import_ramda = __toModule(require_src14());
 var import_path = __toModule(require("path"));
 var import_browser_or_node = __toModule(require_lib4());
 var debug2 = (0, import_debug2.default)("ipfsConnector");
-var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
+var IPFS_HOST = "https://ipfs.pollinations.ai";
 var _client = null;
 function getClient() {
   if (!_client) {
-    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h", headers: {
-      Authorization: "Basic cG9sbGluYXRpb25zLWZyb250ZW5kOlZrRk5HaWY3Y1R0UXkz"
-    } }));
+    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h" }));
   }
   return _client;
 }

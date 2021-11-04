@@ -92,7 +92,8 @@ function getWriter(client, mfsRoot, initialRootCID) {
             debug("closing input writer. Deleting", mfsRoot)
             if (initializedFolder)
                 await ipfsRm(client, mfsRoot)
-        }
+        },
+        pin: async cid => await ipfsPin(client, cid)
     };
 }
 
@@ -166,7 +167,7 @@ const ipfsCp = async (client, cid, ipfsPath) => {
 
 const ipfsPin = async (client, cid) => {
     debug("Pinning", cid);
-    return await client.pin.add(cid);
+    return await client.pin.add(cid, { recursive: true });
 }
 
 export const getWebURL = (cid, name = null) => {

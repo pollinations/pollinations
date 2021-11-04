@@ -5,9 +5,9 @@ const debug = Debug("media");
 
 // recognized media types
 const _mediaTypeMap = {
-    "all": [".jpg", ".png", ".mp4",".webm"],
+    "all": [".jpg", ".jpeg", ".png", ".mp4",".webm"],
     "video": [".mp4",".webm"],
-    "image": [".jpg", ".png"],
+    "image": [".jpg", ".jpeg", ".png"],
     "text": [".md", ".txt"],
     "audio": [".mp3", ".wav", ".ogg",".flac"],
   }

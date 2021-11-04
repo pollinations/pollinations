@@ -13,7 +13,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 const debug = Debug("ipfs/receiver");
 
 // Receives a stream of updates from IPFS pubsub or stdin and writes them to disk
-export const receive = async function ({ ipns, nodeid, once, path: rootPath }) {
+export const receive = async function ({ ipns, nodeid, once, path: rootPath }, process=processRemoteCID) {
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
     subscribeGenerator(nodeid, "/input")
@@ -24,7 +24,7 @@ export const receive = async function ({ ipns, nodeid, once, path: rootPath }) {
     debug("received CID",remoteCID);
     remoteCID = stringCID(remoteCID);
     debug("remoteCID", remoteCID);
-    await processRemoteCID(stringCID(remoteCID), rootPath);
+    await process(stringCID(remoteCID), rootPath);
     if (once) {
       unsubscribe();
       break;

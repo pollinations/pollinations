@@ -14,6 +14,7 @@ if (process.argv[2] && process.argv[3]) {
             await socialPost(platform, cid);
             console.log("done");
         }
-    });
+    }, 
+    "");
     console.log("listening to publish of inseminated topic and posting to social")
 }

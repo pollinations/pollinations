@@ -90,7 +90,8 @@ function getWriter(client, mfsRoot, initialRootCID) {
             debug("closing input writer. Deleting", mfsRoot)
             if (initializedFolder)
                 await ipfsRm(client, mfsRoot)
-        }
+        },
+        pin: async cid => await ipfsPin(client, cid)
     };
 }
 

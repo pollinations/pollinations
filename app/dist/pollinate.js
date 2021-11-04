@@ -35928,6 +35928,7 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
         }
       }
       const newContentID = await cid();
+      currentContentID = newContentID;
       console.log(newContentID);
       if (ipns) {
         debug4("publish", newContentID);

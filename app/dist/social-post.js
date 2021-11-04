@@ -36641,8 +36641,8 @@ var import_event_iterator = __toModule(require_node2());
 var import_path5 = __toModule(require("path"));
 var import_fs = __toModule(require("fs"));
 var debug9 = (0, import_debug9.default)("ipfs/receiver");
-var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID) {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, "/input") : [import_event_iterator.stream.call(process3.stdin), noop];
+var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug9("received CID", remoteCID);
@@ -36705,6 +36705,6 @@ if (process.argv[2] && process.argv[3]) {
       await socialPost(platform, cid);
       console.log("done");
     }
-  });
+  }, "");
   console.log("listening to publish of inseminated topic and posting to social");
 }

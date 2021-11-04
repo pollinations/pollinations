@@ -35972,7 +35972,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
 var publishDonePollinate = async (cid) => {
   const client = await getClient();
   debug4("Publishing done pollinate", cid);
-  await client.pubsub.publish("done_pollinate", cid);
+  await client.pubsub.publish("done_pollination", cid);
 };
 var executeOnce = (f) => {
   let executed = false;

@@ -21,7 +21,7 @@ export default function Home() {
                     </Typography>
                      Pollinations are an effort to make generative art more approachable.   
                   <ListItem style={{display:"block"}}>- A frontend hosting a set of <a href="https://github.com/pollinations/hive" target="_blank">curated models</a> that allow creating and experimenting with generative art (this page).</ListItem>
-                  <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of generated content</ListItem>
+                  <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content</ListItem>
                   <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
                   <ListItem></ListItem>
                 </List>         

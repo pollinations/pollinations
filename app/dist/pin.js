@@ -29400,7 +29400,8 @@ function getWriter(client, mfsRoot2, initialRootCID) {
       debug2("closing input writer. Deleting", mfsRoot2);
       if (initializedFolder)
         await ipfsRm(client, mfsRoot2);
-    }
+    },
+    pin: async (cid) => await ipfsPin(client, cid)
   };
 }
 async function initializeMFSFolder(client, initialRootCID) {
@@ -29452,6 +29453,10 @@ var getIPFSDaemonURL = async () => {
 var ipfsCp = async (client, cid, ipfsPath) => {
   debug2("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+};
+var ipfsPin = async (client, cid) => {
+  debug2("Pinning", cid);
+  return await client.pin.add(cid);
 };
 var stripSlashIPFS = (cidString) => {
   debug2("stripSlash", cidString);
@@ -29758,17 +29763,13 @@ async function processFile({ path, cid }, rootPath, { get }) {
 }
 
 // src/backend/pinning-cli.js
-if (process.argv[2] && process.argv[3]) {
-  socialPost(process.argv[2], process.argv[3]);
-} else {
-  (async () => {
-    const { pin } = await writer();
-    receive({
-      ipns: true,
-      nodeid: "done_pollination"
-    }, async (cid) => {
-      console.log("pinning result", await pin(cid));
-    }, "");
-    console.log("listening to publish of inseminated topic and pinning");
-  })();
-}
+(async () => {
+  const { pin } = await writer();
+  receive({
+    ipns: true,
+    nodeid: "done_pollination"
+  }, async (cid) => {
+    console.log("pinning result", await pin(cid));
+  }, "");
+  console.log("listening to publish of inseminated topic and pinning");
+})();

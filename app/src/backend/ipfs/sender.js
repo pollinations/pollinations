@@ -73,11 +73,11 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
       // await Promise.all(changed.map(async ({ event, file }) => {
      
       const newContentID = await cid();
+      currentContentID = newContentID;
       console.log(newContentID);
 
       if (ipns) {
         debug("publish", newContentID);
-        // if (!isSameContentID(stringCID(newContentID)))
         await publish(newContentID);
       }
       // }));

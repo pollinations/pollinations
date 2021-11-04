@@ -35315,9 +35315,9 @@ var import_ramda3 = __toModule(require_src14());
 var import_debug6 = __toModule(require_src11());
 var debug6 = (0, import_debug6.default)("media");
 var _mediaTypeMap = {
-  "all": [".jpg", ".png", ".mp4", ".webm"],
+  "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
   "video": [".mp4", ".webm"],
-  "image": [".jpg", ".png"],
+  "image": [".jpg", ".jpeg", ".png"],
   "text": [".md", ".txt"],
   "audio": [".mp3", ".wav", ".ogg", ".flac"]
 };

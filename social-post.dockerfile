@@ -3,4 +3,4 @@ RUN ["mkdir","app"]
 ADD ./app /app
 WORKDIR /app
 RUN ["npm","i"]
-CMD ["node","--version"]
+CMD ["node","dist/social-post.js"]

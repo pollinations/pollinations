@@ -8,7 +8,7 @@ if (process.argv[2] && process.argv[3]) {
     receive({
         ipns: true,
         nodeid: "inseminated",
-    }, cid => {
+    }, async cid => {
         for (const platform of ["twitter", "instagram", "telegram", "facebook", "youtube", "linkedin"]) {
             console.log("posting", cid, "to", platform);
             await socialPost(platform, cid);

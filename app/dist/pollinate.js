@@ -36043,14 +36043,14 @@ var import_event_iterator = __toModule(require_node2());
 var import_path5 = __toModule(require("path"));
 var import_fs2 = __toModule(require("fs"));
 var debug6 = (0, import_debug6.default)("ipfs/receiver");
-var receive = async function({ ipns, nodeid, once, path: rootPath2 }) {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
+var receive = async function({ ipns, nodeid, once, path: rootPath2 }, process4 = processRemoteCID) {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, "/input") : [import_event_iterator.stream.call(process4.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug6("received CID", remoteCID);
     remoteCID = stringCID(remoteCID);
     debug6("remoteCID", remoteCID);
-    await processRemoteCID(stringCID(remoteCID), rootPath2);
+    await process4(stringCID(remoteCID), rootPath2);
     if (once) {
       unsubscribe();
       break;

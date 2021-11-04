@@ -165,7 +165,7 @@ const ipfsCp = async (client, cid, ipfsPath) => {
 
 const ipfsPin = async (client, cid) => {
     debug("Pinning", cid);
-    return await client.pin.add(cid);
+    return await client.pin.add(cid, { recursive: true });
 }
 
 export const getWebURL = (cid, name = null) => {

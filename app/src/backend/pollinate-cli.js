@@ -61,17 +61,26 @@ if (executeCommand)
     // const receivedCID = await receive({...options, once: true});
     // debug("received IPFS content", receivedCID);
     
-    const {start, processing, close} = await sender({...options, once: false });
-    
-    start();
-    
-    await execute(executeCommand, options.logout);
-    debug("done executing", executeCommand,". Waiting...");
 
-    // This waiting logic is quite hacky. Should improve it.
-    await awaitSleep(sleepBeforeExit);
-    debug("awaiting termination of state sync");
-    await processing(); 
+ 
+    while (true) {
+      const {start: startSending, processing, close} = await sender({...options, once: false });
+      
+      await receive({...options, once: true, path: options.path+"/input"});
+
+    
+      startSending();
+  
+      await execute(executeCommand, options.logout);
+      debug("done executing", executeCommand,". Waiting...");
+      await close();
+    
+      // This waiting logic is quite hacky. Should improve it.
+      await awaitSleep(sleepBeforeExit);
+      debug("awaiting termination of state sync");
+      await processing();
+    }
+
     await awaitSleep(sleepBeforeExit);      
     debug("awaiting termination of state sync");
     await processing(); 

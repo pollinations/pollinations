@@ -6,7 +6,7 @@ import Debug from "debug";
 const debug = Debug("NotebookProgress");
 
 export const NotebookProgress = ({output, metadata}) => {
-    if (!output?.log?.split)
+    if (!output?.log?.split || !metadata)
         return null;
     const progress = getProgress(output.log, metadata.numCells)*100;
 

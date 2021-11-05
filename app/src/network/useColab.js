@@ -48,7 +48,7 @@ const useColab = (updateHashCondition = () => true) => {
     
             if (nodeID) {
                 debug("setting new nodeID", nodeID);
-                dispatchState({ nodeID, gpu, status: "ready" });
+                dispatchState({ nodeID, gpu });
             }
         });
     },[]);
@@ -59,7 +59,10 @@ const useColab = (updateHashCondition = () => true) => {
             if (!state.nodeID)
                 return;
             debug("nodeID changed to", state.nodeID,". (Re)subscribing");
-            return subscribeCID(state.nodeID, "/output", setContentID);
+            return subscribeCID(state.nodeID, "/output", setContentID, heartbeat => {
+                debug("hearbeat state", heartbeat);
+                dispatchState({ heartbeat })
+            });
         }
     , [state.nodeID]);
 
@@ -112,16 +115,18 @@ const useColab = (updateHashCondition = () => true) => {
         return () => close && close();
     }, [inputCID]);
 
+    const dispatch = useCallback(async inputState => {
+        debug("dispatching", inputState)
+        const newInputContentID = await updateInput(inputWriter, inputState);
+        debug("added input",inputState,"got cid", newInputContentID,"to state",state.contentID)
+        // setContentID(newInputContentID)
+        debug("Publishing contentID to colab", newInputContentID);
+        publish(newInputContentID);
+    }, [publish, inputWriter]);
+
     return {
         state, 
-        dispatch: async inputState => {
-            debug("dispatching", inputState)
-            const newInputContentID = await updateInput(inputWriter, inputState);
-            debug("added input",inputState,"got cid", newInputContentID,"to state",state.contentID)
-            // setContentID(newInputContentID)
-            debug("Publishing contentID to colab", newInputContentID);
-            publish(newInputContentID);
-        },
+        dispatch,
         inputWriter
     };
 };
@@ -152,8 +157,7 @@ const stateReducer = [
     }, {
         nodeID: null,
         contentID: null,
-        ipfs: { },
-        status: "disconnected"
+        ipfs: { }
     }];
 
 

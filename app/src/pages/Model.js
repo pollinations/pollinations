@@ -29,7 +29,7 @@ export default React.memo(function Model() {
 
 
   const dispatchForm = useCallback(async inputs => {
-    debug("dispatchForm", inputs);´
+    debug("dispatchForm", inputs);
     await dispatchInput({
       ...inputs,
       ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],

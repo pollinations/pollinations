@@ -15,9 +15,9 @@ import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
 import useColab from "../network/useColab";
+import Acordion from "../components/Acordion";
 
 const debug = Debug("Model");
-
 
 export default React.memo(function Model() {
   
@@ -40,19 +40,13 @@ export default React.memo(function Model() {
   //  debug("ipfs state before rendering model", ipfs)
   return <>
       <Box my={2}>
-      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
 
         {/* just in case */}
-        {metadata && metadata.description ? 
-          <>
-              <Typography variant="h5" component="h5" gutterBottom>
-                {metadata.name.replace(".ipynb","")}
-              </Typography>
-              <Typography color="textSecondary"><Markdown>{metadata.description}</Markdown></Typography>
-          </>
-           : null}
+        <NotebookDescription metadata={metadata}/>
+        
 
         {/* inputs */}
         <div style={{ width: '100%' }}>
@@ -93,7 +87,6 @@ export default React.memo(function Model() {
         </div>
 
 
-      </div>
       </Box>
   </>
 });
@@ -110,3 +103,67 @@ const isDone = (state) => state?.ipfs?.output?.done;
 
 const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
+
+// Stepper
+
+const steps = [
+  {
+    title: '1. Connect to Google Colab',
+    description: [
+      ''
+    ]
+  }
+]
+
+const useStepper = () => {
+
+  return <>
+  </>
+}
+
+
+
+
+
+
+
+
+// Notebook Description
+
+const NotebookDescription = ( { metadata } ) => {
+  if (metadata === null) return null
+  return  <>
+  <Typography 
+          variant="h5" 
+          component="h5" 
+          gutterBottom
+          children={metadata.name.replace(".ipynb","")}/>
+  <Acordion visibleContent='More info about this notebook'
+    hiddenContent={
+      <Typography color="textSecondary">
+        <Markdown children={metadata.description}/>
+      </Typography>}
+  />
+  <Acordion visibleContent='Instructions'
+    hiddenContent={
+      <Typography color="textSecondary">
+        <Instructions/>
+      </Typography>}
+  />
+  </>
+}
+
+const Instructions = () => {
+  const [ markdown, setMarkdown ] = useState('')
+
+  useEffect(() => { 
+    async function getHelp(){
+      const response = await fetch("https://raw.githubusercontent.com/pollinations/pollinations/dev/docs/instructions.md");
+      const md = await response.text();
+      setMarkdown(md);
+    }
+    getHelp() 
+  },[]);
+
+  return <Markdown children={markdown}/>
+}

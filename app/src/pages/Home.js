@@ -3,9 +3,10 @@ import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import NotebookSelector from "../components/NotebookSelector";
 import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
-import Markdown from "markdown-to-jsx";
+import Markdown from "markdown-to-jsx"
 import { Link } from 'react-router-dom'
-import useFilter from "../hooks/useFilter";
+import useFilter from "../hooks/useFilter"
+import OpenInNewIcon from '@material-ui/icons/OpenInNew'
 
 const debug = Debug("home");
 
@@ -59,12 +60,15 @@ const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box m={5}>
                 <Card>
-                <CardHeader subheader={category} title={<Link to={path}>{name}</Link>} action={<Button href={path}><Icon /></Button>} />
+                <CardHeader 
+                subheader={category} 
+                title={<Link to={path} children={name} />} 
+                action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
                     <CardContent>
                         <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
                     </CardContent>
                 </Card>
-            </Box>;
+            </Box>
 }
  
 {/* <Card className={classes.root}>

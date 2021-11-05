@@ -1,8 +1,8 @@
 ## 🌸 Pollinations
 
-Pollinations is an effort to make generative art more approachable. There are three main components.
+Pollinations are an effort to make generative art more approachable. 
 - A frontend hosting a set of [curated notebooks](https://github.com/pollinations/hive) that allow creating and experimenting with generative art.
-- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage
+- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content
 - Pollinations are run on Google Colab at the moment (for the free cloud GPUs)
 
 [Instructions](docs/instructions.md) on using Pollinations.AI.

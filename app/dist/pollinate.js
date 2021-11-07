@@ -34793,8 +34793,6 @@ if (executeCommand)
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
-      debug10("sleeping 5s");
-      await (0, import_await_sleep3.default)(5e3);
       debug10("executing");
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");

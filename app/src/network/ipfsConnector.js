@@ -10,8 +10,6 @@ import { last } from "ramda";
 
 import { join,basename, dirname } from "path";
 
-import { isNode } from "browser-or-node";
-
 const debug = Debug("ipfsConnector")
 
 
@@ -152,7 +150,6 @@ export const getIPNSURL = (id) => {
 };
 
 const stripSlashIPFS = cidString => { 
-    debug("stripSlash", cidString); 
     if (!cidString) 
         throw new Error("CID is falsy");
     return cidString.replace("/ipfs/", "")

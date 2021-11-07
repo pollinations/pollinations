@@ -11,6 +11,7 @@ import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
 import { exec, spawn } from "child_process";
 import { createWriteStream } from "fs";
+import { rmdir } from "fs/promises";
 
 
 export const debug = Debug("pollinate")
@@ -64,10 +65,12 @@ if (executeCommand)
 
  
     while (true) {
-      const {start: startSending, processing, close} = await sender({...options, once: false });
-      
+      debug("removing ipfs data");
+      await rmdir(rootPath, {recursive: true});
+      debug("receiving");
       await receive({...options, once: true, path: options.path+"/input"});
 
+      const {start: startSending, processing, close} = await sender({...options, once: false });
       startSending();
       // debug("sleeping 5s")
       // await awaitSleep(5000);

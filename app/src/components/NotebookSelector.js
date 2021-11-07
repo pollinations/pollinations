@@ -19,7 +19,7 @@ import { Box } from '@material-ui/core';
 import { Link } from 'react-router-dom'
 
 
-export default function NotebookSelector(state) {
+export default function NotebookSelector({children}) {
     const [visible, setVisible] = useState(false);
     
     const [notebooks,setNotebooks] = useState([]);
@@ -44,7 +44,7 @@ export default function NotebookSelector(state) {
           <Box marginLeft="15"> 
             <SocialLinks />
           </Box>
-          {<NodeStatus {...state} /> }
+         {children}
         </Toolbar>
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>

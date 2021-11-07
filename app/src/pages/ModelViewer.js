@@ -5,15 +5,18 @@ import Typography from "@material-ui/core/Typography"
 
 // Components
 import { SEO } from "../components/Helmet"
-import useColab from "../network/useColab"
+import useIPFS from "../network/useIPFS"
 import { getMedia } from "../data/media"
 import readMetadata from "../utils/notebookMetadata"
+import Debug from "debug";
 
-export default memo(function ModelViewer() {
+const debug = Debug("ModelViewer");
+
+export default memo(function ModelViewer({contentID}) {
   
-  const { state } = useColab()
-  let { ipfs, contentID } = state
-
+  debug("ModelViewer CID", contentID)
+  const ipfs = useIPFS(contentID);
+  debug("ModelViewer IPFS", ipfs)
   const metadata = getNotebookMetadata(ipfs)
 
   const [ images, setImages ] = useState([])

@@ -2,7 +2,6 @@
 import { create, globSource } from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
 import { CID } from "multiformats/cid";
-import reachable from "is-port-reachable";
 import all from "it-all";
 
 
@@ -125,26 +124,7 @@ async function initializeMFSFolder(client, initialRootCID) {
 
 
 const localIPFSAvailable = async () => {
-    if (isNode) {
-        return await reachable(5001);
-    } else {
-
-        // If a local IPFS node is running it breaks pollinations
-        // for some reason. O it's just really slow to connect to
-        // the other nodes. A flag on in localStorage needs to be
-        // set for now to use a local node
-        if (!localStorage.localIPFS)
-            return false;
-
-        try {
-            // The fllowing line will return 404 if the port is open,
-            // otherwise it will throw an exception.
-            await fetch("http://localhost:5001", { mode: 'no-cors' })
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
+    return false;
 }
 
 const getIPFSDaemonURL = async () => {

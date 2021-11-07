@@ -1,30 +1,42 @@
-import { Box, Container, Link } from "@material-ui/core";
+import { Box, Container,Link } from "@material-ui/core";
 import NotebookSelector from "../components/NotebookSelector";
-import { Switch, Route } from "react-router";
-import { getRoutes } from "../routes";
+import { Routes, Route, Router, useParams } from "react-router";
+import useColabNode from "../network/useColabNode";
+import NodeStatus from "../components/NodeStatus";
+import ModelViewer from "./ModelViewer";
+import Model from "./Model";
+import Home from "./Home";
+import { BrowserRouter } from "react-router-dom";
 
 export const AppContainer = () => {
 
-    const routes = getRoutes();
-
-    return <>
+    const {node, publish, contentID} = useColabNode()
+    return <BrowserRouter>
         {/* Nav Bar */}
-        <NotebookSelector />
+        <NotebookSelector>
+            {<NodeStatus {...node} /> }
+        </NotebookSelector>
+        
 
         {/* Children that get IPFS state */}
         <Container maxWidth="md">
-            <Switch children={
-            routes.map(({ Page, ...route }) => 
-                <Route {...route} 
-                    key={route.path} 
-                    component={Page}/>
-            )
-            }/>
+
+                <Routes>
+                    <Route exact={false} path='v/:contentID' element={<WithParams Component={ModelViewer} />} />
+                    <Route exact={false} path='p/:contentID' element={<WithParams Component={Model} />} />
+                    <Route exact={true} path='/' element={<Home />} />
+                </Routes>
+
         </Container>
 
         {/* Footer */}
         <Box align="right" fontStyle="italic">
-            Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions">[ Github ]</Link> or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
+            Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank">[ Github ]</Link> or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
         </Box>
-    </>
+    </BrowserRouter>;
 }
+
+function WithParams({ Component }) {
+    const params = useParams();
+    return <Component {...params} />;
+  }

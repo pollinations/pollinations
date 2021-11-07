@@ -14,16 +14,17 @@ import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
-import useColab from "../network/useColab";
+import useIPFS from "../network/useIPFS";
 import Acordion from "../components/Acordion";
 
 const debug = Debug("Model");
 
 
-export default React.memo(function Model() {
+export default React.memo(function Model({ contentID, heartbeat }) {
   
-  const { state, dispatch} = useColab();
-  let { ipfs, nodeID, status, contentID, dispatchInput } = state;
+
+  const ipfs = useIPFS(contentID);
+  //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
 
   const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
 
@@ -36,7 +37,7 @@ export default React.memo(function Model() {
       formAction: "submit"
     });
   debug("dispatched Form");
-}, [dispatchInput, ipfs?.input]);
+}, [ipfs?.input]);
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 
@@ -59,7 +60,7 @@ export default React.memo(function Model() {
              disconnected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
           <FormView
-            input={ipfs.input}
+            input={ipfs?.input}
             disconnected={disconnected}
             colabState={ipfs?.output?.status}
             metadata={metadata}
@@ -67,7 +68,7 @@ export default React.memo(function Model() {
             onCancel={cancelForm}
           />
           <NotebookProgress
-            output={ipfs.output}
+            output={ipfs?.output}
             metadata={metadata}
           />
         </div>
@@ -87,7 +88,7 @@ export default React.memo(function Model() {
         }
 
         <div style={{ width: '100%' }}>
-          <IpfsLog state={state} />
+          <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>
 
 

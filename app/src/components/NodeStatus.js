@@ -1,9 +1,10 @@
 import React from "react";
 import { displayContentID } from "../network/utils";
 import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
-import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
+import { Button, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
 import WarningIcon from '@material-ui/icons/Error';
 import Debug from "debug";
+import { Link } from "react-router-dom";
 
 const debug = Debug("NodeStatus");
 
@@ -28,14 +29,14 @@ export default ({ nodeID, contentID,  gpu, connected }) => {
                         </TableRow>
                         <TableRow>
                         <TableCell ><b>ContentID</b></TableCell>
-                            <TableCell>{contentID ?
-                                <Link
-                                    href={getWebURL(contentID)} 
-                                    children={displayContentID(contentID)}
-                                    target="_blank"
-                                />
-                                : <p children="N/A" />}
-                        </TableCell>
+                            <TableCell>
+                                {
+                                    contentID ?
+                                        <Link to={`/p/${contentID}`}>{displayContentID(contentID)}</Link>
+                                    : 
+                                    <p>N/A</p>
+                                }
+                            </TableCell>
                         </TableRow>
                         {/* <TableRow>
                             <TableCell><b>Status</b></TableCell>

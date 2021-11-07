@@ -8,7 +8,7 @@ import all from "it-all";
 import Debug from "debug";
 import { last } from "ramda";
 
-import { join } from "path";
+import { join,basename, dirname } from "path";
 
 import { isNode } from "browser-or-node";
 
@@ -227,9 +227,10 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
-    // await retryException(async () =>
-     await ipfsAdd(client, ipfsPath, globSource(localPath,"", { preserveMtime: true, preserveMode: true }))
-    //  );
+    // get filename from path
+    const filename = basename(localPath);
+    const folder = dirname(localPath);
+     await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }))
 }
 
 async function optionallyResolveIPNS(client, cid) {

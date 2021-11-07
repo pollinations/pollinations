@@ -1,10 +1,13 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-import colabConnectionManager from "./localColabConnection";
+import colabConnectionManager from "../network/localColabConnection";
 import Debug from "debug";
-import { publisher, subscribeCID } from "./ipfsPubSub";
+import { publisher, subscribeCID } from "../network/ipfsPubSub";
 
 const debug = Debug("useColabNode");
 
+
+// receive colab nodeID via broadcastchannel
+// subscribe to updates and return publisher to send new inputs
 const useColabNode = () => {
 
     const [node, setNode] = useState({connected: false});

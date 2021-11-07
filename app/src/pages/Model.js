@@ -14,9 +14,9 @@ import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
-import useIPFS from "../network/useIPFS";
+import useIPFS from "../hooks/useIPFS";
 import Acordion from "../components/Acordion";
-import useIPFSWrite from "../network/useIPFSWrite";
+import useIPFSWrite from "../hooks/useIPFSWrite";
 
 const debug = Debug("Model");
 

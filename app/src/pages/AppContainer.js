@@ -1,7 +1,7 @@
 import { Box, Container,Link } from "@material-ui/core";
 import NotebookSelector from "../components/NotebookSelector";
 import { Routes, Route, Router, useParams } from "react-router";
-import useColabNode from "../network/useColabNode";
+import useColabNode from "../hooks/useColabNode";
 import NodeStatus from "../components/NodeStatus";
 import ModelViewer from "./ModelViewer";
 import Model from "./Model";

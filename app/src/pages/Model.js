@@ -18,6 +18,7 @@ import useIPFS from "../hooks/useIPFS";
 import Acordion from "../components/Acordion";
 import useIPFSWrite from "../hooks/useIPFSWrite";
 import NotebookTitle from "../components/NotebookTitle";
+import { useNavigate } from "react-router";
 
 const debug = Debug("Model");
 
@@ -27,7 +28,7 @@ export default React.memo(function Model({ contentID, node}) {
   const { connected, publish } = node;
 
   const ipfs = useIPFS(contentID);
-  
+  const navigate = useNavigate();
   //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
   const dispatchInput = useIPFSWrite(ipfs, publish);
 
@@ -42,6 +43,7 @@ export default React.memo(function Model({ contentID, node}) {
       formAction: "submit"
     });
   debug("dispatched Form");
+  navigate("/n")
 }, [ipfs?.input]);
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);

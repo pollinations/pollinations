@@ -7,10 +7,12 @@ import ModelViewer from "./ModelViewer";
 import Model from "./Model";
 import Home from "./Home";
 import { BrowserRouter } from "react-router-dom";
+import { cloneElement } from "react";
 
 export const AppContainer = () => {
 
-    const {node, publish, contentID} = useColabNode()
+    const {node, publish, contentID} = useColabNode();
+
     return <BrowserRouter>
         {/* Nav Bar */}
         <NotebookSelector>
@@ -22,8 +24,8 @@ export const AppContainer = () => {
         <Container maxWidth="md">
 
                 <Routes>
-                    <Route exact={false} path='v/:contentID' element={<WithParams Component={ModelViewer} />} />
-                    <Route exact={false} path='p/:contentID' element={<WithParams Component={Model} />} />
+                    <Route exact={false} path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
+                    <Route exact={false} path='c/:contentID' element={<WithParams><Model connected={node.connected}/></WithParams>} />
                     <Route exact={true} path='/' element={<Home />} />
                 </Routes>
 
@@ -36,7 +38,7 @@ export const AppContainer = () => {
     </BrowserRouter>;
 }
 
-function WithParams({ Component }) {
+function WithParams({ children }) {
     const params = useParams();
-    return <Component {...params} />;
+    return cloneElement(children, {...params});
   }

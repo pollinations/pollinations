@@ -7,7 +7,7 @@ const debug = Debug("useColabNode");
 
 const useColabNode = () => {
 
-    const [node, setNode] = useState(null);
+    const [node, setNode] = useState({connected: false});
     const [publish, setPublish ] = useState(null);
     const [contentID, setContentID] = useState(null);
 
@@ -33,7 +33,8 @@ const useColabNode = () => {
             debug("nodeID changed to", node.nodeID,". (Re)subscribing");
             return subscribeCID(node.nodeID, "/output", setContentID, heartbeat => {
                 debug("hearbeat state", heartbeat);
-                setNode({...node, heartbeat })
+                const connected = heartbeat && heartbeat.alive;
+                setNode({...node, connected })
             });
         }
     , [node?.nodeID]);

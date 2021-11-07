@@ -36,9 +36,19 @@ export const IPFSWebState = contentID => {
     return getIPFSState(contentID, fetchAndMakeURL);
 }
 
-export const getInputWriter = async (input) => {
+export const getInputWriter = input => {
     debug("getting input writer for cid", input[".cid"]);
-    return writer(input[".cid"]);
+    const w = writer(input[".cid"]);
+
+    // try to close the writer when window is closed
+    const previousUnload = window.onbeforeunload;
+    window.onbeforeunload = () => { 
+        previousUnload && previousUnload(); 
+        w.close(); 
+        return undefined; 
+    };
+
+    return w;
 }
 
 // Update /input of ipfs state with new inputs (from form probably)

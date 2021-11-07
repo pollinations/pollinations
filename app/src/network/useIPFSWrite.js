@@ -24,9 +24,6 @@ export default (ipfs, publish) => {
             const writer = await getInputWriter(ipfs?.input);
             close = writer.close;
             
-            // try to close the writer when window is closed
-            window.onbeforeunload = () => { close(); return undefined; };
-
             setInputWriter(writer);
         })();
         return () => close && close();

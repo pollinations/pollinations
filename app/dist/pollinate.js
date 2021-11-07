@@ -24866,31 +24866,17 @@ var require_chokidar = __commonJS({
       isIBMi
     } = require_constants3();
     var stat = promisify(fs.stat);
-    var lstat = promisify(fs.lstat);
-    var close2 = promisify(fs.close);
-    var fsrealpath = promisify(fs.realpath);
-    var statMethods = { lstat, stat };
-    var foreach = (val, fn) => {
-      if (val instanceof Set) {
-        val.forEach(fn);
-      } else {
-        fn(val);
-      }
-    };
-    var addAndConvert = (main, prop, item) => {
-      let container = main[prop];
-      if (!(container instanceof Set)) {
-        main[prop] = container = new Set([container]);
-      }
-      container.add(item);
-    };
-    var clearItem = (cont) => (key) => {
-      const set = cont[key];
-      if (set instanceof Set) {
-        set.clear();
-      } else {
-        delete cont[key];
-      }
+    var readdir = promisify(fs.readdir);
+    var arrify = (value = []) => Array.isArray(value) ? value : [value];
+    var flatten = (list, result = []) => {
+      list.forEach((item) => {
+        if (Array.isArray(item)) {
+          flatten(item, result);
+        } else {
+          result.push(item);
+        }
+      });
+      return result;
     };
     var unifyPaths = (paths_) => {
       const paths = flatten(arrify(paths_));
@@ -24908,35 +24894,8 @@ var require_chokidar = __commonJS({
       while (str.match(DOUBLE_SLASH_RE)) {
         str = str.replace(DOUBLE_SLASH_RE, SLASH);
       }
-      if (cont) {
-        addAndConvert(cont, KEY_LISTENERS, listener);
-        addAndConvert(cont, KEY_ERR, errHandler);
-        addAndConvert(cont, KEY_RAW, rawEmitter);
-      } else {
-        watcher = createFsWatchInstance(path, options, fsWatchBroadcast.bind(null, fullPath, KEY_LISTENERS), errHandler, fsWatchBroadcast.bind(null, fullPath, KEY_RAW));
-        if (!watcher)
-          return;
-        watcher.on(EV_ERROR, async (error) => {
-          const broadcastErr = fsWatchBroadcast.bind(null, fullPath, KEY_ERR);
-          cont.watcherUnusable = true;
-          if (isWindows && error.code === "EPERM") {
-            try {
-              const fd = await open(path, "r");
-              await close2(fd);
-              broadcastErr(error);
-            } catch (err) {
-            }
-          } else {
-            broadcastErr(error);
-          }
-        });
-        cont = {
-          listeners: listener,
-          errHandlers: errHandler,
-          rawEmitters: rawEmitter,
-          watcher
-        };
-        FsWatchInstances.set(fullPath, cont);
+      if (prepend) {
+        str = SLASH + str;
       }
       return str;
     };
@@ -34464,14 +34423,14 @@ function heartbeatChecker(heartbeatStateCallback) {
   function setHeartbeatTimeout() {
     heartbeatTimeout = setTimeout(() => {
       const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
-      debug3("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
+      debug6("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
       heartbeatStateCallback({ lastHeartbeat, alive: false });
     }, HEARTBEAT_FREQUENCY * 2 * 1e3);
-    debug3("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+    debug6("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
   }
   const gotHeartbeat = () => {
     const time = new Date().getTime();
-    debug3("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
+    debug6("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
     lastHeartbeat = time;
     if (heartbeatTimeout)
       clearTimeout(heartbeatTimeout);
@@ -34603,8 +34562,8 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     for await (const changed of changedFiles$) {
       let done = null;
-      processing2 = new Promise((resolve) => done = resolve);
-      debug4("Changed files", changed);
+      processing2 = new Promise((resolve2) => done = resolve2);
+      debug7("Changed files", changed);
       for (const { event, path: file } of changed) {
         debug7("Local:", event, file);
         const localPath = (0, import_path2.join)(watchPath, file);
@@ -34834,11 +34793,12 @@ if (executeCommand)
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
+      debug10("executing");
       await execute(executeCommand, options_default.logout);
-      debug7("done executing", executeCommand, ". Waiting...");
+      debug10("done executing", executeCommand, ". Waiting...");
       await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
-      debug7("awaiting termination of state sync");
+      debug10("awaiting termination of state sync");
       await processing2();
     }
     await (0, import_await_sleep3.default)(sleepBeforeExit);

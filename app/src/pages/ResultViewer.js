@@ -14,6 +14,7 @@ import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
 import { Fab } from "@material-ui/core"
 import CreateIcon from '@material-ui/icons/Create';
+import CancelIcon from '@material-ui/icons/Cancel';
 import { Link } from "react-router-dom"
 const debug = Debug("ModelViewer");
 
@@ -81,7 +82,9 @@ export default memo(function ModelViewer({contentID}) {
 <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  
-        <Fab component={Link} style={styles.fab} variant="extended" to={`/c/${contentID}`}><CreateIcon /> Create</Fab>
+        {
+            <Fab component={Link} style={styles.fab} variant="extended" to={`/c/${contentID}`}>{ipfs?.output?.done  ? <><CreateIcon /> Create</> : <><CancelIcon /> Cancel</>}</Fab>
+        }
       </Box>
 })
 

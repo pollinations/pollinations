@@ -20231,31 +20231,6 @@ var require_src7 = __commonJS({
   }
 });
 
-// node_modules/browser-or-node/lib/index.js
-var require_lib4 = __commonJS({
-  "node_modules/browser-or-node/lib/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {
-      value: true
-    });
-    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
-      return typeof obj;
-    } : function(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-    var isBrowser2 = typeof window !== "undefined" && typeof window.document !== "undefined";
-    var isWebWorker2 = (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
-    var isNode3 = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-    var isJsDom = function isJsDom2() {
-      return typeof window !== "undefined" && window.name === "nodejs" || navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
-    };
-    exports2.isBrowser = isBrowser2;
-    exports2.isWebWorker = isWebWorker2;
-    exports2.isNode = isNode3;
-    exports2.isJsDom = isJsDom;
-  }
-});
-
 // node_modules/queueable/dist/lib/Deferred.js
 var require_Deferred = __commonJS({
   "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
@@ -20725,7 +20700,7 @@ var require_LastResult = __commonJS({
 });
 
 // node_modules/queueable/dist/lib/index.js
-var require_lib5 = __commonJS({
+var require_lib4 = __commonJS({
   "node_modules/queueable/dist/lib/index.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
@@ -26572,7 +26547,7 @@ var require_stringify2 = __commonJS({
 });
 
 // node_modules/json5/lib/index.js
-var require_lib6 = __commonJS({
+var require_lib5 = __commonJS({
   "node_modules/json5/lib/index.js"(exports2, module2) {
     var parse3 = require_parse3();
     var stringify = require_stringify2();
@@ -34169,7 +34144,6 @@ var import_it_all3 = __toModule(require_it_all());
 var import_debug5 = __toModule(require_src());
 var import_ramda = __toModule(require_src7());
 var import_path = __toModule(require("path"));
-var import_browser_or_node = __toModule(require_lib4());
 var debug5 = (0, import_debug5.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
 var _client = null;
@@ -34259,7 +34233,6 @@ var ipfsCp = async (client, cid, ipfsPath) => {
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
 };
 var stripSlashIPFS = (cidString) => {
-  debug5("stripSlash", cidString);
   if (!cidString)
     throw new Error("CID is falsy");
   return cidString.replace("/ipfs/", "");
@@ -34350,7 +34323,7 @@ var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await
 var import_native_abort_controller12 = __toModule(require_src6());
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src());
-var import_queueable = __toModule(require_lib5());
+var import_queueable = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
 function publisher(nodeID, suffix = "/output") {
@@ -34492,7 +34465,7 @@ var import_path2 = __toModule(require("path"));
 var import_fs = __toModule(require("fs"));
 var import_debug7 = __toModule(require_src());
 var import_chokidar = __toModule(require_chokidar());
-var import_queueable2 = __toModule(require_lib5());
+var import_queueable2 = __toModule(require_lib4());
 
 // node_modules/throttle-debounce/esm/index.js
 function throttle(delay, noTrailing, callback, debounceMode) {
@@ -34644,7 +34617,7 @@ var import_path3 = __toModule(require("path"));
 var PromiseAllProgress = (name5, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toModule(require_lib6());
+var import_json5 = __toModule(require_lib5());
 var debug8 = (0, import_debug8.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -34759,6 +34732,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 // src/backend/pollinate-cli.js
 var import_child_process = __toModule(require("child_process"));
 var import_fs3 = __toModule(require("fs"));
+var import_promises = __toModule(require("fs/promises"));
 var debug10 = (0, import_debug10.default)("pollinate");
 var readline = import_readline.default.createInterface({
   input: import_process2.default.stdin,
@@ -34792,8 +34766,11 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 if (executeCommand)
   (async () => {
     while (true) {
-      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      debug10("removing ipfs data");
+      await (0, import_promises.rmdir)(rootPath, { recursive: true });
+      debug10("receiving");
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
+      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       startSending();
       debug10("executing");
       await execute(executeCommand, options_default.logout);

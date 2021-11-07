@@ -25224,31 +25224,6 @@ var require_src11 = __commonJS({
   }
 });
 
-// node_modules/browser-or-node/lib/index.js
-var require_lib4 = __commonJS({
-  "node_modules/browser-or-node/lib/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {
-      value: true
-    });
-    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
-      return typeof obj;
-    } : function(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-    var isBrowser2 = typeof window !== "undefined" && typeof window.document !== "undefined";
-    var isWebWorker2 = (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
-    var isNode3 = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-    var isJsDom = function isJsDom2() {
-      return typeof window !== "undefined" && window.name === "nodejs" || navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
-    };
-    exports2.isBrowser = isBrowser2;
-    exports2.isWebWorker = isWebWorker2;
-    exports2.isNode = isNode3;
-    exports2.isJsDom = isJsDom;
-  }
-});
-
 // node_modules/json5/lib/unicode.js
 var require_unicode = __commonJS({
   "node_modules/json5/lib/unicode.js"(exports2, module2) {
@@ -26322,7 +26297,7 @@ var require_stringify = __commonJS({
 });
 
 // node_modules/json5/lib/index.js
-var require_lib5 = __commonJS({
+var require_lib4 = __commonJS({
   "node_modules/json5/lib/index.js"(exports2, module2) {
     var parse5 = require_parse();
     var stringify = require_stringify();
@@ -33738,7 +33713,6 @@ var import_it_all3 = __toModule(require_it_all());
 var import_debug5 = __toModule(require_src7());
 var import_ramda = __toModule(require_src11());
 var import_path = __toModule(require("path"));
-var import_browser_or_node = __toModule(require_lib4());
 var debug5 = (0, import_debug5.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
 var _client = null;
@@ -33772,7 +33746,6 @@ var getWebURL = (cid, name5 = null) => {
   return `https://pollinations.ai/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
-  debug5("stripSlash", cidString);
   if (!cidString)
     throw new Error("CID is falsy");
   return cidString.replace("/ipfs/", "");
@@ -33820,7 +33793,7 @@ var import_path2 = __toModule(require("path"));
 var PromiseAllProgress = (name5, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toModule(require_lib5());
+var import_json5 = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -33875,7 +33848,7 @@ var dataFetchers = (cid, { get }) => {
 };
 
 // src/network/ipfsWebClient.js
-var import_json52 = __toModule(require_lib5());
+var import_json52 = __toModule(require_lib4());
 var debug7 = (0, import_debug7.default)("ipfsWebClient");
 var fetchAndMakeURL = async ({ name: name5, cid, text }) => {
   const ext = (0, import_path3.extname)(name5);
@@ -33904,7 +33877,7 @@ function shouldImport(ext) {
 
 // src/utils/notebookMetadata.js
 var import_debug8 = __toModule(require_src7());
-var import_json53 = __toModule(require_lib5());
+var import_json53 = __toModule(require_lib4());
 var debug8 = (0, import_debug8.default)("notebookMetadata");
 function readMetadata(notebookJSON) {
   if (!notebookJSON)

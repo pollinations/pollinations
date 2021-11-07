@@ -11,7 +11,7 @@ import { cloneElement } from "react";
 
 export const AppContainer = () => {
 
-    const {node, publish, contentID} = useColabNode();
+    const node = useColabNode();
 
     return <BrowserRouter>
         {/* Nav Bar */}

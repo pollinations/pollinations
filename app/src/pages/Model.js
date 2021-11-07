@@ -17,6 +17,7 @@ import { SocialPostStatus } from "../components/Social";
 import useIPFS from "../hooks/useIPFS";
 import Acordion from "../components/Acordion";
 import useIPFSWrite from "../hooks/useIPFSWrite";
+import NotebookTitle from "../components/NotebookTitle";
 
 const debug = Debug("Model");
 
@@ -53,7 +54,7 @@ export default React.memo(function Model({ contentID, node}) {
 
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
-
+        <NotebookTitle metadata={metadata} />
         {/* just in case */}
         <NotebookDescription metadata={metadata}/>
         
@@ -71,10 +72,6 @@ export default React.memo(function Model({ contentID, node}) {
             onSubmit={dispatchForm}
             onCancel={cancelForm}
           />
-          <NotebookProgress
-            output={ipfs?.output}
-            metadata={metadata}
-          />
         </div>
         {
           ipfs?.output?.social &&
@@ -90,11 +87,6 @@ export default React.memo(function Model({ contentID, node}) {
           <ImageViewer output={ipfs.output} contentID={contentID} />
         </div>
         }
-
-        <div style={{ width: '100%' }}>
-          <IpfsLog ipfs={ipfs} contentID={contentID} />
-        </div>
-
 
       </Box>
   </>
@@ -142,12 +134,7 @@ const useStepper = () => {
 const NotebookDescription = ( { metadata } ) => {
   if (metadata === null) return null
   return  <>
-  <Typography 
-          variant="h5" 
-          component="h5" 
-          gutterBottom
-          children={metadata.name.replace(".ipynb","")}/>
-  <Acordion visibleContent='More info about this notebook'
+  <Acordion visibleContent='Description'
     hiddenContent={
       <Typography color="textSecondary">
         <Markdown children={metadata.description}/>
@@ -161,6 +148,7 @@ const NotebookDescription = ( { metadata } ) => {
   />
   </>
 }
+
 
 const Instructions = () => {
   const [ markdown, setMarkdown ] = useState('')

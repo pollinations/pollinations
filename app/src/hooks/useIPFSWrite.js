@@ -1,7 +1,7 @@
 
  
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-import { updateInput, getInputWriter } from "./ipfsWebClient";
+import { updateInput, getInputWriter } from "../network/ipfsWebClient";
 
 import Debug from "debug";
 

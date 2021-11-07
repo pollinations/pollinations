@@ -2,7 +2,7 @@
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
 
  
-import {IPFSWebState} from "./ipfsWebClient";
+import {IPFSWebState} from "../network/ipfsWebClient";
 import Debug from "debug";
 
 

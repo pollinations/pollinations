@@ -32237,7 +32237,7 @@ function toCoreInterface3(entry) {
 
 // node_modules/ipfs-http-client/esm/src/files/mkdir.js
 var createMkdir = configure((api) => {
-  async function mkdir(path, options = {}) {
+  async function mkdir2(path, options = {}) {
     const res = await api.post("files/mkdir", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
@@ -32247,7 +32247,7 @@ var createMkdir = configure((api) => {
     });
     await res.text();
   }
-  return mkdir;
+  return mkdir2;
 });
 
 // node_modules/ipfs-http-client/esm/src/files/mv.js
@@ -34768,6 +34768,7 @@ if (executeCommand)
     while (true) {
       debug10("removing ipfs data");
       await (0, import_promises.rmdir)(rootPath, { recursive: true });
+      await (0, import_promises.mkdir)(rootPath);
       debug10("receiving");
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));

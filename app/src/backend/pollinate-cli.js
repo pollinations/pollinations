@@ -49,7 +49,7 @@ const execute = async (command, logfile=null) =>
     childProc.stderr.pipe(process.stderr);
     if (logfile) {
       debug("creating a write stream to ", logfile);
-      const logout = createWriteStream(logfile, {'flags': 'a'});
+      const logout = createWriteStream(logfile);
       childProc.stdout.pipe(logout);
       childProc.stderr.pipe(logout);
     }

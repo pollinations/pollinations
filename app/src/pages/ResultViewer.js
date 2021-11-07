@@ -79,7 +79,7 @@ export default memo(function ModelViewer({contentID}) {
         }/>
 
 
-<div style={{ width: '100%' }}>
+        <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  
         {

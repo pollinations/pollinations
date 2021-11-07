@@ -34758,7 +34758,7 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
   childProc.stderr.pipe(import_process2.default.stderr);
   if (logfile) {
     debug10("creating a write stream to ", logfile);
-    const logout = (0, import_fs3.createWriteStream)(logfile, { "flags": "a" });
+    const logout = (0, import_fs3.createWriteStream)(logfile);
     childProc.stdout.pipe(logout);
     childProc.stderr.pipe(logout);
   }

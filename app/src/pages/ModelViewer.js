@@ -11,6 +11,7 @@ import readMetadata from "../utils/notebookMetadata"
 import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
+import NotebookTitle from "../components/NotebookTitle"
 
 const debug = Debug("ModelViewer");
 
@@ -43,6 +44,7 @@ export default memo(function ModelViewer({contentID}) {
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
+        <NotebookTitle metadata={metadata} />
         <NotebookProgress
             output={ipfs?.output}
             metadata={metadata}

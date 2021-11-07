@@ -18,7 +18,7 @@ export default ({ nodeID, contentID,  gpu, connected }) => {
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
-    const nodeInfo = !connected ? <ColabConnectButton disconnected={!connected} />  : gpuInfo || displayContentID(nodeID);
+    const nodeInfo = !connected ? <ColabConnectButton connected={!connected} />  : gpuInfo || displayContentID(nodeID);
 
     return <Box style={{width:"220px", marginLeft:"auto"}}>
         <Table size="small" aria-label="a dense table" >
@@ -63,7 +63,7 @@ const parseGPU = gpu  =>
     gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
-const ColabConnectButton = disconnected => <Button color="secondary" href={colabURL} target="colab">[ {disconnected ? <><WarningIcon />Launch</> : "Launch"} ]</Button>;
+const ColabConnectButton = ({connected}) => <Button color="secondary" href={colabURL} target="colab">[ {connected ?  "Launch":<><WarningIcon />Launch</>}  ]</Button>;
 
 
 const TableCell = withStyles({

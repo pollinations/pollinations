@@ -34766,12 +34766,12 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 if (executeCommand)
   (async () => {
     while (true) {
+      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       debug10("removing ipfs data");
       await (0, import_promises.rmdir)(rootPath, { recursive: true });
       await (0, import_promises.mkdir)(rootPath);
       debug10("receiving");
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
-      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       startSending();
       debug10("executing");
       await execute(executeCommand, options_default.logout);

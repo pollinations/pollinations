@@ -65,13 +65,14 @@ if (executeCommand)
 
  
     while (true) {
+      const {start: startSending, processing, close} = await sender({...options, once: false });
+
       debug("removing ipfs data");
       await rmdir(rootPath, {recursive: true});
       await mkdir(rootPath);
       debug("receiving");
       await receive({...options, once: true, path: options.path+"/input"});
 
-      const {start: startSending, processing, close} = await sender({...options, once: false });
       startSending();
       // debug("sleeping 5s")
       // await awaitSleep(5000);

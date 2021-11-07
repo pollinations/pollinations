@@ -9,6 +9,8 @@ import useIPFS from "../hooks/useIPFS"
 import { getMedia } from "../data/media"
 import readMetadata from "../utils/notebookMetadata"
 import Debug from "debug";
+import { IpfsLog } from "../components/Logs"
+import { NotebookProgress } from "../components/NotebookProgress"
 
 const debug = Debug("ModelViewer");
 
@@ -41,7 +43,10 @@ export default memo(function ModelViewer({contentID}) {
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
-
+        <NotebookProgress
+            output={ipfs?.output}
+            metadata={metadata}
+          />
         <div style={styles.big}>
 
             {   
@@ -67,6 +72,11 @@ export default memo(function ModelViewer({contentID}) {
             // Steps Preview
             images.map( ([filename, url]) => <img src={url} alt={filename} style={styles.img} /> )
         }/>
+
+
+<div style={{ width: '100%' }}>
+          <IpfsLog ipfs={ipfs} contentID={contentID} />
+        </div>  
       </Box>
 })
 

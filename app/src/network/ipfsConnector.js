@@ -15,9 +15,6 @@ import { isNode } from "browser-or-node";
 const debug = Debug("ipfsConnector")
 
 
-export const ipfsGlobSource = globSource;
-
-
 const IPFS_HOST = "https://ipfs.pollinations.ai";
 
 let _client = null;
@@ -231,7 +228,7 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
     // await retryException(async () =>
-     await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }))
+     await ipfsAdd(client, ipfsPath, globSource(localPath,"", { preserveMtime: true, preserveMode: true }))
     //  );
 }
 

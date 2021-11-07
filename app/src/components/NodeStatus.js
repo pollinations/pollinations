@@ -32,7 +32,7 @@ export default ({ nodeID, contentID,  gpu, connected }) => {
                             <TableCell>
                                 {
                                     contentID ?
-                                        <Link to={`/p/${contentID}`}>{displayContentID(contentID)}</Link>
+                                        <Link to="/n">{displayContentID(contentID)}</Link>
                                     : 
                                     <p>N/A</p>
                                 }

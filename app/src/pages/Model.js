@@ -20,7 +20,7 @@ import Acordion from "../components/Acordion";
 const debug = Debug("Model");
 
 
-export default React.memo(function Model({ contentID, heartbeat }) {
+export default React.memo(function Model({ contentID, connected }) {
   
 
   const ipfs = useIPFS(contentID);
@@ -42,7 +42,7 @@ export default React.memo(function Model({ contentID, heartbeat }) {
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 
   debug("ipfs state before rendering model", ipfs)
-  const disconnected = !heartbeat || !heartbeat?.alive;
+
 
   return <>
       <Box my={2}>
@@ -57,11 +57,11 @@ export default React.memo(function Model({ contentID, heartbeat }) {
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-             disconnected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
+             !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
           <FormView
             input={ipfs?.input}
-            disconnected={disconnected}
+            connected={connected}
             colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}

@@ -5,7 +5,7 @@ import Typography from "@material-ui/core/Typography"
 
 // Components
 import { SEO } from "../components/Helmet"
-import useIPFS from "../network/useIPFS"
+import useIPFS from "../hooks/useIPFS"
 import { getMedia } from "../data/media"
 import readMetadata from "../utils/notebookMetadata"
 import Debug from "debug";

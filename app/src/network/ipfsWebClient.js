@@ -36,8 +36,7 @@ export const IPFSWebState = contentID => {
     return getIPFSState(contentID, fetchAndMakeURL);
 }
 
-export const getInputWriter = async (rootCID) => {
-    const input  = await getIPFSState(rootCID);
+export const getInputWriter = async (input) => {
     debug("getting input writer for cid", input[".cid"]);
     return writer(input[".cid"]);
 }

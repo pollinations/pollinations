@@ -8,7 +8,6 @@ const debug = Debug("useColabNode");
 const useColabNode = () => {
 
     const [node, setNode] = useState({connected: false});
-    const [publish, setPublish ] = useState(null);
     const [contentID, setContentID] = useState(null);
 
     useEffect(() => {
@@ -34,7 +33,7 @@ const useColabNode = () => {
             return subscribeCID(node.nodeID, "/output", setContentID, heartbeat => {
                 debug("hearbeat state", heartbeat);
                 const connected = heartbeat && heartbeat.alive;
-                setNode({...node, connected })
+                setNode(node => ({...node, connected }));
             });
         }
     , [node?.nodeID]);
@@ -45,11 +44,11 @@ const useColabNode = () => {
             return;
         debug("nodeID change to", node?.nodeID, "creating publisher")
         const { publish, close } = publisher(node?.nodeID, "/input");
-        setPublish(() => publish);
+        setNode(node => ({...node, publish}));
         return close;
     }, [node?.nodeID]);
 
-    return { publish, node, contentID };
+    return { node, contentID };
 
 };
 

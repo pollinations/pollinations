@@ -1,17 +1,19 @@
 
  
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-
- 
 import {IPFSWebState,  updateInput, getInputWriter } from "./ipfsWebClient";
 
-const [inputWriter, setInputWriter] = useState(null);
+import Debug from "debug";
 
+const debug = Debug("useIPFSWrite");
 
+export default (ipfs, publish) => {
 
-export default ({ipfs, publish}) => {
+    const [inputWriter, setInputWriter] = useState(null);
+
 
     const inputCID = ipfs?.input && ipfs?.input[".cid"];
+    debug("inputCID", inputCID, "inputWriter",inputWriter);
     useEffect(() => {
         if (!inputCID)
             return;
@@ -19,7 +21,7 @@ export default ({ipfs, publish}) => {
         debug("creating input writer for", inputCID);
         let close = null;
         (async () => {
-            const writer = await getInputWriter(inputCID);
+            const writer = await getInputWriter(ipfs?.input);
             close = writer.close;
             
             // try to close the writer when window is closed
@@ -31,11 +33,9 @@ export default ({ipfs, publish}) => {
     }, [inputCID]);
 
     const dispatch = useCallback(async inputState => {
-        debug("dispatching", inputState)
+        debug("dispatching", inputState, inputWriter)
         const newInputContentID = await updateInput(inputWriter, inputState);
-        debug("added input",inputState,"got cid", newInputContentID,"to state",state.contentID)
-        // setContentID(newInputContentID)
-        debug("Publishing contentID to colab", newInputContentID);
+        debug("added input",inputState,"got cid", newInputContentID,"to state")
         publish(newInputContentID);
     }, [publish, inputWriter]);
 

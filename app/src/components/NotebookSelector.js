@@ -49,7 +49,7 @@ export default function NotebookSelector({children}) {
       </AppBar>
           <Drawer anchor={"top"} open={visible} onClose={() => setVisible(false)}>
           <List>
-        {notebooks.map(({name, category, Icon, path}) => ( <Link onClick={() => setVisible(false)} to={path}>
+        {notebooks.map(({name, category, Icon, path}) => ( <Link key={path} onClick={() => setVisible(false)} to={path}>
           <ListItem button key={name} component="a" >
             <ListItemIcon> <Icon /> </ListItemIcon>
             <ListItemText primary={`${category} - ${name}`} />

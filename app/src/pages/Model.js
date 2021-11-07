@@ -8,11 +8,9 @@ import Debug from "debug";
 
 
 // Components
-import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
-import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
 import useIPFS from "../hooks/useIPFS";
 import Acordion from "../components/Acordion";

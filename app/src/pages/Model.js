@@ -16,15 +16,19 @@ import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
 import useIPFS from "../network/useIPFS";
 import Acordion from "../components/Acordion";
+import useIPFSWrite from "../network/useIPFSWrite";
 
 const debug = Debug("Model");
 
 
-export default React.memo(function Model({ contentID, connected }) {
-  
+export default React.memo(function Model({ contentID, node}) {
+
+  const { connected, publish } = node;
 
   const ipfs = useIPFS(contentID);
+  
   //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
+  const dispatchInput = useIPFSWrite(ipfs, publish);
 
   const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
 

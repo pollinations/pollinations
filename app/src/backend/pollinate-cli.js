@@ -49,7 +49,10 @@ const execute = async (command, logfile=null) =>
     childProc.stderr.pipe(process.stderr);
     if (logfile) {
       debug("creating a write stream to ", logfile);
-      const logout = createWriteStream(logfile);
+      const logfileDir = dirname(logfile);
+      // create logfile directory if it doesn't exist
+      await mkdir(logfileDir, { recursive: true });
+      const logout = createWriteStream(logfile, { flags: "a" });
       childProc.stdout.pipe(logout);
       childProc.stderr.pipe(logout);
     }

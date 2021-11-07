@@ -34313,7 +34313,7 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
 };
 var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug5("Adding file", localPath, "to", ipfsPath);
-  await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }));
+  await ipfsAdd(client, ipfsPath, globSource(localPath, "", { preserveMtime: true, preserveMode: true }));
 };
 async function optionallyResolveIPNS(client, cid) {
   debug5("Trying to resolve CID", cid);

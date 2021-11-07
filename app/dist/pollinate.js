@@ -22352,9 +22352,9 @@ var require_readdirp = __commonJS({
       async _formatEntry(dirent, path) {
         let entry;
         try {
-          const basename = this._isDirent ? dirent.name : dirent;
-          const fullPath = sysPath.resolve(sysPath.join(path, basename));
-          entry = { path: sysPath.relative(this._root, fullPath), fullPath, basename };
+          const basename2 = this._isDirent ? dirent.name : dirent;
+          const fullPath = sysPath.resolve(sysPath.join(path, basename2));
+          entry = { path: sysPath.relative(this._root, fullPath), fullPath, basename: basename2 };
           entry[this._statsProp] = this._isDirent ? dirent : await this._stat(fullPath);
         } catch (err) {
           this._onError(err);
@@ -24199,16 +24199,16 @@ var require_nodefs_handler = __commonJS({
       _watchWithNodeFs(path, listener) {
         const opts = this.fsw.options;
         const directory = sysPath.dirname(path);
-        const basename = sysPath.basename(path);
+        const basename2 = sysPath.basename(path);
         const parent = this.fsw._getWatchedDir(directory);
-        parent.add(basename);
+        parent.add(basename2);
         const absolutePath = sysPath.resolve(path);
         const options = { persistent: opts.persistent };
         if (!listener)
           listener = EMPTY_FN;
         let closer;
         if (opts.usePolling) {
-          options.interval = opts.enableBinaryInterval && isBinaryPath(basename) ? opts.binaryInterval : opts.interval;
+          options.interval = opts.enableBinaryInterval && isBinaryPath(basename2) ? opts.binaryInterval : opts.interval;
           closer = setFsWatchFileListener(path, absolutePath, options, {
             listener,
             rawEmitter: this.fsw._emitRaw
@@ -24226,11 +24226,11 @@ var require_nodefs_handler = __commonJS({
         if (this.fsw.closed) {
           return;
         }
-        const dirname2 = sysPath.dirname(file);
-        const basename = sysPath.basename(file);
-        const parent = this.fsw._getWatchedDir(dirname2);
+        const dirname3 = sysPath.dirname(file);
+        const basename2 = sysPath.basename(file);
+        const parent = this.fsw._getWatchedDir(dirname3);
         let prevStats = stats;
-        if (parent.has(basename))
+        if (parent.has(basename2))
           return;
         const listener = async (path, newStats) => {
           if (!this.fsw._throttle(THROTTLE_MODE_WATCH, file, 5))
@@ -24253,9 +24253,9 @@ var require_nodefs_handler = __commonJS({
                 prevStats = newStats2;
               }
             } catch (error) {
-              this.fsw._remove(dirname2, basename);
+              this.fsw._remove(dirname3, basename2);
             }
-          } else if (parent.has(basename)) {
+          } else if (parent.has(basename2)) {
             const at = newStats.atimeMs;
             const mt = newStats.mtimeMs;
             if (!at || at <= mt || mt !== prevStats.mtimeMs) {
@@ -34313,7 +34313,9 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
 };
 var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug5("Adding file", localPath, "to", ipfsPath);
-  await ipfsAdd(client, ipfsPath, globSource(localPath, "", { preserveMtime: true, preserveMode: true }));
+  const filename = (0, import_path.basename)(localPath);
+  const folder = (0, import_path.dirname)(localPath);
+  await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }));
 };
 async function optionallyResolveIPNS(client, cid) {
   debug5("Trying to resolve CID", cid);

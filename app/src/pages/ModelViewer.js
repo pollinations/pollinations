@@ -12,7 +12,9 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
-
+import { Fab } from "@material-ui/core"
+import CreateIcon from '@material-ui/icons/Create';
+import { Link } from "react-router-dom"
 const debug = Debug("ModelViewer");
 
 export default memo(function ModelViewer({contentID}) {
@@ -79,6 +81,7 @@ export default memo(function ModelViewer({contentID}) {
 <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  
+        <Fab component={Link} style={styles.fab} variant="extended" to={`/c/${contentID}`}><CreateIcon /> Create</Fab>
       </Box>
 })
 
@@ -113,8 +116,14 @@ const styles = {
     },
     img: {
         width: '100%'
+    },
+    fab: {
+        position: 'fixed',
+        bottom: '1em',
+        right: '1em'
     }
 }
+
 
 // for backward compatibility we check if the notebook.ipynb is at / or at /input
 // the new "correct" way is to save the notebook.ipynb to /input

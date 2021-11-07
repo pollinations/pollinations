@@ -25,7 +25,7 @@ export const AppContainer = () => {
 
                 <Routes>
                     <Route exact={false} path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
-                    <Route exact={false} path='c/:contentID' element={<WithParams><Model connected={node.connected}/></WithParams>} />
+                    <Route exact={false} path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
                     <Route exact={true} path='/' element={<Home />} />
                 </Routes>
 

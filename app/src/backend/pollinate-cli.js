@@ -68,9 +68,11 @@ if (executeCommand)
       
       await receive({...options, once: true, path: options.path+"/input"});
 
-    
       startSending();
-  
+      debug("sleeping 5s")
+      await awaitSleep(5000);
+      
+      debug("executing");
       await execute(executeCommand, options.logout);
       debug("done executing", executeCommand,". Waiting...");
       await close();

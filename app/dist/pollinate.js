@@ -23,9 +23,6 @@ var __spreadValues = (a, b) => {
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
-var __require = typeof require !== "undefined" ? require : (x) => {
-  throw new Error('Dynamic require of "' + x + '" is not supported');
-};
 var __objRest = (source, exclude) => {
   var target = {};
   for (var prop in source)
@@ -38,7 +35,7 @@ var __objRest = (source, exclude) => {
     }
   return target;
 };
-var __commonJS = (cb, mod2) => function __require2() {
+var __commonJS = (cb, mod2) => function __require() {
   return mod2 || (0, cb[Object.keys(cb)[0]])((mod2 = { exports: {} }).exports, mod2), mod2.exports;
 };
 var __export = (target, all4) => {
@@ -34462,6 +34459,7 @@ function subscribeCallback(topic, callback) {
       callback(message);
     };
     const doSub = async () => {
+      var _a;
       const client = await getClient();
       try {
         abort.abort();
@@ -34473,7 +34471,7 @@ function subscribeCallback(topic, callback) {
           debug6("subscription was aborted. returning");
           return;
         }
-        if (e.message?.startsWith("Already subscribed"))
+        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
         await doSub();
@@ -34795,6 +34793,9 @@ if (executeCommand)
       const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
+      debug10("sleeping 5s");
+      await (0, import_await_sleep3.default)(5e3);
+      debug10("executing");
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");
       await close2();

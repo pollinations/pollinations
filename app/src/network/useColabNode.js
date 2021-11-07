@@ -8,7 +8,8 @@ const debug = Debug("useColabNode");
 const useColabNode = () => {
 
     const [node, setNode] = useState({connected: false});
-    const [contentID, setContentID] = useState(null);
+
+    const updateNode = props => setNode(node => ({...node, ...props}));
 
     useEffect(() => {
         colabConnectionManager(nodeData => {
@@ -19,7 +20,7 @@ const useColabNode = () => {
     
             if (nodeID) {
                 debug("setting new nodeID", nodeID);
-                setNode({ nodeID, gpu });
+                updateNode({ nodeID, gpu });
             }
         });
     },[]);
@@ -30,10 +31,10 @@ const useColabNode = () => {
             if (!node?.nodeID)
                 return;
             debug("nodeID changed to", node.nodeID,". (Re)subscribing");
-            return subscribeCID(node.nodeID, "/output", setContentID, heartbeat => {
+            return subscribeCID(node.nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
                 debug("hearbeat state", heartbeat);
                 const connected = heartbeat && heartbeat.alive;
-                setNode(node => ({...node, connected }));
+                updateNode({connected});
             });
         }
     , [node?.nodeID]);
@@ -44,11 +45,11 @@ const useColabNode = () => {
             return;
         debug("nodeID change to", node?.nodeID, "creating publisher")
         const { publish, close } = publisher(node?.nodeID, "/input");
-        setNode(node => ({...node, publish}));
+        updateNode({publish});
         return close;
     }, [node?.nodeID]);
 
-    return { node, contentID };
+    return node ;
 
 };
 

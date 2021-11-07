@@ -17,8 +17,7 @@ export default ({ nodeID, contentID,  gpu, connected }) => {
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
-    const disconnected = !connected;
-    const nodeInfo = !nodeID || disconnected ? <ColabConnectButton disconnected={disconnected} />  : gpuInfo || displayContentID(nodeID);
+    const nodeInfo = !connected ? <ColabConnectButton disconnected={!connected} />  : gpuInfo || displayContentID(nodeID);
 
     return <Box style={{width:"220px", marginLeft:"auto"}}>
         <Table size="small" aria-label="a dense table" >

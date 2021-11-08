@@ -34735,27 +34735,38 @@ var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2 + 2e3;
-var execute = async (command, logfile = null) => new Promise((resolve2, reject) => {
-  debug10("Executing command", command);
-  const childProc = (0, import_child_process.spawn)(command);
-  childProc.on("error", (err) => {
-    if (err)
-      reject(err);
-    else
+var execute = async (command, logfile = null) => {
+  let childProc = null;
+  const executePromise = new Promise((resolve2, reject) => {
+    debug10("Executing command", command);
+    childProc = (0, import_child_process.spawn)(command);
+    childProc.on("error", (err) => {
+      if (err)
+        reject(err);
+      else
+        resolve2();
+    });
+    childProc.on("close", () => {
+      childProc = null;
       resolve2();
+    });
+    childProc.stdout.pipe(import_process2.default.stderr);
+    childProc.stderr.pipe(import_process2.default.stderr);
+    if (logfile) {
+      debug10("creating a write stream to ", logfile);
+      const logfileDir = (0, import_path6.dirname)(logfile);
+      (0, import_fs3.mkdirSync)(logfileDir, { recursive: true });
+      const logout = (0, import_fs3.createWriteStream)(logfile, { flags: "a" });
+      childProc.stdout.pipe(logout);
+      childProc.stderr.pipe(logout);
+    }
   });
-  childProc.on("close", resolve2);
-  childProc.stdout.pipe(import_process2.default.stderr);
-  childProc.stderr.pipe(import_process2.default.stderr);
-  if (logfile) {
-    debug10("creating a write stream to ", logfile);
-    const logfileDir = (0, import_path6.dirname)(logfile);
-    (0, import_fs3.mkdirSync)(logfileDir, { recursive: true });
-    const logout = (0, import_fs3.createWriteStream)(logfile, { flags: "a" });
-    childProc.stdout.pipe(logout);
-    childProc.stderr.pipe(logout);
-  }
-});
+  const kill = () => {
+    debug10("Killing child process");
+    childProc && childProc.kill();
+  };
+  return { executePromise, kill };
+};
 if (executeCommand)
   (async () => {
     while (true) {
@@ -34767,9 +34778,10 @@ if (executeCommand)
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
       debug10("executing");
-      const executePromise = execute(executeCommand, options_default.logout);
+      const { executePromise, kill } = execute(executeCommand, options_default.logout);
       const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       await Promise.race([executePromise, receivePromise]);
+      kill();
       debug10("done executing", executeCommand, ". Waiting...");
       await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);

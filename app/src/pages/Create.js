@@ -127,20 +127,13 @@ const useStepper = () => {
 
 const NotebookDescription = ( { metadata } ) => {
   if (metadata === null) return null
-  return  <>
-  <Acordion visibleContent='Description'
+  return (
+  <Acordion visibleContent='Details'
     hiddenContent={
       <Typography color="textSecondary">
         <Markdown children={metadata.description}/>
       </Typography>}
-  />
-  <Acordion visibleContent='Instructions'
-    hiddenContent={
-      <Typography color="textSecondary">
-        <Instructions/>
-      </Typography>}
-  />
-  </>
+  />);
 }
 
 

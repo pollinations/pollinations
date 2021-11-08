@@ -34578,9 +34578,10 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   const channel$ = new import_queueable2.Channel();
   let changeQueue = [];
   const watcher = import_chokidar.default.watch(watchPath, {
-    awaitWriteFinish: true,
+    awaitWriteFinish: false,
     ignored: /(^|[\/\\])\../,
-    cwd: watchPath
+    cwd: watchPath,
+    interval: debounceTime
   });
   const sendQueuedFiles = debounce(debounceTime, false, async () => {
     const files = changeQueue;

@@ -8,16 +8,16 @@ import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, connected, colabState, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata);
 
     // some variables for conditionally rendering the form parts
     // TODO: has a lot of redundancy. refactor this
-    const showSubmit = colabState !== "running";
+    const showSubmit = true; //colabState !== "running";
     const showCancel = false; //!showSubmit && input.formAction !== "cancel";
     const inProgress = false//!!(input && input.formAction);
-    const formDisabled = !connected || inProgress;
+    const formDisabled = !connected;// || inProgress;
 
 
     // Fill in the form inputs and override default values if they are in the ipfs object
@@ -25,8 +25,6 @@ const FormView = ({ input, connected, colabState, metadata, onSubmit, onCancel }
     if (!filledForm)
         return null;
 
-
-    debug("colabState", colabState);
     debug("filledForm", filledForm);
 
     // the UI schema for the form defines which widgets are used for each input
@@ -47,7 +45,7 @@ const FormView = ({ input, connected, colabState, metadata, onSubmit, onCancel }
             debug("submitted", formData);
             onSubmit(formData)
         }}
-        disabled={formDisabled || colabState === "running"}
+        disabled={formDisabled}
         >
         {/* <FileUpload />  */}
         <Box m={1}>

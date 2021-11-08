@@ -67,7 +67,7 @@ export default React.memo(function Model({ contentID, node}) {
           <FormView
             input={ipfs?.input}
             connected={connected}
-            colabState={ipfs?.output?.status}
+            //colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}
             onCancel={cancelForm}
@@ -91,12 +91,6 @@ export default React.memo(function Model({ contentID, node}) {
       </Box>
   </>
 });
-
-
-// function that returns true when the run has finished
-// will change URL hash
-
-const isDone = (state) => state?.ipfs?.output?.done;
 
 
 // for backward compatibility we check if the notebook.ipynb is at / or at /input

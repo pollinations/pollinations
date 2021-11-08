@@ -91,8 +91,8 @@ if (executeCommand)
       const {executePromise, kill} = execute(executeCommand, options.logout);
       const receivePromise = receive({...options, once: true, path: options.path+"/input"})
       await Promise.race([executePromise, receivePromise]);
-      kill();
       debug("done executing", executeCommand,". Waiting...");
+      kill();
       await close();
     
       // This waiting logic is quite hacky. Should improve it.

@@ -34781,8 +34781,8 @@ if (executeCommand)
       const { executePromise, kill } = execute(executeCommand, options_default.logout);
       const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       await Promise.race([executePromise, receivePromise]);
-      kill();
       debug10("done executing", executeCommand, ". Waiting...");
+      kill();
       await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       debug10("awaiting termination of state sync");

@@ -34495,7 +34495,7 @@ function throttle(delay, noTrailing, callback, debounceMode) {
     if (cancelled) {
       return;
     }
-    function exec2() {
+    function exec() {
       lastExec = Date.now();
       callback.apply(self2, arguments_);
     }
@@ -34503,13 +34503,13 @@ function throttle(delay, noTrailing, callback, debounceMode) {
       timeoutID = void 0;
     }
     if (debounceMode && !timeoutID) {
-      exec2();
+      exec();
     }
     clearExistingTimeout();
     if (debounceMode === void 0 && elapsed > delay) {
-      exec2();
+      exec();
     } else if (noTrailing !== true) {
-      timeoutID = setTimeout(debounceMode ? clear : exec2, debounceMode === void 0 ? delay - elapsed : delay);
+      timeoutID = setTimeout(debounceMode ? clear : exec, debounceMode === void 0 ? delay - elapsed : delay);
     }
   }
   wrapper.cancel = cancel;
@@ -34777,7 +34777,9 @@ if (executeCommand)
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
       startSending();
       debug10("executing");
-      await execute(executeCommand, options_default.logout);
+      const executePromise = execute(executeCommand, options_default.logout);
+      const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
+      await Promise.any([executePromise, receivePromise]);
       debug10("done executing", executeCommand, ". Waiting...");
       await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);

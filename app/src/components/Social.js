@@ -13,12 +13,12 @@ import { Link } from "@material-ui/core";
 const debug = Debug("Social");
 
 const platforms = {
-  "twitter": { icon: <TwitterIcon />, url: "https://twitter.com/pollinations_ai" },
-  "facebook": { icon: <FacebookIcon />, url: "https://facebook.com/pollinations"},
-  "linkedin": { icon: <LinkedInIcon />, url: "https://linkedin.com/company/pollinations-ai"},
-  "instagram": { icon: <InstagramIcon />, url: "https://instagram.com/pollinations_ai" },
-  "youtube": { icon: <YoutubeIcon />, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
-  "telegram": { icon: <TelegramIcon />, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
+  "twitter": { icon: <TwitterIcon fontSize="small"/>, url: "https://twitter.com/pollinations_ai" },
+  "facebook": { icon: <FacebookIcon fontSize="small"/>, url: "https://facebook.com/pollinations"},
+  "linkedin": { icon: <LinkedInIcon fontSize="small"/>, url: "https://linkedin.com/company/pollinations-ai"},
+  "instagram": { icon: <InstagramIcon fontSize="small"/>, url: "https://instagram.com/pollinations_ai" },
+  "youtube": { icon: <YoutubeIcon fontSize="small"/>, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
+  "telegram": { icon: <TelegramIcon fontSize="small"/>, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
 };
 
 export const SocialPostStatus = ({ results }) => 

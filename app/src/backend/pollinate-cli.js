@@ -78,7 +78,7 @@ if (executeCommand)
       debug("executing");
       const executePromise = execute(executeCommand, options.logout);
       const receivePromise = receive({...options, once: true, path: options.path+"/input"})
-      await Promise.any([executePromise, receivePromise]);
+      await Promise.race([executePromise, receivePromise]);
       debug("done executing", executeCommand,". Waiting...");
       await close();
     

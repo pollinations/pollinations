@@ -34780,7 +34780,7 @@ if (executeCommand)
       debug10("executing");
       const executePromise = execute(executeCommand, options_default.logout);
       const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
-      await Promise.any([executePromise, receivePromise]);
+      await Promise.race([executePromise, receivePromise]);
       debug10("done executing", executeCommand, ". Waiting...");
       await close2();
       await (0, import_await_sleep3.default)(sleepBeforeExit);

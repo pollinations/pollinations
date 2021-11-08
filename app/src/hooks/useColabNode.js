@@ -28,29 +28,26 @@ const useColabNode = () => {
         });
     },[]);
 
-    // Subscribe to updates from node when the nodeID changes
-    useEffect(
-        () => { 
-            if (!node?.nodeID)
-                return;
-            debug("nodeID changed to", node.nodeID,". (Re)subscribing");
-            return subscribeCID(node.nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
-                debug("hearbeat state", heartbeat);
-                const connected = heartbeat && heartbeat.alive;
-                updateNode({connected});
-            });
-        }
-    , [node?.nodeID]);
+    useEffect(()=>{
+        let nodeID = node?.nodeID
 
-    // Create a publisher to the node when the nodeID changes
-    useEffect(() => {
-        if (!node?.nodeID)
-            return;
-        debug("nodeID change to", node?.nodeID, "creating publisher")
-        const { publish, close } = publisher(node?.nodeID, "/input");
-        updateNode({publish});
-        return close;
-    }, [node?.nodeID]);
+        if (!nodeID) return
+
+        // Publisher
+        debug("nodeID change to", nodeID, "creating publisher")
+        const { publish, close } = publisher(nodeID, "/input")
+        updateNode({ publish })
+        close()
+        
+        // Update
+        debug("nodeID changed to", nodeID,". (Re)subscribing")
+        subscribeCID(nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
+            debug("hearbeat state", heartbeat);
+            const connected = heartbeat && heartbeat.alive;
+            updateNode({connected});
+        })
+
+    },[node.nodeID])
 
     return node ;
 

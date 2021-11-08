@@ -4,7 +4,7 @@ import { Routes, Route, Router, useParams } from "react-router";
 import useColabNode from "../hooks/useColabNode";
 import NodeStatus from "../components/NodeStatus";
 import ModelViewer from "./ResultViewer";
-import Model from "./Model";
+import Model from "./Create";
 import Home from "./Home";
 import { BrowserRouter } from "react-router-dom";
 import { cloneElement } from "react";

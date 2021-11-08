@@ -12,6 +12,7 @@ import { receive } from "./ipfs/receiver.js";
 import { exec, spawn } from "child_process";
 import { createWriteStream, mkdirSync } from "fs";
 import { rmdir,mkdir } from "fs/promises";
+import { dirname } from "path";
 
 
 export const debug = Debug("pollinate")

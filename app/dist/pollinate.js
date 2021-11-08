@@ -34695,15 +34695,6 @@ var receive = async function({ ipns, nodeid, once, path: rootPath2 }) {
   ;
   return remoteCID;
 };
-var _lastContentID = null;
-var isSameContentID = (cid) => {
-  if (_lastContentID === cid) {
-    debug9("contentid was the same. probably skipping");
-    return true;
-  }
-  _lastContentID = cid;
-  return false;
-};
 var writeFileAndCreateFolder = async (path, content) => {
   debug9("creating folder if it does not exist", (0, import_path5.dirname)(path));
   (0, import_fs2.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
@@ -34712,8 +34703,6 @@ var writeFileAndCreateFolder = async (path, content) => {
   return path;
 };
 async function processRemoteCID(contentID, rootPath2) {
-  if (isSameContentID(stringCID(contentID)))
-    return;
   debug9("Processing remote CID", contentID);
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
   debug9("got remote state", ipfsState);

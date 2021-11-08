@@ -26709,6 +26709,112 @@ var require_node2 = __commonJS({
   }
 });
 
+// node_modules/tree-kill/index.js
+var require_tree_kill = __commonJS({
+  "node_modules/tree-kill/index.js"(exports2, module2) {
+    "use strict";
+    var childProcess = require("child_process");
+    var spawn2 = childProcess.spawn;
+    var exec = childProcess.exec;
+    module2.exports = function(pid, signal, callback) {
+      if (typeof signal === "function" && callback === void 0) {
+        callback = signal;
+        signal = void 0;
+      }
+      pid = parseInt(pid);
+      if (Number.isNaN(pid)) {
+        if (callback) {
+          return callback(new Error("pid must be a number"));
+        } else {
+          throw new Error("pid must be a number");
+        }
+      }
+      var tree = {};
+      var pidsToProcess = {};
+      tree[pid] = [];
+      pidsToProcess[pid] = 1;
+      switch (process.platform) {
+        case "win32":
+          exec("taskkill /pid " + pid + " /T /F", callback);
+          break;
+        case "darwin":
+          buildProcessTree(pid, tree, pidsToProcess, function(parentPid) {
+            return spawn2("pgrep", ["-P", parentPid]);
+          }, function() {
+            killAll(tree, signal, callback);
+          });
+          break;
+        default:
+          buildProcessTree(pid, tree, pidsToProcess, function(parentPid) {
+            return spawn2("ps", ["-o", "pid", "--no-headers", "--ppid", parentPid]);
+          }, function() {
+            killAll(tree, signal, callback);
+          });
+          break;
+      }
+    };
+    function killAll(tree, signal, callback) {
+      var killed = {};
+      try {
+        Object.keys(tree).forEach(function(pid) {
+          tree[pid].forEach(function(pidpid) {
+            if (!killed[pidpid]) {
+              killPid(pidpid, signal);
+              killed[pidpid] = 1;
+            }
+          });
+          if (!killed[pid]) {
+            killPid(pid, signal);
+            killed[pid] = 1;
+          }
+        });
+      } catch (err) {
+        if (callback) {
+          return callback(err);
+        } else {
+          throw err;
+        }
+      }
+      if (callback) {
+        return callback();
+      }
+    }
+    function killPid(pid, signal) {
+      try {
+        process.kill(parseInt(pid, 10), signal);
+      } catch (err) {
+        if (err.code !== "ESRCH")
+          throw err;
+      }
+    }
+    function buildProcessTree(parentPid, tree, pidsToProcess, spawnChildProcessesList, cb) {
+      var ps = spawnChildProcessesList(parentPid);
+      var allData = "";
+      ps.stdout.on("data", function(data) {
+        var data = data.toString("ascii");
+        allData += data;
+      });
+      var onClose = function(code5) {
+        delete pidsToProcess[parentPid];
+        if (code5 != 0) {
+          if (Object.keys(pidsToProcess).length == 0) {
+            cb();
+          }
+          return;
+        }
+        allData.match(/\d+/g).forEach(function(pid) {
+          pid = parseInt(pid, 10);
+          tree[parentPid].push(pid);
+          tree[pid] = [];
+          pidsToProcess[pid] = 1;
+          buildProcessTree(pid, tree, pidsToProcess, spawnChildProcessesList, cb);
+        });
+      };
+      ps.on("close", onClose);
+    }
+  }
+});
+
 // src/backend/pollinate-cli.js
 __export(exports, {
   debug: () => debug10,
@@ -34724,6 +34830,7 @@ var import_child_process = __toModule(require("child_process"));
 var import_fs3 = __toModule(require("fs"));
 var import_promises = __toModule(require("fs/promises"));
 var import_path6 = __toModule(require("path"));
+var import_tree_kill = __toModule(require_tree_kill());
 var debug10 = (0, import_debug10.default)("pollinate");
 var readline = import_readline.default.createInterface({
   input: import_process2.default.stdin,
@@ -34763,7 +34870,11 @@ var execute = async (command, logfile = null) => {
   });
   const kill = () => {
     debug10("Killing child process");
-    childProc && childProc.kill();
+    if (childProc) {
+      childProc.stdout.pause();
+      childProc.stderr.pause();
+      (0, import_tree_kill.default)(childProc.pid);
+    }
   };
   return { executePromise, kill };
 };

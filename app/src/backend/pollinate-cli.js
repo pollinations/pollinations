@@ -10,7 +10,7 @@ import options from "./options.js";
 import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
 import { exec, spawn } from "child_process";
-import { createWriteStream } from "fs";
+import { createWriteStream, mkdirSync } from "fs";
 import { rmdir,mkdir } from "fs/promises";
 
 
@@ -51,7 +51,7 @@ const execute = async (command, logfile=null) =>
       debug("creating a write stream to ", logfile);
       const logfileDir = dirname(logfile);
       // create logfile directory if it doesn't exist
-      await mkdir(logfileDir, { recursive: true });
+      mkdirSync(logfileDir, { recursive: true });
       const logout = createWriteStream(logfile, { flags: "a" });
       childProc.stdout.pipe(logout);
       childProc.stderr.pipe(logout);

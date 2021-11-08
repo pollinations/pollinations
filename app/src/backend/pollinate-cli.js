@@ -76,7 +76,9 @@ if (executeCommand)
       // await awaitSleep(5000);
 
       debug("executing");
-      await execute(executeCommand, options.logout);
+      const executePromise = execute(executeCommand, options.logout);
+      const receivePromise = receive({...options, once: true, path: options.path+"/input"})
+      await Promise.any([executePromise, receivePromise]);
       debug("done executing", executeCommand,". Waiting...");
       await close();
     

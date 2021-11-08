@@ -34733,6 +34733,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 var import_child_process = __toModule(require("child_process"));
 var import_fs3 = __toModule(require("fs"));
 var import_promises = __toModule(require("fs/promises"));
+var import_path6 = __toModule(require("path"));
 var debug10 = (0, import_debug10.default)("pollinate");
 var readline = import_readline.default.createInterface({
   input: import_process2.default.stdin,
@@ -34758,7 +34759,7 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
   childProc.stderr.pipe(import_process2.default.stderr);
   if (logfile) {
     debug10("creating a write stream to ", logfile);
-    const logfileDir = dirname(logfile);
+    const logfileDir = (0, import_path6.dirname)(logfile);
     (0, import_fs3.mkdirSync)(logfileDir, { recursive: true });
     const logout = (0, import_fs3.createWriteStream)(logfile, { flags: "a" });
     childProc.stdout.pipe(logout);

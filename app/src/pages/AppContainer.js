@@ -17,17 +17,17 @@ export const AppContainer = () => {
     return <BrowserRouter>
         {/* Nav Bar */}
         <NotebookSelector>
-            {<NodeStatus {...node} /> }
+            <NodeStatus {...node} /> 
         </NotebookSelector>
         
         {/* Children that get IPFS state */}
         <Container maxWidth="md">
 
                 <Routes>
-                    <Route exact={true} path='n' element={<WithParams><NodeViewer {...node} /></WithParams>} />
-                    <Route exact={false} path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
-                    <Route exact={false} path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
-                    <Route exact={true} path='/' element={<Home />} />
+                    <Route exact path='n' element={<WithParams><NodeViewer {...node} /></WithParams>} />
+                    <Route path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
+                    <Route path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
+                    <Route exact path='/' element={<Home />} />
                 </Routes>
 
         </Container>

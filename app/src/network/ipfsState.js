@@ -13,7 +13,7 @@ const debug = Debug("ipfsState");
 
 // Recursively get the IPFS content and transform it into a JS object.
 // The callback is called for each file in the directories which can fetch or process them further
-export const getIPFSState = async (contentID, callback=f=>f, skipCache=true) => {
+export const getIPFSState = async (contentID, callback=f=>f, skipCache=false) => {
     
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);

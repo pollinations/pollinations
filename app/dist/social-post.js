@@ -33795,7 +33795,7 @@ var PromiseAllProgress = (name5, promises) => Promise.all(promises);
 // src/network/ipfsState.js
 var import_json5 = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfsState");
-var getIPFSState = async (contentID, callback = (f) => f, skipCache = true) => {
+var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
   debug6("Getting state for CID", contentID);
   return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback, skipCache);

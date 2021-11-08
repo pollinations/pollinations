@@ -9,11 +9,10 @@ import Readline from 'readline';
 import options from "./options.js";
 import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
-import { exec, spawn } from "child_process";
+import { spawn } from "child_process";
 import { createWriteStream, mkdirSync } from "fs";
 import { rmdir,mkdir } from "fs/promises";
 import { dirname } from "path";
-
 
 export const debug = Debug("pollinate")
 
@@ -62,11 +61,6 @@ const execute = async (command, logfile=null) =>
 
 if (executeCommand) 
   (async () => {
-    
-    // const receivedCID = await receive({...options, once: true});
-    // debug("received IPFS content", receivedCID);
-    
-
  
     while (true) {
       const {start: startSending, processing, close} = await sender({...options, once: false });
@@ -124,14 +118,3 @@ else {
     })();
   }
 }
-
-
-
-// ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
-//   const newContentID = new TextDecoder().decode(data);
-//   debug("content ID from colab", newContentID);
-//   onContentID(newContentID);
-// });
-
-
-// setInterval(() => null,5000)

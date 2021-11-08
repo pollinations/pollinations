@@ -13,7 +13,7 @@ import { spawn } from "child_process";
 import { createWriteStream, mkdirSync } from "fs";
 import { rmdir,mkdir } from "fs/promises";
 import { dirname } from "path";
-
+import treekill from "tree-kill"
 export const debug = Debug("pollinate")
 
 const readline = Readline.createInterface({
@@ -64,7 +64,11 @@ const execute = async (command, logfile=null) => {
 
   const kill = () => {
     debug("Killing child process");
-    childProc && childProc.kill();
+    if (childProc) {
+      childProc.stdout.pause();
+      childProc.stderr.pause();
+      treekill(childProc.pid);
+    }
   };
 
   return {executePromise, kill};

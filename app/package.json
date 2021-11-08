@@ -56,6 +56,7 @@
     "sass": "^1.42.0",
     "social-post-api": "^1.0.19",
     "throttle-debounce": "^3.0.1",
+    "tree-kill": "^1.2.2",
     "web-vitals": "^1.1.2",
     "workbox-background-sync": "^6.1.5",
     "workbox-broadcast-update": "^6.1.5",

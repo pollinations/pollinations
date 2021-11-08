@@ -34,17 +34,21 @@ const enableReceive = !options.send;
 const executeCommand = options.execute;
 const sleepBeforeExit = options.debounce * 2+2000;
 
-const execute = async (command, logfile=null) => 
-  new Promise((resolve,reject) => {
+const execute = async (command, logfile=null) => {
+  let childProc = null;
+  const executePromise = new Promise((resolve,reject) => {
     debug("Executing command", command);
-    const childProc = spawn(command);
+    childProc = spawn(command);
     childProc.on("error", err => {
       if (err) 
         reject(err);
       else 
         resolve();
     });
-    childProc.on("close", resolve);
+    childProc.on("close",() => {
+      childProc = null;
+      resolve();
+    });
     childProc.stdout.pipe(process.stderr);
     childProc.stderr.pipe(process.stderr);
     if (logfile) {
@@ -57,6 +61,14 @@ const execute = async (command, logfile=null) =>
       childProc.stderr.pipe(logout);
     }
   });
+
+  const kill = () => {
+    debug("Killing child process");
+    childProc && childProc.kill();
+  };
+
+  return {executePromise, kill};
+}
 
 
 if (executeCommand) 
@@ -76,9 +88,10 @@ if (executeCommand)
       // await awaitSleep(5000);
 
       debug("executing");
-      const executePromise = execute(executeCommand, options.logout);
+      const {executePromise, kill} = execute(executeCommand, options.logout);
       const receivePromise = receive({...options, once: true, path: options.path+"/input"})
       await Promise.race([executePromise, receivePromise]);
+      kill();
       debug("done executing", executeCommand,". Waiting...");
       await close();
     

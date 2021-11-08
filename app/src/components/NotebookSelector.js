@@ -25,7 +25,7 @@ export default function NotebookSelector({children}) {
   return <>
 
     <AppBar position="static">
-      <Toolbar>
+      <Toolbar variant="dense">
 
         <IconButton
           color="inherit"

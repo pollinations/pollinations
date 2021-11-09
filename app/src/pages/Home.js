@@ -61,7 +61,7 @@ const NotebookCard = ({notebook}) => {
     return  <Box m={5}>
         <Card>
         <CardHeader 
-        subheader={name?.slice(2)} 
+        subheader={<Link children={name?.slice(2)} to={path}/>} 
         title={category?.slice(2)} 
         action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
             <CardContent>

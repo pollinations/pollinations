@@ -25,7 +25,9 @@ export const SocialPostStatus = ({ results }) =>
   Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
 
 export const SocialLinks = () => 
-  <div children={Object.keys(platforms).map(PlatformLink)}/>
+  <div style={{display: 'flex', alignItems: 'center', marginLeft: 'auto'}} 
+  children={Object.keys(platforms).map(PlatformLink)}/>
+
 
 const PlatformLink = platform => {
     return <Link 

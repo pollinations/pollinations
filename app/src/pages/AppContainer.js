@@ -17,24 +17,22 @@ export const AppContainer = () => {
 
     return <BrowserRouter>
         {/* Nav Bar     */}
-        <NotebookSelector>
-            <NodeStatus {...node} /> 
-        </NotebookSelector>
+        <NotebookSelector/>
         
         {/* Children that get IPFS state */}
-        <Container maxWidth="md">
+        <Container maxWidth="md" >
 
-                <Routes>
-                    <Route exact path='n' element={<WithParams><NodeViewer {...node} /></WithParams>} />
-                    <Route path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
-                    <Route path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
-                    <Route exact path='/' element={<Home />} />
-                </Routes>
+            <Routes>
+                <Route exact path='n' element={<WithParams><NodeViewer {...node} /></WithParams>} />
+                <Route path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
+                <Route path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
+                <Route exact path='/' element={<Home />} />
+            </Routes>
+            <More/>
 
         </Container>
 
-        {/* Footer */}
-        <Footer/>
+        <Footer {...node}/>
     </BrowserRouter>;
 }
 
@@ -42,3 +40,9 @@ function WithParams({ children }) {
     const params = useParams();
     return cloneElement(children, {...params});
   }
+
+const More = () => <div style={{margin: '1em auto 4em auto'}}>
+  Discuss, get help and contribute on 
+  <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank"> [ Github ] </Link>  
+  or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
+</div>

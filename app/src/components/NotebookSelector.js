@@ -12,27 +12,22 @@ import MenuIcon from '@material-ui/icons/Menu';
 
 import { getNotebooks } from "../data/notebooks.js";
 import { SocialLinks } from './Social';
-import { Box } from '@material-ui/core';
+import { Box, Container } from '@material-ui/core';
 import { Link } from 'react-router-dom'
 
 
 export default function NotebookSelector({children}) {
-
-  const [visible, setVisible] = useState(false)
-  const [notebooks,setNotebooks] = useState([])
-  useEffect(async () => setNotebooks(await getNotebooks()),[])
 
   return <>
 
     <AppBar position="static">
       <Toolbar variant="dense">
 
-        <Typography variant="h6" noWrap>
-          <Link to="/">Pollinations</Link>
-        </Typography>
+          <Typography variant="h6" noWrap>
+            <Link to="/">Pollinations</Link>
+          </Typography>
 
-        {children}
-
+          <SocialLinks />
       </Toolbar>
     </AppBar>
   </>

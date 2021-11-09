@@ -18,7 +18,7 @@ const LaunchColabButton = ({ connected }) => {
         href={colabURL} 
         target="colab">
         {loading ? 'Launching...' : '[ Launch Colab ]'}
-    </Button> : <></>
+    </Button> : <Button disabled children='Connected to Colab'/>
 }
 
 export default LaunchColabButton

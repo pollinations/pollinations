@@ -9,13 +9,14 @@ import Home from "./Home";
 import { BrowserRouter } from "react-router-dom";
 import { cloneElement } from "react";
 import NodeViewer from "./NodeViewer";
+import Footer from "../components/footer";
 
 export const AppContainer = () => {
 
     const node = useColabNode();
 
     return <BrowserRouter>
-        {/* Nav Bar */}
+        {/* Nav Bar     */}
         <NotebookSelector>
             <NodeStatus {...node} /> 
         </NotebookSelector>
@@ -33,9 +34,7 @@ export const AppContainer = () => {
         </Container>
 
         {/* Footer */}
-        <Box align="right" fontStyle="italic">
-            Discuss, get help and contribute on <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank">[ Github ]</Link> or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
-        </Box>
+        <Footer/>
     </BrowserRouter>;
 }
 

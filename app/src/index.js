@@ -7,9 +7,9 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 // images
 
 
-import { Box, createMuiTheme, ThemeProvider } from '@material-ui/core';
+import { Box, createTheme, ThemeProvider } from '@material-ui/core';
 
-const darkTheme = createMuiTheme({
+const darkTheme = createTheme({
   typography: {
     fontFamily: 'Source Code Pro'
   },

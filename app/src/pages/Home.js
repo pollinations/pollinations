@@ -59,16 +59,16 @@ export default function Home() {
 const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box m={5}>
-                <Card>
-                <CardHeader 
-                subheader={category} 
-                title={<Link to={path} children={name} />} 
-                action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
-                    <CardContent>
-                        <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
-                    </CardContent>
-                </Card>
-            </Box>
+        <Card>
+        <CardHeader 
+        subheader={name?.slice(2)} 
+        title={category?.slice(2)} 
+        action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
+            <CardContent>
+                <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
+            </CardContent>
+        </Card>
+    </Box>
 }
  
 {/* <Card className={classes.root}>

@@ -38,12 +38,6 @@ export default ({ nodeID, contentID,  gpu, connected }) => {
                                 }
                             </TableCell>
                         </TableRow>
-                        {/* <TableRow>
-                            <TableCell><b>Status</b></TableCell>
-                            <TableCell>
-                                {colabState}
-                            </TableCell>
-                        </TableRow> */}
                     </TableBody>
                 </Table>
             </Box>;

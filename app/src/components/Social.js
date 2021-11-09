@@ -25,12 +25,17 @@ export const SocialPostStatus = ({ results }) =>
   Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
 
 export const SocialLinks = () => 
-  Object.keys(platforms).map(PlatformLink);
+  <div children={Object.keys(platforms).map(PlatformLink)}/>
 
 const PlatformLink = platform => {
-    return  <Link key={`plt_link_${platform}`} href={platforms[platform].url} target="_blank" title={platform}>
-              {platforms[platform].icon}
-            </Link>;
+    return <Link 
+        key={`plt_link_${platform}`} 
+        href={platforms[platform].url} 
+        style={{margin: '0 0.2em'}}
+        target="_blank" 
+        title={platform}>
+        {platforms[platform].icon}
+    </Link>
   }
   
 

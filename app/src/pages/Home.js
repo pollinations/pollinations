@@ -1,7 +1,6 @@
 import React from "react";
 import { useNotebooks } from "../data/notebooks";
 import Debug from "debug";
-import NotebookSelector from "../components/NotebookSelector";
 import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
 import Markdown from "markdown-to-jsx"
 import { Link } from 'react-router-dom'

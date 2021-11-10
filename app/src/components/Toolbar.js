@@ -34,8 +34,8 @@ let ToolBarHeader = ({ node, setOpen, open }) => {
 
     </div>
 }
-let ToolBarContent = ({ children }) => {
 
+let ToolBarContent = ({ children }) => {
     return <div style={{
         width: '500px',
         padding: '1em',

@@ -12,10 +12,10 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
-import { Fab } from "@material-ui/core"
+import { Button, Fab } from "@material-ui/core"
 import CreateIcon from '@material-ui/icons/Create';
 import CancelIcon from '@material-ui/icons/Cancel';
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 const debug = Debug("ModelViewer");
 
 export default memo(function ModelViewer({contentID}) {
@@ -43,11 +43,21 @@ export default memo(function ModelViewer({contentID}) {
         url: firstImage[1]
     })
   },[ipfs.output])
+
+  const navigate = useNavigate()
+  useEffect(()=>{
+
+    if (!ipfs?.output?.done) return
+
+    navigate(`/c/${contentID}`)
+
+  },[ipfs?.output?.done])
   
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         <NotebookTitle metadata={metadata} />
+        
         <NotebookProgress
             output={ipfs?.output}
             metadata={metadata}
@@ -82,9 +92,7 @@ export default memo(function ModelViewer({contentID}) {
         <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  
-        {
-            <Fab component={Link} style={styles.fab} variant="extended" to={`/c/${contentID}`}>{ipfs?.output?.done  ? <><CreateIcon /> Create</> : <><CancelIcon /> Cancel</>}</Fab>
-        }
+        
       </Box>
 })
 

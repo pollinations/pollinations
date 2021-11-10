@@ -18,14 +18,15 @@ const debug = Debug("ModelViewer");
 
 export default memo(function ModelViewer({contentID}) {
   
-  debug("ModelViewer CID", contentID)
+  debug("ModelViewer CID", contentID);
   const ipfs = useIPFS(contentID);
 
   debug("ModelViewer IPFS", ipfs);
   const metadata = getNotebookMetadata(ipfs);
 
   const {images, first} = useMemo(() => {
-    return mediaToDisplay(ipfs)
+    //if (!ipfs.output) return EMPTY_MEDIA;
+    return mediaToDisplay(ipfs.output);
   }, [ipfs.output]);
 
   
@@ -118,8 +119,9 @@ const styles = {
 
 const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
-function mediaToDisplay(ipfs) {
-    const imagesIn = getMedia(ipfs?.output)
+function mediaToDisplay(output) {
+    const imagesIn = getMedia(output);
+    if (!imagesIn || imagesIn.length === 0) return EMPTY_MEDIA;
 
     // remove first image for large display
     const firstImage = imagesIn.shift()
@@ -139,3 +141,5 @@ function every_nth(array){
     const nth = Math.max(1, Math.floor(array.length / 20))
     return array.filter((e, i) => i % nth === nth - 1)
 }
+
+const EMPTY_MEDIA = { images: [], first: {} }

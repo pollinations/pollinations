@@ -88,7 +88,6 @@ export default memo(function ModelViewer({contentID}) {
             images.map( ([filename, url]) => <img src={url} alt={filename} style={styles.img} /> )
         }/>
 
-
         <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  

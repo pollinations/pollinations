@@ -16,7 +16,7 @@ import { Button } from "@material-ui/core"
 
 const debug = Debug("ModelViewer");
 
-export default memo(function ModelViewer({contentID}) {
+export default memo(function ModelViewer({ contentID }) {
   
   debug("ModelViewer CID", contentID);
   const ipfs = useIPFS(contentID);
@@ -29,12 +29,11 @@ export default memo(function ModelViewer({contentID}) {
     return mediaToDisplay(ipfs.output);
   }, [ipfs.output]);
 
-  
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         <NotebookTitle metadata={metadata}>
-            <Button  color="default" href={`/c/${contentID}`}>[ Clone ]</Button>
+            <Button color="default" href={`/c/${contentID}`}>[ Clone ]</Button>
         </NotebookTitle>
         
         <NotebookProgress

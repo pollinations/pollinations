@@ -4,7 +4,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
-import AppBar from '@material-ui/core/AppBar';
+import AppBarMaterial from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import IconButton from '@material-ui/core/IconButton';
@@ -16,11 +16,11 @@ import { Box, Container } from '@material-ui/core';
 import { Link } from 'react-router-dom'
 
 
-export default function NotebookSelector({children}) {
+export default function AppBar({ children }) {
 
   return <>
 
-    <AppBar position="static">
+    <AppBarMaterial position="static">
       <Toolbar variant="dense">
 
           <Typography variant="h6" noWrap>
@@ -29,6 +29,6 @@ export default function NotebookSelector({children}) {
 
           <SocialLinks />
       </Toolbar>
-    </AppBar>
+    </AppBarMaterial>
   </>
 }

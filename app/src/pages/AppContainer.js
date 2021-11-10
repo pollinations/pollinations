@@ -1,5 +1,4 @@
 import { Box, Container,Link } from "@material-ui/core";
-import NotebookSelector from "../components/AppBar";
 import { Routes, Route, Router, useParams } from "react-router";
 import useColabNode from "../hooks/useColabNode";
 import NodeStatus from "../components/NodeStatus";
@@ -10,6 +9,7 @@ import { BrowserRouter } from "react-router-dom";
 import { cloneElement } from "react";
 import NodeViewer from "./NodeViewer";
 import Footer from "../components/footer";
+import AppBar from "../components/AppBar";
 
 export const AppContainer = () => {
 
@@ -17,7 +17,7 @@ export const AppContainer = () => {
 
     return <BrowserRouter>
         {/* Nav Bar     */}
-        <NotebookSelector/>
+        <AppBar/>
         
         {/* Children that get IPFS state */}
         <Container maxWidth="md" >

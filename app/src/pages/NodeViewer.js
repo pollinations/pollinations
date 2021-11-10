@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'
+import useIPFS from '../hooks/useIPFS';
 import ResultViewer from "./ResultViewer";
 
 export default ({ contentID }) => {

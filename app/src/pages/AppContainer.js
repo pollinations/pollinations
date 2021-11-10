@@ -10,11 +10,13 @@ import { cloneElement } from "react";
 import NodeViewer from "./NodeViewer";
 import Footer from "../components/footer";
 import AppBar from "../components/AppBar";
+import Debug from "debug";
 
+const debug = Debug("AppContainer");
 export const AppContainer = () => {
 
     const node = useColabNode();
-
+    debug("got colab node info", node);
     return <BrowserRouter>
         {/* Nav Bar     */}
         <AppBar/>

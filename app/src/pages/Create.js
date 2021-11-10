@@ -21,11 +21,12 @@ import { useNavigate } from "react-router";
 const debug = Debug("Model");
 
 
-export default React.memo(function Model({ contentID, node}) {
+export default React.memo(function Create({ contentID, node}) {
+
+  const ipfs = useIPFS(contentID);
 
   const { connected, publish } = node;
 
-  const ipfs = useIPFS(contentID);
   const navigate = useNavigate();
   //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
   const dispatchInput = useIPFSWrite(ipfs, publish);
@@ -36,13 +37,14 @@ export default React.memo(function Model({ contentID, node}) {
   const dispatchForm = useCallback(async inputs => {
     debug("dispatchForm", inputs);
     await dispatchInput({
-      ...inputs,
-      ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
-      formAction: "submit"
+      ...(ipfs?.input || {}),
+      ...inputs
     });
-  debug("dispatched Form");
-  navigate("/n")
-}, [ipfs?.input]);
+    debug("dispatched Form");
+
+    navigate(`/n/${node.nodeID}`);
+  
+  }, [ipfs?.input]);
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 

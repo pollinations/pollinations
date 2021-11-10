@@ -119,7 +119,7 @@ const styles = {
 const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
 function mediaToDisplay(ipfs) {
-    const imagesIn = mediaToDisplay(ipfs?.output)
+    const imagesIn = getMedia(ipfs?.output)
 
     // remove first image for large display
     const firstImage = imagesIn.shift()

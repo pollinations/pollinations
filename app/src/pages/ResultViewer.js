@@ -12,10 +12,7 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
-import { Button, Fab } from "@material-ui/core"
-import CreateIcon from '@material-ui/icons/Create';
-import CancelIcon from '@material-ui/icons/Cancel';
-import { useNavigate } from "react-router-dom"
+
 const debug = Debug("ModelViewer");
 
 export default memo(function ModelViewer({contentID}) {
@@ -43,15 +40,6 @@ export default memo(function ModelViewer({contentID}) {
         url: firstImage[1]
     })
   },[ipfs.output])
-
-  const navigate = useNavigate()
-  useEffect(()=>{
-
-    if (!ipfs?.output?.done) return
-
-    navigate(`/c/${contentID}`)
-
-  },[ipfs?.output?.done])
   
   return <Box my={2}>
       

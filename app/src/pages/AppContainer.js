@@ -23,7 +23,7 @@ export const AppContainer = () => {
         <Container maxWidth="md" >
 
             <Routes>
-                <Route exact path='n' element={<WithParams><NodeViewer {...node} /></WithParams>} />
+                <Route exact path='n/:nodeID' element={<WithParams><NodeViewer {...node} /></WithParams>} />
                 <Route path='p/:contentID' element={<WithParams><ModelViewer /></WithParams>} />
                 <Route path='c/:contentID' element={<WithParams><Model node={node} /></WithParams>} />
                 <Route exact path='/' element={<Home />} />

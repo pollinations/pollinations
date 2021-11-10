@@ -12,7 +12,7 @@ let ToolBarHeader = ({ node, setOpen, open }) => {
 
     function go2Pollen(){
         setOpen(false)
-        navigate('/n')
+        navigate(`/n/${node.nodeID}`)
     }
 
     return <div style={{

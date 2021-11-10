@@ -4,7 +4,10 @@ import ResultViewer from "./ResultViewer";
 
 export default ({ contentID }) => {
 
-    useNavigateToResultsWhenDone(contentID);
+    // TODO: we shouldn't be calling useIPFS twice (here and in ResultViewer.js)
+    const ipfs = useIPFS(contentID);
+
+    useNavigateToResultsWhenDone(contentID, ipfs);
 
     return <>
         <ResultViewer contentID={contentID} />
@@ -13,7 +16,7 @@ export default ({ contentID }) => {
 
 
 // Navigate to viewing page with hash when done
-function useNavigateToResultsWhenDone(contentID) {
+function useNavigateToResultsWhenDone(contentID, ipfs) {
     const navigate = useNavigate();
 
     useEffect(() => {

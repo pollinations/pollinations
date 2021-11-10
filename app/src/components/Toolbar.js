@@ -21,11 +21,12 @@ let ToolBarHeader = ({ node, setOpen, open }) => {
         alignItems: 'flex-start'
     }} >
         <LaunchColabButton {...node} />
+        
+        <div>
         {
             (node.connected && node.contentID) &&
             <Button onClick={go2Pollen} children='[ Current Pollen ]'/>
         }
-        <div>
         <IconButton onClick={() => setOpen(state => !state)}>
             <ArrowUpward fontSize='small' style={{ transform: `rotateZ(${open ? '180deg' : '0deg'})`}} />
         </IconButton>

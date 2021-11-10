@@ -21,7 +21,7 @@ export default memo(function ModelViewer({contentID}) {
   debug("ModelViewer CID", contentID)
   const ipfs = useIPFS(contentID);
   debug("ModelViewer IPFS", ipfs)
-  const metadata = getNotebookMetadata(ipfs)
+  const metadata = getNotebookMetadata(ipfs);
 
   const [ images, setImages ] = useState([])
   const [ first, setFirst ] = useState({ isVideo: false, filename: '', url: ''})

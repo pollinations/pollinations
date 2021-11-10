@@ -12,6 +12,7 @@ import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
+import { Button } from "@material-ui/core"
 
 const debug = Debug("ModelViewer");
 
@@ -44,7 +45,9 @@ export default memo(function ModelViewer({contentID}) {
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
-        <NotebookTitle metadata={metadata} />
+        <NotebookTitle metadata={metadata}>
+            <Button  color="default" href={`/c/${contentID}`}>[ Clone ]</Button>
+        </NotebookTitle>
         
         <NotebookProgress
             output={ipfs?.output}

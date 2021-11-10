@@ -20,27 +20,14 @@ export default memo(function ModelViewer({contentID}) {
   
   debug("ModelViewer CID", contentID)
   const ipfs = useIPFS(contentID);
-  debug("ModelViewer IPFS", ipfs)
+
+  debug("ModelViewer IPFS", ipfs);
   const metadata = getNotebookMetadata(ipfs);
 
-  const [ images, setImages ] = useState([])
-  const [ first, setFirst ] = useState({ isVideo: false, filename: '', url: ''})
+  const {images, first} = useMemo(() => {
+    return mediaToDisplay(ipfs)
+  }, [ipfs.output]);
 
-  
-  useEffect(() => {
-    const images = getMedia(ipfs?.output)
-    if (!images || images.length === 0) return 
-    
-    // remove first image for large display
-    const firstImage = images.shift();
-
-    setImages( every_nth(images) )
-    setFirst({
-        isVideo: firstImage[0].toLowerCase().endsWith(".mp4"),
-        filename: firstImage[0],
-        url: firstImage[1]
-    })
-  },[ipfs.output])
   
   return <Box my={2}>
       
@@ -130,6 +117,23 @@ const styles = {
 // the new "correct" way is to save the notebook.ipynb to /input
 
 const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
+
+function mediaToDisplay(ipfs) {
+    const imagesIn = mediaToDisplay(ipfs?.output)
+
+    // remove first image for large display
+    const firstImage = imagesIn.shift()
+
+    const images = every_nth(imagesIn);
+
+    const first = {
+        isVideo: firstImage[0].toLowerCase().endsWith(".mp4"),
+        filename: firstImage[0],
+        url: firstImage[1]
+    }
+
+    return { images, first }
+}
 
 function every_nth(array){
     const nth = Math.max(1, Math.floor(array.length / 20))

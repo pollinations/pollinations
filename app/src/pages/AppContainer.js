@@ -5,7 +5,7 @@ import ResultViewer from "./ResultViewer";
 import Creator from "./Create";
 import Home from "./Home";
 import { BrowserRouter } from "react-router-dom";
-import React, { cloneElement, useEffect } from "react";
+import React, { useEffect } from "react";
 import Footer from "../components/footer";
 import AppBar from "../components/AppBar";
 import Debug from "debug";

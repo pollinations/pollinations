@@ -21,10 +21,10 @@ import { useNavigate } from "react-router";
 const debug = Debug("Model");
 
 
-export default React.memo(function Create({ contentID, node}) {
+export default React.memo(function Create({ ipfs, node}) {
 
-  const ipfs = useIPFS(contentID);
-
+  const contentID = ipfs[".cid"];
+  
   const { connected, publish } = node;
 
   const navigate = useNavigate();

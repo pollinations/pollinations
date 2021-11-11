@@ -1,16 +1,17 @@
 import React from "react";
-import { useNotebooks } from "../data/notebooks";
+import { getNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
 import Markdown from "markdown-to-jsx"
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import useFilter from "../hooks/useFilter"
 import OpenInNewIcon from '@material-ui/icons/OpenInNew'
 
 const debug = Debug("home");
 
-export default function Home() {
-    const notebooks = useNotebooks();
+export default function Home({ ipfs }) {
+
+    const notebooks = getNotebooks(ipfs);
     const { notebookList, options, option } = useFilter(notebooks)
 
     debug("got notebooks", notebooks);

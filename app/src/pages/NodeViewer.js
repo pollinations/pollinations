@@ -5,13 +5,14 @@ import ResultViewer from "./ResultViewer";
 
 export default ({ contentID }) => {
 
+
     // TODO: we shouldn't be calling useIPFS twice (here and in ResultViewer.js)
     const ipfs = useIPFS(contentID);
 
     useNavigateToResultsWhenDone(contentID, ipfs);
 
     return <>
-        <ResultViewer contentID={contentID} />
+        <ResultViewer ipfs={ipfs} />
     </>;
 };
 

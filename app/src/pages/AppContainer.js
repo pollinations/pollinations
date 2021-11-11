@@ -1,11 +1,11 @@
 import { Box, Container,Link } from "@material-ui/core";
-import { Routes, Route, Router, useParams, Navigate } from "react-router";
+import { Routes, Route, Router, useParams, Navigate, useNavigate } from "react-router";
 import useColabNode from "../hooks/useColabNode";
 import ResultViewer from "./ResultViewer";
 import Creator from "./Create";
 import Home from "./Home";
 import { BrowserRouter } from "react-router-dom";
-import React, { cloneElement } from "react";
+import React, { cloneElement, useEffect } from "react";
 import Footer from "../components/footer";
 import AppBar from "../components/AppBar";
 import Debug from "debug";
@@ -37,9 +37,7 @@ export const AppContainer = () => {
 }
 
 const HomeWithData =() => {
-    const params = useParams();
-    const path = params["*"];
-    const ipfs = useIPFS("/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888" + path);
+    const ipfs = useIPFS("/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888" );
     
     debug("home ipfs",ipfs);
     

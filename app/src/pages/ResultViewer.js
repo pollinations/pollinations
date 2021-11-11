@@ -16,11 +16,10 @@ import { Button } from "@material-ui/core"
 
 const debug = Debug("ModelViewer");
 
-export default memo(function ModelViewer({ contentID }) {
+export default memo(function ResultViewer({ ipfs }) {
   
+  const contentID = ipfs[".cid"];
   debug("ModelViewer CID", contentID);
-  const ipfs = useIPFS(contentID);
-
   debug("ModelViewer IPFS", ipfs);
   const metadata = getNotebookMetadata(ipfs);
 
@@ -33,7 +32,7 @@ export default memo(function ModelViewer({ contentID }) {
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         <NotebookTitle metadata={metadata}>
-            <Button color="default" href={`/c/${contentID}`}>[ Clone ]</Button>
+            <Button color="default" href={`/p/${contentID}/create`}>[ Clone ]</Button>
         </NotebookTitle>
         
         <NotebookProgress

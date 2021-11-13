@@ -22,11 +22,15 @@ export default (ipfs, node) => {
     debug("inputCID", cid, writer);
 
     const dispatch = useCallback(async inputState => {
-        debug("dispatching", inputState, writer)
-        const newInputContentID = await updateInput(await writer, inputState);
-        debug("added input",inputState,"got cid", newInputContentID,"to state")
-        publish(newInputContentID);
-    }, [publish, writer]);
+        
+        debug("dispatching", ipfs, writer)
+        const newContentID = await updateInput(await writer, inputState);
+
+        debug("added input", inputState, "got cid", newContentID, "to state");
+
+        publish(newContentID);
+        
+    }, [publish, writer, ipfs]);
 
     return dispatch;
 }

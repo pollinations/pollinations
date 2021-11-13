@@ -20,7 +20,7 @@ import { useNavigate } from "react-router";
 const debug = Debug("Model");
 
 
-export default React.memo(function Create({ ipfs, node}) {
+export default React.memo(function Create({ ipfs, node }) {
 
   const contentID = ipfs[".cid"];
   
@@ -94,29 +94,6 @@ export default React.memo(function Create({ ipfs, node}) {
 });
 
 
-// Stepper
-
-const steps = [
-  {
-    title: '1. Connect to Google Colab',
-    description: [
-      ''
-    ]
-  }
-]
-
-const useStepper = () => {
-
-  return <>
-  </>
-}
-
-
-
-
-
-
-
 
 // Notebook Description
 
@@ -132,17 +109,3 @@ const NotebookDescription = ( { metadata } ) => {
 }
 
 
-const Instructions = () => {
-  const [ markdown, setMarkdown ] = useState('')
-
-  useEffect(() => { 
-    async function getHelp(){
-      const response = await fetch("https://raw.githubusercontent.com/pollinations/pollinations/dev/docs/instructions.md");
-      const md = await response.text();
-      setMarkdown(md);
-    }
-    getHelp() 
-  },[]);
-
-  return <Markdown children={markdown}/>
-}

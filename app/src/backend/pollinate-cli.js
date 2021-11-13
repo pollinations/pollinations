@@ -70,22 +70,15 @@ if (executeCommand)
 
     
       startSending();
-      try {
-        await execute(executeCommand, options.logout);
-        debug("done executing", executeCommand,". Waiting...");
-
-        await close();
-      
-        // This waiting logic is quite hacky. Should improve it.
-        await awaitSleep(sleepBeforeExit);
-        debug("awaiting termination of state sync");
-        await processing();
- 
-      } catch (err) {
-        debug("error executing", executeCommand, err);
-        await close(true);
-        throw err;
-      }
+  
+      await execute(executeCommand, options.logout);
+      debug("done executing", executeCommand,". Waiting...");
+      await close();
+    
+      // This waiting logic is quite hacky. Should improve it.
+      await awaitSleep(sleepBeforeExit);
+      debug("awaiting termination of state sync");
+      await processing();
     }
 
     await awaitSleep(sleepBeforeExit);      

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { getNotebooks } from "../data/notebooks";
 import Debug from "debug";
 import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
@@ -11,7 +11,7 @@ const debug = Debug("home");
 
 export default function Home({ ipfs }) {
 
-    const notebooks = getNotebooks(ipfs);
+    const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
     const { notebookList, options, option } = useFilter(notebooks)
 
     debug("got notebooks", notebooks);

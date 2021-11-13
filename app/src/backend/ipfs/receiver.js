@@ -56,8 +56,8 @@ export const writeFileAndCreateFolder = async (path, content) => {
 
 // Fetch the IPFS state and write to disk  
 async function processRemoteCID(contentID, rootPath) {
-  if (isSameContentID(stringCID(contentID)))
-    return;
+  // if (isSameContentID(stringCID(contentID)))
+  //   return;
   debug("Processing remote CID", contentID);
   const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));
   debug("got remote state", ipfsState);

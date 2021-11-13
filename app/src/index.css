@@ -10,6 +10,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: hsl(0,0,9) !important;
 }
+footer {
+  position: fixed;
+  min-width: 30%;
+  border-radius: 10px 10px 0 0;
+  right: 50;
+  bottom: 0;
+  background-color: #424242 !important;
+}
 
 .MuiAccordionSummary-root{padding: 0 !important;}
 .MuiAccordionDetails-root{padding: 8px 0px 16px !important;}

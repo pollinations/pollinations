@@ -101,3 +101,9 @@ const isMarkdownCell = cell => cell["cell_type"] === "markdown";
 
 
 export default readMetadata;
+
+
+// for backward compatibility we check if the notebook.ipynb is at / or at /input
+// the new "correct" way is to save the notebook.ipynb to /input
+
+export const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);

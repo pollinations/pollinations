@@ -27,7 +27,7 @@ export const AppContainer = () => {
             <Routes>
                 <Route path='n/:nodeID' element={<NodeWithData { ...node } />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} />} />
-                <Route path='/*' element={<HomeWithData />} />
+                <Route path='/' element={<HomeWithData />} />
             </Routes>
             <More/>
         </Container>

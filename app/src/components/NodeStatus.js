@@ -7,7 +7,7 @@ import Debug from "debug";
 
 const debug = Debug("NodeStatus");
 
-const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
+const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/social-post-dockerized/colabs/pollinator.ipynb";
 
 // Display the connection status to colab and currect IPFS content ID
 export default ({ nodeID, contentID,  gpu, heartbeat }) => {

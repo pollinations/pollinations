@@ -76,10 +76,10 @@ export const updateInput = async (inputWriter, inputs) => {
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`;
         }
-        
+
         await inputWriter.add("input/" + key, JSON.stringify(val))
     };
-
+    
     return await inputWriter.cid();
 };
 

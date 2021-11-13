@@ -53,6 +53,7 @@ export const getWriter = async ipfs => {
 
 // Update /input of ipfs state with new inputs (from form probably)
 export const updateInput = async (inputWriter, inputs) => {
+
     debug("updateInput", inputs);
 
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
@@ -69,14 +70,16 @@ export const updateInput = async (inputWriter, inputs) => {
             // convert fileContent to buffer
             const buffer = Buffer.from(fileContent, "base64");
             debug("Writing file", filename);
-            await inputWriter.add(filename, buffer);
+            await inputWriter.add("input/" + filename, buffer);
 
             // We should not need to reference the absolute path here.
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`;
         }
-        await inputWriter.add(key, JSON.stringify(val))
+        
+        await inputWriter.add("input/" + key, JSON.stringify(val))
     };
+
     return await inputWriter.cid();
 };
 

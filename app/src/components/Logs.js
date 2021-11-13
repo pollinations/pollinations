@@ -6,8 +6,8 @@ import Ansi from "ansi-to-react";
 import { getWebURL } from '../network/ipfsConnector';
 // import JupyterViewer from "react-jupyter-notebook";
 
-export const IpfsLog = ({state}) => {
-    const {ipfs, contentID} = state;
+export const IpfsLog = ({ipfs,contentID}) => {
+
     const log = ipfs.output && ipfs.output.log;
     if (!log)
         return null;

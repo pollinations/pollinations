@@ -34886,11 +34886,11 @@ if (executeCommand)
       await (0, import_promises.rmdir)(rootPath, { recursive: true });
       await (0, import_promises.mkdir)(rootPath);
       debug10("receiving");
-      await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
+      await receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path }));
       startSending();
       debug10("executing");
       const { executePromise, kill } = execute(executeCommand, options_default.logout);
-      const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path + "/input" }));
+      const receivePromise = receive(__spreadProps(__spreadValues({}, options_default), { once: true, path: options_default.path }));
       await Promise.race([executePromise, receivePromise]);
       debug10("done executing", executeCommand, ". Waiting...");
       kill();

@@ -3,7 +3,7 @@ import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/co
 import Alert from '@material-ui/lab/Alert';
 import Markdown from 'markdown-to-jsx';
 
-import readMetadata from "../utils/notebookMetadata";
+import readMetadata, { getNotebookMetadata } from "../utils/notebookMetadata";
 import Debug from "debug";
 
 
@@ -12,7 +12,6 @@ import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { SocialPostStatus } from "../components/Social";
-import useIPFS from "../hooks/useIPFS";
 import Acordion from "../components/Acordion";
 import useIPFSWrite from "../hooks/useIPFSWrite";
 import NotebookTitle from "../components/NotebookTitle";
@@ -25,11 +24,11 @@ export default React.memo(function Create({ ipfs, node}) {
 
   const contentID = ipfs[".cid"];
   
-  const { connected, publish } = node;
+  const { connected } = node;
 
   const navigate = useNavigate();
   //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
-  const dispatchInput = useIPFSWrite(ipfs, publish);
+  const dispatchInput = useIPFSWrite(ipfs, node);
 
   const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
 
@@ -93,12 +92,6 @@ export default React.memo(function Create({ ipfs, node}) {
       </Box>
   </>
 });
-
-
-// for backward compatibility we check if the notebook.ipynb is at / or at /input
-// the new "correct" way is to save the notebook.ipynb to /input
-
-const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
 
 // Stepper

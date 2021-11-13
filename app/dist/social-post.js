@@ -20366,7 +20366,7 @@ var require_core2 = __commonJS({
   "node_modules/ipfs-http-client/src/lib/core.js"(exports2, module2) {
     "use strict";
     var { Multiaddr } = require_src6();
-    var { isBrowser, isWebWorker, isNode: isNode2 } = require_env();
+    var { isBrowser, isWebWorker, isNode } = require_env();
     var { default: parseDuration } = require_parse_duration();
     var log = require_src11()("ipfs-http-client:lib:error-handler");
     var HTTP = require_http();
@@ -20403,7 +20403,7 @@ var require_core2 = __commonJS({
       } else if (url.pathname === "/" || url.pathname === void 0) {
         url.pathname = "api/v0";
       }
-      if (isNode2) {
+      if (isNode) {
         const Agent = url.protocol.startsWith("https") ? https.Agent : http.Agent;
         agent = opts.agent || new Agent({
           keepAlive: true,
@@ -33125,31 +33125,6 @@ var require_src14 = __commonJS({
   }
 });
 
-// node_modules/browser-or-node/lib/index.js
-var require_lib4 = __commonJS({
-  "node_modules/browser-or-node/lib/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {
-      value: true
-    });
-    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
-      return typeof obj;
-    } : function(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-    var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
-    var isWebWorker = (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
-    var isNode2 = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-    var isJsDom = function isJsDom2() {
-      return typeof window !== "undefined" && window.name === "nodejs" || navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
-    };
-    exports2.isBrowser = isBrowser;
-    exports2.isWebWorker = isWebWorker;
-    exports2.isNode = isNode2;
-    exports2.isJsDom = isJsDom;
-  }
-});
-
 // node_modules/json5/lib/unicode.js
 var require_unicode = __commonJS({
   "node_modules/json5/lib/unicode.js"(exports2, module2) {
@@ -34223,7 +34198,7 @@ var require_stringify = __commonJS({
 });
 
 // node_modules/json5/lib/index.js
-var require_lib5 = __commonJS({
+var require_lib4 = __commonJS({
   "node_modules/json5/lib/index.js"(exports2, module2) {
     var parse4 = require_parse();
     var stringify = require_stringify();
@@ -34704,7 +34679,7 @@ var require_LastResult = __commonJS({
 });
 
 // node_modules/queueable/dist/lib/index.js
-var require_lib6 = __commonJS({
+var require_lib5 = __commonJS({
   "node_modules/queueable/dist/lib/index.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
@@ -35706,7 +35681,6 @@ var import_it_all = __toModule(require_it_all());
 var import_debug2 = __toModule(require_src11());
 var import_ramda = __toModule(require_src14());
 var import_path = __toModule(require("path"));
-var import_browser_or_node = __toModule(require_lib4());
 var debug2 = (0, import_debug2.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs.pollinations.ai";
 var _client = null;
@@ -35725,17 +35699,13 @@ async function reader() {
 }
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 var localIPFSAvailable = async () => {
-  if (import_browser_or_node.isNode) {
-    return await (0, import_is_port_reachable.default)(5001);
-  } else {
-    if (!localStorage.localIPFS)
-      return false;
-    try {
-      await fetch("http://localhost:5001", { mode: "no-cors" });
-      return true;
-    } catch (e) {
-      return false;
-    }
+  if (!localStorage.localIPFS)
+    return false;
+  try {
+    await fetch("http://localhost:5001", { mode: "no-cors" });
+    return true;
+  } catch (e) {
+    return false;
   }
 };
 var getIPFSDaemonURL = async () => {
@@ -35799,7 +35769,7 @@ var import_path2 = __toModule(require("path"));
 var PromiseAllProgress = (name, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toModule(require_lib5());
+var import_json5 = __toModule(require_lib4());
 var debug3 = (0, import_debug3.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -35854,7 +35824,7 @@ var dataFetchers = (cid, { get }) => {
 };
 
 // src/network/ipfsWebClient.js
-var import_json52 = __toModule(require_lib5());
+var import_json52 = __toModule(require_lib4());
 var debug4 = (0, import_debug4.default)("ipfsWebClient");
 var fetchAndMakeURL = async ({ name, cid, text }) => {
   const ext = (0, import_path3.extname)(name);
@@ -35883,7 +35853,7 @@ function shouldImport(ext) {
 
 // src/utils/notebookMetadata.js
 var import_debug5 = __toModule(require_src11());
-var import_json53 = __toModule(require_lib5());
+var import_json53 = __toModule(require_lib4());
 var debug5 = (0, import_debug5.default)("notebookMetadata");
 function readMetadata(notebookJSON) {
   if (!notebookJSON)
@@ -36544,7 +36514,7 @@ var import_process = __toModule(require("process"));
 var import_native_abort_controller = __toModule(require_src9());
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug8 = __toModule(require_src11());
-var import_queueable = __toModule(require_lib6());
+var import_queueable = __toModule(require_lib5());
 var debug8 = (0, import_debug8.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
 function subscribeGenerator(nodeID, suffix = "/input") {

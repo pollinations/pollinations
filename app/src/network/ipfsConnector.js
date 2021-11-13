@@ -1,6 +1,6 @@
 
 import { create, globSource } from "ipfs-http-client";
-import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
+import { toPromise, callLogger, toPromise1, noop, retryException, AUTH } from "./utils.js";
 import { CID } from "multiformats/cid";
 import reachable from "is-port-reachable";
 import all from "it-all";
@@ -11,25 +11,30 @@ import { last } from "ramda";
 
 import { join } from "path";
 
-import { isNode } from "browser-or-node";
-
 const debug = Debug("ipfsConnector")
 
 
 export const ipfsGlobSource = globSource;
 
 
-const IPFS_HOST = "https://ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio"
 
 let _client = null;
+
+const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
+
+const Authorization = base64Decode(AUTH);
 
 // create a new IPFS session
 export function getClient() {
     if (!_client) {
-        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h"}))
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  headers: {
+                Authorization
+            }}))
     }
     return _client;
 }
+
 
 // basic IPFS read access
 export async function reader() {
@@ -126,10 +131,6 @@ async function initializeMFSFolder(client, initialRootCID) {
 
 
 const localIPFSAvailable = async () => {
-    if (isNode) {
-        return await reachable(5001);
-    } else {
-
         // If a local IPFS node is running it breaks pollinations
         // for some reason. O it's just really slow to connect to
         // the other nodes. A flag on in localStorage needs to be
@@ -145,7 +146,7 @@ const localIPFSAvailable = async () => {
         } catch (e) {
             return false;
         }
-    }
+    
 }
 
 const getIPFSDaemonURL = async () => {

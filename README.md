@@ -11,6 +11,7 @@ Pollinations are an effort to make generative art more approachable.
 
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
+- Discord: https://discord.gg/azGuNpvPu8
 
 ## �👩‍💻 Development
 <details>

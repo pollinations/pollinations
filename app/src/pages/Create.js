@@ -8,68 +8,71 @@ import Debug from "debug";
 
 
 // Components
-import { IpfsLog } from "../components/Logs";
 import FormView from '../components/Form'
 import ImageViewer, { getCoverImage } from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
-import { NotebookProgress } from "../components/NotebookProgress";
 import { SocialPostStatus } from "../components/Social";
+import useIPFS from "../hooks/useIPFS";
+import Acordion from "../components/Acordion";
+import useIPFSWrite from "../hooks/useIPFSWrite";
+import NotebookTitle from "../components/NotebookTitle";
+import { useNavigate } from "react-router";
 
 const debug = Debug("Model");
 
-export default React.memo(function Model(state) {
 
-  let { ipfs, contentID, dispatchInput, heartbeat } = state;
+export default React.memo(function Create({ ipfs, node}) {
+
+  const contentID = ipfs[".cid"];
+  
+  const { connected, publish } = node;
+
+  const navigate = useNavigate();
+  //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
+  const dispatchInput = useIPFSWrite(ipfs, publish);
 
   const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
+
 
   const dispatchForm = useCallback(async inputs => {
     debug("dispatchForm", inputs);
     await dispatchInput({
-      ...inputs,
-      ["notebook.ipynb"]: ipfs?.input["notebook.ipynb"],
-      formAction: "submit"
+      ...(ipfs?.input || {}),
+      ...inputs
     });
-  debug("dispatched Form");
-}, [dispatchInput, ipfs?.input]);
+    debug("dispatched Form");
+
+    navigate(`/n/${node.nodeID}`);
+  
+  }, [ipfs?.input]);
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
 
   debug("ipfs state before rendering model", ipfs)
-  const disconnected = !heartbeat || !heartbeat?.alive;
+
+
   return <>
-    <Container maxWidth="md">
       <Box my={2}>
-      <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
-
+        <NotebookTitle metadata={metadata} />
         {/* just in case */}
-        {metadata && metadata.description ? 
-          <>
-              <Typography variant="h5" component="h5" gutterBottom>
-                {metadata.name.replace(".ipynb","")}
-              </Typography>
-              <Typography color="textSecondary"><Markdown>{metadata.description}</Markdown></Typography>
-          </>
-           : null}
+        <NotebookDescription metadata={metadata}/>
+        
 
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-             disconnected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
+             !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
           <FormView
-            input={ipfs.input}
-            disconnected={disconnected}
-            colabState={ipfs?.output?.status}
+            input={ipfs?.input}
+            connected={connected}
+            //colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}
             onCancel={cancelForm}
-          />
-          <NotebookProgress
-            output={ipfs.output}
-            metadata={metadata}
           />
         </div>
         {
@@ -87,22 +90,9 @@ export default React.memo(function Model(state) {
         </div>
         }
 
-        <div style={{ width: '100%' }}>
-          <IpfsLog state={state} />
-        </div>
-
-
-      </div>
       </Box>
-    </Container>
   </>
 });
-
-
-// function that returns true when the run has finished
-// will change URL hash
-
-const isDone = (state) => state?.ipfs?.output?.done;
 
 
 // for backward compatibility we check if the notebook.ipynb is at / or at /input
@@ -110,3 +100,56 @@ const isDone = (state) => state?.ipfs?.output?.done;
 
 const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
+
+// Stepper
+
+const steps = [
+  {
+    title: '1. Connect to Google Colab',
+    description: [
+      ''
+    ]
+  }
+]
+
+const useStepper = () => {
+
+  return <>
+  </>
+}
+
+
+
+
+
+
+
+
+// Notebook Description
+
+const NotebookDescription = ( { metadata } ) => {
+  if (metadata === null) return null
+  return (
+  <Acordion visibleContent='Details'
+    hiddenContent={
+      <Typography color="textSecondary">
+        <Markdown children={metadata.description}/>
+      </Typography>}
+  />);
+}
+
+
+const Instructions = () => {
+  const [ markdown, setMarkdown ] = useState('')
+
+  useEffect(() => { 
+    async function getHelp(){
+      const response = await fetch("https://raw.githubusercontent.com/pollinations/pollinations/dev/docs/instructions.md");
+      const md = await response.text();
+      setMarkdown(md);
+    }
+    getHelp() 
+  },[]);
+
+  return <Markdown children={markdown}/>
+}

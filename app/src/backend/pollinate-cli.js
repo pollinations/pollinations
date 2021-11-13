@@ -9,10 +9,11 @@ import Readline from 'readline';
 import options from "./options.js";
 import { sender } from './ipfs/sender.js';
 import { receive } from "./ipfs/receiver.js";
-import { exec, spawn } from "child_process";
-import { createWriteStream } from "fs";
-
-
+import { spawn } from "child_process";
+import { createWriteStream, mkdirSync } from "fs";
+import { rmdir,mkdir } from "fs/promises";
+import { dirname } from "path";
+import treekill from "tree-kill"
 export const debug = Debug("pollinate")
 
 const readline = Readline.createInterface({
@@ -33,46 +34,69 @@ const enableReceive = !options.send;
 const executeCommand = options.execute;
 const sleepBeforeExit = options.debounce * 2+2000;
 
-const execute = async (command, logfile=null) => 
-  new Promise((resolve,reject) => {
+const execute = async (command, logfile=null) => {
+  let childProc = null;
+  const executePromise = new Promise((resolve,reject) => {
     debug("Executing command", command);
-    const childProc = spawn(command);
+    childProc = spawn(command);
     childProc.on("error", err => {
       if (err) 
         reject(err);
       else 
         resolve();
     });
-    childProc.on("close", resolve);
+    childProc.on("close",() => {
+      childProc = null;
+      resolve();
+    });
     childProc.stdout.pipe(process.stderr);
     childProc.stderr.pipe(process.stderr);
     if (logfile) {
       debug("creating a write stream to ", logfile);
-      const logout = createWriteStream(logfile, {'flags': 'a'});
+      const logfileDir = dirname(logfile);
+      // create logfile directory if it doesn't exist
+      mkdirSync(logfileDir, { recursive: true });
+      const logout = createWriteStream(logfile, { flags: "a" });
       childProc.stdout.pipe(logout);
       childProc.stderr.pipe(logout);
     }
   });
 
+  const kill = () => {
+    debug("Killing child process");
+    if (childProc) {
+      childProc.stdout.pause();
+      childProc.stderr.pause();
+      treekill(childProc.pid);
+    }
+  };
+
+  return {executePromise, kill};
+}
+
 
 if (executeCommand) 
   (async () => {
-    
-    // const receivedCID = await receive({...options, once: true});
-    // debug("received IPFS content", receivedCID);
-    
-
  
     while (true) {
       const {start: startSending, processing, close} = await sender({...options, once: false });
-      
+
+      debug("removing ipfs data");
+      await rmdir(rootPath, {recursive: true});
+      await mkdir(rootPath);
+      debug("receiving");
       await receive({...options, once: true, path: options.path+"/input"});
 
-    
       startSending();
-  
-      await execute(executeCommand, options.logout);
+      // debug("sleeping 5s")
+      // await awaitSleep(5000);
+
+      debug("executing");
+      const {executePromise, kill} = execute(executeCommand, options.logout);
+      const receivePromise = receive({...options, once: true, path: options.path+"/input"})
+      await Promise.race([executePromise, receivePromise]);
       debug("done executing", executeCommand,". Waiting...");
+      kill();
       await close();
     
       // This waiting logic is quite hacky. Should improve it.
@@ -113,14 +137,3 @@ else {
     })();
   }
 }
-
-
-
-// ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
-//   const newContentID = new TextDecoder().decode(data);
-//   debug("content ID from colab", newContentID);
-//   onContentID(newContentID);
-// });
-
-
-// setInterval(() => null,5000)

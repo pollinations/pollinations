@@ -2,22 +2,17 @@
 import { create, globSource } from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1, noop, retryException, AUTH } from "./utils.js";
 import { CID } from "multiformats/cid";
-import reachable from "is-port-reachable";
 import all from "it-all";
 
 
 import Debug from "debug";
 import { last } from "ramda";
 
-import { join } from "path";
+import { join,basename, dirname } from "path";
 
 const debug = Debug("ipfsConnector")
 
-
-export const ipfsGlobSource = globSource;
-
-
-const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio"
+const IPFS_HOST = "https://ipfs.pollinations.ai";
 
 let _client = null;
 
@@ -131,22 +126,7 @@ async function initializeMFSFolder(client, initialRootCID) {
 
 
 const localIPFSAvailable = async () => {
-        // If a local IPFS node is running it breaks pollinations
-        // for some reason. O it's just really slow to connect to
-        // the other nodes. A flag on in localStorage needs to be
-        // set for now to use a local node
-        if (!localStorage.localIPFS)
-            return false;
-
-        try {
-            // The fllowing line will return 404 if the port is open,
-            // otherwise it will throw an exception.
-            await fetch("http://localhost:5001", { mode: 'no-cors' })
-            return true;
-        } catch (e) {
-            return false;
-        }
-    
+    return false;
 }
 
 const getIPFSDaemonURL = async () => {
@@ -179,7 +159,6 @@ export const getIPNSURL = (id) => {
 };
 
 const stripSlashIPFS = cidString => { 
-    debug("stripSlash", cidString); 
     if (!cidString) 
         throw new Error("CID is falsy");
     return cidString.replace("/ipfs/", "")
@@ -254,9 +233,10 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
-    // await retryException(async () =>
-     await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }))
-    //  );
+    // get filename from path
+    const filename = basename(localPath);
+    const folder = dirname(localPath);
+     await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }))
 }
 
 async function optionallyResolveIPNS(client, cid) {

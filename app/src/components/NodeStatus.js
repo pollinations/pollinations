@@ -1,24 +1,24 @@
 import React from "react";
 import { displayContentID } from "../network/utils";
 import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
-import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
+import { Button, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
 import WarningIcon from '@material-ui/icons/Error';
 import Debug from "debug";
+import { Link } from "react-router-dom";
 
 const debug = Debug("NodeStatus");
 
 const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/social-post-dockerized/colabs/pollinator.ipynb";
 
 // Display the connection status to colab and currect IPFS content ID
-export default ({ nodeID, contentID,  gpu, heartbeat }) => {
+export default ({ nodeID, contentID,  gpu, connected }) => {
     
     gpu = parseGPU(gpu);
     debug("parsed GPU", gpu);
 
     const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
     
-    const disconnected = !heartbeat || !heartbeat.alive;
-    const nodeInfo = !nodeID || disconnected ? <ColabConnectButton disconnected={disconnected} />  : gpuInfo || displayContentID(nodeID);
+    const nodeInfo = !connected ? <ColabConnectButton connected={!connected} />  : gpuInfo || displayContentID(nodeID);
 
     return <Box style={{width:"220px", marginLeft:"auto"}}>
         <Table size="small" aria-label="a dense table" >
@@ -29,21 +29,15 @@ export default ({ nodeID, contentID,  gpu, heartbeat }) => {
                         </TableRow>
                         <TableRow>
                         <TableCell ><b>ContentID</b></TableCell>
-                            <TableCell>{contentID ?
-                                <Link
-                                    href={getWebURL(contentID)} 
-                                    children={displayContentID(contentID)}
-                                    target="_blank"
-                                />
-                                : <p children="N/A" />}
-                        </TableCell>
-                        </TableRow>
-                        {/* <TableRow>
-                            <TableCell><b>Status</b></TableCell>
                             <TableCell>
-                                {colabState}
+                                {
+                                    contentID ?
+                                        <Link to="/n">{displayContentID(contentID)}</Link>
+                                    : 
+                                    <p>N/A</p>
+                                }
                             </TableCell>
-                        </TableRow> */}
+                        </TableRow>
                     </TableBody>
                 </Table>
             </Box>;
@@ -63,7 +57,7 @@ const parseGPU = gpu  =>
     gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
-const ColabConnectButton = disconnected => <Button color="secondary" href={colabURL} target="colab">[ {disconnected ? <><WarningIcon />Launch</> : "Launch"} ]</Button>;
+const ColabConnectButton = ({connected}) => <Button color="secondary" href={colabURL} target="colab">[ {connected ?  "Launch":<><WarningIcon />Launch</>}  ]</Button>;
 
 
 const TableCell = withStyles({

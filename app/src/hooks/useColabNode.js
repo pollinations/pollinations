@@ -10,7 +10,7 @@ const debug = Debug("useColabNode");
 // subscribe to updates and return publisher to send new inputs
 const useColabNode = () => {
 
-    const [node, setNode] = useState({connected: false});
+    const [node, setNode] = useState({connected: false, publish: NOOP_PUBLISH});
 
     const updateNode = props => setNode(node => ({...node, ...props}));
 
@@ -52,5 +52,7 @@ const useColabNode = () => {
     return node ;
 
 };
+
+const NOOP_PUBLISH = () => console.error("publish function not defined yet for some weird reason.");
 
 export default useColabNode;

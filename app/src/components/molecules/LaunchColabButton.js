@@ -1,7 +1,7 @@
 import {Button} from '@material-ui/core'
 import { useEffect, useState } from 'react';
 
-const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
+const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/ale/colabs/pollinator.ipynb";
 
 const LaunchColabButton = ({ connected }) => {
 

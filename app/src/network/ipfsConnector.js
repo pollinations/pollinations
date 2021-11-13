@@ -12,7 +12,7 @@ import { join,basename, dirname } from "path";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;
 

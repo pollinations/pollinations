@@ -34252,7 +34252,7 @@ var import_debug5 = __toModule(require_src());
 var import_ramda = __toModule(require_src7());
 var import_path = __toModule(require("path"));
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = "https://ipfs.pollinations.ai";
+var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);

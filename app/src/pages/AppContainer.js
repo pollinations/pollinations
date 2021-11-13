@@ -45,15 +45,14 @@ const HomeWithData =() => {
 };
 
 const NodeWithData = ({ contentID }) => {
-    // TODO: we shouldn't be calling useIPFS twice (here and in ResultViewer.js)
-    const ipfs = useIPFS(contentID);
+    const ipfs = useIPFS(contentID)
     
-    useNavigateToResultsWhenDone(ipfs);
-
-    return <ResultViewer ipfs={ipfs} />;
+    if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`}/>
+    
+    return <ResultViewer ipfs={ipfs} />
 }
 
-const ModelRoutes = ({node}) => {
+const ModelRoutes = ({ node }) => {
     const { contentID } = useParams();
     const ipfs = useIPFS(contentID);
     return (
@@ -70,19 +69,3 @@ const More = () => <div style={{margin: '1em auto 4em auto'}}>
   <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank"> [ Github ] </Link>  
   or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
 </div>
-
-
-
-// Navigate to viewing page with hash when done
-function useNavigateToResultsWhenDone(ipfs) {
-    const navigate = useNavigate();
-
-    useEffect(() => {
-
-        if (!ipfs?.output?.done)
-            return;
-
-        navigate(`/p/${ipfs[".cid"]}`);
-
-    }, [ipfs?.output?.done]);
-}

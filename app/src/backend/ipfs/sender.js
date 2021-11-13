@@ -102,9 +102,10 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   let changeQueue = [];
 
   const watcher = chokidar.watch(watchPath, { 
-    awaitWriteFinish: true, 
+    awaitWriteFinish: false, 
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
+    interval: debounceTime,
   });
 
   const sendQueuedFiles =  debounce(debounceTime, false, async () => {

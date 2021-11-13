@@ -1,29 +1,32 @@
 
  
 import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-import { updateInput, getInputWriter } from "../network/ipfsWebClient";
+import { updateInput, getWriter } from "../network/ipfsWebClient";
 
 import Debug from "debug";
 
 const debug = Debug("useIPFSWrite");
 
-export default (ipfs, publish) => {
+export default (ipfs, node) => {
 
-    const inputCID = ipfs?.input && ipfs?.input[".cid"];
-    const inputWriter = useMemo(() => {
-        if (!inputCID)
+    const { publish } = node;
+    
+    const cid = ipfs && ipfs[".cid"];
+
+    const writer = useMemo(() => {
+        if (!cid)
             return;
-        return getInputWriter(ipfs.input);
-    }, [inputCID]);
+        return getWriter(ipfs);
+    }, [cid]);
 
-    debug("inputCID", inputCID, inputWriter);
+    debug("inputCID", cid, writer);
 
     const dispatch = useCallback(async inputState => {
-        debug("dispatching", inputState, inputWriter)
-        const newInputContentID = await updateInput(await inputWriter, inputState);
+        debug("dispatching", inputState, writer)
+        const newInputContentID = await updateInput(await writer, inputState);
         debug("added input",inputState,"got cid", newInputContentID,"to state")
         publish(newInputContentID);
-    }, [publish, inputWriter]);
+    }, [publish, writer]);
 
     return dispatch;
 }

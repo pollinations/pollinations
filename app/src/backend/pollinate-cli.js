@@ -85,7 +85,7 @@ if (executeCommand)
       await rmdir(rootPath, {recursive: true});
       await mkdir(rootPath);
       debug("receiving");
-      await receive({...options, once: true, path: options.path+"/input"});
+      await receive({...options, once: true, path: options.path});
 
       startSending();
       // debug("sleeping 5s")
@@ -93,7 +93,7 @@ if (executeCommand)
 
       debug("executing");
       const {executePromise, kill} = execute(executeCommand, options.logout);
-      const receivePromise = receive({...options, once: true, path: options.path+"/input"})
+      const receivePromise = receive({...options, once: true, path: options.path})
       await Promise.race([executePromise, receivePromise]);
       debug("done executing", executeCommand,". Waiting...");
       kill();

@@ -7,12 +7,12 @@ import Typography from "@material-ui/core/Typography"
 import { SEO } from "../components/Helmet"
 import useIPFS from "../hooks/useIPFS"
 import { getMedia } from "../data/media"
-import readMetadata from "../utils/notebookMetadata"
 import Debug from "debug";
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
 import { Button } from "@material-ui/core"
+import { getNotebookMetadata } from "../utils/notebookMetadata"
 
 const debug = Debug("ModelViewer");
 
@@ -111,11 +111,6 @@ const styles = {
     }
 }
 
-
-// for backward compatibility we check if the notebook.ipynb is at / or at /input
-// the new "correct" way is to save the notebook.ipynb to /input
-
-const getNotebookMetadata = ipfs => readMetadata((ipfs?.input && ipfs.input["notebook.ipynb"]) || ipfs && ipfs["notebook.ipynb"]);
 
 function mediaToDisplay(output) {
     const imagesIn = getMedia(output);

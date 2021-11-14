@@ -30,9 +30,11 @@ let _client = null;
 // create a new IPFS session
 export function getClient() {
     if (!_client) {
-        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  headers: {
-                Authorization
-            }}))
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  
+        // headers: {
+        //         Authorization
+        //     }
+        }))
     }
     return _client;
 }

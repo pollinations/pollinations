@@ -35073,10 +35073,9 @@ var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
 function getClient() {
   if (!_client) {
-    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({
-      url,
-      timeout: "2h"
-    }));
+    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h", headers: {
+      Authorization
+    } }));
   }
   return _client;
 }

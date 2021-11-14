@@ -26,6 +26,7 @@ const Authorization = base64Decode(AUTH);
 const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;
+
 // create a new IPFS session
 export function getClient() {
     if (!_client) {

@@ -11,7 +11,7 @@ echo "🐝: Checking if social media posting is enabled"
 if [[ $(< "$IPFS_ROOT/input/social") != "false" ]]; then
 
     echo "🐝: Initializing social media posts to $SOCIAL_PLATFORMS"
-    for platform in "twitter" "instagram" "telegram" "facebook" "youtube" "linkedin" "fbg" "gmb"  ; do
+    for platform in "twitter" "instagram" "telegram" "facebook" "youtube" "linkedin" "fbg" "gmb" "pinterest" ; do
         
         # Initiate post
         echo "🐝: Posting to $platform with cid: $cid"

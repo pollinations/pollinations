@@ -23,6 +23,7 @@ const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
 
 const Authorization = base64Decode(AUTH);
 
+let _client = null;
 // create a new IPFS session
 export function getClient() {
     if (!_client) {

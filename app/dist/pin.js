@@ -28521,6 +28521,7 @@ var toPromise = async (asyncGen) => {
   return contents;
 };
 var noop = () => null;
+var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
 
 // node_modules/multiformats/esm/vendor/varint.js
 var encode_1 = encode;
@@ -29329,11 +29330,15 @@ var import_debug2 = __toModule(require_src7());
 var import_ramda = __toModule(require_src10());
 var import_path = __toModule(require("path"));
 var debug2 = (0, import_debug2.default)("ipfsConnector");
-var IPFS_HOST = "https://ipfs.pollinations.ai";
+var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
+var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
+var Authorization = base64Decode(AUTH);
 function getClient() {
   if (!_client) {
-    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h" }));
+    _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h", headers: {
+      Authorization
+    } }));
   }
   return _client;
 }

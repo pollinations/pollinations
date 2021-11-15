@@ -1299,42 +1299,42 @@ var require_end_of_stream = __commonJS({
     var once = require_once();
     var noop2 = function() {
     };
-    var isRequest = function(stream) {
-      return stream.setHeader && typeof stream.abort === "function";
+    var isRequest = function(stream2) {
+      return stream2.setHeader && typeof stream2.abort === "function";
     };
-    var isChildProcess = function(stream) {
-      return stream.stdio && Array.isArray(stream.stdio) && stream.stdio.length === 3;
+    var isChildProcess = function(stream2) {
+      return stream2.stdio && Array.isArray(stream2.stdio) && stream2.stdio.length === 3;
     };
-    var eos = function(stream, opts, callback) {
+    var eos = function(stream2, opts, callback) {
       if (typeof opts === "function")
-        return eos(stream, null, opts);
+        return eos(stream2, null, opts);
       if (!opts)
         opts = {};
       callback = once(callback || noop2);
-      var ws = stream._writableState;
-      var rs = stream._readableState;
-      var readable = opts.readable || opts.readable !== false && stream.readable;
-      var writable = opts.writable || opts.writable !== false && stream.writable;
+      var ws = stream2._writableState;
+      var rs = stream2._readableState;
+      var readable = opts.readable || opts.readable !== false && stream2.readable;
+      var writable = opts.writable || opts.writable !== false && stream2.writable;
       var cancelled = false;
       var onlegacyfinish = function() {
-        if (!stream.writable)
+        if (!stream2.writable)
           onfinish();
       };
       var onfinish = function() {
         writable = false;
         if (!readable)
-          callback.call(stream);
+          callback.call(stream2);
       };
       var onend = function() {
         readable = false;
         if (!writable)
-          callback.call(stream);
+          callback.call(stream2);
       };
       var onexit = function(exitCode) {
-        callback.call(stream, exitCode ? new Error("exited with error code: " + exitCode) : null);
+        callback.call(stream2, exitCode ? new Error("exited with error code: " + exitCode) : null);
       };
       var onerror = function(err) {
-        callback.call(stream, err);
+        callback.call(stream2, err);
       };
       var onclose = function() {
         process.nextTick(onclosenexttick);
@@ -1343,45 +1343,45 @@ var require_end_of_stream = __commonJS({
         if (cancelled)
           return;
         if (readable && !(rs && (rs.ended && !rs.destroyed)))
-          return callback.call(stream, new Error("premature close"));
+          return callback.call(stream2, new Error("premature close"));
         if (writable && !(ws && (ws.ended && !ws.destroyed)))
-          return callback.call(stream, new Error("premature close"));
+          return callback.call(stream2, new Error("premature close"));
       };
       var onrequest = function() {
-        stream.req.on("finish", onfinish);
+        stream2.req.on("finish", onfinish);
       };
-      if (isRequest(stream)) {
-        stream.on("complete", onfinish);
-        stream.on("abort", onclose);
-        if (stream.req)
+      if (isRequest(stream2)) {
+        stream2.on("complete", onfinish);
+        stream2.on("abort", onclose);
+        if (stream2.req)
           onrequest();
         else
-          stream.on("request", onrequest);
+          stream2.on("request", onrequest);
       } else if (writable && !ws) {
-        stream.on("end", onlegacyfinish);
-        stream.on("close", onlegacyfinish);
+        stream2.on("end", onlegacyfinish);
+        stream2.on("close", onlegacyfinish);
       }
-      if (isChildProcess(stream))
-        stream.on("exit", onexit);
-      stream.on("end", onend);
-      stream.on("finish", onfinish);
+      if (isChildProcess(stream2))
+        stream2.on("exit", onexit);
+      stream2.on("end", onend);
+      stream2.on("finish", onfinish);
       if (opts.error !== false)
-        stream.on("error", onerror);
-      stream.on("close", onclose);
+        stream2.on("error", onerror);
+      stream2.on("close", onclose);
       return function() {
         cancelled = true;
-        stream.removeListener("complete", onfinish);
-        stream.removeListener("abort", onclose);
-        stream.removeListener("request", onrequest);
-        if (stream.req)
-          stream.req.removeListener("finish", onfinish);
-        stream.removeListener("end", onlegacyfinish);
-        stream.removeListener("close", onlegacyfinish);
-        stream.removeListener("finish", onfinish);
-        stream.removeListener("exit", onexit);
-        stream.removeListener("end", onend);
-        stream.removeListener("error", onerror);
-        stream.removeListener("close", onclose);
+        stream2.removeListener("complete", onfinish);
+        stream2.removeListener("abort", onclose);
+        stream2.removeListener("request", onrequest);
+        if (stream2.req)
+          stream2.req.removeListener("finish", onfinish);
+        stream2.removeListener("end", onlegacyfinish);
+        stream2.removeListener("close", onlegacyfinish);
+        stream2.removeListener("finish", onfinish);
+        stream2.removeListener("exit", onexit);
+        stream2.removeListener("end", onend);
+        stream2.removeListener("error", onerror);
+        stream2.removeListener("close", onclose);
       };
     };
     module2.exports = eos;
@@ -1400,23 +1400,23 @@ var require_pump = __commonJS({
     var isFn = function(fn) {
       return typeof fn === "function";
     };
-    var isFS = function(stream) {
+    var isFS = function(stream2) {
       if (!ancient)
         return false;
       if (!fs)
         return false;
-      return (stream instanceof (fs.ReadStream || noop2) || stream instanceof (fs.WriteStream || noop2)) && isFn(stream.close);
+      return (stream2 instanceof (fs.ReadStream || noop2) || stream2 instanceof (fs.WriteStream || noop2)) && isFn(stream2.close);
     };
-    var isRequest = function(stream) {
-      return stream.setHeader && isFn(stream.abort);
+    var isRequest = function(stream2) {
+      return stream2.setHeader && isFn(stream2.abort);
     };
-    var destroyer = function(stream, reading, writing, callback) {
+    var destroyer = function(stream2, reading, writing, callback) {
       callback = once(callback);
       var closed = false;
-      stream.on("close", function() {
+      stream2.on("close", function() {
         closed = true;
       });
-      eos(stream, { readable: reading, writable: writing }, function(err) {
+      eos(stream2, { readable: reading, writable: writing }, function(err) {
         if (err)
           return callback(err);
         closed = true;
@@ -1429,12 +1429,12 @@ var require_pump = __commonJS({
         if (destroyed)
           return;
         destroyed = true;
-        if (isFS(stream))
-          return stream.close(noop2);
-        if (isRequest(stream))
-          return stream.abort();
-        if (isFn(stream.destroy))
-          return stream.destroy();
+        if (isFS(stream2))
+          return stream2.close(noop2);
+        if (isRequest(stream2))
+          return stream2.abort();
+        if (isFn(stream2.destroy))
+          return stream2.destroy();
         callback(err || new Error("stream was destroyed"));
       };
     };
@@ -1452,10 +1452,10 @@ var require_pump = __commonJS({
       if (streams.length < 2)
         throw new Error("pump requires two streams per minimum");
       var error;
-      var destroys = streams.map(function(stream, i) {
+      var destroys = streams.map(function(stream2, i) {
         var reading = i < streams.length - 1;
         var writing = i > 0;
-        return destroyer(stream, reading, writing, function(err) {
+        return destroyer(stream2, reading, writing, function(err) {
           if (!error)
             error = err;
           if (err)
@@ -1491,13 +1491,13 @@ var require_buffer_stream = __commonJS({
       if (isBuffer) {
         encoding = null;
       }
-      const stream = new PassThroughStream({ objectMode });
+      const stream2 = new PassThroughStream({ objectMode });
       if (encoding) {
-        stream.setEncoding(encoding);
+        stream2.setEncoding(encoding);
       }
       let length2 = 0;
       const chunks = [];
-      stream.on("data", (chunk) => {
+      stream2.on("data", (chunk) => {
         chunks.push(chunk);
         if (objectMode) {
           length2 = chunks.length;
@@ -1505,14 +1505,14 @@ var require_buffer_stream = __commonJS({
           length2 += chunk.length;
         }
       });
-      stream.getBufferedValue = () => {
+      stream2.getBufferedValue = () => {
         if (array) {
           return chunks;
         }
         return isBuffer ? Buffer.concat(chunks, length2) : chunks.join("");
       };
-      stream.getBufferedLength = () => length2;
-      return stream;
+      stream2.getBufferedLength = () => length2;
+      return stream2;
     };
   }
 });
@@ -1538,33 +1538,33 @@ var require_get_stream = __commonJS({
         maxBuffer: Infinity
       }, options);
       const { maxBuffer } = options;
-      let stream;
+      let stream2;
       await new Promise((resolve, reject) => {
         const rejectPromise = (error) => {
-          if (error && stream.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
-            error.bufferedData = stream.getBufferedValue();
+          if (error && stream2.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
+            error.bufferedData = stream2.getBufferedValue();
           }
           reject(error);
         };
-        stream = pump(inputStream, bufferStream(options), (error) => {
+        stream2 = pump(inputStream, bufferStream(options), (error) => {
           if (error) {
             rejectPromise(error);
             return;
           }
           resolve();
         });
-        stream.on("data", () => {
-          if (stream.getBufferedLength() > maxBuffer) {
+        stream2.on("data", () => {
+          if (stream2.getBufferedLength() > maxBuffer) {
             rejectPromise(new MaxBufferError());
           }
         });
       });
-      return stream.getBufferedValue();
+      return stream2.getBufferedValue();
     }
     module2.exports = getStream;
     module2.exports.default = getStream;
-    module2.exports.buffer = (stream, options) => getStream(stream, __spreadProps(__spreadValues({}, options), { encoding: "buffer" }));
-    module2.exports.array = (stream, options) => getStream(stream, __spreadProps(__spreadValues({}, options), { array: true }));
+    module2.exports.buffer = (stream2, options) => getStream(stream2, __spreadProps(__spreadValues({}, options), { encoding: "buffer" }));
+    module2.exports.array = (stream2, options) => getStream(stream2, __spreadProps(__spreadValues({}, options), { array: true }));
     module2.exports.MaxBufferError = MaxBufferError;
   }
 });
@@ -2982,13 +2982,13 @@ Please report this to https://github.com/szmarczak/http2-wrapper/`);
                 if (session[kGracefullyClosing]) {
                   throw new Error("The session is gracefully closing. No new streams are allowed.");
                 }
-                const stream = session[kRequest](headers, streamOptions);
+                const stream2 = session[kRequest](headers, streamOptions);
                 session.ref();
                 ++session[kCurrentStreamsCount];
                 if (session[kCurrentStreamsCount] === session.remoteSettings.maxConcurrentStreams) {
                   this._freeSessionsCount--;
                 }
-                stream.once("close", () => {
+                stream2.once("close", () => {
                   wasFree = isFree();
                   --session[kCurrentStreamsCount];
                   if (!session.destroyed && !session.closed) {
@@ -3011,7 +3011,7 @@ Please report this to https://github.com/szmarczak/http2-wrapper/`);
                     }
                   }
                 });
-                return stream;
+                return stream2;
               };
             } catch (error) {
               for (const listener of listeners) {
@@ -3427,14 +3427,14 @@ var require_client_request = __commonJS({
         }
         this[kFlushedHeaders] = true;
         const isConnectMethod = this.method === HTTP2_METHOD_CONNECT;
-        const onStream = (stream) => {
-          this._request = stream;
+        const onStream = (stream2) => {
+          this._request = stream2;
           if (this.destroyed) {
-            stream.destroy();
+            stream2.destroy();
             return;
           }
           if (!isConnectMethod) {
-            proxyEvents(stream, this, ["timeout", "continue", "close", "error"]);
+            proxyEvents(stream2, this, ["timeout", "continue", "close", "error"]);
           }
           const waitForEnd = (fn) => {
             return (...args) => {
@@ -3447,8 +3447,8 @@ var require_client_request = __commonJS({
               }
             };
           };
-          stream.once("response", waitForEnd((headers, flags, rawHeaders) => {
-            const response = new IncomingMessage(this.socket, stream.readableHighWaterMark);
+          stream2.once("response", waitForEnd((headers, flags, rawHeaders) => {
+            const response = new IncomingMessage(this.socket, stream2.readableHighWaterMark);
             this.res = response;
             response.req = this;
             response.statusCode = headers[HTTP2_HEADER_STATUS];
@@ -3466,18 +3466,18 @@ var require_client_request = __commonJS({
             });
             if (isConnectMethod) {
               response.upgrade = true;
-              if (this.emit("connect", response, stream, Buffer.alloc(0))) {
+              if (this.emit("connect", response, stream2, Buffer.alloc(0))) {
                 this.emit("close");
               } else {
-                stream.destroy();
+                stream2.destroy();
               }
             } else {
-              stream.on("data", (chunk) => {
+              stream2.on("data", (chunk) => {
                 if (!response._dumped && !response.push(chunk)) {
-                  stream.pause();
+                  stream2.pause();
                 }
               });
-              stream.once("end", () => {
+              stream2.once("end", () => {
                 response.push(null);
               });
               if (!this.emit("response", response)) {
@@ -3485,13 +3485,13 @@ var require_client_request = __commonJS({
               }
             }
           }));
-          stream.once("headers", waitForEnd((headers) => this.emit("information", { statusCode: headers[HTTP2_HEADER_STATUS] })));
-          stream.once("trailers", waitForEnd((trailers, flags, rawTrailers) => {
+          stream2.once("headers", waitForEnd((headers) => this.emit("information", { statusCode: headers[HTTP2_HEADER_STATUS] })));
+          stream2.once("trailers", waitForEnd((trailers, flags, rawTrailers) => {
             const { res } = this;
             res.trailers = trailers;
             res.rawTrailers = rawTrailers;
           }));
-          const { socket } = stream.session;
+          const { socket } = stream2.session;
           this.socket = socket;
           this.connection = socket;
           for (const job of this[kJobs]) {
@@ -4126,10 +4126,10 @@ var require_get_buffer = __commonJS({
   "node_modules/got/dist/source/core/utils/get-buffer.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var getBuffer = async (stream) => {
+    var getBuffer = async (stream2) => {
       const chunks = [];
       let length2 = 0;
-      for await (const chunk of stream) {
+      for await (const chunk of stream2) {
         chunks.push(chunk);
         length2 += Buffer.byteLength(chunk);
       }
@@ -15667,7 +15667,7 @@ var require_duplex = __commonJS({
         };
       }
       Object.assign(options, readable, writable);
-      const stream = new Stream(options);
+      const stream2 = new Stream(options);
       if (duplex.sink) {
         duplex.sink({
           [Symbol.asyncIterator]() {
@@ -15678,16 +15678,16 @@ var require_duplex = __commonJS({
             return chunk === END_CHUNK ? { done: true } : { value: chunk };
           },
           async throw(err) {
-            stream.destroy(err);
+            stream2.destroy(err);
             return { done: true };
           },
           async return() {
-            stream.destroy();
+            stream2.destroy();
             return { done: true };
           }
         });
       }
-      return stream;
+      return stream2;
     };
   }
 });
@@ -16487,7 +16487,7 @@ var require_abort_controller = __commonJS({
         value: "AbortSignal"
       });
     }
-    var AbortController = class {
+    var AbortController2 = class {
       constructor() {
         signals.set(this, createAbortSignal());
       }
@@ -16506,21 +16506,21 @@ var require_abort_controller = __commonJS({
       }
       return signal;
     }
-    Object.defineProperties(AbortController.prototype, {
+    Object.defineProperties(AbortController2.prototype, {
       signal: { enumerable: true },
       abort: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController.prototype, Symbol.toStringTag, {
+      Object.defineProperty(AbortController2.prototype, Symbol.toStringTag, {
         configurable: true,
         value: "AbortController"
       });
     }
-    exports2.AbortController = AbortController;
+    exports2.AbortController = AbortController2;
     exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController;
-    module2.exports = AbortController;
-    module2.exports.AbortController = module2.exports["default"] = AbortController;
+    exports2.default = AbortController2;
+    module2.exports = AbortController2;
+    module2.exports.AbortController = module2.exports["default"] = AbortController2;
     module2.exports.AbortSignal = AbortSignal;
   }
 });
@@ -16543,9 +16543,9 @@ var require_src9 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     function anySignal(signals) {
-      const controller = new AbortController();
+      const controller = new AbortController2();
       function onAbort() {
         controller.abort();
         for (const signal of signals) {
@@ -16578,7 +16578,7 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError } = require_error();
     var merge = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     var anySignal = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -16641,7 +16641,7 @@ var require_http = __commonJS({
           opts.body = JSON.stringify(opts.json);
           headers.set("content-type", "application/json");
         }
-        const abortController = new AbortController();
+        const abortController = new AbortController2();
         const signal = anySignal([abortController.signal, opts.signal]);
         const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
@@ -19700,11 +19700,11 @@ var require_common2 = __commonJS({
         let enableOverride = null;
         let namespacesCache;
         let enabledCache;
-        function debug8(...args) {
-          if (!debug8.enabled) {
+        function debug10(...args) {
+          if (!debug10.enabled) {
             return;
           }
-          const self2 = debug8;
+          const self2 = debug10;
           const curr = Number(new Date());
           const ms = curr - (prevTime || curr);
           self2.diff = ms;
@@ -19734,12 +19734,12 @@ var require_common2 = __commonJS({
           const logFn = self2.log || createDebug.log;
           logFn.apply(self2, args);
         }
-        debug8.namespace = namespace;
-        debug8.useColors = createDebug.useColors();
-        debug8.color = createDebug.selectColor(namespace);
-        debug8.extend = extend;
-        debug8.destroy = createDebug.destroy;
-        Object.defineProperty(debug8, "enabled", {
+        debug10.namespace = namespace;
+        debug10.useColors = createDebug.useColors();
+        debug10.color = createDebug.selectColor(namespace);
+        debug10.extend = extend;
+        debug10.destroy = createDebug.destroy;
+        Object.defineProperty(debug10, "enabled", {
           enumerable: true,
           configurable: false,
           get: () => {
@@ -19757,9 +19757,9 @@ var require_common2 = __commonJS({
           }
         });
         if (typeof createDebug.init === "function") {
-          createDebug.init(debug8);
+          createDebug.init(debug10);
         }
-        return debug8;
+        return debug10;
       }
       function extend(namespace, delimiter) {
         const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
@@ -20099,8 +20099,8 @@ var require_supports_color = __commonJS({
       }
       return min;
     }
-    function getSupportLevel(stream) {
-      const level = supportsColor(stream, stream && stream.isTTY);
+    function getSupportLevel(stream2) {
+      const level = supportsColor(stream2, stream2 && stream2.isTTY);
       return translateLevel(level);
     }
     module2.exports = {
@@ -20262,11 +20262,11 @@ var require_node = __commonJS({
     function load() {
       return process.env.DEBUG;
     }
-    function init(debug8) {
-      debug8.inspectOpts = {};
+    function init(debug10) {
+      debug10.inspectOpts = {};
       const keys = Object.keys(exports2.inspectOpts);
       for (let i = 0; i < keys.length; i++) {
-        debug8.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
+        debug10.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
       }
     }
     module2.exports = require_common2()(exports2);
@@ -20366,7 +20366,7 @@ var require_core2 = __commonJS({
   "node_modules/ipfs-http-client/src/lib/core.js"(exports2, module2) {
     "use strict";
     var { Multiaddr } = require_src6();
-    var { isBrowser, isWebWorker, isNode: isNode2 } = require_env();
+    var { isBrowser, isWebWorker, isNode } = require_env();
     var { default: parseDuration } = require_parse_duration();
     var log = require_src11()("ipfs-http-client:lib:error-handler");
     var HTTP = require_http();
@@ -20403,7 +20403,7 @@ var require_core2 = __commonJS({
       } else if (url.pathname === "/" || url.pathname === void 0) {
         url.pathname = "api/v0";
       }
-      if (isNode2) {
+      if (isNode) {
         const Agent = url.protocol.startsWith("https") ? https.Agent : http.Agent;
         agent = opts.agent || new Agent({
           keepAlive: true,
@@ -20551,8 +20551,8 @@ var require_it_peekable = __commonJS({
 var require_browser_readablestream_to_it = __commonJS({
   "node_modules/browser-readablestream-to-it/index.js"(exports2, module2) {
     "use strict";
-    async function* browserReadableStreamToIt(stream, options = {}) {
-      const reader2 = stream.getReader();
+    async function* browserReadableStreamToIt(stream2, options = {}) {
+      const reader2 = stream2.getReader();
       try {
         while (true) {
           const result = await reader2.read();
@@ -20652,9 +20652,9 @@ var require_normalise_content_browser = __commonJS({
       }
       throw errCode(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
     }
-    async function itToBlob(stream) {
+    async function itToBlob(stream2) {
       const parts = [];
-      for await (const chunk of stream) {
+      for await (const chunk of stream2) {
         parts.push(chunk);
       }
       return new Blob(parts);
@@ -23151,10 +23151,10 @@ var require_add_all = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function* addAll(source, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const { headers, body, total, parts } = await multipartRequest(source, controller, options.headers);
         const [progressFn, onUploadProgress] = typeof options.progress === "function" ? createProgressHandler(total, parts, options.progress) : [void 0, void 0];
@@ -23420,10 +23420,10 @@ var require_put = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function put(data, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         let res;
         try {
@@ -23762,10 +23762,10 @@ var require_replace = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       const replace = async (config, options = {}) => {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("config/replace", __spreadValues({
           signal,
@@ -23977,11 +23977,11 @@ var require_import = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
     var multipartRequest = require_multipart_request();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     var { CID: CID2 } = require_cid();
     module2.exports = configure((api) => {
       async function* dagImport(source, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const { headers, body } = await multipartRequest(source, controller, options.headers);
         const res = await api.post("dag/import", {
@@ -24016,7 +24016,7 @@ var require_put2 = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = (codecs, options) => {
       const fn = configure((api) => {
         const put = async (dagNode, options2 = {}) => {
@@ -24027,7 +24027,7 @@ var require_put2 = __commonJS({
           }, options2);
           const codec = await codecs.getCodec(settings.format);
           const serialized = codec.encode(dagNode);
-          const controller = new AbortController();
+          const controller = new AbortController2();
           const signal = abortSignal(controller.signal, settings.signal);
           const res = await api.post("dag/put", __spreadValues({
             timeout: settings.timeout,
@@ -24139,11 +24139,11 @@ var require_put3 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     var { toString: uint8ArrayToString } = require_to_string();
     module2.exports = configure((api) => {
       async function* put(key, value, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("dht/put", __spreadValues({
           signal,
@@ -24735,10 +24735,10 @@ var require_write = __commonJS({
     var multipartRequest = require_multipart_request();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function write(path, input, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("files/write", __spreadValues({
           signal,
@@ -25507,10 +25507,10 @@ var require_append_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function appendData(cid, data, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("object/patch/append-data", __spreadValues({
           signal,
@@ -25562,10 +25562,10 @@ var require_set_data = __commonJS({
     var configure = require_configure();
     var toUrlSearchParams = require_to_url_search_params();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function setData(cid, data, options = {}) {
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("object/patch/set-data", __spreadValues({
           signal,
@@ -26148,7 +26148,7 @@ var require_ping = __commonJS({
 var require_subscription_tracker = __commonJS({
   "node_modules/ipfs-http-client/src/pubsub/subscription-tracker.js"(exports2, module2) {
     "use strict";
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     var SubscriptionTracker = class {
       constructor() {
         this._subs = new Map();
@@ -26158,7 +26158,7 @@ var require_subscription_tracker = __commonJS({
         if (topicSubs.find((s) => s.handler === handler)) {
           throw new Error(`Already subscribed to ${topic} with this handler`);
         }
-        const controller = new AbortController();
+        const controller = new AbortController2();
         this._subs.set(topic, [{ handler, controller }].concat(topicSubs));
         if (signal) {
           signal.addEventListener("abort", () => this.unsubscribe(topic, handler));
@@ -26236,13 +26236,13 @@ var require_publish2 = __commonJS({
     var toUrlSearchParams = require_to_url_search_params();
     var multipartRequest = require_multipart_request();
     var abortSignal = require_abort_signal();
-    var { AbortController } = require_src9();
+    var { AbortController: AbortController2 } = require_src9();
     module2.exports = configure((api) => {
       async function publish(topic, data, options = {}) {
         const searchParams = toUrlSearchParams(__spreadValues({
           arg: topic
         }, options));
-        const controller = new AbortController();
+        const controller = new AbortController2();
         const signal = abortSignal(controller.signal, options.signal);
         const res = await api.post("pubsub/pub", __spreadValues({
           signal,
@@ -30951,8 +30951,8 @@ var require_isEmpty = __commonJS({
 var require_join = __commonJS({
   "node_modules/ramda/src/join.js"(exports2, module2) {
     var invoker = require_invoker();
-    var join3 = /* @__PURE__ */ invoker(1, "join");
-    module2.exports = join3;
+    var join4 = /* @__PURE__ */ invoker(1, "join");
+    module2.exports = join4;
   }
 });
 
@@ -33125,31 +33125,6 @@ var require_src14 = __commonJS({
   }
 });
 
-// node_modules/browser-or-node/lib/index.js
-var require_lib4 = __commonJS({
-  "node_modules/browser-or-node/lib/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", {
-      value: true
-    });
-    var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function(obj) {
-      return typeof obj;
-    } : function(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-    var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
-    var isWebWorker = (typeof self === "undefined" ? "undefined" : _typeof(self)) === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
-    var isNode2 = typeof process !== "undefined" && process.versions != null && process.versions.node != null;
-    var isJsDom = function isJsDom2() {
-      return typeof window !== "undefined" && window.name === "nodejs" || navigator.userAgent.includes("Node.js") || navigator.userAgent.includes("jsdom");
-    };
-    exports2.isBrowser = isBrowser;
-    exports2.isWebWorker = isWebWorker;
-    exports2.isNode = isNode2;
-    exports2.isJsDom = isJsDom;
-  }
-});
-
 // node_modules/json5/lib/unicode.js
 var require_unicode = __commonJS({
   "node_modules/json5/lib/unicode.js"(exports2, module2) {
@@ -34223,7 +34198,7 @@ var require_stringify = __commonJS({
 });
 
 // node_modules/json5/lib/index.js
-var require_lib5 = __commonJS({
+var require_lib4 = __commonJS({
   "node_modules/json5/lib/index.js"(exports2, module2) {
     var parse4 = require_parse();
     var stringify = require_stringify();
@@ -34232,6 +34207,647 @@ var require_lib5 = __commonJS({
       stringify
     };
     module2.exports = JSON5;
+  }
+});
+
+// node_modules/queueable/dist/lib/Deferred.js
+var require_Deferred = __commonJS({
+  "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred = class {
+      constructor() {
+        this.promise = new Promise((resolve, reject) => {
+          this.resolve = (value) => {
+            resolve(value);
+            return this.promise;
+          };
+          this.reject = (reason) => {
+            reject(reason);
+            return this.promise;
+          };
+        });
+      }
+    };
+    exports2.default = Deferred;
+  }
+});
+
+// node_modules/fast-list/fast-list.js
+var require_fast_list = __commonJS({
+  "node_modules/fast-list/fast-list.js"(exports2, module2) {
+    (function() {
+      function Item(data, prev, next) {
+        this.next = next;
+        if (next)
+          next.prev = this;
+        this.prev = prev;
+        if (prev)
+          prev.next = this;
+        this.data = data;
+      }
+      function FastList() {
+        if (!(this instanceof FastList))
+          return new FastList();
+        this._head = null;
+        this._tail = null;
+        this.length = 0;
+      }
+      FastList.prototype = {
+        push: function(data) {
+          this._tail = new Item(data, this._tail, null);
+          if (!this._head)
+            this._head = this._tail;
+          this.length++;
+        },
+        pop: function() {
+          if (this.length === 0)
+            return void 0;
+          var t = this._tail;
+          this._tail = t.prev;
+          if (t.prev) {
+            t.prev = this._tail.next = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._head = this._tail;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return t.data;
+        },
+        unshift: function(data) {
+          this._head = new Item(data, null, this._head);
+          if (!this._tail)
+            this._tail = this._head;
+          this.length++;
+        },
+        shift: function() {
+          if (this.length === 0)
+            return void 0;
+          var h = this._head;
+          this._head = h.next;
+          if (h.next) {
+            h.next = this._head.prev = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._tail = this._head;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return h.data;
+        },
+        item: function(n) {
+          if (n < 0)
+            n = this.length + n;
+          var h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          return h ? h.data : void 0;
+        },
+        slice: function(n, m) {
+          if (!n)
+            n = 0;
+          if (!m)
+            m = this.length;
+          if (m < 0)
+            m = this.length + m;
+          if (n < 0)
+            n = this.length + n;
+          if (m === n) {
+            return [];
+          }
+          if (m < n) {
+            throw new Error("invalid offset: " + n + "," + m + " (length=" + this.length + ")");
+          }
+          var len = m - n, ret = new Array(len), i = 0, h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          while (i < len && h) {
+            ret[i++] = h.data;
+            h = h.next;
+          }
+          return ret;
+        },
+        drop: function() {
+          FastList.call(this);
+        },
+        forEach: function(fn, thisp) {
+          var p = this._head, i = 0, len = this.length;
+          while (i < len && p) {
+            fn.call(thisp || this, p.data, i, this);
+            p = p.next;
+            i++;
+          }
+        },
+        map: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            n.push(fn.call(thisp || me, v, i, me));
+          });
+          return n;
+        },
+        filter: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            if (fn.call(thisp || me, v, i, me))
+              n.push(v);
+          });
+          return n;
+        },
+        reduce: function(fn, val, thisp) {
+          var i = 0, p = this._head, len = this.length;
+          if (!val) {
+            i = 1;
+            val = p && p.data;
+            p = p && p.next;
+          }
+          while (i < len && p) {
+            val = fn.call(thisp || this, val, p.data, this);
+            i++;
+            p = p.next;
+          }
+          return val;
+        }
+      };
+      if (typeof exports2 !== "undefined")
+        module2.exports = FastList;
+      else if (typeof define === "function" && define.amd) {
+        define("FastList", function() {
+          return FastList;
+        });
+      } else
+        (function() {
+          return this;
+        })().FastList = FastList;
+    })();
+  }
+});
+
+// node_modules/queueable/dist/lib/LinkedQueue.js
+var require_LinkedQueue = __commonJS({
+  "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fast_list_1 = __importDefault(require_fast_list());
+    var Queue = class {
+      constructor(limit = 0) {
+        this.limit = limit;
+        this.length = 0;
+        this.list = new fast_list_1.default();
+      }
+      enqueue(value) {
+        const { list } = this;
+        if (this.limit > 0 && list.length === this.limit) {
+          list.shift();
+        }
+        this.length += 1;
+        list.push(value);
+      }
+      dequeue() {
+        if (this.length === 0) {
+          throw Error("Queue is empty");
+        }
+        this.length -= 1;
+        return this.list.shift();
+      }
+      clear() {
+        this.length = 0;
+        this.list.drop();
+      }
+      forEach(f) {
+        this.list.forEach(f);
+      }
+    };
+    exports2.default = Queue;
+  }
+});
+
+// node_modules/queueable/dist/lib/common.js
+var require_common3 = __commonJS({
+  "node_modules/queueable/dist/lib/common.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.doneResult = Object.freeze({
+      value: void 0,
+      done: true
+    });
+    exports2.donePromise = Promise.resolve(exports2.doneResult);
+  }
+});
+
+// node_modules/queueable/dist/lib/fromDom.js
+var require_fromDom = __commonJS({
+  "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromDom = (init) => (type, target, options) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      target.addEventListener(type, listener, options);
+      return adapter.wrap(() => target.removeEventListener(type, listener, options));
+    };
+    exports2.default = fromDom;
+  }
+});
+
+// node_modules/queueable/dist/lib/fromEmitter.js
+var require_fromEmitter = __commonJS({
+  "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromEmitter = (init) => (type, emitter) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      emitter.addListener(type, listener);
+      return adapter.wrap(() => void emitter.removeListener(type, listener));
+    };
+    exports2.default = fromEmitter;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Channel.js
+var require_Channel = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var LinkedQueue_1 = __importDefault(require_LinkedQueue());
+    var common_1 = require_common3();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var Channel2 = class {
+      constructor(pushLimit = 0, pullLimit = 0) {
+        this.closed = false;
+        this.pushBuffer = new LinkedQueue_1.default(pushLimit);
+        this.pullBuffer = new LinkedQueue_1.default(pullLimit);
+      }
+      next() {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        if (this.pushBuffer.length === 0) {
+          const defer2 = new Deferred_1.default();
+          this.pullBuffer.enqueue(defer2);
+          return defer2.promise;
+        }
+        const { result, defer } = this.pushBuffer.dequeue();
+        defer.resolve(result);
+        if (result.done) {
+          this.close();
+        }
+        return defer.promise;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.pullBuffer.length > 0) {
+          return this.pullBuffer.dequeue().resolve(result);
+        }
+        const defer = new Deferred_1.default();
+        this.pushBuffer.enqueue({ result, defer });
+        return defer.promise;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+      async return(value) {
+        this.close();
+        return {
+          done: true,
+          value
+        };
+      }
+      close() {
+        if (this.closed) {
+          return;
+        }
+        this.closed = true;
+        this.pushBuffer.forEach(({ defer: { resolve } }) => void resolve(common_1.doneResult));
+        this.pushBuffer.clear();
+        this.pullBuffer.forEach(({ resolve }) => void resolve(common_1.doneResult));
+        this.pullBuffer.clear();
+      }
+      wrap(onReturn) {
+        if (this.closed) {
+          throw Error("Balancer is closed");
+        }
+        return {
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          next: () => this.next(),
+          return: async (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+      }
+    };
+    exports2.default = Channel2;
+    Channel2.fromDom = fromDom_1.default(() => new Channel2());
+    Channel2.fromEmitter = fromEmitter_1.default(() => new Channel2());
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Multicast.js
+var require_Multicast = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Channel_1 = __importDefault(require_Channel());
+    var Multicast = class {
+      constructor(init = () => new Channel_1.default()) {
+        this.init = init;
+        this.receivers = new Set();
+      }
+      push(value) {
+        this.receivers.forEach((balancer) => balancer.push(value));
+        return this;
+      }
+      [Symbol.asyncIterator]() {
+        const producer = this.init();
+        const { receivers } = this;
+        receivers.add(producer);
+        if (this.onStart && receivers.size === 1) {
+          this.onStart();
+        }
+        return producer.wrap(() => {
+          receivers.delete(producer);
+          if (this.onStop && receivers.size === 0) {
+            this.onStop();
+          }
+        });
+      }
+    };
+    exports2.default = Multicast;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/LastResult.js
+var require_LastResult = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var common_1 = require_common3();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var LastResult = class {
+      constructor() {
+        this.buffer = new Deferred_1.default();
+        this.closed = false;
+        this.resolved = false;
+        this.requested = false;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          throw Error("Iterator closed");
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.resolved === false) {
+          this.resolved = true;
+        } else {
+          this.buffer = new Deferred_1.default();
+          this.resolved = false;
+        }
+        this.requested = false;
+        this.buffer.resolve(result);
+        return this.buffer.promise;
+      }
+      async next() {
+        if (this.closed) {
+          return common_1.doneResult;
+        }
+        this.requested = true;
+        return this.buffer.promise;
+      }
+      async return(value) {
+        this.closed = true;
+        if (!this.resolved && this.requested) {
+          this.buffer.resolve(common_1.doneResult);
+        }
+        return Promise.resolve({
+          value,
+          done: true
+        });
+      }
+      wrap(onReturn) {
+        const wrapped = {
+          next: () => this.next(),
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          return: (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+        return wrapped;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+    };
+    exports2.default = LastResult;
+    LastResult.fromDom = fromDom_1.default(() => new LastResult());
+    LastResult.fromEmitter = fromEmitter_1.default(() => new LastResult());
+  }
+});
+
+// node_modules/queueable/dist/lib/index.js
+var require_lib5 = __commonJS({
+  "node_modules/queueable/dist/lib/index.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Multicast_1 = __importDefault(require_Multicast());
+    exports2.Multicast = Multicast_1.default;
+    var Channel_1 = __importDefault(require_Channel());
+    exports2.Channel = Channel_1.default;
+    var LastResult_1 = __importDefault(require_LastResult());
+    exports2.LastResult = LastResult_1.default;
+    var Deferred_1 = __importDefault(require_Deferred());
+    exports2.Deferred = Deferred_1.default;
+    var fromDom_1 = require_fromDom();
+    exports2.fromDom = fromDom_1.default;
+    var fromEmitter_1 = require_fromEmitter();
+    exports2.fromEmitter = fromEmitter_1.default;
+  }
+});
+
+// node_modules/event-iterator/lib/event-iterator.js
+var require_event_iterator = __commonJS({
+  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var EventQueue = class {
+      constructor() {
+        this.pullQueue = [];
+        this.pushQueue = [];
+        this.eventHandlers = {};
+        this.isPaused = false;
+        this.isStopped = false;
+      }
+      push(value) {
+        if (this.isStopped)
+          return;
+        const resolution = { value, done: false };
+        if (this.pullQueue.length) {
+          const placeholder = this.pullQueue.shift();
+          if (placeholder)
+            placeholder.resolve(resolution);
+        } else {
+          this.pushQueue.push(Promise.resolve(resolution));
+          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
+            this.isPaused = true;
+            if (this.eventHandlers.highWater) {
+              this.eventHandlers.highWater();
+            } else if (console) {
+              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
+            }
+          }
+        }
+      }
+      stop() {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        for (const placeholder of this.pullQueue) {
+          placeholder.resolve({ value: void 0, done: true });
+        }
+        this.pullQueue.length = 0;
+      }
+      fail(error) {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        if (this.pullQueue.length) {
+          for (const placeholder of this.pullQueue) {
+            placeholder.reject(error);
+          }
+          this.pullQueue.length = 0;
+        } else {
+          const rejection = Promise.reject(error);
+          rejection.catch(() => {
+          });
+          this.pushQueue.push(rejection);
+        }
+      }
+      remove() {
+        Promise.resolve().then(() => {
+          if (this.removeCallback)
+            this.removeCallback();
+        });
+      }
+      [Symbol.asyncIterator]() {
+        return {
+          next: (value) => {
+            const result = this.pushQueue.shift();
+            if (result) {
+              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
+                this.isPaused = false;
+                if (this.eventHandlers.lowWater) {
+                  this.eventHandlers.lowWater();
+                }
+              }
+              return result;
+            } else if (this.isStopped) {
+              return Promise.resolve({ value: void 0, done: true });
+            } else {
+              return new Promise((resolve, reject) => {
+                this.pullQueue.push({ resolve, reject });
+              });
+            }
+          },
+          return: () => {
+            this.isStopped = true;
+            this.pushQueue.length = 0;
+            this.remove();
+            return Promise.resolve({ value: void 0, done: true });
+          }
+        };
+      }
+    };
+    var EventIterator = class {
+      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
+        const queue = new EventQueue();
+        queue.highWaterMark = highWaterMark;
+        queue.lowWaterMark = lowWaterMark;
+        queue.removeCallback = listen({
+          push: (value) => queue.push(value),
+          stop: () => queue.stop(),
+          fail: (error) => queue.fail(error),
+          on: (event, fn) => {
+            queue.eventHandlers[event] = fn;
+          }
+        }) || (() => {
+        });
+        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
+        Object.freeze(this);
+      }
+    };
+    exports2.EventIterator = EventIterator;
+    exports2.default = EventIterator;
+  }
+});
+
+// node_modules/event-iterator/lib/node.js
+var require_node2 = __commonJS({
+  "node_modules/event-iterator/lib/node.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var event_iterator_1 = require_event_iterator();
+    exports2.EventIterator = event_iterator_1.EventIterator;
+    function stream2(evOptions) {
+      return new event_iterator_1.EventIterator((queue) => {
+        this.addListener("data", queue.push);
+        this.addListener("end", queue.stop);
+        this.addListener("error", queue.fail);
+        queue.on("highWater", () => this.pause());
+        queue.on("lowWater", () => this.resume());
+        return () => {
+          this.removeListener("data", queue.push);
+          this.removeListener("end", queue.stop);
+          this.removeListener("error", queue.fail);
+          if (this.destroy) {
+            this.destroy();
+          } else if (typeof this.close == "function") {
+            ;
+            this.close();
+          }
+        };
+      }, evOptions);
+    }
+    exports2.stream = stream2;
+    exports2.default = event_iterator_1.EventIterator;
   }
 });
 
@@ -34257,6 +34873,7 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
+var noop = () => null;
 var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
 
 // node_modules/multiformats/esm/vendor/varint.js
@@ -35065,12 +35682,11 @@ var import_it_all = __toModule(require_it_all());
 var import_debug2 = __toModule(require_src11());
 var import_ramda = __toModule(require_src14());
 var import_path = __toModule(require("path"));
-var import_browser_or_node = __toModule(require_lib4());
 var debug2 = (0, import_debug2.default)("ipfsConnector");
-var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
-var Authorization = base64Decode(AUTH);
 var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
+var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
+var Authorization = base64Decode(AUTH);
 function getClient() {
   if (!_client) {
     _client = getIPFSDaemonURL().then((url) => (0, import_ipfs_http_client.create)({ url, timeout: "2h", headers: {
@@ -35086,19 +35702,15 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e5)}`;
+var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 var localIPFSAvailable = async () => {
-  if (import_browser_or_node.isNode) {
-    return await (0, import_is_port_reachable.default)(5001);
-  } else {
-    if (!localStorage.localIPFS)
-      return false;
-    try {
-      await fetch("http://localhost:5001", { mode: "no-cors" });
-      return true;
-    } catch (e) {
-      return false;
-    }
+  if (!localStorage.localIPFS)
+    return false;
+  try {
+    await fetch("http://localhost:5001", { mode: "no-cors" });
+    return true;
+  } catch (e) {
+    return false;
   }
 };
 var getIPFSDaemonURL = async () => {
@@ -35162,7 +35774,7 @@ var import_path2 = __toModule(require("path"));
 var PromiseAllProgress = (name, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toModule(require_lib5());
+var import_json5 = __toModule(require_lib4());
 var debug3 = (0, import_debug3.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -35170,18 +35782,18 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback, skipCache);
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile, skipCache) => {
+var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
   var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
-  const key = `${cid} - ${processFile.toString()}`;
+  const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
     debug3("cache miss", cid);
-    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile, skipCache);
+    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
   } else
     debug3("cache hit", cid);
   return cache[key];
 };
-var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile, skipCache) => {
-  debug3("ipfs state getter callback name", processFile.toString());
+var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, processFile2, skipCache) => {
+  debug3("ipfs state getter callback name", processFile2.toString());
   const { ls, get } = ipfsReader;
   cid = stringCID(cid);
   const _debug = debug3.extend(`_getIPFSState(${path})`);
@@ -35190,14 +35802,14 @@ var _getIPFSState = async (ipfsReader, { cid, type, name, path, rootCID }, proce
     const files = await ls(cid);
     _debug("Got files for", name, cid, files);
     const filenames = files.map(({ name: name2 }) => name2);
-    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile, skipCache)));
+    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
     const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });
     return contentResult;
   }
   if (type === "file") {
-    const fileResult = await processFile(__spreadValues({
+    const fileResult = await processFile2(__spreadValues({
       cid,
       path,
       name,
@@ -35217,7 +35829,7 @@ var dataFetchers = (cid, { get }) => {
 };
 
 // src/network/ipfsWebClient.js
-var import_json52 = __toModule(require_lib5());
+var import_json52 = __toModule(require_lib4());
 var debug4 = (0, import_debug4.default)("ipfsWebClient");
 var fetchAndMakeURL = async ({ name, cid, text }) => {
   const ext = (0, import_path3.extname)(name);
@@ -35246,7 +35858,7 @@ function shouldImport(ext) {
 
 // src/utils/notebookMetadata.js
 var import_debug5 = __toModule(require_src11());
-var import_json53 = __toModule(require_lib5());
+var import_json53 = __toModule(require_lib4());
 var debug5 = (0, import_debug5.default)("notebookMetadata");
 function readMetadata(notebookJSON) {
   if (!notebookJSON)
@@ -35900,8 +36512,174 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
   return postResponse;
 }
 
+// src/backend/ipfs/receiver.js
+var import_process = __toModule(require("process"));
+
+// src/network/ipfsPubSub.js
+var import_native_abort_controller = __toModule(require_src9());
+var import_await_sleep2 = __toModule(require_await_sleep());
+var import_debug8 = __toModule(require_src11());
+var import_queueable = __toModule(require_lib5());
+var debug8 = (0, import_debug8.default)("ipfs:pubsub");
+var HEARTBEAT_FREQUENCY = 15;
+function subscribeGenerator(nodeID, suffix = "/input") {
+  const channel = new import_queueable.Channel();
+  debug8("Subscribing to pubsub events from", nodeID, suffix);
+  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
+  return [channel, unsubscribe];
+}
+function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
+  const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
+  const unsubscribe = subscribeCallback(nodeID + suffix, (message) => {
+    if (message === "HEARTBEAT") {
+      gotHeartbeat();
+    } else {
+      callback(message);
+    }
+  });
+  return () => {
+    unsubscribe();
+    closeHeartbeat();
+  };
+}
+function heartbeatChecker(heartbeatStateCallback) {
+  let lastHeartbeat = new Date().getTime();
+  let heartbeatTimeout = null;
+  function setHeartbeatTimeout() {
+    heartbeatTimeout = setTimeout(() => {
+      const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
+      debug8("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
+      heartbeatStateCallback({ lastHeartbeat, alive: false });
+    }, HEARTBEAT_FREQUENCY * 2 * 1e3);
+    debug8("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+  }
+  const gotHeartbeat = () => {
+    const time = new Date().getTime();
+    debug8("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
+    lastHeartbeat = time;
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+    heartbeatStateCallback({ alive: true });
+    setHeartbeatTimeout();
+  };
+  const closeHeartbeat = () => {
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+  };
+  setHeartbeatTimeout();
+  return { gotHeartbeat, closeHeartbeat };
+}
+function subscribeCallback(topic, callback) {
+  const abort = new import_native_abort_controller.AbortController();
+  (async () => {
+    const onError = async (...errorArgs) => {
+      debug8("onError", ...errorArgs, "aborting");
+      abort.abort();
+      await (0, import_await_sleep2.default)(300);
+      debug8("resubscribing");
+      await doSub();
+    };
+    const handler = ({ data }) => {
+      const message = new TextDecoder().decode(data);
+      callback(message);
+    };
+    const doSub = async () => {
+      const client = await getClient();
+      try {
+        abort.abort();
+        debug8("Executing subscribe", topic);
+        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+      } catch (e) {
+        debug8("subscribe error", e, e.name);
+        if (e.name === "DOMException") {
+          debug8("subscription was aborted. returning");
+          return;
+        }
+        if (e.message?.startsWith("Already subscribed"))
+          return;
+        await (0, import_await_sleep2.default)(300);
+        await doSub();
+      }
+    };
+    doSub();
+  })();
+  return () => {
+    debug8("subscribe abort was called");
+    abort.abort();
+  };
+}
+
+// src/backend/ipfs/receiver.js
+var import_path4 = __toModule(require("path"));
+var import_debug9 = __toModule(require_src11());
+var import_event_iterator = __toModule(require_node2());
+var import_path5 = __toModule(require("path"));
+var import_fs = __toModule(require("fs"));
+var debug9 = (0, import_debug9.default)("ipfs/receiver");
+var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
+  let remoteCID = null;
+  for await (remoteCID of await cidStream) {
+    debug9("received CID", remoteCID);
+    remoteCID = stringCID(remoteCID);
+    debug9("remoteCID", remoteCID);
+    await process3(stringCID(remoteCID), rootPath);
+    if (once) {
+      unsubscribe();
+      break;
+    }
+  }
+  ;
+  return remoteCID;
+};
+var _lastContentID = null;
+var isSameContentID = (cid) => {
+  if (_lastContentID === cid) {
+    debug9("contentid was the same. probably skipping");
+    return true;
+  }
+  _lastContentID = cid;
+  return false;
+};
+var writeFileAndCreateFolder = async (path, content) => {
+  debug9("creating folder if it does not exist", (0, import_path5.dirname)(path));
+  (0, import_fs.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
+  debug9("writing file of length", content.size, "to folder", path);
+  (0, import_fs.writeFileSync)(path, content);
+  return path;
+};
+async function processRemoteCID(contentID, rootPath) {
+  if (isSameContentID(stringCID(contentID)))
+    return;
+  debug9("Processing remote CID", contentID);
+  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
+  debug9("got remote state", ipfsState);
+}
+async function processFile({ path, cid }, rootPath, { get }) {
+  const _debug = debug9.extend(`processFile(${path})`);
+  _debug("started");
+  const destPath = (0, import_path4.join)(rootPath, path);
+  _debug("writeFile", destPath, cid, "queued");
+  const content = await get(cid, { stream: true });
+  _debug("writefile content", content.length);
+  await writeFileAndCreateFolder(destPath, content);
+  _debug("done");
+  return destPath;
+}
+
 // src/backend/social-post-cli.js
 if (process.argv[2] && process.argv[3]) {
   socialPost(process.argv[2], process.argv[3]);
-} else
-  console.error("Please supply a content id as argument.");
+} else {
+  receive({
+    ipns: true,
+    nodeid: "post_pollen"
+  }, async (cid) => {
+    for (const platform of ["twitter", "instagram", "telegram", "facebook", "youtube", "linkedin"]) {
+      console.log("posting", cid, "to", platform);
+      console.log("social post result", await socialPost(platform, cid));
+      console.log("done");
+    }
+  }, "");
+  console.log("listening to publish of inseminated topic and posting to social");
+}

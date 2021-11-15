@@ -70,3 +70,8 @@ export const callLogger = (f,name = null) => (...args) => {
       }
       throw new Error("Too many retries");
     }
+
+
+
+export const AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
+

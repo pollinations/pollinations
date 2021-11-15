@@ -1,9 +1,15 @@
+import { publisher } from "../network/ipfsPubSub";
 import { socialPost } from "./functions/social-post"
 import { receive } from "./ipfs/receiver";
 
 
-if (process.argv[2] && process.argv[3]) {
-    socialPost(process.argv[2],process.argv[3]);
+if (process.argv[2]) {
+    const { publish, close } = publisher("post_pollen","/output");
+    async function run() {
+        await publish(process.argv[2]);
+        close();
+    }
+    run();
 } else {
     receive({
         ipns: true,

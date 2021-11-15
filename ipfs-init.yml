@@ -1,9 +1,0 @@
-version: '3'
-services:
-  ipfs:
-    image: ipfs/go-ipfs:latest
-    environment:
-      - IPFS_PATH=/ipfsdata
-    volumes:
-      - ./tmp/ipfs:/ipfsdata
-    entrypoint: ipfs init

@@ -14113,7 +14113,7 @@ var require_lib2 = __commonJS({
       electron = require("electron");
     }
     var isReady = electron && electron.app && !electron.app.isReady() ? new Promise((resolve) => electron.app.once("ready", resolve)) : Promise.resolve();
-    function fetch2(url$1, opts = {}) {
+    function fetch(url$1, opts = {}) {
       return isReady.then(() => new Promise((resolve, reject) => {
         const request = new Request(url$1, opts);
         const options = getNodeRequestOptions(request);
@@ -14202,7 +14202,7 @@ var require_lib2 = __commonJS({
           if (request.signal) {
             request.signal.removeEventListener("abort", abortRequest);
           }
-          if (fetch2.isRedirect(res.statusCode) && request.redirect !== "manual") {
+          if (fetch.isRedirect(res.statusCode) && request.redirect !== "manual") {
             if (request.redirect === "error") {
               reject(new FetchError(`redirect mode is set to error: ${request.url}`, "no-redirect"));
               return;
@@ -14221,7 +14221,7 @@ var require_lib2 = __commonJS({
               request.headers.delete("content-length");
             }
             request.counter++;
-            resolve(fetch2(url.resolve(request.url, res.headers.location), request));
+            resolve(fetch(url.resolve(request.url, res.headers.location), request));
             return;
           }
           const headers2 = new Headers();
@@ -14290,12 +14290,12 @@ var require_lib2 = __commonJS({
         writeToStream(req, request);
       }));
     }
-    fetch2.isRedirect = (code) => code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
+    fetch.isRedirect = (code) => code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     exports2.FetchError = FetchError;
     exports2.Headers = Headers;
     exports2.Request = Request;
     exports2.Response = Response2;
-    exports2["default"] = fetch2;
+    exports2["default"] = fetch;
   }
 });
 
@@ -15167,12 +15167,12 @@ var require_lib3 = __commonJS({
     AbortError.prototype.name = "AbortError";
     var PassThrough$1 = Stream.PassThrough;
     var resolve_url = Url.resolve;
-    function fetch2(url, opts) {
-      if (!fetch2.Promise) {
+    function fetch(url, opts) {
+      if (!fetch.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch2.Promise;
-      return new fetch2.Promise(function(resolve, reject) {
+      Body.Promise = fetch.Promise;
+      return new fetch.Promise(function(resolve, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https : http).request;
@@ -15222,7 +15222,7 @@ var require_lib3 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch2.isRedirect(res.statusCode)) {
+          if (fetch.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
             const locationURL = location2 === null ? null : resolve_url(request.url, location2);
             switch (request.redirect) {
@@ -15270,7 +15270,7 @@ var require_lib3 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch2(new Request(locationURL, requestOpts)));
+                resolve(fetch(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -15330,11 +15330,11 @@ var require_lib3 = __commonJS({
         writeToStream(req, request);
       });
     }
-    fetch2.isRedirect = function(code) {
+    fetch.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch2.Promise = global.Promise;
-    module2.exports = exports2 = fetch2;
+    fetch.Promise = global.Promise;
+    module2.exports = exports2 = fetch;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -15384,7 +15384,7 @@ var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
     var { TimeoutError, AbortError } = require_error();
-    var { Response: Response2, Request, Headers, default: fetch2 } = require_fetch();
+    var { Response: Response2, Request, Headers, default: fetch } = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
@@ -15442,7 +15442,7 @@ var require_fetch_browser = __commonJS({
         request.send(options.body);
       });
     };
-    var fetchWithStreaming = fetch2;
+    var fetchWithStreaming = fetch;
     var fetchWith = (url, options = {}) => options.onUploadProgress != null ? fetchWithProgress(url, options) : fetchWithStreaming(url, options);
     var parseHeaders = (input) => {
       const headers = new Headers();
@@ -15736,7 +15736,7 @@ var require_fetch_node = __commonJS({
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
     var toStream = require_src8();
     var { Buffer: Buffer2 } = require("buffer");
-    var fetch2 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
+    var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
       const { onUploadProgress, body } = options;
       if (onUploadProgress && body) {
@@ -15780,7 +15780,7 @@ var require_fetch_node = __commonJS({
       }
     };
     module2.exports = {
-      fetch: fetch2,
+      fetch,
       Request,
       Headers
     };
@@ -16574,7 +16574,7 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var { fetch: fetch2, Request, Headers } = require_fetch2();
+    var { fetch, Request, Headers } = require_fetch2();
     var { TimeoutError, HTTPError } = require_error();
     var merge = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
@@ -16643,7 +16643,7 @@ var require_http = __commonJS({
         }
         const abortController = new AbortController2();
         const signal = anySignal([abortController.signal, opts.signal]);
-        const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
+        const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
           timeout: void 0,
           headers
@@ -20485,12 +20485,12 @@ var require_core2 = __commonJS({
         delete this.put;
         delete this.delete;
         delete this.options;
-        const fetch2 = this.fetch;
+        const fetch = this.fetch;
         this.fetch = (resource, options2 = {}) => {
           if (typeof resource === "string" && !resource.startsWith("/")) {
             resource = `${opts.url}/${resource}`;
           }
-          return fetch2.call(this, resource, merge(options2, {
+          return fetch.call(this, resource, merge(options2, {
             method: "POST"
           }));
         };
@@ -35704,14 +35704,7 @@ async function reader() {
 }
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 var localIPFSAvailable = async () => {
-  if (!localStorage.localIPFS)
-    return false;
-  try {
-    await fetch("http://localhost:5001", { mode: "no-cors" });
-    return true;
-  } catch (e) {
-    return false;
-  }
+  return false;
 };
 var getIPFSDaemonURL = async () => {
   if (await localIPFSAvailable()) {

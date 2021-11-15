@@ -104,9 +104,16 @@ echo -n waiting > $IPFS_ROOT/output/status
 echo "🐝: Sleeping 10 seconds"
 sleep 10
 
-# --- Post to social media
+# --- Pin & Post
 
-post_social.sh $IPFS_ROOT
+CID=$(</content/cid)
+
+echo "🐝: Pinning $CID"
+pin $CID
+
+echo "🐝: Posting $CID to social media"
+social_post $CID
+
 
 
 # --- Cleanup

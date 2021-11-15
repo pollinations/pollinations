@@ -6,7 +6,7 @@ import { receive } from "./ipfs/receiver";
     const { pin } = await writer();
     receive({
         ipns: true,
-        nodeid: "done_pollination",
+        nodeid: "done_pollen",
     }, async cid => {
         console.log("pinning result", await pin(cid));
     }, "");

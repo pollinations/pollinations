@@ -16,11 +16,6 @@ const debug = Debug("ipfsConnector")
 
 export const ipfsGlobSource = globSource;
 
-
-const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
-
-const Authorization = base64Decode(AUTH);
-
 const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;

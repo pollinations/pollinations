@@ -1,6 +1,6 @@
 
 import { create, globSource } from "ipfs-http-client";
-import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
+import { toPromise, callLogger, toPromise1, noop, retryException, AUTH } from "./utils.js";
 import { CID } from "multiformats/cid";
 import reachable from "is-port-reachable";
 import all from "it-all";
@@ -11,25 +11,29 @@ import { last } from "ramda";
 
 import { join } from "path";
 
-import { isNode } from "browser-or-node";
-
 const debug = Debug("ipfsConnector")
 
 
 export const ipfsGlobSource = globSource;
 
-
-const IPFS_HOST = "https://ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;
+
+const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
+
+const Authorization = base64Decode(AUTH);
 
 // create a new IPFS session
 export function getClient() {
     if (!_client) {
-        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h"}))
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  headers: {
+                Authorization
+            }}))
     }
     return _client;
 }
+
 
 // basic IPFS read access
 export async function reader() {
@@ -42,7 +46,7 @@ export async function reader() {
 
 // randomly assign a temporary folder in the IPFS mutable filesystem
 // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
-const mfsRoot = `/tmp_${Math.round(Math.random() * 100000)}`;
+const mfsRoot = `/tmp_${Math.round(Math.random() * 1000000)}`;
 
 // Create a writer to modify the IPFS state
 // It creates a temporary folder in the IPFS mutable filesystem 
@@ -91,6 +95,7 @@ function getWriter(client, mfsRoot, initialRootCID) {
             if (initializedFolder)
                 await ipfsRm(client, mfsRoot)
         },
+        pin: async cid => await ipfsPin(client, cid)
     };
 }
 
@@ -125,26 +130,7 @@ async function initializeMFSFolder(client, initialRootCID) {
 
 
 const localIPFSAvailable = async () => {
-    if (isNode) {
-        return await reachable(5001);
-    } else {
-
-        // If a local IPFS node is running it breaks pollinations
-        // for some reason. O it's just really slow to connect to
-        // the other nodes. A flag on in localStorage needs to be
-        // set for now to use a local node
-        if (!localStorage.localIPFS)
-            return false;
-
-        try {
-            // The fllowing line will return 404 if the port is open,
-            // otherwise it will throw an exception.
-            await fetch("http://localhost:5001", { mode: 'no-cors' })
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
+    return false;
 }
 
 const getIPFSDaemonURL = async () => {
@@ -160,9 +146,11 @@ const getIPFSDaemonURL = async () => {
 const ipfsCp = async (client, cid, ipfsPath) => {
   debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
-    //await retryException(async () => 
-    
-    //);
+}
+
+const ipfsPin = async (client, cid) => {
+    debug("Pinning", cid);
+    return await client.pin.add(cid, { recursive: true });
 }
 
 export const getWebURL = (cid, name = null) => {

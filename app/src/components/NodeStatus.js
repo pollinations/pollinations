@@ -4,10 +4,10 @@ import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
 import { Button, Link, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
 import WarningIcon from '@material-ui/icons/Error';
 import Debug from "debug";
+import { pollinatorColabURL } from "./molecules/LaunchColabButton";
 
 const debug = Debug("NodeStatus");
 
-const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/dev/colabs/pollinator.ipynb";
 
 // Display the connection status to colab and currect IPFS content ID
 export default ({ nodeID, contentID,  gpu, heartbeat }) => {
@@ -63,7 +63,7 @@ const parseGPU = gpu  =>
     gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
-const ColabConnectButton = disconnected => <Button color="secondary" href={colabURL} target="colab">[ {disconnected ? <><WarningIcon />Launch</> : "Launch"} ]</Button>;
+const ColabConnectButton = disconnected => <Button color="secondary" href={pollinatorColabURL} target="colab">[ {disconnected ? <><WarningIcon />Launch</> : "Launch"} ]</Button>;
 
 
 const TableCell = withStyles({

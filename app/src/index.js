@@ -6,8 +6,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import CssBaseline from '@material-ui/core/CssBaseline';
 // images
 
-
-import { Box, createTheme, ThemeProvider } from '@material-ui/core';
+import { createTheme, ThemeProvider } from '@material-ui/core/styles';
 
 const darkTheme = createTheme({
   typography: {

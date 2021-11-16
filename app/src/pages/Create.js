@@ -61,7 +61,7 @@ export default React.memo(function Create({ ipfs, node }) {
         {/* inputs */}
         <div style={{ width: '100%' }}>
           {
-             !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (top right) or refer to INSTRUCTIONS for further instructions.</Alert>
+             !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
           <FormView
             input={ipfs?.input}

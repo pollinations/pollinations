@@ -26,7 +26,7 @@ export default function Home({ ipfs }) {
     debug("got notebooks", notebooks);
     return  <>
           {/* title */}
-        <Box m={5}>
+        <Box paddingTop={3}>
           <List>
           <Typography variant="h6" component="h6" gutterBottom>
           🌸 Pollinations
@@ -36,8 +36,9 @@ export default function Home({ ipfs }) {
                   <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content</ListItem>
                   <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
           </List>
+          </Box>
 
-          { // Only show filter after options are loaded
+          <div children={ // Only show filter after options are loaded
           options.length > 0 &&
           <>     
             <Typography 
@@ -54,20 +55,31 @@ export default function Home({ ipfs }) {
                   key={opt}/>)
             }/>
           </>
-          }
+          } style={GridStyleFilter}/>
           
-        </Box>
-          {
+          <div children={
             notebookList
             .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)
-          }
+          } style={GridStyleNotebooks}/>
   </>;
+}
+let GridStyleNotebooks = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+  gap: '1em'
+}
+let GridStyleFilter = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+  gap: '1em',
+  margin: '1.5em 0',
+  marginTop: '50px'
 }
 
 
 const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
-    return  <Box m={5}>
+    return  <Box>
         <Card>
         <CardHeader 
         subheader={<Link children={name?.slice(2)} to={path}/>} 

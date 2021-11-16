@@ -1,4 +1,4 @@
-import { Box, Container,Link } from "@material-ui/core"
+import { Container,Link } from "@material-ui/core"
 import { Routes, Route, useParams, Navigate } from "react-router"
 import useColabNode from "./hooks/useColabNode"
 import ResultViewer from "./pages/ResultViewer"
@@ -6,7 +6,7 @@ import Creator from "./pages/Create"
 import Home from "./pages/Home"
 import { BrowserRouter } from "react-router-dom"
 import React from "react"
-import Footer from "./components/footer"
+import ToolBar from "./components/ToolBar"
 import AppBar from "./components/AppBar"
 import Debug from "debug"
 import useIPFS from "./hooks/useIPFS"
@@ -31,7 +31,7 @@ export default function App(){
             <More/>
         </Container>
 
-        <Footer {...node}/>
+        <ToolBar {...node}/>
     </BrowserRouter></>)
 }
 

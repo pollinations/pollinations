@@ -1,10 +1,19 @@
-import React, { useMemo } from "react";
-import { getNotebooks } from "../data/notebooks";
-import Debug from "debug";
-import { Box, Button, Card, CardActions, CardContent, Link as LinkStyle, Typography, CardHeader, List, ListItem } from "@material-ui/core";
+import { useMemo } from "react"
+import { Link } from 'react-router-dom'
 import Markdown from "markdown-to-jsx"
-import { Link, useParams } from 'react-router-dom'
+import Debug from "debug"
+
+import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
+
+import Box from '@material-ui/core/Box'
+import Button from '@material-ui/core/Button'
+import Card from '@material-ui/core/Card'
+import CardHeader from '@material-ui/core/CardHeader'
+import CardContent from '@material-ui/core/CardContent'
+import Typography from '@material-ui/core/Typography'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
 import OpenInNewIcon from '@material-ui/icons/OpenInNew'
 
 const debug = Debug("home");

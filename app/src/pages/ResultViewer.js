@@ -1,18 +1,17 @@
 import { memo, useMemo } from "react"
-
-import Box from '@material-ui/core/Box'
-import Typography from "@material-ui/core/Typography"
-
-// Components
-import { SEO } from "../components/Helmet"
-import useIPFS from "../hooks/useIPFS"
-import { getMedia } from "../data/media"
 import Debug from "debug";
+
+import { SEO } from "../components/Helmet"
+import { getMedia } from "../data/media"
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
-import { Button } from "@material-ui/core"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
+
+import Box from '@material-ui/core/Box'
+import Typography from "@material-ui/core/Typography"
+import Button from "@material-ui/core/Button"
+
 
 const debug = Debug("ModelViewer");
 

@@ -33,6 +33,7 @@ export function publisher(nodeID, suffix = "/output") {
     sendHeartbeat();
 
     const close = () => {
+        debug("Closing publisher", handle);
         clearInterval(handle);
     };
 

@@ -22,7 +22,7 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
   const { publish, close: closePublisher } = publisher(nodeid,"/output");
 
 
-  let currentContentID = null;
+  // let currentContentID = null;
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
@@ -30,8 +30,8 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
     await closePublisher();
 
     // publishes a message that pollinating is done which instructs the backend to pin the result
-    if (currentContentID)
-      await publishDonePollinate(currentContentID);
+    // if (currentContentID)
+    //   await publishDonePollinate(currentContentID);
   });
 
   async function start() {
@@ -73,7 +73,7 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
       // await Promise.all(changed.map(async ({ event, file }) => {
      
       const newContentID = await cid();
-      currentContentID = newContentID;
+      // currentContentID = newContentID;
       console.log(newContentID);
 
       if (ipns) {
@@ -110,7 +110,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   let changeQueue = [];
 
   const watcher = chokidar.watch(watchPath, { 
-    awaitWriteFinish: false, 
+    awaitWriteFinish: true, 
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     interval: debounceTime,

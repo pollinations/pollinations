@@ -7,7 +7,7 @@ const category2controls = category_string => {
         output: controls[2]
     }
 }
-const emptyCell = 'No Idea'
+const emptyCell = 'Anything'
 
 const useFilter = (notebooks) => {
     const [ selected, setSelected ] = useState(emptyCell)

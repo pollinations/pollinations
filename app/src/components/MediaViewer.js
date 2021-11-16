@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Card, CardContent, GridList, GridListTile, IconButton,Button, GridListTileBar, ImageListItem, Paper, Box } from "@material-ui/core"
+import { GridList, GridListTile, Button, Paper, Box } from "@material-ui/core"
 import Markdown from 'markdown-to-jsx';
 import Debug from "debug";
 
@@ -78,6 +78,6 @@ export default ({output, contentID}) => <>
     <ImageViewer output={output}  />
     <MarkdownViewer output={output} />
     <AudioViewer output={output} />
-  </>;
+  </>
 
-const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1);
+const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1)

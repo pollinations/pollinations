@@ -6,9 +6,9 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 import CssBaseline from '@material-ui/core/CssBaseline';
 // images
 
-import { createTheme, ThemeProvider } from '@material-ui/core/styles';
+import { createMuiTheme, ThemeProvider } from '@material-ui/core';
 
-const darkTheme = createTheme({
+const darkTheme = createMuiTheme({
   typography: {
     fontFamily: 'Source Code Pro'
   },

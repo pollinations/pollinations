@@ -34482,6 +34482,7 @@ function publisher(nodeID, suffix = "/output") {
   const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
   sendHeartbeat();
   const close2 = () => {
+    debug6("Closing publisher", handle);
     clearInterval(handle);
   };
   return {
@@ -34668,12 +34669,9 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
   let processing2 = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  let currentContentID = null;
   const close2 = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
-    if (currentContentID)
-      await publishDonePollinate(currentContentID);
   });
   async function start() {
     if (!(0, import_fs.existsSync)(watchPath)) {
@@ -34701,7 +34699,6 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
         }
       }
       const newContentID = await cid();
-      currentContentID = newContentID;
       console.log(newContentID);
       if (ipns) {
         debug7("publish", newContentID);
@@ -34725,7 +34722,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   const channel$ = new import_queueable2.Channel();
   let changeQueue = [];
   const watcher = import_chokidar.default.watch(watchPath, {
-    awaitWriteFinish: false,
+    awaitWriteFinish: true,
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     interval: debounceTime
@@ -34742,11 +34739,6 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     }
   });
   return channel$;
-};
-var publishDonePollinate = async (cid) => {
-  const client = await getClient();
-  debug7("Publishing done pollinate", cid);
-  await client.pubsub.publish("done_pollination", cid);
 };
 var executeOnce = (f) => {
   let executed = false;

@@ -1,37 +1,35 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Container, Link, Paper, Typography } from "@material-ui/core";
-import Alert from '@material-ui/lab/Alert';
-import Markdown from 'markdown-to-jsx';
-
-import readMetadata, { getNotebookMetadata } from "../utils/notebookMetadata";
+import React, { useCallback, useMemo } from "react"
+import { useNavigate } from "react-router"
+import Markdown from 'markdown-to-jsx'
 import Debug from "debug";
 
+import { getNotebookMetadata } from "../utils/notebookMetadata"
+import useIPFSWrite from "../hooks/useIPFSWrite"
 
-// Components
+import Typography from "@material-ui/core/Typography"
+import Box from "@material-ui/core/Box"
+import Alert from '@material-ui/lab/Alert'
+
 import FormView from '../components/Form'
-import ImageViewer, { getCoverImage } from '../components/MediaViewer'
+import ImageViewer from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { SocialPostStatus } from "../components/Social";
 import Acordion from "../components/Acordion";
-import useIPFSWrite from "../hooks/useIPFSWrite";
 import NotebookTitle from "../components/NotebookTitle";
-import { useNavigate } from "react-router";
 
 const debug = Debug("Model");
 
-
 export default React.memo(function Create({ ipfs, node }) {
 
-  const contentID = ipfs[".cid"];
+  const contentID = ipfs[".cid"]
   
-  const { connected } = node;
+  const { connected } = node
 
-  const navigate = useNavigate();
-  //let { ipfs, nodeID, status, contentID, dispatchInput } = state;
-  const dispatchInput = useIPFSWrite(ipfs, node);
+  const navigate = useNavigate()
 
-  const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input]);
+  const dispatchInput = useIPFSWrite(ipfs, node)
 
+  const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input])
 
   const dispatchForm = useCallback(async inputs => {
     debug("dispatchForm", inputs);

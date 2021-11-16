@@ -1,6 +1,6 @@
 
 import { create, globSource } from "ipfs-http-client";
-import { toPromise, callLogger, toPromise1, noop, retryException } from "./utils.js";
+import { toPromise, callLogger, toPromise1, noop, retryException, AUTH } from "./utils.js";
 import { CID } from "multiformats/cid";
 import all from "it-all";
 
@@ -12,18 +12,24 @@ import { join,basename, dirname } from "path";
 
 const debug = Debug("ipfsConnector")
 
-
-const IPFS_HOST = "https://ipfs.pollinations.ai";
+const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
 let _client = null;
+
+const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
+
+const Authorization = base64Decode(AUTH);
 
 // create a new IPFS session
 export function getClient() {
     if (!_client) {
-        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h"}))
+        _client = getIPFSDaemonURL().then(url => create({url, timeout: "2h",  headers: {
+                Authorization
+            }}))
     }
     return _client;
 }
+
 
 // basic IPFS read access
 export async function reader() {
@@ -85,6 +91,7 @@ function getWriter(client, mfsRoot, initialRootCID) {
             if (initializedFolder)
                 await ipfsRm(client, mfsRoot)
         },
+        pin: async cid => await ipfsPin(client, cid)
     };
 }
 
@@ -135,9 +142,11 @@ const getIPFSDaemonURL = async () => {
 const ipfsCp = async (client, cid, ipfsPath) => {
   debug("Copying from ",`/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
-    //await retryException(async () => 
-    
-    //);
+}
+
+const ipfsPin = async (client, cid) => {
+    debug("Pinning", cid);
+    return await client.pin.add(cid, { recursive: true });
 }
 
 export const getWebURL = (cid, name = null) => {

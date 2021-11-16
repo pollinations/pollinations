@@ -6,9 +6,10 @@ import WarningIcon from '@material-ui/icons/Error';
 import Debug from "debug";
 import { Link } from "react-router-dom";
 
+import { pollinatorColabURL } from "./molecules/LaunchColabButton";
+
 const debug = Debug("NodeStatus");
 
-const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/ale/colabs/pollinator.ipynb";
 
 // Display the connection status to colab and currect IPFS content ID
 export default ({ nodeID, contentID,  gpu, connected }) => {
@@ -57,8 +58,7 @@ const parseGPU = gpu  =>
     gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
 
 
-const ColabConnectButton = ({connected}) => <Button color="secondary" href={colabURL} target="colab">[ {connected ?  "Launch":<><WarningIcon />Launch</>}  ]</Button>;
-
+const ColabConnectButton = ({connected}) => <Button color="secondary" href={pollinatorColabURL} target="colab">[ {connected ?  "Launch":<><WarningIcon />Launch</>}  ]</Button>;
 
 const TableCell = withStyles({
     root: {

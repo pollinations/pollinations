@@ -34492,6 +34492,7 @@ function publisher(nodeID, suffix = "/output") {
   const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
   sendHeartbeat();
   const close = () => {
+    debug6("Closing publisher", handle);
     clearInterval(handle);
   };
   return {

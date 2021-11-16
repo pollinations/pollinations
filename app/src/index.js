@@ -1,13 +1,11 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-import CssBaseline from '@material-ui/core/CssBaseline';
-// images
+import React from 'react'
+import ReactDOM from 'react-dom'
+import './index.css'
+import App from './App'
+import * as serviceWorkerRegistration from './serviceWorkerRegistration'
+import CssBaseline from '@material-ui/core/CssBaseline'
 
-
-import { Box, createTheme, ThemeProvider } from '@material-ui/core';
+import { createTheme, ThemeProvider } from '@material-ui/core'
 
 const darkTheme = createTheme({
   typography: {
@@ -19,7 +17,7 @@ const darkTheme = createTheme({
       main:'hsl(10,10,10)'
       },
   },
-});
+})
 
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>

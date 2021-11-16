@@ -1,7 +1,7 @@
 import {Button} from '@material-ui/core'
 import { useEffect, useState } from 'react';
 
-const branch = "seedling";
+const branch = "master";
 
 export const pollinatorColabURL = `https://colab.research.google.com/github/pollinations/pollinations/blob/${branch}/colabs/pollinator.ipynb`;
 

@@ -14,7 +14,7 @@ const Instructions = {
 
 const InstructionsView = () => <>
     <ol children={Instructions.steps.map( step => 
-    <li children={step}/> 
+    <li children={step} key={step}/> 
     )}/>
     <ul style={{ listStyleType: 'none' }} children={Instructions.notes.map( note => 
     <> <li children={note} style={{fontSize: '0.9em'}}/> <br/> </>

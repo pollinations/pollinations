@@ -55,7 +55,7 @@ export default memo(function ResultViewer({ ipfs }) {
                 variant="h5" 
                 component="h5" 
                 gutterBottom
-                children={`${ipfs?.input?.text_input}`}
+                children={`${ipfs?.input[metadata?.primaryInput]}`}
             /> }/>
 
         </div>

@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-import CssBaseline from '@material-ui/core/CssBaseline';
-// images
+import React from 'react'
+import ReactDOM from 'react-dom'
+import './index.css'
+import App from './App'
+import * as serviceWorkerRegistration from './serviceWorkerRegistration'
+import CssBaseline from '@material-ui/core/CssBaseline'
 
 import { createMuiTheme, ThemeProvider } from '@material-ui/core';
 
@@ -18,7 +17,7 @@ const darkTheme = createMuiTheme({
       main:'hsl(10,10,10)'
       },
   },
-});
+})
 
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>

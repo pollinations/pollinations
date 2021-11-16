@@ -8,21 +8,26 @@ import LinkedInIcon from '@material-ui/icons/LinkedIn';
 import InstagramIcon from '@material-ui/icons/Instagram';
 import YoutubeIcon from '@material-ui/icons/YouTube';
 import TelegramIcon from '@material-ui/icons/Telegram';
+import PinterestIcon from '@material-ui/icons/Pinterest';
+import GoogleIcon from '@material-ui/icons/PostAdd';
 import { Link } from "@material-ui/core";
 
 const debug = Debug("Social");
 
 const platforms = {
-  "twitter": { icon: <TwitterIcon fontSize="small"/>, url: "https://twitter.com/pollinations_ai" },
-  "facebook": { icon: <FacebookIcon fontSize="small"/>, url: "https://facebook.com/pollinations"},
-  "linkedin": { icon: <LinkedInIcon fontSize="small"/>, url: "https://linkedin.com/company/pollinations-ai"},
-  "instagram": { icon: <InstagramIcon fontSize="small"/>, url: "https://instagram.com/pollinations_ai" },
-  "youtube": { icon: <YoutubeIcon fontSize="small"/>, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
-  "telegram": { icon: <TelegramIcon fontSize="small"/>, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
+  "twitter": { icon: <TwitterIcon />, url: "https://twitter.com/pollinations_ai" },
+  "facebook": { icon: <FacebookIcon />, url: "https://facebook.com/pollinations"},
+  "linkedin": { icon: <LinkedInIcon />, url: "https://linkedin.com/company/pollinations-ai"},
+  "instagram": { icon: <InstagramIcon />, url: "https://instagram.com/pollinations_ai" },
+  "youtube": { icon: <YoutubeIcon />, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
+  "telegram": { icon: <TelegramIcon />, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
+  "fbg":  { icon: <FacebookIcon />, url: "https://pinterest.com/pollinations_ai/"},
+  // "gmb":  { icon: <GoogleIcon />, url: "https://facebook.com/pollinations"},
+  "pinterest": { icon: <GoogleIcon />, url: "https://facebook.com/pollinations"},
 };
 
 export const SocialPostStatus = ({ results }) => 
-  Object.keys(results).map(platform => PostResultLink(results[platform], platform)); 
+  Object.keys(results).map(platform => results[platform] && PostResultLink(results[platform], platform)); 
 
 export const SocialLinks = () => 
   <div style={{display: 'flex', alignItems: 'center', marginLeft: 'auto'}} 

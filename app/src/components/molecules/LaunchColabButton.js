@@ -1,7 +1,9 @@
 import {Button} from '@material-ui/core'
 import { useEffect, useState } from 'react';
 
-const colabURL = "https://colab.research.google.com/github/pollinations/pollinations/blob/ale/colabs/pollinator.ipynb";
+const branch = "seedling";
+
+export const pollinatorColabURL = `https://colab.research.google.com/github/pollinations/pollinations/blob/${branch}/colabs/pollinator.ipynb`;
 
 const LaunchColabButton = ({ connected }) => {
 
@@ -15,7 +17,7 @@ const LaunchColabButton = ({ connected }) => {
     return !connected ? <Button 
         onClick={()=>setLoading(true)}
         color="secondary" 
-        href={colabURL} 
+        href={pollinatorColabURL} 
         target="colab">
         {loading ? 'Launching...' : '[ Launch Colab ]'}
     </Button> : <Button disabled children='Connected to GPU'/>

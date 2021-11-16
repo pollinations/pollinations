@@ -92,8 +92,8 @@
     "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/social-post.js && chmod ugoa+x dist/*.js",
-    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v scripts/*.sh /usr/local/bin"
+    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/pin.js && chmod ugoa+x dist/*.js",
+    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v dist/social-post.js /usr/local/bin/social_post && cp -v dist/pin.js /usr/local/bin/pin && cp -v scripts/*.sh /usr/local/bin"
   },
   "bin": {
     "pollinate": "./src/backend/pollinate-cli.js"

@@ -31,7 +31,8 @@ export default function App(){
             <Routes>
                 <Route path='n/:nodeID' element={<NodeWithData { ...node } />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} />} />
-                <Route path='/' element={<HomeWithData />} />
+                <Route path=':selected' element={<HomeWithData />} />
+                <Route index element={<Navigate replace to="Anything" />} />
             </Routes>
             <More/>
         </Container>

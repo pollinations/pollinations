@@ -17,7 +17,7 @@ const LaunchColabButton = ({ connected }) => {
         color="secondary" 
         href={pollinatorColabURL} 
         target="colab">
-        {loading ? 'Launching...' : '[ Launch Colab ]'}
+        {loading ? 'Launching...' : '[ Launch GPU ]'}
     </Button> : <Button disabled children='Connected to GPU'/>
 }
 

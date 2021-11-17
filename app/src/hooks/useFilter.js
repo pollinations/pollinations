@@ -39,7 +39,7 @@ const useFilter = (notebooks) => {
             : notebook.controls.output === selected )
 
     const setSelected = (option) => {
-        navigate(`/${option}`)
+        navigate(`/c/${option}`)
     }
     return ({
         notebookList: filtered, 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router"
 
 const category2controls = category_string => {
     let controls = category_string.substring(2).split('-')
@@ -10,10 +11,10 @@ const category2controls = category_string => {
 const emptyCell = 'Anything'
 
 const useFilter = (notebooks) => {
-    const [ selected, setSelected ] = useState(emptyCell)
+    const { selected } = useParams();
     const [ options, setOptions ] = useState([])
     const [ notebookList, setNotebookList ] = useState([])
-
+    const navigate = useNavigate();
     // 1 Add input/output arrays to notebooks
     useEffect(() => {
         
@@ -37,6 +38,9 @@ const useFilter = (notebooks) => {
             // otherwise match with option
             : notebook.controls.output === selected )
 
+    const setSelected = (option) => {
+        navigate(`/${option}`)
+    }
     return ({
         notebookList: filtered, 
         options, option: { selected, setSelected }

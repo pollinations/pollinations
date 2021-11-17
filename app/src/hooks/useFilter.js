@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router"
+import { useNavigate, useParams } from "react-router";
+import Debug from 'debug';
+
+const debug = Debug('useFilter');
 
 const category2controls = category_string => {
     let controls = category_string.substring(2).split('-')
@@ -15,6 +18,7 @@ const useFilter = (notebooks) => {
     const [ options, setOptions ] = useState([])
     const [ notebookList, setNotebookList ] = useState([])
     const navigate = useNavigate();
+    debug("useFilter selected", selected);
     // 1 Add input/output arrays to notebooks
     useEffect(() => {
         

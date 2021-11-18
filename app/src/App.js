@@ -18,13 +18,20 @@ import Home from "./pages/Home"
 
 const debug = Debug("AppContainer");
 
-export default function App(){
+const App = () => (
+    <BrowserRouter>
+        <Pollinations />
+    </BrowserRouter>
+)
 
+const Pollinations = () => {
     const node = useColabNode()
     debug("got colab node info", node)
-    const navigate = useNavigate();
+    
+    const navigate = useNavigate()
+    const navigateToNode = nodeID => navigate(`/n/${nodeID}`)
 
-    return (<><BrowserRouter>
+    return (<>   
         {/* Nav Bar     */}
         <AppBar/>
         {/* Children that get IPFS state */}
@@ -38,8 +45,8 @@ export default function App(){
             <More/>
         </Container>
 
-        <ToolBar {...node} showNode={nodeID =>  navigate(`/n/${nodeID}`}) />
-    </BrowserRouter></>)
+        <ToolBar {...node} showNode={navigateToNode} />
+        </>)
 }
 
 const HomeWithData =() => {
@@ -81,3 +88,5 @@ const More = () => <div style={{margin: '1em auto 4em auto'}}>
   <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank"> [ Github ] </Link>  
   or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
 </div>
+
+export default App;

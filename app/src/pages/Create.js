@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from "react"
-import { useNavigate } from "react-router"
 import Markdown from 'markdown-to-jsx'
 import Debug from "debug";
 
@@ -24,8 +23,6 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
   const contentID = ipfs[".cid"]
   
   const { connected } = node
-
-  const navigate = useNavigate()
 
   const dispatchInput = useIPFSWrite(ipfs, node)
 

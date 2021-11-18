@@ -7,8 +7,6 @@ import { Button, IconButton } from "@material-ui/core"
 
 let ToolBarHeader = ({ node, setOpen, open, showNode }) => {
 
-    let navigate = useNavigate()
-
     function go2Pollen(){
         setOpen(false)
        showNode(node.nodeID)

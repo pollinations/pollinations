@@ -37,7 +37,7 @@ export default memo(function ResultViewer({ ipfs }) {
         {   // Waiting Screen goes here
             !contentID &&
             <Typography>
-                Connecting to Colab...
+                Connecting to GPU...
             </Typography>
         }
 

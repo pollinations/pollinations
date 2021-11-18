@@ -37,8 +37,6 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
     onSubmit(contentID);
     debug("dispatched Form");
 
-
-  
   }, [ipfs?.input]);
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);

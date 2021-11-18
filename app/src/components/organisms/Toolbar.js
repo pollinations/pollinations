@@ -4,8 +4,7 @@ import ArrowUpward from '@material-ui/icons/ArrowUpward'
 import { Button, IconButton } from "@material-ui/core"
 
 
-
-let ToolBarHeader = ({ node, setOpen, open, showNode }) => {
+const ToolBarHeader = ({ node, setOpen, open, showNode }) => {
 
     function go2Pollen(){
         setOpen(false)
@@ -32,7 +31,7 @@ let ToolBarHeader = ({ node, setOpen, open, showNode }) => {
     </div>
 }
 
-let ToolBarContent = ({ children }) => {
+const ToolBarContent = ({ children }) => {
     return <div style={{
         width: '500px',
         padding: '1em',
@@ -41,7 +40,7 @@ let ToolBarContent = ({ children }) => {
 }
 
 
-let ToolBar = ({ children, node }) => {
+const ToolBar = ({ children, node, showNode }) => {
 
     const [open, setOpen] = useState(false)
 
@@ -59,7 +58,7 @@ let ToolBar = ({ children, node }) => {
         backgroundColor: '#222',
         padding: '0.3em'
     }} >
-        <ToolBarHeader open={open} setOpen={setOpen} node={node}/>
+        <ToolBarHeader open={open} setOpen={setOpen} node={node} showNode={showNode} />
         <ToolBarContent>
             {children}
         </ToolBarContent>

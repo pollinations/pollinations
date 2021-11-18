@@ -19,7 +19,7 @@ import NotebookTitle from "../components/NotebookTitle";
 
 const debug = Debug("Model");
 
-export default React.memo(function Create({ ipfs, node }) {
+export default React.memo(function Create({ ipfs, node, onSubmit }) {
 
   const contentID = ipfs[".cid"]
   
@@ -33,13 +33,14 @@ export default React.memo(function Create({ ipfs, node }) {
 
   const dispatchForm = useCallback(async inputs => {
     debug("dispatchForm", inputs);
-    await dispatchInput({
+    const contentID = await dispatchInput({
       ...(ipfs?.input || {}),
       ...inputs
     });
+    onSubmit(contentID);
     debug("dispatched Form");
 
-    navigate(`/n/${node.nodeID}`);
+
   
   }, [ipfs?.input]);
 

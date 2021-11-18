@@ -11,6 +11,7 @@ import { getNotebookMetadata } from "../utils/notebookMetadata"
 import Box from '@material-ui/core/Box'
 import Typography from "@material-ui/core/Typography"
 import Button from "@material-ui/core/Button"
+import { Link } from "react-router-dom";
 
 // STREAM VIEWER (/n)
 
@@ -42,7 +43,7 @@ export default memo(function ResultViewer({ ipfs }) {
         }
 
         <NotebookTitle metadata={metadata}>
-            <Button color="default" href={`/p/${contentID}/create`}>[ Clone ]</Button>
+            <Button color="default" to={`/p/${contentID}/create`} component={Link}>[ Clone ]</Button>
         </NotebookTitle>
         
         <NotebookProgress output={ipfs?.output} metadata={metadata} />

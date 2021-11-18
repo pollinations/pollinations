@@ -29,7 +29,7 @@ const Pollinations = () => {
     debug("got colab node info", node)
     
     const navigate = useNavigate()
-    const navigateToNode = nodeID => navigate(`/n/${nodeID}`)
+    const navigateToNode = () => navigate(`/n/${node.nodeID}`)
 
     return (<>   
         {/* Nav Bar     */}
@@ -38,7 +38,7 @@ const Pollinations = () => {
         <Container maxWidth="md" >
             <Routes>
                 <Route path='n/:nodeID' element={<NodeWithData { ...node } />} />
-                <Route path='p/:contentID/*' element={<ModelRoutes node={node} />} />
+                <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
@@ -46,7 +46,7 @@ const Pollinations = () => {
         </Container>
 
         <ToolBar {...node} showNode={navigateToNode} />
-        </>)
+    </>)
 }
 
 const HomeWithData =() => {
@@ -65,14 +65,13 @@ const NodeWithData = ({ contentID }) => {
     return <ResultViewer ipfs={ipfs} />
 }
 
-const ModelRoutes = ({ node }) => {
+const ModelRoutes = ({ node, navigateToNode }) => {
     const { contentID } = useParams();
     const ipfs = useIPFS(contentID);
-    const navigate = useNavigate();
 
-    const navigateToNode = (contentID) => {
-        navigate(`/n/${node.nodeID}`);
-    }
+    // const navigateToNode = (_contentID) => {
+    //     navigate(`/n/${node.nodeID}`);
+    // }
 
     return (
         <Routes>

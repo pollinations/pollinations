@@ -22,7 +22,8 @@ export default function App(){
 
     const node = useColabNode()
     debug("got colab node info", node)
-    
+    const navigate = useNavigate();
+
     return (<><BrowserRouter>
         {/* Nav Bar     */}
         <AppBar/>
@@ -37,7 +38,7 @@ export default function App(){
             <More/>
         </Container>
 
-        <ToolBar {...node}/>
+        <ToolBar {...node} showNode={nodeID =>  navigate(`/n/${nodeID}`}) />
     </BrowserRouter></>)
 }
 

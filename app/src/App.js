@@ -14,6 +14,7 @@ import AppBar from "./components/AppBar"
 import ResultViewer from "./pages/ResultViewer"
 import Creator from "./pages/Create"
 import Home from "./pages/Home"
+import { useState } from "react"
 
 
 const debug = Debug("AppContainer");
@@ -45,7 +46,7 @@ const Pollinations = () => {
             <More/>
         </Container>
 
-        <ToolBar {...node} showNode={navigateToNode} />
+        <ToolBar node={node} showNode={navigateToNode} />
     </>)
 }
 
@@ -66,18 +67,22 @@ const NodeWithData = ({ contentID }) => {
 }
 
 const ModelRoutes = ({ node, navigateToNode }) => {
-    const { contentID } = useParams();
+    const { contentID: urlContentID } = useParams();
+
+    const [contentID, setContentID] = useState(urlContentID);
+
     const ipfs = useIPFS(contentID);
 
-    // const navigateToNode = (_contentID) => {
-    //     navigate(`/n/${node.nodeID}`);
-    // }
+    const setCIDAndGotoNode = (_contentID) => {
+        setContentID(_contentID)
+        navigateToNode()
+    }
 
     return (
         <Routes>
             <Route index element={<Navigate replace to="view" />} />
             <Route path='view' element={<ResultViewer ipfs={ipfs} />} />
-            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={navigateToNode} />} />
+            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={setCIDAndGotoNode} />} />
         </Routes>
     )
 }

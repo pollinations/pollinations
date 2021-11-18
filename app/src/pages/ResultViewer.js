@@ -12,6 +12,7 @@ import Box from '@material-ui/core/Box'
 import Typography from "@material-ui/core/Typography"
 import Button from "@material-ui/core/Button"
 
+// STREAM VIEWER (/n)
 
 const debug = Debug("ModelViewer");
 
@@ -27,17 +28,24 @@ export default memo(function ResultViewer({ ipfs }) {
     return mediaToDisplay(ipfs.output);
   }, [ipfs.output]);
 
+
+
   return <Box my={2}>
       
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
+
+        {   // Waiting Screen goes here
+            !contentID &&
+            <Typography>
+                Connecting to Colab...
+            </Typography>
+        }
+
         <NotebookTitle metadata={metadata}>
             <Button color="default" href={`/p/${contentID}/create`}>[ Clone ]</Button>
         </NotebookTitle>
         
-        <NotebookProgress
-            output={ipfs?.output}
-            metadata={metadata}
-          />
+        <NotebookProgress output={ipfs?.output} metadata={metadata} />
         <div style={styles.big}>
 
             {   
@@ -59,11 +67,12 @@ export default memo(function ResultViewer({ ipfs }) {
 
         </div>
 
-        <div style={styles.steps} children={   
-            // Steps Preview
-            images.map( ([filename, url]) => <img src={url} alt={filename} style={styles.img} /> )
-        }/>
-
+        <div style={styles.steps}>
+            { // Steps Preview
+              images.map( ([filename, url]) => <img src={url} alt={filename} style={styles.img} /> )
+            }
+        </div> 
+        
         <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  

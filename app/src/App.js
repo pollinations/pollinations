@@ -67,15 +67,16 @@ const NodeWithData = ({ contentID }) => {
 }
 
 const ModelRoutes = ({ node, navigateToNode }) => {
-    const { contentID: urlContentID } = useParams();
+    const { contentID } = useParams();
 
-    const [contentID, setContentID] = useState(urlContentID);
+    // here I wanted to update the contentID on form submit but it's buggy so i disabled
+    // const [contentID, setContentID] = useState(urlContentID);
 
     const ipfs = useIPFS(contentID);
 
     const setCIDAndGotoNode = (_contentID) => {
-        setContentID(_contentID)
-        navigateToNode()
+        // setContentID(_contentID)
+        navigateToNode();
     }
 
     return (

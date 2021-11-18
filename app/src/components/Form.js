@@ -4,7 +4,7 @@ import Button from '@material-ui/core/Button'
 import Debug from "debug";
 import { Box, Paper, Typography } from "@material-ui/core";
 import HelpModal from "./HelpModal";
-import { useDropzone } from 'react-dropzone'
+// import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
@@ -144,29 +144,29 @@ function textOrTextarea(defaultVal) {
     return (defaultVal.split("\n").length > 1 ? "textarea" : "text");
 }
 
-// File upload widget using dropzone
-function FileUpload() {
-    const onDrop = useCallback(async acceptedFiles => {
-      // Do something with the files
-      debug("dropped files", acceptedFiles);
-      const file = acceptedFiles[0];
-      const { cid } = await _client.add({content: file.stream(), path: file.path});
+// // File upload widget using dropzone
+// function FileUpload() {
+//     const onDrop = useCallback(async acceptedFiles => {
+//       // Do something with the files
+//       debug("dropped files", acceptedFiles);
+//       const file = acceptedFiles[0];
+//       const { cid } = await _client.add({content: file.stream(), path: file.path});
       
       
-    }, []);
+//     }, []);
 
-    const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+//     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
   
-    return (<Paper variant={isDragActive ? "outlined":"elevation"}>
-      <div {...getRootProps()}>
-        <input {...getInputProps()} />
-        {
-          isDragActive ?
-            <p>Drop the files here ...</p> :
-            <p>Drag 'n' drop some files here, or click to select files</p>
-        }
-      </div>
-      </Paper>
-    )
-  }
+//     return (<Paper variant={isDragActive ? "outlined":"elevation"}>
+//       <div {...getRootProps()}>
+//         <input {...getInputProps()} />
+//         {
+//           isDragActive ?
+//             <p>Drop the files here ...</p> :
+//             <p>Drag 'n' drop some files here, or click to select files</p>
+//         }
+//       </div>
+//       </Paper>
+//     )
+//   }
 

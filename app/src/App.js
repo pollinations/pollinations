@@ -1,4 +1,4 @@
-import { Routes, Route, useParams, Navigate } from "react-router"
+import { Routes, Route, useParams, Navigate, useNavigate } from "react-router"
 import { BrowserRouter } from "react-router-dom"
 import Debug from "debug"
 
@@ -60,11 +60,17 @@ const NodeWithData = ({ contentID }) => {
 const ModelRoutes = ({ node }) => {
     const { contentID } = useParams();
     const ipfs = useIPFS(contentID);
+    const navigate = useNavigate();
+
+    const navigateToNode = (contentID) => {
+        navigate(`/n/${node.nodeID}`);
+    }
+
     return (
         <Routes>
             <Route index element={<Navigate replace to="view" />} />
             <Route path='view' element={<ResultViewer ipfs={ipfs} />} />
-            <Route path='create' element={<Creator ipfs={ipfs} node={node} />} />
+            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={navigateToNode} />} />
         </Routes>
     )
 }

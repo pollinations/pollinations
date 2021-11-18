@@ -29,6 +29,8 @@ export default (ipfs, node) => {
         debug("added input", inputState, "got cid", newContentID, "to state");
 
         publish(newContentID);
+
+        return newContentID;
         
     }, [publish, writer, ipfs]);
 

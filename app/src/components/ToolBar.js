@@ -4,7 +4,7 @@ import ToolBarContainer from "./organisms/Toolbar"
 import Instructions from "./molecules/Instructions"
 import NodeIdInfo from "./molecules/NodeId"
 
-const ToolBar = ({ ...node }) => <ToolBarContainer node={node}>
+const ToolBar = ({ node, showNode }) => <ToolBarContainer node={node} showNode={showNode}>
     {
         node?.connected ?  <>
             <GpuInfo {...node} />

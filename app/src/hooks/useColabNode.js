@@ -49,7 +49,10 @@ const useColabNode = () => {
 
     },[node.nodeID])
 
-    return node ;
+    const overrideContentID = useCallback(contentID => setNode(node => ({...node, contentID})), []);
+    const overrideNodeID = useCallback(nodeID => setNode(node => ({...node, nodeID})), []);
+    
+    return {node, overrideContentID, overrideNodeID} ;
 
 };
 

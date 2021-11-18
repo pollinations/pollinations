@@ -14,7 +14,7 @@ import AppBar from "./components/AppBar"
 import ResultViewer from "./pages/ResultViewer"
 import Creator from "./pages/Create"
 import Home from "./pages/Home"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 
 const debug = Debug("AppContainer");
@@ -26,11 +26,15 @@ const App = () => (
 )
 
 const Pollinations = () => {
-    const node = useColabNode()
-    debug("got colab node info", node)
+    const {node, overrideContentID, overrideNodeID} = useColabNode();
+    debug("got colab node info", node);
     
     const navigate = useNavigate()
-    const navigateToNode = () => navigate(`/n/${node.nodeID}`)
+    const navigateToNode = (contentID) => {
+        if (contentID)
+            overrideContentID(contentID)
+        navigate(`/n/${node.nodeID}`)
+    }
 
     return (<>   
         {/* Nav Bar     */}
@@ -38,7 +42,7 @@ const Pollinations = () => {
         {/* Children that get IPFS state */}
         <Container maxWidth="md" >
             <Routes>
-                <Route path='n/:nodeID' element={<NodeWithData { ...node } />} />
+                <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
@@ -52,15 +56,19 @@ const Pollinations = () => {
 
 const HomeWithData =() => {
     const ipfs = useIPFS("/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888" );
-    
+
     debug("home ipfs",ipfs);
     
     return <Home ipfs={ipfs} />
 }
 
-const NodeWithData = ({ contentID }) => {
-    const ipfs = useIPFS(contentID)
-    
+const NodeWithData = ({ node, overrideNodeID }) => {
+    const ipfs = useIPFS(node.contentID);
+    const { nodeID } = useParams();
+    useEffect(() => {
+        overrideNodeID(nodeID);
+    }, [nodeID])
+
     if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`}/>
     
     return <ResultViewer ipfs={ipfs} />
@@ -69,21 +77,13 @@ const NodeWithData = ({ contentID }) => {
 const ModelRoutes = ({ node, navigateToNode }) => {
     const { contentID } = useParams();
 
-    // here I wanted to update the contentID on form submit but it's buggy so i disabled
-    // const [contentID, setContentID] = useState(urlContentID);
-
     const ipfs = useIPFS(contentID);
-
-    const setCIDAndGotoNode = (_contentID) => {
-        // setContentID(_contentID)
-        navigateToNode();
-    }
 
     return (
         <Routes>
             <Route index element={<Navigate replace to="view" />} />
             <Route path='view' element={<ResultViewer ipfs={ipfs} />} />
-            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={setCIDAndGotoNode} />} />
+            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={navigateToNode} />} />
         </Routes>
     )
 }

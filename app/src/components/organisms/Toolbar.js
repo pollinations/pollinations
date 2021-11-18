@@ -1,18 +1,17 @@
 import LaunchColabButton from "../molecules/LaunchColabButton"
 import { useState } from "react"
 import ArrowUpward from '@material-ui/icons/ArrowUpward'
-import { useNavigate } from "react-router"
 import { Button, IconButton } from "@material-ui/core"
 
 
 
-let ToolBarHeader = ({ node, setOpen, open }) => {
+let ToolBarHeader = ({ node, setOpen, open, showNode }) => {
 
     let navigate = useNavigate()
 
     function go2Pollen(){
         setOpen(false)
-        navigate(`/n/${node.nodeID}`)
+       showNode(node.nodeID)
     }
 
     return <div style={{

@@ -106,13 +106,13 @@ sleep 10
 
 # --- Pin & Post
 
-CID=$(</content/cid)
+CID=tag=$( tail -n 1 /contentid/cid )
 
 echo "🐝: Pinning $CID"
-pin $CID
+node /usr/local/bin/pin.js $CID
 
 echo "🐝: Posting $CID to social media"
-social_post $CID
+node /usr/local/bin/social_post.js $CID
 
 
 

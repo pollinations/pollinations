@@ -26,10 +26,10 @@ export function publisher(nodeID, suffix = "/output") {
         lastPublishCID = cid;
     };
 
-    const interval = setInterval(() => {
-        if (lastPublishCID)
-            _publish(lastPublishCID);
-    }, 5000);
+    // const interval = setInterval(() => {
+    //     if (lastPublishCID)
+    //         _publish(lastPublishCID);
+    // }, 5000);
 
     const sendHeartbeat = async () => {
         const client = await getClient();
@@ -43,7 +43,7 @@ export function publisher(nodeID, suffix = "/output") {
     const close = () => {
         debug("Closing publisher", handle);
         clearInterval(handle);
-        clearInterval(interval);
+        // clearInterval(interval);
     };
 
     return {

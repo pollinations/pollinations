@@ -106,7 +106,7 @@ sleep 10
 
 # --- Pin & Post
 
-CID=tag=$( tail -n 1 /contentid/cid )
+CID=$( tail -n 1 /content/cid )
 
 echo "🐝: Pinning $CID"
 node /usr/local/bin/pin.js $CID

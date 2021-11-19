@@ -35,17 +35,22 @@ const useColabNode = () => {
 
         // Publisher
         debug("nodeID change to", nodeID, "creating publisher")
-        const { publish, close } = publisher(nodeID, "/input")
+        const { publish, closePub } = publisher(nodeID, "/input")
         updateNode({ publish, close })
         //close()
         
         // Update
         debug("nodeID changed to", nodeID,". (Re)subscribing")
-        subscribeCID(nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
+        const closeSub = subscribeCID(nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
             debug("hearbeat state", heartbeat);
             const connected = heartbeat && heartbeat.alive;
             updateNode({connected});
         })
+
+        return () => {
+            closeSub();
+            closePub();
+        }
 
     },[node.nodeID])
 

@@ -1,25 +1,24 @@
 
+import chokidar from "chokidar";
+import Debug from 'debug';
+import { existsSync, mkdirSync } from 'fs';
+import { join } from "path";
+import { Channel } from "queueable";
+import { debounce } from "throttle-debounce";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
-import { join } from "path";
-import { existsSync, mkdirSync } from 'fs';
-import Debug from 'debug';
-import { sortBy, reverse } from "ramda";
-import chokidar from "chokidar";
-import { Channel } from "queueable";
-import { debounce, throttle } from "throttle-debounce";
 
 const debug = Debug("ipfs/sender");
 
 
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
-export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, once, nodeid }) => {
-  
+export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
+
   let processing = Promise.resolve(true);
-  
+
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
-  const { publish, close: closePublisher } = publisher(nodeid,"/output");
+  const { publish, close: closePublisher } = publisher(nodeid, "/output");
 
 
   // let currentContentID = null;
@@ -42,16 +41,16 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
     }
 
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
-    
+
 
     for await (const changed of changedFiles$) {
-      
-      let done=null;
+
+      let done = null;
 
       processing = new Promise(resolve => done = resolve);
       debug("Changed files", changed);
-      for (const  { event, path: file } of changed) {
-      // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
+      for (const { event, path: file } of changed) {
+        // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
         const localPath = join(watchPath, file);
         const ipfsPath = file;
@@ -67,11 +66,11 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
         if (event === "unlink" || event === "unlinkDir") {
           debug("removing", file, event);
           await rm(ipfsPath);
-    
+
         }
       }
       // await Promise.all(changed.map(async ({ event, file }) => {
-     
+
       const newContentID = await cid();
       // currentContentID = newContentID;
       console.log(newContentID);
@@ -81,22 +80,22 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
         await publish(newContentID);
       }
       // }));
-  
+
       done();
 
       if (once) {
         break;
       }
-    
+
     }
-    
-    await close();
+
+    // await close();
   }
 
   return {
-      start, 
-      processing: () => processing, 
-      close
+    start,
+    processing: () => processing,
+    close
   };
 
 };
@@ -106,17 +105,17 @@ export const sender = async ({ path: watchPath, debounce:debounceTime, ipns, onc
 const chunkedFilewatcher = (watchPath, debounceTime) => {
   debug("Local: Watching", watchPath);
   const channel$ = new Channel();
-  
+
   let changeQueue = [];
 
-  const watcher = chokidar.watch(watchPath, { 
-    awaitWriteFinish: true, 
+  const watcher = chokidar.watch(watchPath, {
+    awaitWriteFinish: true,
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     interval: debounceTime,
   });
 
-  const sendQueuedFiles =  debounce(debounceTime, false, async () => {
+  const sendQueuedFiles = debounce(debounceTime, false, async () => {
     const files = changeQueue;
     changeQueue = [];
     channel$.push(files);

@@ -54,546 +54,6 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
-// node_modules/event-target-shim/dist/event-target-shim.js
-var require_event_target_shim = __commonJS({
-  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var privateData = new WeakMap();
-    var wrappers = new WeakMap();
-    function pd(event) {
-      const retv = privateData.get(event);
-      console.assert(retv != null, "'this' is expected an Event object, but got", event);
-      return retv;
-    }
-    function setCancelFlag(data) {
-      if (data.passiveListener != null) {
-        if (typeof console !== "undefined" && typeof console.error === "function") {
-          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
-        }
-        return;
-      }
-      if (!data.event.cancelable) {
-        return;
-      }
-      data.canceled = true;
-      if (typeof data.event.preventDefault === "function") {
-        data.event.preventDefault();
-      }
-    }
-    function Event(eventTarget, event) {
-      privateData.set(this, {
-        eventTarget,
-        event,
-        eventPhase: 2,
-        currentTarget: eventTarget,
-        canceled: false,
-        stopped: false,
-        immediateStopped: false,
-        passiveListener: null,
-        timeStamp: event.timeStamp || Date.now()
-      });
-      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
-      const keys = Object.keys(event);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in this)) {
-          Object.defineProperty(this, key, defineRedirectDescriptor(key));
-        }
-      }
-    }
-    Event.prototype = {
-      get type() {
-        return pd(this).event.type;
-      },
-      get target() {
-        return pd(this).eventTarget;
-      },
-      get currentTarget() {
-        return pd(this).currentTarget;
-      },
-      composedPath() {
-        const currentTarget = pd(this).currentTarget;
-        if (currentTarget == null) {
-          return [];
-        }
-        return [currentTarget];
-      },
-      get NONE() {
-        return 0;
-      },
-      get CAPTURING_PHASE() {
-        return 1;
-      },
-      get AT_TARGET() {
-        return 2;
-      },
-      get BUBBLING_PHASE() {
-        return 3;
-      },
-      get eventPhase() {
-        return pd(this).eventPhase;
-      },
-      stopPropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.stopPropagation === "function") {
-          data.event.stopPropagation();
-        }
-      },
-      stopImmediatePropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        data.immediateStopped = true;
-        if (typeof data.event.stopImmediatePropagation === "function") {
-          data.event.stopImmediatePropagation();
-        }
-      },
-      get bubbles() {
-        return Boolean(pd(this).event.bubbles);
-      },
-      get cancelable() {
-        return Boolean(pd(this).event.cancelable);
-      },
-      preventDefault() {
-        setCancelFlag(pd(this));
-      },
-      get defaultPrevented() {
-        return pd(this).canceled;
-      },
-      get composed() {
-        return Boolean(pd(this).event.composed);
-      },
-      get timeStamp() {
-        return pd(this).timeStamp;
-      },
-      get srcElement() {
-        return pd(this).eventTarget;
-      },
-      get cancelBubble() {
-        return pd(this).stopped;
-      },
-      set cancelBubble(value) {
-        if (!value) {
-          return;
-        }
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.cancelBubble === "boolean") {
-          data.event.cancelBubble = true;
-        }
-      },
-      get returnValue() {
-        return !pd(this).canceled;
-      },
-      set returnValue(value) {
-        if (!value) {
-          setCancelFlag(pd(this));
-        }
-      },
-      initEvent() {
-      }
-    };
-    Object.defineProperty(Event.prototype, "constructor", {
-      value: Event,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
-      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
-      wrappers.set(window.Event.prototype, Event);
-    }
-    function defineRedirectDescriptor(key) {
-      return {
-        get() {
-          return pd(this).event[key];
-        },
-        set(value) {
-          pd(this).event[key] = value;
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineCallDescriptor(key) {
-      return {
-        value() {
-          const event = pd(this).event;
-          return event[key].apply(event, arguments);
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineWrapper(BaseEvent, proto) {
-      const keys = Object.keys(proto);
-      if (keys.length === 0) {
-        return BaseEvent;
-      }
-      function CustomEvent(eventTarget, event) {
-        BaseEvent.call(this, eventTarget, event);
-      }
-      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
-        constructor: { value: CustomEvent, configurable: true, writable: true }
-      });
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in BaseEvent.prototype)) {
-          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
-          const isFunc = typeof descriptor.value === "function";
-          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
-        }
-      }
-      return CustomEvent;
-    }
-    function getWrapper(proto) {
-      if (proto == null || proto === Object.prototype) {
-        return Event;
-      }
-      let wrapper = wrappers.get(proto);
-      if (wrapper == null) {
-        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
-        wrappers.set(proto, wrapper);
-      }
-      return wrapper;
-    }
-    function wrapEvent(eventTarget, event) {
-      const Wrapper = getWrapper(Object.getPrototypeOf(event));
-      return new Wrapper(eventTarget, event);
-    }
-    function isStopped(event) {
-      return pd(event).immediateStopped;
-    }
-    function setEventPhase(event, eventPhase) {
-      pd(event).eventPhase = eventPhase;
-    }
-    function setCurrentTarget(event, currentTarget) {
-      pd(event).currentTarget = currentTarget;
-    }
-    function setPassiveListener(event, passiveListener) {
-      pd(event).passiveListener = passiveListener;
-    }
-    var listenersMap = new WeakMap();
-    var CAPTURE = 1;
-    var BUBBLE = 2;
-    var ATTRIBUTE = 3;
-    function isObject(x) {
-      return x !== null && typeof x === "object";
-    }
-    function getListeners(eventTarget) {
-      const listeners = listenersMap.get(eventTarget);
-      if (listeners == null) {
-        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
-      }
-      return listeners;
-    }
-    function defineEventAttributeDescriptor(eventName) {
-      return {
-        get() {
-          const listeners = getListeners(this);
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              return node.listener;
-            }
-            node = node.next;
-          }
-          return null;
-        },
-        set(listener) {
-          if (typeof listener !== "function" && !isObject(listener)) {
-            listener = null;
-          }
-          const listeners = getListeners(this);
-          let prev = null;
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              if (prev !== null) {
-                prev.next = node.next;
-              } else if (node.next !== null) {
-                listeners.set(eventName, node.next);
-              } else {
-                listeners.delete(eventName);
-              }
-            } else {
-              prev = node;
-            }
-            node = node.next;
-          }
-          if (listener !== null) {
-            const newNode = {
-              listener,
-              listenerType: ATTRIBUTE,
-              passive: false,
-              once: false,
-              next: null
-            };
-            if (prev === null) {
-              listeners.set(eventName, newNode);
-            } else {
-              prev.next = newNode;
-            }
-          }
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineEventAttribute(eventTargetPrototype, eventName) {
-      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
-    }
-    function defineCustomEventTarget(eventNames) {
-      function CustomEventTarget() {
-        EventTarget.call(this);
-      }
-      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
-        constructor: {
-          value: CustomEventTarget,
-          configurable: true,
-          writable: true
-        }
-      });
-      for (let i = 0; i < eventNames.length; ++i) {
-        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
-      }
-      return CustomEventTarget;
-    }
-    function EventTarget() {
-      if (this instanceof EventTarget) {
-        listenersMap.set(this, new Map());
-        return;
-      }
-      if (arguments.length === 1 && Array.isArray(arguments[0])) {
-        return defineCustomEventTarget(arguments[0]);
-      }
-      if (arguments.length > 0) {
-        const types = new Array(arguments.length);
-        for (let i = 0; i < arguments.length; ++i) {
-          types[i] = arguments[i];
-        }
-        return defineCustomEventTarget(types);
-      }
-      throw new TypeError("Cannot call a class as a function");
-    }
-    EventTarget.prototype = {
-      addEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        if (typeof listener !== "function" && !isObject(listener)) {
-          throw new TypeError("'listener' should be a function or an object.");
-        }
-        const listeners = getListeners(this);
-        const optionsIsObj = isObject(options);
-        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        const newNode = {
-          listener,
-          listenerType,
-          passive: optionsIsObj && Boolean(options.passive),
-          once: optionsIsObj && Boolean(options.once),
-          next: null
-        };
-        let node = listeners.get(eventName);
-        if (node === void 0) {
-          listeners.set(eventName, newNode);
-          return;
-        }
-        let prev = null;
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-        prev.next = newNode;
-      },
-      removeEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        const listeners = getListeners(this);
-        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        let prev = null;
-        let node = listeners.get(eventName);
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-      },
-      dispatchEvent(event) {
-        if (event == null || typeof event.type !== "string") {
-          throw new TypeError('"event.type" should be a string.');
-        }
-        const listeners = getListeners(this);
-        const eventName = event.type;
-        let node = listeners.get(eventName);
-        if (node == null) {
-          return true;
-        }
-        const wrappedEvent = wrapEvent(this, event);
-        let prev = null;
-        while (node != null) {
-          if (node.once) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-          } else {
-            prev = node;
-          }
-          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
-          if (typeof node.listener === "function") {
-            try {
-              node.listener.call(this, wrappedEvent);
-            } catch (err) {
-              if (typeof console !== "undefined" && typeof console.error === "function") {
-                console.error(err);
-              }
-            }
-          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
-            node.listener.handleEvent(wrappedEvent);
-          }
-          if (isStopped(wrappedEvent)) {
-            break;
-          }
-          node = node.next;
-        }
-        setPassiveListener(wrappedEvent, null);
-        setEventPhase(wrappedEvent, 0);
-        setCurrentTarget(wrappedEvent, null);
-        return !wrappedEvent.defaultPrevented;
-      }
-    };
-    Object.defineProperty(EventTarget.prototype, "constructor", {
-      value: EventTarget,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
-      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
-    }
-    exports2.defineEventAttribute = defineEventAttribute;
-    exports2.EventTarget = EventTarget;
-    exports2.default = EventTarget;
-    module2.exports = EventTarget;
-    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
-    module2.exports.defineEventAttribute = defineEventAttribute;
-  }
-});
-
-// node_modules/abort-controller/dist/abort-controller.js
-var require_abort_controller = __commonJS({
-  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var eventTargetShim = require_event_target_shim();
-    var AbortSignal = class extends eventTargetShim.EventTarget {
-      constructor() {
-        super();
-        throw new TypeError("AbortSignal cannot be constructed directly");
-      }
-      get aborted() {
-        const aborted = abortedFlags.get(this);
-        if (typeof aborted !== "boolean") {
-          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
-        }
-        return aborted;
-      }
-    };
-    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
-    function createAbortSignal() {
-      const signal = Object.create(AbortSignal.prototype);
-      eventTargetShim.EventTarget.call(signal);
-      abortedFlags.set(signal, false);
-      return signal;
-    }
-    function abortSignal2(signal) {
-      if (abortedFlags.get(signal) !== false) {
-        return;
-      }
-      abortedFlags.set(signal, true);
-      signal.dispatchEvent({ type: "abort" });
-    }
-    var abortedFlags = new WeakMap();
-    Object.defineProperties(AbortSignal.prototype, {
-      aborted: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortSignal"
-      });
-    }
-    var AbortController13 = class {
-      constructor() {
-        signals.set(this, createAbortSignal());
-      }
-      get signal() {
-        return getSignal(this);
-      }
-      abort() {
-        abortSignal2(getSignal(this));
-      }
-    };
-    var signals = new WeakMap();
-    function getSignal(controller) {
-      const signal = signals.get(controller);
-      if (signal == null) {
-        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
-      }
-      return signal;
-    }
-    Object.defineProperties(AbortController13.prototype, {
-      signal: { enumerable: true },
-      abort: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController13.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortController"
-      });
-    }
-    exports2.AbortController = AbortController13;
-    exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController13;
-    module2.exports = AbortController13;
-    module2.exports.AbortController = module2.exports["default"] = AbortController13;
-    module2.exports.AbortSignal = AbortSignal;
-  }
-});
-
-// node_modules/native-abort-controller/src/index.js
-var require_src = __commonJS({
-  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
-    "use strict";
-    var impl;
-    if (globalThis.AbortController && globalThis.AbortSignal) {
-      impl = globalThis;
-    } else {
-      impl = require_abort_controller();
-    }
-    module2.exports.AbortSignal = impl.AbortSignal;
-    module2.exports.AbortController = impl.AbortController;
-  }
-});
-
 // node_modules/await-sleep/index.js
 var require_await_sleep = __commonJS({
   "node_modules/await-sleep/index.js"(exports2, module2) {
@@ -1322,13 +782,1044 @@ var require_node = __commonJS({
 });
 
 // node_modules/debug/src/index.js
-var require_src2 = __commonJS({
+var require_src = __commonJS({
   "node_modules/debug/src/index.js"(exports2, module2) {
     if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
       module2.exports = require_browser();
     } else {
       module2.exports = require_node();
     }
+  }
+});
+
+// node_modules/event-target-shim/dist/event-target-shim.js
+var require_event_target_shim = __commonJS({
+  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var privateData = new WeakMap();
+    var wrappers = new WeakMap();
+    function pd(event) {
+      const retv = privateData.get(event);
+      console.assert(retv != null, "'this' is expected an Event object, but got", event);
+      return retv;
+    }
+    function setCancelFlag(data) {
+      if (data.passiveListener != null) {
+        if (typeof console !== "undefined" && typeof console.error === "function") {
+          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
+        }
+        return;
+      }
+      if (!data.event.cancelable) {
+        return;
+      }
+      data.canceled = true;
+      if (typeof data.event.preventDefault === "function") {
+        data.event.preventDefault();
+      }
+    }
+    function Event(eventTarget, event) {
+      privateData.set(this, {
+        eventTarget,
+        event,
+        eventPhase: 2,
+        currentTarget: eventTarget,
+        canceled: false,
+        stopped: false,
+        immediateStopped: false,
+        passiveListener: null,
+        timeStamp: event.timeStamp || Date.now()
+      });
+      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
+      const keys = Object.keys(event);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in this)) {
+          Object.defineProperty(this, key, defineRedirectDescriptor(key));
+        }
+      }
+    }
+    Event.prototype = {
+      get type() {
+        return pd(this).event.type;
+      },
+      get target() {
+        return pd(this).eventTarget;
+      },
+      get currentTarget() {
+        return pd(this).currentTarget;
+      },
+      composedPath() {
+        const currentTarget = pd(this).currentTarget;
+        if (currentTarget == null) {
+          return [];
+        }
+        return [currentTarget];
+      },
+      get NONE() {
+        return 0;
+      },
+      get CAPTURING_PHASE() {
+        return 1;
+      },
+      get AT_TARGET() {
+        return 2;
+      },
+      get BUBBLING_PHASE() {
+        return 3;
+      },
+      get eventPhase() {
+        return pd(this).eventPhase;
+      },
+      stopPropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.stopPropagation === "function") {
+          data.event.stopPropagation();
+        }
+      },
+      stopImmediatePropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        data.immediateStopped = true;
+        if (typeof data.event.stopImmediatePropagation === "function") {
+          data.event.stopImmediatePropagation();
+        }
+      },
+      get bubbles() {
+        return Boolean(pd(this).event.bubbles);
+      },
+      get cancelable() {
+        return Boolean(pd(this).event.cancelable);
+      },
+      preventDefault() {
+        setCancelFlag(pd(this));
+      },
+      get defaultPrevented() {
+        return pd(this).canceled;
+      },
+      get composed() {
+        return Boolean(pd(this).event.composed);
+      },
+      get timeStamp() {
+        return pd(this).timeStamp;
+      },
+      get srcElement() {
+        return pd(this).eventTarget;
+      },
+      get cancelBubble() {
+        return pd(this).stopped;
+      },
+      set cancelBubble(value) {
+        if (!value) {
+          return;
+        }
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.cancelBubble === "boolean") {
+          data.event.cancelBubble = true;
+        }
+      },
+      get returnValue() {
+        return !pd(this).canceled;
+      },
+      set returnValue(value) {
+        if (!value) {
+          setCancelFlag(pd(this));
+        }
+      },
+      initEvent() {
+      }
+    };
+    Object.defineProperty(Event.prototype, "constructor", {
+      value: Event,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
+      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
+      wrappers.set(window.Event.prototype, Event);
+    }
+    function defineRedirectDescriptor(key) {
+      return {
+        get() {
+          return pd(this).event[key];
+        },
+        set(value) {
+          pd(this).event[key] = value;
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineCallDescriptor(key) {
+      return {
+        value() {
+          const event = pd(this).event;
+          return event[key].apply(event, arguments);
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineWrapper(BaseEvent, proto) {
+      const keys = Object.keys(proto);
+      if (keys.length === 0) {
+        return BaseEvent;
+      }
+      function CustomEvent(eventTarget, event) {
+        BaseEvent.call(this, eventTarget, event);
+      }
+      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
+        constructor: { value: CustomEvent, configurable: true, writable: true }
+      });
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in BaseEvent.prototype)) {
+          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+          const isFunc = typeof descriptor.value === "function";
+          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
+        }
+      }
+      return CustomEvent;
+    }
+    function getWrapper(proto) {
+      if (proto == null || proto === Object.prototype) {
+        return Event;
+      }
+      let wrapper = wrappers.get(proto);
+      if (wrapper == null) {
+        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
+        wrappers.set(proto, wrapper);
+      }
+      return wrapper;
+    }
+    function wrapEvent(eventTarget, event) {
+      const Wrapper = getWrapper(Object.getPrototypeOf(event));
+      return new Wrapper(eventTarget, event);
+    }
+    function isStopped(event) {
+      return pd(event).immediateStopped;
+    }
+    function setEventPhase(event, eventPhase) {
+      pd(event).eventPhase = eventPhase;
+    }
+    function setCurrentTarget(event, currentTarget) {
+      pd(event).currentTarget = currentTarget;
+    }
+    function setPassiveListener(event, passiveListener) {
+      pd(event).passiveListener = passiveListener;
+    }
+    var listenersMap = new WeakMap();
+    var CAPTURE = 1;
+    var BUBBLE = 2;
+    var ATTRIBUTE = 3;
+    function isObject(x) {
+      return x !== null && typeof x === "object";
+    }
+    function getListeners(eventTarget) {
+      const listeners = listenersMap.get(eventTarget);
+      if (listeners == null) {
+        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
+      }
+      return listeners;
+    }
+    function defineEventAttributeDescriptor(eventName) {
+      return {
+        get() {
+          const listeners = getListeners(this);
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              return node.listener;
+            }
+            node = node.next;
+          }
+          return null;
+        },
+        set(listener) {
+          if (typeof listener !== "function" && !isObject(listener)) {
+            listener = null;
+          }
+          const listeners = getListeners(this);
+          let prev = null;
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              if (prev !== null) {
+                prev.next = node.next;
+              } else if (node.next !== null) {
+                listeners.set(eventName, node.next);
+              } else {
+                listeners.delete(eventName);
+              }
+            } else {
+              prev = node;
+            }
+            node = node.next;
+          }
+          if (listener !== null) {
+            const newNode = {
+              listener,
+              listenerType: ATTRIBUTE,
+              passive: false,
+              once: false,
+              next: null
+            };
+            if (prev === null) {
+              listeners.set(eventName, newNode);
+            } else {
+              prev.next = newNode;
+            }
+          }
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineEventAttribute(eventTargetPrototype, eventName) {
+      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
+    }
+    function defineCustomEventTarget(eventNames) {
+      function CustomEventTarget() {
+        EventTarget.call(this);
+      }
+      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
+        constructor: {
+          value: CustomEventTarget,
+          configurable: true,
+          writable: true
+        }
+      });
+      for (let i = 0; i < eventNames.length; ++i) {
+        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
+      }
+      return CustomEventTarget;
+    }
+    function EventTarget() {
+      if (this instanceof EventTarget) {
+        listenersMap.set(this, new Map());
+        return;
+      }
+      if (arguments.length === 1 && Array.isArray(arguments[0])) {
+        return defineCustomEventTarget(arguments[0]);
+      }
+      if (arguments.length > 0) {
+        const types = new Array(arguments.length);
+        for (let i = 0; i < arguments.length; ++i) {
+          types[i] = arguments[i];
+        }
+        return defineCustomEventTarget(types);
+      }
+      throw new TypeError("Cannot call a class as a function");
+    }
+    EventTarget.prototype = {
+      addEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        if (typeof listener !== "function" && !isObject(listener)) {
+          throw new TypeError("'listener' should be a function or an object.");
+        }
+        const listeners = getListeners(this);
+        const optionsIsObj = isObject(options);
+        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        const newNode = {
+          listener,
+          listenerType,
+          passive: optionsIsObj && Boolean(options.passive),
+          once: optionsIsObj && Boolean(options.once),
+          next: null
+        };
+        let node = listeners.get(eventName);
+        if (node === void 0) {
+          listeners.set(eventName, newNode);
+          return;
+        }
+        let prev = null;
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+        prev.next = newNode;
+      },
+      removeEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        const listeners = getListeners(this);
+        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        let prev = null;
+        let node = listeners.get(eventName);
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+      },
+      dispatchEvent(event) {
+        if (event == null || typeof event.type !== "string") {
+          throw new TypeError('"event.type" should be a string.');
+        }
+        const listeners = getListeners(this);
+        const eventName = event.type;
+        let node = listeners.get(eventName);
+        if (node == null) {
+          return true;
+        }
+        const wrappedEvent = wrapEvent(this, event);
+        let prev = null;
+        while (node != null) {
+          if (node.once) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+          } else {
+            prev = node;
+          }
+          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
+          if (typeof node.listener === "function") {
+            try {
+              node.listener.call(this, wrappedEvent);
+            } catch (err) {
+              if (typeof console !== "undefined" && typeof console.error === "function") {
+                console.error(err);
+              }
+            }
+          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
+            node.listener.handleEvent(wrappedEvent);
+          }
+          if (isStopped(wrappedEvent)) {
+            break;
+          }
+          node = node.next;
+        }
+        setPassiveListener(wrappedEvent, null);
+        setEventPhase(wrappedEvent, 0);
+        setCurrentTarget(wrappedEvent, null);
+        return !wrappedEvent.defaultPrevented;
+      }
+    };
+    Object.defineProperty(EventTarget.prototype, "constructor", {
+      value: EventTarget,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
+    }
+    exports2.defineEventAttribute = defineEventAttribute;
+    exports2.EventTarget = EventTarget;
+    exports2.default = EventTarget;
+    module2.exports = EventTarget;
+    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
+    module2.exports.defineEventAttribute = defineEventAttribute;
+  }
+});
+
+// node_modules/abort-controller/dist/abort-controller.js
+var require_abort_controller = __commonJS({
+  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var eventTargetShim = require_event_target_shim();
+    var AbortSignal = class extends eventTargetShim.EventTarget {
+      constructor() {
+        super();
+        throw new TypeError("AbortSignal cannot be constructed directly");
+      }
+      get aborted() {
+        const aborted = abortedFlags.get(this);
+        if (typeof aborted !== "boolean") {
+          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
+        }
+        return aborted;
+      }
+    };
+    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
+    function createAbortSignal() {
+      const signal = Object.create(AbortSignal.prototype);
+      eventTargetShim.EventTarget.call(signal);
+      abortedFlags.set(signal, false);
+      return signal;
+    }
+    function abortSignal2(signal) {
+      if (abortedFlags.get(signal) !== false) {
+        return;
+      }
+      abortedFlags.set(signal, true);
+      signal.dispatchEvent({ type: "abort" });
+    }
+    var abortedFlags = new WeakMap();
+    Object.defineProperties(AbortSignal.prototype, {
+      aborted: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortSignal"
+      });
+    }
+    var AbortController13 = class {
+      constructor() {
+        signals.set(this, createAbortSignal());
+      }
+      get signal() {
+        return getSignal(this);
+      }
+      abort() {
+        abortSignal2(getSignal(this));
+      }
+    };
+    var signals = new WeakMap();
+    function getSignal(controller) {
+      const signal = signals.get(controller);
+      if (signal == null) {
+        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
+      }
+      return signal;
+    }
+    Object.defineProperties(AbortController13.prototype, {
+      signal: { enumerable: true },
+      abort: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortController13.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortController"
+      });
+    }
+    exports2.AbortController = AbortController13;
+    exports2.AbortSignal = AbortSignal;
+    exports2.default = AbortController13;
+    module2.exports = AbortController13;
+    module2.exports.AbortController = module2.exports["default"] = AbortController13;
+    module2.exports.AbortSignal = AbortSignal;
+  }
+});
+
+// node_modules/native-abort-controller/src/index.js
+var require_src2 = __commonJS({
+  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
+    "use strict";
+    var impl;
+    if (globalThis.AbortController && globalThis.AbortSignal) {
+      impl = globalThis;
+    } else {
+      impl = require_abort_controller();
+    }
+    module2.exports.AbortSignal = impl.AbortSignal;
+    module2.exports.AbortController = impl.AbortController;
+  }
+});
+
+// node_modules/queueable/dist/lib/Deferred.js
+var require_Deferred = __commonJS({
+  "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred = class {
+      constructor() {
+        this.promise = new Promise((resolve2, reject) => {
+          this.resolve = (value) => {
+            resolve2(value);
+            return this.promise;
+          };
+          this.reject = (reason) => {
+            reject(reason);
+            return this.promise;
+          };
+        });
+      }
+    };
+    exports2.default = Deferred;
+  }
+});
+
+// node_modules/fast-list/fast-list.js
+var require_fast_list = __commonJS({
+  "node_modules/fast-list/fast-list.js"(exports2, module2) {
+    (function() {
+      function Item(data, prev, next) {
+        this.next = next;
+        if (next)
+          next.prev = this;
+        this.prev = prev;
+        if (prev)
+          prev.next = this;
+        this.data = data;
+      }
+      function FastList() {
+        if (!(this instanceof FastList))
+          return new FastList();
+        this._head = null;
+        this._tail = null;
+        this.length = 0;
+      }
+      FastList.prototype = {
+        push: function(data) {
+          this._tail = new Item(data, this._tail, null);
+          if (!this._head)
+            this._head = this._tail;
+          this.length++;
+        },
+        pop: function() {
+          if (this.length === 0)
+            return void 0;
+          var t = this._tail;
+          this._tail = t.prev;
+          if (t.prev) {
+            t.prev = this._tail.next = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._head = this._tail;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return t.data;
+        },
+        unshift: function(data) {
+          this._head = new Item(data, null, this._head);
+          if (!this._tail)
+            this._tail = this._head;
+          this.length++;
+        },
+        shift: function() {
+          if (this.length === 0)
+            return void 0;
+          var h = this._head;
+          this._head = h.next;
+          if (h.next) {
+            h.next = this._head.prev = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._tail = this._head;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return h.data;
+        },
+        item: function(n) {
+          if (n < 0)
+            n = this.length + n;
+          var h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          return h ? h.data : void 0;
+        },
+        slice: function(n, m) {
+          if (!n)
+            n = 0;
+          if (!m)
+            m = this.length;
+          if (m < 0)
+            m = this.length + m;
+          if (n < 0)
+            n = this.length + n;
+          if (m === n) {
+            return [];
+          }
+          if (m < n) {
+            throw new Error("invalid offset: " + n + "," + m + " (length=" + this.length + ")");
+          }
+          var len = m - n, ret = new Array(len), i = 0, h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          while (i < len && h) {
+            ret[i++] = h.data;
+            h = h.next;
+          }
+          return ret;
+        },
+        drop: function() {
+          FastList.call(this);
+        },
+        forEach: function(fn, thisp) {
+          var p = this._head, i = 0, len = this.length;
+          while (i < len && p) {
+            fn.call(thisp || this, p.data, i, this);
+            p = p.next;
+            i++;
+          }
+        },
+        map: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            n.push(fn.call(thisp || me, v, i, me));
+          });
+          return n;
+        },
+        filter: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            if (fn.call(thisp || me, v, i, me))
+              n.push(v);
+          });
+          return n;
+        },
+        reduce: function(fn, val, thisp) {
+          var i = 0, p = this._head, len = this.length;
+          if (!val) {
+            i = 1;
+            val = p && p.data;
+            p = p && p.next;
+          }
+          while (i < len && p) {
+            val = fn.call(thisp || this, val, p.data, this);
+            i++;
+            p = p.next;
+          }
+          return val;
+        }
+      };
+      if (typeof exports2 !== "undefined")
+        module2.exports = FastList;
+      else if (typeof define === "function" && define.amd) {
+        define("FastList", function() {
+          return FastList;
+        });
+      } else
+        (function() {
+          return this;
+        })().FastList = FastList;
+    })();
+  }
+});
+
+// node_modules/queueable/dist/lib/LinkedQueue.js
+var require_LinkedQueue = __commonJS({
+  "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fast_list_1 = __importDefault(require_fast_list());
+    var Queue = class {
+      constructor(limit = 0) {
+        this.limit = limit;
+        this.length = 0;
+        this.list = new fast_list_1.default();
+      }
+      enqueue(value) {
+        const { list } = this;
+        if (this.limit > 0 && list.length === this.limit) {
+          list.shift();
+        }
+        this.length += 1;
+        list.push(value);
+      }
+      dequeue() {
+        if (this.length === 0) {
+          throw Error("Queue is empty");
+        }
+        this.length -= 1;
+        return this.list.shift();
+      }
+      clear() {
+        this.length = 0;
+        this.list.drop();
+      }
+      forEach(f) {
+        this.list.forEach(f);
+      }
+    };
+    exports2.default = Queue;
+  }
+});
+
+// node_modules/queueable/dist/lib/common.js
+var require_common2 = __commonJS({
+  "node_modules/queueable/dist/lib/common.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.doneResult = Object.freeze({
+      value: void 0,
+      done: true
+    });
+    exports2.donePromise = Promise.resolve(exports2.doneResult);
+  }
+});
+
+// node_modules/queueable/dist/lib/fromDom.js
+var require_fromDom = __commonJS({
+  "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromDom = (init) => (type, target, options) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      target.addEventListener(type, listener, options);
+      return adapter.wrap(() => target.removeEventListener(type, listener, options));
+    };
+    exports2.default = fromDom;
+  }
+});
+
+// node_modules/queueable/dist/lib/fromEmitter.js
+var require_fromEmitter = __commonJS({
+  "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromEmitter = (init) => (type, emitter) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      emitter.addListener(type, listener);
+      return adapter.wrap(() => void emitter.removeListener(type, listener));
+    };
+    exports2.default = fromEmitter;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Channel.js
+var require_Channel = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var LinkedQueue_1 = __importDefault(require_LinkedQueue());
+    var common_1 = require_common2();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var Channel2 = class {
+      constructor(pushLimit = 0, pullLimit = 0) {
+        this.closed = false;
+        this.pushBuffer = new LinkedQueue_1.default(pushLimit);
+        this.pullBuffer = new LinkedQueue_1.default(pullLimit);
+      }
+      next() {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        if (this.pushBuffer.length === 0) {
+          const defer2 = new Deferred_1.default();
+          this.pullBuffer.enqueue(defer2);
+          return defer2.promise;
+        }
+        const { result, defer } = this.pushBuffer.dequeue();
+        defer.resolve(result);
+        if (result.done) {
+          this.close();
+        }
+        return defer.promise;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.pullBuffer.length > 0) {
+          return this.pullBuffer.dequeue().resolve(result);
+        }
+        const defer = new Deferred_1.default();
+        this.pushBuffer.enqueue({ result, defer });
+        return defer.promise;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+      async return(value) {
+        this.close();
+        return {
+          done: true,
+          value
+        };
+      }
+      close() {
+        if (this.closed) {
+          return;
+        }
+        this.closed = true;
+        this.pushBuffer.forEach(({ defer: { resolve: resolve2 } }) => void resolve2(common_1.doneResult));
+        this.pushBuffer.clear();
+        this.pullBuffer.forEach(({ resolve: resolve2 }) => void resolve2(common_1.doneResult));
+        this.pullBuffer.clear();
+      }
+      wrap(onReturn) {
+        if (this.closed) {
+          throw Error("Balancer is closed");
+        }
+        return {
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          next: () => this.next(),
+          return: async (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+      }
+    };
+    exports2.default = Channel2;
+    Channel2.fromDom = fromDom_1.default(() => new Channel2());
+    Channel2.fromEmitter = fromEmitter_1.default(() => new Channel2());
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Multicast.js
+var require_Multicast = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Channel_1 = __importDefault(require_Channel());
+    var Multicast = class {
+      constructor(init = () => new Channel_1.default()) {
+        this.init = init;
+        this.receivers = new Set();
+      }
+      push(value) {
+        this.receivers.forEach((balancer) => balancer.push(value));
+        return this;
+      }
+      [Symbol.asyncIterator]() {
+        const producer = this.init();
+        const { receivers } = this;
+        receivers.add(producer);
+        if (this.onStart && receivers.size === 1) {
+          this.onStart();
+        }
+        return producer.wrap(() => {
+          receivers.delete(producer);
+          if (this.onStop && receivers.size === 0) {
+            this.onStop();
+          }
+        });
+      }
+    };
+    exports2.default = Multicast;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/LastResult.js
+var require_LastResult = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var common_1 = require_common2();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var LastResult = class {
+      constructor() {
+        this.buffer = new Deferred_1.default();
+        this.closed = false;
+        this.resolved = false;
+        this.requested = false;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          throw Error("Iterator closed");
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.resolved === false) {
+          this.resolved = true;
+        } else {
+          this.buffer = new Deferred_1.default();
+          this.resolved = false;
+        }
+        this.requested = false;
+        this.buffer.resolve(result);
+        return this.buffer.promise;
+      }
+      async next() {
+        if (this.closed) {
+          return common_1.doneResult;
+        }
+        this.requested = true;
+        return this.buffer.promise;
+      }
+      async return(value) {
+        this.closed = true;
+        if (!this.resolved && this.requested) {
+          this.buffer.resolve(common_1.doneResult);
+        }
+        return Promise.resolve({
+          value,
+          done: true
+        });
+      }
+      wrap(onReturn) {
+        const wrapped = {
+          next: () => this.next(),
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          return: (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+        return wrapped;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+    };
+    exports2.default = LastResult;
+    LastResult.fromDom = fromDom_1.default(() => new LastResult());
+    LastResult.fromEmitter = fromEmitter_1.default(() => new LastResult());
+  }
+});
+
+// node_modules/queueable/dist/lib/index.js
+var require_lib = __commonJS({
+  "node_modules/queueable/dist/lib/index.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Multicast_1 = __importDefault(require_Multicast());
+    exports2.Multicast = Multicast_1.default;
+    var Channel_1 = __importDefault(require_Channel());
+    exports2.Channel = Channel_1.default;
+    var LastResult_1 = __importDefault(require_LastResult());
+    exports2.LastResult = LastResult_1.default;
+    var Deferred_1 = __importDefault(require_Deferred());
+    exports2.Deferred = Deferred_1.default;
+    var fromDom_1 = require_fromDom();
+    exports2.fromDom = fromDom_1.default;
+    var fromEmitter_1 = require_fromEmitter();
+    exports2.fromEmitter = fromEmitter_1.default;
   }
 });
 
@@ -2361,11 +2852,11 @@ var require_cid = __commonJS({
         return CID2.create(1, code5, digest2);
       }
       static decode(bytes3) {
-        const [cid, remainder] = CID2.decodeFirst(bytes3);
+        const [cid2, remainder] = CID2.decodeFirst(bytes3);
         if (remainder.length) {
           throw new Error("Incorrect length");
         }
-        return cid;
+        return cid2;
       }
       static decodeFirst(bytes$1) {
         const specs = CID2.inspectBytes(bytes$1);
@@ -2376,9 +2867,9 @@ var require_cid = __commonJS({
         }
         const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize);
         const digest$1 = new digest.Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes);
-        const cid = specs.version === 0 ? CID2.createV0(digest$1) : CID2.createV1(specs.codec, digest$1);
+        const cid2 = specs.version === 0 ? CID2.createV0(digest$1) : CID2.createV1(specs.codec, digest$1);
         return [
-          cid,
+          cid2,
           bytes$1.subarray(specs.size)
         ];
       }
@@ -2416,9 +2907,9 @@ var require_cid = __commonJS({
       }
       static parse(source, base3) {
         const [prefix, bytes3] = parseCIDtoBytes2(source, base3);
-        const cid = CID2.decode(bytes3);
-        cid._baseCache.set(prefix, source);
-        return cid;
+        const cid2 = CID2.decode(bytes3);
+        cid2._baseCache.set(prefix, source);
+        return cid2;
       }
     };
     var parseCIDtoBytes2 = (source, base3) => {
@@ -2460,24 +2951,24 @@ var require_cid = __commonJS({
       if (prefix !== base58.base58btc.prefix) {
         throw Error(`Cannot string encode V0 in ${base3.name} encoding`);
       }
-      const cid = cache2.get(prefix);
-      if (cid == null) {
-        const cid2 = base3.encode(bytes3).slice(1);
-        cache2.set(prefix, cid2);
-        return cid2;
+      const cid2 = cache2.get(prefix);
+      if (cid2 == null) {
+        const cid3 = base3.encode(bytes3).slice(1);
+        cache2.set(prefix, cid3);
+        return cid3;
       } else {
-        return cid;
+        return cid2;
       }
     };
     var toStringV12 = (bytes3, cache2, base3) => {
       const { prefix } = base3;
-      const cid = cache2.get(prefix);
-      if (cid == null) {
-        const cid2 = base3.encode(bytes3);
-        cache2.set(prefix, cid2);
-        return cid2;
+      const cid2 = cache2.get(prefix);
+      if (cid2 == null) {
+        const cid3 = base3.encode(bytes3);
+        cache2.set(prefix, cid3);
+        return cid3;
       } else {
-        return cid;
+        return cid2;
       }
     };
     var DAG_PB_CODE2 = 112;
@@ -2534,12 +3025,12 @@ var require_src3 = __commonJS({
   "node_modules/multiformats/cjs/src/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var cid = require_cid();
+    var cid2 = require_cid();
     var varint4 = require_varint2();
     var bytes2 = require_bytes();
     var hasher = require_hasher();
     var digest = require_digest();
-    exports2.CID = cid.CID;
+    exports2.CID = cid2.CID;
     exports2.varint = varint4;
     exports2.bytes = bytes2;
     exports2.hasher = hasher;
@@ -2566,7 +3057,7 @@ var require_basics = __commonJS({
     var raw = require_raw();
     var json = require_json();
     require_src3();
-    var cid = require_cid();
+    var cid2 = require_cid();
     var hasher = require_hasher();
     var digest = require_digest();
     var varint4 = require_varint2();
@@ -2577,7 +3068,7 @@ var require_basics = __commonJS({
       raw,
       json
     };
-    exports2.CID = cid.CID;
+    exports2.CID = cid2.CID;
     exports2.hasher = hasher;
     exports2.digest = digest;
     exports2.varint = varint4;
@@ -7122,7 +7613,7 @@ var require_streams = __commonJS({
 });
 
 // node_modules/iconv-lite/lib/index.js
-var require_lib = __commonJS({
+var require_lib2 = __commonJS({
   "node_modules/iconv-lite/lib/index.js"(exports2, module2) {
     "use strict";
     var Buffer2 = require_safer().Buffer;
@@ -7245,7 +7736,7 @@ var require_lib = __commonJS({
 var require_encoding = __commonJS({
   "node_modules/encoding/lib/encoding.js"(exports2, module2) {
     "use strict";
-    var iconvLite = require_lib();
+    var iconvLite = require_lib2();
     module2.exports.convert = convert;
     function convert(str, to, from3) {
       from3 = checkEncoding(from3 || "UTF-8");
@@ -7290,7 +7781,7 @@ var require_encoding = __commonJS({
 });
 
 // node_modules/electron-fetch/lib/index.js
-var require_lib2 = __commonJS({
+var require_lib3 = __commonJS({
   "node_modules/electron-fetch/lib/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -8295,7 +8786,7 @@ var require_lib2 = __commonJS({
 });
 
 // node_modules/node-fetch/lib/index.js
-var require_lib3 = __commonJS({
+var require_lib4 = __commonJS({
   "node_modules/node-fetch/lib/index.js"(exports2, module2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -9400,10 +9891,10 @@ var require_src5 = __commonJS({
       };
     } else {
       module2.exports = {
-        default: require_lib3().default,
-        Headers: require_lib3().Headers,
-        Request: require_lib3().Request,
-        Response: require_lib3().Response
+        default: require_lib4().default,
+        Headers: require_lib4().Headers,
+        Request: require_lib4().Request,
+        Response: require_lib4().Response
       };
     }
   }
@@ -9415,7 +9906,7 @@ var require_fetch = __commonJS({
     "use strict";
     var { isElectronMain } = require_env();
     if (isElectronMain) {
-      module2.exports = require_lib2();
+      module2.exports = require_lib3();
     } else {
       module2.exports = require_src5();
     }
@@ -10046,7 +10537,7 @@ var require_iso_url = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController: AbortController13 } = require_src();
+    var { AbortController: AbortController13 } = require_src2();
     function anySignal2(signals) {
       const controller = new AbortController13();
       function onAbort() {
@@ -10081,7 +10572,7 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController: AbortController13 } = require_src();
+    var { AbortController: AbortController13 } = require_src2();
     var anySignal2 = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -18916,497 +19407,6 @@ var require_src7 = __commonJS({
   }
 });
 
-// node_modules/queueable/dist/lib/Deferred.js
-var require_Deferred = __commonJS({
-  "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred = class {
-      constructor() {
-        this.promise = new Promise((resolve2, reject) => {
-          this.resolve = (value) => {
-            resolve2(value);
-            return this.promise;
-          };
-          this.reject = (reason) => {
-            reject(reason);
-            return this.promise;
-          };
-        });
-      }
-    };
-    exports2.default = Deferred;
-  }
-});
-
-// node_modules/fast-list/fast-list.js
-var require_fast_list = __commonJS({
-  "node_modules/fast-list/fast-list.js"(exports2, module2) {
-    (function() {
-      function Item(data, prev, next) {
-        this.next = next;
-        if (next)
-          next.prev = this;
-        this.prev = prev;
-        if (prev)
-          prev.next = this;
-        this.data = data;
-      }
-      function FastList() {
-        if (!(this instanceof FastList))
-          return new FastList();
-        this._head = null;
-        this._tail = null;
-        this.length = 0;
-      }
-      FastList.prototype = {
-        push: function(data) {
-          this._tail = new Item(data, this._tail, null);
-          if (!this._head)
-            this._head = this._tail;
-          this.length++;
-        },
-        pop: function() {
-          if (this.length === 0)
-            return void 0;
-          var t = this._tail;
-          this._tail = t.prev;
-          if (t.prev) {
-            t.prev = this._tail.next = null;
-          }
-          this.length--;
-          if (this.length === 1)
-            this._head = this._tail;
-          else if (this.length === 0)
-            this._head = this._tail = null;
-          return t.data;
-        },
-        unshift: function(data) {
-          this._head = new Item(data, null, this._head);
-          if (!this._tail)
-            this._tail = this._head;
-          this.length++;
-        },
-        shift: function() {
-          if (this.length === 0)
-            return void 0;
-          var h = this._head;
-          this._head = h.next;
-          if (h.next) {
-            h.next = this._head.prev = null;
-          }
-          this.length--;
-          if (this.length === 1)
-            this._tail = this._head;
-          else if (this.length === 0)
-            this._head = this._tail = null;
-          return h.data;
-        },
-        item: function(n) {
-          if (n < 0)
-            n = this.length + n;
-          var h = this._head;
-          while (n-- > 0 && h)
-            h = h.next;
-          return h ? h.data : void 0;
-        },
-        slice: function(n, m) {
-          if (!n)
-            n = 0;
-          if (!m)
-            m = this.length;
-          if (m < 0)
-            m = this.length + m;
-          if (n < 0)
-            n = this.length + n;
-          if (m === n) {
-            return [];
-          }
-          if (m < n) {
-            throw new Error("invalid offset: " + n + "," + m + " (length=" + this.length + ")");
-          }
-          var len = m - n, ret = new Array(len), i = 0, h = this._head;
-          while (n-- > 0 && h)
-            h = h.next;
-          while (i < len && h) {
-            ret[i++] = h.data;
-            h = h.next;
-          }
-          return ret;
-        },
-        drop: function() {
-          FastList.call(this);
-        },
-        forEach: function(fn, thisp) {
-          var p = this._head, i = 0, len = this.length;
-          while (i < len && p) {
-            fn.call(thisp || this, p.data, i, this);
-            p = p.next;
-            i++;
-          }
-        },
-        map: function(fn, thisp) {
-          var n = new FastList();
-          this.forEach(function(v, i, me) {
-            n.push(fn.call(thisp || me, v, i, me));
-          });
-          return n;
-        },
-        filter: function(fn, thisp) {
-          var n = new FastList();
-          this.forEach(function(v, i, me) {
-            if (fn.call(thisp || me, v, i, me))
-              n.push(v);
-          });
-          return n;
-        },
-        reduce: function(fn, val, thisp) {
-          var i = 0, p = this._head, len = this.length;
-          if (!val) {
-            i = 1;
-            val = p && p.data;
-            p = p && p.next;
-          }
-          while (i < len && p) {
-            val = fn.call(thisp || this, val, p.data, this);
-            i++;
-            p = p.next;
-          }
-          return val;
-        }
-      };
-      if (typeof exports2 !== "undefined")
-        module2.exports = FastList;
-      else if (typeof define === "function" && define.amd) {
-        define("FastList", function() {
-          return FastList;
-        });
-      } else
-        (function() {
-          return this;
-        })().FastList = FastList;
-    })();
-  }
-});
-
-// node_modules/queueable/dist/lib/LinkedQueue.js
-var require_LinkedQueue = __commonJS({
-  "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fast_list_1 = __importDefault(require_fast_list());
-    var Queue = class {
-      constructor(limit = 0) {
-        this.limit = limit;
-        this.length = 0;
-        this.list = new fast_list_1.default();
-      }
-      enqueue(value) {
-        const { list } = this;
-        if (this.limit > 0 && list.length === this.limit) {
-          list.shift();
-        }
-        this.length += 1;
-        list.push(value);
-      }
-      dequeue() {
-        if (this.length === 0) {
-          throw Error("Queue is empty");
-        }
-        this.length -= 1;
-        return this.list.shift();
-      }
-      clear() {
-        this.length = 0;
-        this.list.drop();
-      }
-      forEach(f) {
-        this.list.forEach(f);
-      }
-    };
-    exports2.default = Queue;
-  }
-});
-
-// node_modules/queueable/dist/lib/common.js
-var require_common2 = __commonJS({
-  "node_modules/queueable/dist/lib/common.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.doneResult = Object.freeze({
-      value: void 0,
-      done: true
-    });
-    exports2.donePromise = Promise.resolve(exports2.doneResult);
-  }
-});
-
-// node_modules/queueable/dist/lib/fromDom.js
-var require_fromDom = __commonJS({
-  "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fromDom = (init) => (type, target, options) => {
-      const adapter = init();
-      const listener = (event) => void adapter.push(event);
-      target.addEventListener(type, listener, options);
-      return adapter.wrap(() => target.removeEventListener(type, listener, options));
-    };
-    exports2.default = fromDom;
-  }
-});
-
-// node_modules/queueable/dist/lib/fromEmitter.js
-var require_fromEmitter = __commonJS({
-  "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fromEmitter = (init) => (type, emitter) => {
-      const adapter = init();
-      const listener = (event) => void adapter.push(event);
-      emitter.addListener(type, listener);
-      return adapter.wrap(() => void emitter.removeListener(type, listener));
-    };
-    exports2.default = fromEmitter;
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/Channel.js
-var require_Channel = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred_1 = __importDefault(require_Deferred());
-    var LinkedQueue_1 = __importDefault(require_LinkedQueue());
-    var common_1 = require_common2();
-    var fromDom_1 = __importDefault(require_fromDom());
-    var fromEmitter_1 = __importDefault(require_fromEmitter());
-    var Channel2 = class {
-      constructor(pushLimit = 0, pullLimit = 0) {
-        this.closed = false;
-        this.pushBuffer = new LinkedQueue_1.default(pushLimit);
-        this.pullBuffer = new LinkedQueue_1.default(pullLimit);
-      }
-      next() {
-        if (this.closed) {
-          return Promise.resolve(common_1.doneResult);
-        }
-        if (this.pushBuffer.length === 0) {
-          const defer2 = new Deferred_1.default();
-          this.pullBuffer.enqueue(defer2);
-          return defer2.promise;
-        }
-        const { result, defer } = this.pushBuffer.dequeue();
-        defer.resolve(result);
-        if (result.done) {
-          this.close();
-        }
-        return defer.promise;
-      }
-      push(value, done = false) {
-        if (this.closed) {
-          return Promise.resolve(common_1.doneResult);
-        }
-        const result = {
-          value,
-          done
-        };
-        if (this.pullBuffer.length > 0) {
-          return this.pullBuffer.dequeue().resolve(result);
-        }
-        const defer = new Deferred_1.default();
-        this.pushBuffer.enqueue({ result, defer });
-        return defer.promise;
-      }
-      [Symbol.asyncIterator]() {
-        return this;
-      }
-      async return(value) {
-        this.close();
-        return {
-          done: true,
-          value
-        };
-      }
-      close() {
-        if (this.closed) {
-          return;
-        }
-        this.closed = true;
-        this.pushBuffer.forEach(({ defer: { resolve: resolve2 } }) => void resolve2(common_1.doneResult));
-        this.pushBuffer.clear();
-        this.pullBuffer.forEach(({ resolve: resolve2 }) => void resolve2(common_1.doneResult));
-        this.pullBuffer.clear();
-      }
-      wrap(onReturn) {
-        if (this.closed) {
-          throw Error("Balancer is closed");
-        }
-        return {
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-          next: () => this.next(),
-          return: async (value) => {
-            if (onReturn) {
-              onReturn();
-            }
-            return this.return(value);
-          }
-        };
-      }
-    };
-    exports2.default = Channel2;
-    Channel2.fromDom = fromDom_1.default(() => new Channel2());
-    Channel2.fromEmitter = fromEmitter_1.default(() => new Channel2());
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/Multicast.js
-var require_Multicast = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Channel_1 = __importDefault(require_Channel());
-    var Multicast = class {
-      constructor(init = () => new Channel_1.default()) {
-        this.init = init;
-        this.receivers = new Set();
-      }
-      push(value) {
-        this.receivers.forEach((balancer) => balancer.push(value));
-        return this;
-      }
-      [Symbol.asyncIterator]() {
-        const producer = this.init();
-        const { receivers } = this;
-        receivers.add(producer);
-        if (this.onStart && receivers.size === 1) {
-          this.onStart();
-        }
-        return producer.wrap(() => {
-          receivers.delete(producer);
-          if (this.onStop && receivers.size === 0) {
-            this.onStop();
-          }
-        });
-      }
-    };
-    exports2.default = Multicast;
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/LastResult.js
-var require_LastResult = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred_1 = __importDefault(require_Deferred());
-    var common_1 = require_common2();
-    var fromDom_1 = __importDefault(require_fromDom());
-    var fromEmitter_1 = __importDefault(require_fromEmitter());
-    var LastResult = class {
-      constructor() {
-        this.buffer = new Deferred_1.default();
-        this.closed = false;
-        this.resolved = false;
-        this.requested = false;
-      }
-      push(value, done = false) {
-        if (this.closed) {
-          throw Error("Iterator closed");
-        }
-        const result = {
-          value,
-          done
-        };
-        if (this.resolved === false) {
-          this.resolved = true;
-        } else {
-          this.buffer = new Deferred_1.default();
-          this.resolved = false;
-        }
-        this.requested = false;
-        this.buffer.resolve(result);
-        return this.buffer.promise;
-      }
-      async next() {
-        if (this.closed) {
-          return common_1.doneResult;
-        }
-        this.requested = true;
-        return this.buffer.promise;
-      }
-      async return(value) {
-        this.closed = true;
-        if (!this.resolved && this.requested) {
-          this.buffer.resolve(common_1.doneResult);
-        }
-        return Promise.resolve({
-          value,
-          done: true
-        });
-      }
-      wrap(onReturn) {
-        const wrapped = {
-          next: () => this.next(),
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-          return: (value) => {
-            if (onReturn) {
-              onReturn();
-            }
-            return this.return(value);
-          }
-        };
-        return wrapped;
-      }
-      [Symbol.asyncIterator]() {
-        return this;
-      }
-    };
-    exports2.default = LastResult;
-    LastResult.fromDom = fromDom_1.default(() => new LastResult());
-    LastResult.fromEmitter = fromEmitter_1.default(() => new LastResult());
-  }
-});
-
-// node_modules/queueable/dist/lib/index.js
-var require_lib4 = __commonJS({
-  "node_modules/queueable/dist/lib/index.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Multicast_1 = __importDefault(require_Multicast());
-    exports2.Multicast = Multicast_1.default;
-    var Channel_1 = __importDefault(require_Channel());
-    exports2.Channel = Channel_1.default;
-    var LastResult_1 = __importDefault(require_LastResult());
-    exports2.LastResult = LastResult_1.default;
-    var Deferred_1 = __importDefault(require_Deferred());
-    exports2.Deferred = Deferred_1.default;
-    var fromDom_1 = require_fromDom();
-    exports2.fromDom = fromDom_1.default;
-    var fromEmitter_1 = require_fromEmitter();
-    exports2.fromEmitter = fromEmitter_1.default;
-  }
-});
-
 // node_modules/@sindresorhus/is/dist/index.js
 var require_dist = __commonJS({
   "node_modules/@sindresorhus/is/dist/index.js"(exports2, module2) {
@@ -26999,9 +26999,10 @@ var require_node2 = __commonJS({
 });
 
 // src/network/ipfsPubSub.js
-var import_native_abort_controller12 = __toModule(require_src());
 var import_await_sleep2 = __toModule(require_await_sleep());
-var import_debug6 = __toModule(require_src2());
+var import_debug6 = __toModule(require_src());
+var import_native_abort_controller12 = __toModule(require_src2());
+var import_queueable = __toModule(require_lib());
 
 // node_modules/ipfs-core-utils/esm/src/multibases.js
 var LOAD_BASE = (name5) => Promise.reject(new Error(`No base found for "${name5}"`));
@@ -27788,11 +27789,11 @@ var CID = class {
     return CID.create(1, code5, digest);
   }
   static decode(bytes2) {
-    const [cid, remainder] = CID.decodeFirst(bytes2);
+    const [cid2, remainder] = CID.decodeFirst(bytes2);
     if (remainder.length) {
       throw new Error("Incorrect length");
     }
-    return cid;
+    return cid2;
   }
   static decodeFirst(bytes2) {
     const specs = CID.inspectBytes(bytes2);
@@ -27803,9 +27804,9 @@ var CID = class {
     }
     const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize);
     const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes);
-    const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest);
+    const cid2 = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest);
     return [
-      cid,
+      cid2,
       bytes2.subarray(specs.size)
     ];
   }
@@ -27843,9 +27844,9 @@ var CID = class {
   }
   static parse(source, base3) {
     const [prefix, bytes2] = parseCIDtoBytes(source, base3);
-    const cid = CID.decode(bytes2);
-    cid._baseCache.set(prefix, source);
-    return cid;
+    const cid2 = CID.decode(bytes2);
+    cid2._baseCache.set(prefix, source);
+    return cid2;
   }
 };
 var parseCIDtoBytes = (source, base3) => {
@@ -27887,24 +27888,24 @@ var toStringV0 = (bytes2, cache2, base3) => {
   if (prefix !== base58btc.prefix) {
     throw Error(`Cannot string encode V0 in ${base3.name} encoding`);
   }
-  const cid = cache2.get(prefix);
-  if (cid == null) {
-    const cid2 = base3.encode(bytes2).slice(1);
-    cache2.set(prefix, cid2);
-    return cid2;
+  const cid2 = cache2.get(prefix);
+  if (cid2 == null) {
+    const cid3 = base3.encode(bytes2).slice(1);
+    cache2.set(prefix, cid3);
+    return cid3;
   } else {
-    return cid;
+    return cid2;
   }
 };
 var toStringV1 = (bytes2, cache2, base3) => {
   const { prefix } = base3;
-  const cid = cache2.get(prefix);
-  if (cid == null) {
-    const cid2 = base3.encode(bytes2);
-    cache2.set(prefix, cid2);
-    return cid2;
+  const cid2 = cache2.get(prefix);
+  if (cid2 == null) {
+    const cid3 = base3.encode(bytes2);
+    cache2.set(prefix, cid3);
+    return cid3;
   } else {
-    return cid;
+    return cid2;
   }
 };
 var DAG_PB_CODE = 112;
@@ -28516,20 +28517,20 @@ function asLink(link) {
   }
   const pbl = {};
   if (link.Hash) {
-    let cid = CID.asCID(link.Hash);
+    let cid2 = CID.asCID(link.Hash);
     try {
-      if (!cid) {
+      if (!cid2) {
         if (typeof link.Hash === "string") {
-          cid = CID.parse(link.Hash);
+          cid2 = CID.parse(link.Hash);
         } else if (link.Hash instanceof Uint8Array) {
-          cid = CID.decode(link.Hash);
+          cid2 = CID.decode(link.Hash);
         }
       }
     } catch (e) {
       throw new TypeError(`Invalid DAG-PB form: ${e.message}`);
     }
-    if (cid) {
-      pbl.Hash = cid;
+    if (cid2) {
+      pbl.Hash = cid2;
     }
   }
   if (!pbl.Hash) {
@@ -28616,9 +28617,9 @@ function createNode(data, links = []) {
     Links: links
   });
 }
-function createLink(name5, size, cid) {
+function createLink(name5, size, cid2) {
   return asLink({
-    Hash: cid,
+    Hash: cid2,
     Name: name5,
     Tsize: size
   });
@@ -30128,12 +30129,12 @@ function cidEncoder(obj) {
   if (obj.asCID !== obj) {
     return null;
   }
-  const cid = CID.asCID(obj);
-  if (!cid) {
+  const cid2 = CID.asCID(obj);
+  if (!cid2) {
     return null;
   }
-  const bytes2 = new Uint8Array(cid.bytes.byteLength + 1);
-  bytes2.set(cid.bytes, 1);
+  const bytes2 = new Uint8Array(cid2.bytes.byteLength + 1);
+  bytes2.set(cid2.bytes, 1);
   return [
     new Token(Type.tag, CID_CBOR_TAG),
     new Token(Type.bytes, bytes2)
@@ -30414,7 +30415,7 @@ function unitRatio(str) {
 var parse_duration_default = parse;
 
 // node_modules/ipfs-http-client/esm/src/lib/core.js
-var import_debug = __toModule(require_src2());
+var import_debug = __toModule(require_src());
 var import_http2 = __toModule(require_http());
 
 // node_modules/merge-options/index.mjs
@@ -30714,11 +30715,11 @@ function toCoreInterface(res) {
 
 // node_modules/ipfs-http-client/esm/src/bitswap/unwant.js
 var createUnwant = configure((api) => {
-  async function unwant(cid, options = {}) {
+  async function unwant(cid2, options = {}) {
     const res = await api.post("bitswap/unwant", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -30739,11 +30740,11 @@ function createBitswap(config) {
 
 // node_modules/ipfs-http-client/esm/src/block/get.js
 var createGet = configure((api) => {
-  async function get(cid, options = {}) {
+  async function get(cid2, options = {}) {
     const res = await api.post("block/get", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -31480,7 +31481,7 @@ function modeToString2(mode) {
 
 // node_modules/ipfs-core-utils/esm/src/multipart-request.node.js
 var import_it_to_stream = __toModule(require_src6());
-var import_debug2 = __toModule(require_src2());
+var import_debug2 = __toModule(require_src());
 var merge2 = merge_options_default.bind({ ignoreUndefined: true });
 var log2 = (0, import_debug2.default)("ipfs:core-utils:multipart-request");
 async function multipartRequest(source, abortController, headers = {}, boundary = `-----------------------------${nanoid()}`) {
@@ -31655,7 +31656,7 @@ function abortSignal(...signals) {
 }
 
 // node_modules/ipfs-http-client/esm/src/block/put.js
-var import_native_abort_controller = __toModule(require_src());
+var import_native_abort_controller = __toModule(require_src2());
 var createPut = configure((api) => {
   async function put(data, options = {}) {
     const controller = new import_native_abort_controller.AbortController();
@@ -31686,14 +31687,14 @@ var createPut = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/block/rm.js
 var createRm = configure((api) => {
-  async function* rm(cid, options = {}) {
-    if (!Array.isArray(cid)) {
-      cid = [cid];
+  async function* rm(cid2, options = {}) {
+    if (!Array.isArray(cid2)) {
+      cid2 = [cid2];
     }
     const res = await api.post("block/rm", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.map((cid2) => cid2.toString()),
+        arg: cid2.map((cid3) => cid3.toString()),
         "stream-channels": true
       }, options)),
       headers: options.headers
@@ -31714,11 +31715,11 @@ function toCoreInterface2(removed) {
 
 // node_modules/ipfs-http-client/esm/src/block/stat.js
 var createStat2 = configure((api) => {
-  async function stat(cid, options = {}) {
+  async function stat(cid2, options = {}) {
     const res = await api.post("block/stat", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -31929,7 +31930,7 @@ var createGetAll = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/config/replace.js
-var import_native_abort_controller2 = __toModule(require_src());
+var import_native_abort_controller2 = __toModule(require_src2());
 var createReplace = configure((api) => {
   const replace = async (config, options = {}) => {
     const controller = new import_native_abort_controller2.AbortController();
@@ -32013,15 +32014,15 @@ var createExport = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/lib/resolve.js
 var import_err_code6 = __toModule(require_err_code());
-async function* resolve(cid, path, codecs2, getBlock, options) {
-  const load = async (cid2) => {
-    const codec = await codecs2.getCodec(cid2.code);
-    const block = await getBlock(cid2, options);
+async function* resolve(cid2, path, codecs2, getBlock, options) {
+  const load = async (cid3) => {
+    const codec = await codecs2.getCodec(cid3.code);
+    const block = await getBlock(cid3, options);
     return codec.decode(block);
   };
   const parts = path.split("/").filter(Boolean);
-  let value = await load(cid);
-  let lastCid = cid;
+  let value = await load(cid2);
+  let lastCid = cid2;
   if (!parts.length) {
     yield {
       value,
@@ -32042,9 +32043,9 @@ async function* resolve(cid, path, codecs2, getBlock, options) {
     } else {
       throw (0, import_err_code6.default)(new Error(`no link named "${key}" under ${lastCid}`), "ERR_NO_LINK");
     }
-    const cid2 = CID.asCID(value);
-    if (cid2) {
-      lastCid = cid2;
+    const cid3 = CID.asCID(value);
+    if (cid3) {
+      lastCid = cid3;
       value = await load(value);
     }
   }
@@ -32057,17 +32058,17 @@ var import_err_code7 = __toModule(require_err_code());
 var createGet3 = (codecs2, options) => {
   const fn = configure((api, opts) => {
     const getBlock = createGet(opts);
-    const get = async (cid, options2 = {}) => {
+    const get = async (cid2, options2 = {}) => {
       if (options2.path) {
-        const entry = options2.localResolve ? await (0, import_it_first.default)(resolve(cid, options2.path, codecs2, getBlock, options2)) : await (0, import_it_last.default)(resolve(cid, options2.path, codecs2, getBlock, options2));
+        const entry = options2.localResolve ? await (0, import_it_first.default)(resolve(cid2, options2.path, codecs2, getBlock, options2)) : await (0, import_it_last.default)(resolve(cid2, options2.path, codecs2, getBlock, options2));
         const result = entry;
         if (!result) {
           throw (0, import_err_code7.default)(new Error("Not found"), "ERR_NOT_FOUND");
         }
         return result;
       }
-      const codec = await codecs2.getCodec(cid.code);
-      const block = await getBlock(cid, options2);
+      const codec = await codecs2.getCodec(cid2.code);
+      const block = await getBlock(cid2, options2);
       const node = codec.decode(block);
       return {
         value: node,
@@ -32080,7 +32081,7 @@ var createGet3 = (codecs2, options) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/dag/import.js
-var import_native_abort_controller3 = __toModule(require_src());
+var import_native_abort_controller3 = __toModule(require_src2());
 var createImport = configure((api) => {
   async function* dagImport(source, options = {}) {
     const controller = new import_native_abort_controller3.AbortController();
@@ -32111,7 +32112,7 @@ var createImport = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dag/put.js
-var import_native_abort_controller4 = __toModule(require_src());
+var import_native_abort_controller4 = __toModule(require_src2());
 var createPut2 = (codecs2, options) => {
   const fn = configure((api) => {
     const put = async (dagNode, options2 = {}) => {
@@ -32202,11 +32203,11 @@ var createFindPeer = configure((api) => {
 // node_modules/ipfs-http-client/esm/src/dht/find-provs.js
 var import_multiaddr9 = __toModule(require_src4());
 var createFindProvs = configure((api) => {
-  async function* findProvs(cid, options = {}) {
+  async function* findProvs(cid2, options = {}) {
     const res = await api.post("dht/findprovs", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -32261,7 +32262,7 @@ var createProvide = configure((api) => {
     const res = await api.post("dht/provide", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cidArr.map((cid) => cid.toString())
+        arg: cidArr.map((cid2) => cid2.toString())
       }, options)),
       headers: options.headers
     });
@@ -32283,7 +32284,7 @@ var createProvide = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/dht/put.js
 var import_multiaddr11 = __toModule(require_src4());
-var import_native_abort_controller5 = __toModule(require_src());
+var import_native_abort_controller5 = __toModule(require_src2());
 var createPut3 = configure((api) => {
   async function* put(key, value, options = {}) {
     const controller = new import_native_abort_controller5.AbortController();
@@ -32598,7 +32599,7 @@ var createTouch = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/files/write.js
-var import_native_abort_controller6 = __toModule(require_src());
+var import_native_abort_controller6 = __toModule(require_src2());
 var createWrite = configure((api) => {
   async function write(path, input, options = {}) {
     const controller = new import_native_abort_controller6.AbortController();
@@ -32903,11 +32904,11 @@ function createName(config) {
 
 // node_modules/ipfs-http-client/esm/src/object/data.js
 var createData = configure((api) => {
-  async function data(cid, options = {}) {
+  async function data(cid2, options = {}) {
     const res = await api.post("object/data", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`
       }, options)),
       headers: options.headers
     });
@@ -32919,11 +32920,11 @@ var createData = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/get.js
 var createGet5 = configure((api) => {
-  async function get(cid, options = {}) {
+  async function get(cid2, options = {}) {
     const res = await api.post("object/get", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`,
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`,
         dataEncoding: "base64"
       }, options)),
       headers: options.headers
@@ -32943,11 +32944,11 @@ var createGet5 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/links.js
 var createLinks = configure((api) => {
-  async function links(cid, options = {}) {
+  async function links(cid2, options = {}) {
     const res = await api.post("object/links", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`
       }, options)),
       headers: options.headers
     });
@@ -32995,11 +32996,11 @@ var createPut4 = (codecs2, options) => {
 
 // node_modules/ipfs-http-client/esm/src/object/stat.js
 var createStat4 = configure((api) => {
-  async function stat(cid, options = {}) {
+  async function stat(cid2, options = {}) {
     const res = await api.post("object/stat", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid}`
+        arg: `${cid2}`
       }, options)),
       headers: options.headers
     });
@@ -33013,12 +33014,12 @@ var createStat4 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/patch/add-link.js
 var createAddLink = configure((api) => {
-  async function addLink(cid, dLink, options = {}) {
+  async function addLink(cid2, dLink, options = {}) {
     const res = await api.post("object/patch/add-link", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
         arg: [
-          `${cid}`,
+          `${cid2}`,
           dLink.Name || dLink.name || "",
           (dLink.Hash || dLink.cid || "").toString() || null
         ]
@@ -33032,15 +33033,15 @@ var createAddLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/append-data.js
-var import_native_abort_controller7 = __toModule(require_src());
+var import_native_abort_controller7 = __toModule(require_src2());
 var createAppendData = configure((api) => {
-  async function appendData(cid, data, options = {}) {
+  async function appendData(cid2, data, options = {}) {
     const controller = new import_native_abort_controller7.AbortController();
     const signal = abortSignal(controller.signal, options.signal);
     const res = await api.post("object/patch/append-data", __spreadValues({
       signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid}`
+        arg: `${cid2}`
       }, options))
     }, await multipartRequest3(data, controller, options.headers)));
     const { Hash } = await res.json();
@@ -33051,12 +33052,12 @@ var createAppendData = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/patch/rm-link.js
 var createRmLink = configure((api) => {
-  async function rmLink(cid, dLink, options = {}) {
+  async function rmLink(cid2, dLink, options = {}) {
     const res = await api.post("object/patch/rm-link", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
         arg: [
-          `${cid}`,
+          `${cid2}`,
           dLink.Name || dLink.name || null
         ]
       }, options)),
@@ -33069,15 +33070,15 @@ var createRmLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/set-data.js
-var import_native_abort_controller8 = __toModule(require_src());
+var import_native_abort_controller8 = __toModule(require_src2());
 var createSetData = configure((api) => {
-  async function setData(cid, data, options = {}) {
+  async function setData(cid2, data, options = {}) {
     const controller = new import_native_abort_controller8.AbortController();
     const signal = abortSignal(controller.signal, options.signal);
     const res = await api.post("object/patch/set-data", __spreadValues({
       signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: [`${cid}`]
+        arg: [`${cid2}`]
       }, options))
     }, await multipartRequest3(data, controller, options.headers)));
     const { Hash } = await res.json();
@@ -33115,9 +33116,9 @@ async function* normaliseInput3(input) {
   if (input === null || input === void 0) {
     throw (0, import_err_code10.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
   }
-  const cid = CID.asCID(input);
-  if (cid) {
-    yield toPin({ cid });
+  const cid2 = CID.asCID(input);
+  if (cid2) {
+    yield toPin({ cid: cid2 });
     return;
   }
   if (input instanceof String || typeof input === "string") {
@@ -33134,8 +33135,8 @@ async function* normaliseInput3(input) {
       return iterator;
     if (CID.asCID(first2.value) || first2.value instanceof String || typeof first2.value === "string") {
       yield toPin({ cid: first2.value });
-      for (const cid2 of iterator) {
-        yield toPin({ cid: cid2 });
+      for (const cid3 of iterator) {
+        yield toPin({ cid: cid3 });
       }
       return;
     }
@@ -33155,8 +33156,8 @@ async function* normaliseInput3(input) {
       return iterator;
     if (CID.asCID(first2.value) || first2.value instanceof String || typeof first2.value === "string") {
       yield toPin({ cid: first2.value });
-      for await (const cid2 of iterator) {
-        yield toPin({ cid: cid2 });
+      for await (const cid3 of iterator) {
+        yield toPin({ cid: cid3 });
       }
       return;
     }
@@ -33202,8 +33203,8 @@ var createAddAll = configure((api) => {
       });
       for await (const pin of res.ndjson()) {
         if (pin.Pins) {
-          for (const cid of pin.Pins) {
-            yield CID.parse(cid);
+          for (const cid2 of pin.Pins) {
+            yield CID.parse(cid2);
           }
           continue;
         }
@@ -33229,10 +33230,10 @@ function createAdd2(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/pin/ls.js
-function toPin2(type, cid, metadata) {
+function toPin2(type, cid2, metadata) {
   const pin = {
     type,
-    cid: CID.parse(cid)
+    cid: CID.parse(cid2)
   };
   if (metadata) {
     pin.metadata = metadata;
@@ -33255,8 +33256,8 @@ var createLs3 = configure((api) => {
     });
     for await (const pin of res.ndjson()) {
       if (pin.Keys) {
-        for (const cid of Object.keys(pin.Keys)) {
-          yield toPin2(pin.Keys[cid].Type, cid, pin.Keys[cid].Metadata);
+        for (const cid2 of Object.keys(pin.Keys)) {
+          yield toPin2(pin.Keys[cid2].Type, cid2, pin.Keys[cid2].Metadata);
         }
         return;
       }
@@ -33284,7 +33285,7 @@ var createRmAll = configure((api) => {
       });
       for await (const pin of res.ndjson()) {
         if (pin.Pins) {
-          yield* pin.Pins.map((cid) => CID.parse(cid));
+          yield* pin.Pins.map((cid2) => CID.parse(cid2));
           continue;
         }
         yield CID.parse(pin);
@@ -33312,10 +33313,10 @@ var createRm5 = (config) => {
 var decodePin = ({
   Name: name5,
   Status: status,
-  Cid: cid
+  Cid: cid2
 }) => {
   return {
-    cid: CID.parse(cid),
+    cid: CID.parse(cid2),
     name: name5,
     status
   };
@@ -33327,21 +33328,21 @@ var encodeService = (service) => {
     throw new TypeError("service name must be passed");
   }
 };
-var encodeCID2 = (cid) => {
-  if (CID.asCID(cid)) {
-    return cid.toString();
+var encodeCID2 = (cid2) => {
+  if (CID.asCID(cid2)) {
+    return cid2.toString();
   } else {
-    throw new TypeError(`CID instance expected instead of ${typeof cid}`);
+    throw new TypeError(`CID instance expected instead of ${typeof cid2}`);
   }
 };
-var encodeQuery = ({ service, cid, name: name5, status, all: all4 }) => {
+var encodeQuery = ({ service, cid: cid2, name: name5, status, all: all4 }) => {
   const query = toUrlSearchParams({
     service: encodeService(service),
     name: name5,
     force: all4 ? true : void 0
   });
-  if (cid) {
-    for (const value of cid) {
+  if (cid2) {
+    for (const value of cid2) {
       query.append("cid", encodeCID2(value));
     }
   }
@@ -33352,9 +33353,9 @@ var encodeQuery = ({ service, cid, name: name5, status, all: all4 }) => {
   }
   return query;
 };
-var encodeAddParams = ({ cid, service, background, name: name5, origins }) => {
+var encodeAddParams = ({ cid: cid2, service, background, name: name5, origins }) => {
   const params = toUrlSearchParams({
-    arg: encodeCID2(cid),
+    arg: encodeCID2(cid2),
     service: encodeService(service),
     name: name5,
     background: background ? true : void 0
@@ -33369,14 +33370,14 @@ var encodeAddParams = ({ cid, service, background, name: name5, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a) {
+  async function add(cid2, _a) {
     var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
       headers,
       searchParams: encodeAddParams(__spreadValues({
-        cid
+        cid: cid2
       }, query))
     });
     return decodePin(await response.json());
@@ -33582,7 +33583,7 @@ var createPeers = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/pubsub/publish.js
-var import_native_abort_controller9 = __toModule(require_src());
+var import_native_abort_controller9 = __toModule(require_src2());
 var createPublish2 = configure((api) => {
   async function publish2(topic, data, options = {}) {
     const searchParams = toUrlSearchParams(__spreadValues({
@@ -33600,7 +33601,7 @@ var createPublish2 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/pubsub/subscribe.js
-var import_debug3 = __toModule(require_src2());
+var import_debug3 = __toModule(require_src());
 var log3 = (0, import_debug3.default)("ipfs-http-client:pubsub:subscribe");
 var createSubscribe = (options, subsTracker) => {
   return configure((api) => {
@@ -33686,7 +33687,7 @@ var createUnsubscribe = (options, subsTracker) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/pubsub/subscription-tracker.js
-var import_native_abort_controller10 = __toModule(require_src());
+var import_native_abort_controller10 = __toModule(require_src2());
 var SubscriptionTracker = class {
   constructor() {
     this._subs = new Map();
@@ -33956,7 +33957,7 @@ function createSwarm(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/add-all.js
-var import_native_abort_controller11 = __toModule(require_src());
+var import_native_abort_controller11 = __toModule(require_src2());
 var createAddAll2 = configure((api) => {
   async function* addAll(source, options = {}) {
     const controller = new import_native_abort_controller11.AbortController();
@@ -34381,7 +34382,7 @@ function create2(options = {}) {
 }
 
 // src/network/utils.js
-var import_debug4 = __toModule(require_src2());
+var import_debug4 = __toModule(require_src());
 var import_await_sleep = __toModule(require_await_sleep());
 var debug4 = (0, import_debug4.default)("utils");
 var toPromise = async (asyncGen) => {
@@ -34401,7 +34402,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var import_it_all3 = __toModule(require_it_all());
-var import_debug5 = __toModule(require_src2());
+var import_debug5 = __toModule(require_src());
 var import_ramda = __toModule(require_src7());
 var import_path = __toModule(require("path"));
 var debug5 = (0, import_debug5.default)("ipfsConnector");
@@ -34420,8 +34421,8 @@ function getClient() {
 async function reader() {
   const client = await getClient();
   return {
-    ls: async (cid) => await ipfsLsCID(client, cid),
-    get: async (cid, options = {}) => await ipfsGet(client, cid, options)
+    ls: async (cid2) => await ipfsLsCID(client, cid2),
+    get: async (cid2, options = {}) => await ipfsGet(client, cid2, options)
   };
 }
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
@@ -34436,9 +34437,9 @@ var getIPFSDaemonURL = async () => {
   debug5("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
-var getWebURL = (cid, name5 = null) => {
+var getWebURL = (cid2, name5 = null) => {
   const filename = name5 ? `?filename=${name5}` : "";
-  return `https://pollinations.ai/ipfs/${cid}${filename}`;
+  return `https://pollinations.ai/ipfs/${cid2}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)
@@ -34447,18 +34448,18 @@ var stripSlashIPFS = (cidString) => {
 };
 var firstLine = (s) => s.split("\n")[0];
 var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : CID.asCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
-var _normalizeIPFS = ({ name: name5, path, cid, type }) => ({ name: name5, path, cid: stringCID(cid), type });
-var ipfsLsCID = async (client, cid) => {
-  cid = await optionallyResolveIPNS(client, cid);
-  debug5("calling ipfs ls with cid", cid);
-  const result = (await toPromise(client.ls(stringCID(cid)))).filter(({ type, name: name5 }) => type !== "unknown" && name5 !== void 0).map(_normalizeIPFS);
+var _normalizeIPFS = ({ name: name5, path, cid: cid2, type }) => ({ name: name5, path, cid: stringCID(cid2), type });
+var ipfsLsCID = async (client, cid2) => {
+  cid2 = await optionallyResolveIPNS(client, cid2);
+  debug5("calling ipfs ls with cid", cid2);
+  const result = (await toPromise(client.ls(stringCID(cid2)))).filter(({ type, name: name5 }) => type !== "unknown" && name5 !== void 0).map(_normalizeIPFS);
   debug5("got ipfs ls result", result);
   return result;
 };
-var ipfsGet = async (client, cid, { onlyLink = false }) => {
-  const _debug = debug5.extend(`ipfsGet(${cid})`);
-  cid = await optionallyResolveIPNS(client, cid);
-  const chunkArrays = await (0, import_it_all3.default)(client.cat(cid));
+var ipfsGet = async (client, cid2, { onlyLink = false }) => {
+  const _debug = debug5.extend(`ipfsGet(${cid2})`);
+  cid2 = await optionallyResolveIPNS(client, cid2);
+  const chunkArrays = await (0, import_it_all3.default)(client.cat(cid2));
   const chunks = chunkArrays.map(Buffer.from);
   _debug("Got all chunks. Total:", chunks.length);
   if (chunks.length === 0)
@@ -34467,24 +34468,29 @@ var ipfsGet = async (client, cid, { onlyLink = false }) => {
   _debug("Received content length:", contentArray.length);
   return contentArray;
 };
-async function optionallyResolveIPNS(client, cid) {
-  debug5("Trying to resolve CID", cid);
-  if (cid.startsWith("/ipns"))
-    cid = await ipfsResolve(client, cid);
-  return cid;
+async function optionallyResolveIPNS(client, cid2) {
+  debug5("Trying to resolve CID", cid2);
+  if (cid2.startsWith("/ipns"))
+    cid2 = await ipfsResolve(client, cid2);
+  return cid2;
 }
 var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await toPromise(client.name.resolve(path, { nocache: true }))));
 
 // src/network/ipfsPubSub.js
-var import_queueable = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
 function publisher(nodeID, suffix = "/output") {
   debug6("Creating publisher for", nodeID, suffix);
-  const _publish = async (cid) => {
+  let lastPublishCID = null;
+  const _publish = async (cid2) => {
     const client = await getClient();
-    await publish(client, nodeID, cid, suffix, nodeID);
+    await publish(client, nodeID, cid2, suffix, nodeID);
+    lastPublishCID = cid2;
   };
+  const interval = setInterval(() => {
+    if (lastPublishCID)
+      _publish(cid);
+  }, 5e3);
   const sendHeartbeat = async () => {
     const client = await getClient();
     publishHeartbeat(client, suffix, nodeID);
@@ -34494,6 +34500,7 @@ function publisher(nodeID, suffix = "/output") {
   const close = () => {
     debug6("Closing publisher", handle);
     clearInterval(handle);
+    clearInterval(interval);
   };
   return {
     publish: _publish,
@@ -34529,7 +34536,7 @@ async function experimentalIPNSPublish(client, rootCID) {
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);
-  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
+  const unsubscribe = subscribeCID(nodeID, suffix, (cid2) => channel.push(cid2));
   return [channel, unsubscribe];
 }
 function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
@@ -34619,10 +34626,10 @@ var import_social_post_api = __toModule(require_social_post_api());
 
 // src/network/ipfsWebClient.js
 var import_path3 = __toModule(require("path"));
-var import_debug8 = __toModule(require_src2());
+var import_debug8 = __toModule(require_src());
 
 // src/network/ipfsState.js
-var import_debug7 = __toModule(require_src2());
+var import_debug7 = __toModule(require_src());
 var import_ramda2 = __toModule(require_src7());
 var import_path2 = __toModule(require("path"));
 
@@ -34639,59 +34646,59 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
 };
 var cache = {};
 var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
-  const key = `${cid} - ${processFile2.toString()}`;
+  var _b = _a, { cid: cid2 } = _b, rest = __objRest(_b, ["cid"]);
+  const key = `${cid2} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
-    debug7("cache miss", cid);
-    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
+    debug7("cache miss", cid2);
+    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid: cid2 }, rest), processFile2, skipCache);
   } else
-    debug7("cache hit", cid);
+    debug7("cache hit", cid2);
   return cache[key];
 };
-var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }, processFile2, skipCache) => {
+var _getIPFSState = async (ipfsReader, { cid: cid2, type, name: name5, path, rootCID }, processFile2, skipCache) => {
   debug7("ipfs state getter callback name", processFile2.toString());
   const { ls, get } = ipfsReader;
-  cid = stringCID(cid);
+  cid2 = stringCID(cid2);
   const _debug = debug7.extend(`_getIPFSState(${path})`);
-  _debug("Getting state for", type, name5, cid);
+  _debug("Getting state for", type, name5, cid2);
   if (type === "dir") {
-    const files = await ls(cid);
-    _debug("Got files for", name5, cid, files);
+    const files = await ls(cid2);
+    _debug("Got files for", name5, cid2, files);
     const filenames = files.map(({ name: name6 }) => name6);
     const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
     const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
     _debug("contents", contentResult);
-    Object.defineProperty(contentResult, ".cid", { value: cid });
+    Object.defineProperty(contentResult, ".cid", { value: cid2 });
     return contentResult;
   }
   if (type === "file") {
     const fileResult = await processFile2(__spreadValues({
-      cid,
+      cid: cid2,
       path,
       name: name5,
       rootCID
-    }, dataFetchers(cid, ipfsReader)), ipfsReader);
+    }, dataFetchers(cid2, ipfsReader)), ipfsReader);
     return fileResult;
   }
-  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
+  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid2}".`;
 };
-var dataFetchers = (cid, { get }) => {
-  debug7("creating data fetchers for cid", cid);
+var dataFetchers = (cid2, { get }) => {
+  debug7("creating data fetchers for cid", cid2);
   return {
-    json: async () => (0, import_json5.parse)((await get(cid)).toString()),
-    text: async () => (await get(cid)).toString(),
-    buffer: async () => await get(cid)
+    json: async () => (0, import_json5.parse)((await get(cid2)).toString()),
+    text: async () => (await get(cid2)).toString(),
+    buffer: async () => await get(cid2)
   };
 };
 
 // src/network/ipfsWebClient.js
 var import_json52 = __toModule(require_lib5());
 var debug8 = (0, import_debug8.default)("ipfsWebClient");
-var fetchAndMakeURL = async ({ name: name5, cid, text }) => {
+var fetchAndMakeURL = async ({ name: name5, cid: cid2, text }) => {
   const ext = (0, import_path3.extname)(name5);
   const doImport = shouldImport(ext);
   debug8("ext", ext, "extIsJSON", doImport);
-  const webURL = getWebURL(cid, name5);
+  const webURL = getWebURL(cid2, name5);
   if (doImport) {
     const textContent = await text();
     try {
@@ -34713,7 +34720,7 @@ function shouldImport(ext) {
 }
 
 // src/utils/notebookMetadata.js
-var import_debug9 = __toModule(require_src2());
+var import_debug9 = __toModule(require_src());
 var import_json53 = __toModule(require_lib5());
 var debug9 = (0, import_debug9.default)("notebookMetadata");
 function readMetadata(notebookJSON) {
@@ -34785,7 +34792,7 @@ var notebookMetadata_default = readMetadata;
 
 // src/data/media.js
 var import_ramda3 = __toModule(require_src7());
-var import_debug10 = __toModule(require_src2());
+var import_debug10 = __toModule(require_src());
 var debug10 = (0, import_debug10.default)("media");
 var _mediaTypeMap = {
   "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
@@ -34809,8 +34816,8 @@ function getMedia(output, type = "all") {
   return media;
 }
 var gzipProxy = (path) => {
-  const cid = (0, import_ramda3.last)(path.split("/"));
-  return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
+  const cid2 = (0, import_ramda3.last)(path.split("/"));
+  return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid2}`;
 };
 
 // src/data/matureWords.json
@@ -35289,16 +35296,16 @@ var repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n - 1);
 var mature_default = (text) => mature(text);
 
 // src/data/summaryData.js
-var import_debug11 = __toModule(require_src2());
+var import_debug11 = __toModule(require_src());
 var debug11 = (0, import_debug11.default)("summaryData");
-function getPostData(ipfs, cid, shortenPost = true) {
+function getPostData(ipfs, cid2, shortenPost = true) {
   const { name: name5, primaryInput } = notebookMetadata_default(ipfs.input["notebook.ipynb"]);
   const coverImage = getCoverImage(ipfs.output);
   debug11("got coverImage", coverImage);
   const coverImageURL = coverImage ? coverImage[1] : null;
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
-  const url = `https://pollinations.ai/p/${cid}/`;
+  const url = `https://pollinations.ai/p/${cid2}/`;
   const possibleText = getMedia(ipfs.output, "text")[0];
   const text = possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
   const maturityFilteredText = mature_default(text);
@@ -35330,10 +35337,10 @@ function shorten(str, maxLength) {
 }
 
 // src/backend/functions/social-post.js
-async function socialPost(platform, cid) {
-  console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
-  const ipfs = await IPFSWebState(cid);
-  const data = getPostData(ipfs, cid, platform === "twitter");
+async function socialPost(platform, cid2) {
+  console.log("platform", platform, "cid", cid2, ". Fetching IPFS state");
+  const ipfs = await IPFSWebState(cid2);
+  const data = getPostData(ipfs, cid2, platform === "twitter");
   let res = null;
   try {
     res = await doPost(data, platform);
@@ -35371,7 +35378,7 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
 // src/backend/ipfs/receiver.js
 var import_process = __toModule(require("process"));
 var import_path4 = __toModule(require("path"));
-var import_debug12 = __toModule(require_src2());
+var import_debug12 = __toModule(require_src());
 var import_event_iterator = __toModule(require_node2());
 var import_path5 = __toModule(require("path"));
 var import_fs = __toModule(require("fs"));
@@ -35404,12 +35411,12 @@ async function processRemoteCID(contentID, rootPath) {
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
   debug12("got remote state", ipfsState);
 }
-async function processFile({ path, cid }, rootPath, { get }) {
+async function processFile({ path, cid: cid2 }, rootPath, { get }) {
   const _debug = debug12.extend(`processFile(${path})`);
   _debug("started");
   const destPath = (0, import_path4.join)(rootPath, path);
-  _debug("writeFile", destPath, cid, "queued");
-  const content = await get(cid, { stream: true });
+  _debug("writeFile", destPath, cid2, "queued");
+  const content = await get(cid2, { stream: true });
   _debug("writefile content", content.length);
   await writeFileAndCreateFolder(destPath, content);
   _debug("done");
@@ -35428,10 +35435,10 @@ if (process.argv[2]) {
   receive({
     ipns: true,
     nodeid: "post_pollen"
-  }, async (cid) => {
+  }, async (cid2) => {
     for (const platform of ["twitter", "instagram", "telegram", "facebook", "youtube", "linkedin", "fbg", "gmb", "pinterest"]) {
-      console.log("posting", cid, "to", platform);
-      console.log("social post result", await socialPost(platform, cid));
+      console.log("posting", cid2, "to", platform);
+      console.log("social post result", await socialPost(platform, cid2));
       console.log("done");
     }
   }, "");

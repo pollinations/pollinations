@@ -34341,10 +34341,6 @@ function publisher(nodeID, suffix = "/output") {
     await publish(client, nodeID, cid, suffix, nodeID);
     lastPublishCID = cid;
   };
-  const interval = setInterval(() => {
-    if (lastPublishCID)
-      _publish(lastPublishCID);
-  }, 5e3);
   const sendHeartbeat = async () => {
     const client = await getClient();
     publishHeartbeat(client, suffix, nodeID);
@@ -34354,7 +34350,6 @@ function publisher(nodeID, suffix = "/output") {
   const close2 = () => {
     debug7("Closing publisher", handle);
     clearInterval(handle);
-    clearInterval(interval);
   };
   return {
     publish: _publish,

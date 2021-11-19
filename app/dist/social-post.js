@@ -35420,7 +35420,7 @@ async function processFile({ path, cid }, rootPath, { get }) {
 
 // src/backend/social-post-cli.js
 if (process.argv[2]) {
-  const { publish: publish2, close } = publisher("post_pollen", "/output");
+  const { publish: publish2, close } = publisher("post_pollen", "");
   async function run() {
     await publish2(process.argv[2]);
     close();

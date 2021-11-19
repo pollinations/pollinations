@@ -28,7 +28,7 @@ export function publisher(nodeID, suffix = "/output") {
 
     const interval = setInterval(() => {
         if (lastPublishCID)
-            _publish(cid);
+            _publish(lastPublishCID);
     }, 5000);
 
     const sendHeartbeat = async () => {

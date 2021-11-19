@@ -1083,11 +1083,11 @@ var require_cid = __commonJS({
         return CID2.create(1, code5, digest2);
       }
       static decode(bytes3) {
-        const [cid, remainder] = CID2.decodeFirst(bytes3);
+        const [cid2, remainder] = CID2.decodeFirst(bytes3);
         if (remainder.length) {
           throw new Error("Incorrect length");
         }
-        return cid;
+        return cid2;
       }
       static decodeFirst(bytes$1) {
         const specs = CID2.inspectBytes(bytes$1);
@@ -1098,9 +1098,9 @@ var require_cid = __commonJS({
         }
         const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize);
         const digest$1 = new digest.Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes);
-        const cid = specs.version === 0 ? CID2.createV0(digest$1) : CID2.createV1(specs.codec, digest$1);
+        const cid2 = specs.version === 0 ? CID2.createV0(digest$1) : CID2.createV1(specs.codec, digest$1);
         return [
-          cid,
+          cid2,
           bytes$1.subarray(specs.size)
         ];
       }
@@ -1138,9 +1138,9 @@ var require_cid = __commonJS({
       }
       static parse(source, base3) {
         const [prefix, bytes3] = parseCIDtoBytes2(source, base3);
-        const cid = CID2.decode(bytes3);
-        cid._baseCache.set(prefix, source);
-        return cid;
+        const cid2 = CID2.decode(bytes3);
+        cid2._baseCache.set(prefix, source);
+        return cid2;
       }
     };
     var parseCIDtoBytes2 = (source, base3) => {
@@ -1182,24 +1182,24 @@ var require_cid = __commonJS({
       if (prefix !== base58.base58btc.prefix) {
         throw Error(`Cannot string encode V0 in ${base3.name} encoding`);
       }
-      const cid = cache2.get(prefix);
-      if (cid == null) {
-        const cid2 = base3.encode(bytes3).slice(1);
-        cache2.set(prefix, cid2);
-        return cid2;
+      const cid2 = cache2.get(prefix);
+      if (cid2 == null) {
+        const cid3 = base3.encode(bytes3).slice(1);
+        cache2.set(prefix, cid3);
+        return cid3;
       } else {
-        return cid;
+        return cid2;
       }
     };
     var toStringV12 = (bytes3, cache2, base3) => {
       const { prefix } = base3;
-      const cid = cache2.get(prefix);
-      if (cid == null) {
-        const cid2 = base3.encode(bytes3);
-        cache2.set(prefix, cid2);
-        return cid2;
+      const cid2 = cache2.get(prefix);
+      if (cid2 == null) {
+        const cid3 = base3.encode(bytes3);
+        cache2.set(prefix, cid3);
+        return cid3;
       } else {
-        return cid;
+        return cid2;
       }
     };
     var DAG_PB_CODE2 = 112;
@@ -1256,12 +1256,12 @@ var require_src = __commonJS({
   "node_modules/multiformats/cjs/src/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var cid = require_cid();
+    var cid2 = require_cid();
     var varint4 = require_varint2();
     var bytes2 = require_bytes();
     var hasher = require_hasher();
     var digest = require_digest();
-    exports2.CID = cid.CID;
+    exports2.CID = cid2.CID;
     exports2.varint = varint4;
     exports2.bytes = bytes2;
     exports2.hasher = hasher;
@@ -1288,7 +1288,7 @@ var require_basics = __commonJS({
     var raw = require_raw();
     var json = require_json();
     require_src();
-    var cid = require_cid();
+    var cid2 = require_cid();
     var hasher = require_hasher();
     var digest = require_digest();
     var varint4 = require_varint2();
@@ -1299,7 +1299,7 @@ var require_basics = __commonJS({
       raw,
       json
     };
-    exports2.CID = cid.CID;
+    exports2.CID = cid2.CID;
     exports2.hasher = hasher;
     exports2.digest = digest;
     exports2.varint = varint4;
@@ -21427,11 +21427,11 @@ var CID = class {
     return CID.create(1, code5, digest);
   }
   static decode(bytes2) {
-    const [cid, remainder] = CID.decodeFirst(bytes2);
+    const [cid2, remainder] = CID.decodeFirst(bytes2);
     if (remainder.length) {
       throw new Error("Incorrect length");
     }
-    return cid;
+    return cid2;
   }
   static decodeFirst(bytes2) {
     const specs = CID.inspectBytes(bytes2);
@@ -21442,9 +21442,9 @@ var CID = class {
     }
     const digestBytes = multihashBytes.subarray(specs.multihashSize - specs.digestSize);
     const digest = new Digest(specs.multihashCode, specs.digestSize, digestBytes, multihashBytes);
-    const cid = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest);
+    const cid2 = specs.version === 0 ? CID.createV0(digest) : CID.createV1(specs.codec, digest);
     return [
-      cid,
+      cid2,
       bytes2.subarray(specs.size)
     ];
   }
@@ -21482,9 +21482,9 @@ var CID = class {
   }
   static parse(source, base3) {
     const [prefix, bytes2] = parseCIDtoBytes(source, base3);
-    const cid = CID.decode(bytes2);
-    cid._baseCache.set(prefix, source);
-    return cid;
+    const cid2 = CID.decode(bytes2);
+    cid2._baseCache.set(prefix, source);
+    return cid2;
   }
 };
 var parseCIDtoBytes = (source, base3) => {
@@ -21526,24 +21526,24 @@ var toStringV0 = (bytes2, cache2, base3) => {
   if (prefix !== base58btc.prefix) {
     throw Error(`Cannot string encode V0 in ${base3.name} encoding`);
   }
-  const cid = cache2.get(prefix);
-  if (cid == null) {
-    const cid2 = base3.encode(bytes2).slice(1);
-    cache2.set(prefix, cid2);
-    return cid2;
+  const cid2 = cache2.get(prefix);
+  if (cid2 == null) {
+    const cid3 = base3.encode(bytes2).slice(1);
+    cache2.set(prefix, cid3);
+    return cid3;
   } else {
-    return cid;
+    return cid2;
   }
 };
 var toStringV1 = (bytes2, cache2, base3) => {
   const { prefix } = base3;
-  const cid = cache2.get(prefix);
-  if (cid == null) {
-    const cid2 = base3.encode(bytes2);
-    cache2.set(prefix, cid2);
-    return cid2;
+  const cid2 = cache2.get(prefix);
+  if (cid2 == null) {
+    const cid3 = base3.encode(bytes2);
+    cache2.set(prefix, cid3);
+    return cid3;
   } else {
-    return cid;
+    return cid2;
   }
 };
 var DAG_PB_CODE = 112;
@@ -22155,20 +22155,20 @@ function asLink(link) {
   }
   const pbl = {};
   if (link.Hash) {
-    let cid = CID.asCID(link.Hash);
+    let cid2 = CID.asCID(link.Hash);
     try {
-      if (!cid) {
+      if (!cid2) {
         if (typeof link.Hash === "string") {
-          cid = CID.parse(link.Hash);
+          cid2 = CID.parse(link.Hash);
         } else if (link.Hash instanceof Uint8Array) {
-          cid = CID.decode(link.Hash);
+          cid2 = CID.decode(link.Hash);
         }
       }
     } catch (e) {
       throw new TypeError(`Invalid DAG-PB form: ${e.message}`);
     }
-    if (cid) {
-      pbl.Hash = cid;
+    if (cid2) {
+      pbl.Hash = cid2;
     }
   }
   if (!pbl.Hash) {
@@ -22255,9 +22255,9 @@ function createNode(data, links = []) {
     Links: links
   });
 }
-function createLink(name5, size, cid) {
+function createLink(name5, size, cid2) {
   return asLink({
-    Hash: cid,
+    Hash: cid2,
     Name: name5,
     Tsize: size
   });
@@ -23767,12 +23767,12 @@ function cidEncoder(obj) {
   if (obj.asCID !== obj) {
     return null;
   }
-  const cid = CID.asCID(obj);
-  if (!cid) {
+  const cid2 = CID.asCID(obj);
+  if (!cid2) {
     return null;
   }
-  const bytes2 = new Uint8Array(cid.bytes.byteLength + 1);
-  bytes2.set(cid.bytes, 1);
+  const bytes2 = new Uint8Array(cid2.bytes.byteLength + 1);
+  bytes2.set(cid2.bytes, 1);
   return [
     new Token(Type.tag, CID_CBOR_TAG),
     new Token(Type.bytes, bytes2)
@@ -24353,11 +24353,11 @@ function toCoreInterface(res) {
 
 // node_modules/ipfs-http-client/esm/src/bitswap/unwant.js
 var createUnwant = configure((api) => {
-  async function unwant(cid, options = {}) {
+  async function unwant(cid2, options = {}) {
     const res = await api.post("bitswap/unwant", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -24378,11 +24378,11 @@ function createBitswap(config) {
 
 // node_modules/ipfs-http-client/esm/src/block/get.js
 var createGet = configure((api) => {
-  async function get(cid, options = {}) {
+  async function get(cid2, options = {}) {
     const res = await api.post("block/get", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -25325,14 +25325,14 @@ var createPut = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/block/rm.js
 var createRm = configure((api) => {
-  async function* rm(cid, options = {}) {
-    if (!Array.isArray(cid)) {
-      cid = [cid];
+  async function* rm(cid2, options = {}) {
+    if (!Array.isArray(cid2)) {
+      cid2 = [cid2];
     }
     const res = await api.post("block/rm", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.map((cid2) => cid2.toString()),
+        arg: cid2.map((cid3) => cid3.toString()),
         "stream-channels": true
       }, options)),
       headers: options.headers
@@ -25353,11 +25353,11 @@ function toCoreInterface2(removed) {
 
 // node_modules/ipfs-http-client/esm/src/block/stat.js
 var createStat2 = configure((api) => {
-  async function stat(cid, options = {}) {
+  async function stat(cid2, options = {}) {
     const res = await api.post("block/stat", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -25652,15 +25652,15 @@ var createExport = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/lib/resolve.js
 var import_err_code6 = __toModule(require_err_code());
-async function* resolve(cid, path, codecs2, getBlock, options) {
-  const load = async (cid2) => {
-    const codec = await codecs2.getCodec(cid2.code);
-    const block = await getBlock(cid2, options);
+async function* resolve(cid2, path, codecs2, getBlock, options) {
+  const load = async (cid3) => {
+    const codec = await codecs2.getCodec(cid3.code);
+    const block = await getBlock(cid3, options);
     return codec.decode(block);
   };
   const parts = path.split("/").filter(Boolean);
-  let value = await load(cid);
-  let lastCid = cid;
+  let value = await load(cid2);
+  let lastCid = cid2;
   if (!parts.length) {
     yield {
       value,
@@ -25681,9 +25681,9 @@ async function* resolve(cid, path, codecs2, getBlock, options) {
     } else {
       throw (0, import_err_code6.default)(new Error(`no link named "${key}" under ${lastCid}`), "ERR_NO_LINK");
     }
-    const cid2 = CID.asCID(value);
-    if (cid2) {
-      lastCid = cid2;
+    const cid3 = CID.asCID(value);
+    if (cid3) {
+      lastCid = cid3;
       value = await load(value);
     }
   }
@@ -25696,17 +25696,17 @@ var import_err_code7 = __toModule(require_err_code());
 var createGet3 = (codecs2, options) => {
   const fn = configure((api, opts) => {
     const getBlock = createGet(opts);
-    const get = async (cid, options2 = {}) => {
+    const get = async (cid2, options2 = {}) => {
       if (options2.path) {
-        const entry = options2.localResolve ? await (0, import_it_first.default)(resolve(cid, options2.path, codecs2, getBlock, options2)) : await (0, import_it_last.default)(resolve(cid, options2.path, codecs2, getBlock, options2));
+        const entry = options2.localResolve ? await (0, import_it_first.default)(resolve(cid2, options2.path, codecs2, getBlock, options2)) : await (0, import_it_last.default)(resolve(cid2, options2.path, codecs2, getBlock, options2));
         const result = entry;
         if (!result) {
           throw (0, import_err_code7.default)(new Error("Not found"), "ERR_NOT_FOUND");
         }
         return result;
       }
-      const codec = await codecs2.getCodec(cid.code);
-      const block = await getBlock(cid, options2);
+      const codec = await codecs2.getCodec(cid2.code);
+      const block = await getBlock(cid2, options2);
       const node = codec.decode(block);
       return {
         value: node,
@@ -25841,11 +25841,11 @@ var createFindPeer = configure((api) => {
 // node_modules/ipfs-http-client/esm/src/dht/find-provs.js
 var import_multiaddr9 = __toModule(require_src2());
 var createFindProvs = configure((api) => {
-  async function* findProvs(cid, options = {}) {
+  async function* findProvs(cid2, options = {}) {
     const res = await api.post("dht/findprovs", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cid.toString()
+        arg: cid2.toString()
       }, options)),
       headers: options.headers
     });
@@ -25900,7 +25900,7 @@ var createProvide = configure((api) => {
     const res = await api.post("dht/provide", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: cidArr.map((cid) => cid.toString())
+        arg: cidArr.map((cid2) => cid2.toString())
       }, options)),
       headers: options.headers
     });
@@ -26542,11 +26542,11 @@ function createName(config) {
 
 // node_modules/ipfs-http-client/esm/src/object/data.js
 var createData = configure((api) => {
-  async function data(cid, options = {}) {
+  async function data(cid2, options = {}) {
     const res = await api.post("object/data", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`
       }, options)),
       headers: options.headers
     });
@@ -26558,11 +26558,11 @@ var createData = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/get.js
 var createGet5 = configure((api) => {
-  async function get(cid, options = {}) {
+  async function get(cid2, options = {}) {
     const res = await api.post("object/get", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`,
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`,
         dataEncoding: "base64"
       }, options)),
       headers: options.headers
@@ -26582,11 +26582,11 @@ var createGet5 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/links.js
 var createLinks = configure((api) => {
-  async function links(cid, options = {}) {
+  async function links(cid2, options = {}) {
     const res = await api.post("object/links", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid instanceof Uint8Array ? CID.decode(cid) : cid}`
+        arg: `${cid2 instanceof Uint8Array ? CID.decode(cid2) : cid2}`
       }, options)),
       headers: options.headers
     });
@@ -26634,11 +26634,11 @@ var createPut4 = (codecs2, options) => {
 
 // node_modules/ipfs-http-client/esm/src/object/stat.js
 var createStat4 = configure((api) => {
-  async function stat(cid, options = {}) {
+  async function stat(cid2, options = {}) {
     const res = await api.post("object/stat", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid}`
+        arg: `${cid2}`
       }, options)),
       headers: options.headers
     });
@@ -26652,12 +26652,12 @@ var createStat4 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/patch/add-link.js
 var createAddLink = configure((api) => {
-  async function addLink(cid, dLink, options = {}) {
+  async function addLink(cid2, dLink, options = {}) {
     const res = await api.post("object/patch/add-link", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
         arg: [
-          `${cid}`,
+          `${cid2}`,
           dLink.Name || dLink.name || "",
           (dLink.Hash || dLink.cid || "").toString() || null
         ]
@@ -26673,13 +26673,13 @@ var createAddLink = configure((api) => {
 // node_modules/ipfs-http-client/esm/src/object/patch/append-data.js
 var import_native_abort_controller7 = __toModule(require_src6());
 var createAppendData = configure((api) => {
-  async function appendData(cid, data, options = {}) {
+  async function appendData(cid2, data, options = {}) {
     const controller = new import_native_abort_controller7.AbortController();
     const signal = abortSignal(controller.signal, options.signal);
     const res = await api.post("object/patch/append-data", __spreadValues({
       signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: `${cid}`
+        arg: `${cid2}`
       }, options))
     }, await multipartRequest3(data, controller, options.headers)));
     const { Hash } = await res.json();
@@ -26690,12 +26690,12 @@ var createAppendData = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/object/patch/rm-link.js
 var createRmLink = configure((api) => {
-  async function rmLink(cid, dLink, options = {}) {
+  async function rmLink(cid2, dLink, options = {}) {
     const res = await api.post("object/patch/rm-link", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
         arg: [
-          `${cid}`,
+          `${cid2}`,
           dLink.Name || dLink.name || null
         ]
       }, options)),
@@ -26710,13 +26710,13 @@ var createRmLink = configure((api) => {
 // node_modules/ipfs-http-client/esm/src/object/patch/set-data.js
 var import_native_abort_controller8 = __toModule(require_src6());
 var createSetData = configure((api) => {
-  async function setData(cid, data, options = {}) {
+  async function setData(cid2, data, options = {}) {
     const controller = new import_native_abort_controller8.AbortController();
     const signal = abortSignal(controller.signal, options.signal);
     const res = await api.post("object/patch/set-data", __spreadValues({
       signal,
       searchParams: toUrlSearchParams(__spreadValues({
-        arg: [`${cid}`]
+        arg: [`${cid2}`]
       }, options))
     }, await multipartRequest3(data, controller, options.headers)));
     const { Hash } = await res.json();
@@ -26754,9 +26754,9 @@ async function* normaliseInput3(input) {
   if (input === null || input === void 0) {
     throw (0, import_err_code10.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
   }
-  const cid = CID.asCID(input);
-  if (cid) {
-    yield toPin({ cid });
+  const cid2 = CID.asCID(input);
+  if (cid2) {
+    yield toPin({ cid: cid2 });
     return;
   }
   if (input instanceof String || typeof input === "string") {
@@ -26773,8 +26773,8 @@ async function* normaliseInput3(input) {
       return iterator;
     if (CID.asCID(first2.value) || first2.value instanceof String || typeof first2.value === "string") {
       yield toPin({ cid: first2.value });
-      for (const cid2 of iterator) {
-        yield toPin({ cid: cid2 });
+      for (const cid3 of iterator) {
+        yield toPin({ cid: cid3 });
       }
       return;
     }
@@ -26794,8 +26794,8 @@ async function* normaliseInput3(input) {
       return iterator;
     if (CID.asCID(first2.value) || first2.value instanceof String || typeof first2.value === "string") {
       yield toPin({ cid: first2.value });
-      for await (const cid2 of iterator) {
-        yield toPin({ cid: cid2 });
+      for await (const cid3 of iterator) {
+        yield toPin({ cid: cid3 });
       }
       return;
     }
@@ -26841,8 +26841,8 @@ var createAddAll = configure((api) => {
       });
       for await (const pin of res.ndjson()) {
         if (pin.Pins) {
-          for (const cid of pin.Pins) {
-            yield CID.parse(cid);
+          for (const cid2 of pin.Pins) {
+            yield CID.parse(cid2);
           }
           continue;
         }
@@ -26868,10 +26868,10 @@ function createAdd2(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/pin/ls.js
-function toPin2(type, cid, metadata) {
+function toPin2(type, cid2, metadata) {
   const pin = {
     type,
-    cid: CID.parse(cid)
+    cid: CID.parse(cid2)
   };
   if (metadata) {
     pin.metadata = metadata;
@@ -26894,8 +26894,8 @@ var createLs3 = configure((api) => {
     });
     for await (const pin of res.ndjson()) {
       if (pin.Keys) {
-        for (const cid of Object.keys(pin.Keys)) {
-          yield toPin2(pin.Keys[cid].Type, cid, pin.Keys[cid].Metadata);
+        for (const cid2 of Object.keys(pin.Keys)) {
+          yield toPin2(pin.Keys[cid2].Type, cid2, pin.Keys[cid2].Metadata);
         }
         return;
       }
@@ -26923,7 +26923,7 @@ var createRmAll = configure((api) => {
       });
       for await (const pin of res.ndjson()) {
         if (pin.Pins) {
-          yield* pin.Pins.map((cid) => CID.parse(cid));
+          yield* pin.Pins.map((cid2) => CID.parse(cid2));
           continue;
         }
         yield CID.parse(pin);
@@ -26951,10 +26951,10 @@ var createRm5 = (config) => {
 var decodePin = ({
   Name: name5,
   Status: status,
-  Cid: cid
+  Cid: cid2
 }) => {
   return {
-    cid: CID.parse(cid),
+    cid: CID.parse(cid2),
     name: name5,
     status
   };
@@ -26966,21 +26966,21 @@ var encodeService = (service) => {
     throw new TypeError("service name must be passed");
   }
 };
-var encodeCID2 = (cid) => {
-  if (CID.asCID(cid)) {
-    return cid.toString();
+var encodeCID2 = (cid2) => {
+  if (CID.asCID(cid2)) {
+    return cid2.toString();
   } else {
-    throw new TypeError(`CID instance expected instead of ${typeof cid}`);
+    throw new TypeError(`CID instance expected instead of ${typeof cid2}`);
   }
 };
-var encodeQuery = ({ service, cid, name: name5, status, all: all4 }) => {
+var encodeQuery = ({ service, cid: cid2, name: name5, status, all: all4 }) => {
   const query = toUrlSearchParams({
     service: encodeService(service),
     name: name5,
     force: all4 ? true : void 0
   });
-  if (cid) {
-    for (const value of cid) {
+  if (cid2) {
+    for (const value of cid2) {
       query.append("cid", encodeCID2(value));
     }
   }
@@ -26991,9 +26991,9 @@ var encodeQuery = ({ service, cid, name: name5, status, all: all4 }) => {
   }
   return query;
 };
-var encodeAddParams = ({ cid, service, background, name: name5, origins }) => {
+var encodeAddParams = ({ cid: cid2, service, background, name: name5, origins }) => {
   const params = toUrlSearchParams({
-    arg: encodeCID2(cid),
+    arg: encodeCID2(cid2),
     service: encodeService(service),
     name: name5,
     background: background ? true : void 0
@@ -27008,14 +27008,14 @@ var encodeAddParams = ({ cid, service, background, name: name5, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a) {
+  async function add(cid2, _a) {
     var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
       headers,
       searchParams: encodeAddParams(__spreadValues({
-        cid
+        cid: cid2
       }, query))
     });
     return decodePin(await response.json());
@@ -28060,8 +28060,8 @@ function getClient() {
 async function reader() {
   const client = await getClient();
   return {
-    ls: async (cid) => await ipfsLsCID(client, cid),
-    get: async (cid, options = {}) => await ipfsGet(client, cid, options)
+    ls: async (cid2) => await ipfsLsCID(client, cid2),
+    get: async (cid2, options = {}) => await ipfsGet(client, cid2, options)
   };
 }
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
@@ -28095,7 +28095,7 @@ function getWriter(client, mfsRoot2, initialRootCID) {
       if (initializedFolder)
         await ipfsRm(client, mfsRoot2);
     },
-    pin: async (cid) => await ipfsPin(client, cid)
+    pin: async (cid2) => await ipfsPin(client, cid2)
   };
 }
 async function initializeMFSFolder(client, initialRootCID) {
@@ -28133,13 +28133,13 @@ var getIPFSDaemonURL = async () => {
   debug5("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
-var ipfsCp = async (client, cid, ipfsPath) => {
-  debug5("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
-  return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+var ipfsCp = async (client, cid2, ipfsPath) => {
+  debug5("Copying from ", `/ipfs/${cid2}`, "to", ipfsPath);
+  return await client.files.cp(`/ipfs/${cid2}`, ipfsPath);
 };
-var ipfsPin = async (client, cid) => {
-  debug5("Pinning", cid);
-  return await client.pin.add(cid, { recursive: true });
+var ipfsPin = async (client, cid2) => {
+  debug5("Pinning", cid2);
+  return await client.pin.add(cid2, { recursive: true });
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)
@@ -28148,24 +28148,24 @@ var stripSlashIPFS = (cidString) => {
 };
 var firstLine = (s) => s.split("\n")[0];
 var stringCID = (file) => firstLine(stripSlashIPFS(file instanceof Object && "cid" in file ? file.cid.toString() : CID.asCID(file) ? file.toString() : file instanceof Buffer ? file.toString() : file));
-var _normalizeIPFS = ({ name: name5, path, cid, type }) => ({ name: name5, path, cid: stringCID(cid), type });
-var ipfsLsCID = async (client, cid) => {
-  cid = await optionallyResolveIPNS(client, cid);
-  debug5("calling ipfs ls with cid", cid);
-  const result = (await toPromise(client.ls(stringCID(cid)))).filter(({ type, name: name5 }) => type !== "unknown" && name5 !== void 0).map(_normalizeIPFS);
+var _normalizeIPFS = ({ name: name5, path, cid: cid2, type }) => ({ name: name5, path, cid: stringCID(cid2), type });
+var ipfsLsCID = async (client, cid2) => {
+  cid2 = await optionallyResolveIPNS(client, cid2);
+  debug5("calling ipfs ls with cid", cid2);
+  const result = (await toPromise(client.ls(stringCID(cid2)))).filter(({ type, name: name5 }) => type !== "unknown" && name5 !== void 0).map(_normalizeIPFS);
   debug5("got ipfs ls result", result);
   return result;
 };
 var ipfsAdd = async (client, path, content, options = {}) => {
   debug5("adding", path, "options", options);
-  let cid = null;
+  let cid2 = null;
   try {
-    cid = stringCID(await client.add(content, options));
+    cid2 = stringCID(await client.add(content, options));
   } catch (e) {
     debug5("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
     return null;
   }
-  debug5("added", cid);
+  debug5("added", cid2);
   try {
     debug5("Trying to delete", path);
     await client.files.rm(path, { recursive: true });
@@ -28175,16 +28175,16 @@ var ipfsAdd = async (client, path, content, options = {}) => {
   ;
   debug5("copying to", path);
   try {
-    await client.files.cp(`/ipfs/${cid}`, path, { create: true });
+    await client.files.cp(`/ipfs/${cid2}`, path, { create: true });
   } catch (e) {
     debug5("couldn't copy. file probably existed for some reason");
   }
-  return cid;
+  return cid2;
 };
-var ipfsGet = async (client, cid, { onlyLink = false }) => {
-  const _debug = debug5.extend(`ipfsGet(${cid})`);
-  cid = await optionallyResolveIPNS(client, cid);
-  const chunkArrays = await (0, import_it_all3.default)(client.cat(cid));
+var ipfsGet = async (client, cid2, { onlyLink = false }) => {
+  const _debug = debug5.extend(`ipfsGet(${cid2})`);
+  cid2 = await optionallyResolveIPNS(client, cid2);
+  const chunkArrays = await (0, import_it_all3.default)(client.cat(cid2));
   const chunks = chunkArrays.map(Buffer.from);
   _debug("Got all chunks. Total:", chunks.length);
   if (chunks.length === 0)
@@ -28199,11 +28199,11 @@ var ipfsAddFile = async (client, ipfsPath, localPath) => {
   const folder = (0, import_path.dirname)(localPath);
   await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }));
 };
-async function optionallyResolveIPNS(client, cid) {
-  debug5("Trying to resolve CID", cid);
-  if (cid.startsWith("/ipns"))
-    cid = await ipfsResolve(client, cid);
-  return cid;
+async function optionallyResolveIPNS(client, cid2) {
+  debug5("Trying to resolve CID", cid2);
+  if (cid2.startsWith("/ipns"))
+    cid2 = await ipfsResolve(client, cid2);
+  return cid2;
 }
 async function ipfsMkdir(client, path) {
   debug5("Creating folder", path);
@@ -28229,18 +28229,24 @@ async function getCID(client, path = "/") {
 var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await toPromise(client.name.resolve(path, { nocache: true }))));
 
 // src/network/ipfsPubSub.js
-var import_native_abort_controller12 = __toModule(require_src6());
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src3());
+var import_native_abort_controller12 = __toModule(require_src6());
 var import_queueable = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 15;
 function publisher(nodeID, suffix = "/output") {
   debug6("Creating publisher for", nodeID, suffix);
-  const _publish = async (cid) => {
+  let lastPublishCID = null;
+  const _publish = async (cid2) => {
     const client = await getClient();
-    await publish(client, nodeID, cid, suffix, nodeID);
+    await publish(client, nodeID, cid2, suffix, nodeID);
+    lastPublishCID = cid2;
   };
+  const interval = setInterval(() => {
+    if (lastPublishCID)
+      _publish(cid);
+  }, 5e3);
   const sendHeartbeat = async () => {
     const client = await getClient();
     publishHeartbeat(client, suffix, nodeID);
@@ -28250,6 +28256,7 @@ function publisher(nodeID, suffix = "/output") {
   const close = () => {
     debug6("Closing publisher", handle);
     clearInterval(handle);
+    clearInterval(interval);
   };
   return {
     publish: _publish,
@@ -28285,7 +28292,7 @@ async function experimentalIPNSPublish(client, rootCID) {
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);
-  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
+  const unsubscribe = subscribeCID(nodeID, suffix, (cid2) => channel.push(cid2));
   return [channel, unsubscribe];
 }
 function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
@@ -28391,48 +28398,48 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
 };
 var cache = {};
 var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
-  const key = `${cid} - ${processFile2.toString()}`;
+  var _b = _a, { cid: cid2 } = _b, rest = __objRest(_b, ["cid"]);
+  const key = `${cid2} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
-    debug7("cache miss", cid);
-    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
+    debug7("cache miss", cid2);
+    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid: cid2 }, rest), processFile2, skipCache);
   } else
-    debug7("cache hit", cid);
+    debug7("cache hit", cid2);
   return cache[key];
 };
-var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }, processFile2, skipCache) => {
+var _getIPFSState = async (ipfsReader, { cid: cid2, type, name: name5, path, rootCID }, processFile2, skipCache) => {
   debug7("ipfs state getter callback name", processFile2.toString());
   const { ls, get } = ipfsReader;
-  cid = stringCID(cid);
+  cid2 = stringCID(cid2);
   const _debug = debug7.extend(`_getIPFSState(${path})`);
-  _debug("Getting state for", type, name5, cid);
+  _debug("Getting state for", type, name5, cid2);
   if (type === "dir") {
-    const files = await ls(cid);
-    _debug("Got files for", name5, cid, files);
+    const files = await ls(cid2);
+    _debug("Got files for", name5, cid2, files);
     const filenames = files.map(({ name: name6 }) => name6);
     const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
     const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
     _debug("contents", contentResult);
-    Object.defineProperty(contentResult, ".cid", { value: cid });
+    Object.defineProperty(contentResult, ".cid", { value: cid2 });
     return contentResult;
   }
   if (type === "file") {
     const fileResult = await processFile2(__spreadValues({
-      cid,
+      cid: cid2,
       path,
       name: name5,
       rootCID
-    }, dataFetchers(cid, ipfsReader)), ipfsReader);
+    }, dataFetchers(cid2, ipfsReader)), ipfsReader);
     return fileResult;
   }
-  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
+  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid2}".`;
 };
-var dataFetchers = (cid, { get }) => {
-  debug7("creating data fetchers for cid", cid);
+var dataFetchers = (cid2, { get }) => {
+  debug7("creating data fetchers for cid", cid2);
   return {
-    json: async () => (0, import_json5.parse)((await get(cid)).toString()),
-    text: async () => (await get(cid)).toString(),
-    buffer: async () => await get(cid)
+    json: async () => (0, import_json5.parse)((await get(cid2)).toString()),
+    text: async () => (await get(cid2)).toString(),
+    buffer: async () => await get(cid2)
   };
 };
 
@@ -28471,12 +28478,12 @@ async function processRemoteCID(contentID, rootPath) {
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
   debug8("got remote state", ipfsState);
 }
-async function processFile({ path, cid }, rootPath, { get }) {
+async function processFile({ path, cid: cid2 }, rootPath, { get }) {
   const _debug = debug8.extend(`processFile(${path})`);
   _debug("started");
   const destPath = (0, import_path3.join)(rootPath, path);
-  _debug("writeFile", destPath, cid, "queued");
-  const content = await get(cid, { stream: true });
+  _debug("writeFile", destPath, cid2, "queued");
+  const content = await get(cid2, { stream: true });
   _debug("writefile content", content.length);
   await writeFileAndCreateFolder(destPath, content);
   _debug("done");
@@ -28497,8 +28504,8 @@ if (process.argv[2]) {
     receive({
       ipns: true,
       nodeid: "done_pollen"
-    }, async (cid) => {
-      console.log("pinning result", await pin(cid));
+    }, async (cid2) => {
+      console.log("pinning result", await pin(cid2));
     }, "");
     console.log("listening to publish of inseminated topic and pinning");
   })();

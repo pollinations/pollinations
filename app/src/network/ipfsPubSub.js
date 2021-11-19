@@ -1,10 +1,10 @@
-import { AbortController } from 'native-abort-controller';
-
 import awaitSleep from 'await-sleep';
 import Debug from 'debug';
-import { getClient } from './ipfsConnector';
+import { AbortController } from 'native-abort-controller';
 import { Channel } from 'queueable';
+import { getClient } from './ipfsConnector';
 import { noop } from './utils';
+
 
 const debug = Debug('ipfs:pubsub');
 
@@ -18,36 +18,45 @@ export function publisher(nodeID, suffix = "/output") {
 
     debug("Creating publisher for", nodeID, suffix);
 
+    let lastPublishCID = null;
+
     const _publish = async cid => {
         const client = await getClient();
         await publish(client, nodeID, cid, suffix, nodeID);
+        lastPublishCID = cid;
     };
+
+    const interval = setInterval(() => {
+        if (lastPublishCID)
+            _publish(cid);
+    }, 5000);
 
     const sendHeartbeat = async () => {
         const client = await getClient();
         publishHeartbeat(client, suffix, nodeID);
     };
-    
+
     const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1000);
-    
+
     sendHeartbeat();
 
     const close = () => {
         debug("Closing publisher", handle);
         clearInterval(handle);
+        clearInterval(interval);
     };
 
-    return { 
-        publish: _publish, 
-        close 
+    return {
+        publish: _publish,
+        close
     };
 }
 
 async function publishHeartbeat(client, suffix, nodeID) {
 
-    if (nodeID === "ipns") 
+    if (nodeID === "ipns")
         return;
-    
+
     debug("publishing heartbeat to", nodeID, suffix);
 
     await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
@@ -55,7 +64,7 @@ async function publishHeartbeat(client, suffix, nodeID) {
 
 async function publish(client, nodeID, rootCID, suffix = "/output") {
 
-    debug("publish pubsub", nodeID+suffix, rootCID);
+    debug("publish pubsub", nodeID + suffix, rootCID);
 
     if (nodeID === "ipns")
         await experimentalIPNSPublish(client, rootCID);
@@ -85,10 +94,10 @@ async function experimentalIPNSPublish(client, rootCID) {
 export function subscribeGenerator(nodeID, suffix = "/input") {
 
     const channel = new Channel();
-   
+
     debug("Subscribing to pubsub events from", nodeID, suffix);
 
-    const unsubscribe = subscribeCID(nodeID,suffix,
+    const unsubscribe = subscribeCID(nodeID, suffix,
         cid => channel.push(cid)
     );
     return [channel, unsubscribe];
@@ -97,11 +106,11 @@ export function subscribeGenerator(nodeID, suffix = "/input") {
 
 // Subscribe to a content ids from a nodeID and suffix. Callback is called with the content ids
 // Also receives and logs heartbeats received from the publisher
-export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
+export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
 
     const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
 
-    const unsubscribe = subscribeCallback(nodeID+suffix, message => {
+    const unsubscribe = subscribeCallback(nodeID + suffix, message => {
         if (message === "HEARTBEAT") {
             gotHeartbeat();
         } else {
@@ -121,7 +130,7 @@ function heartbeatChecker(heartbeatStateCallback) {
 
     let lastHeartbeat = new Date().getTime();
     let heartbeatTimeout = null;
-  
+
     function setHeartbeatTimeout() {
         heartbeatTimeout = setTimeout(() => {
             const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1000;
@@ -130,7 +139,7 @@ function heartbeatChecker(heartbeatStateCallback) {
         }, HEARTBEAT_FREQUENCY * 2 * 1000);
         debug("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
     }
-    
+
     const gotHeartbeat = () => {
         const time = new Date().getTime();
         debug("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1000);
@@ -147,7 +156,7 @@ function heartbeatChecker(heartbeatStateCallback) {
     };
 
     setHeartbeatTimeout();
-    
+
     return { gotHeartbeat, closeHeartbeat }
 
 
@@ -207,6 +216,6 @@ const skipRepeatCalls = f => {
         if (lastValue !== value) {
             f(value);
             lastValue = value;
-        };  
+        };
     }
 }

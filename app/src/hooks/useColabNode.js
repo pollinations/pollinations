@@ -35,7 +35,7 @@ const useColabNode = () => {
 
         // Publisher
         debug("nodeID change to", nodeID, "creating publisher")
-        const { publish, closePub } = publisher(nodeID, "/input")
+        const { publish, close: closePub } = publisher(nodeID, "/input")
         updateNode({ publish, close })
         //close()
         

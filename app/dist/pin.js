@@ -28486,8 +28486,9 @@ async function processFile({ path, cid }, rootPath, { get }) {
 }
 
 // src/backend/pinning-cli.js
+var PUBSUB_TOPIC = "done_pollen";
 if (process.argv[2]) {
-  const { publish: publish2, close } = publisher("done_pollen", "");
+  const { publish: publish2, close } = publisher(PUBSUB_TOPIC, "");
   async function run() {
     await publish2(process.argv[2]);
     close();

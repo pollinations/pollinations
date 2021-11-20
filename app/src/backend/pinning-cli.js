@@ -2,8 +2,10 @@ import { writer } from "../network/ipfsConnector";
 import { publisher } from "../network/ipfsPubSub";
 import { receive } from "./ipfs/receiver";
 
+const PUBSUB_TOPIC = "done_pollen";
+
 if (process.argv[2]) {
-    const { publish, close } = publisher("done_pollen","");
+    const { publish, close } = publisher(PUBSUB_TOPIC,"");
     async function run() {
         await publish(process.argv[2]);
         close();

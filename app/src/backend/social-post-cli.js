@@ -2,9 +2,11 @@ import { publisher } from "../network/ipfsPubSub";
 import { socialPost } from "./functions/social-post";
 import { receive } from "./ipfs/receiver";
 
+const PUBSUB_TOPIC = "post_pollen";
 
 if (process.argv[2]) {
-    const { publish, close } = publisher("post_pollen", "");
+
+    const { publish, close } = publisher(PUBSUB_TOPIC, "");
     async function run() {
         await publish(process.argv[2]);
         close();
@@ -22,5 +24,5 @@ if (process.argv[2]) {
         }
     },
         "");
-    console.log("listening to publish of inseminated topic and posting to social")
+    console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`)
 }

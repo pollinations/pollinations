@@ -10,7 +10,7 @@ const debug = Debug('ipfs:pubsub');
 
 
 // frequency at which to send heartbeats vis pubsub
-const HEARTBEAT_FREQUENCY = 15;
+const HEARTBEAT_FREQUENCY = 7;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
@@ -136,8 +136,8 @@ function heartbeatChecker(heartbeatStateCallback) {
             const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1000;
             debug("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
             heartbeatStateCallback({ lastHeartbeat, alive: false });
-        }, HEARTBEAT_FREQUENCY * 2 * 1000);
-        debug("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+        }, HEARTBEAT_FREQUENCY * 1.5 * 1000);
+        debug("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 1.5, " seconds until next heartbeat");
     }
 
     const gotHeartbeat = () => {

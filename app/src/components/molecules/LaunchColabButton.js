@@ -12,13 +12,22 @@ const LaunchColabButton = ({ connected }) => {
 
     },[connected])
 
-    return !connected ? <Button 
-        onClick={()=>setLoading(true)}
-        color="secondary" 
-        href={pollinatorColabURL} 
-        target="colab">
-        {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}
-    </Button> : <Button disabled children='Connected to GPU'/>
+    // Connected should be null right after connecting to a node but before a heartbeat has been received
+    // In typescript we'd use an enum type but here we use: null (unknown), false (disconnected) and true (connected)
+
+    if (connected === null)
+        return  <Button disabled children='Waiting for GPU...'/>
+
+    if (connected === false)
+        return  <Button 
+            onClick={()=>setLoading(true)}
+            color="secondary" 
+            href={pollinatorColabURL} 
+            target="colab">
+            {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}
+        </Button>
+
+    return <Button disabled children='Connected to GPU'/>
 }
 
 export default LaunchColabButton

@@ -12,7 +12,7 @@ const useColabNode = () => {
 
     const [node, setNode] = useState({connected: false, publish: NOOP_PUBLISH});
 
-    const updateNode = props => setNode(node => ({...node, ...props}));
+    const updateNode = useCallback(props => setNode(node => ({...node, ...props})), []);
 
     useEffect(() => {
         colabConnectionManager(nodeData => {
@@ -41,7 +41,7 @@ const useColabNode = () => {
         
         // Update
         debug("nodeID changed to", nodeID,". (Re)subscribing")
-        const closeSub = subscribeCID(nodeID, "/output", contentID => setNode(node => ({...node, contentID})), heartbeat => {
+        const closeSub = subscribeCID(nodeID, "/output", contentID => updateNode({ contentID }), heartbeat => {
             debug("hearbeat state", heartbeat);
             const connected = heartbeat && heartbeat.alive;
             updateNode({connected});
@@ -54,10 +54,10 @@ const useColabNode = () => {
 
     },[node.nodeID])
 
-    const overrideContentID = useCallback(contentID => setNode(node => ({...node, contentID})), []);
-    const overrideNodeID = useCallback(nodeID => setNode(node => ({...node, nodeID})), []);
+    const overrideContentID = useCallback(contentID => updateNode({ contentID }), []);
+    const overrideNodeID = useCallback(nodeID => updateNode({ nodeID }), []);
     
-    return {node, overrideContentID, overrideNodeID} ;
+    return {node, overrideContentID, overrideNodeID};
 
 };
 

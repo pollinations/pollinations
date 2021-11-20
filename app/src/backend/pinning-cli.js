@@ -21,7 +21,7 @@ if (process.argv[2]) {
         }, async cid => {
             console.log("pinning result", await pin(cid));
         }, "");
-        console.log("listening to publish of inseminated topic and pinning")
+        console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and pinning`)
     })();
 
 }

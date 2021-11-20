@@ -34478,7 +34478,7 @@ var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await
 
 // src/network/ipfsPubSub.js
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
-var HEARTBEAT_FREQUENCY = 15;
+var HEARTBEAT_FREQUENCY = 7;
 function publisher(nodeID, suffix = "/output") {
   debug6("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;
@@ -34556,8 +34556,8 @@ function heartbeatChecker(heartbeatStateCallback) {
       const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
       debug6("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
       heartbeatStateCallback({ lastHeartbeat, alive: false });
-    }, HEARTBEAT_FREQUENCY * 2 * 1e3);
-    debug6("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+    }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
+    debug6("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 1.5, " seconds until next heartbeat");
   }
   const gotHeartbeat = () => {
     const time = new Date().getTime();

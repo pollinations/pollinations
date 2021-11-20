@@ -34332,7 +34332,7 @@ var import_debug7 = __toModule(require_src());
 var import_native_abort_controller12 = __toModule(require_src6());
 var import_queueable = __toModule(require_lib5());
 var debug7 = (0, import_debug7.default)("ipfs:pubsub");
-var HEARTBEAT_FREQUENCY = 15;
+var HEARTBEAT_FREQUENCY = 7;
 function publisher(nodeID, suffix = "/output") {
   debug7("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;
@@ -34410,8 +34410,8 @@ function heartbeatChecker(heartbeatStateCallback) {
       const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
       debug7("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
       heartbeatStateCallback({ lastHeartbeat, alive: false });
-    }, HEARTBEAT_FREQUENCY * 2 * 1e3);
-    debug7("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 2, " seconds until next heartbeat");
+    }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
+    debug7("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 1.5, " seconds until next heartbeat");
   }
   const gotHeartbeat = () => {
     const time = new Date().getTime();

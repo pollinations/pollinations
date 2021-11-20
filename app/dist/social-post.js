@@ -35419,8 +35419,9 @@ async function processFile({ path, cid }, rootPath, { get }) {
 }
 
 // src/backend/social-post-cli.js
+var PUBSUB_TOPIC = "post_pollen";
 if (process.argv[2]) {
-  const { publish: publish2, close } = publisher("post_pollen", "");
+  const { publish: publish2, close } = publisher(PUBSUB_TOPIC, "");
   async function run() {
     await publish2(process.argv[2]);
     close();
@@ -35437,5 +35438,5 @@ if (process.argv[2]) {
       console.log("done");
     }
   }, "");
-  console.log("listening to publish of inseminated topic and posting to social");
+  console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`);
 }

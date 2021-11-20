@@ -23,7 +23,9 @@ const useColabNode = () => {
     
             if (nodeID) {
                 debug("setting new nodeID", nodeID);
-                updateNode({ nodeID, gpu });
+
+                // Setting connected to null means we are not sure if there is a connection yet
+                updateNode({ nodeID, gpu, connected: null });
             }
         });
     },[]);

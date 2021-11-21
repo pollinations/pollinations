@@ -34411,7 +34411,6 @@ function heartbeatChecker(heartbeatStateCallback) {
       debug7("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
       heartbeatStateCallback({ lastHeartbeat, alive: false });
     }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
-    debug7("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 1.5, " seconds until next heartbeat");
   }
   const gotHeartbeat = () => {
     const time = new Date().getTime();
@@ -34670,7 +34669,7 @@ var executeOnce = (f) => {
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 100).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 800).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 

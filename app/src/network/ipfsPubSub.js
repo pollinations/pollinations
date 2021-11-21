@@ -57,7 +57,7 @@ async function publishHeartbeat(client, suffix, nodeID) {
     if (nodeID === "ipns")
         return;
 
-    debug("publishing heartbeat to", nodeID, suffix);
+    // debug("publishing heartbeat to", nodeID, suffix);
 
     await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
 }

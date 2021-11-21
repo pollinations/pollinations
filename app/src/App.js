@@ -15,6 +15,7 @@ import ResultViewer from "./pages/ResultViewer"
 import Creator from "./pages/Create"
 import Home from "./pages/Home"
 import { useEffect, useState } from "react"
+import { useCallback } from "react"
 
 
 const debug = Debug("AppContainer");
@@ -30,11 +31,15 @@ const Pollinations = () => {
     debug("got colab node info", node);
     
     const navigate = useNavigate()
-    const navigateToNode = (contentID) => {
+
+    const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
-        navigate(`/n/${node.nodeID}`)
-    }
+        if (node?.nodeID)
+            navigate(`/n/${node.nodeID}`)
+        else
+            console.error("For some reason NodeID is not set...",node)
+    }, [node?.nodeID])
 
     return (<>   
         {/* Nav Bar     */}

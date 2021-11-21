@@ -34557,7 +34557,6 @@ function heartbeatChecker(heartbeatStateCallback) {
       debug6("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
       heartbeatStateCallback({ lastHeartbeat, alive: false });
     }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
-    debug6("Set heartbeat timeout. Waiting ", HEARTBEAT_FREQUENCY * 1.5, " seconds until next heartbeat");
   }
   const gotHeartbeat = () => {
     const time = new Date().getTime();

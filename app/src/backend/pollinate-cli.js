@@ -74,8 +74,8 @@ if (executeCommand)
       // This waiting logic is quite hacky. Should improve it.
       await awaitSleep(sleepBeforeExit);
       debug("awaiting termination of state sync");
-      await close();
       await processing();
+      await close();
     }
 
     await awaitSleep(sleepBeforeExit);

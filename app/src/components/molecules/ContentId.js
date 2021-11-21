@@ -6,7 +6,7 @@ const ContentIdInfo = ({ contentID, connected }) => {
     if (!contentID) return <Typography> ContentId: N/A </Typography>
     return <Typography >
                 ContentId: 
-                <Link href={`https://polliantions.ai/ipfs/${contentID}`}>
+                <Link href={`https://pollinations.ai/ipfs/${contentID}`} target="_blank">
                     { displayContentID(contentID) }
                 </Link>
             </Typography>

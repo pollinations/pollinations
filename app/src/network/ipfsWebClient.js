@@ -55,7 +55,8 @@ export const getWriter = async ipfs => {
 export const updateInput = async (inputWriter, inputs) => {
 
     debug("updateInput", inputs);
-
+    debug("removing output")
+    await inputWriter.rm("output")
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
     for (let [key, val] of Object.entries(inputs)) {
         // check if value is a string and base64 encoded file and convert it to a separate file input

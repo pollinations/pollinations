@@ -62,20 +62,11 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
           <FormView
             input={ipfs?.input}
             connected={connected}
-            //colabState={ipfs?.output?.status}
             metadata={metadata}
             onSubmit={dispatchForm}
             onCancel={cancelForm}
           />
         </div>
-        {
-          ipfs?.output?.social &&
-          (<div style={{ width: '100%' }}>
-            <h3>Social</h3>
-            <br />
-            <SocialPostStatus results={ipfs?.output?.social} />
-          </div>)
-        }
 
         {/* previews */}
         {ipfs.output && <div >

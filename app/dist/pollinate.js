@@ -34592,9 +34592,9 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
       (0, import_fs2.mkdirSync)(watchPath, { recursive: true });
     }
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
+    let done = null;
+    processing2 = new Promise((resolve2) => done = resolve2);
     for await (const changed of changedFiles$) {
-      let done = null;
-      processing2 = new Promise((resolve2) => done = resolve2);
       debug9("Changed files", changed);
       for (const { event, path: file } of changed) {
         debug9("Local:", event, file);
@@ -34617,11 +34617,11 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
         debug9("publish", newContentID);
         await publish2(newContentID);
       }
-      done();
       if (once) {
         break;
       }
     }
+    done();
   }
   return {
     start,
@@ -34712,8 +34712,8 @@ if (executeCommand)
       debug10("done executing", executeCommand, ". Waiting...");
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       debug10("awaiting termination of state sync");
-      await close2();
       await processing2();
+      await close2();
     }
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug10("awaiting termination of state sync");

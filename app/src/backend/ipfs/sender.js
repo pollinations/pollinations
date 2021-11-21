@@ -44,11 +44,12 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
 
 
+    let done = null;
+
+    processing = new Promise(resolve => done = resolve);
+
     for await (const changed of changedFiles$) {
 
-      let done = null;
-
-      processing = new Promise(resolve => done = resolve);
       debug("Changed files", changed);
       for (const { event, path: file } of changed) {
         // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
@@ -82,7 +83,7 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
       }
       // }));
 
-      done();
+
 
       if (once) {
         break;
@@ -90,6 +91,7 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
 
     }
 
+    done();
     // await close();
   }
 
@@ -124,7 +126,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
 
   watcher.on("all", async (event, path) => {
     if (path !== '') {
-      
+
       const lastChanged = last(changeQueue)
 
       // add to queue only if it is not a repetition of the last change

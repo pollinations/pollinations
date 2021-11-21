@@ -9013,12 +9013,12 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last6 = this.buffer[this.btm];
-        if (last6 === void 0)
+        const last7 = this.buffer[this.btm];
+        if (last7 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last6;
+        return last7;
       }
       isEmpty() {
         return this.buffer[this.btm] === void 0;
@@ -10277,8 +10277,8 @@ var require_multiaddr_to_uri = __commonJS({
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last6 = parts[parts.length - 1];
-      if (last6.protocol === "tcp") {
+      const last7 = parts[parts.length - 1];
+      if (last7.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -11745,14 +11745,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last6 = async (source) => {
+    var last7 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last6;
+    module2.exports = last7;
   }
 });
 
@@ -14392,8 +14392,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last6 = init.pop();
-      return compose(compose.apply(this, map4(chain, init)), last6);
+      var last7 = init.pop();
+      return compose(compose.apply(this, map4(chain, init)), last7);
     }
     module2.exports = composeK;
   }
@@ -15740,8 +15740,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last6 = /* @__PURE__ */ nth(-1);
-    module2.exports = last6;
+    var last7 = /* @__PURE__ */ nth(-1);
+    module2.exports = last7;
   }
 });
 
@@ -15751,7 +15751,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last6 = require_last();
+    var last7 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -15759,7 +15759,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last6(result), list[idx])) {
+          if (!pred(last7(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -34523,6 +34523,7 @@ var import_debug9 = __toModule(require_src());
 var import_fs2 = __toModule(require("fs"));
 var import_path5 = __toModule(require("path"));
 var import_queueable2 = __toModule(require_lib5());
+var import_ramda3 = __toModule(require_src7());
 
 // node_modules/throttle-debounce/esm/index.js
 function throttle(delay, noTrailing, callback, debounceMode) {
@@ -34646,8 +34647,13 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   });
   watcher.on("all", async (event, path) => {
     if (path !== "") {
-      changeQueue.push({ event, path });
-      sendQueuedFiles();
+      const lastChanged = (0, import_ramda3.last)(changeQueue);
+      if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
+        debug9(`Last change "${event}" for "${path}" was duplicate. Ignoring.`);
+      } else {
+        changeQueue.push({ event, path });
+        sendQueuedFiles();
+      }
     }
   });
   return channel$;
@@ -34684,10 +34690,8 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
   debug10("Executing command", command);
   const childProc = (0, import_child_process.spawn)(command);
   childProc.on("error", (err) => {
-    if (err)
-      reject(err);
-    else
-      resolve2();
+    debug10("Error executing command", err);
+    reject(err);
   });
   childProc.on("close", resolve2);
   childProc.stdout.pipe(import_process2.default.stderr);

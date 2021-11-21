@@ -28261,7 +28261,6 @@ function publisher(nodeID, suffix = "/output") {
 async function publishHeartbeat(client, suffix, nodeID) {
   if (nodeID === "ipns")
     return;
-  debug6("publishing heartbeat to", nodeID, suffix);
   await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
 }
 async function publish(client, nodeID, rootCID, suffix = "/output") {

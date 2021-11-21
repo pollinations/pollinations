@@ -34359,7 +34359,6 @@ function publisher(nodeID, suffix = "/output") {
 async function publishHeartbeat(client, suffix, nodeID) {
   if (nodeID === "ipns")
     return;
-  debug7("publishing heartbeat to", nodeID, suffix);
   await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
 }
 async function publish(client, nodeID, rootCID, suffix = "/output") {
@@ -34593,10 +34592,10 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
     }
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     let done = null;
-    processing2 = new Promise((resolve2) => done = resolve2);
     for await (const changed of changedFiles$) {
       debug9("Changed files", changed);
       for (const { event, path: file } of changed) {
+        processing2 = new Promise((resolve2) => done = resolve2);
         debug9("Local:", event, file);
         const localPath = (0, import_path5.join)(watchPath, file);
         const ipfsPath = file;
@@ -34620,8 +34619,8 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
       if (once) {
         break;
       }
+      done();
     }
-    done();
   }
   return {
     start,
@@ -34710,8 +34709,9 @@ if (executeCommand)
       startSending();
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
       debug10("awaiting termination of state sync");
+      await processing2();
+      await (0, import_await_sleep3.default)(sleepBeforeExit);
       await processing2();
       await close2();
     }

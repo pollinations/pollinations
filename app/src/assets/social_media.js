@@ -15,7 +15,7 @@ export const platforms = {
     "instagram": { icon: <InstagramIcon fontSize='small'/>, url: "https://instagram.com/pollinations_ai" },
     "youtube": { icon: <YoutubeIcon fontSize='small'/>, url: "https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug" },
     "telegram": { icon: <TelegramIcon fontSize='small'/>, url: "https://t.me/joinchat/Ft4jOGXbIyViM2My" },
-    "fbg":  { icon: <PinterestIcon fontSize='small'/>, url: "https://pinterest.com/pollinations_ai/"},
+    "pinterest":  { icon: <PinterestIcon fontSize='small'/>, url: "https://pinterest.com/pollinations_ai/"},
     // "gmb":  { icon: <GoogleIcon />, url: "https://facebook.com/pollinations"},
-    "pinterest": { icon: <GoogleIcon fontSize='small'/>, url: "https://facebook.com/pollinations"},
+    // "pinterest": { icon: <GoogleIcon fontSize='small'/>, url: "https://facebook.com/pollinations"},
 }

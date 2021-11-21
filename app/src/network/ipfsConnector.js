@@ -2,19 +2,15 @@
 import { create, globSource } from "ipfs-http-client";
 import { toPromise, callLogger, toPromise1, noop, retryException, AUTH } from "./utils.js";
 import { CID } from "multiformats/cid";
-import reachable from "is-port-reachable";
 import all from "it-all";
 
 
 import Debug from "debug";
 import { last } from "ramda";
 
-import { join } from "path";
+import { join,basename, dirname } from "path";
 
 const debug = Debug("ipfsConnector")
-
-
-export const ipfsGlobSource = globSource;
 
 const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 
@@ -163,7 +159,6 @@ export const getIPNSURL = (id) => {
 };
 
 const stripSlashIPFS = cidString => { 
-    debug("stripSlash", cidString); 
     if (!cidString) 
         throw new Error("CID is falsy");
     return cidString.replace("/ipfs/", "")
@@ -238,9 +233,10 @@ const ipfsGet = async (client, cid, { onlyLink=false }) => {
 
 const ipfsAddFile = async (client,  ipfsPath, localPath) => {
     debug("Adding file", localPath, "to", ipfsPath);
-    // await retryException(async () =>
-     await ipfsAdd(client, ipfsPath, globSource(localPath, { preserveMtime: true, preserveMode: true }))
-    //  );
+    // get filename from path
+    const filename = basename(localPath);
+    const folder = dirname(localPath);
+     await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }))
 }
 
 async function optionallyResolveIPNS(client, cid) {

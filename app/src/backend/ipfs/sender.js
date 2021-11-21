@@ -46,12 +46,12 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
 
     let done = null;
 
-    processing = new Promise(resolve => done = resolve);
 
     for await (const changed of changedFiles$) {
 
       debug("Changed files", changed);
       for (const { event, path: file } of changed) {
+        processing = new Promise(resolve => done = resolve);
         // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
         const localPath = join(watchPath, file);
@@ -88,10 +88,10 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
       if (once) {
         break;
       }
-
+      done();
     }
 
-    done();
+
     // await close();
   }
 

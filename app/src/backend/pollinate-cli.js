@@ -37,10 +37,8 @@ const execute = async (command, logfile = null) =>
     debug("Executing command", command);
     const childProc = spawn(command);
     childProc.on("error", err => {
-      if (err)
+        debug("Error executing command", err);
         reject(err);
-      else
-        resolve();
     });
     childProc.on("close", resolve);
     childProc.stdout.pipe(process.stderr);

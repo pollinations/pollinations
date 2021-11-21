@@ -36,16 +36,27 @@ export const IPFSWebState = contentID => {
     return getIPFSState(contentID, fetchAndMakeURL);
 }
 
-export const getInputWriter = async (rootCID) => {
-    const input  = await getIPFSState(rootCID);
-    debug("getting input writer for cid", input[".cid"]);
-    return writer(input[".cid"]);
+export const getWriter = async ipfs => {
+    debug("getting input writer for cid", ipfs[".cid"]);
+    const w = await writer(ipfs[".cid"]);
+
+    // try to close the writer when window is closed
+    const previousUnload = window.onbeforeunload;
+    window.onbeforeunload = () => { 
+        previousUnload && previousUnload(); 
+        w.close(); 
+        return undefined; 
+    };
+
+    return w;
 }
 
 // Update /input of ipfs state with new inputs (from form probably)
 export const updateInput = async (inputWriter, inputs) => {
-    debug("updateInput", inputs);
 
+    debug("updateInput", inputs);
+    debug("removing output")
+    await inputWriter.rm("output")
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
     for (let [key, val] of Object.entries(inputs)) {
         // check if value is a string and base64 encoded file and convert it to a separate file input
@@ -60,14 +71,16 @@ export const updateInput = async (inputWriter, inputs) => {
             // convert fileContent to buffer
             const buffer = Buffer.from(fileContent, "base64");
             debug("Writing file", filename);
-            await inputWriter.add(filename, buffer);
+            await inputWriter.add("input/" + filename, buffer);
 
             // We should not need to reference the absolute path here.
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`;
         }
-        await inputWriter.add(key, JSON.stringify(val))
+        
+        await inputWriter.add("input/" + key, JSON.stringify(val))
     };
+
     return await inputWriter.cid();
 };
 

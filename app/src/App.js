@@ -37,8 +37,10 @@ const Pollinations = () => {
             overrideContentID(contentID)
         if (node?.nodeID)
             navigate(`/n/${node.nodeID}`)
-        else
+        else {
+            history.go(0)
             console.error("For some reason NodeID is not set...",node)
+        }
     }, [node?.nodeID])
 
     return (<>   

@@ -4,20 +4,20 @@ import Button from '@material-ui/core/Button'
 import Debug from "debug";
 import { Box, Paper, Typography } from "@material-ui/core";
 import HelpModal from "./HelpModal";
-import { useDropzone } from 'react-dropzone'
+// import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, disconnected, colabState, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata);
 
     // some variables for conditionally rendering the form parts
     // TODO: has a lot of redundancy. refactor this
-    const showSubmit = colabState !== "running";
+    const showSubmit = true; //colabState !== "running";
     const showCancel = false; //!showSubmit && input.formAction !== "cancel";
     const inProgress = false//!!(input && input.formAction);
-    const formDisabled = disconnected || inProgress;
+    const formDisabled = !connected;// || inProgress;
 
 
     // Fill in the form inputs and override default values if they are in the ipfs object
@@ -25,8 +25,6 @@ const FormView = ({ input, disconnected, colabState, metadata, onSubmit, onCance
     if (!filledForm)
         return null;
 
-
-    debug("colabState", colabState);
     debug("filledForm", filledForm);
 
     // the UI schema for the form defines which widgets are used for each input
@@ -47,7 +45,7 @@ const FormView = ({ input, disconnected, colabState, metadata, onSubmit, onCance
             debug("submitted", formData);
             onSubmit(formData)
         }}
-        disabled={formDisabled || colabState === "running"}
+        disabled={formDisabled}
         >
         {/* <FileUpload />  */}
         <Box m={1}>
@@ -146,29 +144,29 @@ function textOrTextarea(defaultVal) {
     return (defaultVal.split("\n").length > 1 ? "textarea" : "text");
 }
 
-// File upload widget using dropzone
-function FileUpload() {
-    const onDrop = useCallback(async acceptedFiles => {
-      // Do something with the files
-      debug("dropped files", acceptedFiles);
-      const file = acceptedFiles[0];
-      const { cid } = await _client.add({content: file.stream(), path: file.path});
+// // File upload widget using dropzone
+// function FileUpload() {
+//     const onDrop = useCallback(async acceptedFiles => {
+//       // Do something with the files
+//       debug("dropped files", acceptedFiles);
+//       const file = acceptedFiles[0];
+//       const { cid } = await _client.add({content: file.stream(), path: file.path});
       
       
-    }, []);
+//     }, []);
 
-    const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
+//     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
   
-    return (<Paper variant={isDragActive ? "outlined":"elevation"}>
-      <div {...getRootProps()}>
-        <input {...getInputProps()} />
-        {
-          isDragActive ?
-            <p>Drop the files here ...</p> :
-            <p>Drag 'n' drop some files here, or click to select files</p>
-        }
-      </div>
-      </Paper>
-    )
-  }
+//     return (<Paper variant={isDragActive ? "outlined":"elevation"}>
+//       <div {...getRootProps()}>
+//         <input {...getInputProps()} />
+//         {
+//           isDragActive ?
+//             <p>Drop the files here ...</p> :
+//             <p>Drag 'n' drop some files here, or click to select files</p>
+//         }
+//       </div>
+//       </Paper>
+//     )
+//   }
 

@@ -4,6 +4,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from "path";
 import { Channel } from "queueable";
+import { last } from "ramda";
 import { debounce } from "throttle-debounce";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
@@ -113,20 +114,28 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     interval: debounceTime,
-  });
+  })
 
   const sendQueuedFiles = debounce(debounceTime, false, async () => {
-    const files = changeQueue;
-    changeQueue = [];
-    channel$.push(files);
-  });
+    const files = changeQueue
+    changeQueue = []
+    channel$.push(files)
+  })
 
   watcher.on("all", async (event, path) => {
     if (path !== '') {
-      changeQueue.push({ event, path });
-      sendQueuedFiles();
+      
+      const lastChanged = last(changeQueue)
+
+      // add to queue only if it is not a repetition of the last change
+      if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
+        debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
+      } else {
+        changeQueue.push({ event, path });
+        sendQueuedFiles();
+      }
     }
-  });
+  })
 
   return channel$;
 }

@@ -12,7 +12,7 @@ const useColabNode = () => {
 
     const [node, setNode] = useState({connected: false, publish: NOOP_PUBLISH});
 
-    const updateNode = useCallback(props => setNode(node => ({...node, ...props})), []);
+    const updateNode = useCallback(props => setNode(node => propsSame(node, props) ? node : ({...node, ...props})), []);
 
     useEffect(() => {
         colabConnectionManager(nodeData => {
@@ -64,5 +64,7 @@ const useColabNode = () => {
 };
 
 const NOOP_PUBLISH = () => console.error("publish function not defined yet for some weird reason.");
+
+const propsSame = (node, props) => Object.keys(props).map(key => node[key] === props[key]).every(x => x);
 
 export default useColabNode;

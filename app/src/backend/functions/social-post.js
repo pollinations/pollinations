@@ -103,7 +103,7 @@ const autoHashtag = async text => {
       position: "auto"  // optional, "auto" or "end"
     })
   })
-  const json = await res.json();
-  return JSON.stringify(json)
+  const json = await res.json()
+  return json.body
 }
 

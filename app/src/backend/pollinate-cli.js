@@ -30,15 +30,15 @@ const enableReceive = !options.send;
 
 
 const executeCommand = options.execute;
-const sleepBeforeExit = options.debounce * 2 + 2000;
+const sleepBeforeExit = options.debounce * 2 + 10000;
 
 const execute = async (command, logfile = null) =>
   new Promise((resolve, reject) => {
     debug("Executing command", command);
     const childProc = spawn(command);
     childProc.on("error", err => {
-        debug("Error executing command", err);
-        reject(err);
+      debug("Error executing command", err);
+      reject(err);
     });
     childProc.on("close", resolve);
     childProc.stdout.pipe(process.stderr);
@@ -77,6 +77,7 @@ if (executeCommand)
       await awaitSleep(sleepBeforeExit);
       await processing();
       await close();
+      await processing();
     }
 
     await awaitSleep(sleepBeforeExit);

@@ -1,8 +1,8 @@
 
-import SocialPost from "social-post-api"; 
+import SocialPost from "social-post-api";
+import { getPostData } from "../../data/summaryData";
 import { IPFSWebState } from "../../network/ipfsWebClient.js";
 
-import { getPostData } from "../../data/summaryData";
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -11,17 +11,17 @@ const headers = {
 };
 
 
-export const handler = async ({path}) => {
+export const handler = async ({ path }) => {
 
-    const cid = path.split("/").slice(-1)[0];
-    const platform = path.split("/").slice(-2)[0];
-    // your server-side functionality
-    let res = await socialPost(platform, cid);
-    return {
-      statusCode: 200,
-      body: JSON.stringify(res, null, 4),
-      headers
-    };
+  const cid = path.split("/").slice(-1)[0];
+  const platform = path.split("/").slice(-2)[0];
+  // your server-side functionality
+  let res = await socialPost(platform, cid);
+  return {
+    statusCode: 200,
+    body: JSON.stringify(res, null, 4),
+    headers
+  };
 }
 
 
@@ -41,7 +41,7 @@ export async function socialPost(platform, cid) {
   return res;
 }
 
-async function doPost({post, title, videoURL, coverImage, url}, platform) {
+async function doPost({ post, title, videoURL, coverImage, url }, platform) {
 
   // Ayrshare API Key
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
@@ -54,13 +54,12 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
       title,       // required: Video Title
       youTubeVisibility: "public", // optional: "public", "unlisted", or "private" - default "private"
       thumbNail: coverImage, // optional: URL of a JPEG or PNG and less than 2MB
-      // playListId: "PLrav6EfwgDX5peD7Ni-pOKa7B13WjLyUB" // optional: Playlist ID to add the video
     },
     shortenLinks: false,
     "mediaUrls": [videoURL],
     "platforms": [platform],
     autoHashtag: {
-      max: 2,
+      max: 10,
       position: "auto"
     }
   };
@@ -73,7 +72,7 @@ async function doPost({post, title, videoURL, coverImage, url}, platform) {
 
 
 const followText =
-`## Create
+  `## Create
 https://pollinations.ai
 
 ## Follow

@@ -34617,121 +34617,26 @@ function subscribeCallback(topic, callback) {
 // src/backend/functions/social-post.js
 var import_social_post_api = __toModule(require_social_post_api());
 
-// src/network/ipfsWebClient.js
-var import_path3 = __toModule(require("path"));
-var import_debug8 = __toModule(require_src());
-
-// src/network/ipfsState.js
-var import_debug7 = __toModule(require_src());
-var import_ramda2 = __toModule(require_src7());
-var import_path2 = __toModule(require("path"));
-
-// src/utils/logProgressToConsole.js
-var PromiseAllProgress = (name5, promises) => Promise.all(promises);
-
-// src/network/ipfsState.js
-var import_json5 = __toModule(require_lib5());
-var debug7 = (0, import_debug7.default)("ipfsState");
-var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
-  const ipfsReader = await reader();
-  debug7("Getting state for CID", contentID);
-  return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback, skipCache);
-};
-var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
-  const key = `${cid} - ${processFile2.toString()}`;
-  if (!cache[key] || skipCache) {
-    debug7("cache miss", cid);
-    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
-  } else
-    debug7("cache hit", cid);
-  return cache[key];
-};
-var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }, processFile2, skipCache) => {
-  debug7("ipfs state getter callback name", processFile2.toString());
-  const { ls, get } = ipfsReader;
-  cid = stringCID(cid);
-  const _debug = debug7.extend(`_getIPFSState(${path})`);
-  _debug("Getting state for", type, name5, cid);
-  if (type === "dir") {
-    const files = await ls(cid);
-    _debug("Got files for", name5, cid, files);
-    const filenames = files.map(({ name: name6 }) => name6);
-    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
-    const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
-    _debug("contents", contentResult);
-    Object.defineProperty(contentResult, ".cid", { value: cid });
-    return contentResult;
-  }
-  if (type === "file") {
-    const fileResult = await processFile2(__spreadValues({
-      cid,
-      path,
-      name: name5,
-      rootCID
-    }, dataFetchers(cid, ipfsReader)), ipfsReader);
-    return fileResult;
-  }
-  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
-};
-var dataFetchers = (cid, { get }) => {
-  debug7("creating data fetchers for cid", cid);
-  return {
-    json: async () => (0, import_json5.parse)((await get(cid)).toString()),
-    text: async () => (await get(cid)).toString(),
-    buffer: async () => await get(cid)
-  };
-};
-
-// src/network/ipfsWebClient.js
-var import_json52 = __toModule(require_lib5());
-var debug8 = (0, import_debug8.default)("ipfsWebClient");
-var fetchAndMakeURL = async ({ name: name5, cid, text }) => {
-  const ext = (0, import_path3.extname)(name5);
-  const doImport = shouldImport(ext);
-  debug8("ext", ext, "extIsJSON", doImport);
-  const webURL = getWebURL(cid, name5);
-  if (doImport) {
-    const textContent = await text();
-    try {
-      return (0, import_json52.parse)(textContent);
-    } catch (_e) {
-      debug8("result was not json. returning raw.");
-      return textContent;
-    }
-  } else {
-    return webURL;
-  }
-};
-var IPFSWebState = (contentID) => {
-  debug8("Getting state for CID", contentID);
-  return getIPFSState(contentID, fetchAndMakeURL);
-};
-function shouldImport(ext) {
-  return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb" || ext.toLowerCase() === ".md";
-}
-
 // src/utils/notebookMetadata.js
-var import_debug9 = __toModule(require_src());
-var import_json53 = __toModule(require_lib5());
-var debug9 = (0, import_debug9.default)("notebookMetadata");
+var import_debug7 = __toModule(require_src());
+var import_json5 = __toModule(require_lib5());
+var debug7 = (0, import_debug7.default)("notebookMetadata");
 function readMetadata(notebookJSON) {
   if (!notebookJSON)
     return null;
   let { metadata, cells } = notebookJSON;
-  debug9("cells", cells, "metadata", metadata);
+  debug7("cells", cells, "metadata", metadata);
   const { name: name5 } = metadata["colab"];
   const descriptionCell = cells.find(isMarkdownCell);
   const parameterCell = cells.find(isParameterCell);
-  debug9("parameter cell", parameterCell);
+  debug7("parameter cell", parameterCell);
   const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
   const parameterTexts = parameterCell ? parameterCell["source"] : null;
-  debug9("parameter texts", parameterTexts);
+  debug7("parameter texts", parameterTexts);
   const allParameters = parameterTexts.map(extractParametersWithComment).filter((param) => param).map(mapToJSONFormField);
   const properties = Object.fromEntries(allParameters);
   const primaryInput = allParameters[0][0];
-  debug9("got parameters", allParameters, "primary input", primaryInput);
+  debug7("got parameters", allParameters, "primary input", primaryInput);
   return {
     form: {
       properties
@@ -34763,18 +34668,18 @@ var extractEnumerableParameters = (text) => {
   if (!match)
     return null;
   const [_text, name5, defaultVal, enumString] = match;
-  debug9("Parsing options string", enumString);
-  return { name: name5, defaultVal, type: "string", enumOptions: (0, import_json53.parse)(enumString) };
+  debug7("Parsing options string", enumString);
+  return { name: name5, defaultVal, type: "string", enumOptions: (0, import_json5.parse)(enumString) };
 };
 var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOptions }) => {
   defaultVal = defaultVal.trim();
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase();
-  debug9("Parsing JSON:", { defaultVal, enumOptions });
+  debug7("Parsing JSON:", { defaultVal, enumOptions });
   return [name5, {
     enum: enumOptions,
     type,
-    default: (0, import_json53.parse)(defaultVal),
+    default: (0, import_json5.parse)(defaultVal),
     title: name5,
     description
   }];
@@ -34784,9 +34689,9 @@ var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
 var notebookMetadata_default = readMetadata;
 
 // src/data/media.js
-var import_ramda3 = __toModule(require_src7());
-var import_debug10 = __toModule(require_src());
-var debug10 = (0, import_debug10.default)("media");
+var import_ramda2 = __toModule(require_src7());
+var import_debug8 = __toModule(require_src());
+var debug8 = (0, import_debug8.default)("media");
 var _mediaTypeMap = {
   "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
   "video": [".mp4", ".webm"],
@@ -34796,20 +34701,20 @@ var _mediaTypeMap = {
 };
 var getCoverImage = (output) => {
   const image = output && getMedia(output, "image")[0];
-  debug10("coverImage", image);
+  debug8("coverImage", image);
   return image ? [image[0], gzipProxy(image[1])] : null;
 };
 var getCoverVideo = (output) => output && getMedia(output, "video")[0];
 function getMedia(output, type = "all") {
   const extensions = _mediaTypeMap[type];
-  const filterByExtensions = (filename) => (0, import_ramda3.any)(import_ramda3.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
+  const filterByExtensions = (filename) => (0, import_ramda2.any)(import_ramda2.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
   const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
   const media = mediaFilenames.map((filename) => [filename, output[filename]]);
   media.reverse();
   return media;
 }
 var gzipProxy = (path) => {
-  const cid = (0, import_ramda3.last)(path.split("/"));
+  const cid = (0, import_ramda2.last)(path.split("/"));
   return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
 };
 
@@ -35289,12 +35194,12 @@ var repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n - 1);
 var mature_default = (text) => mature(text);
 
 // src/data/summaryData.js
-var import_debug11 = __toModule(require_src());
-var debug11 = (0, import_debug11.default)("summaryData");
+var import_debug9 = __toModule(require_src());
+var debug9 = (0, import_debug9.default)("summaryData");
 function getPostData(ipfs, cid, shortenPost = true) {
   const { name: name5, primaryInput } = notebookMetadata_default(ipfs.input["notebook.ipynb"]);
   const coverImage = getCoverImage(ipfs.output);
-  debug11("got coverImage", coverImage);
+  debug9("got coverImage", coverImage);
   const coverImageURL = coverImage ? coverImage[1] : null;
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
@@ -35303,7 +35208,7 @@ function getPostData(ipfs, cid, shortenPost = true) {
   const text = possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
   const maturityFilteredText = mature_default(text);
   const { post, title } = formatPostAndTitle(name5, maturityFilteredText, url, shortenPost);
-  debug11("Created post data", { name: name5, text, videoURL, coverImage: coverImageURL, url });
+  debug9("Created post data", { name: name5, text, videoURL, coverImage: coverImageURL, url });
   return { post, title, videoURL, coverImage: coverImageURL, url };
 }
 var hashTags = "#pollinations #generative #art #machinelearning";
@@ -35321,12 +35226,107 @@ function formatPostAndTitle(modelTitle, text, url, shortenPost) {
   return { post, title: text };
 }
 function shorten(str, maxLength) {
-  debug11("shortening", str, maxLength);
+  debug9("shortening", str, maxLength);
   if (!str)
     return "";
   if (str.length > maxLength)
     return `${str.substr(0, maxLength - 3)}...`;
   return str;
+}
+
+// src/network/ipfsWebClient.js
+var import_path3 = __toModule(require("path"));
+var import_debug11 = __toModule(require_src());
+
+// src/network/ipfsState.js
+var import_debug10 = __toModule(require_src());
+var import_ramda3 = __toModule(require_src7());
+var import_path2 = __toModule(require("path"));
+
+// src/utils/logProgressToConsole.js
+var PromiseAllProgress = (name5, promises) => Promise.all(promises);
+
+// src/network/ipfsState.js
+var import_json52 = __toModule(require_lib5());
+var debug10 = (0, import_debug10.default)("ipfsState");
+var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
+  const ipfsReader = await reader();
+  debug10("Getting state for CID", contentID);
+  return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback, skipCache);
+};
+var cache = {};
+var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
+  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
+  const key = `${cid} - ${processFile2.toString()}`;
+  if (!cache[key] || skipCache) {
+    debug10("cache miss", cid);
+    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
+  } else
+    debug10("cache hit", cid);
+  return cache[key];
+};
+var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }, processFile2, skipCache) => {
+  debug10("ipfs state getter callback name", processFile2.toString());
+  const { ls, get } = ipfsReader;
+  cid = stringCID(cid);
+  const _debug = debug10.extend(`_getIPFSState(${path})`);
+  _debug("Getting state for", type, name5, cid);
+  if (type === "dir") {
+    const files = await ls(cid);
+    _debug("Got files for", name5, cid, files);
+    const filenames = files.map(({ name: name6 }) => name6);
+    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
+    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
+    _debug("contents", contentResult);
+    Object.defineProperty(contentResult, ".cid", { value: cid });
+    return contentResult;
+  }
+  if (type === "file") {
+    const fileResult = await processFile2(__spreadValues({
+      cid,
+      path,
+      name: name5,
+      rootCID
+    }, dataFetchers(cid, ipfsReader)), ipfsReader);
+    return fileResult;
+  }
+  throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
+};
+var dataFetchers = (cid, { get }) => {
+  debug10("creating data fetchers for cid", cid);
+  return {
+    json: async () => (0, import_json52.parse)((await get(cid)).toString()),
+    text: async () => (await get(cid)).toString(),
+    buffer: async () => await get(cid)
+  };
+};
+
+// src/network/ipfsWebClient.js
+var import_json53 = __toModule(require_lib5());
+var debug11 = (0, import_debug11.default)("ipfsWebClient");
+var fetchAndMakeURL = async ({ name: name5, cid, text }) => {
+  const ext = (0, import_path3.extname)(name5);
+  const doImport = shouldImport(ext);
+  debug11("ext", ext, "extIsJSON", doImport);
+  const webURL = getWebURL(cid, name5);
+  if (doImport) {
+    const textContent = await text();
+    try {
+      return (0, import_json53.parse)(textContent);
+    } catch (_e) {
+      debug11("result was not json. returning raw.");
+      return textContent;
+    }
+  } else {
+    return webURL;
+  }
+};
+var IPFSWebState = (contentID) => {
+  debug11("Getting state for CID", contentID);
+  return getIPFSState(contentID, fetchAndMakeURL);
+};
+function shouldImport(ext) {
+  return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb" || ext.toLowerCase() === ".md";
 }
 
 // src/backend/functions/social-post.js
@@ -35359,7 +35359,7 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
     "mediaUrls": [videoURL],
     "platforms": [platform],
     autoHashtag: {
-      max: 2,
+      max: 10,
       position: "auto"
     }
   };

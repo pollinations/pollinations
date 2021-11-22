@@ -100,7 +100,7 @@ const autoHashtag = async text => {
     body: JSON.stringify({
       post: text,       // required
       max: 3,           // optional, range 1-5
-      position: "auto"  // optional, "auto" or "end"
+      position: "end"  // optional, "auto" or "end"
     })
   })
   const json = await res.json()

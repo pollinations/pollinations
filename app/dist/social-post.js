@@ -35381,11 +35381,11 @@ var autoHashtag = async (text) => {
     body: JSON.stringify({
       post: text,
       max: 3,
-      position: "auto"
+      position: "end"
     })
   });
   const json = await res.json();
-  return JSON.stringify(json);
+  return json.post || text;
 };
 
 // src/backend/ipfs/receiver.js

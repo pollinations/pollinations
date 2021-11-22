@@ -1,8 +1,8 @@
 
+import fetch from "node-fetch";
 import SocialPost from "social-post-api";
 import { getPostData } from "../../data/summaryData";
 import { IPFSWebState } from "../../network/ipfsWebClient.js";
-
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -43,6 +43,8 @@ export async function socialPost(platform, cid) {
 
 async function doPost({ post, title, videoURL, coverImage, url }, platform) {
 
+  post = (await autoHashtag(post)) + fixedHashTags;
+
   // Ayrshare API Key
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"])
   const social = new SocialPost(process.env["AYRSHARE_KEY"]);
@@ -65,10 +67,13 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
   };
 
   const postResponse = await social.post(shareConfig).catch(console.error);
-  console.log("postResponse", postResponse);
+  social.
+    console.log("postResponse", postResponse);
   return postResponse;
 }
 
+
+const fixedHashTags = " #pollinations #generativeart #machinelearning";
 
 
 const followText =
@@ -83,4 +88,21 @@ https://instagram.com/pollinations_ai
 #pollinations
 `;
 
+
+const autoHashtag = async text => {
+
+  const res = await fetch(`https://app.ayrshare.com/api/auto-hashtag`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`
+    },
+    body: JSON.stringify({
+      post: text,       // required
+      max: 3,           // optional, range 1-5
+      position: "auto"  // optional, "auto" or "end"
+    })
+  })
+  const json = await res.json();
+  return json;
+}
 

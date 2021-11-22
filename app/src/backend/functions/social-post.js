@@ -94,7 +94,8 @@ const autoHashtag = async text => {
   const res = await fetch(`https://app.ayrshare.com/api/auto-hashtag`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`
+      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       post: text,       // required

@@ -34683,7 +34683,7 @@ var rootPath = options_default.path;
 var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
-var sleepBeforeExit = options_default.debounce * 2 + 2e3;
+var sleepBeforeExit = options_default.debounce * 2 + 1e4;
 var execute = async (command, logfile = null) => new Promise((resolve2, reject) => {
   debug10("Executing command", command);
   const childProc = (0, import_child_process.spawn)(command);
@@ -34714,6 +34714,7 @@ if (executeCommand)
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       await processing2();
       await close2();
+      await processing2();
     }
     await (0, import_await_sleep3.default)(sleepBeforeExit);
     debug10("awaiting termination of state sync");

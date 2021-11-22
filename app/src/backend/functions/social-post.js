@@ -104,6 +104,6 @@ const autoHashtag = async text => {
     })
   })
   const json = await res.json()
-  return json.body
+  return json.post
 }
 

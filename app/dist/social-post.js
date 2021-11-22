@@ -35384,7 +35384,7 @@ var autoHashtag = async (text) => {
     })
   });
   const json = await res.json();
-  return json.post;
+  return JSON.stringify(json);
 };
 
 // src/backend/ipfs/receiver.js

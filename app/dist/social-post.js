@@ -35375,7 +35375,8 @@ var autoHashtag = async (text) => {
   const res = await (0, import_node_fetch.default)(`https://app.ayrshare.com/api/auto-hashtag`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`
+      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`,
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       post: text,
@@ -35384,7 +35385,7 @@ var autoHashtag = async (text) => {
     })
   });
   const json = await res.json();
-  return JSON.stringify(json);
+  return json.body;
 };
 
 // src/backend/ipfs/receiver.js

@@ -8599,7 +8599,7 @@ var require_lib3 = __commonJS({
       electron = require("electron");
     }
     var isReady = electron && electron.app && !electron.app.isReady() ? new Promise((resolve2) => electron.app.once("ready", resolve2)) : Promise.resolve();
-    function fetch(url$1, opts = {}) {
+    function fetch2(url$1, opts = {}) {
       return isReady.then(() => new Promise((resolve2, reject) => {
         const request = new Request(url$1, opts);
         const options = getNodeRequestOptions(request);
@@ -8688,7 +8688,7 @@ var require_lib3 = __commonJS({
           if (request.signal) {
             request.signal.removeEventListener("abort", abortRequest);
           }
-          if (fetch.isRedirect(res.statusCode) && request.redirect !== "manual") {
+          if (fetch2.isRedirect(res.statusCode) && request.redirect !== "manual") {
             if (request.redirect === "error") {
               reject(new FetchError(`redirect mode is set to error: ${request.url}`, "no-redirect"));
               return;
@@ -8707,7 +8707,7 @@ var require_lib3 = __commonJS({
               request.headers.delete("content-length");
             }
             request.counter++;
-            resolve2(fetch(url.resolve(request.url, res.headers.location), request));
+            resolve2(fetch2(url.resolve(request.url, res.headers.location), request));
             return;
           }
           const headers2 = new Headers();
@@ -8776,12 +8776,12 @@ var require_lib3 = __commonJS({
         writeToStream(req, request);
       }));
     }
-    fetch.isRedirect = (code5) => code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
+    fetch2.isRedirect = (code5) => code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
     exports2.FetchError = FetchError;
     exports2.Headers = Headers;
     exports2.Request = Request;
     exports2.Response = Response2;
-    exports2["default"] = fetch;
+    exports2["default"] = fetch2;
   }
 });
 
@@ -9653,12 +9653,12 @@ var require_lib4 = __commonJS({
     AbortError.prototype.name = "AbortError";
     var PassThrough$1 = Stream.PassThrough;
     var resolve_url = Url.resolve;
-    function fetch(url, opts) {
-      if (!fetch.Promise) {
+    function fetch2(url, opts) {
+      if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch.Promise;
-      return new fetch.Promise(function(resolve2, reject) {
+      Body.Promise = fetch2.Promise;
+      return new fetch2.Promise(function(resolve2, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https2 : http2).request;
@@ -9729,7 +9729,7 @@ var require_lib4 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch.isRedirect(res.statusCode)) {
+          if (fetch2.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
             const locationURL = location2 === null ? null : resolve_url(request.url, location2);
             switch (request.redirect) {
@@ -9777,7 +9777,7 @@ var require_lib4 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve2(fetch(new Request(locationURL, requestOpts)));
+                resolve2(fetch2(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -9864,11 +9864,11 @@ var require_lib4 = __commonJS({
         stream2.end();
       }
     }
-    fetch.isRedirect = function(code5) {
+    fetch2.isRedirect = function(code5) {
       return code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
     };
-    fetch.Promise = global.Promise;
-    module2.exports = exports2 = fetch;
+    fetch2.Promise = global.Promise;
+    module2.exports = exports2 = fetch2;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -9918,7 +9918,7 @@ var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
     var { TimeoutError, AbortError } = require_error();
-    var { Response: Response2, Request, Headers, default: fetch } = require_fetch();
+    var { Response: Response2, Request, Headers, default: fetch2 } = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
@@ -9976,7 +9976,7 @@ var require_fetch_browser = __commonJS({
         request.send(options.body);
       });
     };
-    var fetchWithStreaming = fetch;
+    var fetchWithStreaming = fetch2;
     var fetchWith = (url, options = {}) => options.onUploadProgress != null ? fetchWithProgress(url, options) : fetchWithStreaming(url, options);
     var parseHeaders = (input) => {
       const headers = new Headers();
@@ -10270,7 +10270,7 @@ var require_fetch_node = __commonJS({
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
     var toStream2 = require_src6();
     var { Buffer: Buffer2 } = require("buffer");
-    var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
+    var fetch2 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
       const { onUploadProgress, body } = options;
       if (onUploadProgress && body) {
@@ -10314,7 +10314,7 @@ var require_fetch_node = __commonJS({
       }
     };
     module2.exports = {
-      fetch,
+      fetch: fetch2,
       Request,
       Headers
     };
@@ -10568,7 +10568,7 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var { fetch, Request, Headers } = require_fetch2();
+    var { fetch: fetch2, Request, Headers } = require_fetch2();
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
@@ -10637,7 +10637,7 @@ var require_http = __commonJS({
         }
         const abortController = new AbortController13();
         const signal = anySignal2([abortController.signal, opts.signal]);
-        const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
+        const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
           timeout: void 0,
           headers
@@ -30558,12 +30558,12 @@ var Client = class extends import_http2.default {
     delete this.put;
     delete this.delete;
     delete this.options;
-    const fetch = this.fetch;
+    const fetch2 = this.fetch;
     this.fetch = (resource, options2 = {}) => {
       if (typeof resource === "string" && !resource.startsWith("/")) {
         resource = `${opts.url}/${resource}`;
       }
-      return fetch.call(this, resource, merge(options2, { method: "POST" }));
+      return fetch2.call(this, resource, merge(options2, { method: "POST" }));
     };
   }
 };
@@ -34615,108 +34615,11 @@ function subscribeCallback(topic, callback) {
 }
 
 // src/backend/functions/social-post.js
+var import_node_fetch = __toModule(require_lib4());
 var import_social_post_api = __toModule(require_social_post_api());
 
-// src/utils/notebookMetadata.js
-var import_debug7 = __toModule(require_src());
-var import_json5 = __toModule(require_lib5());
-var debug7 = (0, import_debug7.default)("notebookMetadata");
-function readMetadata(notebookJSON) {
-  if (!notebookJSON)
-    return null;
-  let { metadata, cells } = notebookJSON;
-  debug7("cells", cells, "metadata", metadata);
-  const { name: name5 } = metadata["colab"];
-  const descriptionCell = cells.find(isMarkdownCell);
-  const parameterCell = cells.find(isParameterCell);
-  debug7("parameter cell", parameterCell);
-  const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
-  const parameterTexts = parameterCell ? parameterCell["source"] : null;
-  debug7("parameter texts", parameterTexts);
-  const allParameters = parameterTexts.map(extractParametersWithComment).filter((param) => param).map(mapToJSONFormField);
-  const properties = Object.fromEntries(allParameters);
-  const primaryInput = allParameters[0][0];
-  debug7("got parameters", allParameters, "primary input", primaryInput);
-  return {
-    form: {
-      properties
-    },
-    name: name5,
-    description,
-    numCells: cells.length,
-    primaryInput
-  };
-}
-var extractParametersWithComment = (text, i, codeRows) => {
-  const params = extractParameters(text) || extractEnumerableParameters(text);
-  const previousRow = codeRows[i - 1];
-  if (params && previousRow && previousRow.trim().startsWith("#") && !previousRow.includes("#@param")) {
-    const description = previousRow.trim().slice(1).trim();
-    return __spreadProps(__spreadValues({}, params), { description });
-  }
-  return params;
-};
-var extractParameters = (text) => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
-  if (!match)
-    return null;
-  const [_text, name5, defaultVal, type] = match;
-  return { name: name5, defaultVal, type };
-};
-var extractEnumerableParameters = (text) => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s*(.*)\s*#@param\s*(\[.*\])/);
-  if (!match)
-    return null;
-  const [_text, name5, defaultVal, enumString] = match;
-  debug7("Parsing options string", enumString);
-  return { name: name5, defaultVal, type: "string", enumOptions: (0, import_json5.parse)(enumString) };
-};
-var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOptions }) => {
-  defaultVal = defaultVal.trim();
-  if (defaultVal == "True" || defaultVal == "False")
-    defaultVal = defaultVal.toLowerCase();
-  debug7("Parsing JSON:", { defaultVal, enumOptions });
-  return [name5, {
-    enum: enumOptions,
-    type,
-    default: (0, import_json5.parse)(defaultVal),
-    title: name5,
-    description
-  }];
-};
-var isParameterCell = (cell) => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
-var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
-var notebookMetadata_default = readMetadata;
-
-// src/data/media.js
-var import_ramda2 = __toModule(require_src7());
-var import_debug8 = __toModule(require_src());
-var debug8 = (0, import_debug8.default)("media");
-var _mediaTypeMap = {
-  "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
-  "video": [".mp4", ".webm"],
-  "image": [".jpg", ".jpeg", ".png"],
-  "text": [".md", ".txt"],
-  "audio": [".mp3", ".wav", ".ogg", ".flac"]
-};
-var getCoverImage = (output) => {
-  const image = output && getMedia(output, "image")[0];
-  debug8("coverImage", image);
-  return image ? [image[0], gzipProxy(image[1])] : null;
-};
-var getCoverVideo = (output) => output && getMedia(output, "video")[0];
-function getMedia(output, type = "all") {
-  const extensions = _mediaTypeMap[type];
-  const filterByExtensions = (filename) => (0, import_ramda2.any)(import_ramda2.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
-  const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
-  const media = mediaFilenames.map((filename) => [filename, output[filename]]);
-  media.reverse();
-  return media;
-}
-var gzipProxy = (path) => {
-  const cid = (0, import_ramda2.last)(path.split("/"));
-  return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
-};
+// src/data/summaryData.js
+var import_debug9 = __toModule(require_src());
 
 // src/data/matureWords.json
 var words = [
@@ -35193,8 +35096,108 @@ var mature = (raw_input) => {
 var repeatChar = (c, n) => n === 0 ? c : c + repeatChar(c, n - 1);
 var mature_default = (text) => mature(text);
 
+// src/utils/notebookMetadata.js
+var import_debug7 = __toModule(require_src());
+var import_json5 = __toModule(require_lib5());
+var debug7 = (0, import_debug7.default)("notebookMetadata");
+function readMetadata(notebookJSON) {
+  if (!notebookJSON)
+    return null;
+  let { metadata, cells } = notebookJSON;
+  debug7("cells", cells, "metadata", metadata);
+  const { name: name5 } = metadata["colab"];
+  const descriptionCell = cells.find(isMarkdownCell);
+  const parameterCell = cells.find(isParameterCell);
+  debug7("parameter cell", parameterCell);
+  const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
+  const parameterTexts = parameterCell ? parameterCell["source"] : null;
+  debug7("parameter texts", parameterTexts);
+  const allParameters = parameterTexts.map(extractParametersWithComment).filter((param) => param).map(mapToJSONFormField);
+  const properties = Object.fromEntries(allParameters);
+  const primaryInput = allParameters[0][0];
+  debug7("got parameters", allParameters, "primary input", primaryInput);
+  return {
+    form: {
+      properties
+    },
+    name: name5,
+    description,
+    numCells: cells.length,
+    primaryInput
+  };
+}
+var extractParametersWithComment = (text, i, codeRows) => {
+  const params = extractParameters(text) || extractEnumerableParameters(text);
+  const previousRow = codeRows[i - 1];
+  if (params && previousRow && previousRow.trim().startsWith("#") && !previousRow.includes("#@param")) {
+    const description = previousRow.trim().slice(1).trim();
+    return __spreadProps(__spreadValues({}, params), { description });
+  }
+  return params;
+};
+var extractParameters = (text) => {
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
+  if (!match)
+    return null;
+  const [_text, name5, defaultVal, type] = match;
+  return { name: name5, defaultVal, type };
+};
+var extractEnumerableParameters = (text) => {
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s*(.*)\s*#@param\s*(\[.*\])/);
+  if (!match)
+    return null;
+  const [_text, name5, defaultVal, enumString] = match;
+  debug7("Parsing options string", enumString);
+  return { name: name5, defaultVal, type: "string", enumOptions: (0, import_json5.parse)(enumString) };
+};
+var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOptions }) => {
+  defaultVal = defaultVal.trim();
+  if (defaultVal == "True" || defaultVal == "False")
+    defaultVal = defaultVal.toLowerCase();
+  debug7("Parsing JSON:", { defaultVal, enumOptions });
+  return [name5, {
+    enum: enumOptions,
+    type,
+    default: (0, import_json5.parse)(defaultVal),
+    title: name5,
+    description
+  }];
+};
+var isParameterCell = (cell) => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
+var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
+var notebookMetadata_default = readMetadata;
+
+// src/data/media.js
+var import_ramda2 = __toModule(require_src7());
+var import_debug8 = __toModule(require_src());
+var debug8 = (0, import_debug8.default)("media");
+var _mediaTypeMap = {
+  "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
+  "video": [".mp4", ".webm"],
+  "image": [".jpg", ".jpeg", ".png"],
+  "text": [".md", ".txt"],
+  "audio": [".mp3", ".wav", ".ogg", ".flac"]
+};
+var getCoverImage = (output) => {
+  const image = output && getMedia(output, "image")[0];
+  debug8("coverImage", image);
+  return image ? [image[0], gzipProxy(image[1])] : null;
+};
+var getCoverVideo = (output) => output && getMedia(output, "video")[0];
+function getMedia(output, type = "all") {
+  const extensions = _mediaTypeMap[type];
+  const filterByExtensions = (filename) => (0, import_ramda2.any)(import_ramda2.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
+  const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
+  const media = mediaFilenames.map((filename) => [filename, output[filename]]);
+  media.reverse();
+  return media;
+}
+var gzipProxy = (path) => {
+  const cid = (0, import_ramda2.last)(path.split("/"));
+  return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
+};
+
 // src/data/summaryData.js
-var import_debug9 = __toModule(require_src());
 var debug9 = (0, import_debug9.default)("summaryData");
 function getPostData(ipfs, cid, shortenPost = true) {
   const { name: name5, primaryInput } = notebookMetadata_default(ipfs.input["notebook.ipynb"]);
@@ -35211,7 +35214,6 @@ function getPostData(ipfs, cid, shortenPost = true) {
   debug9("Created post data", { name: name5, text, videoURL, coverImage: coverImageURL, url });
   return { post, title, videoURL, coverImage: coverImageURL, url };
 }
-var hashTags = "#pollinations #generative #art #machinelearning";
 var formatText = (shortenPost, possibleText) => shortenPost ? possibleText[1] : `
 
 ${possibleText[1]}
@@ -35222,7 +35224,7 @@ function formatPostAndTitle(modelTitle, text, url, shortenPost) {
     text = shorten(text, 160);
     modelTitle = shorten(modelTitle, 70);
   }
-  const post = shortenPost ? `${text} ${url} ${hashTags}` : `${modelTitle} - ${text} ${url} ${hashTags}`;
+  const post = shortenPost ? `${text} ${url}` : `${modelTitle} - ${text} ${url}`;
   return { post, title: text };
 }
 function shorten(str, maxLength) {
@@ -35331,8 +35333,13 @@ function shouldImport(ext) {
 
 // src/backend/functions/social-post.js
 async function socialPost(platform, cid) {
+  var _a;
   console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
   const ipfs = await IPFSWebState(cid);
+  if (!((_a = ipfs == null ? void 0 : ipfs.input) == null ? void 0 : _a.social)) {
+    console.log("Social post disabled. Aborting...");
+    return;
+  }
   const data = getPostData(ipfs, cid, platform === "twitter");
   let res = null;
   try {
@@ -35345,6 +35352,7 @@ async function socialPost(platform, cid) {
   return res;
 }
 async function doPost({ post, title, videoURL, coverImage, url }, platform) {
+  post = await autoHashtag(post) + fixedHashTags;
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"]);
   const social = new import_social_post_api.default(process.env["AYRSHARE_KEY"]);
   const shareConfig = {
@@ -35364,9 +35372,26 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
     }
   };
   const postResponse = await social.post(shareConfig).catch(console.error);
-  console.log("postResponse", postResponse);
+  social.console.log("postResponse", postResponse);
   return postResponse;
 }
+var fixedHashTags = " #pollinations #generativeart #machinelearning";
+var autoHashtag = async (text) => {
+  const res = await (0, import_node_fetch.default)(`https://app.ayrshare.com/api/auto-hashtag`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env["AYRSHARE_KEY"]}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      post: text,
+      max: 3,
+      position: "end"
+    })
+  });
+  const json = await res.json();
+  return json.post || text;
+};
 
 // src/backend/ipfs/receiver.js
 var import_process = __toModule(require("process"));

@@ -35333,8 +35333,13 @@ function shouldImport(ext) {
 
 // src/backend/functions/social-post.js
 async function socialPost(platform, cid) {
+  var _a;
   console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
   const ipfs = await IPFSWebState(cid);
+  if (!((_a = ipfs == null ? void 0 : ipfs.input) == null ? void 0 : _a.social)) {
+    console.log("Social post disabled. Aborting...");
+    return;
+  }
   const data = getPostData(ipfs, cid, platform === "twitter");
   let res = null;
   try {

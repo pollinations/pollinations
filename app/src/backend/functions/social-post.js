@@ -28,7 +28,10 @@ export const handler = async ({ path }) => {
 export async function socialPost(platform, cid) {
   console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
   const ipfs = await IPFSWebState(cid);
-
+  if (!ipfs?.input?.social) {
+    console.log("Social post disabled. Aborting...");
+    return;
+  }
   const data = getPostData(ipfs, cid, platform === "twitter");
   let res = null;
   try {

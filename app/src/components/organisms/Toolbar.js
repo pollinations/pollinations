@@ -1,14 +1,14 @@
-import LaunchColabButton from "../molecules/LaunchColabButton"
-import { useState } from "react"
-import ArrowUpward from '@material-ui/icons/ArrowUpward'
 import { Button, IconButton } from "@material-ui/core"
+import ArrowUpward from '@material-ui/icons/ArrowUpward'
+import { useState } from "react"
+import LaunchColabButton from "../molecules/LaunchColabButton"
 
 
 const ToolBarHeader = ({ node, setOpen, open, showNode }) => {
 
-    function go2Pollen(){
+    function go2Pollen() {
         setOpen(false)
-       showNode(node.nodeID)
+        showNode()
     }
 
     return <div style={{
@@ -17,15 +17,15 @@ const ToolBarHeader = ({ node, setOpen, open, showNode }) => {
         alignItems: 'flex-start'
     }} >
         <LaunchColabButton {...node} />
-        
+
         <div>
-        {
-            (node.connected && node.contentID) &&
-            <Button onClick={go2Pollen} children='[ Current Pollen ]'/>
-        }
-        <IconButton onClick={() => setOpen(state => !state)}>
-            <ArrowUpward fontSize='small' style={{ transform: `rotateZ(${open ? '180deg' : '0deg'})`}} />
-        </IconButton>
+            {
+                (node.connected && node.contentID) &&
+                <Button onClick={go2Pollen} children='[ Current Pollen ]' />
+            }
+            <IconButton onClick={() => setOpen(state => !state)}>
+                <ArrowUpward fontSize='small' style={{ transform: `rotateZ(${open ? '180deg' : '0deg'})` }} />
+            </IconButton>
         </div>
 
     </div>
@@ -36,7 +36,7 @@ const ToolBarContent = ({ children }) => {
         width: '500px',
         padding: '1em',
         overflow: 'auto'
-    }} children={children}/>
+    }} children={children} />
 }
 
 
@@ -62,7 +62,7 @@ const ToolBar = ({ children, node, showNode }) => {
         <ToolBarContent>
             {children}
         </ToolBarContent>
-        
+
     </div>
 }
 

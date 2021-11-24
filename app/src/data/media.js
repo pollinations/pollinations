@@ -50,3 +50,29 @@ const gzipProxy = path => {
   return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
 }
   
+
+
+export function mediaToDisplay(output) {
+  const imagesIn = getMedia(output);
+  if (!imagesIn || imagesIn.length === 0) return EMPTY_MEDIA;
+
+  // remove first image for large display
+  const firstImage = imagesIn.shift()
+
+  const images = every_nth(imagesIn);
+
+  const first = {
+      isVideo: firstImage[0].toLowerCase().endsWith(".mp4"),
+      filename: firstImage[0],
+      url: firstImage[1]
+  }
+
+  return { images, first }
+}
+
+function every_nth(array){
+  const nth = Math.max(1, Math.floor(array.length / 20))
+  return array.filter((e, i) => i % nth === nth - 1)
+}
+
+const EMPTY_MEDIA = { images: [], first: {} }

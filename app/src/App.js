@@ -9,6 +9,7 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import Creator from "./pages/Create"
+import Feed from "./pages/Feed"
 import Home from "./pages/Home"
 import ResultViewer from "./pages/ResultViewer"
 
@@ -51,6 +52,7 @@ const Pollinations = () => {
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
+                <Route path='feed' element={<Feed />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
             <More />

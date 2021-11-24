@@ -19,19 +19,20 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
   let processing = Promise.resolve(true);
 
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
+
+  // publisher to pollinations frontend
   const { publish, close: closePublisher } = publisher(nodeid, "/output");
+  
+  // publisher to pollen feed
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
 
 
-  // let currentContentID = null;
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
-
-    // publishes a message that pollinating is done which instructs the backend to pin the result
-    // if (currentContentID)
-    //   await publishDonePollinate(currentContentID);
+    await closePollenPublisher();
   });
 
   async function start() {
@@ -79,9 +80,12 @@ export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, on
 
       if (ipns) {
         debug("publish", newContentID);
+        // publish to frontend
         await publish(newContentID);
+        // publish to feed
+        await publishPollen(newContentID);
       }
-      // }));
+
 
 
 

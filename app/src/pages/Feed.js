@@ -12,7 +12,7 @@ const Feed = () => {
     useEffect(() => subscribeCID("pollen", "", setCid),[])
     
     return <>
-        <Typography variant="h6" component="h6" gutterBottom>
+        <Typography variant="h3" component="h3" gutterBottom>
           🌸 Pollinations Feed
         </Typography>
         <ResultViewer ipfs={ipfs} />

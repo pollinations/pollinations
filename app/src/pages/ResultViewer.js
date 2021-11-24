@@ -2,7 +2,7 @@ import { memo, useMemo } from "react"
 import Debug from "debug";
 
 import { SEO } from "../components/Helmet"
-import { getMedia } from "../data/media"
+import { getMedia, mediaToDisplay } from "../data/media"
 import { IpfsLog } from "../components/Logs"
 import { NotebookProgress } from "../components/NotebookProgress"
 import NotebookTitle from "../components/NotebookTitle"
@@ -25,7 +25,6 @@ export default memo(function ResultViewer({ ipfs }) {
   const metadata = getNotebookMetadata(ipfs);
 
   const {images, first} = useMemo(() => {
-    //if (!ipfs.output) return EMPTY_MEDIA;
     return mediaToDisplay(ipfs.output);
   }, [ipfs.output]);
 
@@ -120,28 +119,3 @@ const styles = {
     }
 }
 
-
-function mediaToDisplay(output) {
-    const imagesIn = getMedia(output);
-    if (!imagesIn || imagesIn.length === 0) return EMPTY_MEDIA;
-
-    // remove first image for large display
-    const firstImage = imagesIn.shift()
-
-    const images = every_nth(imagesIn);
-
-    const first = {
-        isVideo: firstImage[0].toLowerCase().endsWith(".mp4"),
-        filename: firstImage[0],
-        url: firstImage[1]
-    }
-
-    return { images, first }
-}
-
-function every_nth(array){
-    const nth = Math.max(1, Math.floor(array.length / 20))
-    return array.filter((e, i) => i % nth === nth - 1)
-}
-
-const EMPTY_MEDIA = { images: [], first: {} }

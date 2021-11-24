@@ -34581,9 +34581,11 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
   let processing2 = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
   const close2 = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
+    await closePollenPublisher();
   });
   async function start() {
     if (!(0, import_fs2.existsSync)(watchPath)) {
@@ -34615,6 +34617,7 @@ var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodei
       if (ipns) {
         debug9("publish", newContentID);
         await publish2(newContentID);
+        await publishPollen(newContentID);
       }
       if (once) {
         break;

@@ -1,7 +1,8 @@
-import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-import colabConnectionManager from "../network/localColabConnection";
 import Debug from "debug";
+import { useCallback, useEffect } from "react";
 import { publisher, subscribeCID } from "../network/ipfsPubSub";
+import colabConnectionManager from "../network/localColabConnection";
+import useState from 'react-usestateref';
 
 const debug = Debug("useColabNode");
 
@@ -10,27 +11,31 @@ const debug = Debug("useColabNode");
 // subscribe to updates and return publisher to send new inputs
 const useColabNode = () => {
 
-    const [node, setNode] = useState({connected: false, publish: NOOP_PUBLISH});
 
-    const updateNode = useCallback(props => setNode(node => propsSame(node, props) ? node : ({...node, ...props})), []);
+    const [node, setNode, nodeRef] = useState({ connected: false, publish: NOOP_PUBLISH })
+
+    const updateNode = useCallback(props => {
+        if (!propsSame(node, props))
+            setNode({ ...nodeRef.current, ...props })
+    }, [])
 
     useEffect(() => {
         colabConnectionManager(nodeData => {
-            
-            debug("nodeData", nodeData);
-            
-            const {nodeID, gpu} = nodeData;
-    
+
+            debug("nodeData", nodeData)
+
+            const { nodeID, gpu } = nodeData
+
             if (nodeID) {
-                debug("setting new nodeID", nodeID);
+                debug("setting new nodeID", nodeID)
 
                 // Setting connected to null means we are not sure if there is a connection yet
-                updateNode({ nodeID, gpu, connected: null });
+                updateNode({ nodeID, gpu, connected: null })
             }
         });
-    },[]);
+    }, []);
 
-    useEffect(()=>{
+    useEffect(() => {
         let nodeID = node?.nodeID
 
         if (!nodeID) return
@@ -40,31 +45,31 @@ const useColabNode = () => {
         const { publish, close: closePub } = publisher(nodeID, "/input")
         updateNode({ publish, close })
         //close()
-        
+
         // Update
-        debug("nodeID changed to", nodeID,". (Re)subscribing")
+        debug("nodeID changed to", nodeID, ". (Re)subscribing")
         const closeSub = subscribeCID(nodeID, "/output", contentID => updateNode({ contentID }), heartbeat => {
-            debug("hearbeat state", heartbeat);
-            const connected = heartbeat && heartbeat.alive;
-            updateNode({connected});
+            debug("hearbeat state", heartbeat)
+            const connected = heartbeat && heartbeat.alive
+            updateNode({ connected })
         })
 
         return () => {
-            closeSub();
-            closePub();
+            closeSub()
+            closePub()
         }
 
-    },[node.nodeID])
+    }, [node.nodeID])
 
-    const overrideContentID = useCallback(contentID => updateNode({ contentID }), []);
-    const overrideNodeID = useCallback(nodeID => updateNode({ nodeID }), []);
-    
-    return {node, overrideContentID, overrideNodeID};
+    const overrideContentID = useCallback(contentID => updateNode({ contentID }), [])
+    const overrideNodeID = useCallback(nodeID => updateNode({ nodeID }), [])
+
+    return { node, overrideContentID, overrideNodeID }
 
 };
 
-const NOOP_PUBLISH = () => console.error("publish function not defined yet for some weird reason.");
+const NOOP_PUBLISH = () => console.error("publish function not defined yet for some weird reason.")
 
-const propsSame = (node, props) => Object.keys(props).map(key => node[key] === props[key]).every(x => x);
+const propsSame = (node, props) => Object.keys(props).map(key => node[key] === props[key]).every(x => x)
 
-export default useColabNode;
+export default useColabNode

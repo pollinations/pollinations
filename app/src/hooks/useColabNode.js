@@ -1,7 +1,8 @@
 import Debug from "debug";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { publisher, subscribeCID } from "../network/ipfsPubSub";
 import colabConnectionManager from "../network/localColabConnection";
+import useState from 'react-usestateref';
 
 const debug = Debug("useColabNode");
 
@@ -10,12 +11,13 @@ const debug = Debug("useColabNode");
 // subscribe to updates and return publisher to send new inputs
 const useColabNode = () => {
 
-    const [node, setNode] = useState({ connected: false, publish: NOOP_PUBLISH })
+
+    const [node, setNode, nodeRef] = useState({ connected: false, publish: NOOP_PUBLISH })
 
     const updateNode = useCallback(props => {
         if (!propsSame(node, props))
-            setNode({ ...node, ...props })
-    }, [node])
+            setNode({ ...nodeRef.current, ...props })
+    }, [])
 
     useEffect(() => {
         colabConnectionManager(nodeData => {
@@ -53,8 +55,8 @@ const useColabNode = () => {
         })
 
         return () => {
-            closeSub();
-            closePub();
+            closeSub()
+            closePub()
         }
 
     }, [node.nodeID])

@@ -34102,10 +34102,7 @@ async function reader() {
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 async function writer(initialRootCID = null) {
   const client = await getClient();
-  return getWriter(client, mfsRoot, initialRootCID);
-}
-function getWriter(client, mfsRoot2, initialRootCID) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot2, path);
+  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
   let initializedFolder = false;
   const returnRootCID = (func) => async (...args) => {
     if (!initializedFolder) {
@@ -34113,7 +34110,7 @@ function getWriter(client, mfsRoot2, initialRootCID) {
       initializedFolder = true;
     }
     await func(...args);
-    return await getCID(client, mfsRoot2);
+    return await getCID(client, mfsRoot);
   };
   return {
     add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
@@ -34123,12 +34120,12 @@ function getWriter(client, mfsRoot2, initialRootCID) {
     cid: async () => {
       if (!initializedFolder)
         return null;
-      return await getCID(client, mfsRoot2);
+      return await getCID(client, mfsRoot);
     },
     close: async () => {
-      debug5("closing input writer. Deleting", mfsRoot2);
+      debug5("closing input writer. Deleting", mfsRoot);
       if (initializedFolder)
-        await ipfsRm(client, mfsRoot2);
+        await ipfsRm(client, mfsRoot);
     },
     pin: async (cid) => await ipfsPin(client, cid)
   };
@@ -34636,7 +34633,10 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   const channel$ = new import_queueable2.Channel();
   let changeQueue = [];
   const watcher = import_chokidar.default.watch(watchPath, {
-    awaitWriteFinish: true,
+    awaitWriteFinish: {
+      stabilityThreshold: debounceTime,
+      pollInterval: debounceTime / 2
+    },
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
     interval: debounceTime
@@ -34671,7 +34671,7 @@ var executeOnce = (f) => {
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 800).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 300).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 

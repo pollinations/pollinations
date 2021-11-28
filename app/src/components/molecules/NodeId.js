@@ -1,14 +1,15 @@
-import { Link as MaterialLink, Typography } from "@material-ui/core"
-import { Link } from "react-router-dom"
+import { Typography } from "@material-ui/core"
+
 import { displayContentID } from "../../network/utils"
+import RouterLink from "./RouterLink"
 
 const NodeIdInfo = ({ nodeID, connected }) => {
     if (!connected) return <></>
     if (!nodeID) return <Typography> NodeID: N/A </Typography>
     return <Typography > NodeID:
-        <MaterialLink compponent={Link} to={`/n/${nodeID}`}>
+        <RouterLink to={`/n/${nodeID}`}>
             {displayContentID(nodeID)}
-        </MaterialLink>
+        </RouterLink>
     </Typography>
 }
 

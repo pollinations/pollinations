@@ -37,16 +37,6 @@ export const IpfsLog = ({ipfs,contentID}) => {
             </Typography>
         </CardContent>}
 
-        {/* <CardContent>
-            <ReactJson
-                src={ipfs}
-                name={displayContentID(contentID)}
-                enableClipboard={false}
-                displayDataTypes={false}
-                displayObjectSize={false}
-                collapsed={true} />
-        </CardContent> */}
-
     </div>
 
 }
@@ -54,7 +44,7 @@ const formatLog =
         log =>  log?.replace && log
                 .replace(/\].*/g, "")
                 .split("\n")
-                .filter(s => !s.startsWith("unhandled iopub") && !s.startsWith("Writing failed"))
+                .filter(s => !s.startsWith("unhandled iopub") && !s.startsWith("Writing failed") && !s.includes("[0m") && !(s.trim().length === 0))
                 .slice(-10)
                 .join("\n");
 

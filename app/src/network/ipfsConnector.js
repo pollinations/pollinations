@@ -44,17 +44,13 @@ export async function reader() {
 // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
 const mfsRoot = `/tmp_${Math.round(Math.random() * 1000000)}`;
 
+
+
 // Create a writer to modify the IPFS state
 // It creates a temporary folder in the IPFS mutable filesystem 
 // so calling close is important
-export async function writer(initialRootCID=null) {
-    const client = await getClient();    
-
-    return getWriter(client, mfsRoot, initialRootCID);
-}
-
-// getWriter just wraps the individual ipfs functions passing in the client
-function getWriter(client, mfsRoot, initialRootCID) {
+export async function writer(initialRootCID = null) {
+    const client = await getClient();  
 
     const joinPath = path => join(mfsRoot, path);
     

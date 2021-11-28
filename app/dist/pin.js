@@ -28067,10 +28067,7 @@ async function reader() {
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 async function writer(initialRootCID = null) {
   const client = await getClient();
-  return getWriter(client, mfsRoot, initialRootCID);
-}
-function getWriter(client, mfsRoot2, initialRootCID) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot2, path);
+  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
   let initializedFolder = false;
   const returnRootCID = (func) => async (...args) => {
     if (!initializedFolder) {
@@ -28078,7 +28075,7 @@ function getWriter(client, mfsRoot2, initialRootCID) {
       initializedFolder = true;
     }
     await func(...args);
-    return await getCID(client, mfsRoot2);
+    return await getCID(client, mfsRoot);
   };
   return {
     add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
@@ -28088,12 +28085,12 @@ function getWriter(client, mfsRoot2, initialRootCID) {
     cid: async () => {
       if (!initializedFolder)
         return null;
-      return await getCID(client, mfsRoot2);
+      return await getCID(client, mfsRoot);
     },
     close: async () => {
-      debug5("closing input writer. Deleting", mfsRoot2);
+      debug5("closing input writer. Deleting", mfsRoot);
       if (initializedFolder)
-        await ipfsRm(client, mfsRoot2);
+        await ipfsRm(client, mfsRoot);
     },
     pin: async (cid) => await ipfsPin(client, cid)
   };

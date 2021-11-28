@@ -73,10 +73,10 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
-    // useEffect(() => {
-    //     if (nodeID)
-    //         overrideNodeID(nodeID)
-    // }, [nodeID])
+    useEffect(() => {
+        if (nodeID)
+            overrideNodeID(nodeID)
+    }, [nodeID])
 
     if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`} />
 

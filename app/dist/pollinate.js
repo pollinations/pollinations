@@ -34100,11 +34100,11 @@ async function reader() {
   };
 }
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
-async function writer(initialRootCID = null) {
-  const client = await getClient();
+function writer(initialRootCID = null) {
   const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
   let initializedFolder = false;
   const returnRootCID = (func) => async (...args) => {
+    const client = await getClient();
     if (!initializedFolder) {
       await initializeMFSFolder(client, initialRootCID);
       initializedFolder = true;
@@ -34113,21 +34113,21 @@ async function writer(initialRootCID = null) {
     return await getCID(client, mfsRoot);
   };
   return {
-    add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
-    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
-    rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
-    mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
+    add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
+    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
+    rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
+    mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
     cid: async () => {
       if (!initializedFolder)
         return null;
-      return await getCID(client, mfsRoot);
+      return await getCID(await getClient(), mfsRoot);
     },
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
       if (initializedFolder)
-        await ipfsRm(client, mfsRoot);
+        await ipfsRm(await getClient(), mfsRoot);
     },
-    pin: async (cid) => await ipfsPin(client, cid)
+    pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
 }
 async function initializeMFSFolder(client, initialRootCID) {
@@ -34574,9 +34574,9 @@ function debounce(delay, atBegin, callback) {
 
 // src/backend/ipfs/sender.js
 var debug9 = (0, import_debug9.default)("ipfs/sender");
-var sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
+var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
   let processing2 = Promise.resolve(true);
-  const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
+  const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
   const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
   const close2 = executeOnce(async (error) => {
@@ -34707,7 +34707,7 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 if (executeCommand)
   (async () => {
     while (true) {
-      const { start: startSending, processing: processing2, close: close2 } = await sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      const { start: startSending, processing: processing2, close: close2 } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
       startSending();
       await execute(executeCommand, options_default.logout);
@@ -34730,7 +34730,7 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { start, processing: processing2, close: close2 } = await sender(options_default);
+      const { start, processing: processing2, close: close2 } = sender(options_default);
       await start();
       await (0, import_await_sleep3.default)(sleepBeforeExit);
       await processing2();

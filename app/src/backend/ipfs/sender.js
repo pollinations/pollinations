@@ -14,11 +14,11 @@ const debug = Debug("ipfs/sender");
 
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
-export const sender = async ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
+export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
 
   let processing = Promise.resolve(true);
 
-  const { addFile, mkDir, rm, cid, close: closeWriter } = await writer();
+  const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
 
   // publisher to pollinations frontend
   const { publish, close: closePublisher } = publisher(nodeid, "/output");

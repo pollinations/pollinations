@@ -28231,7 +28231,7 @@ var import_debug6 = __toModule(require_src3());
 var import_native_abort_controller12 = __toModule(require_src6());
 var import_queueable = __toModule(require_lib4());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
-var HEARTBEAT_FREQUENCY = 7;
+var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output") {
   debug6("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;

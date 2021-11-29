@@ -34478,7 +34478,7 @@ var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await
 
 // src/network/ipfsPubSub.js
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
-var HEARTBEAT_FREQUENCY = 7;
+var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output") {
   debug6("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;

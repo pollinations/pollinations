@@ -49,8 +49,7 @@ const mfsRoot = `/tmp_${Math.round(Math.random() * 1000000)}`;
 // Create a writer to modify the IPFS state
 // It creates a temporary folder in the IPFS mutable filesystem 
 // so calling close is important
-export async function writer(initialRootCID = null) {
-    const client = await getClient();  
+export function writer(initialRootCID = null) {  
 
     const joinPath = path => join(mfsRoot, path);
     
@@ -58,7 +57,7 @@ export async function writer(initialRootCID = null) {
     
     // initialize the writer lazily, calls the function and finally return the root CID
     const returnRootCID = func => async (...args) => {
-        
+        const client = await getClient();
         // lazily initialize the MFS folder
         if (!initializedFolder) {
             await initializeMFSFolder(client,  initialRootCID);
@@ -73,21 +72,21 @@ export async function writer(initialRootCID = null) {
     };
     
     return {
-        add: returnRootCID(async (path, content, options) => await ipfsAdd(client, joinPath(path), content, options)),
-        addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(client, joinPath(path), localPath, options)),
-        rm: returnRootCID(async (path) => await ipfsRm(client, joinPath(path))),
-        mkDir: returnRootCID(async (path) => await ipfsMkdir(client, joinPath(path))),
+        add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
+        addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
+        rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
+        mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
         cid:  async () => {
             if (!initializedFolder)
                 return null;
-            return await getCID(client, mfsRoot)
+            return await getCID(await getClient(), mfsRoot)
         },
         close: async () => {
             debug("closing input writer. Deleting", mfsRoot)
             if (initializedFolder)
-                await ipfsRm(client, mfsRoot)
+                await ipfsRm(await getClient(), mfsRoot)
         },
-        pin: async cid => await ipfsPin(client, cid)
+        pin: async cid => await ipfsPin(await getClient(), cid)
     };
 }
 

@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Link } from 'react-router-dom'
+
 import Markdown from "markdown-to-jsx"
 import Debug from "debug"
 
@@ -15,6 +15,7 @@ import Typography from '@material-ui/core/Typography'
 import List from '@material-ui/core/List'
 import ListItem from '@material-ui/core/ListItem'
 import OpenInNewIcon from '@material-ui/icons/OpenInNew'
+import RouterLink from "../components/molecules/RouterLink"
 
 const debug = Debug("home");
 
@@ -82,8 +83,8 @@ const NotebookCard = ({notebook}) => {
     return  <Box>
         <Card>
         <CardHeader 
-        subheader={<Link children={name?.slice(2)} to={path}/>} 
-        title={<Link children={category?.slice(2)} to={path}/>} 
+        subheader={<RouterLink children={name?.slice(2)} to={path}/>} 
+        title={<RouterLink children={category?.slice(2)} to={path}/>} 
         action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
             <CardContent>
                 <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>

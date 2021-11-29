@@ -10,7 +10,7 @@ const debug = Debug('ipfs:pubsub');
 
 
 // frequency at which to send heartbeats vis pubsub
-const HEARTBEAT_FREQUENCY = 20;
+const HEARTBEAT_FREQUENCY = 12;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates

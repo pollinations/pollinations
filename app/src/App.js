@@ -32,7 +32,7 @@ const Pollinations = () => {
 
     const navigate = useNavigate()
 
-    const navigateToNode = useCallback((contentID) => {
+    const navigateToNode = useCallback(contentID => {
         if (contentID)
             overrideContentID(contentID)
         if (node?.nodeID)

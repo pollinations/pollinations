@@ -14,7 +14,7 @@ if (process.argv[2]) {
 } else {
 
     (async () => {
-        const { pin } = await writer();
+        const { pin } = writer();
         receive({
             ipns: true,
             nodeid: "done_pollen",

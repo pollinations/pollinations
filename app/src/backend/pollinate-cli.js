@@ -61,7 +61,7 @@ if (executeCommand)
 
 
     while (true) {
-      const { start: startSending, processing, close } = await sender({ ...options, once: false });
+      const { start: startSending, processing, close } = sender({ ...options, once: false });
 
       await receive({ ...options, once: true });
 
@@ -96,7 +96,7 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = await sender(options);
+      const { start, processing, close } = sender(options);
       await start();
       await awaitSleep(sleepBeforeExit);
       await processing();

@@ -17441,13 +17441,13 @@ var require_mapObjIndexed = __commonJS({
     var _curry2 = require_curry2();
     var _reduce = require_reduce();
     var keys = require_keys();
-    var mapObjIndexed = /* @__PURE__ */ _curry2(function mapObjIndexed2(fn, obj) {
+    var mapObjIndexed2 = /* @__PURE__ */ _curry2(function mapObjIndexed3(fn, obj) {
       return _reduce(function(acc, key) {
         acc[key] = fn(obj[key], key, obj);
         return acc;
       }, {}, keys(obj));
     });
-    module2.exports = mapObjIndexed;
+    module2.exports = mapObjIndexed2;
   }
 });
 
@@ -34398,6 +34398,20 @@ var toPromise = async (asyncGen) => {
   return contents;
 };
 var noop = () => null;
+var retryException = (f) => {
+  return async (...args) => {
+    let n = 5;
+    while (n-- > 0) {
+      try {
+        return await f(...args);
+      } catch (e) {
+        debug4("retryException", e);
+        await (0, import_await_sleep.default)(1e3);
+      }
+    }
+    throw new Error("Too many retries");
+  };
+};
 var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
 
 // src/network/ipfsConnector.js
@@ -34502,17 +34516,19 @@ function publisher(nodeID, suffix = "/output") {
     close
   };
 }
-async function publishHeartbeat(client, suffix, nodeID) {
+var publishHeartbeat = async (client, suffix, nodeID) => {
+  const retryPublish = retryException(client.pubsub.publish);
   if (nodeID === "ipns")
     return;
-  await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
-}
+  await retryPublish(nodeID + suffix, "HEARTBEAT");
+};
 async function publish(client, nodeID, rootCID, suffix = "/output") {
+  const retryPublish = retryException(client.pubsub.publish);
   debug6("publish pubsub", nodeID + suffix, rootCID);
   if (nodeID === "ipns")
     await experimentalIPNSPublish(client, rootCID);
   else
-    await client.pubsub.publish(nodeID + suffix, rootCID);
+    await retryPublish(nodeID + suffix, rootCID);
 }
 var abortPublish = null;
 async function experimentalIPNSPublish(client, rootCID) {

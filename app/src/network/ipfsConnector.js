@@ -6,7 +6,7 @@ import all from "it-all";
 
 
 import Debug from "debug";
-import { last } from "ramda";
+import { last, mapObjIndexed } from "ramda";
 
 import { join,basename, dirname } from "path";
 
@@ -71,7 +71,7 @@ export function writer(initialRootCID = null) {
         return await getCID(client, mfsRoot);
     };
     
-    return {
+    const methods = {
         add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
         addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
         rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
@@ -87,8 +87,13 @@ export function writer(initialRootCID = null) {
                 await ipfsRm(await getClient(), mfsRoot)
         },
         pin: async cid => await ipfsPin(await getClient(), cid)
-    };
+    }
+    
+    const methodsWithRetry = mapObjIndexed(retryException, methods)
+    
+    return methodsWithRetry
 }
+
 
 // Initializes a folder in `mfsRoot` with the given CID
 async function initializeMFSFolder(client, initialRootCID) {
@@ -253,7 +258,11 @@ async function ipfsMkdir(client, path) {
 
 async function ipfsRm(client, path) {
     debug("Deleting", path);
-    await client.files.rm(path,{ force: true, recursive: true });
+    try {
+        await client.files.rm(path,{ force: true, recursive: true });
+    } catch(e) {
+        debug(`couldn't delete "${path}"  because it probably doesn't exist`, e)
+    }
 }
 
 async function getCID(client, path = "/") {

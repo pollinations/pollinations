@@ -34453,7 +34453,7 @@ var getIPFSDaemonURL = async () => {
 };
 var getWebURL = (cid, name5 = null) => {
   const filename = name5 ? `?filename=${name5}` : "";
-  return `https://pollinations.ai/ipfs/${cid}${filename}`;
+  return `https://pollinations-ipfs-gateway.zencraft.studio/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)

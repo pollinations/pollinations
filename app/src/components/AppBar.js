@@ -4,6 +4,7 @@ import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import Alert from '@material-ui/lab/Alert'
 import React from 'react'
+import { Route, Routes } from 'react-router'
 import RouterLink from './molecules/RouterLink'
 import { SocialLinks } from './Social'
 
@@ -15,9 +16,22 @@ export default function AppBar() {
           <div style={Border}/>
       <div style={ContainerStyle}>
         <Typography variant="h6">
-          <RouterLink to={"/"}>
-            about
-          </RouterLink>
+
+          <Routes>
+
+            <Route exact path='/c/Anything' element={
+              <RouterLink to={"/"}>
+                about
+              </RouterLink>}
+            />
+
+            <Route exact path='/*' element={
+              <RouterLink to={"/"}>
+                pollinations
+              </RouterLink>}
+            />
+            
+          </Routes>
         </Typography>
 
         <SocialLinks />

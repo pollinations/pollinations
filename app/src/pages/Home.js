@@ -12,9 +12,6 @@ import Card from '@material-ui/core/Card'
 import CardHeader from '@material-ui/core/CardHeader'
 import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
-import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import OpenInNewIcon from '@material-ui/icons/OpenInNew'
 import RouterLink from "../components/molecules/RouterLink"
 
 const debug = Debug("home");
@@ -37,7 +34,8 @@ export default function Home({ ipfs }) {
             Pollinations is a platform for AI generative media. <br/>  We want to facilitate the translation of multiple human expressions into AI generated art. 
             </Typography>
             <Typography variant="p" component="p" gutterBottom>
-            We gather many generative art models in one space. The models you can find here are  all open source and are constantly updated, so you can be sure you will be using the most cutting-edge AI art frameworks.            </Typography>
+            We gather many generative art models in one space. The models you can find here are  all open source and are constantly updated, so you can be sure you will be using the most cutting-edge AI art frameworks.            
+            </Typography>
           </div>
 
 
@@ -47,9 +45,10 @@ export default function Home({ ipfs }) {
           <>     
             <Typography 
               className='Lato'
-              variant="h2" 
-              component="h2" 
+              variant="h3" 
+              component="h3" 
               gutterBottom
+              style={{marginBottom: '0.8em'}}
               align='center'
               children='What do you want to create?'/>
             <div style={{display: 'flex', justifyContent:'center', marginBottom: '8em'}} children={
@@ -93,8 +92,8 @@ const NotebookCard = ({notebook}) => {
     return  <Box>
         <Card style={{backgroundColor: 'transparent', border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
         <CardHeader
-        subheader={<Typography className='Lato' variant="h5" component="h5" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
-        title={<Typography className='Lato' variant="p" component="p" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
+        subheader={<Typography className='Lato' variant="h4" component="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
+        title={<Typography className='Lato' variant="h6" component="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
         action={<></>} />
             <CardContent style={{backgroundColor: 'yellow !important'}}>
             

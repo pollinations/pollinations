@@ -28,19 +28,23 @@ export default function Home({ ipfs }) {
     return  <>
           {/* title */}
         <Box paddingTop={3}>
-          <List>
-          <Typography variant="h6" component="h6" gutterBottom>
-          🌸 Pollinations
+          <Typography align='center' variant="h1" component="h1" gutterBottom>
+          pollinations.ai
           </Typography>
-            Pollinations are an effort to make generative art more approachable.   
-                  <ListItem style={{display:"block"}}>- A frontend hosting a set of <a href="https://github.com/pollinations/hive" target="_blank">curated models</a> that allow creating and experimenting with generative art (this page).</ListItem>
-                  <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content</ListItem>
-                  <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
-          </List>
+
+          <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', width: '100%',minHeight: '30vh', paddingTop: '3em'}}>
+            <Typography align='center' variant="h6" component="h6" gutterBottom style={{paddingRight: '1em'}}>
+            We want to facilitate the translation of multiple human expressions into multiple forms of media.  
+            </Typography>
+            <Typography variant="p" component="p" gutterBottom>
+            Pollinations is a platform for generative media. We gather many generative art frameworks in one space, with a easy to use interface. We want to make AI generated media available to everyone.  The models you can find here are constantly being updated, so you know you will be using the most cutting-edge AI art frameworks.
+            </Typography>
+          </div>
+
+
           </Box>
 
-          <div children={ // Only show filter after options are loaded
-          options.length > 0 &&
+          <div children={ options.length > 0 &&
           <>     
             <Typography 
               variant="h6" 
@@ -58,6 +62,8 @@ export default function Home({ ipfs }) {
           </>
           } style={GridStyleFilter}/>
           
+          {console.log(notebooks)}
+
           <div children={
             notebookList
             .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)

@@ -32,7 +32,7 @@ const Pollinations = () => {
 
     const navigate = useNavigate()
 
-    const navigateToNode = useCallback(contentID => {
+    const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
         if (node?.nodeID)
@@ -47,12 +47,12 @@ const Pollinations = () => {
         {/* Nav Bar     */}
         <AppBar />
         {/* Children that get IPFS state */}
-        <Container maxWidth="md" >
+        <Container maxWidth='lg'>
             <Routes>
+                <Route path='feed' element={<Feed />} />
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
-                <Route path='feed' element={<Feed />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
             <More />
@@ -73,10 +73,10 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
-    useEffect(() => {
-        if (nodeID)
-            overrideNodeID(nodeID)
-    }, [nodeID])
+    // useEffect(() => {
+    //     if (nodeID)
+    //         overrideNodeID(nodeID)
+    // }, [nodeID])
 
     if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`} />
 

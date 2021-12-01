@@ -1,29 +1,54 @@
-import { Link } from '@material-ui/core'
+import { Container, Link } from '@material-ui/core'
 import AppBarMaterial from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import Alert from '@material-ui/lab/Alert'
 import React from 'react'
+import { Route, Routes } from 'react-router'
 import RouterLink from './molecules/RouterLink'
 import { SocialLinks } from './Social'
 
-export default function AppBar({ children }) {
+export default function AppBar() {
 
   return <>
-    <AppBarMaterial position="static">
-      <Toolbar variant="dense">
+      <Container maxWidth='lg'>
 
-        <Typography variant="h6" noWrap>
-          <RouterLink to={"/"}>
-            Pollinations
-          </RouterLink>
+          <div style={Border}/>
+      <div style={ContainerStyle}>
+        <Typography variant="h6">
+
+          <Routes>
+
+            <Route exact path='/c/Anything' element={
+              <RouterLink to={"/"}>
+                about
+              </RouterLink>}
+            />
+
+            <Route exact path='/*' element={
+              <RouterLink to={"/"}>
+                pollinations
+              </RouterLink>}
+            />
+            
+          </Routes>
         </Typography>
 
         <SocialLinks />
-      </Toolbar>
-    </AppBarMaterial>
-    <Alert severity="info">This is the <b>new experimental</b> frontend to Pollinations.AI. To visit the old one go to <Link href="https://old.pollinations.ai">https://old.pollinations.ai</Link> </Alert>
-  </>
+      </div>
+      </Container>
+      </>
 }
 
+let ContainerStyle = {
+  width: '100%',
+  display: 'flex',
+  justifyContent: 'space-between',
+}
+let Border = {
+  width: '100%',
+  height: '1px',
+  marginTop: '1.5em',
+  backgroundColor: 'white',
+}
 

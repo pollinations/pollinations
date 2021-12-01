@@ -21,7 +21,7 @@ const LaunchColabButton = ({ connected }) => {
     if (connected === false)
         return  <Button 
             onClick={()=>setLoading(true)}
-            color="secondary" 
+            color="primary" 
             href={pollinatorColabURL} 
             target="colab">
             {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}

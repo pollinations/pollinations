@@ -17,7 +17,7 @@ if (process.argv[2]) {
         ipns: true,
         nodeid: "post_pollen",
     }, async cid => {
-        for (const platform of ["twitter", "instagram", "telegram", "facebook", "youtube", "linkedin", "fbg", "gmb", "pinterest"]) {
+        for (const platform of ["twitter", "instagram", "facebook", "youtube", "linkedin"]) {
             console.log("posting", cid, "to", platform);
             console.log("social post result", await socialPost(platform, cid));
             console.log("done");

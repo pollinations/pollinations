@@ -35388,7 +35388,7 @@ async function doPost({ post, title, videoURL, coverImage, url }, platform) {
     }
   };
   const postResponse = await social.post(shareConfig).catch(console.error);
-  social.console.log("postResponse", postResponse);
+  console.log("postResponse", postResponse);
   return postResponse;
 }
 var fixedHashTags = " #pollinations #generativeart #machinelearning";

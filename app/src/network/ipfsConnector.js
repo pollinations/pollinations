@@ -151,11 +151,11 @@ const ipfsPin = async (client, cid) => {
 
 export const getWebURL = (cid, name = null) => {
     const filename = name ? `?filename=${name}` : '';
-    return `https://pollinations.ai/ipfs/${cid}${filename}`
+    return `https://pollinations-ipfs-gateway.zencraft.studio/ipfs/${cid}${filename}`
 };
 
 export const getIPNSURL = (id) => {
-    return `https://pollinations.ai/ipns/${id}`;
+    return ` https://pollinations-ipfs-gateway.zencraft.studio/ipfs/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => { 

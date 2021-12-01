@@ -32,13 +32,12 @@ export default function Home({ ipfs }) {
           pollinations.ai
           </Typography>
 
-          <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', width: '100%',minHeight: '30vh', paddingTop: '3em'}}>
+          <div style={{display: 'grid', gridAutoFlow: 'column', gridTemplateColumns: 'minmax(300px, 2fr) minmax(300px, 1fr)', width: '100%',minHeight: '30vh', paddingTop: '3em'}}>
             <Typography align='center' variant="h6" component="h6" gutterBottom style={{paddingRight: '1em'}}>
-            We want to facilitate the translation of multiple human expressions into multiple forms of media.  
+            Pollinations is a platform for AI generative media. <br/>  We want to facilitate the translation of multiple human expressions into AI generated art. 
             </Typography>
             <Typography variant="p" component="p" gutterBottom>
-            Pollinations is a platform for generative media. We gather many generative art frameworks in one space, with a easy to use interface. We want to make AI generated media available to everyone.  The models you can find here are constantly being updated, so you know you will be using the most cutting-edge AI art frameworks.
-            </Typography>
+            We gather many generative art models in one space. The models you can find here are  all open source and are constantly updated, so you can be sure you will be using the most cutting-edge AI art frameworks.            </Typography>
           </div>
 
 
@@ -47,23 +46,25 @@ export default function Home({ ipfs }) {
           <div children={ options.length > 0 &&
           <>     
             <Typography 
-              variant="h6" 
-              component="h6" 
+              className='Lato'
+              variant="h2" 
+              component="h2" 
               gutterBottom
+              align='center'
               children='What do you want to create?'/>
-            <div style={{display: 'flex', justifyContent:'space-around'}} children={
+            <div style={{display: 'flex', justifyContent:'center', marginBottom: '8em'}} children={
               options?.map( opt => 
                 <Button 
-                  color={opt === option.selected ? 'secondary' : ''}
-                  onClick={() => option.setSelected(opt)} 
-                  children={opt} 
-                  key={opt}/>)
+                style={{margin: '0 0.5em'}}
+                variant={opt === option.selected ? 'contained' : 'outlined'}
+                color={opt === option.selected ? 'secondary' : 'primary'}
+                onClick={() => option.setSelected(opt)} 
+                children={opt} 
+                key={opt}/>)
             }/>
           </>
           } style={GridStyleFilter}/>
           
-          {console.log(notebooks)}
-
           <div children={
             notebookList
             .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)
@@ -76,9 +77,12 @@ let GridStyleNotebooks = {
   gap: '1em'
 }
 let GridStyleFilter = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-  gap: '1em',
+  // width: '100%',
+  // display: 'flex',
+  // justifyContent: 'space-between',
+  // flexWrap: 'wrap',
+  // gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+  //gap: '1em',
   margin: '1.5em 0',
   marginTop: '50px'
 }
@@ -87,13 +91,15 @@ let GridStyleFilter = {
 const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box>
-        <Card>
-        <CardHeader 
-        subheader={<RouterLink children={name?.slice(2)} to={path}/>} 
-        title={<RouterLink children={category?.slice(2)} to={path}/>} 
-        action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
-            <CardContent>
-                <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
+        <Card style={{backgroundColor: 'transparent', border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
+        <CardHeader
+        subheader={<Typography className='Lato' variant="h5" component="h5" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
+        title={<Typography className='Lato' variant="p" component="p" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
+        action={<></>} />
+            <CardContent style={{backgroundColor: 'yellow !important'}}>
+            
+                <Markdown className='markDownGambiarra' style={{pointerEvents: "none"}}>{description}</Markdown>
+                {console.log(description)}
             </CardContent>
         </Card>
     </Box>

@@ -1,12 +1,18 @@
 @import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
 @import url(//fonts.googleapis.com/css?family=Lato);
 
+::selection {
+  background: blue; /* WebKit/Blink Browsers */
+}
+::-moz-selection {
+  background: blue; /* Gecko Browsers */
+}
 
 body {
   margin: 20px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #222 !important;
+  background-color: #111 !important;
 }
 
 footer {
@@ -15,8 +21,9 @@ footer {
   border-radius: 10px 10px 0 0;
   right: 50;
   bottom: 0;
-  background-color: #424242 !important;
+  background-color: #424242 !important; 
 }
+
 h1, h2, h3, h4, h5, h6, p {
   color: rgb(255, 236, 249) !important;
 }
@@ -36,4 +43,16 @@ a {
   word-break: break-all;
   color: whitesmoke;
   padding: 10px 0;
+}
+
+.Lato{
+  font-family: 'Lato' !important;
+}
+
+.markDownGambiarra{
+    width: '100%'
+}
+
+.MuiCardHeader-root{
+  background-color: rgb(62, 0, 156) !important;
 }

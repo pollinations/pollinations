@@ -12,9 +12,6 @@ import Card from '@material-ui/core/Card'
 import CardHeader from '@material-ui/core/CardHeader'
 import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
-import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import OpenInNewIcon from '@material-ui/icons/OpenInNew'
 import RouterLink from "../components/molecules/RouterLink"
 
 const debug = Debug("home");
@@ -28,32 +25,41 @@ export default function Home({ ipfs }) {
     return  <>
           {/* title */}
         <Box paddingTop={3}>
-          <List>
-          <Typography variant="h6" component="h6" gutterBottom>
-          🌸 Pollinations
+          <Typography align='center' variant="h1" component="h1" gutterBottom>
+          pollinations.ai
           </Typography>
-            Pollinations are an effort to make generative art more approachable.   
-                  <ListItem style={{display:"block"}}>- A frontend hosting a set of <a href="https://github.com/pollinations/hive" target="_blank">curated models</a> that allow creating and experimenting with generative art (this page).</ListItem>
-                  <ListItem>- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content</ListItem>
-                  <ListItem>- Pollinations are run on Google Colab (for the free cloud GPUs) </ListItem>
-          </List>
+
+          <div style={{display: 'grid', gridAutoFlow: 'column', gridTemplateColumns: 'minmax(300px, 2fr) minmax(300px, 1fr)', width: '100%',minHeight: '30vh', paddingTop: '3em'}}>
+            <Typography align='center' variant="h6" component="h6" gutterBottom style={{paddingRight: '1em'}}>
+            Pollinations is a platform for AI generative media. <br/>  We want to facilitate the translation of multiple human expressions into AI generated art. 
+            </Typography>
+            <Typography variant="p" component="p" gutterBottom>
+            We gather many generative art models in one space. The models you can find here are  all open source and are constantly updated, so you can be sure you will be using the most cutting-edge AI art frameworks.            
+            </Typography>
+          </div>
+
+
           </Box>
 
-          <div children={ // Only show filter after options are loaded
-          options.length > 0 &&
+          <div children={ options.length > 0 &&
           <>     
             <Typography 
-              variant="h6" 
-              component="h6" 
+              className='Lato'
+              variant="h3" 
+              component="h3" 
               gutterBottom
+              style={{marginBottom: '0.8em'}}
+              align='center'
               children='What do you want to create?'/>
-            <div style={{display: 'flex', justifyContent:'space-around'}} children={
+            <div style={{display: 'flex', justifyContent:'center', marginBottom: '8em'}} children={
               options?.map( opt => 
                 <Button 
-                  color={opt === option.selected ? 'secondary' : ''}
-                  onClick={() => option.setSelected(opt)} 
-                  children={opt} 
-                  key={opt}/>)
+                style={{margin: '0 0.5em'}}
+                variant={opt === option.selected ? 'contained' : 'outlined'}
+                color={opt === option.selected ? 'secondary' : 'primary'}
+                onClick={() => option.setSelected(opt)} 
+                children={opt} 
+                key={opt}/>)
             }/>
           </>
           } style={GridStyleFilter}/>
@@ -70,9 +76,12 @@ let GridStyleNotebooks = {
   gap: '1em'
 }
 let GridStyleFilter = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-  gap: '1em',
+  // width: '100%',
+  // display: 'flex',
+  // justifyContent: 'space-between',
+  // flexWrap: 'wrap',
+  // gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+  //gap: '1em',
   margin: '1.5em 0',
   marginTop: '50px'
 }
@@ -81,13 +90,15 @@ let GridStyleFilter = {
 const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box>
-        <Card>
-        <CardHeader 
-        subheader={<RouterLink children={name?.slice(2)} to={path}/>} 
-        title={<RouterLink children={category?.slice(2)} to={path}/>} 
-        action={<Button href={path} endIcon={<OpenInNewIcon />} children='Open'/>} />
-            <CardContent>
-                <Markdown style={{pointerEvents: "none"}}>{description}</Markdown>
+        <Card style={{backgroundColor: 'transparent', border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
+        <CardHeader
+        subheader={<Typography className='Lato' variant="h4" component="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
+        title={<Typography className='Lato' variant="h6" component="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
+        action={<></>} />
+            <CardContent style={{backgroundColor: 'yellow !important'}}>
+            
+                <Markdown className='markDownGambiarra' style={{pointerEvents: "none"}}>{description}</Markdown>
+                {console.log(description)}
             </CardContent>
         </Card>
     </Box>

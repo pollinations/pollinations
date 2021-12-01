@@ -1,22 +1,31 @@
 @import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
+@import url(//fonts.googleapis.com/css?family=Lato);
 
+::selection {
+  background: blue; /* WebKit/Blink Browsers */
+}
+::-moz-selection {
+  background: blue; /* Gecko Browsers */
+}
 
 body {
   margin: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: hsl(0,0,9) !important;
+  background-color: #111 !important;
 }
+
 footer {
   position: fixed;
   min-width: 30%;
   border-radius: 10px 10px 0 0;
   right: 50;
   bottom: 0;
-  background-color: #424242 !important;
+  background-color: #424242 !important; 
+}
+
+h1, h2, h3, h4, h5, h6, p {
+  color: rgb(255, 236, 249) !important;
 }
 
 .MuiAccordionSummary-root{padding: 0 !important;}
@@ -25,9 +34,25 @@ footer {
 h3{
   margin-bottom: 0;
 }
+h1 {
+  font-size: 9rem !important;
+  font-family: 'Lato' !important;
+}
 
 a {
   word-break: break-all;
   color: whitesmoke;
   padding: 10px 0;
+}
+
+.Lato{
+  font-family: 'Lato' !important;
+}
+
+.markDownGambiarra{
+    width: '100%'
+}
+
+.MuiCardHeader-root{
+  background-color: rgb(62, 0, 156) !important;
 }

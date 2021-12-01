@@ -32,7 +32,7 @@ const Pollinations = () => {
 
     const navigate = useNavigate()
 
-    const navigateToNode = useCallback((contentID) => {
+    const navigateToNode = useCallback(contentID => {
         if (contentID)
             overrideContentID(contentID)
         if (node?.nodeID)
@@ -63,7 +63,7 @@ const Pollinations = () => {
 }
 
 const HomeWithData = () => {
-    const ipfs = useIPFS("/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888");
+    const ipfs = useIPFS("/ipns/k51qzi5uqu5dk56owjc245w1z3i5kgzn1rq6ly6n152iw00px6zx2vv4uzkkh9");
 
     debug("home ipfs", ipfs);
 
@@ -99,7 +99,7 @@ const ModelRoutes = ({ node, navigateToNode }) => {
 
 const More = () => <div style={{ margin: '1em auto 4em auto' }}>
     Discuss, get help and contribute on
-    <Link href="https://github.com/pollinations/pollinations/discussions" target="_blank"> [ Github ] </Link>
+    <Link href="https://github.com/pollinations/pollinations" target="_blank"> [ Github ] </Link>
     or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
 </div>
 

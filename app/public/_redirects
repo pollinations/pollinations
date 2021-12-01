@@ -1,6 +1,7 @@
-/ipfs/*/image.png http://ipfs.pollinations.ai:8080/ipfs/:splat 200
-/ipfs/* http://ipfs.pollinations.ai:8080/ipfs/:splat 200
-/ipns/* http://ipfs.pollinations.ai:8080/ipns/:splat 200
+/ipfs/*/image.png http://pollinations-ipfs-gateway.zencraft.studio/ipfs/:splat 200
+/ipfs/* http://pollinations-ipfs-gateway.zencraft.studio/ipfs/:splat 200
+/ipns/* http://pollinations-ipfs-gateway.zencraft.studio/ipns/:splat 200
 /p/* / 200
 /n/* / 200
 /c/* / 200
+/feed / 200

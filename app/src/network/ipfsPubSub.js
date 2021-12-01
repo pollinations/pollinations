@@ -3,14 +3,14 @@ import Debug from 'debug';
 import { AbortController } from 'native-abort-controller';
 import { Channel } from 'queueable';
 import { getClient } from './ipfsConnector';
-import { noop } from './utils';
+import { noop, retryException } from './utils';
 
 
 const debug = Debug('ipfs:pubsub');
 
 
 // frequency at which to send heartbeats vis pubsub
-const HEARTBEAT_FREQUENCY = 7;
+const HEARTBEAT_FREQUENCY = 12;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
@@ -52,24 +52,23 @@ export function publisher(nodeID, suffix = "/output") {
     };
 }
 
-async function publishHeartbeat(client, suffix, nodeID) {
-
+const publishHeartbeat = async (client, suffix, nodeID) => {
+    const retryPublish = retryException(client.pubsub.publish)
     if (nodeID === "ipns")
         return;
 
     // debug("publishing heartbeat to", nodeID, suffix);
-
-    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+    await retryPublish(nodeID + suffix, "HEARTBEAT");
 }
 
 async function publish(client, nodeID, rootCID, suffix = "/output") {
-
+    const retryPublish = retryException(client.pubsub.publish)
     debug("publish pubsub", nodeID + suffix, rootCID);
 
     if (nodeID === "ipns")
         await experimentalIPNSPublish(client, rootCID);
     else
-        await client.pubsub.publish(nodeID + suffix, rootCID)
+        await retryPublish(nodeID + suffix, rootCID)
 }
 
 

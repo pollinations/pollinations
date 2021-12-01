@@ -59,10 +59,12 @@ export const callLogger = (f,name = null) => (...args) => {
     return output;
   }
   
-  export const retryException = async (f, n=10) => {
+  export const retryException = (f) => {
+    return async (...args) => {
+      let n = 5;
       while (n-- > 0) {
         try {
-            return await f();
+            return await f(...args);
         } catch (e) {
             debug("retryException", e);
             await awaitSleep(1000)
@@ -70,6 +72,7 @@ export const callLogger = (f,name = null) => (...args) => {
       }
       throw new Error("Too many retries");
     }
+}
 
 
 

@@ -79,7 +79,7 @@ async function experimentalIPNSPublish(client, rootCID) {
     if (abortPublish)
         abortPublish.abort();
     abortPublish = new AbortController();
-    await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: false })
+    await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true })
         .then(() => {
             debug("published...", rootCID);
             abortPublish = null;

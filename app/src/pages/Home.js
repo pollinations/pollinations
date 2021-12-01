@@ -30,7 +30,7 @@ export default function Home({ ipfs }) {
           </Typography>
 
           <div style={{display: 'grid', gridAutoFlow: 'column', gridTemplateColumns: 'minmax(300px, 2fr) minmax(300px, 1fr)', width: '100%',minHeight: '30vh', paddingTop: '3em'}}>
-            <Typography align='center' variant="h6" component="h6" gutterBottom style={{paddingRight: '1em'}}>
+            <Typography variant="h6" component="h6" gutterBottom style={{paddingRight: '1em'}}>
             Pollinations is a platform for AI generative media. <br/>  We want to facilitate the translation of multiple human expressions into AI generated art. 
             </Typography>
             <Typography variant="p" component="p" gutterBottom>
@@ -90,15 +90,17 @@ let GridStyleFilter = {
 const NotebookCard = ({notebook}) => {
     const {category, name, path, Icon, description} = notebook;
     return  <Box>
-        <Card style={{backgroundColor: 'transparent', border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
+        <Card style={{
+          backgroundColor: 'transparent', 
+          border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
         <CardHeader
-        subheader={<Typography className='Lato' variant="h4" component="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
-        title={<Typography className='Lato' variant="h6" component="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
+        subheader={<Typography className='Lato noMargin' variant="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
+        title={<Typography className='Lato noMargin' variant="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
         action={<></>} />
             <CardContent style={{backgroundColor: 'yellow !important'}}>
-            
+
                 <Markdown className='markDownGambiarra' style={{pointerEvents: "none"}}>{description}</Markdown>
-                {console.log(description)}
+
             </CardContent>
         </Card>
     </Box>

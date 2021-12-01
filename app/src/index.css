@@ -35,8 +35,18 @@ h3{
   margin-bottom: 0;
 }
 h1 {
-  font-size: 9rem !important;
+  font-size: 4rem !important;
   font-family: 'Lato' !important;
+}
+@media screen and (min-width: 700px) {
+  h1 {
+    font-size: 6rem !important;
+  }
+}
+@media screen and (min-width:1200px) {
+  h1 {
+    font-size: 9rem !important;
+  }
 }
 
 a {
@@ -55,4 +65,9 @@ a {
 
 .MuiCardHeader-root{
   background-color: rgb(62, 0, 156) !important;
+}
+
+
+.noMargin{
+  margin: 0 !important;
 }

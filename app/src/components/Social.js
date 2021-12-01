@@ -7,7 +7,7 @@ export const SocialPostStatus = ({ results }) =>
   Object.keys(results).map(platform => results[platform] && PostResultLink(results[platform], platform)); 
 
 export const SocialLinks = () => 
-  <div style={{display: 'flex', alignItems: 'center', marginLeft: 'auto'}} 
+  <div style={{display: 'flex', alignItems: 'center'}} 
   children={Object.keys(platforms).map(PlatformLink)}/>
 
 

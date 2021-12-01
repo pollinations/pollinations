@@ -63,7 +63,7 @@ const Pollinations = () => {
 }
 
 const HomeWithData = () => {
-    const ipfs = useIPFS("/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888");
+    const ipfs = useIPFS("/ipns/k51qzi5uqu5dk56owjc245w1z3i5kgzn1rq6ly6n152iw00px6zx2vv4uzkkh9");
 
     debug("home ipfs", ipfs);
 

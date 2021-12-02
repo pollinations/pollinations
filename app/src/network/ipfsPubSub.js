@@ -53,22 +53,30 @@ export function publisher(nodeID, suffix = "/output") {
 }
 
 const publishHeartbeat = async (client, suffix, nodeID) => {
-    const retryPublish = retryException(client.pubsub.publish)
+
     if (nodeID === "ipns")
         return;
 
-    // debug("publishing heartbeat to", nodeID, suffix);
-    await retryPublish(nodeID + suffix, "HEARTBEAT");
+    try {
+        // debug("publishing heartbeat to", nodeID, suffix);
+        await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+    } catch (e) {
+        debug("Exception. Couldn't publish heartbeat. Ignoring...", e.name)
+    }
 }
 
 async function publish(client, nodeID, rootCID, suffix = "/output") {
     const retryPublish = retryException(client.pubsub.publish)
     debug("publish pubsub", nodeID + suffix, rootCID);
 
-    if (nodeID === "ipns")
-        await experimentalIPNSPublish(client, rootCID);
-    else
-        await retryPublish(nodeID + suffix, rootCID)
+    try {
+        if (nodeID === "ipns")
+            await experimentalIPNSPublish(client, rootCID);
+        else
+            await retryPublish(nodeID + suffix, rootCID)
+    } catch (e) {
+        debug("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
+    }
 }
 
 

@@ -16951,13 +16951,13 @@ var require_mapObjIndexed = __commonJS({
     var _curry2 = require_curry2();
     var _reduce = require_reduce();
     var keys = require_keys();
-    var mapObjIndexed2 = /* @__PURE__ */ _curry2(function mapObjIndexed3(fn, obj) {
+    var mapObjIndexed = /* @__PURE__ */ _curry2(function mapObjIndexed2(fn, obj) {
       return _reduce(function(acc, key) {
         acc[key] = fn(obj[key], key, obj);
         return acc;
       }, {}, keys(obj));
     });
-    module2.exports = mapObjIndexed2;
+    module2.exports = mapObjIndexed;
   }
 });
 
@@ -26677,6 +26677,9 @@ var import_readline = __toModule(require("readline"));
 // src/backend/ipfs/receiver.js
 var import_process = __toModule(require("process"));
 
+// src/network/ipfsConnector.js
+var import_debug5 = __toModule(require_src());
+
 // node_modules/ipfs-core-utils/esm/src/multibases.js
 var LOAD_BASE = (name5) => Promise.reject(new Error(`No base found for "${name5}"`));
 var Multibases = class {
@@ -34055,6 +34058,11 @@ function create2(options = {}) {
 }
 var globSource = import_glob_source.default;
 
+// src/network/ipfsConnector.js
+var import_it_all3 = __toModule(require_it_all());
+var import_path = __toModule(require("path"));
+var import_ramda = __toModule(require_src7());
+
 // src/network/utils.js
 var import_debug4 = __toModule(require_src());
 var import_await_sleep = __toModule(require_await_sleep());
@@ -34089,10 +34097,6 @@ var retryException = (f) => {
 var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
 
 // src/network/ipfsConnector.js
-var import_it_all3 = __toModule(require_it_all());
-var import_debug5 = __toModule(require_src());
-var import_ramda = __toModule(require_src7());
-var import_path = __toModule(require("path"));
 var debug5 = (0, import_debug5.default)("ipfsConnector");
 var IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
 var _client = null;
@@ -34100,9 +34104,13 @@ var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
 function getClient() {
   if (!_client) {
-    _client = getIPFSDaemonURL().then((url) => create2({ url, timeout: "2h", headers: {
-      Authorization
-    } }));
+    _client = getIPFSDaemonURL().then((url) => create2({
+      url,
+      timeout: "2h",
+      headers: {
+        Authorization
+      }
+    }));
   }
   return _client;
 }
@@ -34143,8 +34151,7 @@ function writer(initialRootCID = null) {
     },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
-  const methodsWithRetry = (0, import_ramda.mapObjIndexed)(retryException, methods);
-  return methodsWithRetry;
+  return methods;
 }
 async function initializeMFSFolder(client, initialRootCID) {
   const getRootCID = async () => await getCID(client, mfsRoot);
@@ -34374,18 +34381,25 @@ function publisher(nodeID, suffix = "/output") {
   };
 }
 var publishHeartbeat = async (client, suffix, nodeID) => {
-  const retryPublish = retryException(client.pubsub.publish);
   if (nodeID === "ipns")
     return;
-  await retryPublish(nodeID + suffix, "HEARTBEAT");
+  try {
+    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+  } catch (e) {
+    debug7("Exception. Couldn't publish heartbeat. Ignoring...", e.name);
+  }
 };
 async function publish(client, nodeID, rootCID, suffix = "/output") {
   const retryPublish = retryException(client.pubsub.publish);
   debug7("publish pubsub", nodeID + suffix, rootCID);
-  if (nodeID === "ipns")
-    await experimentalIPNSPublish(client, rootCID);
-  else
-    await retryPublish(nodeID + suffix, rootCID);
+  try {
+    if (nodeID === "ipns")
+      await experimentalIPNSPublish(client, rootCID);
+    else
+      await retryPublish(nodeID + suffix, rootCID);
+  } catch (e) {
+    debug7("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
+  }
 }
 var abortPublish = null;
 async function experimentalIPNSPublish(client, rootCID) {

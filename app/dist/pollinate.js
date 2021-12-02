@@ -34629,8 +34629,9 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
     let done = null;
     for await (const changed of changedFiles$) {
       debug9("Changed files", changed);
-      for (const { event, path: file } of changed) {
-        processing2 = new Promise((resolve2) => done = resolve2);
+      processing2 = new Promise((resolve2) => done = resolve2);
+      const lastChanged = deduplicateChangedFiles(changed);
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
         debug9("Local:", event, file);
         const localPath = (0, import_path5.join)(watchPath, file);
         const ipfsPath = file;
@@ -34644,7 +34645,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           debug9("removing", file, event);
           await rm(ipfsPath);
         }
-      }
+      }));
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
@@ -34704,6 +34705,7 @@ var executeOnce = (f) => {
     }
   };
 };
+var deduplicateChangedFiles = (changed) => Object.entries(changed.reduce((lastChange, { event, path }) => __spreadProps(__spreadValues({}, lastChange), { [path]: event }), {})).map(([path, event]) => ({ event, path }));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());

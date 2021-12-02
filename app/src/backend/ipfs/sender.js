@@ -16,63 +16,67 @@ const debug = Debug("ipfs/sender");
 // Optionally send updates via PubSub.
 export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
 
-  let processing = Promise.resolve(true);
+  let processing = Promise.resolve(true)
 
-  const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
+  const { addFile, mkDir, rm, cid, close: closeWriter } = writer()
 
   // publisher to pollinations frontend
-  const { publish, close: closePublisher } = publisher(nodeid, "/output");
-  
+  const { publish, close: closePublisher } = publisher(nodeid, "/output")
+
   // publisher to pollen feed
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "")
 
 
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
-    await closeWriter();
-    await closePublisher();
-    await closePollenPublisher();
+    await closeWriter()
+    await closePublisher()
+    await closePollenPublisher()
   });
 
   async function start() {
 
     if (!existsSync(watchPath)) {
-      debug("Local: Root directory does not exist. Creating", watchPath);
-      mkdirSync(watchPath, { recursive: true });
+      debug("Local: Root directory does not exist. Creating", watchPath)
+      mkdirSync(watchPath, { recursive: true })
     }
 
-    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
+    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime)
 
 
-    let done = null;
+    let done = null
 
 
     for await (const changed of changedFiles$) {
 
-      debug("Changed files", changed);
-      for (const { event, path: file } of changed) {
-        processing = new Promise(resolve => done = resolve);
+      debug("Changed files", changed)
+      processing = new Promise(resolve => done = resolve)
+
+      const lastChanged = deduplicateChangedFiles(changed)
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
+
         // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
-        const localPath = join(watchPath, file);
-        const ipfsPath = file;
+        const localPath = join(watchPath, file)
+        const ipfsPath = file
 
         if (event === "addDir") {
-          await mkDir(ipfsPath);
+          await mkDir(ipfsPath)
         }
 
         if (event === "add" || event === "change") {
-          await addFile(ipfsPath, localPath);
+          await addFile(ipfsPath, localPath)
         }
 
         if (event === "unlink" || event === "unlinkDir") {
-          debug("removing", file, event);
-          await rm(ipfsPath);
+          debug("removing", file, event)
+          await rm(ipfsPath)
 
         }
       }
-      // await Promise.all(changed.map(async ({ event, file }) => {
+      ))
+
 
       const newContentID = await cid();
       // currentContentID = newContentID;
@@ -118,7 +122,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   const watcher = chokidar.watch(watchPath, {
     awaitWriteFinish: {
       stabilityThreshold: debounceTime,
-      pollInterval: debounceTime/2
+      pollInterval: debounceTime / 2
     },
     ignored: /(^|[\/\\])\../,
     cwd: watchPath,
@@ -159,11 +163,16 @@ const publishDonePollinate = async cid => {
 
 
 const executeOnce = f => {
-  let executed = false;
+  let executed = false
   return async (...args) => {
     if (!executed) {
-      executed = true;
-      await f(...args);
+      executed = true
+      await f(...args)
     }
   }
 }
+
+const deduplicateChangedFiles = (changed) =>
+  Object.entries(changed.reduce((lastChange, { event, path }) => ({ ...lastChange, [path]: event }), {}))
+    .map(([path, event]) => ({ event, path }))
+

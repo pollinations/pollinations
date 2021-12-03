@@ -10,7 +10,7 @@ import { parse } from 'json5';
 
 const debug = Debug('notebooks');
 
-const DEFAULT_HIVE_PATH = "/ipns/k51qzi5uqu5dhpj5q7ya9le4ru112fzlx9x1jk2k68069wmuy6gps5i4nc8888";
+const DEFAULT_HIVE_PATH = "/ipns/qzi5uqu5dgclgti82d70co1fcw7g0xmelek4lwd5t6pcfduk21ddeuseonh";
 
 // get list of notebooks from IPNS path
 // this should be refactored once we cleaned the IFPS state code

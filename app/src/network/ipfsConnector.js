@@ -12,7 +12,7 @@ import { AUTH, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://ipfs-pollinations.zencraft.studio";
+const IPFS_HOST = "https://ipfs-pollinations-api.zencraft.studio";
 
 let _client = null;
 

@@ -12,7 +12,7 @@ import { AUTH, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://pollinations-ipfs-api.zencraft.studio";
+const IPFS_HOST = "http://api.pollinations.ai";
 
 let _client = null;
 
@@ -24,9 +24,8 @@ const Authorization = base64Decode(AUTH);
 export function getClient() {
     if (!_client) {
         _client = getIPFSDaemonURL().then(url => create({
-            url, timeout: "2h", headers: {
-                Authorization
-            }
+            port: 5005,
+            url, timeout: "2h",
         }))
     }
     return _client;
@@ -153,11 +152,11 @@ const ipfsPin = async (client, cid) => {
 
 export const getWebURL = (cid, name = null) => {
     const filename = name ? `?filename=${name}` : '';
-    return `https://pollinations-ipfs-gateway.zencraft.studio/ipfs/${cid}${filename}`
+    return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`
 };
 
 export const getIPNSURL = (id) => {
-    return ` https://pollinations-ipfs-gateway.zencraft.studio/ipfs/ipns/${id}`;
+    return `https://ipfs.pollinations.ai/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => {

@@ -36157,18 +36157,16 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = "https://pollinations-ipfs-api.zencraft.studio";
+var IPFS_HOST = "http://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
 function getClient() {
   if (!_client) {
     _client = getIPFSDaemonURL().then((url) => create2({
+      port: 5005,
       url,
-      timeout: "2h",
-      headers: {
-        Authorization
-      }
+      timeout: "2h"
     }));
   }
   return _client;
@@ -36194,7 +36192,7 @@ var getIPFSDaemonURL = async () => {
 };
 var getWebURL = (cid, name5 = null) => {
   const filename = name5 ? `?filename=${name5}` : "";
-  return `https://pollinations-ipfs-gateway.zencraft.studio/ipfs/${cid}${filename}`;
+  return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)

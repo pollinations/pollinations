@@ -36392,6 +36392,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       }
       done();
     }
+    await close();
   }
   return {
     start,

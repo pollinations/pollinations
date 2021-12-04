@@ -103,7 +103,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
     }
 
 
-    // await close();
+    await close();
   }
 
   return {

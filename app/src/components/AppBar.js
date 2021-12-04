@@ -36,9 +36,9 @@ export default function AppBar() {
 
         <SocialLinks />
       </div>
-      <Alert severity="error">
+      {/* <Alert severity="error">
        Sorry, we are experiencing some problems with our backend. We are on it and pollinations will be back as soon as possible
-      </Alert>
+      </Alert> */}
       </Container>
       </>
 }

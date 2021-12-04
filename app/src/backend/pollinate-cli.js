@@ -59,14 +59,18 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
+    const { start: startSending, processing, close } = sender({ ...options, once: false });
 
+
+    let startedSending = false;
     while (true) {
-      const { start: startSending, processing, close } = sender({ ...options, once: false });
 
       await receive({ ...options, once: true });
 
-
-      startSending();
+      if (!startedSending) {  
+        startedSending = true;
+        startSending();
+      }
 
       await execute(executeCommand, options.logout);
       debug("done executing", executeCommand, ". Waiting...");
@@ -76,9 +80,9 @@ if (executeCommand)
       await processing();
       await awaitSleep(sleepBeforeExit);
       await processing();
-      await close();
-      await processing();
+
     }
+    await close();
 
     await awaitSleep(sleepBeforeExit);
     debug("awaiting termination of state sync");

@@ -31,6 +31,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
+    debug("Closing sender", nodeid)
     await closeWriter()
     await closePublisher()
     await closePollenPublisher()

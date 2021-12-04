@@ -54,15 +54,14 @@ export function writer(initialRootCID = null) {
 
     const joinPath = path => join(mfsRoot, path);
 
-    let initializedFolder = false;
+    let initializedFolder = Promise.resolve(false);
 
     // initialize the writer lazily, calls the function and finally return the root CID
     const returnRootCID = func => async (...args) => {
         const client = await getClient();
         // lazily initialize the MFS folder
-        if (!initializedFolder) {
-            await initializeMFSFolder(client, initialRootCID);
-            initializedFolder = true;
+        if (!(await initializedFolder)) {
+            initializedFolder =  initializeMFSFolder(client, initialRootCID)
         }
 
         // execute function
@@ -78,13 +77,13 @@ export function writer(initialRootCID = null) {
         rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
         mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
         cid: async () => {
-            if (!initializedFolder)
+            if (!await initializedFolder)
                 return null;
             return await getCID(await getClient(), mfsRoot)
         },
         close: async () => {
             debug("closing input writer. Deleting", mfsRoot)
-            if (initializedFolder)
+            if (await initializedFolder)
                 await ipfsRm(await getClient(), mfsRoot)
         },
         pin: async cid => await ipfsPin(await getClient(), cid)
@@ -123,6 +122,7 @@ async function initializeMFSFolder(client, initialRootCID) {
             await ipfsCp(client, rootCid, mfsRoot);
         }
     }
+    return await getRootCID();
 }
 
 

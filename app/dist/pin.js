@@ -29820,12 +29820,11 @@ async function reader() {
 var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
 function writer(initialRootCID = null) {
   const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
-  let initializedFolder = false;
+  let initializedFolder = Promise.resolve(false);
   const returnRootCID = (func) => async (...args) => {
     const client = await getClient();
-    if (!initializedFolder) {
-      await initializeMFSFolder(client, initialRootCID);
-      initializedFolder = true;
+    if (!await initializedFolder) {
+      initializedFolder = initializeMFSFolder(client, initialRootCID);
     }
     await func(...args);
     return await getCID(client, mfsRoot);
@@ -29836,13 +29835,13 @@ function writer(initialRootCID = null) {
     rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
     mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
     cid: async () => {
-      if (!initializedFolder)
+      if (!await initializedFolder)
         return null;
       return await getCID(await getClient(), mfsRoot);
     },
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
-      if (initializedFolder)
+      if (await initializedFolder)
         await ipfsRm(await getClient(), mfsRoot);
     },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
@@ -29872,6 +29871,7 @@ async function initializeMFSFolder(client, initialRootCID) {
       await ipfsCp(client, rootCid, mfsRoot);
     }
   }
+  return await getRootCID();
 }
 var localIPFSAvailable = async () => {
   return false;

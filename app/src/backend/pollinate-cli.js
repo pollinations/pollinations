@@ -61,12 +61,16 @@ if (executeCommand)
 
     const { start: startSending, processing, close } = sender({ ...options, once: false });
 
+
+    let startedSending = false;
     while (true) {
 
       await receive({ ...options, once: true });
 
-
-      startSending();
+      if (!startedSending) {  
+        startedSending = true;
+        startSending();
+      }
 
       await execute(executeCommand, options.logout);
       debug("done executing", executeCommand, ". Waiting...");
@@ -79,7 +83,7 @@ if (executeCommand)
 
     }
     await close();
-    
+
     await awaitSleep(sleepBeforeExit);
     debug("awaiting termination of state sync");
     await processing();

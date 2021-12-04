@@ -173,25 +173,36 @@ function heartbeatChecker(heartbeatStateCallback) {
 
 // Subscribe to an ipfs topic with some rather ugly code to handle errors that probably don't even occur
 function subscribeCallback(topic, callback) {
-    const abort = new AbortController();
+    let abort = new AbortController();
+    
     (async () => {
         const onError = async (...errorArgs) => {
-            debug("onError", ...errorArgs, "aborting");
-            abort.abort();
-            await awaitSleep(300);
+            debug("onError", ...errorArgs, "aborting")
+            
+            if (abort.signal.aborted)
+                return;
+            
+            abort.abort()
+            await awaitSleep(300)
             debug("resubscribing")
             await doSub();
         };
 
         const handler = ({ data }) => {
-            const message = new TextDecoder().decode(data)
-            callback(message);
+
+            if (abort.signal.aborted) {
+                console.error("Subscription to",topic,"was aborted. Shouldn't receive any more messages.");
+            } else {
+                const message = new TextDecoder().decode(data)
+                callback(message);
+            }
         }
 
         const doSub = async () => {
-            const client = await getClient();
+            const client = await getClient()
             try {
                 abort.abort();
+                abort = new AbortController()
                 debug("Executing subscribe", topic);
                 await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
             } catch (e) {

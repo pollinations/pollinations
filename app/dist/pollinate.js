@@ -36188,24 +36188,31 @@ function heartbeatChecker(heartbeatStateCallback) {
   return { gotHeartbeat, closeHeartbeat };
 }
 function subscribeCallback(topic, callback) {
-  const abort = new import_native_abort_controller12.AbortController();
+  let abort = new import_native_abort_controller12.AbortController();
   (async () => {
     const onError = async (...errorArgs) => {
       debug7("onError", ...errorArgs, "aborting");
+      if (abort.signal.aborted)
+        return;
       abort.abort();
       await (0, import_await_sleep2.default)(300);
       debug7("resubscribing");
       await doSub();
     };
     const handler = ({ data }) => {
-      const message = new TextDecoder().decode(data);
-      callback(message);
+      if (abort.signal.aborted) {
+        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
+      } else {
+        const message = new TextDecoder().decode(data);
+        callback(message);
+      }
     };
     const doSub = async () => {
       var _a;
       const client = await getClient();
       try {
         abort.abort();
+        abort = new import_native_abort_controller12.AbortController();
         debug7("Executing subscribe", topic);
         await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
       } catch (e) {
@@ -36476,9 +36483,13 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 if (executeCommand)
   (async () => {
     const { start: startSending, processing, close } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    let startedSending = false;
     while (true) {
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
-      startSending();
+      if (!startedSending) {
+        startedSending = true;
+        startSending();
+      }
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");
       debug10("awaiting termination of state sync");

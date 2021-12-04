@@ -30090,24 +30090,31 @@ function heartbeatChecker(heartbeatStateCallback) {
   return { gotHeartbeat, closeHeartbeat };
 }
 function subscribeCallback(topic, callback) {
-  const abort = new import_native_abort_controller12.AbortController();
+  let abort = new import_native_abort_controller12.AbortController();
   (async () => {
     const onError = async (...errorArgs) => {
       debug6("onError", ...errorArgs, "aborting");
+      if (abort.signal.aborted)
+        return;
       abort.abort();
       await (0, import_await_sleep2.default)(300);
       debug6("resubscribing");
       await doSub();
     };
     const handler = ({ data }) => {
-      const message = new TextDecoder().decode(data);
-      callback(message);
+      if (abort.signal.aborted) {
+        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
+      } else {
+        const message = new TextDecoder().decode(data);
+        callback(message);
+      }
     };
     const doSub = async () => {
       var _a;
       const client = await getClient();
       try {
         abort.abort();
+        abort = new import_native_abort_controller12.AbortController();
         debug6("Executing subscribe", topic);
         await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
       } catch (e) {

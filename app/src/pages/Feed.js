@@ -9,7 +9,7 @@ const Feed = () => {
 
     const ipfs = useIPFS(cid)
 
-    useEffect(() => subscribeCID("pollen", "", setCid),[])
+    useEffect(() => subscribeCID("processing_pollen", "", setCid),[])
     
     return <>
         <Typography variant="h3" component="h3" gutterBottom>

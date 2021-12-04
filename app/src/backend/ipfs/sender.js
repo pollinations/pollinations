@@ -1,4 +1,5 @@
 
+import awaitSleep from "await-sleep";
 import chokidar from "chokidar";
 import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
@@ -24,7 +25,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   const { publish, close: closePublisher } = publisher(nodeid, "/output")
 
   // publisher to pollen feed
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "")
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
 
 
   // Close function closes both the writer and the publisher.
@@ -86,6 +87,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
         debug("publish", newContentID);
         // publish to frontend
         await publish(newContentID);
+        await awaitSleep(1000)
         // publish to feed
         await publishPollen(newContentID);
       }

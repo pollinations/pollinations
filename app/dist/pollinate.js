@@ -28400,7 +28400,7 @@ __export(exports, {
   debug: () => debug10,
   rootPath: () => rootPath
 });
-var import_await_sleep3 = __toModule(require_await_sleep());
+var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
 var import_debug10 = __toModule(require_src());
 var import_fs3 = __toModule(require("fs"));
@@ -36280,6 +36280,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
+var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
 var import_fs2 = __toModule(require("fs"));
@@ -36345,7 +36346,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
   let processing2 = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   const close2 = executeOnce(async (error) => {
     await closeWriter();
     await closePublisher();
@@ -36382,6 +36383,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       if (ipns) {
         debug9("publish", newContentID);
         await publish2(newContentID);
+        await (0, import_await_sleep3.default)(1e3);
         await publishPollen(newContentID);
       }
       if (once) {
@@ -36483,12 +36485,12 @@ if (executeCommand)
       debug10("done executing", executeCommand, ". Waiting...");
       debug10("awaiting termination of state sync");
       await processing2();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
+      await (0, import_await_sleep4.default)(sleepBeforeExit);
       await processing2();
       await close2();
       await processing2();
     }
-    await (0, import_await_sleep3.default)(sleepBeforeExit);
+    await (0, import_await_sleep4.default)(sleepBeforeExit);
     debug10("awaiting termination of state sync");
     await processing();
     debug10("calling sender's close function.");
@@ -36501,7 +36503,7 @@ else {
     (async () => {
       const { start, processing: processing2, close: close2 } = sender(options_default);
       await start();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
+      await (0, import_await_sleep4.default)(sleepBeforeExit);
       await processing2();
       await close2();
       import_process2.default.exit(0);

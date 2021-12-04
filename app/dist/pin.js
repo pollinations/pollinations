@@ -29785,7 +29785,7 @@ var retryException = (f) => {
       try {
         return await f(...args);
       } catch (e) {
-        debug4("retryException", e);
+        debug4(`retryException #${n}`, e);
         await (0, import_await_sleep.default)(1e3);
       }
     }
@@ -29817,33 +29817,27 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
-  let initializedFolder = false;
-  const returnRootCID = (func) => async (...args) => {
+  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
+  const returnRootCID = (func) => async (path = "/", ...args) => {
     const client = await getClient();
-    if (!initializedFolder) {
-      await initializeMFSFolder(client, initialRootCID);
-      initializedFolder = true;
-    }
-    await func(...args);
+    await initializedFolder;
+    debug5("join", mfsRoot, path);
+    const tmpPath = (0, import_path.join)(mfsRoot, path);
+    await func(client, tmpPath, ...args);
     return await getCID(client, mfsRoot);
   };
   const methods = {
-    add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
-    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
-    rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
-    mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
-    cid: async () => {
-      if (!initializedFolder)
-        return null;
-      return await getCID(await getClient(), mfsRoot);
-    },
+    add: returnRootCID(ipfsAdd),
+    addFile: returnRootCID(ipfsAddFile),
+    rm: returnRootCID(ipfsRm),
+    mkDir: returnRootCID(ipfsMkdir),
+    cid: returnRootCID(noop),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
-      if (initializedFolder)
-        await ipfsRm(await getClient(), mfsRoot);
+      await initializedFolder;
+      await ipfsRm(await getClient(), mfsRoot);
     },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
@@ -29872,6 +29866,7 @@ async function initializeMFSFolder(client, initialRootCID) {
       await ipfsCp(client, rootCid, mfsRoot);
     }
   }
+  return await getRootCID();
 }
 var localIPFSAvailable = async () => {
   return false;
@@ -30063,6 +30058,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     }
   });
   return () => {
+    debug6("Unsubscribing from pubsub events from", nodeID, suffix);
     unsubscribe();
     closeHeartbeat();
   };
@@ -30094,24 +30090,31 @@ function heartbeatChecker(heartbeatStateCallback) {
   return { gotHeartbeat, closeHeartbeat };
 }
 function subscribeCallback(topic, callback) {
-  const abort = new import_native_abort_controller12.AbortController();
+  let abort = new import_native_abort_controller12.AbortController();
   (async () => {
     const onError = async (...errorArgs) => {
       debug6("onError", ...errorArgs, "aborting");
+      if (abort.signal.aborted)
+        return;
       abort.abort();
       await (0, import_await_sleep2.default)(300);
       debug6("resubscribing");
       await doSub();
     };
     const handler = ({ data }) => {
-      const message = new TextDecoder().decode(data);
-      callback(message);
+      if (abort.signal.aborted) {
+        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
+      } else {
+        const message = new TextDecoder().decode(data);
+        callback(message);
+      }
     };
     const doSub = async () => {
       var _a;
       const client = await getClient();
       try {
         abort.abort();
+        abort = new import_native_abort_controller12.AbortController();
         debug6("Executing subscribe", topic);
         await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
       } catch (e) {

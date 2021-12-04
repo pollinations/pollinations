@@ -8036,7 +8036,7 @@ var require_tr46 = __commonJS({
       var len = countSymbols(label);
       for (var i = 0; i < len; ++i) {
         var status = findStatus(label.codePointAt(i));
-        if (processing2 === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing2 === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
+        if (processing === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
           error = true;
           break;
         }
@@ -8046,7 +8046,7 @@ var require_tr46 = __commonJS({
         error
       };
     }
-    function processing2(domain_name, useSTD3, processing_option) {
+    function processing(domain_name, useSTD3, processing_option) {
       var result = mapChars(domain_name, useSTD3, processing_option);
       result.string = normalize(result.string);
       var labels = result.string.split(".");
@@ -8065,7 +8065,7 @@ var require_tr46 = __commonJS({
       };
     }
     module2.exports.toASCII = function(domain_name, useSTD3, processing_option, verifyDnsLength) {
-      var result = processing2(domain_name, useSTD3, processing_option);
+      var result = processing(domain_name, useSTD3, processing_option);
       var labels = result.string.split(".");
       labels = labels.map(function(l) {
         try {
@@ -8092,7 +8092,7 @@ var require_tr46 = __commonJS({
       return labels.join(".");
     };
     module2.exports.toUnicode = function(domain_name, useSTD3) {
-      var result = processing2(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
+      var result = processing(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
       return {
         domain: result.string,
         error: result.error
@@ -24249,9 +24249,9 @@ var require_is_glob = __commonJS({
         if (str[index] === "\\") {
           var open = str[index + 1];
           index += 2;
-          var close2 = chars[open];
-          if (close2) {
-            var n = str.indexOf(close2, index);
+          var close = chars[open];
+          if (close) {
+            var n = str.indexOf(close, index);
             if (n !== -1) {
               index = n + 1;
             }
@@ -24277,9 +24277,9 @@ var require_is_glob = __commonJS({
         if (str[index] === "\\") {
           var open = str[index + 1];
           index += 2;
-          var close2 = chars[open];
-          if (close2) {
-            var n = str.indexOf(close2, index);
+          var close = chars[open];
+          if (close) {
+            var n = str.indexOf(close, index);
             if (n !== -1) {
               index = n + 1;
             }
@@ -25761,7 +25761,7 @@ var require_nodefs_handler = __commonJS({
     var open = promisify(fs.open);
     var stat = promisify(fs.stat);
     var lstat = promisify(fs.lstat);
-    var close2 = promisify(fs.close);
+    var close = promisify(fs.close);
     var fsrealpath = promisify(fs.realpath);
     var statMethods = { lstat, stat };
     var foreach = (val, fn) => {
@@ -25840,7 +25840,7 @@ var require_nodefs_handler = __commonJS({
           if (isWindows && error.code === "EPERM") {
             try {
               const fd = await open(path, "r");
-              await close2(fd);
+              await close(fd);
               broadcastErr(error);
             } catch (err) {
             }
@@ -28400,7 +28400,7 @@ __export(exports, {
   debug: () => debug10,
   rootPath: () => rootPath
 });
-var import_await_sleep3 = __toModule(require_await_sleep());
+var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
 var import_debug10 = __toModule(require_src());
 var import_fs3 = __toModule(require("fs"));
@@ -35820,7 +35820,7 @@ var retryException = (f) => {
       try {
         return await f(...args);
       } catch (e) {
-        debug4("retryException", e);
+        debug4(`retryException #${n}`, e);
         await (0, import_await_sleep.default)(1e3);
       }
     }
@@ -35852,33 +35852,27 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
-  let initializedFolder = false;
-  const returnRootCID = (func) => async (...args) => {
+  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
+  const returnRootCID = (func) => async (path = "/", ...args) => {
     const client = await getClient();
-    if (!initializedFolder) {
-      await initializeMFSFolder(client, initialRootCID);
-      initializedFolder = true;
-    }
-    await func(...args);
+    await initializedFolder;
+    debug5("join", mfsRoot, path);
+    const tmpPath = (0, import_path.join)(mfsRoot, path);
+    await func(client, tmpPath, ...args);
     return await getCID(client, mfsRoot);
   };
   const methods = {
-    add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
-    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
-    rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
-    mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
-    cid: async () => {
-      if (!initializedFolder)
-        return null;
-      return await getCID(await getClient(), mfsRoot);
-    },
+    add: returnRootCID(ipfsAdd),
+    addFile: returnRootCID(ipfsAddFile),
+    rm: returnRootCID(ipfsRm),
+    mkDir: returnRootCID(ipfsMkdir),
+    cid: returnRootCID(noop),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
-      if (initializedFolder)
-        await ipfsRm(await getClient(), mfsRoot);
+      await initializedFolder;
+      await ipfsRm(await getClient(), mfsRoot);
     },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
@@ -35907,6 +35901,7 @@ async function initializeMFSFolder(client, initialRootCID) {
       await ipfsCp(client, rootCid, mfsRoot);
     }
   }
+  return await getRootCID();
 }
 var localIPFSAvailable = async () => {
   return false;
@@ -36102,13 +36097,13 @@ function publisher(nodeID, suffix = "/output") {
   };
   const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
   sendHeartbeat();
-  const close2 = () => {
+  const close = () => {
     debug7("Closing publisher", handle);
     clearInterval(handle);
   };
   return {
     publish: _publish,
-    close: close2
+    close
   };
 }
 var publishHeartbeat = async (client, suffix, nodeID) => {
@@ -36161,6 +36156,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     }
   });
   return () => {
+    debug7("Unsubscribing from pubsub events from", nodeID, suffix);
     unsubscribe();
     closeHeartbeat();
   };
@@ -36192,24 +36188,31 @@ function heartbeatChecker(heartbeatStateCallback) {
   return { gotHeartbeat, closeHeartbeat };
 }
 function subscribeCallback(topic, callback) {
-  const abort = new import_native_abort_controller12.AbortController();
+  let abort = new import_native_abort_controller12.AbortController();
   (async () => {
     const onError = async (...errorArgs) => {
       debug7("onError", ...errorArgs, "aborting");
+      if (abort.signal.aborted)
+        return;
       abort.abort();
       await (0, import_await_sleep2.default)(300);
       debug7("resubscribing");
       await doSub();
     };
     const handler = ({ data }) => {
-      const message = new TextDecoder().decode(data);
-      callback(message);
+      if (abort.signal.aborted) {
+        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
+      } else {
+        const message = new TextDecoder().decode(data);
+        callback(message);
+      }
     };
     const doSub = async () => {
       var _a;
       const client = await getClient();
       try {
         abort.abort();
+        abort = new import_native_abort_controller12.AbortController();
         debug7("Executing subscribe", topic);
         await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
       } catch (e) {
@@ -36280,6 +36283,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
+var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
 var import_fs2 = __toModule(require("fs"));
@@ -36342,11 +36346,12 @@ function debounce(delay, atBegin, callback) {
 // src/backend/ipfs/sender.js
 var debug9 = (0, import_debug9.default)("ipfs/sender");
 var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
-  let processing2 = Promise.resolve(true);
+  let processing = Promise.resolve(true);
   const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("pollen", "");
-  const close2 = executeOnce(async (error) => {
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
+  const close = executeOnce(async (error) => {
+    debug9("Closing sender", nodeid);
     await closeWriter();
     await closePublisher();
     await closePollenPublisher();
@@ -36360,8 +36365,9 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
     let done = null;
     for await (const changed of changedFiles$) {
       debug9("Changed files", changed);
-      for (const { event, path: file } of changed) {
-        processing2 = new Promise((resolve2) => done = resolve2);
+      processing = new Promise((resolve2) => done = resolve2);
+      const lastChanged = changed;
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
         debug9("Local:", event, file);
         const localPath = (0, import_path5.join)(watchPath, file);
         const ipfsPath = file;
@@ -36375,12 +36381,13 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           debug9("removing", file, event);
           await rm(ipfsPath);
         }
-      }
+      }));
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
         debug9("publish", newContentID);
         await publish2(newContentID);
+        await (0, import_await_sleep3.default)(1e3);
         await publishPollen(newContentID);
       }
       if (once) {
@@ -36388,11 +36395,12 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       }
       done();
     }
+    await close();
   }
   return {
     start,
-    processing: () => processing2,
-    close: close2
+    processing: () => processing,
+    close
   };
 };
 var chunkedFilewatcher = (watchPath, debounceTime) => {
@@ -36414,6 +36422,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     channel$.push(files);
   });
   watcher.on("all", async (event, path) => {
+    debug9("got watcher event", event, path);
     if (path !== "") {
       const lastChanged = (0, import_ramda3.last)(changeQueue);
       if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
@@ -36473,20 +36482,23 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 });
 if (executeCommand)
   (async () => {
+    const { start: startSending, processing, close } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    let startedSending = false;
     while (true) {
-      const { start: startSending, processing: processing2, close: close2 } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
-      startSending();
+      if (!startedSending) {
+        startedSending = true;
+        startSending();
+      }
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");
       debug10("awaiting termination of state sync");
-      await processing2();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
-      await processing2();
-      await close2();
-      await processing2();
+      await processing();
+      await (0, import_await_sleep4.default)(sleepBeforeExit);
+      await processing();
     }
-    await (0, import_await_sleep3.default)(sleepBeforeExit);
+    await close();
+    await (0, import_await_sleep4.default)(sleepBeforeExit);
     debug10("awaiting termination of state sync");
     await processing();
     debug10("calling sender's close function.");
@@ -36497,11 +36509,11 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { start, processing: processing2, close: close2 } = sender(options_default);
+      const { start, processing, close } = sender(options_default);
       await start();
-      await (0, import_await_sleep3.default)(sleepBeforeExit);
-      await processing2();
-      await close2();
+      await (0, import_await_sleep4.default)(sleepBeforeExit);
+      await processing();
+      await close();
       import_process2.default.exit(0);
     })();
   if (enableReceive) {

@@ -36156,6 +36156,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     }
   });
   return () => {
+    debug7("Unsubscribing from pubsub events from", nodeID, suffix);
     unsubscribe();
     closeHeartbeat();
   };

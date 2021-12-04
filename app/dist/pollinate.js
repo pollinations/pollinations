@@ -35852,32 +35852,27 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
-  const joinPath = (path) => (0, import_path.join)(mfsRoot, path);
-  let initializedFolder = Promise.resolve(false);
-  const returnRootCID = (func) => async (...args) => {
+  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
+  const returnRootCID = (func) => async (path = "/", ...args) => {
     const client = await getClient();
-    if (!await initializedFolder) {
-      initializedFolder = initializeMFSFolder(client, initialRootCID);
-    }
-    await func(...args);
+    await initializedFolder;
+    debug5("join", mfsRoot, path);
+    const tmpPath = (0, import_path.join)(mfsRoot, path);
+    await func(client, tmpPath, ...args);
     return await getCID(client, mfsRoot);
   };
   const methods = {
-    add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
-    addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
-    rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
-    mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
-    cid: async () => {
-      if (!await initializedFolder)
-        return null;
-      return await getCID(await getClient(), mfsRoot);
-    },
+    add: returnRootCID(ipfsAdd),
+    addFile: returnRootCID(ipfsAddFile),
+    rm: returnRootCID(ipfsRm),
+    mkDir: returnRootCID(ipfsMkdir),
+    cid: returnRootCID(noop),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
-      if (await initializedFolder)
-        await ipfsRm(await getClient(), mfsRoot);
+      await initializedFolder;
+      await ipfsRm(await getClient(), mfsRoot);
     },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };

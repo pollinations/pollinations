@@ -5,7 +5,7 @@ import all from "it-all";
 import { CID } from "multiformats/cid";
 import { basename, dirname, join } from "path";
 import { last } from "ramda";
-import { AUTH, toPromise } from "./utils.js";
+import { AUTH, noop, toPromise } from "./utils.js";
 
 
 
@@ -43,8 +43,7 @@ export async function reader() {
 
 // randomly assign a temporary folder in the IPFS mutable filesystem
 // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
-const mfsRoot = `/tmp_${Math.round(Math.random() * 1000000)}`;
-
+const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g,"_")}`;
 
 
 // Create a writer to modify the IPFS state
@@ -52,39 +51,36 @@ const mfsRoot = `/tmp_${Math.round(Math.random() * 1000000)}`;
 // so calling close is important
 export function writer(initialRootCID = null) {
 
-    const joinPath = path => join(mfsRoot, path);
 
-    let initializedFolder = Promise.resolve(false);
+    // Promise to a temporary folder in the IPFS mutable filesystem
+    let initializedFolder = getClient().then(client => initializeMFSFolder(client, initialRootCID))
 
-    // initialize the writer lazily, calls the function and finally return the root CID
-    const returnRootCID = func => async (...args) => {
-        const client = await getClient();
-        // lazily initialize the MFS folder
-        if (!(await initializedFolder)) {
-            initializedFolder =  initializeMFSFolder(client, initialRootCID)
-        }
+    // calls the function with client and absolute path and finally return the root CID
+    const returnRootCID = func => async (path="/", ...args) => {
+
+        const client = await getClient()
+
+        await initializedFolder
+        debug("join", mfsRoot, path)
+        const tmpPath = join(mfsRoot, path)
 
         // execute function
-        await func(...args);
+        await func(client, tmpPath, ...args)
 
         // return the root CID
-        return await getCID(client, mfsRoot);
+        return await getCID(client, mfsRoot)
     };
 
     const methods = {
-        add: returnRootCID(async (path, content, options) => await ipfsAdd(await getClient(), joinPath(path), content, options)),
-        addFile: returnRootCID(async (path, localPath, options) => await ipfsAddFile(await getClient(), joinPath(path), localPath, options)),
-        rm: returnRootCID(async (path) => await ipfsRm(await getClient(), joinPath(path))),
-        mkDir: returnRootCID(async (path) => await ipfsMkdir(await getClient(), joinPath(path))),
-        cid: async () => {
-            if (!await initializedFolder)
-                return null;
-            return await getCID(await getClient(), mfsRoot)
-        },
+        add: returnRootCID(ipfsAdd),
+        addFile: returnRootCID(ipfsAddFile),
+        rm: returnRootCID(ipfsRm),
+        mkDir: returnRootCID(ipfsMkdir),
+        cid: returnRootCID(noop),
         close: async () => {
             debug("closing input writer. Deleting", mfsRoot)
-            if (await initializedFolder)
-                await ipfsRm(await getClient(), mfsRoot)
+            await initializedFolder
+            await ipfsRm(await getClient(), mfsRoot)
         },
         pin: async cid => await ipfsPin(await getClient(), cid)
     }

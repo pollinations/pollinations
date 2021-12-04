@@ -36178,7 +36178,7 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${Math.round(Math.random() * 1e6)}`;
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 var localIPFSAvailable = async () => {
   return false;
 };

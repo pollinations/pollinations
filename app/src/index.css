@@ -60,8 +60,8 @@ a {
 }
 
 .MuiCardHeader-root{
-  /* background-color: rgb(62, 0, 156) !important; */
-  background: linear-gradient(0deg, transparent 0%, rgba(62,0,156,1) 100%) !important; 
+  background-color: rgb(62, 0, 156) !important; 
+  /* background: linear-gradient(0deg, transparent 0%, rgba(62,0,156,1) 100%) !important;  */
 }
 
 

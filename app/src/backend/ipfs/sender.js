@@ -55,9 +55,9 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       debug("Changed files", changed)
       processing = new Promise(resolve => done = resolve)
 
-      const lastChanged = deduplicateChangedFiles(changed)
-      for (const { event, path: file } of lastChanged) {
-      // await Promise.all(lastChanged.map(async ({ event, path: file }) => {
+      const lastChanged = changed; // deduplicateChangedFiles(changed)
+      //for (const { event, path: file } of lastChanged) {
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
 
         // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
@@ -77,7 +77,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
           await rm(ipfsPath)
 
         }
-      }
+      }))
       
 
       const newContentID = await cid();
@@ -139,6 +139,9 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   })
 
   watcher.on("all", async (event, path) => {
+    
+    debug("got watcher event", event, path);
+
     if (path !== '') {
 
       const lastChanged = last(changeQueue)

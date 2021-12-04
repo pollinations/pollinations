@@ -36363,8 +36363,8 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
     for await (const changed of changedFiles$) {
       debug9("Changed files", changed);
       processing = new Promise((resolve2) => done = resolve2);
-      const lastChanged = deduplicateChangedFiles(changed);
-      for (const { event, path: file } of lastChanged) {
+      const lastChanged = changed;
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
         debug9("Local:", event, file);
         const localPath = (0, import_path5.join)(watchPath, file);
         const ipfsPath = file;
@@ -36378,7 +36378,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           debug9("removing", file, event);
           await rm(ipfsPath);
         }
-      }
+      }));
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
@@ -36419,6 +36419,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     channel$.push(files);
   });
   watcher.on("all", async (event, path) => {
+    debug9("got watcher event", event, path);
     if (path !== "") {
       const lastChanged = (0, import_ramda3.last)(changeQueue);
       if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
@@ -36440,7 +36441,6 @@ var executeOnce = (f) => {
     }
   };
 };
-var deduplicateChangedFiles = (changed) => Object.entries(changed.reduce((lastChange, { event, path }) => __spreadProps(__spreadValues({}, lastChange), { [path]: event }), {})).map(([path, event]) => ({ event, path }));
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());

@@ -30316,7 +30316,6 @@ var sendToDiscord = async (message) => {
 };
 
 // src/backend/pinning-cli.js
-var Hook = new webhook.Webhook("https://discord.com/api/webhooks/916931514313351228/oP8RFRfDSqLbFIbroYMpWshXLA-kXcVF9HZ8b2bj2dIjj_5mCjsr2g74C-E4iWV7aXT9");
 var PUBSUB_TOPIC = "done_pollen";
 if (process.argv[2]) {
   const { publish: publish2, close } = publisher(PUBSUB_TOPIC, "");
@@ -30334,7 +30333,8 @@ if (process.argv[2]) {
     }, async (cid) => {
       console.log("pinning result", await pin(cid));
       console.log("Sending to discord");
-      sendToDiscord(cid);
+      await sendToDiscord(`done_pollen: https://pollinations.ai/ipfs/${cid}`);
+      console.log("Sent to discord");
     }, "");
     console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and pinning`);
   })();

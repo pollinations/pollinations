@@ -1059,10 +1059,7 @@ var require_base = __commonJS({
         }
       }
       or(decoder) {
-        const decoders = __spreadValues({
-          [this.prefix]: this
-        }, decoder.decoders || { [decoder.prefix]: decoder });
-        return new ComposedDecoder2(decoders);
+        return or2(this, decoder);
       }
     };
     var ComposedDecoder2 = class {
@@ -1070,8 +1067,7 @@ var require_base = __commonJS({
         this.decoders = decoders;
       }
       or(decoder) {
-        const other = decoder.decoders || { [decoder.prefix]: decoder };
-        return new ComposedDecoder2(__spreadValues(__spreadValues({}, this.decoders), other));
+        return or2(this, decoder);
       }
       decode(input) {
         const prefix = input[0];
@@ -1083,6 +1079,7 @@ var require_base = __commonJS({
         }
       }
     };
+    var or2 = (left, right) => new ComposedDecoder2(__spreadValues(__spreadValues({}, left.decoders || { [left.prefix]: left }), right.decoders || { [right.prefix]: right }));
     var Codec2 = class {
       constructor(name5, prefix, baseEncode, baseDecode) {
         this.name = name5;
@@ -1178,6 +1175,7 @@ var require_base = __commonJS({
     exports2.Codec = Codec2;
     exports2.baseX = baseX2;
     exports2.from = from3;
+    exports2.or = or2;
     exports2.rfc4648 = rfc46482;
   }
 });
@@ -2817,7 +2815,7 @@ var require_src3 = __commonJS({
     var varint4 = require_varint3();
     var { CID: CID2 } = require_cid();
     var { base58btc: base58btc2 } = require_base58();
-    var errCode11 = require_err_code();
+    var errCode12 = require_err_code();
     var inspect = Symbol.for("nodejs.util.inspect.custom");
     var { toString: uint8ArrayToString } = require_to_string();
     var { equals: uint8ArrayEquals } = require_equals();
@@ -2955,7 +2953,7 @@ var require_src3 = __commonJS({
         }
         const resolver = resolvers.get(resolvableProto.name);
         if (!resolver) {
-          throw errCode11(new Error(`no available resolver for ${resolvableProto.name}`), "ERR_NO_AVAILABLE_RESOLVER");
+          throw errCode12(new Error(`no available resolver for ${resolvableProto.name}`), "ERR_NO_AVAILABLE_RESOLVER");
         }
         const addresses = await resolver(this);
         return addresses.map((a) => new Multiaddr18(a));
@@ -7561,7 +7559,7 @@ var require_lib2 = __commonJS({
       electron = require("electron");
     }
     var isReady = electron && electron.app && !electron.app.isReady() ? new Promise((resolve2) => electron.app.once("ready", resolve2)) : Promise.resolve();
-    function fetch(url$1, opts = {}) {
+    function fetch2(url$1, opts = {}) {
       return isReady.then(() => new Promise((resolve2, reject) => {
         const request = new Request(url$1, opts);
         const options = getNodeRequestOptions(request);
@@ -7650,7 +7648,7 @@ var require_lib2 = __commonJS({
           if (request.signal) {
             request.signal.removeEventListener("abort", abortRequest);
           }
-          if (fetch.isRedirect(res.statusCode) && request.redirect !== "manual") {
+          if (fetch2.isRedirect(res.statusCode) && request.redirect !== "manual") {
             if (request.redirect === "error") {
               reject(new FetchError(`redirect mode is set to error: ${request.url}`, "no-redirect"));
               return;
@@ -7669,7 +7667,7 @@ var require_lib2 = __commonJS({
               request.headers.delete("content-length");
             }
             request.counter++;
-            resolve2(fetch(url.resolve(request.url, res.headers.location), request));
+            resolve2(fetch2(url.resolve(request.url, res.headers.location), request));
             return;
           }
           const headers2 = new Headers();
@@ -7738,12 +7736,12 @@ var require_lib2 = __commonJS({
         writeToStream(req, request);
       }));
     }
-    fetch.isRedirect = (code5) => code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
+    fetch2.isRedirect = (code5) => code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
     exports2.FetchError = FetchError;
     exports2.Headers = Headers;
     exports2.Request = Request;
     exports2.Response = Response2;
-    exports2["default"] = fetch;
+    exports2["default"] = fetch2;
   }
 });
 
@@ -10396,12 +10394,12 @@ var require_lib4 = __commonJS({
     AbortError.prototype.name = "AbortError";
     var PassThrough$1 = Stream.PassThrough;
     var resolve_url = Url.resolve;
-    function fetch(url, opts) {
-      if (!fetch.Promise) {
+    function fetch2(url, opts) {
+      if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch.Promise;
-      return new fetch.Promise(function(resolve2, reject) {
+      Body.Promise = fetch2.Promise;
+      return new fetch2.Promise(function(resolve2, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https2 : http2).request;
@@ -10451,7 +10449,7 @@ var require_lib4 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch.isRedirect(res.statusCode)) {
+          if (fetch2.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
             const locationURL = location2 === null ? null : resolve_url(request.url, location2);
             switch (request.redirect) {
@@ -10499,7 +10497,7 @@ var require_lib4 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve2(fetch(new Request(locationURL, requestOpts)));
+                resolve2(fetch2(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -10559,11 +10557,11 @@ var require_lib4 = __commonJS({
         writeToStream(req, request);
       });
     }
-    fetch.isRedirect = function(code5) {
+    fetch2.isRedirect = function(code5) {
       return code5 === 301 || code5 === 302 || code5 === 303 || code5 === 307 || code5 === 308;
     };
-    fetch.Promise = global.Promise;
-    module2.exports = exports2 = fetch;
+    fetch2.Promise = global.Promise;
+    module2.exports = exports2 = fetch2;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -10613,7 +10611,7 @@ var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
     var { TimeoutError, AbortError } = require_error();
-    var { Response: Response2, Request, Headers, default: fetch } = require_fetch();
+    var { Response: Response2, Request, Headers, default: fetch2 } = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
@@ -10671,7 +10669,7 @@ var require_fetch_browser = __commonJS({
         request.send(options.body);
       });
     };
-    var fetchWithStreaming = fetch;
+    var fetchWithStreaming = fetch2;
     var fetchWith = (url, options = {}) => options.onUploadProgress != null ? fetchWithProgress(url, options) : fetchWithStreaming(url, options);
     var parseHeaders = (input) => {
       const headers = new Headers();
@@ -10965,7 +10963,7 @@ var require_fetch_node = __commonJS({
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
     var toStream2 = require_src5();
     var { Buffer: Buffer2 } = require("buffer");
-    var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
+    var fetch2 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
       const { onUploadProgress, body } = options;
       if (onUploadProgress && body) {
@@ -11009,7 +11007,7 @@ var require_fetch_node = __commonJS({
       }
     };
     module2.exports = {
-      fetch,
+      fetch: fetch2,
       Request,
       Headers
     };
@@ -11803,7 +11801,7 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var { fetch, Request, Headers } = require_fetch2();
+    var { fetch: fetch2, Request, Headers } = require_fetch2();
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
@@ -11872,7 +11870,7 @@ var require_http = __commonJS({
         }
         const abortController = new AbortController13();
         const signal = anySignal2([abortController.signal, opts.signal]);
-        const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
+        const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
           timeout: void 0,
           headers
@@ -14350,11 +14348,11 @@ var require_glob_source = __commonJS({
     var fs = require("fs");
     var glob = require_it_glob();
     var Path = require("path");
-    var errCode11 = require_err_code();
+    var errCode12 = require_err_code();
     module2.exports = async function* globSource2(cwd, pattern, options) {
       options = options || {};
       if (typeof pattern !== "string") {
-        throw errCode11(new Error("Pattern must be a string"), "ERR_INVALID_PATH", { pattern });
+        throw errCode12(new Error("Pattern must be a string"), "ERR_INVALID_PATH", { pattern });
       }
       if (!Path.isAbsolute(cwd)) {
         cwd = Path.resolve(process.cwd(), cwd);
@@ -17562,10 +17560,10 @@ var require_dropWhile = __commonJS({
 var require_or = __commonJS({
   "node_modules/ramda/src/or.js"(exports2, module2) {
     var _curry2 = require_curry2();
-    var or = /* @__PURE__ */ _curry2(function or2(a, b) {
+    var or2 = /* @__PURE__ */ _curry2(function or3(a, b) {
       return a || b;
     });
-    module2.exports = or;
+    module2.exports = or2;
   }
 });
 
@@ -17575,11 +17573,11 @@ var require_either = __commonJS({
     var _curry2 = require_curry2();
     var _isFunction = require_isFunction();
     var lift = require_lift();
-    var or = require_or();
+    var or2 = require_or();
     var either = /* @__PURE__ */ _curry2(function either2(f, g) {
       return _isFunction(f) ? function _either() {
         return f.apply(this, arguments) || g.apply(this, arguments);
-      } : lift(or)(f, g);
+      } : lift(or2)(f, g);
     });
     module2.exports = either;
   }
@@ -22826,10 +22824,7 @@ var Decoder = class {
     }
   }
   or(decoder) {
-    const decoders = __spreadValues({
-      [this.prefix]: this
-    }, decoder.decoders || { [decoder.prefix]: decoder });
-    return new ComposedDecoder(decoders);
+    return or(this, decoder);
   }
 };
 var ComposedDecoder = class {
@@ -22837,8 +22832,7 @@ var ComposedDecoder = class {
     this.decoders = decoders;
   }
   or(decoder) {
-    const other = decoder.decoders || { [decoder.prefix]: decoder };
-    return new ComposedDecoder(__spreadValues(__spreadValues({}, this.decoders), other));
+    return or(this, decoder);
   }
   decode(input) {
     const prefix = input[0];
@@ -22850,6 +22844,7 @@ var ComposedDecoder = class {
     }
   }
 };
+var or = (left, right) => new ComposedDecoder(__spreadValues(__spreadValues({}, left.decoders || { [left.prefix]: left }), right.decoders || { [right.prefix]: right }));
 var Codec = class {
   constructor(name5, prefix, baseEncode, baseDecode) {
     this.name = name5;
@@ -25932,12 +25927,12 @@ var Client = class extends import_http2.default {
     delete this.put;
     delete this.delete;
     delete this.options;
-    const fetch = this.fetch;
+    const fetch2 = this.fetch;
     this.fetch = (resource, options2 = {}) => {
       if (typeof resource === "string" && !resource.startsWith("/")) {
         resource = `${opts.url}/${resource}`;
       }
-      return fetch.call(this, resource, merge(options2, { method: "POST" }));
+      return fetch2.call(this, resource, merge(options2, { method: "POST" }));
     };
   }
 };
@@ -26206,21 +26201,18 @@ function isFileObject(obj) {
 var isReadableStream = (value) => value && typeof value.getReader === "function";
 
 // node_modules/ipfs-core-utils/esm/src/files/normalise-content.js
-async function normaliseContent(input) {
-  return toAsyncGenerator(input);
+async function* toAsyncIterable(thing) {
+  yield thing;
 }
-async function* toAsyncGenerator(input) {
+async function normaliseContent(input) {
   if (isBytes(input)) {
-    yield toBytes(input);
-    return;
+    return toAsyncIterable(toBytes(input));
   }
   if (typeof input === "string" || input instanceof String) {
-    yield toBytes(input.toString());
-    return;
+    return toAsyncIterable(toBytes(input.toString()));
   }
   if (isBlob(input)) {
-    yield* (0, import_blob_to_it.default)(input);
-    return;
+    return (0, import_blob_to_it.default)(input);
   }
   if (isReadableStream(input)) {
     input = (0, import_browser_readablestream_to_it.default)(input);
@@ -26229,17 +26221,14 @@ async function* toAsyncGenerator(input) {
     const peekable = (0, import_it_peekable.default)(input);
     const { value, done } = await peekable.peek();
     if (done) {
-      yield* [];
-      return;
+      return toAsyncIterable(new Uint8Array(0));
     }
     peekable.push(value);
     if (Number.isInteger(value)) {
-      yield Uint8Array.from(await (0, import_it_all.default)(peekable));
-      return;
+      return toAsyncIterable(Uint8Array.from(await (0, import_it_all.default)(peekable)));
     }
     if (isBytes(value) || typeof value === "string" || value instanceof String) {
-      yield* (0, import_it_map.default)(peekable, toBytes);
-      return;
+      return (0, import_it_map.default)(peekable, toBytes);
     }
   }
   throw (0, import_err_code2.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
@@ -26260,7 +26249,7 @@ function toBytes(chunk) {
   return fromString3(chunk.toString());
 }
 
-// node_modules/ipfs-core-utils/esm/src/files/normalise.js
+// node_modules/ipfs-core-utils/esm/src/files/normalise-candidate-multiple.js
 var import_err_code4 = __toModule(require_err_code());
 var import_browser_readablestream_to_it2 = __toModule(require_browser_readablestream_to_it());
 var import_it_peekable2 = __toModule(require_it_peekable());
@@ -26745,18 +26734,10 @@ function parseMtime2(input) {
   return mtime;
 }
 
-// node_modules/ipfs-core-utils/esm/src/files/normalise.js
-async function* normalise(input, normaliseContent3) {
-  if (input === null || input === void 0) {
-    throw (0, import_err_code4.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
-  }
-  if (typeof input === "string" || input instanceof String) {
-    yield toFileObject(input.toString(), normaliseContent3);
-    return;
-  }
-  if (isBytes(input) || isBlob(input)) {
-    yield toFileObject(input, normaliseContent3);
-    return;
+// node_modules/ipfs-core-utils/esm/src/files/normalise-candidate-multiple.js
+async function* normaliseCandidateMultiple(input, normaliseContent3) {
+  if (typeof input === "string" || input instanceof String || isBytes(input) || isBlob(input) || input._readableState) {
+    throw (0, import_err_code4.default)(new Error("Unexpected input: single item passed - if you are using ipfs.addAll, please use ipfs.add instead"), "ERR_UNEXPECTED_INPUT");
   }
   if (isReadableStream(input)) {
     input = (0, import_browser_readablestream_to_it2.default)(input);
@@ -26769,26 +26750,24 @@ async function* normalise(input, normaliseContent3) {
       return;
     }
     peekable.push(value);
-    if (Number.isInteger(value) || isBytes(value)) {
-      yield toFileObject(peekable, normaliseContent3);
-      return;
+    if (Number.isInteger(value)) {
+      throw (0, import_err_code4.default)(new Error("Unexpected input: single item passed - if you are using ipfs.addAll, please use ipfs.add instead"), "ERR_UNEXPECTED_INPUT");
     }
     if (value._readableState) {
       yield* (0, import_it_map2.default)(peekable, (value2) => toFileObject({ content: value2 }, normaliseContent3));
       return;
     }
-    if (isFileObject(value) || isBlob(value) || typeof value === "string" || value instanceof String) {
-      yield* (0, import_it_map2.default)(peekable, (value2) => toFileObject(value2, normaliseContent3));
+    if (isBytes(value)) {
+      yield toFileObject({ content: peekable }, normaliseContent3);
       return;
     }
-    if (value[Symbol.iterator] || value[Symbol.asyncIterator] || isReadableStream(value)) {
+    if (isFileObject(value) || value[Symbol.iterator] || value[Symbol.asyncIterator] || isReadableStream(value) || isBlob(value)) {
       yield* (0, import_it_map2.default)(peekable, (value2) => toFileObject(value2, normaliseContent3));
       return;
     }
   }
   if (isFileObject(input)) {
-    yield toFileObject(input, normaliseContent3);
-    return;
+    throw (0, import_err_code4.default)(new Error("Unexpected input: single item passed - if you are using ipfs.addAll, please use ipfs.add instead"), "ERR_UNEXPECTED_INPUT");
   }
   throw (0, import_err_code4.default)(new Error("Unexpected input: " + typeof input), "ERR_UNEXPECTED_INPUT");
 }
@@ -26807,9 +26786,9 @@ async function toFileObject(input, normaliseContent3) {
   return file;
 }
 
-// node_modules/ipfs-core-utils/esm/src/files/normalise-input.js
+// node_modules/ipfs-core-utils/esm/src/files/normalise-input-multiple.js
 function normaliseInput(input) {
-  return normalise(input, normaliseContent);
+  return normaliseCandidateMultiple(input, normaliseContent);
 }
 
 // node_modules/nanoid/index.js
@@ -26856,13 +26835,14 @@ function modeToString2(mode) {
 // node_modules/ipfs-core-utils/esm/src/multipart-request.node.js
 var import_it_to_stream = __toModule(require_src5());
 var import_debug2 = __toModule(require_src());
+var import_it_peekable3 = __toModule(require_it_peekable());
 var merge2 = merge_options_default.bind({ ignoreUndefined: true });
 var log2 = (0, import_debug2.default)("ipfs:core-utils:multipart-request");
 async function multipartRequest(source, abortController, headers = {}, boundary = `-----------------------------${nanoid()}`) {
   async function* streamFiles(source2) {
     try {
       let index = 0;
-      for await (const { content, path, mode, mtime } of normaliseInput(source2)) {
+      for await (const { content, path, mode, mtime } of source2) {
         let fileSuffix = "";
         const type = content ? "file" : "dir";
         if (index > 0) {
@@ -26905,17 +26885,22 @@ async function multipartRequest(source, abortController, headers = {}, boundary 
 `;
     }
   }
+  const peekable = (0, import_it_peekable3.default)(normaliseInput(source));
+  const { value, done } = await peekable.peek();
+  if (!done) {
+    peekable.push(value);
+  }
   return {
     parts: null,
     total: -1,
     headers: merge2(headers, { "Content-Type": `multipart/form-data; boundary=${boundary}` }),
-    body: await (0, import_it_to_stream.default)(streamFiles(source))
+    body: (0, import_it_to_stream.default)(streamFiles(peekable))
   };
 }
 
 // node_modules/ipfs-core-utils/esm/src/files/normalise-content.browser.js
 var import_err_code5 = __toModule(require_err_code());
-var import_it_peekable3 = __toModule(require_it_peekable());
+var import_it_peekable4 = __toModule(require_it_peekable());
 var import_browser_readablestream_to_it3 = __toModule(require_browser_readablestream_to_it());
 var import_it_all2 = __toModule(require_it_all());
 async function normaliseContent2(input) {
@@ -26932,7 +26917,7 @@ async function normaliseContent2(input) {
     input = (0, import_browser_readablestream_to_it3.default)(input);
   }
   if (Symbol.iterator in input || Symbol.asyncIterator in input) {
-    const peekable = (0, import_it_peekable3.default)(input);
+    const peekable = (0, import_it_peekable4.default)(input);
     const { value, done } = await peekable.peek();
     if (done) {
       return itToBlob(peekable);
@@ -26955,9 +26940,9 @@ async function itToBlob(stream2) {
   return new Blob(parts);
 }
 
-// node_modules/ipfs-core-utils/esm/src/files/normalise-input.browser.js
+// node_modules/ipfs-core-utils/esm/src/files/normalise-input-multiple.browser.js
 function normaliseInput2(input) {
-  return normalise(input, normaliseContent2);
+  return normaliseCandidateMultiple(input, normaliseContent2, true);
 }
 
 // node_modules/ipfs-core-utils/esm/src/multipart-request.browser.js
@@ -27040,7 +27025,7 @@ var createPut = configure((api) => {
       const response = await api.post("block/put", __spreadValues({
         signal,
         searchParams: toUrlSearchParams(options)
-      }, await multipartRequest3(data, controller, options.headers)));
+      }, await multipartRequest3([data], controller, options.headers)));
       res = await response.json();
     } catch (err) {
       if (options.format === "dag-pb") {
@@ -27312,7 +27297,7 @@ var createReplace = configure((api) => {
     const res = await api.post("config/replace", __spreadValues({
       signal,
       searchParams: toUrlSearchParams(options)
-    }, await multipartRequest3(fromString3(JSON.stringify(config)), controller, options.headers)));
+    }, await multipartRequest3([fromString3(JSON.stringify(config))], controller, options.headers)));
     await res.text();
   };
   return replace;
@@ -27503,7 +27488,7 @@ var createPut2 = (codecs2, options) => {
         timeout: settings.timeout,
         signal,
         searchParams: toUrlSearchParams(settings)
-      }, await multipartRequest3(serialized, controller, settings.headers)));
+      }, await multipartRequest3([serialized], controller, settings.headers)));
       const data = await res.json();
       return CID.parse(data.Cid["/"]);
     };
@@ -27668,7 +27653,7 @@ var createPut3 = configure((api) => {
       searchParams: toUrlSearchParams(__spreadValues({
         arg: toString3(key)
       }, options))
-    }, await multipartRequest3(value, controller, options.headers)));
+    }, await multipartRequest3([value], controller, options.headers)));
     for await (let message of res.ndjson()) {
       message = objectToCamel(message);
       if (message.responses) {
@@ -27985,12 +27970,12 @@ var createWrite = configure((api) => {
         streamChannels: true,
         count: options.length
       }, options))
-    }, await multipartRequest3({
+    }, await multipartRequest3([{
       content: input,
       path: "arg",
       mode: modeToString(options.mode),
       mtime: parseMtime(options.mtime)
-    }, controller, options.headers)));
+    }], controller, options.headers)));
     await res.text();
   }
   return write;
@@ -28417,7 +28402,7 @@ var createAppendData = configure((api) => {
       searchParams: toUrlSearchParams(__spreadValues({
         arg: `${cid}`
       }, options))
-    }, await multipartRequest3(data, controller, options.headers)));
+    }, await multipartRequest3([data], controller, options.headers)));
     const { Hash } = await res.json();
     return CID.parse(Hash);
   }
@@ -28454,7 +28439,7 @@ var createSetData = configure((api) => {
       searchParams: toUrlSearchParams(__spreadValues({
         arg: [`${cid}`]
       }, options))
-    }, await multipartRequest3(data, controller, options.headers)));
+    }, await multipartRequest3([data], controller, options.headers)));
     const { Hash } = await res.json();
     return CID.parse(Hash);
   }
@@ -28968,7 +28953,7 @@ var createPublish2 = configure((api) => {
     const res = await api.post("pubsub/pub", __spreadValues({
       signal,
       searchParams
-    }, await multipartRequest3(data, controller, options.headers)));
+    }, await multipartRequest3([data], controller, options.headers)));
     await res.text();
   }
   return publish2;
@@ -29407,11 +29392,72 @@ function toCoreInterface5({ name: name5, hash, size, mode, mtime, mtimeNsecs }) 
 
 // node_modules/ipfs-http-client/esm/src/add.js
 var import_it_last4 = __toModule(require_it_last());
+
+// node_modules/ipfs-core-utils/esm/src/files/normalise-candidate-single.js
+var import_err_code11 = __toModule(require_err_code());
+var import_browser_readablestream_to_it4 = __toModule(require_browser_readablestream_to_it());
+var import_it_peekable5 = __toModule(require_it_peekable());
+async function* normaliseCandidateSingle(input, normaliseContent3) {
+  if (input === null || input === void 0) {
+    throw (0, import_err_code11.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
+  }
+  if (typeof input === "string" || input instanceof String) {
+    yield toFileObject2(input.toString(), normaliseContent3);
+    return;
+  }
+  if (isBytes(input) || isBlob(input)) {
+    yield toFileObject2(input, normaliseContent3);
+    return;
+  }
+  if (isReadableStream(input)) {
+    input = (0, import_browser_readablestream_to_it4.default)(input);
+  }
+  if (Symbol.iterator in input || Symbol.asyncIterator in input) {
+    const peekable = (0, import_it_peekable5.default)(input);
+    const { value, done } = await peekable.peek();
+    if (done) {
+      yield { content: [] };
+      return;
+    }
+    peekable.push(value);
+    if (Number.isInteger(value) || isBytes(value) || typeof value === "string" || value instanceof String) {
+      yield toFileObject2(peekable, normaliseContent3);
+      return;
+    }
+    throw (0, import_err_code11.default)(new Error("Unexpected input: multiple items passed - if you are using ipfs.add, please use ipfs.addAll instead"), "ERR_UNEXPECTED_INPUT");
+  }
+  if (isFileObject(input)) {
+    yield toFileObject2(input, normaliseContent3);
+    return;
+  }
+  throw (0, import_err_code11.default)(new Error('Unexpected input: cannot convert "' + typeof input + '" into ImportCandidate'), "ERR_UNEXPECTED_INPUT");
+}
+async function toFileObject2(input, normaliseContent3) {
+  const { path, mode, mtime, content } = input;
+  const file = {
+    path: path || "",
+    mode: parseMode(mode),
+    mtime: parseMtime2(mtime)
+  };
+  if (content) {
+    file.content = await normaliseContent3(content);
+  } else if (!path) {
+    file.content = await normaliseContent3(input);
+  }
+  return file;
+}
+
+// node_modules/ipfs-core-utils/esm/src/files/normalise-input-single.js
+function normaliseInput4(input) {
+  return normaliseCandidateSingle(input, normaliseContent);
+}
+
+// node_modules/ipfs-http-client/esm/src/add.js
 function createAdd5(options) {
   const all4 = createAddAll2(options);
   return configure(() => {
     async function add(input, options2 = {}) {
-      return await (0, import_it_last4.default)(all4(input, options2));
+      return await (0, import_it_last4.default)(all4(normaliseInput4(input), options2));
     }
     return add;
   })(options);
@@ -29644,10 +29690,10 @@ var createResolve3 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/start.js
-var import_err_code11 = __toModule(require_err_code());
+var import_err_code12 = __toModule(require_err_code());
 var createStart = configure((api) => {
   const start = async (options = {}) => {
-    throw (0, import_err_code11.default)(new Error("Not implemented"), "ERR_NOT_IMPLEMENTED");
+    throw (0, import_err_code12.default)(new Error("Not implemented"), "ERR_NOT_IMPLEMENTED");
   };
   return start;
 });
@@ -30250,7 +30296,27 @@ async function processFile({ path, cid }, rootPath, { get }) {
   return destPath;
 }
 
+// src/backend/sendDiscord.js
+var import_node_fetch = __toModule(require_lib4());
+var sendToDiscord = async (message) => {
+  const msgToDiscord = {
+    "username": "pollinations",
+    "avatar_url": "https://i.imgur.com/4M34hi2.png",
+    "content": message
+  };
+  const result = await (0, import_node_fetch.default)("https://discord.com/api/webhooks/916931514313351228/oP8RFRfDSqLbFIbroYMpWshXLA-kXcVF9HZ8b2bj2dIjj_5mCjsr2g74C-E4iWV7aXT9", {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(msgToDiscord)
+  });
+  console.log(await result.text());
+};
+
 // src/backend/pinning-cli.js
+var Hook = new webhook.Webhook("https://discord.com/api/webhooks/916931514313351228/oP8RFRfDSqLbFIbroYMpWshXLA-kXcVF9HZ8b2bj2dIjj_5mCjsr2g74C-E4iWV7aXT9");
 var PUBSUB_TOPIC = "done_pollen";
 if (process.argv[2]) {
   const { publish: publish2, close } = publisher(PUBSUB_TOPIC, "");
@@ -30267,6 +30333,8 @@ if (process.argv[2]) {
       nodeid: "done_pollen"
     }, async (cid) => {
       console.log("pinning result", await pin(cid));
+      console.log("Sending to discord");
+      sendToDiscord(cid);
     }, "");
     console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and pinning`);
   })();

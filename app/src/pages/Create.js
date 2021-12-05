@@ -99,7 +99,7 @@ const NotebookDescription = ( { metadata } ) => {
     <Box maxWidth="70%">
     <Paper variant="outlined" elevation={0} >
       <Box m={2}>
-      <Typography variant="h6" gutterBottom>Explanation</Typography>
+      <Typography variant="h5" gutterBottom>More information</Typography>
       <Typography color="textSecondary" style={{fontSize:"90%"}} >
         <Markdown children={metadata.description}/>
       </Typography>

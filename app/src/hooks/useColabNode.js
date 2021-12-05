@@ -33,7 +33,7 @@ const useColabNode = () => {
                 updateNode({ nodeID, gpu, connected: null })
             }
         });
-    }, []);
+    }, [updateNode]);
 
     useEffect(() => {
         let nodeID = node?.nodeID

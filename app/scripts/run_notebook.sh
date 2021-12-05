@@ -104,13 +104,13 @@ echo "🐝: Sleeping 10 seconds"
 sleep 10
 
 
+# --- Pin ---
+CID=$( tail -n 1 /content/cid )
+echo "🐝: Pinning $CID"
+node /usr/local/bin/pin.js $CID
 
-
-# --- Pin & Post if run successfulk ---
+# --- Post if run successfulk ---
 if [[ "$RUN_COUNT" < 3  ]]; then
-    CID=$( tail -n 1 /content/cid )
-    echo "🐝: Pinning $CID"
-    node /usr/local/bin/pin.js $CID
     echo "🐝: Posting $CID to social media"
     node /usr/local/bin/social_post.js $CID
 fi

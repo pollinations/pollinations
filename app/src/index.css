@@ -64,6 +64,10 @@ a {
   /* background: linear-gradient(0deg, transparent 0%, rgba(62,0,156,1) 100%) !important;  */
 }
 
+.MuiPaper-root {
+  background-color: transparent !important; 
+  /* background: linear-gradient(0deg, transparent 0%, rgba(62,0,156,1) 100%) !important;  */
+}
 
 .noMargin{
   margin: 0 !important;

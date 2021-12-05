@@ -15,6 +15,7 @@ import { SEO } from "../components/Helmet";
 import { SocialPostStatus } from "../components/Social";
 import Acordion from "../components/Acordion";
 import NotebookTitle from "../components/NotebookTitle";
+import { Button, Grid, Paper } from "@material-ui/core";
 
 const debug = Debug("Model");
 
@@ -49,24 +50,34 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
 
         <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
         {/* control panel */}
-        <NotebookTitle metadata={metadata} />
-        {/* just in case */}
-        <NotebookDescription metadata={metadata}/>
-        
 
-        {/* inputs */}
-        <div style={{ width: '100%' }}>
+        {/* just in case */}
+            {/* inputs */}
+           
           {
              !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.</Alert>
           }
-          <FormView
-            input={ipfs?.input}
-            connected={connected}
-            metadata={metadata}
-            onSubmit={dispatchForm}
-            onCancel={cancelForm}
-          />
-        </div>
+          <Grid container spacing={{ xs: 12, md: 5, sm:2 }} columns={{ xs: 2, sm: 2, md: 1 }}>
+              <Grid md={6}>
+              <NotebookTitle metadata={metadata} /> 
+                <FormView
+                  input={ipfs?.input}
+                  connected={connected}
+                  metadata={metadata}
+                  onSubmit={dispatchForm}
+                  onCancel={cancelForm}
+                />
+              </Grid>
+
+        <Grid xs={12} md={6} align="right">
+     
+        <NotebookDescription metadata={metadata}/>
+
+        </Grid>
+        </Grid>
+        
+
+
 
         {/* previews */}
         {ipfs.output && <div >
@@ -85,12 +96,17 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
 const NotebookDescription = ( { metadata } ) => {
   if (metadata === null) return null
   return (
-  <Acordion visibleContent='Details'
-    hiddenContent={
-      <Typography color="textSecondary">
+    <Box maxWidth="70%">
+    <Paper variant="outlined" elevation={0} >
+      <Box m={2}>
+      <Typography variant="h6" gutterBottom>Explanation</Typography>
+      <Typography color="textSecondary" style={{fontSize:"90%"}} >
         <Markdown children={metadata.description}/>
-      </Typography>}
-  />);
+      </Typography>
+      </Box>
+      </Paper>
+      </Box>  
+  );
 }
 
 

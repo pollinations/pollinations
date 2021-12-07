@@ -12,6 +12,7 @@ import Box from '@material-ui/core/Box'
 import Typography from "@material-ui/core/Typography"
 import Button from "@material-ui/core/Button"
 import { Link } from "react-router-dom";
+import MediaViewer from "../components/MediaViewer";
 
 // STREAM VIEWER (/n)
 
@@ -67,12 +68,12 @@ export default memo(function ResultViewer({ ipfs }) {
 
         </div>
 
-        <div style={styles.steps}>
-            { // Steps Preview
-              images.map( ([filename, url]) => <img src={url} alt={filename} style={styles.img} /> )
-            }
-        </div> 
-        
+        {/* previews */}
+        {ipfs.output && <div >
+          <MediaViewer output={ipfs.output} contentID={contentID} />
+        </div>
+        }
+
         <div style={{ width: '100%' }}>
           <IpfsLog ipfs={ipfs} contentID={contentID} />
         </div>  

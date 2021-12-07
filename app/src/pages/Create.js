@@ -10,7 +10,7 @@ import Box from "@material-ui/core/Box"
 import Alert from '@material-ui/lab/Alert'
 
 import FormView from '../components/Form'
-import ImageViewer from '../components/MediaViewer'
+import MediaViewer from '../components/MediaViewer'
 import { SEO } from "../components/Helmet";
 import { SocialPostStatus } from "../components/Social";
 import Acordion from "../components/Acordion";
@@ -70,7 +70,7 @@ export default React.memo(function Create({ ipfs, node, onSubmit }) {
 
         {/* previews */}
         {ipfs.output && <div >
-          <ImageViewer output={ipfs.output} contentID={contentID} />
+          <MediaViewer output={ipfs.output} contentID={contentID} />
         </div>
         }
 

@@ -24,6 +24,9 @@ export default memo(function ResultViewer({ ipfs }) {
   debug("ModelViewer CID", contentID);
   debug("ModelViewer IPFS", ipfs);
   const metadata = getNotebookMetadata(ipfs);
+  
+  const primaryInputField = metadata?.primaryInput;
+  const primaryInput = ipfs?.input?.[primaryInputField];
 
   const {images, first} = useMemo(() => {
     return mediaToDisplay(ipfs.output);
@@ -56,16 +59,12 @@ export default memo(function ResultViewer({ ipfs }) {
             : <img alt={first.filename} src={first.url}/>
             }
 
-            <div style={styles.query} children={ 
-            // Input Query
-            ipfs?.input?.text_input && true &&
-            <Typography 
-                variant="h5" 
-                component="h5" 
-                gutterBottom
-                children={`${ipfs?.input[metadata?.primaryInput]}`}
-            /> }/>
+            <div style={styles.query}>
+            <Typography variant="h5" component="h5" gutterBottom> 
+                {primaryInput}
+            </Typography>
 
+            </div>
         </div>
 
         {/* previews */}

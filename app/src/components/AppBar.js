@@ -27,7 +27,7 @@ export default function AppBar() {
 
             <Route exact path='/*' element={
               <RouterLink to={"/"}>
-                pollinations
+                pollinations.ai
               </RouterLink>}
             />
             

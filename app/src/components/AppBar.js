@@ -20,8 +20,8 @@ export default function AppBar() {
           <Routes>
 
             <Route exact path='/c/Anything' element={
-              <RouterLink to={"/"}>
-                about
+              <RouterLink to={"/feed"}>
+                feed
               </RouterLink>}
             />
 

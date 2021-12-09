@@ -78,10 +78,10 @@ export default memo(function ResultViewer({ ipfs }) {
       </Box>
 })
 
-const BigPreview = ({ isVideo, filename, url }) => isVideo ?
+const BigPreview = ({ isVideo, filename, url }) => (isVideo ?
     <video muted autoPlay controls loop alt={filename} src={url}
-    style={{ width: 'calc(100vh - 90px)' }}/>
+    style={{ maxWidth: 'calc(100vh - 90px)' }}/>
     : 
-    <img alt={filename} src={url} />
+    <img alt={filename} src={url} style={{ maxWidth: 'calc(100vh - 90px)' }}/>)
 
 

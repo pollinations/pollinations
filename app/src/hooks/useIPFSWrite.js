@@ -1,46 +1,44 @@
 
- 
-import {useCallback, useEffect, useMemo, useReducer, useState} from "react";
-import { updateInput, getWriter } from "../network/ipfsWebClient";
-import {usePrevious} from 'react-use';
 
 import Debug from "debug";
-import { noop } from "../network/utils";
+import { useCallback } from "react";
+import { getWriter, updateInput } from "../network/ipfsWebClient";
+
 
 const debug = Debug("useIPFSWrite");
 
 export default (ipfs, node) => {
 
     const { publish } = node;
-  
-    const [writer, setWriter] = useState(noop);
 
+    debug("publish", publish)
 
 
 
     const dispatch = useCallback(async inputState => {
-          
-        const cid = ipfs && ipfs[".cid"];
 
-        debug("inputCID", cid);
-        
+        const cid = ipfs && ipfs[".cid"]
+
+        debug("inputCID", cid)
+
         if (!cid)
-            return;
+            return
 
         const writer = getWriter(ipfs);
         debug("dispatching", ipfs)
-        const newContentID = await updateInput(writer, inputState);
+        const newContentID = await updateInput(writer, { ...ipfs.input, ...inputState })
 
-        debug("added input", inputState, "got cid", newContentID, "to state");
+        debug("added input", inputState, "got cid", newContentID, "to state")
 
-        publish(newContentID);
-        
-        await writer.close();
+        debug("publishing with publish function", publish)
+        publish(newContentID)
+
+        await writer.close()
 
         return newContentID;
-        
-    }, [publish, writer, ipfs]);
+
+    }, [publish, ipfs])
 
 
-    return dispatch;
+    return dispatch
 }

@@ -1,8 +1,8 @@
 import Debug from "debug";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { publisher, subscribeCID } from "../network/ipfsPubSub";
 import colabConnectionManager from "../network/localColabConnection";
-import useState from 'react-usestateref';
+
 
 const debug = Debug("useColabNode");
 
@@ -12,11 +12,10 @@ const debug = Debug("useColabNode");
 const useColabNode = () => {
 
 
-    const [node, setNode, nodeRef] = useState({ connected: false, publish: NOOP_PUBLISH })
+    const [node, setNode] = useState({ connected: false, publish: NOOP_PUBLISH })
 
     const updateNode = useCallback(props => {
-        if (!propsSame(node, props))
-            setNode({ ...nodeRef.current, ...props })
+        setNode(node => propsSame(node, props) ? node : ({ ...node, ...props }))
     }, [])
 
     useEffect(() => {

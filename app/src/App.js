@@ -8,11 +8,11 @@ import AppBar from "./components/AppBar"
 import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
+import useIPFSWrite from "./hooks/useIPFSWrite"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
 import Home from "./pages/Home"
 import ResultViewer from "./pages/ResultViewer"
-
 
 
 
@@ -35,13 +35,13 @@ const Pollinations = () => {
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
-        if (node?.nodeID)
+        if (node.nodeID)
             navigate(`/n/${node.nodeID}`)
         else {
-            history.go(0)
+            // history.go(0)
             console.error("For some reason NodeID is not set...", node)
         }
-    }, [node?.nodeID])
+    }, [node.nodeID])
 
     return (<>
         {/* Nav Bar     */}
@@ -73,10 +73,10 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
-    // useEffect(() => {
-    //     if (nodeID)
-    //         overrideNodeID(nodeID)
-    // }, [nodeID])
+    useEffect(() => {
+        if (nodeID)
+            overrideNodeID(nodeID)
+    }, [nodeID])
 
     if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`} />
 
@@ -87,12 +87,20 @@ const ModelRoutes = ({ node, navigateToNode }) => {
     const { contentID } = useParams();
 
     const ipfs = useIPFS(contentID);
+    const dispatchInput = useIPFSWrite(ipfs, node)
+
+    const dispatch = useCallback(async inputs => {
+        debug("dispatching inputs", inputs)
+        const contentID = await dispatchInput(inputs)
+        debug("dispatched Form")
+        navigateToNode(contentID)
+    }, [ipfs.input, node])
 
     return (
         <Routes>
             <Route index element={<Navigate replace to="view" />} />
             <Route path='view' element={<ResultViewer ipfs={ipfs} />} />
-            <Route path='create' element={<Creator ipfs={ipfs} node={node} onSubmit={navigateToNode} />} />
+            <Route path='create' element={<Creator ipfs={ipfs} node={node} dispatch={dispatch} />} />
         </Routes>
     )
 }

@@ -32,11 +32,11 @@ function ImageViewer({output}) {
     debug("first",firstFilename, firstURL)
 
     return (
-        <div style={{width:"100%"}}>
-          <div style={{ maxWidth:'500px', margin: '20px auto' }}>
+        <Box paddingTop='2em'>
+          {/* <div style={{ maxWidth:'500px', margin: '20px auto' }}>
             <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />
             {firstFilename}
-          </div>
+          </div> */}
             
           <GridList cellHeight={200} cols={4}
             children={images.map(([filename, url]) => (
@@ -45,7 +45,7 @@ function ImageViewer({output}) {
               </GridListTile>
             ))}/>
 
-        </div>
+        </Box>
     )
 }
 
@@ -69,7 +69,7 @@ function MarkdownViewer({output}) {
   
 }
 
-export default ({output, contentID}) => <>
+export default ({output, contentID}) => <Box paddingTop='2em'>
     <h3>Output [<Button
         href={getWebURL(`${contentID}/output`)} 
         target="_blank">
@@ -78,6 +78,6 @@ export default ({output, contentID}) => <>
     <ImageViewer output={output}  />
     <MarkdownViewer output={output} />
     <AudioViewer output={output} />
-  </>
+  </Box>
 
 const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1)

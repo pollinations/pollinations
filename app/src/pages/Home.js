@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 
-import Markdown from "markdown-to-jsx"
+import Markdown, { compiler } from "markdown-to-jsx"
 import Debug from "debug"
 
 import { getNotebooks } from "../data/notebooks"
@@ -17,6 +17,8 @@ import RouterLink from "../components/molecules/RouterLink"
 const debug = Debug("home");
 
 export default function Home({ ipfs }) {
+
+  console.error('home', new Date().getSeconds())
 
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
@@ -57,10 +59,12 @@ export default function Home({ ipfs }) {
       }
     </Box>
           
-    <Box display='grid' gridGap='1em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
+    <Box display='grid' gridGap='2em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
       {
         notebookList
-        .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)
+        .map(notebook => 
+          <NotebookCard key={notebook.name} notebook={notebook} />
+        )
       }
     </Box>
   </>
@@ -106,6 +110,8 @@ const HeroSection = props => <Box paddingTop={3}>
 // Component
 
 const NotebookCard = ({notebook}) => {
+    let test = compiler(notebook.description, { wrapper: null })
+
     const {category, name, path, Icon, description} = notebook;
     return  <Box>
         <Card style={{
@@ -115,9 +121,25 @@ const NotebookCard = ({notebook}) => {
         subheader={<Typography className='Lato noMargin' variant="h4" component="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
         title={<Typography className='Lato' variant="h6" component="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
         action={<></>} />
-            <CardContent>
+                        <img src={
+                          test[0]?.props?.src ? 
+                          test[0]?.props?.src 
+                          : test[0]?.props?.children[0]?.props?.src} 
 
-                <Markdown style={{pointerEvents: "none"}}>
+                        style={{width: '100%'}}/>
+
+            <CardContent>
+                            {console.log(description)}
+                <Markdown 
+                options={{
+                  overrides: {
+                      img: {
+                          component: gambiarraImg,
+                          
+                      },
+                  },
+              }}
+              style={{pointerEvents: "none"}}>
                   {description}
                 </Markdown>
 
@@ -125,3 +147,8 @@ const NotebookCard = ({notebook}) => {
         </Card>
     </Box>
 }
+
+// surprise, it's a div instead!
+const gambiarraImg = ({ children, ...props }) => (
+  <div />
+);

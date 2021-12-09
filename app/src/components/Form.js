@@ -1,8 +1,8 @@
-import React, { useCallback } from "react";
+import { Box } from "@material-ui/core";
+import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
-import Button from '@material-ui/core/Button'
 import Debug from "debug";
-import { Box, Paper, Typography } from "@material-ui/core";
+import React from "react";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 
@@ -35,7 +35,7 @@ const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
     // Hacky way to remove default entries for files
     Object.entries(uiSchema).forEach(([field, prop]) => {
         if (prop["ui:widget"] === "file")
-          filledForm[field].default = undefined;
+            filledForm[field].default = undefined;
     });
 
     return <Form
@@ -46,7 +46,7 @@ const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
             onSubmit(formData)
         }}
         disabled={formDisabled}
-        >
+    >
         {/* <FileUpload />  */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
@@ -87,9 +87,9 @@ function getFormInputs(ipfsInput, metadata) {
     ipfsInput = ipfsInput || {};
 
     const propertiesWithSocial = addSocialCheckbox(metadata.form.properties);
-    
+
     return Object.fromEntries(Object.entries(propertiesWithSocial).map(
-        ([formKey, prop]) => [formKey, formKey in ipfsInput ? { ...prop,"enum": prop.enum, "default": ipfsInput[formKey] } : prop]))
+        ([formKey, prop]) => [formKey, formKey in ipfsInput ? { ...prop, "enum": prop.enum, "default": ipfsInput[formKey] } : prop]))
 }
 
 
@@ -108,14 +108,14 @@ const toSchema = (key, props, enabled) => {
         "number": () => "updown",
         "integer": () => "updown"
     };
-    
+
     // Use custom widgets for certain prefixes such as a
     // file uploader for inputs starting with audio_, file_
     const prefixOverride = getPrefixOverride(key);
     debug("after prefix override", prefixOverride);
 
     return {
-        "ui:widget":  prefixOverride ? prefixOverride[1] : typeMappings[props.type](props),
+        "ui:widget": prefixOverride ? prefixOverride[1] : typeMappings[props.type](props),
         "ui_disabled": !enabled
     }
 
@@ -131,7 +131,8 @@ const prefixMappings = {
     "file_": "file",
     "num_": "updown",
     "audio_": "file",
-    "video_": "file"
+    "video_": "file",
+    "image_": "file"
 };
 
 
@@ -151,12 +152,12 @@ function textOrTextarea(defaultVal) {
 //       debug("dropped files", acceptedFiles);
 //       const file = acceptedFiles[0];
 //       const { cid } = await _client.add({content: file.stream(), path: file.path});
-      
-      
+
+
 //     }, []);
 
 //     const {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop})
-  
+
 //     return (<Paper variant={isDragActive ? "outlined":"elevation"}>
 //       <div {...getRootProps()}>
 //         <input {...getInputProps()} />

@@ -18,6 +18,8 @@ const debug = Debug("home");
 
 export default function Home({ ipfs }) {
 
+  console.error('home', new Date().getSeconds())
+
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
 
@@ -60,7 +62,9 @@ export default function Home({ ipfs }) {
     <Box display='grid' gridGap='2em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
       {
         notebookList
-        .map(notebook => <NotebookCard key={notebook.name} notebook={notebook} />)
+        .map(notebook => 
+          <NotebookCard key={notebook.name} notebook={notebook} />
+        )
       }
     </Box>
   </>
@@ -107,7 +111,7 @@ const HeroSection = props => <Box paddingTop={3}>
 
 const NotebookCard = ({notebook}) => {
     let test = compiler(notebook.description, { wrapper: null })
-    console.log(test)
+
     const {category, name, path, Icon, description} = notebook;
     return  <Box>
         <Card style={{
@@ -135,7 +139,7 @@ const NotebookCard = ({notebook}) => {
                       },
                   },
               }}
-              style={{pointerEvents: "none", textOverflow: 'ellipsis', maxHeight: 200}}>
+              style={{pointerEvents: "none"}}>
                   {description}
                 </Markdown>
 

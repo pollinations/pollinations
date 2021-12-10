@@ -13,6 +13,7 @@ import Typography from "@material-ui/core/Typography"
 import Button from "@material-ui/core/Button"
 import { Link } from "react-router-dom";
 import MediaViewer from "../components/MediaViewer";
+import BigPreview from "../components/molecules/BigPreview";
 
 // STREAM VIEWER (/n)
 
@@ -77,11 +78,3 @@ export default memo(function ResultViewer({ ipfs }) {
         
       </Box>
 })
-
-const BigPreview = ({ isVideo, filename, url }) => (isVideo ?
-    <video muted autoPlay controls loop alt={filename} src={url}
-    style={{ maxWidth: 'calc(100vh - 90px)' }}/>
-    : 
-    <img alt={filename} src={url} style={{ maxWidth: 'calc(100vh - 90px)' }}/>)
-
-

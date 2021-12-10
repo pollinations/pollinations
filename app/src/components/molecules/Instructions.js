@@ -1,9 +1,5 @@
-// T
-
 import { Box, List, ListItem, Typography } from "@material-ui/core"
-import Markdown from "markdown-to-jsx"
 import useIPFS from "../../hooks/useIPFS"
-import { getNotebookMetadata } from "../../utils/notebookMetadata"
 import BigPreview from "./BigPreview"
 
 const instructions = 

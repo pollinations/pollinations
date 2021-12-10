@@ -1,9 +1,7 @@
-// T
-
 import Markdown from "markdown-to-jsx"
 
-const instructions = 
-`1. Click on [ LAUNCH GPU ]. A new browser tab will launch.
+const instructions =
+    `1. Click on [ LAUNCH GPU ]. A new browser tab will launch.
 2. In the new tab, click Runtime --> Run All
 3. On the pop-up warning, click "run anyway."
 4. Return to this browser tab.

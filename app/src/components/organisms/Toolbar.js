@@ -56,7 +56,8 @@ const ToolBar = ({ children, node, showNode }) => {
         transition: 'height 0.08s ease-in',
         borderRadius: '10px 10px 0 0',
         backgroundColor: '#222',
-        padding: '0.3em'
+        padding: '0.3em',
+        overflowY: 'auto'
     }} >
         <ToolBarHeader open={open} setOpen={setOpen} node={node} showNode={showNode} />
         <ToolBarContent>

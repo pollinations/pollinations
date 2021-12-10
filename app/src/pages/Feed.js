@@ -11,6 +11,7 @@ import NotebookTitle from "../components/NotebookTitle"
 import { NotebookProgress } from "../components/NotebookProgress"
 import { IpfsLog } from "../components/Logs"
 import MediaViewer from "../components/MediaViewer"
+import BigPreview from "../components/molecules/BigPreview"
 
 const Feed = () => {
     const [cid, setCid] = useState(null)
@@ -32,7 +33,7 @@ const Feed = () => {
     return <>
     <Box my={2} marginBottom='5em'>
       
-      
+      <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
 
       <Box marginTop='2em' minWidth='100%' display='flex' 
           justifyContent={!contentID ? 'center' : 'space-around'} alignItems='center' flexWrap='wrap'>
@@ -65,13 +66,3 @@ const Feed = () => {
 }
 
 export default Feed
-
-const BigPreview = ({ isVideo, filename, url }) => {
-
-  if (!url) return <div style={{minHeight:'80vh'}}/>
-
-  if (!isVideo) return <img alt={filename} src={url} style={{height: '80vh'}} />
-  
-  return <video muted autoPlay controls loop alt={filename} src={url}
-  style={{ width: 'calc(100vh - 90px)' }}/>
-}

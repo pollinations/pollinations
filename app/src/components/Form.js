@@ -2,6 +2,7 @@ import { Box } from "@material-ui/core";
 import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
 import Debug from "debug";
+import { mapObjIndexed, zipObj } from "ramda";
 import React from "react";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
@@ -87,16 +88,18 @@ function getFormInputs(ipfsInput, metadata) {
     ipfsInput = ipfsInput || {};
 
     const propertiesWithSocial = addSocialCheckbox(metadata.form.properties);
-
-    return Object.fromEntries(Object.entries(propertiesWithSocial).map(
-        ([formKey, prop]) => [formKey, formKey in ipfsInput ? { ...prop, "enum": prop.enum, "default": ipfsInput[formKey] } : prop]))
+    debug("getFormInputs", metadata.form.properties, ipfsInput)
+    const formInputsWithDefaults = overrideDefaultValues(propertiesWithSocial, ipfsInput)
+    debug("formInputsWithDefaults", formInputsWithDefaults)
+    return formInputsWithDefaults
 }
 
 
 // Get the ui schema for the form
 const getUISchema = (filledForm, enabled) => {
     debug("getUISchema", filledForm, enabled);
-    return Object.fromEntries(Object.keys(filledForm).map(key => [key, toSchema(key, filledForm[key], enabled)]))
+    const keys = Object.keys(filledForm)
+    return zipObj(keys, keys.map(key => toSchema(key, filledForm[key], enabled)))
 };
 
 
@@ -139,6 +142,9 @@ const prefixMappings = {
 const getPrefixOverride = (key) =>
     Object.entries(prefixMappings).find(([prefix]) => key.startsWith(prefix));
 
+
+const overrideDefaultValues = (propertiesWithSocial, ipfsInput) =>
+    mapObjIndexed((prop, formKey) => formKey in ipfsInput ? { ...prop, "default": ipfsInput[formKey] } : prop, propertiesWithSocial)
 
 // If the text has multiple lines return textarea, otherwise text.
 function textOrTextarea(defaultVal) {

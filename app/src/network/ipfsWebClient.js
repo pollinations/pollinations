@@ -1,10 +1,10 @@
 
-import {  getWebURL, writer } from "./ipfsConnector.js"
-import { extname } from "path";
-
 import Debug from "debug";
-import { getIPFSState } from "./ipfsState.js";
 import { parse } from "json5";
+import { extname } from "path";
+import { getWebURL, writer } from "./ipfsConnector.js";
+import { getIPFSState } from "./ipfsState.js";
+
 
 const debug = Debug("ipfsWebClient")
 
@@ -42,10 +42,10 @@ export const getWriter = ipfs => {
 
     // try to close the writer when window is closed
     const previousUnload = window.onbeforeunload;
-    window.onbeforeunload = () => { 
-        previousUnload && previousUnload(); 
-        w.close(); 
-        return undefined; 
+    window.onbeforeunload = () => {
+        previousUnload && previousUnload();
+        w.close();
+        return undefined;
     };
 
     return w;
@@ -61,11 +61,11 @@ export const updateInput = async (inputWriter, inputs) => {
     for (let [key, val] of Object.entries(inputs)) {
         // check if value is a string and base64 encoded file and convert it to a separate file input
         if (typeof val === "string" && val.startsWith("data:")) {
-            
+
             // Parse file details from data url
             debug("Found base64 encoded file", key);
-            const mimeType = val.split(";")[0].split(":")[1];
-            const filename = key + "." + mimeType.split("/")[1];
+            // const mimeType = val.split(";")[0].split(":")[1];
+            const filename = val.split(";")[1].split("=")[1];
             const fileContent = val.split(",")[1];
 
             // convert fileContent to buffer
@@ -77,7 +77,7 @@ export const updateInput = async (inputWriter, inputs) => {
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`;
         }
-        
+
         await inputWriter.add("input/" + key, JSON.stringify(val))
     };
 

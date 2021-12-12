@@ -5,7 +5,6 @@ import { extname } from "path";
 import { getWebURL, writer } from "./ipfsConnector.js";
 import { getIPFSState } from "./ipfsState.js";
 
-
 const debug = Debug("ipfsWebClient")
 
 // fetch json and texts files. convert media and other files to URLs pointing to the IPFS gateway
@@ -70,6 +69,13 @@ export const updateInput = async (inputWriter, inputs) => {
 
             // convert fileContent to buffer
             const buffer = Buffer.from(fileContent, "base64");
+            const path = "input/" + filename
+            try {
+                await inputWriter.rm(path)
+            } catch (e) {
+                debug("Deleting", path, "failed. Probably did not exist. No problem.")
+            }
+
             debug("Writing file", filename);
             await inputWriter.add("input/" + filename, buffer);
 

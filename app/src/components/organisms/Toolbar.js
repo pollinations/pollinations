@@ -57,7 +57,7 @@ const ToolBar = ({ children, node, showNode }) => {
         borderRadius: '10px 10px 0 0',
         backgroundColor: '#222',
         padding: '0.3em',
-        overflowY: 'auto'
+        overflowY: open ? 'auto' : 'hidden'
     }} >
         <ToolBarHeader open={open} setOpen={setOpen} node={node} showNode={showNode} />
         <ToolBarContent>

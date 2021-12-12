@@ -9,8 +9,9 @@ const useClickOutside = (ref, callback) => {
     useEffect(()=> {
         // avoids passing the function as dependency
         const handleClickOutside = e => {
-            if (ref?.current?.contains(e.target) && callbackRef.current) return 
-            return callbackRef.current(e)
+            if (!ref?.current?.contains(e.target) && callbackRef.current) { 
+             callbackRef.current(e)
+            }
         }
 
         document.addEventListener('click', handleClickOutside, true)

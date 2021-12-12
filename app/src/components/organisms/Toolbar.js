@@ -47,9 +47,9 @@ const ToolBar = ({ children, node, showNode }) => {
     const toolbarRef = useRef()
 
     useClickOutside(toolbarRef, () => setOpen(false))
-    
 
-    return <div style={{
+
+    return <div ref={toolbarRef} style={{
         position: 'fixed',
         bottom: 0,
         right: 30,

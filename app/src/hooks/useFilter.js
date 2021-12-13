@@ -22,6 +22,7 @@ const useFilter = (notebooks) => {
     // 1 Add input/output arrays to notebooks
     useEffect(() => {
         
+        if (!notebooks) return 
         if (!notebooks.length) return
         if (notebooks === undefined) return
         

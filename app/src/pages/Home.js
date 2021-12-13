@@ -13,6 +13,7 @@ import CardHeader from '@material-ui/core/CardHeader'
 import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
 import RouterLink from "../components/molecules/RouterLink"
+import Alert from "@material-ui/lab/Alert"
 
 const debug = Debug("home");
 
@@ -24,7 +25,9 @@ export default function Home({ ipfs }) {
 
   debug("got notebooks", notebooks);
   return  <>
-  
+    {
+      !options.length && <Alert severity="error">Model list temporarily unavailable. Please retry in a little while</Alert>
+    }
     <HeroSection/>
 
     <Box margin='calc(1.5em + 50px) 0 1.5em 0'>
@@ -56,7 +59,7 @@ export default function Home({ ipfs }) {
           </Box> 
         </>
         :
-        <error> IPFS is offline </error>
+        <></>
       }
     </Box>
           

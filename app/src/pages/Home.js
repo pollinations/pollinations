@@ -29,7 +29,7 @@ export default function Home({ ipfs }) {
 
     <Box margin='calc(1.5em + 50px) 0 1.5em 0'>
       { 
-        options.length &&
+        options.length ?
         <>     
           <Typography 
           className='Lato' 
@@ -55,6 +55,8 @@ export default function Home({ ipfs }) {
             }
           </Box> 
         </>
+        :
+        <error> IPFS is offline </error>
       }
     </Box>
           

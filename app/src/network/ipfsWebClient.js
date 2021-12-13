@@ -77,13 +77,18 @@ export const updateInput = async (inputWriter, inputs) => {
             }
 
             debug("Writing file", filename);
-            await inputWriter.add("input/" + filename, buffer);
+            await inputWriter.add(path, buffer);
 
             // We should not need to reference the absolute path here.
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`;
         }
 
+        try {
+            await inputWriter.rm("input/" + key)
+        } catch (e) {
+            debug("Deleting", path, "failed. Probably did not exist. No problem.")
+        }
         await inputWriter.add("input/" + key, JSON.stringify(val))
     };
 

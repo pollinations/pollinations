@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 
 const useClickOutside = (ref, callback) => {
     // reference callback otherwise it rerenders all the time as dependency in useEffect
-    // avoids using useCallback in the parent function
+    // avoids using useCallback in the callback function
     const callbackRef = useRef()
     callbackRef.current = callback
 

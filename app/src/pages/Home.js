@@ -18,7 +18,6 @@ const debug = Debug("home");
 
 export default function Home({ ipfs }) {
 
-  console.error('home', new Date().getSeconds())
 
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
@@ -129,7 +128,6 @@ const NotebookCard = ({notebook}) => {
                         style={{width: '100%'}}/>
 
             <CardContent>
-                            {console.log(description)}
                 <Markdown 
                 options={{
                   overrides: {

@@ -1,6 +1,7 @@
 import { Button, IconButton } from "@material-ui/core"
 import ArrowUpward from '@material-ui/icons/ArrowUpward'
-import { useState } from "react"
+import { useRef, useState } from "react"
+import useClickOutside from "../../hooks/UI/useClickOutside"
 import LaunchColabButton from "../molecules/LaunchColabButton"
 
 
@@ -43,8 +44,12 @@ const ToolBarContent = ({ children }) => {
 const ToolBar = ({ children, node, showNode }) => {
 
     const [open, setOpen] = useState(false)
+    const toolbarRef = useRef()
 
-    return <div style={{
+    useClickOutside(toolbarRef, () => setOpen(false))
+
+
+    return <div ref={toolbarRef} style={{
         position: 'fixed',
         bottom: 0,
         right: 30,

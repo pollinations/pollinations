@@ -168,6 +168,7 @@ export const stringCID = file => firstLine(stripSlashIPFS(file instanceof Object
 const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: stringCID(cid), type });
 
 const ipfsLsCID = async (client, cid) => {
+    try {
     cid = await optionallyResolveIPNS(client, cid);
     debug("calling ipfs ls with cid", cid);
     const result = (await toPromise(client.ls(stringCID(cid))))
@@ -175,6 +176,9 @@ const ipfsLsCID = async (client, cid) => {
         .map(_normalizeIPFS);
     debug("got ipfs ls result", result);
     return result;
+    } catch(e) {
+        console.log(e)
+    }
 }
 
 

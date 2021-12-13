@@ -17,9 +17,11 @@ export const getIPFSState = async (contentID, callback=f=>f, skipCache=false) =>
     
     const ipfsReader = await reader();
     debug("Getting state for CID", contentID);
-
+    try {
     return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID}, callback, skipCache);
- }
+    } catch (e) { console.log(e)}
+
+}
 
 
 // Caching

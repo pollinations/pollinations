@@ -13,24 +13,26 @@ import CardHeader from '@material-ui/core/CardHeader'
 import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
 import RouterLink from "../components/molecules/RouterLink"
+import Alert from "@material-ui/lab/Alert"
 
 const debug = Debug("home");
 
 export default function Home({ ipfs }) {
 
-  console.error('home', new Date().getSeconds())
 
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
 
   debug("got notebooks", notebooks);
   return  <>
-  
+    {
+      !options.length && <Alert severity="error">Model list temporarily unavailable. Please retry in a little while</Alert>
+    }
     <HeroSection/>
 
     <Box margin='calc(1.5em + 50px) 0 1.5em 0'>
       { 
-        options.length &&
+        options.length ?
         <>     
           <Typography 
           className='Lato' 
@@ -56,6 +58,8 @@ export default function Home({ ipfs }) {
             }
           </Box> 
         </>
+        :
+        <></>
       }
     </Box>
           
@@ -129,7 +133,6 @@ const NotebookCard = ({notebook}) => {
                         style={{width: '100%'}}/>
 
             <CardContent>
-                            {console.log(description)}
                 <Markdown 
                 options={{
                   overrides: {

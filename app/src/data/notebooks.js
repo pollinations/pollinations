@@ -19,7 +19,8 @@ export const getNotebooks = (ipfs) => {
   const ipfsState = ipfs;
 
   debug("ipfsState",ipfsState)
-
+  if (!ipfsState) return null
+  
   const notebookCategories = Object.keys(ipfsState);
 
   const allNotebooks = notebookCategories.map(category => {

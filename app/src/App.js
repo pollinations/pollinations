@@ -9,6 +9,7 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
+import useLocalPollens from "./hooks/useLocalPollens"
 
 import About from "./pages/About"
 import BlankMarkdown from "./pages/BlankMarkdown"
@@ -87,12 +88,17 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
+    const { pushCID } = useLocalPollens(node)
+
     useEffect(() => {
         if (nodeID)
             overrideNodeID(nodeID)
     }, [nodeID])
 
-    if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`} />
+    if (ipfs?.output?.done) {
+        pushCID(ipfs[".cid"])
+        return <Navigate to={`/p/${ipfs[".cid"]}`} />
+    }
 
     return <ResultViewer ipfs={ipfs} />
 }

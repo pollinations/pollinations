@@ -1,4 +1,4 @@
-import { Typography } from "@material-ui/core"
+import Typography from "@material-ui/core/Typography"
 import Markdown from "markdown-to-jsx"
 import useContent from "../../hooks/useContent"
 
@@ -14,7 +14,7 @@ const MarkDownContent = ({ id }) => {
             h4: { component: H4 },
             h5: { component: H5 },
             h6: { component: H6 },
-        },
+        }
     }}>
         {content}
     </Markdown>

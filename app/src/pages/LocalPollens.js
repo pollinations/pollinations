@@ -21,7 +21,7 @@ const LocalPollens = ({node}) => {
         <Box display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {   
                 
-                pollens?.map( pollen => <EachPollen key={pollen.cid} cid={pollen.cid}/>)
+                pollens?.reverse().map( pollen => <EachPollen key={pollen.cid} {...pollen}/>)
             }
         </Box>
         
@@ -52,6 +52,9 @@ const EachPollen = cid => {
 
                     <Typography style={{textOverflow: 'elipsis'}} >
                         Contend ID: <RouterLink to={`/p/${cid.cid}`} children={`${cid.cid.slice(0,3)}...${cid.cid.slice(cid.cid.length-6, -3)}`}/>
+                    </Typography>
+                    <Typography>
+                        Date: {cid.date}
                     </Typography>
                 {
 

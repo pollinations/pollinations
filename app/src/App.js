@@ -41,6 +41,19 @@ const Pollinations = () => {
     const navigate = useNavigate()
 
 
+
+    // temporary way of getting around done state
+    const { pushCID } = useLocalPollens(node)
+    const ipfs = useIPFS(node.contentID);
+    useEffect(()=>{
+        if (ipfs?.output?.done) {
+            pushCID(ipfs[".cid"])
+        }
+    },[ipfs?.output?.done])
+
+
+
+
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
@@ -88,7 +101,6 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
-    const { pushCID } = useLocalPollens(node)
 
     useEffect(() => {
         if (nodeID)
@@ -96,7 +108,7 @@ const NodeWithData = ({ node, overrideNodeID }) => {
     }, [nodeID])
 
     if (ipfs?.output?.done) {
-        pushCID(ipfs[".cid"])
+        // pushCID(ipfs[".cid"])
         return <Navigate to={`/p/${ipfs[".cid"]}`} />
     }
 

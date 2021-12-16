@@ -14,8 +14,9 @@
 If you are having dificulties understanding how to use Pollinations, just follow this [ step-by-step video tutorial ]( https://www.youtube.com/watch?v=lwR8fkym_WE&t=2s&ab_channel=CarolineBarrueco ).
 
 
-&nbsp; 
-&nbsp;
+<iframe class='video_container' src="help.mp4" frameborder="0" allowfullscreen="true" > </iframe>
+
+
 
 #### Written instructions: 
 &nbsp;

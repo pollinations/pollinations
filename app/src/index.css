@@ -73,3 +73,8 @@ error {
   font-weight: bold;
   font-size: large;
 }
+
+.video_container{
+  width: 100%;
+  min-height: 480px;
+}

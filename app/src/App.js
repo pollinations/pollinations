@@ -95,6 +95,8 @@ const ModelRoutes = ({ node, navigateToNode }) => {
     const { contentID } = useParams();
 
     const ipfs = useIPFS(contentID);
+
+
     const dispatchInput = useIPFSWrite(ipfs, node)
 
     const dispatch = useCallback(async inputs => {

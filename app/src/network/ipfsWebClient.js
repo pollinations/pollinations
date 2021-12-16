@@ -30,9 +30,9 @@ const fetchAndMakeURL = async ({ name, cid, text }) => {
 }
 
 // Return IPFS state. Converts all JSON/text content to objects and binary cids to URLs.
-export const IPFSWebState = contentID => {
+export const IPFSWebState = (contentID, skipCache = false) => {
     debug("Getting state for CID", contentID)
-    return getIPFSState(contentID, fetchAndMakeURL);
+    return getIPFSState(contentID, fetchAndMakeURL, skipCache);
 }
 
 export const getWriter = ipfs => {
@@ -56,7 +56,12 @@ export const updateInput = async (inputWriter, inputs) => {
     debug("updateInput", inputs);
     debug("removing output")
     await inputWriter.rm("output")
-    debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid());
+    debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid())
+
+    // this is a bit hacky due to some wacky file naming we are doing
+    // will clean this up later
+    const writtenFiles = []
+
     for (let [key, val] of Object.entries(inputs)) {
         // check if value is a string and base64 encoded file and convert it to a separate file input
         if (typeof val === "string" && val.startsWith("data:")) {
@@ -64,31 +69,29 @@ export const updateInput = async (inputWriter, inputs) => {
             // Parse file details from data url
             debug("Found base64 encoded file", key);
             // const mimeType = val.split(";")[0].split(":")[1];
-            const filename = val.split(";")[1].split("=")[1];
-            const fileContent = val.split(",")[1];
+            const filename = val.split(";")[1].split("=")[1]
+            const fileContent = val.split(",")[1]
 
             // convert fileContent to buffer
-            const buffer = Buffer.from(fileContent, "base64");
+            const buffer = Buffer.from(fileContent, "base64")
             const path = "input/" + filename
-            try {
-                await inputWriter.rm(path)
-            } catch (e) {
-                debug("Deleting", path, "failed. Probably did not exist. No problem.")
-            }
 
-            debug("Writing file", filename);
-            await inputWriter.add("input/" + filename, buffer);
+            debug("Writing file", filename)
+            await inputWriter.add(path, buffer)
 
             // We should not need to reference the absolute path here.
             // Will fix on the pollinator side later
-            val = `/content/ipfs/input/${filename}`;
+            val = `/content/ipfs/input/${filename}`
+            writtenFiles.push(path)
         }
 
-        await inputWriter.add("input/" + key, JSON.stringify(val))
-    };
+        const path = "input/" + key
+        if (!writtenFiles.includes(path))
+            await inputWriter.add(path, JSON.stringify(val))
+    }
 
-    return await inputWriter.cid();
-};
+    return await inputWriter.cid()
+}
 
 // only download json files, notebooks and files without extension (such as logs, text, etc)
 function shouldImport(ext) {

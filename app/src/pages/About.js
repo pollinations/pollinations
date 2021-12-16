@@ -1,13 +1,10 @@
-import Markdown from "markdown-to-jsx"
-import useContent from "../hooks/useContent"
+import MarkDownContent from "../components/molecules/MarkDownContent"
 
 const About = () => {
 
-    let content = useContent('about')
-
-    return <Markdown>
+    return <MarkDownContent id='about'>
         {content}
-    </Markdown>
+    </MarkDownContent>
 }
 
 export default About

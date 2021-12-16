@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import instructions from '../assets/contents/instructions.md'
 import help from '../assets/contents/help.md'
 import about from '../assets/contents/about.md'
+import blank from '../assets/contents/blank.md'
 
 
 function getMD(content){
@@ -14,7 +15,7 @@ function getMD(content){
         case "about":
             return about
         default:
-            return null
+            return blank
     }
 }
 

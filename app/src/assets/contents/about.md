@@ -1,5 +1,14 @@
-## About
 
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+
+### About
+
+
+&nbsp;
 
 
 Generative media algorithms usually impose a barrier to people that are not used to code because they are relatively complicated to use. 

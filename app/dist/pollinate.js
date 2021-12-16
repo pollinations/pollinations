@@ -36375,6 +36375,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           await mkDir(ipfsPath);
         }
         if (event === "add" || event === "change") {
+          debug9("adding", ipfsPath, localPath);
           await addFile(ipfsPath, localPath);
         }
         if (event === "unlink" || event === "unlinkDir") {

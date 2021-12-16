@@ -68,6 +68,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
         }
 
         if (event === "add" || event === "change") {
+          debug("adding", ipfsPath, localPath)
           await addFile(ipfsPath, localPath)
         }
 

@@ -157,12 +157,12 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
       const lastChanged = last(changeQueue)
 
       // add to queue only if it is not a repetition of the last change
-      if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
-        debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
-      } else {
-        changeQueue.push({ event, path });
-        //sendQueuedFiles();
-      }
+      // if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
+      //   debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
+      // } else {
+      changeQueue.push({ event, path });
+      //sendQueuedFiles();
+      // }
     }
   })
 

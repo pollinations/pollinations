@@ -36445,11 +36445,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     debug9("got watcher event", event, path);
     if (path !== "") {
       const lastChanged = (0, import_ramda3.last)(changeQueue);
-      if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
-        debug9(`Last change "${event}" for "${path}" was duplicate. Ignoring.`);
-      } else {
-        changeQueue.push({ event, path });
-      }
+      changeQueue.push({ event, path });
     }
   });
   return channel$;

@@ -55,8 +55,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       processing = new Promise(resolve => done = resolve)
 
       const lastChanged = changed; // deduplicateChangedFiles(changed)
-      for (const { event, path: file } of lastChanged) {
-        // await Promise.all(lastChanged.map(async ({ event, path: file }) => {
+      //for (const { event, path: file } of lastChanged) {
+      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
 
         // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
         debug("Local:", event, file);
@@ -76,7 +76,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
           await rm(ipfsPath)
 
         }
-      }
+      }))
 
 
       const newContentID = await cid();

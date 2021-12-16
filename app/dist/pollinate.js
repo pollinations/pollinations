@@ -35858,6 +35858,15 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
+var toPromise1 = async (asyncGen) => {
+  debug4("getting values of asyncGen");
+  for await (const value of asyncGen) {
+    debug4("Got value", value);
+    return value;
+  }
+  debug4("No value found to convert to Promise");
+  return null;
+};
 var noop = () => null;
 var retryException = (f) => {
   return async (...args) => {
@@ -35991,7 +36000,12 @@ var ipfsAdd = async (client, path, content, options = {}) => {
   debug5("adding", path, "options", options);
   let cid = null;
   try {
-    cid = stringCID(await client.add(content, options));
+    if (content[Symbol.asyncIterator]) {
+      debug5("content is an async iterator");
+      cid = stringCID(await toPromise1(client.addAll(content, options)));
+    } else {
+      cid = stringCID(await client.add(content, options));
+    }
   } catch (e) {
     debug5("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
     return null;
@@ -36003,7 +36017,6 @@ var ipfsAdd = async (client, path, content, options = {}) => {
   } catch {
     debug5("Could not delete. Probably did not exist.");
   }
-  ;
   debug5("copying to", path);
   try {
     await client.files.cp(`/ipfs/${cid}`, path, { create: true });

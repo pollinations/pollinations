@@ -14357,7 +14357,7 @@ var require_glob_source = __commonJS({
     var glob = require_it_glob();
     var Path = require("path");
     var errCode12 = require_err_code();
-    module2.exports = async function* globSource2(cwd, pattern, options) {
+    module2.exports = async function* globSource(cwd, pattern, options) {
       options = options || {};
       if (typeof pattern !== "string") {
         throw errCode12(new Error("Pattern must be a string"), "ERR_INVALID_PATH", { pattern });
@@ -28401,7 +28401,7 @@ __export(exports, {
 var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
 var import_debug10 = __toModule(require_src());
-var import_fs3 = __toModule(require("fs"));
+var import_fs4 = __toModule(require("fs"));
 var import_process2 = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
 
@@ -28410,6 +28410,7 @@ var import_process = __toModule(require("process"));
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toModule(require_src());
+var import_fs = __toModule(require("fs"));
 
 // node_modules/ipfs-core-utils/esm/src/multibases.js
 var LOAD_BASE = (name5) => Promise.reject(new Error(`No base found for "${name5}"`));
@@ -35835,7 +35836,6 @@ function create2(options = {}) {
   };
   return client;
 }
-var globSource = import_glob_source.default;
 
 // src/network/ipfsConnector.js
 var import_it_all3 = __toModule(require_it_all());
@@ -35857,15 +35857,6 @@ var toPromise = async (asyncGen) => {
     return [void 0];
   }
   return contents;
-};
-var toPromise1 = async (asyncGen) => {
-  debug4("getting values of asyncGen");
-  for await (const value of asyncGen) {
-    debug4("Got value", value);
-    return value;
-  }
-  debug4("No value found to convert to Promise");
-  return null;
 };
 var noop = () => null;
 var retryException = (f) => {
@@ -36000,12 +35991,7 @@ var ipfsAdd = async (client, path, content, options = {}) => {
   debug5("adding", path, "options", options);
   let cid = null;
   try {
-    if (content[Symbol.asyncIterator]) {
-      debug5("content is an async iterator");
-      cid = stringCID(await toPromise1(client.addAll(content, options)));
-    } else {
-      cid = stringCID(await client.add(content, options));
-    }
+    cid = stringCID(await client.add(content, options));
   } catch (e) {
     debug5("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
     return null;
@@ -36041,7 +36027,7 @@ var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug5("Adding file", localPath, "to", ipfsPath);
   const filename = (0, import_path.basename)(localPath);
   const folder = (0, import_path.dirname)(localPath);
-  await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }));
+  await ipfsAdd(client, ipfsPath, (0, import_fs.createReadStream)(localPath));
 };
 async function optionallyResolveIPNS(client, cid) {
   debug5("Trying to resolve CID", cid);
@@ -36307,7 +36293,7 @@ var import_path3 = __toModule(require("path"));
 var import_debug8 = __toModule(require_src());
 var import_event_iterator = __toModule(require_node2());
 var import_path4 = __toModule(require("path"));
-var import_fs = __toModule(require("fs"));
+var import_fs2 = __toModule(require("fs"));
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
 var receive = async function({ ipns, nodeid, once, path: rootPath2 }, process4 = processRemoteCID, suffix = "/input") {
   const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process4.stdin), noop];
@@ -36327,9 +36313,9 @@ var receive = async function({ ipns, nodeid, once, path: rootPath2 }, process4 =
 };
 var writeFileAndCreateFolder = async (path, content) => {
   debug8("creating folder if it does not exist", (0, import_path4.dirname)(path));
-  (0, import_fs.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
+  (0, import_fs2.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
   debug8("writing file of length", content.size, "to folder", path);
-  (0, import_fs.writeFileSync)(path, content);
+  (0, import_fs2.writeFileSync)(path, content);
   return path;
 };
 async function processRemoteCID(contentID, rootPath2) {
@@ -36353,7 +36339,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
-var import_fs2 = __toModule(require("fs"));
+var import_fs3 = __toModule(require("fs"));
 var import_path5 = __toModule(require("path"));
 var import_queueable2 = __toModule(require_lib6());
 var import_ramda3 = __toModule(require_src7());
@@ -36370,9 +36356,9 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
     await closePollenPublisher();
   });
   async function start() {
-    if (!(0, import_fs2.existsSync)(watchPath)) {
+    if (!(0, import_fs3.existsSync)(watchPath)) {
       debug9("Local: Root directory does not exist. Creating", watchPath);
-      (0, import_fs2.mkdirSync)(watchPath, { recursive: true });
+      (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
     }
     const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
     let done = null;
@@ -36396,6 +36382,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           await rm(ipfsPath);
         }
       }));
+      debug9("synched all changes");
       const newContentID = await cid();
       console.log(newContentID);
       if (ipns) {
@@ -36434,10 +36421,11 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     while (true) {
       const files = changeQueue;
       changeQueue = [];
-      if (files.length > 0)
+      if (files.length > 0) {
+        debug9("Pushing to channel:", files);
         await channel$.push(files);
-      else
-        await (0, import_await_sleep3.default)(debounceTime);
+      }
+      await (0, import_await_sleep3.default)(debounceTime);
     }
   }
   transmitQueue();
@@ -36463,7 +36451,7 @@ var executeOnce = (f) => {
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
-import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 300).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
+import_commander.program.option("-p, --path <path>", "local folder to synchronize", "/tmp/ipfs").option("-r, --receive", "only receive state", false).option("-s, --send", "only send state", false).option("-o, --once", "run once and exit", false).option("-i, --ipns", "publish to /ipns/pollinations.ai", false).option("-n, --nodeid <nodeid>", "local node id", null).option("-d, --debounce <ms>", "file watch debounce time", 1e3).option("-e, --execute <command>", "run command on receive and stream back to ipfs", null).option("-l, --logout <path>", "log to file", null);
 import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
@@ -36491,7 +36479,7 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
   childProc.stderr.pipe(import_process2.default.stderr);
   if (logfile) {
     debug10("creating a write stream to ", logfile);
-    const logout = (0, import_fs3.createWriteStream)(logfile, { "flags": "a" });
+    const logout = (0, import_fs4.createWriteStream)(logfile, { "flags": "a" });
     childProc.stdout.pipe(logout);
     childProc.stderr.pipe(logout);
   }

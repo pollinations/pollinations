@@ -14349,7 +14349,7 @@ var require_glob_source = __commonJS({
     var glob = require_it_glob();
     var Path = require("path");
     var errCode12 = require_err_code();
-    module2.exports = async function* globSource2(cwd, pattern, options) {
+    module2.exports = async function* globSource(cwd, pattern, options) {
       options = options || {};
       if (typeof pattern !== "string") {
         throw errCode12(new Error("Pattern must be a string"), "ERR_INVALID_PATH", { pattern });
@@ -22375,6 +22375,7 @@ var require_node2 = __commonJS({
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toModule(require_src());
+var import_fs = __toModule(require("fs"));
 
 // node_modules/ipfs-core-utils/esm/src/multibases.js
 var LOAD_BASE = (name5) => Promise.reject(new Error(`No base found for "${name5}"`));
@@ -29800,7 +29801,6 @@ function create2(options = {}) {
   };
   return client;
 }
-var globSource = import_glob_source.default;
 
 // src/network/ipfsConnector.js
 var import_it_all3 = __toModule(require_it_all());
@@ -29822,15 +29822,6 @@ var toPromise = async (asyncGen) => {
     return [void 0];
   }
   return contents;
-};
-var toPromise1 = async (asyncGen) => {
-  debug4("getting values of asyncGen");
-  for await (const value of asyncGen) {
-    debug4("Got value", value);
-    return value;
-  }
-  debug4("No value found to convert to Promise");
-  return null;
 };
 var noop = () => null;
 var retryException = (f) => {
@@ -29965,12 +29956,7 @@ var ipfsAdd = async (client, path, content, options = {}) => {
   debug5("adding", path, "options", options);
   let cid = null;
   try {
-    if (content[Symbol.asyncIterator]) {
-      debug5("content is an async iterator");
-      cid = stringCID(await toPromise1(client.addAll(content, options)));
-    } else {
-      cid = stringCID(await client.add(content, options));
-    }
+    cid = stringCID(await client.add(content, options));
   } catch (e) {
     debug5("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
     return null;
@@ -30006,7 +29992,7 @@ var ipfsAddFile = async (client, ipfsPath, localPath) => {
   debug5("Adding file", localPath, "to", ipfsPath);
   const filename = (0, import_path.basename)(localPath);
   const folder = (0, import_path.dirname)(localPath);
-  await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }));
+  await ipfsAdd(client, ipfsPath, (0, import_fs.createReadStream)(localPath));
 };
 async function optionallyResolveIPNS(client, cid) {
   debug5("Trying to resolve CID", cid);
@@ -30275,7 +30261,7 @@ var import_path3 = __toModule(require("path"));
 var import_debug8 = __toModule(require_src());
 var import_event_iterator = __toModule(require_node2());
 var import_path4 = __toModule(require("path"));
-var import_fs = __toModule(require("fs"));
+var import_fs2 = __toModule(require("fs"));
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
 var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID, suffix = "/input") {
   const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
@@ -30295,9 +30281,9 @@ var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = 
 };
 var writeFileAndCreateFolder = async (path, content) => {
   debug8("creating folder if it does not exist", (0, import_path4.dirname)(path));
-  (0, import_fs.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
+  (0, import_fs2.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
   debug8("writing file of length", content.size, "to folder", path);
-  (0, import_fs.writeFileSync)(path, content);
+  (0, import_fs2.writeFileSync)(path, content);
   return path;
 };
 async function processRemoteCID(contentID, rootPath) {

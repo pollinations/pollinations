@@ -14847,7 +14847,7 @@ var require_glob_source = __commonJS({
     var glob = require_it_glob();
     var Path = require("path");
     var errCode12 = require_err_code();
-    module2.exports = async function* globSource2(cwd, pattern, options) {
+    module2.exports = async function* globSource(cwd, pattern, options) {
       options = options || {};
       if (typeof pattern !== "string") {
         throw errCode12(new Error("Pattern must be a string"), "ERR_INVALID_PATH", { pattern });
@@ -28737,6 +28737,7 @@ var import_queueable = __toModule(require_lib());
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toModule(require_src());
+var import_fs = __toModule(require("fs"));
 
 // node_modules/ipfs-core-utils/esm/src/multibases.js
 var LOAD_BASE = (name5) => Promise.reject(new Error(`No base found for "${name5}"`));
@@ -37223,7 +37224,7 @@ var import_path4 = __toModule(require("path"));
 var import_debug12 = __toModule(require_src());
 var import_event_iterator = __toModule(require_node2());
 var import_path5 = __toModule(require("path"));
-var import_fs = __toModule(require("fs"));
+var import_fs2 = __toModule(require("fs"));
 var debug12 = (0, import_debug12.default)("ipfs/receiver");
 var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID, suffix = "/input") {
   const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
@@ -37243,9 +37244,9 @@ var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = 
 };
 var writeFileAndCreateFolder = async (path, content) => {
   debug12("creating folder if it does not exist", (0, import_path5.dirname)(path));
-  (0, import_fs.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
+  (0, import_fs2.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
   debug12("writing file of length", content.size, "to folder", path);
-  (0, import_fs.writeFileSync)(path, content);
+  (0, import_fs2.writeFileSync)(path, content);
   return path;
 };
 async function processRemoteCID(contentID, rootPath) {

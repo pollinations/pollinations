@@ -79,6 +79,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
         }
       }))
 
+      debug("synched all changes")
 
       const newContentID = await cid();
       // currentContentID = newContentID;
@@ -138,11 +139,13 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     while (true) {
       const files = changeQueue
       changeQueue = []
-      if (files.length > 0)
+      if (files.length > 0) {
+        debug("Pushing to channel:", files)
         await channel$.push(files)
-      else
-        // the use of debounce is not quite right here. Will change later
-        await awaitSleep(debounceTime)
+      }
+      // the use of debounce is not quite right here. Will change later
+      // debug("Sleeping", debounceTime)
+      await awaitSleep(debounceTime)
     }
   }
 

@@ -1,11 +1,12 @@
 
 import Debug from "debug";
-import { create, globSource } from "ipfs-http-client";
+import { createReadStream } from "fs";
+import { create } from "ipfs-http-client";
 import all from "it-all";
 import { CID } from "multiformats/cid";
 import { basename, dirname, join } from "path";
 import { last } from "ramda";
-import { AUTH, noop, toPromise, toPromise1 } from "./utils.js";
+import { AUTH, noop, toPromise } from "./utils.js";
 
 
 
@@ -187,12 +188,12 @@ const ipfsAdd = async (client, path, content, options = {}) => {
     let cid = null
     try {
         // check if content has the async iterator symbol
-        if (content[Symbol.asyncIterator]) {
-            debug("content is an async iterator")
-            cid = stringCID(await toPromise1(client.addAll(content, options)))
-        } else {
-            cid = stringCID(await client.add(content, options))
-        }
+        // if (content[Symbol.asyncIterator]) {
+        //     debug("content is an async iterator")
+        //     cid = stringCID(await toPromise1(client.addAll(content, options)))
+        // } else {
+        cid = stringCID(await client.add(content, options))
+        // }
     } catch (e) {
         debug("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?")
         return null
@@ -243,7 +244,7 @@ const ipfsAddFile = async (client, ipfsPath, localPath) => {
     // get filename from path
     const filename = basename(localPath);
     const folder = dirname(localPath);
-    await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }))
+    await ipfsAdd(client, ipfsPath, createReadStream(localPath))
 }
 
 async function optionallyResolveIPNS(client, cid) {

@@ -11,9 +11,12 @@
 &nbsp;
 
 
-This is a [ step-by-step video tutorial]( https://www.youtube.com/watch?v=lwR8fkym_WE&t=2s&ab_channel=CarolineBarruec ) showing how to use the platform.
+If you are having dificulties understanding how to use Pollinations, just follow this [ step-by-step video tutorial ]( https://www.youtube.com/watch?v=lwR8fkym_WE&t=2s&ab_channel=CarolineBarruec ).
+&nbsp; 
+&nbsp;
 
-Follow these steps: 
+#### Wrtten instructions: 
+&nbsp;
 1. Click on [ LAUNCH GPU ]. A new browser tab will launch.
 2. In the new tab, click Runtime --> Run All
 3. On the pop-up warning, click "run anyway."

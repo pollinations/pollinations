@@ -1,9 +1,5 @@
 
 &nbsp;
-&nbsp;
-&nbsp;
-
-&nbsp;
 
 ### Help
 
@@ -14,7 +10,7 @@
 If you are having dificulties understanding how to use Pollinations, just follow this [ step-by-step video tutorial ]( https://www.youtube.com/watch?v=lwR8fkym_WE&t=2s&ab_channel=CarolineBarrueco ).
 
 
-<iframe class='video_container' src="help.mp4" frameborder="0" allowfullscreen="true" > </iframe>
+<iframe allowautoplay='false' class='video_container' src="help.mp4" frameborder="0" allowfullscreen="true" > </iframe>
 
 
 

@@ -1,9 +1,5 @@
 
 &nbsp;
-&nbsp;
-&nbsp;
-
-&nbsp;
 
 ### About
 

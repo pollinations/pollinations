@@ -36446,6 +36446,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     if (path !== "") {
       const lastChanged = (0, import_ramda3.last)(changeQueue);
       changeQueue.push({ event, path });
+      debug9("Queue", changeQueue);
     }
   });
   return channel$;

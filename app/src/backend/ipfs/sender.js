@@ -161,6 +161,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
       //   debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
       // } else {
       changeQueue.push({ event, path });
+      debug("Queue", changeQueue)
       //sendQueuedFiles();
       // }
     }

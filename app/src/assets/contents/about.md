@@ -1,11 +1,14 @@
-1. Click on [ LAUNCH GPU ]. A new browser tab will launch.
-2. In the new tab, click Runtime --> Run All
-3. On the pop-up warning, click "run anyway."
-4. Return to this browser tab.
+## About
 
 
-Note 1: *This is run using Google Colab's spare computing resources, and will not run quickly or sometimes you need to retry a few times when no GPUs are available.*
 
-Note 2: *There are some bugs in the code of Pollinations which result in it becoming desynchronized with Colab. Sometimes one has to go to the Colab tab and click "Runtime -> Restart and Run All" and retry.*
+Generative media algorithms usually impose a barrier to people that are not used to code because they are relatively complicated to use. 
 
-Note 3: *Data is stored on the Interplanetary Filesystem. No information about the user is saved.*
+This, in turn, creates all kinds of problems, making generative art monotonous and elitist.  
+
+Pollinations values inclusivity and diversity, attempting to remove obstacles for creators. We believe that we urgently need **diverse perspectives in the AI ecosystem,**. We want to make AI-generated media simple to access and available for everyone. 
+
+Pollinations prioritizes equitable distribution of value for hackers, creators, and all the busy bees who play a part in making art. Pollinations was initially developed and created by Thomas Haferlach and now it's a community-based, open-source, AI art ecosystem, to join the conversation and talk directly with the coders and creators, come to our [ Discord ](https://discord.com/invite/XXd99CrkCr). 
+
+
+As for now, all the people involved are contributing hours for free to help the platform grow. In the future we want to create a donation payment system, to make the project self-sustainable. 

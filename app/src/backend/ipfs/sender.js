@@ -5,7 +5,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from "path";
 import { Channel } from "queueable";
-import { last } from "ramda";
+import { last, pipe, reverse, uniqBy } from "ramda";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 
@@ -140,8 +140,9 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
       const files = changeQueue
       changeQueue = []
       if (files.length > 0) {
-        debug("Pushing to channel:", files)
-        await channel$.push(files)
+        const deduplicatedFiles = deduplicateChangedFiles(files)
+        debug("Pushing to channel:", deduplicatedFiles)
+        await channel$.push(deduplicatedFiles)
       }
       // the use of debounce is not quite right here. Will change later
       // debug("Sleeping", debounceTime)
@@ -193,6 +194,4 @@ const executeOnce = f => {
 }
 
 const deduplicateChangedFiles = (changed) =>
-  Object.entries(changed.reduce((lastChange, { event, path }) => ({ ...lastChange, [path]: event }), {}))
-    .map(([path, event]) => ({ event, path }))
-
+  pipe(reverse, uniqBy(({ event, path }) => `${event}-${path}`), reverse)(changed)

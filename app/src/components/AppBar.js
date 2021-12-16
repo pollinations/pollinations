@@ -1,4 +1,4 @@
-import { Container, Link } from '@material-ui/core'
+import { Box, Container, Link } from '@material-ui/core'
 import AppBarMaterial from '@material-ui/core/AppBar'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
@@ -13,26 +13,33 @@ export default function AppBar() {
   return <>
       <Container maxWidth='lg'>
 
-          <div style={Border}/>
+      <div style={Border}/>
+
       <div style={ContainerStyle}>
-        <Typography variant="h6">
+        <Box minWidth='50%' display='grid' gridRowGap='2em' gridTemplateColumns='repeat(auto-fit, minmax(90px, 1fr))'>
 
-          <Routes>
-
-            <Route exact path='/c/Anything' element={
-              <RouterLink to={"/feed"}>
-                feed
-              </RouterLink>}
-            />
-
-            <Route exact path='/*' element={
+          <Typography variant="h6" style={{ gridColumnStart: 1, gridColumnEnd: 3}}>
               <RouterLink to={"/"}>
                 pollinations.ai
-              </RouterLink>}
-            />
-            
-          </Routes>
-        </Typography>
+              </RouterLink>
+          </Typography>
+          <Typography variant="h6">
+              <RouterLink to={"/about"}>
+                about
+              </RouterLink>
+          </Typography>
+          <Typography variant="h6">
+              <RouterLink to={"/help"}>
+                help
+              </RouterLink>
+          </Typography>
+          <Typography variant="h6">
+              <RouterLink to={"/feed"}>
+                feed
+              </RouterLink>
+          </Typography>
+
+        </Box>
 
         <SocialLinks />
       </div>
@@ -47,6 +54,7 @@ let ContainerStyle = {
   width: '100%',
   display: 'flex',
   justifyContent: 'space-between',
+  alignItems: 'flex-start'
 }
 let Border = {
   width: '100%',

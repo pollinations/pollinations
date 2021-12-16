@@ -9,9 +9,13 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
+
+import About from "./pages/About"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
+import Help from "./pages/Help"
 import Home from "./pages/Home"
+
 import ResultViewer from "./pages/ResultViewer"
 
 
@@ -32,6 +36,7 @@ const Pollinations = () => {
 
     const navigate = useNavigate()
 
+
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
@@ -49,7 +54,10 @@ const Pollinations = () => {
         {/* Children that get IPFS state */}
         <Container maxWidth='lg'>
             <Routes>
-                <Route path='feed' element={<Feed />} />
+                <Route exact path='feed' element={<Feed />} />
+                <Route exact path='help' element={<Help/>}/>
+                <Route exact path='about' element={<About/>}/>
+
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />

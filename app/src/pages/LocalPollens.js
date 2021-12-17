@@ -3,10 +3,11 @@ import useIPFS from "../hooks/useIPFS"
 import Typography from "@material-ui/core/Typography"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
 import { mediaToDisplay } from "../data/media"
-import { Box, Button, Link, List, ListItem } from "@material-ui/core"
+import { Box, Card, CardHeader, Link, List, ListItem } from "@material-ui/core"
 import useLocalStorage from "../hooks/useLocalStorage"
 import useLocalPollens from "../hooks/useLocalPollens"
 import RouterLink from "../components/molecules/RouterLink"
+import { CardContainerStyle } from "./styles/card"
 
 const LocalPollens = ({node}) => {
     
@@ -16,16 +17,14 @@ const LocalPollens = ({node}) => {
     
     <Typography variant='h2' children='Local Pollens'/>
 
-    <Box margin='2em 0'>
 
-        <Box display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
+        <Box margin='2em 0' display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {   
                 
                 pollens?.reverse().map( pollen => <EachPollen key={pollen.cid} {...pollen}/>)
             }
         </Box>
         
-    </Box>
     </>
 }
 
@@ -39,33 +38,31 @@ const EachPollen = cid => {
     const primaryInputField = metadata?.primaryInput;
     const primaryInput = ipfs?.input?.[primaryInputField];
 
-    return <Box 
-            key={cid} 
-            display='grid' 
-            gridGap='2em' 
-            gridTemplateColumns='repeat(auto-fill, minmax(200px, 1fr))'>
-
-                <Box gridColumnStart={1} gridColumnEnd={3} >
-                    <Typography>
-                        {primaryInput}
-                    </Typography>
-
-                    <Typography style={{textOverflow: 'elipsis'}} >
-                        Contend ID: <RouterLink to={`/p/${cid.cid}`} children={`${cid.cid.slice(0,3)}...${cid.cid.slice(cid.cid.length-6, -3)}`}/>
-                    </Typography>
-                    <Typography>
-                        Date: {cid.date}
-                    </Typography>
-                {
-
-                <video muted autoplay controls loop 
-                    src={first.url} style={{
-                    width: '100%', marginTop: '2em'}}/>
+    return <Box>
+        <Card style={CardContainerStyle}>
+            <CardHeader subheader={<SubHeader cid={cid?.cid}/> } />
                 
-                }
-                </Box>
-
+            <Box padding='1em'>       
+                <br/>
+                <Typography>
+                    {primaryInput}
+                </Typography>
             </Box>
+            { // catch other formats
+            <video muted autoplay controls loop 
+                src={first.url} style={{
+                width: '100%', marginTop: '2em'}}/>
+            }
+        </Card>
+    </Box>
 }
 
 export default LocalPollens
+
+const SubHeader = ({ cid }) => <>
+    <Typography className='Lato noMargin' variant="h4" component="h4" gutterBottom>
+        <RouterLink to={`/p/${cid}`}>
+        {`${cid.slice(0,13)}...`}
+        </RouterLink>
+    </Typography>
+</>

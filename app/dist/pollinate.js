@@ -13693,8 +13693,8 @@ var require_brace_expansion = __commonJS({
         var width = Math.max(n[0].length, n[1].length);
         var incr = n.length == 3 ? Math.abs(numeric(n[2])) : 1;
         var test = lte;
-        var reverse2 = y < x;
-        if (reverse2) {
+        var reverse = y < x;
+        if (reverse) {
           incr *= -1;
           test = gte;
         }
@@ -16075,13 +16075,13 @@ var require_pipe2 = __commonJS({
     var _pipe = require_pipe();
     var reduce = require_reduce2();
     var tail = require_tail();
-    function pipe2() {
+    function pipe() {
       if (arguments.length === 0) {
         throw new Error("pipe requires at least one argument");
       }
       return _arity(arguments[0].length, reduce(_pipe, arguments[0], tail(arguments)));
     }
-    module2.exports = pipe2;
+    module2.exports = pipe;
   }
 });
 
@@ -16090,23 +16090,23 @@ var require_reverse = __commonJS({
   "node_modules/ramda/src/reverse.js"(exports2, module2) {
     var _curry1 = require_curry1();
     var _isString = require_isString();
-    var reverse2 = /* @__PURE__ */ _curry1(function reverse3(list) {
+    var reverse = /* @__PURE__ */ _curry1(function reverse2(list) {
       return _isString(list) ? list.split("").reverse().join("") : Array.prototype.slice.call(list, 0).reverse();
     });
-    module2.exports = reverse2;
+    module2.exports = reverse;
   }
 });
 
 // node_modules/ramda/src/compose.js
 var require_compose = __commonJS({
   "node_modules/ramda/src/compose.js"(exports2, module2) {
-    var pipe2 = require_pipe2();
-    var reverse2 = require_reverse();
+    var pipe = require_pipe2();
+    var reverse = require_reverse();
     function compose() {
       if (arguments.length === 0) {
         throw new Error("compose requires at least one argument");
       }
-      return pipe2.apply(this, reverse2(arguments));
+      return pipe.apply(this, reverse(arguments));
     }
     module2.exports = compose;
   }
@@ -16166,12 +16166,12 @@ var require_pipeP2 = __commonJS({
 var require_composeP = __commonJS({
   "node_modules/ramda/src/composeP.js"(exports2, module2) {
     var pipeP = require_pipeP2();
-    var reverse2 = require_reverse();
+    var reverse = require_reverse();
     function composeP() {
       if (arguments.length === 0) {
         throw new Error("composeP requires at least one argument");
       }
-      return pipeP.apply(this, reverse2(arguments));
+      return pipeP.apply(this, reverse(arguments));
     }
     module2.exports = composeP;
   }
@@ -16236,9 +16236,9 @@ var require_composeWith = __commonJS({
   "node_modules/ramda/src/composeWith.js"(exports2, module2) {
     var _curry2 = require_curry2();
     var pipeWith = require_pipeWith();
-    var reverse2 = require_reverse();
+    var reverse = require_reverse();
     var composeWith = /* @__PURE__ */ _curry2(function composeWith2(xf, list) {
-      return pipeWith.apply(this, [xf, reverse2(list)]);
+      return pipeWith.apply(this, [xf, reverse(list)]);
     });
     module2.exports = composeWith;
   }
@@ -19321,12 +19321,12 @@ var require_pickBy = __commonJS({
 var require_pipeK = __commonJS({
   "node_modules/ramda/src/pipeK.js"(exports2, module2) {
     var composeK = require_composeK();
-    var reverse2 = require_reverse();
+    var reverse = require_reverse();
     function pipeK() {
       if (arguments.length === 0) {
         throw new Error("pipeK requires at least one argument");
       }
-      return composeK.apply(this, reverse2(arguments));
+      return composeK.apply(this, reverse(arguments));
     }
     module2.exports = pipeK;
   }
@@ -36449,7 +36449,7 @@ var executeOnce = (f) => {
     }
   };
 };
-var deduplicateChangedFiles = (changed) => (0, import_ramda3.pipe)(import_ramda3.reverse, (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`), import_ramda3.reverse)(changed);
+var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());

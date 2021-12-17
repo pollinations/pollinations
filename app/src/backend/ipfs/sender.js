@@ -5,7 +5,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from "path";
 import { Channel } from "queueable";
-import { last, pipe, reverse, uniqBy } from "ramda";
+import { last, uniqBy } from "ramda";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 
@@ -194,4 +194,4 @@ const executeOnce = f => {
 }
 
 const deduplicateChangedFiles = (changed) =>
-  pipe(reverse, uniqBy(({ event, path }) => `${event}-${path}`), reverse)(changed)
+  uniqBy(({ event, path }) => `${event}-${path}`, changed)

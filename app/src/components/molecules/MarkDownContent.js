@@ -1,5 +1,6 @@
 import Typography from "@material-ui/core/Typography"
 import Markdown from "markdown-to-jsx"
+import { range, zipObj } from "ramda"
 import useContent from "../../hooks/useContent"
 
 const MarkDownContent = ({ id }) => {

@@ -30,7 +30,7 @@ export default memo(function ResultViewer({ ipfs }) {
   const primaryInputField = metadata?.primaryInput
   const primaryInput = ipfs?.input?.[primaryInputField]
 
-  const success = ipfs?.output?.success
+  const success = ipfs?.output?.success !== false
 
   const { images, first } = useMemo(() => {
     return mediaToDisplay(ipfs.output)

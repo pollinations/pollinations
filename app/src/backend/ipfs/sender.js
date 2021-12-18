@@ -5,8 +5,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from "path";
 import { Channel } from "queueable";
-import { last } from "ramda";
-import { debounce } from "throttle-debounce";
+import { last, uniqBy } from "ramda";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 
@@ -69,6 +68,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
         }
 
         if (event === "add" || event === "change") {
+          debug("adding", ipfsPath, localPath)
           await addFile(ipfsPath, localPath)
         }
 
@@ -78,7 +78,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
 
         }
       }))
-      
+
+      debug("synched all changes")
 
       const newContentID = await cid();
       // currentContentID = newContentID;
@@ -132,14 +133,27 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     interval: debounceTime,
   })
 
-  const sendQueuedFiles = debounce(debounceTime, false, async () => {
-    const files = changeQueue
-    changeQueue = []
-    channel$.push(files)
-  })
+
+  // rewrite the above
+  async function transmitQueue() {
+    while (true) {
+      const files = changeQueue
+      changeQueue = []
+      if (files.length > 0) {
+        const deduplicatedFiles = deduplicateChangedFiles(files)
+        debug("Pushing to channel:", deduplicatedFiles)
+        await channel$.push(deduplicatedFiles)
+      }
+      // the use of debounce is not quite right here. Will change later
+      // debug("Sleeping", debounceTime)
+      await awaitSleep(debounceTime)
+    }
+  }
+
+  transmitQueue()
 
   watcher.on("all", async (event, path) => {
-    
+
     debug("got watcher event", event, path);
 
     if (path !== '') {
@@ -147,12 +161,13 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
       const lastChanged = last(changeQueue)
 
       // add to queue only if it is not a repetition of the last change
-      if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
-        debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
-      } else {
-        changeQueue.push({ event, path });
-        sendQueuedFiles();
-      }
+      // if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
+      //   debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
+      // } else {
+      changeQueue.push({ event, path });
+      debug("Queue", changeQueue)
+      //sendQueuedFiles();
+      // }
     }
   })
 
@@ -179,6 +194,4 @@ const executeOnce = f => {
 }
 
 const deduplicateChangedFiles = (changed) =>
-  Object.entries(changed.reduce((lastChange, { event, path }) => ({ ...lastChange, [path]: event }), {}))
-    .map(([path, event]) => ({ event, path }))
-
+  uniqBy(({ event, path }) => `${event}-${path}`, changed)

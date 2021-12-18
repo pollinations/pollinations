@@ -30,11 +30,13 @@ const EachPollen = cid => {
 
     const ipfs = useIPFS(cid, true)
 
+    if (!ipfs?.output)
+        return null
     const { first } = mediaToDisplay(ipfs.output)
-    const metadata = getNotebookMetadata(ipfs);
+    const metadata = getNotebookMetadata(ipfs)
 
-    const primaryInputField = metadata?.primaryInput;
-    const primaryInput = ipfs?.input?.[primaryInputField];
+    const primaryInputField = metadata?.primaryInput
+    const primaryInput = ipfs?.input?.[primaryInputField]
 
     return <Box>
         <Card style={CardContainerStyle}>

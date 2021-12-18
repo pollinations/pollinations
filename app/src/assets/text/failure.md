@@ -15,5 +15,5 @@ Things you can try is:
 - In the *Colab* tab that is running the Pollinator click "Runtime -> Factory Reset Runtime" and then "Runtime -> Run All"
 - Click **[ CLONE ]** on the failed Pollen and try submitting again
 
-If it doesn't help please visit our [#bug-reports](https://discord.gg/XXd99CrkCr) channel on Discord and we will try to help figure out what is going on. Ideally copy and paste your contentID: *{contentID}* to our channel and we can check what exactly went wrong.
+If it doesn't help please visit our [#bug-reports](https://discord.gg/XXd99CrkCr) channel on Discord. Ideally copy and paste your contentID: *{contentID}* to our channel and we can check what exactly went wrong.
 

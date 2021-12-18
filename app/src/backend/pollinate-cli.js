@@ -2,8 +2,9 @@
 import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
-import { createWriteStream } from "fs"
+import { createWriteStream, mkdirSync } from "fs"
 import { emptyDirSync } from "fs-extra"
+import { join } from "path"
 import process from "process"
 import Readline from 'readline'
 import { receive } from "./ipfs/receiver.js"
@@ -66,6 +67,9 @@ if (executeCommand)
     let startedSending = false;
     while (true) {
       emptyDirSync(rootPath)
+      mkdirSync(join(rootPath, "/input"))
+      mkdirSync(join(rootPath, "/output"))
+
       await receive({ ...options, once: true })
 
       if (!startedSending) {

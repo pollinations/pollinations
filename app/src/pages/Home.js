@@ -14,11 +14,11 @@ import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
 import RouterLink from "../components/molecules/RouterLink"
 import Alert from "@material-ui/lab/Alert"
+import { CardContainerStyle } from "./styles/card"
 
 const debug = Debug("home");
 
 export default function Home({ ipfs }) {
-
 
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
@@ -116,42 +116,45 @@ const HeroSection = props => <Box paddingTop={3}>
 const NotebookCard = ({notebook}) => {
     let test = compiler(notebook.description, { wrapper: null })
 
-    const {category, name, path, Icon, description} = notebook;
+    const {category, name, path, description} = notebook
+
     return  <Box>
-        <Card style={{
-          backgroundColor: 'transparent', 
-          border: '0.9px solid rgb(255, 236, 249)', borderRadius: 20}}>
-        <CardHeader
-        subheader={<Typography className='Lato noMargin' variant="h4" component="h4" gutterBottom children={<RouterLink children={name?.slice(2)} to={path}/>}/>} 
-        title={<Typography className='Lato' variant="h6" component="h6" gutterBottom children={<RouterLink to={path} children={category?.slice(2)}/>} />} 
-        action={<></>} />
-                        <img src={
-                          test[0]?.props?.src ? 
-                          test[0]?.props?.src 
-                          : test[0]?.props?.children[0]?.props?.src} 
+        <Card style={CardContainerStyle}>
 
-                        style={{width: '100%'}}/>
+          <CardHeader
+          subheader={<CardTitle children={name?.slice(2)} to={path} variant='h4'/>} 
+          title={<CardTitle children={category?.slice(2)}to={path} variant='h6'/>} />
 
-            <CardContent>
-                <Markdown 
-                options={{
-                  overrides: {
-                      img: {
-                          component: gambiarraImg,
-                          
-                      },
-                  },
-              }}
-              style={{pointerEvents: "none"}}>
-                  {description}
-                </Markdown>
+          <img src={
+            test[0]?.props?.src ? 
+            test[0]?.props?.src 
+            : test[0]?.props?.children[0]?.props?.src} 
+            style={{width: '100%'}}/>
 
-            </CardContent>
+          <CardContent>
+              <Markdown options={MarkDownOptions}>
+                {description}
+              </Markdown>
+          </CardContent>
+
         </Card>
     </Box>
 }
 
+const CardTitle = ({to, children, variant }) => <>
+  <Typography className='Lato noMargin' variant={variant} gutterBottom>
+      <RouterLink to={to}>
+        {children}
+      </RouterLink>
+  </Typography>
+</>
+
 // surprise, it's a div instead!
 const gambiarraImg = ({ children, ...props }) => (
   <div />
-);
+)
+const MarkDownOptions = {
+  overrides: {
+      img: { component: gambiarraImg }
+  }
+}

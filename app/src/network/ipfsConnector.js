@@ -1,6 +1,7 @@
 
 import Debug from "debug";
-import { create, globSource } from "ipfs-http-client";
+import { createReadStream } from "fs";
+import { create } from "ipfs-http-client";
 import all from "it-all";
 import { CID } from "multiformats/cid";
 import { basename, dirname, join } from "path";
@@ -43,7 +44,7 @@ export async function reader() {
 
 // randomly assign a temporary folder in the IPFS mutable filesystem
 // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
-const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g,"_")}`;
+const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}`;
 
 
 // Create a writer to modify the IPFS state
@@ -56,7 +57,7 @@ export function writer(initialRootCID = null) {
     let initializedFolder = getClient().then(client => initializeMFSFolder(client, initialRootCID))
 
     // calls the function with client and absolute path and finally return the root CID
-    const returnRootCID = func => async (path="/", ...args) => {
+    const returnRootCID = func => async (path = "/", ...args) => {
 
         const client = await getClient()
 
@@ -169,46 +170,52 @@ const _normalizeIPFS = ({ name, path, cid, type }) => ({ name, path, cid: string
 
 const ipfsLsCID = async (client, cid) => {
     try {
-    cid = await optionallyResolveIPNS(client, cid);
-    debug("calling ipfs ls with cid", cid);
-    const result = (await toPromise(client.ls(stringCID(cid))))
-        .filter(({ type, name }) => type !== "unknown" && name !== undefined)
-        .map(_normalizeIPFS);
-    debug("got ipfs ls result", result);
-    return result;
-    } catch(e) {
+        cid = await optionallyResolveIPNS(client, cid);
+        debug("calling ipfs ls with cid", cid);
+        const result = (await toPromise(client.ls(stringCID(cid))))
+            .filter(({ type, name }) => type !== "unknown" && name !== undefined)
+            .map(_normalizeIPFS);
+        debug("got ipfs ls result", result);
+        return result;
+    } catch (e) {
         console.log(e)
     }
 }
 
 
 const ipfsAdd = async (client, path, content, options = {}) => {
-    debug("adding", path, "options", options);
-    let cid = null;
+    debug("adding", path, "options", options)
+    let cid = null
     try {
-        cid = stringCID(await client.add(content, options));
+        // check if content has the async iterator symbol
+        // if (content[Symbol.asyncIterator]) {
+        //     debug("content is an async iterator")
+        //     cid = stringCID(await toPromise1(client.addAll(content, options)))
+        // } else {
+        cid = stringCID(await client.add(content, options))
+        // }
     } catch (e) {
-        debug("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?");
-        return null;
+        debug("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?")
+        return null
     }
 
-    debug("added", cid);
+    debug("added", cid)
 
 
     try {
-        debug("Trying to delete", path);
-        await client.files.rm(path, { recursive: true });
+        debug("Trying to delete", path)
+        await client.files.rm(path, { recursive: true })
     } catch {
         debug("Could not delete. Probably did not exist.")
-    };
-    debug("copying to", path);
-    try {
-        await client.files.cp(`/ipfs/${cid}`, path, { create: true });
-    } catch (e) {
-        debug("couldn't copy. file probably existed for some reason");
     }
-    return cid;
-};
+    debug("copying to", path)
+    try {
+        await client.files.cp(`/ipfs/${cid}`, path, { create: true })
+    } catch (e) {
+        debug("couldn't copy. file probably existed for some reason")
+    }
+    return cid
+}
 
 const ipfsGet = async (client, cid, { onlyLink = false }) => {
 
@@ -237,7 +244,7 @@ const ipfsAddFile = async (client, ipfsPath, localPath) => {
     // get filename from path
     const filename = basename(localPath);
     const folder = dirname(localPath);
-    await ipfsAdd(client, ipfsPath, globSource(folder, filename, { preserveMtime: true, preserveMode: true }))
+    await ipfsAdd(client, ipfsPath, createReadStream(localPath))
 }
 
 async function optionallyResolveIPNS(client, cid) {

@@ -1,42 +1,43 @@
-import { Box, Container, Link } from '@material-ui/core'
-import AppBarMaterial from '@material-ui/core/AppBar'
-import Toolbar from '@material-ui/core/Toolbar'
+import { Box, Container } from '@material-ui/core'
 import Typography from '@material-ui/core/Typography'
-import Alert from '@material-ui/lab/Alert'
 import React from 'react'
-import { Route, Routes } from 'react-router'
 import RouterLink from './molecules/RouterLink'
 import { SocialLinks } from './Social'
 
 export default function AppBar() {
 
   return <>
-      <Container maxWidth='lg'>
+    <Container maxWidth='lg'>
 
-      <div style={Border}/>
+      <div style={Border} />
 
       <div style={ContainerStyle}>
         <Box minWidth='50%' display='grid' gridRowGap='2em' gridTemplateColumns='repeat(auto-fit, minmax(90px, 1fr))'>
 
-          <Typography variant="h6" style={{ gridColumnStart: 1, gridColumnEnd: 3}}>
-              <RouterLink to={"/"}>
-                pollinations.ai
-              </RouterLink>
+          <Typography variant="h6" style={{ gridColumnStart: 1, gridColumnEnd: 3 }}>
+            <RouterLink to={"/"}>
+              pollinations.ai
+            </RouterLink>
           </Typography>
           <Typography variant="h6">
-              <RouterLink to={"/about"}>
-                about
-              </RouterLink>
+            <RouterLink to={"/about"}>
+              about
+            </RouterLink>
           </Typography>
           <Typography variant="h6">
-              <RouterLink to={"/help"}>
-                help
-              </RouterLink>
+            <RouterLink to={"/feed"}>
+              feed
+            </RouterLink>
           </Typography>
           <Typography variant="h6">
-              <RouterLink to={"/feed"}>
-                feed
-              </RouterLink>
+            <RouterLink to={"/help"}>
+              help
+            </RouterLink>
+          </Typography>
+          <Typography variant="h6">
+            <RouterLink to={"/localpollens"}>
+              my pollen
+            </RouterLink>
           </Typography>
 
         </Box>
@@ -46,8 +47,8 @@ export default function AppBar() {
       {/* <Alert severity="error">
        Sorry, we are experiencing some problems with our backend. We are on it and pollinations will be back as soon as possible
       </Alert> */}
-      </Container>
-      </>
+    </Container>
+  </>
 }
 
 let ContainerStyle = {

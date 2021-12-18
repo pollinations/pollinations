@@ -87,12 +87,22 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 done
 
 
+# Write if run succeeded to output/success
+if [[ "$RUN_COUNT" < 2  ]]; then
+    echo "🐝: Run succeeded. Writing 'true' to output/success"
+    echo -n true > $IPFS_ROOT/output/success
+else
+    echo "🐝: Run failed. Writing 'false' to output/success"
+    echo -n false > $IPFS_ROOT/output/success
+fi
+
 
 # --- Cleanup
 
 echo "🐝: Setting the state to signify the run has ended"
 echo -n true > $IPFS_ROOT/output/done
 rm -v $IPFS_ROOT/input/formAction
+
 
 # -- Done
 echo "🐝: Setting colab status to waiting"
@@ -109,17 +119,12 @@ CID=$( tail -n 1 /content/cid )
 echo "🐝: Pinning $CID"
 node /usr/local/bin/pin.js $CID
 
-# --- Post if run successfulk ---
+
+# --- Post if run successfull ---
 if [[ "$RUN_COUNT" < 2  ]]; then
     echo "🐝: Posting $CID to social media"
     node /usr/local/bin/social_post.js $CID
-    echo "🐝: Run succeeded. Writing 'true' to output/success"
-    echo -n true > $IPFS_ROOT/output/success
-else
-    echo "🐝: Run failed. Writing 'false' to output/success"
-    echo -n false > $IPFS_ROOT/output/success
 fi
-
 
 
 # --- Cleanup

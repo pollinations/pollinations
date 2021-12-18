@@ -18,7 +18,7 @@ import { getNotebookMetadata } from "../utils/notebookMetadata";
 
 // STREAM VIEWER (/n)
 
-const debug = Debug("ModelViewer");
+const debug = Debug("ResultViewer");
 
 export default memo(function ResultViewer({ ipfs }) {
 

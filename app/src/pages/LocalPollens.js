@@ -32,6 +32,7 @@ const EachPollen = cid => {
 
     if (!ipfs?.output)
         return null
+
     const { first } = mediaToDisplay(ipfs.output)
     const metadata = getNotebookMetadata(ipfs)
 

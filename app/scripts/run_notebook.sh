@@ -57,7 +57,7 @@ STATUS=1
 RUN_COUNT=0
 
 # --- Run
-while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 3 ]]; do
+while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 
     # Increment run counter
     RUN_COUNT=$((RUN_COUNT+1))
@@ -110,7 +110,7 @@ echo "🐝: Pinning $CID"
 node /usr/local/bin/pin.js $CID
 
 # --- Post if run successfulk ---
-if [[ "$RUN_COUNT" < 3  ]]; then
+if [[ "$RUN_COUNT" < 2  ]]; then
     echo "🐝: Posting $CID to social media"
     node /usr/local/bin/social_post.js $CID
 fi

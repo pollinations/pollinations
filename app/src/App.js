@@ -9,9 +9,17 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
+import useLocalPollens from "./hooks/useLocalPollens"
+
+import About from "./pages/About"
+import BlankMarkdown from "./pages/BlankMarkdown"
+import ChristmasSpecial from "./pages/ChristmaSpecial"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
+import Help from "./pages/Help"
 import Home from "./pages/Home"
+import LocalPollens from "./pages/LocalPollens"
+
 import ResultViewer from "./pages/ResultViewer"
 
 
@@ -32,6 +40,20 @@ const Pollinations = () => {
 
     const navigate = useNavigate()
 
+
+
+    // temporary way of getting around done state
+    const { pushCID } = useLocalPollens(node)
+    const ipfs = useIPFS(node.contentID);
+    useEffect(()=>{
+        if (ipfs?.output?.done) {
+            pushCID(ipfs[".cid"])
+        }
+    },[ipfs?.output?.done])
+
+
+
+
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
             overrideContentID(contentID)
@@ -49,7 +71,13 @@ const Pollinations = () => {
         {/* Children that get IPFS state */}
         <Container maxWidth='lg'>
             <Routes>
-                <Route path='feed' element={<Feed />} />
+                <Route exact path='feed' element={<Feed />} />
+                <Route exact path='help' element={<Help/>}/>
+                <Route exact path='about' element={<About/>}/>
+                <Route exact path='blankMarkdown' element={<BlankMarkdown/>}/>
+                <Route exact path='localpollens' element={<LocalPollens node={node}/>}/>
+                <Route exact path='christmas' element={<ChristmasSpecial/>}/>
+
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
@@ -73,12 +101,16 @@ const HomeWithData = () => {
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID);
     const { nodeID } = useParams();
+
     useEffect(() => {
         if (nodeID)
             overrideNodeID(nodeID)
     }, [nodeID])
 
-    if (ipfs?.output?.done) return <Navigate to={`/p/${ipfs[".cid"]}`} />
+    if (ipfs?.output?.done) {
+        // pushCID(ipfs[".cid"])
+        return <Navigate to={`/p/${ipfs[".cid"]}`} />
+    }
 
     return <ResultViewer ipfs={ipfs} />
 }

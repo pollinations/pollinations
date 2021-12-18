@@ -38934,7 +38934,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       debug9("Local: Root directory does not exist. Creating", watchPath);
       (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
     }
-    const { channel$: changedFiles$, close: _closeFileWatcher, pause } = chunkedFilewatcher(watchPath, debounceTime);
+    const { channel$: changedFiles$, close: _closeFileWatcher, setPaused: setPaused2 } = chunkedFilewatcher(watchPath, debounceTime);
     closeFileWatcher = _closeFileWatcher;
     let done = null;
     for await (const changed of changedFiles$) {
@@ -38976,7 +38976,8 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
   return {
     start,
     processing: () => processing,
-    close
+    close,
+    setPaused
   };
 };
 var chunkedFilewatcher = (watchPath, debounceTime) => {
@@ -39015,10 +39016,10 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
       debug9("Queue", changeQueue);
     }
   });
-  const setPaused = (_paused) => {
+  const setPaused2 = (_paused) => {
     paused = _paused;
   };
-  return { channel$, close: watcher.close(), setPaused };
+  return { channel$, close: watcher.close(), setPaused: setPaused2 };
 };
 var executeOnce = (f) => {
   let executed = false;

@@ -46,7 +46,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       mkdirSync(watchPath, { recursive: true })
     }
 
-    const { channel$: changedFiles$, close: _closeFileWatcher, pause } = chunkedFilewatcher(watchPath, debounceTime)
+    const { channel$: changedFiles$, close: _closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
 
     closeFileWatcher = _closeFileWatcher
 
@@ -114,7 +114,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   return {
     start,
     processing: () => processing,
-    close
+    close,
+    setPaused
   };
 
 };

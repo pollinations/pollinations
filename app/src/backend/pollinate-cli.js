@@ -61,20 +61,24 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
+    const { start: startSending, processing, close, setPaused: pauseSending } = sender({ ...options, once: false })
 
 
-
-    //let startedSending = false;
+    let startedSending = false;
     while (true) {
+      pauseSending(true)
       emptyDirSync(rootPath)
       mkdirSync(join(rootPath, "/input"))
       mkdirSync(join(rootPath, "/output"))
 
       await receive({ ...options, once: true })
-      const { start: startSending, processing, close } = sender({ ...options, once: false })
 
-      startSending()
+      if (!startedSending) {
+        startedSending = true;
+        startSending()
+      }
 
+      pauseSending(false)
 
       await execute(executeCommand, options.logout)
       debug("done executing", executeCommand, ". Waiting...")
@@ -84,8 +88,7 @@ if (executeCommand)
       await processing()
       await awaitSleep(sleepBeforeExit)
       await processing()
-      debug("closing sender")
-      await close()
+
     }
     await close();
 

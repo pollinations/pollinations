@@ -46,7 +46,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       mkdirSync(watchPath, { recursive: true })
     }
 
-    const { channel$: changedFiles$, close: _closeFileWatcher } = chunkedFilewatcher(watchPath, debounceTime)
+    const { channel$: changedFiles$, close: _closeFileWatcher, pause } = chunkedFilewatcher(watchPath, debounceTime)
 
     closeFileWatcher = _closeFileWatcher
 
@@ -137,15 +137,18 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     interval: debounceTime,
   })
 
+  let paused = false;
   // rewrite the above
   async function transmitQueue() {
     while (true) {
-      const files = changeQueue
-      changeQueue = []
-      if (files.length > 0) {
-        const deduplicatedFiles = deduplicateChangedFiles(files)
-        debug("Pushing to channel:", deduplicatedFiles)
-        await channel$.push(deduplicatedFiles)
+      if (!paused) {
+        const files = changeQueue
+        changeQueue = []
+        if (files.length > 0) {
+          const deduplicatedFiles = deduplicateChangedFiles(files)
+          debug("Pushing to channel:", deduplicatedFiles)
+          await channel$.push(deduplicatedFiles)
+        }
       }
       // the use of debounce is not quite right here. Will change later
       // debug("Sleeping", debounceTime)
@@ -166,7 +169,11 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     }
   })
 
-  return { channel$, close: watcher.close() };
+  const setPaused = (_paused) => {
+    paused = _paused
+  }
+
+  return { channel$, close: watcher.close(), setPaused };
 }
 
 // publishes a message that pollinating is done which triggers pinning on the server

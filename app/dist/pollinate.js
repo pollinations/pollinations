@@ -21043,8 +21043,8 @@ var require_isEmpty = __commonJS({
 var require_join = __commonJS({
   "node_modules/ramda/src/join.js"(exports2, module2) {
     var invoker = require_invoker();
-    var join5 = /* @__PURE__ */ invoker(1, "join");
-    module2.exports = join5;
+    var join6 = /* @__PURE__ */ invoker(1, "join");
+    module2.exports = join6;
   }
 });
 
@@ -30972,6 +30972,7 @@ var import_child_process = __toModule(require("child_process"));
 var import_debug10 = __toModule(require_src());
 var import_fs4 = __toModule(require("fs"));
 var import_fs_extra = __toModule(require_lib());
+var import_path6 = __toModule(require("path"));
 var import_process2 = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
 
@@ -39062,6 +39063,8 @@ if (executeCommand)
     let startedSending = false;
     while (true) {
       (0, import_fs_extra.emptyDirSync)(rootPath);
+      (0, import_fs4.mkdirSync)((0, import_path6.join)(rootPath, "/input"));
+      (0, import_fs4.mkdirSync)((0, import_path6.join)(rootPath, "/output"));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
       if (!startedSending) {
         startedSending = true;

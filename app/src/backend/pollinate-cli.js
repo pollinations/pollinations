@@ -1,13 +1,14 @@
 #!/usr/bin/env node
-import awaitSleep from "await-sleep";
-import { spawn } from "child_process";
-import Debug from "debug";
-import { createWriteStream } from "fs";
-import process from "process";
-import Readline from 'readline';
-import { receive } from "./ipfs/receiver.js";
-import { sender } from './ipfs/sender.js';
-import options from "./options.js";
+import awaitSleep from "await-sleep"
+import { spawn } from "child_process"
+import Debug from "debug"
+import { createWriteStream } from "fs"
+import { emptyDirSync } from "fs-extra"
+import process from "process"
+import Readline from 'readline'
+import { receive } from "./ipfs/receiver.js"
+import { sender } from './ipfs/sender.js'
+import options from "./options.js"
 
 
 
@@ -17,37 +18,37 @@ export const debug = Debug("pollinate")
 const readline = Readline.createInterface({
   input: process.stdin,
   output: process.stdout
-});
+})
 
-debug("CLI options", options);
-
-
-
-export const rootPath = options.path;
-
-const enableSend = !options.receive;
-const enableReceive = !options.send;
+debug("CLI options", options)
 
 
-const executeCommand = options.execute;
-const sleepBeforeExit = options.debounce * 2 + 10000;
+
+export const rootPath = options.path
+
+const enableSend = !options.receive
+const enableReceive = !options.send
+
+
+const executeCommand = options.execute
+const sleepBeforeExit = options.debounce * 2 + 10000
 
 const execute = async (command, logfile = null) =>
   new Promise((resolve, reject) => {
-    debug("Executing command", command);
-    const childProc = spawn(command);
+    debug("Executing command", command)
+    const childProc = spawn(command)
     childProc.on("error", err => {
-      debug("Error executing command", err);
-      reject(err);
+      debug("Error executing command", err)
+      reject(err)
     });
-    childProc.on("close", resolve);
-    childProc.stdout.pipe(process.stderr);
-    childProc.stderr.pipe(process.stderr);
+    childProc.on("close", resolve)
+    childProc.stdout.pipe(process.stderr)
+    childProc.stderr.pipe(process.stderr)
     if (logfile) {
-      debug("creating a write stream to ", logfile);
-      const logout = createWriteStream(logfile, { 'flags': 'a' });
-      childProc.stdout.pipe(logout);
-      childProc.stderr.pipe(logout);
+      debug("creating a write stream to ", logfile)
+      const logout = createWriteStream(logfile, { 'flags': 'a' })
+      childProc.stdout.pipe(logout)
+      childProc.stderr.pipe(logout)
     }
   });
 
@@ -59,27 +60,27 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
-    const { start: startSending, processing, close } = sender({ ...options, once: false });
+    const { start: startSending, processing, close } = sender({ ...options, once: false })
 
 
     let startedSending = false;
     while (true) {
+      emptyDirSync(rootPath)
+      await receive({ ...options, once: true })
 
-      await receive({ ...options, once: true });
-
-      if (!startedSending) {  
+      if (!startedSending) {
         startedSending = true;
-        startSending();
+        startSending()
       }
 
-      await execute(executeCommand, options.logout);
-      debug("done executing", executeCommand, ". Waiting...");
+      await execute(executeCommand, options.logout)
+      debug("done executing", executeCommand, ". Waiting...")
 
       // This waiting logic is quite hacky. Should improve it.
-      debug("awaiting termination of state sync");
-      await processing();
-      await awaitSleep(sleepBeforeExit);
-      await processing();
+      debug("awaiting termination of state sync")
+      await processing()
+      await awaitSleep(sleepBeforeExit)
+      await processing()
 
     }
     await close();
@@ -100,19 +101,19 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = sender(options);
-      await start();
-      await awaitSleep(sleepBeforeExit);
-      await processing();
-      await close();
-      process.exit(0);
+      const { start, processing, close } = sender(options)
+      await start()
+      await awaitSleep(sleepBeforeExit)
+      await processing()
+      await close()
+      process.exit(0)
     })();
 
 
   if (enableReceive) {
     (async () => {
-      await receive(options);
-      process.exit(0);
+      await receive(options)
+      process.exit(0)
     })();
   }
 }

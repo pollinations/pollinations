@@ -38920,7 +38920,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
   const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
-  let closeFileWatcher = null;
+  const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime);
   const close = executeOnce(async (error) => {
     debug9("Closing sender", nodeid);
     await closeWriter();
@@ -38934,9 +38934,8 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       debug9("Local: Root directory does not exist. Creating", watchPath);
       (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
     }
-    const { channel$: changedFiles$, close: _closeFileWatcher, setPaused: setPaused2 } = chunkedFilewatcher(watchPath, debounceTime);
-    closeFileWatcher = _closeFileWatcher;
     let done = null;
+    setPaused(false);
     for await (const changed of changedFiles$) {
       debug9("Changed files", changed);
       processing = new Promise((resolve2) => done = resolve2);
@@ -38993,7 +38992,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     cwd: watchPath,
     interval: debounceTime
   });
-  let paused = false;
+  let paused = true;
   async function transmitQueue() {
     while (true) {
       if (!paused) {
@@ -39016,10 +39015,10 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
       debug9("Queue", changeQueue);
     }
   });
-  const setPaused2 = (_paused) => {
+  const setPaused = (_paused) => {
     paused = _paused;
   };
-  return { channel$, close: watcher.close(), setPaused: setPaused2 };
+  return { channel$, close: watcher.close(), setPaused };
 };
 var executeOnce = (f) => {
   let executed = false;

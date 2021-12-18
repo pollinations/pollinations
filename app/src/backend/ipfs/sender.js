@@ -26,8 +26,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   // publisher to pollen feed
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
 
+  const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
 
-  let closeFileWatcher = null
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
@@ -46,12 +46,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       mkdirSync(watchPath, { recursive: true })
     }
 
-    const { channel$: changedFiles$, close: _closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
-
-    closeFileWatcher = _closeFileWatcher
-
     let done = null
-
+    setPaused(false)
 
     for await (const changed of changedFiles$) {
 
@@ -90,9 +86,9 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       console.log(newContentID);
 
       if (ipns) {
-        debug("publish", newContentID);
+        debug("publish", newContentID)
         // publish to frontend
-        await publish(newContentID);
+        await publish(newContentID)
         await awaitSleep(1000)
         // publish to feed
         await publishPollen(newContentID);
@@ -138,7 +134,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     interval: debounceTime,
   })
 
-  let paused = false;
+  let paused = true;
   // rewrite the above
   async function transmitQueue() {
     while (true) {

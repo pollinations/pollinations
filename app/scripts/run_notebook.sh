@@ -113,8 +113,10 @@ node /usr/local/bin/pin.js $CID
 if [[ "$RUN_COUNT" < 2  ]]; then
     echo "🐝: Posting $CID to social media"
     node /usr/local/bin/social_post.js $CID
+    echo "🐝: Run succeeded. Writing 'true' to output/success"
     echo -n true > $IPFS_ROOT/output/success
 else
+    echo "🐝: Run failed. Writing 'false' to output/success"
     echo -n false > $IPFS_ROOT/output/success
 fi
 

@@ -20,6 +20,8 @@ echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
 
 echo "🐝: Removing last run output if there was any."
 rm -rv $IPFS_ROOT/output/*
+!mkdir -p $IPFS_ROOT/input
+!mkdir -p $IPFS_ROOT/output
 
 for path in $IPFS_ROOT/input/*; do
     key=$(basename $path)

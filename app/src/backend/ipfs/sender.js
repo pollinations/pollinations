@@ -5,7 +5,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from "path";
 import { Channel } from "queueable";
-import { last, uniqBy } from "ramda";
+import { uniqBy } from "ramda";
 import { getClient, writer } from "../../network/ipfsConnector.js";
 import { publisher } from "../../network/ipfsPubSub.js";
 
@@ -27,6 +27,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
 
 
+  let closeFileWatcher = null
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = executeOnce(async (error) => {
@@ -34,6 +35,8 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
     await closeWriter()
     await closePublisher()
     await closePollenPublisher()
+    if (closeFileWatcher)
+      await closeFileWatcher()
   });
 
   async function start() {
@@ -43,8 +46,9 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
       mkdirSync(watchPath, { recursive: true })
     }
 
-    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime)
+    const { channel$: changedFiles$, close: _closeFileWatcher } = chunkedFilewatcher(watchPath, debounceTime)
 
+    closeFileWatcher = _closeFileWatcher
 
     let done = null
 
@@ -133,7 +137,6 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     interval: debounceTime,
   })
 
-
   // rewrite the above
   async function transmitQueue() {
     while (true) {
@@ -158,20 +161,12 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
 
     if (path !== '') {
 
-      const lastChanged = last(changeQueue)
-
-      // add to queue only if it is not a repetition of the last change
-      // if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
-      //   debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
-      // } else {
       changeQueue.push({ event, path });
       debug("Queue", changeQueue)
-      //sendQueuedFiles();
-      // }
     }
   })
 
-  return channel$;
+  return { channel$, close: watcher.close() };
 }
 
 // publishes a message that pollinating is done which triggers pinning on the server

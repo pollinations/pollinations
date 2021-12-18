@@ -9,10 +9,6 @@ NOTEBOOK_PARAMS_FILE=/content/params.yaml
 
 echo "IPFS_ROOT: $IPFS_ROOT"
 
-# --- Create input and output folders just in case
-!mkdir -p $IPFS_ROOT/input
-!mkdir -p $IPFS_ROOT/output
-
 
 # --- Construct Parameters
 echo "---" > $NOTEBOOK_PARAMS_FILE

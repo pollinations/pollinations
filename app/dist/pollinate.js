@@ -39020,6 +39020,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     }
   });
   const setPaused = (_paused) => {
+    debug9("setting paused to", _paused);
     paused = _paused;
   };
   return { channel$, close: () => watcher.close(), setPaused };
@@ -39084,6 +39085,7 @@ if (executeCommand)
         startedSending = true;
         startSending();
       }
+      debug10("unpausing sending");
       pauseSending(false);
       await execute(executeCommand, options_default.logout);
       debug10("done executing", executeCommand, ". Waiting...");

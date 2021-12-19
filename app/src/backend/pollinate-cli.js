@@ -78,6 +78,7 @@ if (executeCommand)
         startSending()
       }
 
+      debug("unpausing sending")
       pauseSending(false)
 
       await execute(executeCommand, options.logout)

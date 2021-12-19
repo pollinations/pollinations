@@ -170,6 +170,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
   })
 
   const setPaused = (_paused) => {
+    debug("setting paused to", _paused)
     paused = _paused
   }
 

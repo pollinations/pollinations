@@ -38941,7 +38941,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       debug9("Changed files", changed);
       processing = new Promise((resolve2) => done = resolve2);
       const lastChanged = changed;
-      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
+      for (const { event, path: file } of lastChanged) {
         debug9("Local:", event, file);
         const localPath = (0, import_path5.join)(watchPath, file);
         const ipfsPath = file;
@@ -38956,7 +38956,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
           debug9("removing", file, event);
           await rm(ipfsPath);
         }
-      }));
+      }
       debug9("synched all changes");
       const newContentID = await cid();
       console.log(newContentID);

@@ -23,12 +23,14 @@ export const sender = ({ path, debounce, ipns, once, nodeid }) => {
 
   // const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
 
-  const abortController = new AbortController()
+  let abortController = null;
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
   const close = async (error) => {
     debug("Closing sender", nodeid)
-    abortController.abort()
+    if (abortController)
+      abortController.abort()
+
     await ipfsWriter.close()
     await closePublisher()
     await closePollenPublisher()
@@ -37,6 +39,7 @@ export const sender = ({ path, debounce, ipns, once, nodeid }) => {
 
   async function* startSending() {
 
+    abortController = new AbortController()
     const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal })
 
     debug("start consuming watched files")
@@ -59,9 +62,14 @@ export const sender = ({ path, debounce, ipns, once, nodeid }) => {
     debug("closed sender")
   }
 
+  const stopSending = () => {
+    abortController.abort()
+  }
+
   return {
     startSending,
-    close
+    close,
+    stopSending
   }
 
 };

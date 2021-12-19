@@ -10603,7 +10603,7 @@ var require_tr46 = __commonJS({
       var len = countSymbols(label);
       for (var i = 0; i < len; ++i) {
         var status = findStatus(label.codePointAt(i));
-        if (processing2 === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing2 === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
+        if (processing === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
           error = true;
           break;
         }
@@ -10613,7 +10613,7 @@ var require_tr46 = __commonJS({
         error
       };
     }
-    function processing2(domain_name, useSTD3, processing_option) {
+    function processing(domain_name, useSTD3, processing_option) {
       var result = mapChars(domain_name, useSTD3, processing_option);
       result.string = normalize(result.string);
       var labels = result.string.split(".");
@@ -10632,7 +10632,7 @@ var require_tr46 = __commonJS({
       };
     }
     module2.exports.toASCII = function(domain_name, useSTD3, processing_option, verifyDnsLength) {
-      var result = processing2(domain_name, useSTD3, processing_option);
+      var result = processing(domain_name, useSTD3, processing_option);
       var labels = result.string.split(".");
       labels = labels.map(function(l) {
         try {
@@ -10659,7 +10659,7 @@ var require_tr46 = __commonJS({
       return labels.join(".");
     };
     module2.exports.toUnicode = function(domain_name, useSTD3) {
-      var result = processing2(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
+      var result = processing(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
       return {
         domain: result.string,
         error: result.error
@@ -39004,16 +39004,18 @@ var sender = ({ path, debounce, ipns, once, nodeid }) => {
   const ipfsWriter = writer();
   const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
-  const abortController = new import_native_abort_controller13.AbortController();
+  let abortController = null;
   const close = async (error) => {
     debug11("Closing sender", nodeid);
-    abortController.abort();
+    if (abortController)
+      abortController.abort();
     await ipfsWriter.close();
     await closePublisher();
     await closePollenPublisher();
     debug11("closed all");
   };
   async function* startSending() {
+    abortController = new import_native_abort_controller13.AbortController();
     const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal });
     debug11("start consuming watched files");
     if (!(0, import_fs4.existsSync)(path)) {
@@ -39031,9 +39033,13 @@ var sender = ({ path, debounce, ipns, once, nodeid }) => {
     }
     debug11("closed sender");
   }
+  const stopSending = () => {
+    abortController.abort();
+  };
   return {
     startSending,
-    close
+    close,
+    stopSending
   };
 };
 
@@ -39074,33 +39080,26 @@ var execute = async (command, logfile = null) => new Promise((resolve2, reject) 
 });
 if (executeCommand)
   (async () => {
-    const { start: startSending, close, setPaused: pauseSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
-    let startedSending = false;
+    const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
     while (true) {
-      pauseSending(true);
       (0, import_fs_extra.emptyDirSync)(rootPath);
       (0, import_fs5.mkdirSync)((0, import_path6.join)(rootPath, "/input"));
       (0, import_fs5.mkdirSync)((0, import_path6.join)(rootPath, "/output"));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
-      if (!startedSending) {
-        startedSending = true;
-        startSending();
-      }
-      debug12("unpausing sending");
-      pauseSending(false);
-      await execute(executeCommand, options_default.logout);
-      debug12("done executing", executeCommand, ". Waiting...");
-      debug12("awaiting termination of state sync");
-      await (0, import_await_sleep4.default)(sleepBeforeExit);
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug12("sent", sentCID);
+        }
+      };
+      const doExecute = async () => {
+        await execute(executeCommand, options_default.logout);
+        debug12("done executing", executeCommand, ". Waiting...");
+        await (0, import_await_sleep4.default)(2e3);
+        stopSending();
+      };
+      await Promise.all([doSend(), doExecute()]);
+      debug12("finished. Starting again");
     }
-    await close();
-    await (0, import_await_sleep4.default)(sleepBeforeExit);
-    debug12("awaiting termination of state sync");
-    await processing();
-    debug12("calling sender's close function.");
-    await close();
-    debug12("state sync done. exiting");
-    import_process2.default.exit(0);
   })();
 else {
   if (enableSend)

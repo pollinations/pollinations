@@ -61,42 +61,37 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
-    const { startSending, close } = sender({ ...options, once: false })
+    const { startSending, close, stopSending } = sender({ ...options, once: false })
 
     while (true) {
-      pauseSending(true)
       emptyDirSync(rootPath)
       mkdirSync(join(rootPath, "/input"))
       mkdirSync(join(rootPath, "/output"))
 
-      startSending()
+
       await receive({ ...options, once: true })
-      close()
-
-      debug("unpausing sending")
 
 
-      await execute(executeCommand, options.logout)
-      debug("done executing", executeCommand, ". Waiting...")
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug("sent", sentCID)
+        }
+      }
 
-      // This waiting logic is quite hacky. Should improve it.
-      debug("awaiting termination of state sync")
+      const doExecute = async () => {
+        await execute(executeCommand, options.logout)
+        debug("done executing", executeCommand, ". Waiting...")
+        await awaitSleep(2000)
+        stopSending()
+      }
 
-      await awaitSleep(sleepBeforeExit)
+
+      await Promise.all([doSend(), doExecute()])
+
+      debug("finished. Starting again")
 
     }
-    await close();
 
-    await awaitSleep(sleepBeforeExit);
-    debug("awaiting termination of state sync");
-    await processing();
-
-    // not sure if this is the right order
-    debug("calling sender's close function.")
-    await close();
-
-    debug("state sync done. exiting");
-    process.exit(0);
 
   })();
 

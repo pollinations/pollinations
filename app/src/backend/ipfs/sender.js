@@ -41,6 +41,7 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
 
   async function start() {
 
+    debug("start consuming watched files")
     if (!existsSync(watchPath)) {
       debug("Local: Root directory does not exist. Creating", watchPath)
       mkdirSync(watchPath, { recursive: true })
@@ -96,15 +97,16 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
 
 
 
-
+      done()
       if (once) {
+        debug("Only sending once. break")
+
         break;
       }
-      done();
+
     }
-
-
-    await close();
+    await close()
+    debug("closed sender")
   }
 
   return {
@@ -155,6 +157,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
 
   transmitQueue()
 
+  debug("registering watcher for path", watchPath)
   watcher.on("all", async (event, path) => {
 
     debug("got watcher event", event, path);
@@ -170,7 +173,7 @@ const chunkedFilewatcher = (watchPath, debounceTime) => {
     paused = _paused
   }
 
-  return { channel$, close: watcher.close(), setPaused };
+  return { channel$, close: () => watcher.close(), setPaused };
 }
 
 // publishes a message that pollinating is done which triggers pinning on the server

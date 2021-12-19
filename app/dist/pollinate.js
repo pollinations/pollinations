@@ -38930,6 +38930,7 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
       await closeFileWatcher();
   });
   async function start() {
+    debug9("start consuming watched files");
     if (!(0, import_fs3.existsSync)(watchPath)) {
       debug9("Local: Root directory does not exist. Creating", watchPath);
       (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
@@ -38965,12 +38966,14 @@ var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) =
         await (0, import_await_sleep3.default)(1e3);
         await publishPollen(newContentID);
       }
+      done();
       if (once) {
+        debug9("Only sending once. break");
         break;
       }
-      done();
     }
     await close();
+    debug9("closed sender");
   }
   return {
     start,
@@ -39008,6 +39011,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
     }
   }
   transmitQueue();
+  debug9("registering watcher for path", watchPath);
   watcher.on("all", async (event, path) => {
     debug9("got watcher event", event, path);
     if (path !== "") {
@@ -39018,7 +39022,7 @@ var chunkedFilewatcher = (watchPath, debounceTime) => {
   const setPaused = (_paused) => {
     paused = _paused;
   };
-  return { channel$, close: watcher.close(), setPaused };
+  return { channel$, close: () => watcher.close(), setPaused };
 };
 var executeOnce = (f) => {
   let executed = false;

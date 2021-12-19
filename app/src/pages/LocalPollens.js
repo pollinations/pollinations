@@ -9,7 +9,10 @@ import { CardContainerStyle } from "./styles/card"
 
 const LocalPollens = ({ node }) => {
 
-    const { pollens, pushCID } = useLocalPollens(node)
+    const { pollens } = useLocalPollens(node)
+
+    if (!pollens) 
+        return <> </>
 
     return <>
 
@@ -19,7 +22,9 @@ const LocalPollens = ({ node }) => {
         <Box margin='2em 0' display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {
 
-                pollens?.reverse().map(pollen => <EachPollen key={pollen.cid} {...pollen} />)
+                pollens
+                .sort( (a,b) => new Date(b.date) - new Date(a.date) )
+                .map(pollen => <EachPollen key={pollen.cid} {...pollen} />)
             }
         </Box>
 

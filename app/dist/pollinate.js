@@ -206,11 +206,11 @@ var require_common = __commonJS({
         let enableOverride = null;
         let namespacesCache;
         let enabledCache;
-        function debug11(...args) {
-          if (!debug11.enabled) {
+        function debug13(...args) {
+          if (!debug13.enabled) {
             return;
           }
-          const self2 = debug11;
+          const self2 = debug13;
           const curr = Number(new Date());
           const ms = curr - (prevTime || curr);
           self2.diff = ms;
@@ -240,12 +240,12 @@ var require_common = __commonJS({
           const logFn = self2.log || createDebug.log;
           logFn.apply(self2, args);
         }
-        debug11.namespace = namespace;
-        debug11.useColors = createDebug.useColors();
-        debug11.color = createDebug.selectColor(namespace);
-        debug11.extend = extend;
-        debug11.destroy = createDebug.destroy;
-        Object.defineProperty(debug11, "enabled", {
+        debug13.namespace = namespace;
+        debug13.useColors = createDebug.useColors();
+        debug13.color = createDebug.selectColor(namespace);
+        debug13.extend = extend;
+        debug13.destroy = createDebug.destroy;
+        Object.defineProperty(debug13, "enabled", {
           enumerable: true,
           configurable: false,
           get: () => {
@@ -263,9 +263,9 @@ var require_common = __commonJS({
           }
         });
         if (typeof createDebug.init === "function") {
-          createDebug.init(debug11);
+          createDebug.init(debug13);
         }
-        return debug11;
+        return debug13;
       }
       function extend(namespace, delimiter) {
         const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
@@ -762,11 +762,11 @@ var require_node = __commonJS({
     function load() {
       return process.env.DEBUG;
     }
-    function init(debug11) {
-      debug11.inspectOpts = {};
+    function init(debug13) {
+      debug13.inspectOpts = {};
       const keys = Object.keys(exports2.inspectOpts);
       for (let i = 0; i < keys.length; i++) {
-        debug11.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
+        debug13.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
       }
     }
     module2.exports = require_common()(exports2);
@@ -1274,11 +1274,11 @@ var require_graceful_fs = __commonJS({
         }
       });
     }
-    var debug11 = noop2;
+    var debug13 = noop2;
     if (util.debuglog)
-      debug11 = util.debuglog("gfs4");
+      debug13 = util.debuglog("gfs4");
     else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
-      debug11 = function() {
+      debug13 = function() {
         var m = util.format.apply(util, arguments);
         m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
         console.error(m);
@@ -1313,7 +1313,7 @@ var require_graceful_fs = __commonJS({
       }(fs.closeSync);
       if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
         process.on("exit", function() {
-          debug11(fs[gracefulQueue]);
+          debug13(fs[gracefulQueue]);
           require("assert").equal(fs[gracefulQueue].length, 0);
         });
       }
@@ -1544,7 +1544,7 @@ var require_graceful_fs = __commonJS({
       return fs2;
     }
     function enqueue(elem) {
-      debug11("ENQUEUE", elem[0].name, elem[1]);
+      debug13("ENQUEUE", elem[0].name, elem[1]);
       fs[gracefulQueue].push(elem);
       retry();
     }
@@ -1571,10 +1571,10 @@ var require_graceful_fs = __commonJS({
       var startTime = elem[3];
       var lastTime = elem[4];
       if (startTime === void 0) {
-        debug11("RETRY", fn.name, args);
+        debug13("RETRY", fn.name, args);
         fn.apply(null, args);
       } else if (Date.now() - startTime >= 6e4) {
-        debug11("TIMEOUT", fn.name, args);
+        debug13("TIMEOUT", fn.name, args);
         var cb = args.pop();
         if (typeof cb === "function")
           cb.call(null, err);
@@ -1583,7 +1583,7 @@ var require_graceful_fs = __commonJS({
         var sinceStart = Math.max(lastTime - startTime, 1);
         var desiredDelay = Math.min(sinceStart * 1.2, 100);
         if (sinceAttempt >= desiredDelay) {
-          debug11("RETRY", fn.name, args);
+          debug13("RETRY", fn.name, args);
           fn.apply(null, args.concat([startTime]));
         } else {
           fs[gracefulQueue].push(elem);
@@ -10603,7 +10603,7 @@ var require_tr46 = __commonJS({
       var len = countSymbols(label);
       for (var i = 0; i < len; ++i) {
         var status = findStatus(label.codePointAt(i));
-        if (processing === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
+        if (processing2 === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing2 === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
           error = true;
           break;
         }
@@ -10613,7 +10613,7 @@ var require_tr46 = __commonJS({
         error
       };
     }
-    function processing(domain_name, useSTD3, processing_option) {
+    function processing2(domain_name, useSTD3, processing_option) {
       var result = mapChars(domain_name, useSTD3, processing_option);
       result.string = normalize(result.string);
       var labels = result.string.split(".");
@@ -10632,7 +10632,7 @@ var require_tr46 = __commonJS({
       };
     }
     module2.exports.toASCII = function(domain_name, useSTD3, processing_option, verifyDnsLength) {
-      var result = processing(domain_name, useSTD3, processing_option);
+      var result = processing2(domain_name, useSTD3, processing_option);
       var labels = result.string.split(".");
       labels = labels.map(function(l) {
         try {
@@ -10659,7 +10659,7 @@ var require_tr46 = __commonJS({
       return labels.join(".");
     };
     module2.exports.toUnicode = function(domain_name, useSTD3) {
-      var result = processing(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
+      var result = processing2(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
       return {
         domain: result.string,
         error: result.error
@@ -14291,7 +14291,7 @@ var require_abort_controller = __commonJS({
         value: "AbortSignal"
       });
     }
-    var AbortController13 = class {
+    var AbortController14 = class {
       constructor() {
         signals.set(this, createAbortSignal());
       }
@@ -14310,21 +14310,21 @@ var require_abort_controller = __commonJS({
       }
       return signal;
     }
-    Object.defineProperties(AbortController13.prototype, {
+    Object.defineProperties(AbortController14.prototype, {
       signal: { enumerable: true },
       abort: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController13.prototype, Symbol.toStringTag, {
+      Object.defineProperty(AbortController14.prototype, Symbol.toStringTag, {
         configurable: true,
         value: "AbortController"
       });
     }
-    exports2.AbortController = AbortController13;
+    exports2.AbortController = AbortController14;
     exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController13;
-    module2.exports = AbortController13;
-    module2.exports.AbortController = module2.exports["default"] = AbortController13;
+    exports2.default = AbortController14;
+    module2.exports = AbortController14;
+    module2.exports.AbortController = module2.exports["default"] = AbortController14;
     module2.exports.AbortSignal = AbortSignal;
   }
 });
@@ -14347,9 +14347,9 @@ var require_src6 = __commonJS({
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController: AbortController13 } = require_src6();
+    var { AbortController: AbortController14 } = require_src6();
     function anySignal2(signals) {
-      const controller = new AbortController13();
+      const controller = new AbortController14();
       function onAbort() {
         controller.abort();
         for (const signal of signals) {
@@ -14382,7 +14382,7 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController: AbortController13 } = require_src6();
+    var { AbortController: AbortController14 } = require_src6();
     var anySignal2 = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -14445,7 +14445,7 @@ var require_http = __commonJS({
           opts.body = JSON.stringify(opts.json);
           headers.set("content-type", "application/json");
         }
-        const abortController = new AbortController13();
+        const abortController = new AbortController14();
         const signal = anySignal2([abortController.signal, opts.signal]);
         const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
@@ -24573,7 +24573,7 @@ var require_Channel = __commonJS({
     var common_1 = require_common2();
     var fromDom_1 = __importDefault(require_fromDom());
     var fromEmitter_1 = __importDefault(require_fromEmitter());
-    var Channel3 = class {
+    var Channel2 = class {
       constructor(pushLimit = 0, pullLimit = 0) {
         this.closed = false;
         this.pushBuffer = new LinkedQueue_1.default(pushLimit);
@@ -24648,9 +24648,9 @@ var require_Channel = __commonJS({
         };
       }
     };
-    exports2.default = Channel3;
-    Channel3.fromDom = fromDom_1.default(() => new Channel3());
-    Channel3.fromEmitter = fromEmitter_1.default(() => new Channel3());
+    exports2.default = Channel2;
+    Channel2.fromDom = fromDom_1.default(() => new Channel2());
+    Channel2.fromEmitter = fromEmitter_1.default(() => new Channel2());
   }
 });
 
@@ -30964,13 +30964,13 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
 // src/backend/pollinate-cli.js
 __export(exports, {
-  debug: () => debug10,
+  debug: () => debug12,
   rootPath: () => rootPath
 });
 var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
-var import_debug10 = __toModule(require_src());
-var import_fs4 = __toModule(require("fs"));
+var import_debug12 = __toModule(require_src());
+var import_fs5 = __toModule(require("fs"));
 var import_fs_extra = __toModule(require_lib());
 var import_path6 = __toModule(require("path"));
 var import_process2 = __toModule(require("process"));
@@ -38713,6 +38713,7 @@ function publisher(nodeID, suffix = "/output") {
   const _publish = async (cid) => {
     const client = await getClient();
     await publish(client, nodeID, cid, suffix, nodeID);
+    await (0, import_await_sleep2.default)(100);
     lastPublishCID = cid;
   };
   const sendHeartbeat = async () => {
@@ -38907,134 +38908,134 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
+var import_debug11 = __toModule(require_src());
+var import_fs4 = __toModule(require("fs"));
+var import_native_abort_controller13 = __toModule(require_src6());
+
+// src/backend/ipfs/folderSync.js
+var import_debug10 = __toModule(require_src());
+var import_fs3 = __toModule(require("fs"));
+var import_path5 = __toModule(require("path"));
+
+// src/backend/fileWatcher.js
 var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
-var import_fs3 = __toModule(require("fs"));
-var import_path5 = __toModule(require("path"));
-var import_queueable2 = __toModule(require_lib7());
 var import_ramda3 = __toModule(require_src7());
-var debug9 = (0, import_debug9.default)("ipfs/sender");
-var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
-  let processing = Promise.resolve(true);
-  const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
-  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
-  const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime);
-  const close = executeOnce(async (error) => {
-    debug9("Closing sender", nodeid);
-    await closeWriter();
-    await closePublisher();
-    await closePollenPublisher();
-    if (closeFileWatcher)
-      await closeFileWatcher();
-  });
-  async function start() {
-    debug9("start consuming watched files");
-    if (!(0, import_fs3.existsSync)(watchPath)) {
-      debug9("Local: Root directory does not exist. Creating", watchPath);
-      (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
-    }
-    let done = null;
-    setPaused(false);
-    for await (const changed of changedFiles$) {
-      debug9("Changed files", changed);
-      processing = new Promise((resolve2) => done = resolve2);
-      const lastChanged = changed;
-      for (const { event, path: file } of lastChanged) {
-        debug9("Local:", event, file);
-        const localPath = (0, import_path5.join)(watchPath, file);
-        const ipfsPath = file;
-        if (event === "addDir") {
-          await mkDir(ipfsPath);
-        }
-        if (event === "add" || event === "change") {
-          debug9("adding", ipfsPath, localPath);
-          await addFile(ipfsPath, localPath);
-        }
-        if (event === "unlink" || event === "unlinkDir") {
-          debug9("removing", file, event);
-          await rm(ipfsPath);
-        }
-      }
-      debug9("synched all changes");
-      const newContentID = await cid();
-      console.log(newContentID);
-      if (ipns) {
-        debug9("publish", newContentID);
-        await publish2(newContentID);
-        await (0, import_await_sleep3.default)(1e3);
-        await publishPollen(newContentID);
-      }
-      done();
-      if (once) {
-        debug9("Only sending once. break");
-        break;
-      }
-    }
-    await close();
-    debug9("closed sender");
-  }
-  return {
-    start,
-    processing: () => processing,
-    close,
-    setPaused
-  };
-};
-var chunkedFilewatcher = (watchPath, debounceTime) => {
-  debug9("Local: Watching", watchPath);
-  const channel$ = new import_queueable2.Channel();
-  let changeQueue = [];
-  const watcher = import_chokidar.default.watch(watchPath, {
+var debug9 = (0, import_debug9.default)("fileWatcher");
+async function* chunkedFilewatcher({ path, debounce, signal }) {
+  debug9("Local: Watching", path);
+  const watcher = import_chokidar.default.watch(path, {
     awaitWriteFinish: {
-      stabilityThreshold: debounceTime,
-      pollInterval: debounceTime / 2
+      stabilityThreshold: debounce,
+      pollInterval: debounce / 2
     },
     ignored: /(^|[\/\\])\../,
-    cwd: watchPath,
-    interval: debounceTime
+    cwd: path,
+    interval: debounce
   });
-  let paused = true;
-  async function transmitQueue() {
-    while (true) {
-      if (!paused) {
-        const files = changeQueue;
-        changeQueue = [];
-        if (files.length > 0) {
-          const deduplicatedFiles = deduplicateChangedFiles(files);
-          debug9("Pushing to channel:", deduplicatedFiles);
-          await channel$.push(deduplicatedFiles);
-        }
-      }
-      await (0, import_await_sleep3.default)(debounceTime);
-    }
-  }
-  transmitQueue();
-  debug9("registering watcher for path", watchPath);
-  watcher.on("all", async (event, path) => {
-    debug9("got watcher event", event, path);
-    if (path !== "") {
-      changeQueue.push({ event, path });
+  let changeQueue = [];
+  debug9("registering watcher for path", path);
+  watcher.on("all", async (event, path2) => {
+    debug9("got watcher event", event, path2);
+    if (path2 !== "") {
+      changeQueue.push({ event, path: path2 });
       debug9("Queue", changeQueue);
     }
   });
-  const setPaused = (_paused) => {
-    debug9("setting paused to", _paused);
-    paused = _paused;
-  };
-  return { channel$, close: () => watcher.close(), setPaused };
-};
-var executeOnce = (f) => {
-  let executed = false;
-  return async (...args) => {
-    if (!executed) {
-      executed = true;
-      await f(...args);
+  debug9("signal", signal);
+  while (!signal.aborted) {
+    const files = changeQueue;
+    changeQueue = [];
+    if (files.length > 0) {
+      const deduplicatedFiles = deduplicateChangedFiles(files);
+      debug9("Pushing to channel:", deduplicatedFiles);
+      yield deduplicatedFiles;
+      debug9("Yielded files. Sleeping");
     }
+    await (0, import_await_sleep3.default)(debounce);
+  }
+  debug9("fileWatcher aborted. closing watcher");
+  watcher.removeAllListeners();
+  watcher.unwatch(path);
+  await watcher.close();
+  debug9("closed filewatcher");
+}
+var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
+var fileWatcher_default = chunkedFilewatcher;
+
+// src/backend/ipfs/folderSync.js
+var debug10 = (0, import_debug10.default)("senderLight");
+async function* folderSync({ writer: writer2, path, debounce, signal }) {
+  const { addFile, mkDir, rm, cid } = writer2;
+  debug10("start consuming watched files");
+  if (!(0, import_fs3.existsSync)(path)) {
+    debug10("Local: Root directory does not exist. Creating", path);
+    mkdirSync(path, { recursive: true });
+  }
+  const fileChanges$ = fileWatcher_default({ path, debounce, signal });
+  for await (const changed of fileChanges$) {
+    debug10("Changed files", changed);
+    for (const { event, path: file } of changed) {
+      debug10("Local:", event, file);
+      const localPath = (0, import_path5.join)(path, file);
+      const ipfsPath = file;
+      if (event === "addDir") {
+        debug10("mkdir", ipfsPath);
+        await mkDir(ipfsPath);
+      }
+      if (event === "add" || event === "change") {
+        debug10("adding", ipfsPath, localPath);
+        await addFile(ipfsPath, localPath);
+      }
+      if (event === "unlink" || event === "unlinkDir") {
+        debug10("removing", file, event);
+        await rm(ipfsPath);
+      }
+    }
+    const newContentID = await cid();
+    yield newContentID;
+  }
+}
+
+// src/backend/ipfs/sender.js
+var debug11 = (0, import_debug11.default)("ipfs/sender");
+var sender = ({ path, debounce, ipns, once, nodeid }) => {
+  const ipfsWriter = writer();
+  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
+  const abortController = new import_native_abort_controller13.AbortController();
+  const close = async (error) => {
+    debug11("Closing sender", nodeid);
+    abortController.abort();
+    await ipfsWriter.close();
+    await closePublisher();
+    await closePollenPublisher();
+    debug11("closed all");
+  };
+  async function* startSending() {
+    const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal });
+    debug11("start consuming watched files");
+    if (!(0, import_fs4.existsSync)(path)) {
+      debug11("Local: Root directory does not exist. Creating", path);
+      (0, import_fs4.mkdirSync)(path, { recursive: true });
+    }
+    debug11("getting cid stream");
+    for await (const cid of cid$) {
+      debug11("publishing new cid", cid);
+      await publishPollen(cid);
+      await publish2(cid);
+      yield cid;
+      if (once)
+        await close();
+    }
+    debug11("closed sender");
+  }
+  return {
+    startSending,
+    close
   };
 };
-var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
@@ -39043,74 +39044,72 @@ import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
 // src/backend/pollinate-cli.js
-var debug10 = (0, import_debug10.default)("pollinate");
+var debug12 = (0, import_debug12.default)("pollinate");
 var readline = import_readline.default.createInterface({
   input: import_process2.default.stdin,
   output: import_process2.default.stdout
 });
-debug10("CLI options", options_default);
+debug12("CLI options", options_default);
 var rootPath = options_default.path;
 var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2 + 1e4;
 var execute = async (command, logfile = null) => new Promise((resolve2, reject) => {
-  debug10("Executing command", command);
+  debug12("Executing command", command);
   const childProc = (0, import_child_process.spawn)(command);
   childProc.on("error", (err) => {
-    debug10("Error executing command", err);
+    debug12("Error executing command", err);
     reject(err);
   });
   childProc.on("close", resolve2);
   childProc.stdout.pipe(import_process2.default.stderr);
   childProc.stderr.pipe(import_process2.default.stderr);
   if (logfile) {
-    debug10("creating a write stream to ", logfile);
-    const logout = (0, import_fs4.createWriteStream)(logfile, { "flags": "a" });
+    debug12("creating a write stream to ", logfile);
+    const logout = (0, import_fs5.createWriteStream)(logfile, { "flags": "a" });
     childProc.stdout.pipe(logout);
     childProc.stderr.pipe(logout);
   }
 });
 if (executeCommand)
   (async () => {
-    const { start: startSending, processing, close, setPaused: pauseSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    const { start: startSending, close, setPaused: pauseSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
     let startedSending = false;
     while (true) {
       pauseSending(true);
       (0, import_fs_extra.emptyDirSync)(rootPath);
-      (0, import_fs4.mkdirSync)((0, import_path6.join)(rootPath, "/input"));
-      (0, import_fs4.mkdirSync)((0, import_path6.join)(rootPath, "/output"));
+      (0, import_fs5.mkdirSync)((0, import_path6.join)(rootPath, "/input"));
+      (0, import_fs5.mkdirSync)((0, import_path6.join)(rootPath, "/output"));
       await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
       if (!startedSending) {
         startedSending = true;
         startSending();
       }
-      debug10("unpausing sending");
+      debug12("unpausing sending");
       pauseSending(false);
       await execute(executeCommand, options_default.logout);
-      debug10("done executing", executeCommand, ". Waiting...");
-      debug10("awaiting termination of state sync");
-      await processing();
+      debug12("done executing", executeCommand, ". Waiting...");
+      debug12("awaiting termination of state sync");
       await (0, import_await_sleep4.default)(sleepBeforeExit);
-      await processing();
     }
     await close();
     await (0, import_await_sleep4.default)(sleepBeforeExit);
-    debug10("awaiting termination of state sync");
+    debug12("awaiting termination of state sync");
     await processing();
-    debug10("calling sender's close function.");
+    debug12("calling sender's close function.");
     await close();
-    debug10("state sync done. exiting");
+    debug12("state sync done. exiting");
     import_process2.default.exit(0);
   })();
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = sender(options_default);
-      await start();
-      await (0, import_await_sleep4.default)(sleepBeforeExit);
-      await processing();
-      await close();
+      const { startSending } = sender(options_default);
+      for await (const cid of startSending()) {
+        console.log(cid);
+      }
+      debug12("process should exit");
       import_process2.default.exit(0);
     })();
   if (enableReceive) {

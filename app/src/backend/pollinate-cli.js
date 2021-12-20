@@ -2,14 +2,14 @@
 import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
-import { createWriteStream } from "fs"
+import { createWriteStream, mkdirSync } from "fs"
+import { emptyDirSync } from "fs-extra"
+import { join } from "path"
 import process from "process"
 import Readline from 'readline'
 import { receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"
-
-
 
 
 export const debug = Debug("pollinate")
@@ -62,13 +62,14 @@ if (executeCommand)
     const { startSending, close, stopSending } = sender({ ...options, once: false })
 
     while (true) {
-      // emptyDirSync(rootPath)
-      // mkdirSync(join(rootPath, "/input"))
-      // mkdirSync(join(rootPath, "/output"))
+      emptyDirSync(rootPath)
+      mkdirSync(join(rootPath, "/input"))
+      mkdirSync(join(rootPath, "/output"))
 
 
       await receive({ ...options, once: true })
 
+      await awaitSleep(2000)
 
       const doSend = async () => {
         for await (const sentCID of startSending()) {

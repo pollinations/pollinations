@@ -73,6 +73,7 @@ if (executeCommand)
       const doSend = async () => {
         for await (const sentCID of startSending()) {
           debug("sent", sentCID)
+          console.log(sentCID)
         }
       }
 

@@ -1,1 +1,1 @@
-We gather and update many open-source models, making them accessible through a simple-to-use interface. All content shared here is constantly updated by the pollinations community. 
+We curate many cutting-edge models, making them accessible through a simple interface. All content shared here open-source and is constantly updated by the community. 

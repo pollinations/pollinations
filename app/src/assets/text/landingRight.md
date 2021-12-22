@@ -1,3 +1,1 @@
-We gather many generative art models in one space. 
-The models you can find here are all open source and are constantly updated, 
-so you can be sure you will be using the most cutting-edge AI art frameworks.
+We gather and update many open-source models, making them accessible through a simple-to-use interface. All content shared here is constantly updated by the pollinations community. 

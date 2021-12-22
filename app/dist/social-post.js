@@ -36289,6 +36289,7 @@ function publisher(nodeID, suffix = "/output") {
   const _publish = async (cid) => {
     const client = await getClient();
     await publish(client, nodeID, cid, suffix, nodeID);
+    await (0, import_await_sleep2.default)(100);
     lastPublishCID = cid;
   };
   const sendHeartbeat = async () => {

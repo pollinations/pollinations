@@ -61,59 +61,49 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
-    const { start: startSending, processing, close, setPaused: pauseSending } = sender({ ...options, once: false })
+    const { startSending, close, stopSending } = sender({ ...options, once: false })
 
-
-    let startedSending = false;
     while (true) {
-      pauseSending(true)
       emptyDirSync(rootPath)
       mkdirSync(join(rootPath, "/input"))
       mkdirSync(join(rootPath, "/output"))
 
+
       await receive({ ...options, once: true })
 
-      if (!startedSending) {
-        startedSending = true;
-        startSending()
+
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug("sent", sentCID)
+          console.log(sentCID)
+        }
       }
 
-      debug("unpausing sending")
-      pauseSending(false)
+      const doExecute = async () => {
+        await execute(executeCommand, options.logout)
+        debug("done executing", executeCommand, ". Waiting...")
+        await awaitSleep(2000)
+        stopSending()
+      }
 
-      await execute(executeCommand, options.logout)
-      debug("done executing", executeCommand, ". Waiting...")
 
-      // This waiting logic is quite hacky. Should improve it.
-      debug("awaiting termination of state sync")
-      await processing()
-      await awaitSleep(sleepBeforeExit)
-      await processing()
+      await Promise.all([doSend(), doExecute()])
+
+      debug("finished. Starting again")
 
     }
-    await close();
 
-    await awaitSleep(sleepBeforeExit);
-    debug("awaiting termination of state sync");
-    await processing();
-
-    // not sure if this is the right order
-    debug("calling sender's close function.")
-    await close();
-
-    debug("state sync done. exiting");
-    process.exit(0);
 
   })();
 
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = sender(options)
-      await start()
-      await awaitSleep(sleepBeforeExit)
-      await processing()
-      await close()
+      const { startSending } = sender(options)
+      for await (const cid of startSending()) {
+        console.log(cid)
+      }
+      debug("process should exit")
       process.exit(0)
     })();
 

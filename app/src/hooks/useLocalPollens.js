@@ -15,6 +15,10 @@ export default function useLocalPollens( node ){
 
     }, [pollens])
 
+    const popCID = cid => setPollens( pollens => pollens.filter( pollen => pollen.cid !== cid) )
+
+
+
     useEffect(()=>{
         console.log('fx')
         if (!ipfs?.output?.done) return 
@@ -23,5 +27,5 @@ export default function useLocalPollens( node ){
 
     },[node.contentID, ipfs.output?.done, pushCID])
 
-    return { pollens, pushCID }
+    return { pollens, pushCID, popCID }
 }

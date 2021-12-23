@@ -2,12 +2,12 @@
 import { spawn } from "child_process"
 import Debug from "debug"
 import { createWriteStream } from "fs"
+import { AbortController } from "native-abort-controller"
 import process from "process"
 import Readline from 'readline'
 import { receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"
-
 
 export const debug = Debug("pollinate")
 

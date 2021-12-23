@@ -786,6 +786,546 @@ var require_src = __commonJS({
   }
 });
 
+// node_modules/event-target-shim/dist/event-target-shim.js
+var require_event_target_shim = __commonJS({
+  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var privateData = new WeakMap();
+    var wrappers = new WeakMap();
+    function pd(event) {
+      const retv = privateData.get(event);
+      console.assert(retv != null, "'this' is expected an Event object, but got", event);
+      return retv;
+    }
+    function setCancelFlag(data) {
+      if (data.passiveListener != null) {
+        if (typeof console !== "undefined" && typeof console.error === "function") {
+          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
+        }
+        return;
+      }
+      if (!data.event.cancelable) {
+        return;
+      }
+      data.canceled = true;
+      if (typeof data.event.preventDefault === "function") {
+        data.event.preventDefault();
+      }
+    }
+    function Event(eventTarget, event) {
+      privateData.set(this, {
+        eventTarget,
+        event,
+        eventPhase: 2,
+        currentTarget: eventTarget,
+        canceled: false,
+        stopped: false,
+        immediateStopped: false,
+        passiveListener: null,
+        timeStamp: event.timeStamp || Date.now()
+      });
+      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
+      const keys = Object.keys(event);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in this)) {
+          Object.defineProperty(this, key, defineRedirectDescriptor(key));
+        }
+      }
+    }
+    Event.prototype = {
+      get type() {
+        return pd(this).event.type;
+      },
+      get target() {
+        return pd(this).eventTarget;
+      },
+      get currentTarget() {
+        return pd(this).currentTarget;
+      },
+      composedPath() {
+        const currentTarget = pd(this).currentTarget;
+        if (currentTarget == null) {
+          return [];
+        }
+        return [currentTarget];
+      },
+      get NONE() {
+        return 0;
+      },
+      get CAPTURING_PHASE() {
+        return 1;
+      },
+      get AT_TARGET() {
+        return 2;
+      },
+      get BUBBLING_PHASE() {
+        return 3;
+      },
+      get eventPhase() {
+        return pd(this).eventPhase;
+      },
+      stopPropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.stopPropagation === "function") {
+          data.event.stopPropagation();
+        }
+      },
+      stopImmediatePropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        data.immediateStopped = true;
+        if (typeof data.event.stopImmediatePropagation === "function") {
+          data.event.stopImmediatePropagation();
+        }
+      },
+      get bubbles() {
+        return Boolean(pd(this).event.bubbles);
+      },
+      get cancelable() {
+        return Boolean(pd(this).event.cancelable);
+      },
+      preventDefault() {
+        setCancelFlag(pd(this));
+      },
+      get defaultPrevented() {
+        return pd(this).canceled;
+      },
+      get composed() {
+        return Boolean(pd(this).event.composed);
+      },
+      get timeStamp() {
+        return pd(this).timeStamp;
+      },
+      get srcElement() {
+        return pd(this).eventTarget;
+      },
+      get cancelBubble() {
+        return pd(this).stopped;
+      },
+      set cancelBubble(value) {
+        if (!value) {
+          return;
+        }
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.cancelBubble === "boolean") {
+          data.event.cancelBubble = true;
+        }
+      },
+      get returnValue() {
+        return !pd(this).canceled;
+      },
+      set returnValue(value) {
+        if (!value) {
+          setCancelFlag(pd(this));
+        }
+      },
+      initEvent() {
+      }
+    };
+    Object.defineProperty(Event.prototype, "constructor", {
+      value: Event,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
+      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
+      wrappers.set(window.Event.prototype, Event);
+    }
+    function defineRedirectDescriptor(key) {
+      return {
+        get() {
+          return pd(this).event[key];
+        },
+        set(value) {
+          pd(this).event[key] = value;
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineCallDescriptor(key) {
+      return {
+        value() {
+          const event = pd(this).event;
+          return event[key].apply(event, arguments);
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineWrapper(BaseEvent, proto) {
+      const keys = Object.keys(proto);
+      if (keys.length === 0) {
+        return BaseEvent;
+      }
+      function CustomEvent(eventTarget, event) {
+        BaseEvent.call(this, eventTarget, event);
+      }
+      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
+        constructor: { value: CustomEvent, configurable: true, writable: true }
+      });
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in BaseEvent.prototype)) {
+          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+          const isFunc = typeof descriptor.value === "function";
+          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
+        }
+      }
+      return CustomEvent;
+    }
+    function getWrapper(proto) {
+      if (proto == null || proto === Object.prototype) {
+        return Event;
+      }
+      let wrapper = wrappers.get(proto);
+      if (wrapper == null) {
+        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
+        wrappers.set(proto, wrapper);
+      }
+      return wrapper;
+    }
+    function wrapEvent(eventTarget, event) {
+      const Wrapper = getWrapper(Object.getPrototypeOf(event));
+      return new Wrapper(eventTarget, event);
+    }
+    function isStopped(event) {
+      return pd(event).immediateStopped;
+    }
+    function setEventPhase(event, eventPhase) {
+      pd(event).eventPhase = eventPhase;
+    }
+    function setCurrentTarget(event, currentTarget) {
+      pd(event).currentTarget = currentTarget;
+    }
+    function setPassiveListener(event, passiveListener) {
+      pd(event).passiveListener = passiveListener;
+    }
+    var listenersMap = new WeakMap();
+    var CAPTURE = 1;
+    var BUBBLE = 2;
+    var ATTRIBUTE = 3;
+    function isObject(x) {
+      return x !== null && typeof x === "object";
+    }
+    function getListeners(eventTarget) {
+      const listeners = listenersMap.get(eventTarget);
+      if (listeners == null) {
+        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
+      }
+      return listeners;
+    }
+    function defineEventAttributeDescriptor(eventName) {
+      return {
+        get() {
+          const listeners = getListeners(this);
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              return node.listener;
+            }
+            node = node.next;
+          }
+          return null;
+        },
+        set(listener) {
+          if (typeof listener !== "function" && !isObject(listener)) {
+            listener = null;
+          }
+          const listeners = getListeners(this);
+          let prev = null;
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              if (prev !== null) {
+                prev.next = node.next;
+              } else if (node.next !== null) {
+                listeners.set(eventName, node.next);
+              } else {
+                listeners.delete(eventName);
+              }
+            } else {
+              prev = node;
+            }
+            node = node.next;
+          }
+          if (listener !== null) {
+            const newNode = {
+              listener,
+              listenerType: ATTRIBUTE,
+              passive: false,
+              once: false,
+              next: null
+            };
+            if (prev === null) {
+              listeners.set(eventName, newNode);
+            } else {
+              prev.next = newNode;
+            }
+          }
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineEventAttribute(eventTargetPrototype, eventName) {
+      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
+    }
+    function defineCustomEventTarget(eventNames) {
+      function CustomEventTarget() {
+        EventTarget.call(this);
+      }
+      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
+        constructor: {
+          value: CustomEventTarget,
+          configurable: true,
+          writable: true
+        }
+      });
+      for (let i = 0; i < eventNames.length; ++i) {
+        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
+      }
+      return CustomEventTarget;
+    }
+    function EventTarget() {
+      if (this instanceof EventTarget) {
+        listenersMap.set(this, new Map());
+        return;
+      }
+      if (arguments.length === 1 && Array.isArray(arguments[0])) {
+        return defineCustomEventTarget(arguments[0]);
+      }
+      if (arguments.length > 0) {
+        const types = new Array(arguments.length);
+        for (let i = 0; i < arguments.length; ++i) {
+          types[i] = arguments[i];
+        }
+        return defineCustomEventTarget(types);
+      }
+      throw new TypeError("Cannot call a class as a function");
+    }
+    EventTarget.prototype = {
+      addEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        if (typeof listener !== "function" && !isObject(listener)) {
+          throw new TypeError("'listener' should be a function or an object.");
+        }
+        const listeners = getListeners(this);
+        const optionsIsObj = isObject(options);
+        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        const newNode = {
+          listener,
+          listenerType,
+          passive: optionsIsObj && Boolean(options.passive),
+          once: optionsIsObj && Boolean(options.once),
+          next: null
+        };
+        let node = listeners.get(eventName);
+        if (node === void 0) {
+          listeners.set(eventName, newNode);
+          return;
+        }
+        let prev = null;
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+        prev.next = newNode;
+      },
+      removeEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        const listeners = getListeners(this);
+        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        let prev = null;
+        let node = listeners.get(eventName);
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+      },
+      dispatchEvent(event) {
+        if (event == null || typeof event.type !== "string") {
+          throw new TypeError('"event.type" should be a string.');
+        }
+        const listeners = getListeners(this);
+        const eventName = event.type;
+        let node = listeners.get(eventName);
+        if (node == null) {
+          return true;
+        }
+        const wrappedEvent = wrapEvent(this, event);
+        let prev = null;
+        while (node != null) {
+          if (node.once) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+          } else {
+            prev = node;
+          }
+          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
+          if (typeof node.listener === "function") {
+            try {
+              node.listener.call(this, wrappedEvent);
+            } catch (err) {
+              if (typeof console !== "undefined" && typeof console.error === "function") {
+                console.error(err);
+              }
+            }
+          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
+            node.listener.handleEvent(wrappedEvent);
+          }
+          if (isStopped(wrappedEvent)) {
+            break;
+          }
+          node = node.next;
+        }
+        setPassiveListener(wrappedEvent, null);
+        setEventPhase(wrappedEvent, 0);
+        setCurrentTarget(wrappedEvent, null);
+        return !wrappedEvent.defaultPrevented;
+      }
+    };
+    Object.defineProperty(EventTarget.prototype, "constructor", {
+      value: EventTarget,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
+    }
+    exports2.defineEventAttribute = defineEventAttribute;
+    exports2.EventTarget = EventTarget;
+    exports2.default = EventTarget;
+    module2.exports = EventTarget;
+    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
+    module2.exports.defineEventAttribute = defineEventAttribute;
+  }
+});
+
+// node_modules/abort-controller/dist/abort-controller.js
+var require_abort_controller = __commonJS({
+  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var eventTargetShim = require_event_target_shim();
+    var AbortSignal = class extends eventTargetShim.EventTarget {
+      constructor() {
+        super();
+        throw new TypeError("AbortSignal cannot be constructed directly");
+      }
+      get aborted() {
+        const aborted = abortedFlags.get(this);
+        if (typeof aborted !== "boolean") {
+          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
+        }
+        return aborted;
+      }
+    };
+    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
+    function createAbortSignal() {
+      const signal = Object.create(AbortSignal.prototype);
+      eventTargetShim.EventTarget.call(signal);
+      abortedFlags.set(signal, false);
+      return signal;
+    }
+    function abortSignal2(signal) {
+      if (abortedFlags.get(signal) !== false) {
+        return;
+      }
+      abortedFlags.set(signal, true);
+      signal.dispatchEvent({ type: "abort" });
+    }
+    var abortedFlags = new WeakMap();
+    Object.defineProperties(AbortSignal.prototype, {
+      aborted: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortSignal"
+      });
+    }
+    var AbortController15 = class {
+      constructor() {
+        signals.set(this, createAbortSignal());
+      }
+      get signal() {
+        return getSignal2(this);
+      }
+      abort() {
+        abortSignal2(getSignal2(this));
+      }
+    };
+    var signals = new WeakMap();
+    function getSignal2(controller) {
+      const signal = signals.get(controller);
+      if (signal == null) {
+        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
+      }
+      return signal;
+    }
+    Object.defineProperties(AbortController15.prototype, {
+      signal: { enumerable: true },
+      abort: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortController15.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortController"
+      });
+    }
+    exports2.AbortController = AbortController15;
+    exports2.AbortSignal = AbortSignal;
+    exports2.default = AbortController15;
+    module2.exports = AbortController15;
+    module2.exports.AbortController = module2.exports["default"] = AbortController15;
+    module2.exports.AbortSignal = AbortSignal;
+  }
+});
+
+// node_modules/native-abort-controller/src/index.js
+var require_src2 = __commonJS({
+  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
+    "use strict";
+    var impl;
+    if (globalThis.AbortController && globalThis.AbortSignal) {
+      impl = globalThis;
+    } else {
+      impl = require_abort_controller();
+    }
+    module2.exports.AbortSignal = impl.AbortSignal;
+    module2.exports.AbortController = impl.AbortController;
+  }
+});
+
 // node_modules/event-iterator/lib/event-iterator.js
 var require_event_iterator = __commonJS({
   "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
@@ -2132,7 +2672,7 @@ if (cid) {
 });
 
 // node_modules/multiformats/cjs/src/index.js
-var require_src2 = __commonJS({
+var require_src3 = __commonJS({
   "node_modules/multiformats/cjs/src/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -2167,7 +2707,7 @@ var require_basics = __commonJS({
     var identity$1 = require_identity2();
     var raw = require_raw();
     var json = require_json();
-    require_src2();
+    require_src3();
     var cid = require_cid();
     var hasher = require_hasher();
     var digest = require_digest();
@@ -2958,7 +3498,7 @@ var require_equals = __commonJS({
 });
 
 // node_modules/multiaddr/src/index.js
-var require_src3 = __commonJS({
+var require_src4 = __commonJS({
   "node_modules/multiaddr/src/index.js"(exports2, module2) {
     "use strict";
     var codec = require_codec();
@@ -10723,7 +11263,7 @@ var require_lib4 = __commonJS({
 });
 
 // node_modules/native-fetch/src/index.js
-var require_src4 = __commonJS({
+var require_src5 = __commonJS({
   "node_modules/native-fetch/src/index.js"(exports2, module2) {
     "use strict";
     if (globalThis.fetch && globalThis.Headers && globalThis.Request && globalThis.Response) {
@@ -10752,7 +11292,7 @@ var require_fetch = __commonJS({
     if (isElectronMain) {
       module2.exports = require_lib2();
     } else {
-      module2.exports = require_src4();
+      module2.exports = require_src5();
     }
   }
 });
@@ -11088,7 +11628,7 @@ var require_transform = __commonJS({
 });
 
 // node_modules/it-to-stream/src/index.js
-var require_src5 = __commonJS({
+var require_src6 = __commonJS({
   "node_modules/it-to-stream/src/index.js"(exports2, module2) {
     "use strict";
     var toTransform = require_transform();
@@ -11112,7 +11652,7 @@ var require_fetch_node = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.node.js"(exports2, module2) {
     "use strict";
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
-    var toStream2 = require_src5();
+    var toStream2 = require_src6();
     var { Buffer: Buffer2 } = require("buffer");
     var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
@@ -11378,550 +11918,10 @@ var require_iso_url = __commonJS({
   }
 });
 
-// node_modules/event-target-shim/dist/event-target-shim.js
-var require_event_target_shim = __commonJS({
-  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var privateData = new WeakMap();
-    var wrappers = new WeakMap();
-    function pd(event) {
-      const retv = privateData.get(event);
-      console.assert(retv != null, "'this' is expected an Event object, but got", event);
-      return retv;
-    }
-    function setCancelFlag(data) {
-      if (data.passiveListener != null) {
-        if (typeof console !== "undefined" && typeof console.error === "function") {
-          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
-        }
-        return;
-      }
-      if (!data.event.cancelable) {
-        return;
-      }
-      data.canceled = true;
-      if (typeof data.event.preventDefault === "function") {
-        data.event.preventDefault();
-      }
-    }
-    function Event(eventTarget, event) {
-      privateData.set(this, {
-        eventTarget,
-        event,
-        eventPhase: 2,
-        currentTarget: eventTarget,
-        canceled: false,
-        stopped: false,
-        immediateStopped: false,
-        passiveListener: null,
-        timeStamp: event.timeStamp || Date.now()
-      });
-      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
-      const keys = Object.keys(event);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in this)) {
-          Object.defineProperty(this, key, defineRedirectDescriptor(key));
-        }
-      }
-    }
-    Event.prototype = {
-      get type() {
-        return pd(this).event.type;
-      },
-      get target() {
-        return pd(this).eventTarget;
-      },
-      get currentTarget() {
-        return pd(this).currentTarget;
-      },
-      composedPath() {
-        const currentTarget = pd(this).currentTarget;
-        if (currentTarget == null) {
-          return [];
-        }
-        return [currentTarget];
-      },
-      get NONE() {
-        return 0;
-      },
-      get CAPTURING_PHASE() {
-        return 1;
-      },
-      get AT_TARGET() {
-        return 2;
-      },
-      get BUBBLING_PHASE() {
-        return 3;
-      },
-      get eventPhase() {
-        return pd(this).eventPhase;
-      },
-      stopPropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.stopPropagation === "function") {
-          data.event.stopPropagation();
-        }
-      },
-      stopImmediatePropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        data.immediateStopped = true;
-        if (typeof data.event.stopImmediatePropagation === "function") {
-          data.event.stopImmediatePropagation();
-        }
-      },
-      get bubbles() {
-        return Boolean(pd(this).event.bubbles);
-      },
-      get cancelable() {
-        return Boolean(pd(this).event.cancelable);
-      },
-      preventDefault() {
-        setCancelFlag(pd(this));
-      },
-      get defaultPrevented() {
-        return pd(this).canceled;
-      },
-      get composed() {
-        return Boolean(pd(this).event.composed);
-      },
-      get timeStamp() {
-        return pd(this).timeStamp;
-      },
-      get srcElement() {
-        return pd(this).eventTarget;
-      },
-      get cancelBubble() {
-        return pd(this).stopped;
-      },
-      set cancelBubble(value) {
-        if (!value) {
-          return;
-        }
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.cancelBubble === "boolean") {
-          data.event.cancelBubble = true;
-        }
-      },
-      get returnValue() {
-        return !pd(this).canceled;
-      },
-      set returnValue(value) {
-        if (!value) {
-          setCancelFlag(pd(this));
-        }
-      },
-      initEvent() {
-      }
-    };
-    Object.defineProperty(Event.prototype, "constructor", {
-      value: Event,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
-      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
-      wrappers.set(window.Event.prototype, Event);
-    }
-    function defineRedirectDescriptor(key) {
-      return {
-        get() {
-          return pd(this).event[key];
-        },
-        set(value) {
-          pd(this).event[key] = value;
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineCallDescriptor(key) {
-      return {
-        value() {
-          const event = pd(this).event;
-          return event[key].apply(event, arguments);
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineWrapper(BaseEvent, proto) {
-      const keys = Object.keys(proto);
-      if (keys.length === 0) {
-        return BaseEvent;
-      }
-      function CustomEvent(eventTarget, event) {
-        BaseEvent.call(this, eventTarget, event);
-      }
-      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
-        constructor: { value: CustomEvent, configurable: true, writable: true }
-      });
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in BaseEvent.prototype)) {
-          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
-          const isFunc = typeof descriptor.value === "function";
-          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
-        }
-      }
-      return CustomEvent;
-    }
-    function getWrapper(proto) {
-      if (proto == null || proto === Object.prototype) {
-        return Event;
-      }
-      let wrapper = wrappers.get(proto);
-      if (wrapper == null) {
-        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
-        wrappers.set(proto, wrapper);
-      }
-      return wrapper;
-    }
-    function wrapEvent(eventTarget, event) {
-      const Wrapper = getWrapper(Object.getPrototypeOf(event));
-      return new Wrapper(eventTarget, event);
-    }
-    function isStopped(event) {
-      return pd(event).immediateStopped;
-    }
-    function setEventPhase(event, eventPhase) {
-      pd(event).eventPhase = eventPhase;
-    }
-    function setCurrentTarget(event, currentTarget) {
-      pd(event).currentTarget = currentTarget;
-    }
-    function setPassiveListener(event, passiveListener) {
-      pd(event).passiveListener = passiveListener;
-    }
-    var listenersMap = new WeakMap();
-    var CAPTURE = 1;
-    var BUBBLE = 2;
-    var ATTRIBUTE = 3;
-    function isObject(x) {
-      return x !== null && typeof x === "object";
-    }
-    function getListeners(eventTarget) {
-      const listeners = listenersMap.get(eventTarget);
-      if (listeners == null) {
-        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
-      }
-      return listeners;
-    }
-    function defineEventAttributeDescriptor(eventName) {
-      return {
-        get() {
-          const listeners = getListeners(this);
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              return node.listener;
-            }
-            node = node.next;
-          }
-          return null;
-        },
-        set(listener) {
-          if (typeof listener !== "function" && !isObject(listener)) {
-            listener = null;
-          }
-          const listeners = getListeners(this);
-          let prev = null;
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              if (prev !== null) {
-                prev.next = node.next;
-              } else if (node.next !== null) {
-                listeners.set(eventName, node.next);
-              } else {
-                listeners.delete(eventName);
-              }
-            } else {
-              prev = node;
-            }
-            node = node.next;
-          }
-          if (listener !== null) {
-            const newNode = {
-              listener,
-              listenerType: ATTRIBUTE,
-              passive: false,
-              once: false,
-              next: null
-            };
-            if (prev === null) {
-              listeners.set(eventName, newNode);
-            } else {
-              prev.next = newNode;
-            }
-          }
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineEventAttribute(eventTargetPrototype, eventName) {
-      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
-    }
-    function defineCustomEventTarget(eventNames) {
-      function CustomEventTarget() {
-        EventTarget.call(this);
-      }
-      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
-        constructor: {
-          value: CustomEventTarget,
-          configurable: true,
-          writable: true
-        }
-      });
-      for (let i = 0; i < eventNames.length; ++i) {
-        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
-      }
-      return CustomEventTarget;
-    }
-    function EventTarget() {
-      if (this instanceof EventTarget) {
-        listenersMap.set(this, new Map());
-        return;
-      }
-      if (arguments.length === 1 && Array.isArray(arguments[0])) {
-        return defineCustomEventTarget(arguments[0]);
-      }
-      if (arguments.length > 0) {
-        const types = new Array(arguments.length);
-        for (let i = 0; i < arguments.length; ++i) {
-          types[i] = arguments[i];
-        }
-        return defineCustomEventTarget(types);
-      }
-      throw new TypeError("Cannot call a class as a function");
-    }
-    EventTarget.prototype = {
-      addEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        if (typeof listener !== "function" && !isObject(listener)) {
-          throw new TypeError("'listener' should be a function or an object.");
-        }
-        const listeners = getListeners(this);
-        const optionsIsObj = isObject(options);
-        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        const newNode = {
-          listener,
-          listenerType,
-          passive: optionsIsObj && Boolean(options.passive),
-          once: optionsIsObj && Boolean(options.once),
-          next: null
-        };
-        let node = listeners.get(eventName);
-        if (node === void 0) {
-          listeners.set(eventName, newNode);
-          return;
-        }
-        let prev = null;
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-        prev.next = newNode;
-      },
-      removeEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        const listeners = getListeners(this);
-        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        let prev = null;
-        let node = listeners.get(eventName);
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-      },
-      dispatchEvent(event) {
-        if (event == null || typeof event.type !== "string") {
-          throw new TypeError('"event.type" should be a string.');
-        }
-        const listeners = getListeners(this);
-        const eventName = event.type;
-        let node = listeners.get(eventName);
-        if (node == null) {
-          return true;
-        }
-        const wrappedEvent = wrapEvent(this, event);
-        let prev = null;
-        while (node != null) {
-          if (node.once) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-          } else {
-            prev = node;
-          }
-          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
-          if (typeof node.listener === "function") {
-            try {
-              node.listener.call(this, wrappedEvent);
-            } catch (err) {
-              if (typeof console !== "undefined" && typeof console.error === "function") {
-                console.error(err);
-              }
-            }
-          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
-            node.listener.handleEvent(wrappedEvent);
-          }
-          if (isStopped(wrappedEvent)) {
-            break;
-          }
-          node = node.next;
-        }
-        setPassiveListener(wrappedEvent, null);
-        setEventPhase(wrappedEvent, 0);
-        setCurrentTarget(wrappedEvent, null);
-        return !wrappedEvent.defaultPrevented;
-      }
-    };
-    Object.defineProperty(EventTarget.prototype, "constructor", {
-      value: EventTarget,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
-      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
-    }
-    exports2.defineEventAttribute = defineEventAttribute;
-    exports2.EventTarget = EventTarget;
-    exports2.default = EventTarget;
-    module2.exports = EventTarget;
-    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
-    module2.exports.defineEventAttribute = defineEventAttribute;
-  }
-});
-
-// node_modules/abort-controller/dist/abort-controller.js
-var require_abort_controller = __commonJS({
-  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var eventTargetShim = require_event_target_shim();
-    var AbortSignal = class extends eventTargetShim.EventTarget {
-      constructor() {
-        super();
-        throw new TypeError("AbortSignal cannot be constructed directly");
-      }
-      get aborted() {
-        const aborted = abortedFlags.get(this);
-        if (typeof aborted !== "boolean") {
-          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
-        }
-        return aborted;
-      }
-    };
-    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
-    function createAbortSignal() {
-      const signal = Object.create(AbortSignal.prototype);
-      eventTargetShim.EventTarget.call(signal);
-      abortedFlags.set(signal, false);
-      return signal;
-    }
-    function abortSignal2(signal) {
-      if (abortedFlags.get(signal) !== false) {
-        return;
-      }
-      abortedFlags.set(signal, true);
-      signal.dispatchEvent({ type: "abort" });
-    }
-    var abortedFlags = new WeakMap();
-    Object.defineProperties(AbortSignal.prototype, {
-      aborted: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortSignal"
-      });
-    }
-    var AbortController15 = class {
-      constructor() {
-        signals.set(this, createAbortSignal());
-      }
-      get signal() {
-        return getSignal2(this);
-      }
-      abort() {
-        abortSignal2(getSignal2(this));
-      }
-    };
-    var signals = new WeakMap();
-    function getSignal2(controller) {
-      const signal = signals.get(controller);
-      if (signal == null) {
-        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
-      }
-      return signal;
-    }
-    Object.defineProperties(AbortController15.prototype, {
-      signal: { enumerable: true },
-      abort: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController15.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortController"
-      });
-    }
-    exports2.AbortController = AbortController15;
-    exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController15;
-    module2.exports = AbortController15;
-    module2.exports.AbortController = module2.exports["default"] = AbortController15;
-    module2.exports.AbortSignal = AbortSignal;
-  }
-});
-
-// node_modules/native-abort-controller/src/index.js
-var require_src6 = __commonJS({
-  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
-    "use strict";
-    var impl;
-    if (globalThis.AbortController && globalThis.AbortSignal) {
-      impl = globalThis;
-    } else {
-      impl = require_abort_controller();
-    }
-    module2.exports.AbortSignal = impl.AbortSignal;
-    module2.exports.AbortController = impl.AbortController;
-  }
-});
-
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController: AbortController15 } = require_src6();
+    var { AbortController: AbortController15 } = require_src2();
     function anySignal2(signals) {
       const controller = new AbortController15();
       function onAbort() {
@@ -11956,7 +11956,7 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController: AbortController15 } = require_src6();
+    var { AbortController: AbortController15 } = require_src2();
     var anySignal2 = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -12144,7 +12144,7 @@ var require_http = __commonJS({
 // node_modules/multiaddr-to-uri/index.js
 var require_multiaddr_to_uri = __commonJS({
   "node_modules/multiaddr-to-uri/index.js"(exports2, module2) {
-    var { Multiaddr: Multiaddr18 } = require_src3();
+    var { Multiaddr: Multiaddr18 } = require_src4();
     var reduceValue = (_, v) => v;
     var tcpUri = (str, port, parts, opts) => {
       if (opts && opts.assumeHttp === false)
@@ -28401,6 +28401,7 @@ __export(exports, {
 var import_child_process = __toModule(require("child_process"));
 var import_debug12 = __toModule(require_src());
 var import_fs5 = __toModule(require("fs"));
+var import_native_abort_controller14 = __toModule(require_src2());
 var import_process = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
 
@@ -31791,7 +31792,7 @@ var codecs = {
 };
 
 // node_modules/ipfs-http-client/esm/src/lib/core.js
-var import_multiaddr2 = __toModule(require_src3());
+var import_multiaddr2 = __toModule(require_src4());
 var import_env = __toModule(require_env());
 
 // node_modules/parse-duration/index.mjs
@@ -31830,7 +31831,7 @@ var import_index2 = __toModule(require_merge_options());
 var merge_options_default = import_index2.default;
 
 // node_modules/ipfs-core-utils/esm/src/to-url-string.js
-var import_multiaddr = __toModule(require_src3());
+var import_multiaddr = __toModule(require_src4());
 var import_multiaddr_to_uri = __toModule(require_multiaddr_to_uri());
 function toUrlString(url) {
   try {
@@ -32871,7 +32872,7 @@ function modeToString2(mode) {
 }
 
 // node_modules/ipfs-core-utils/esm/src/multipart-request.node.js
-var import_it_to_stream = __toModule(require_src5());
+var import_it_to_stream = __toModule(require_src6());
 var import_debug2 = __toModule(require_src());
 var import_it_peekable3 = __toModule(require_it_peekable());
 var merge2 = merge_options_default.bind({ ignoreUndefined: true });
@@ -33053,7 +33054,7 @@ function abortSignal(...signals) {
 }
 
 // node_modules/ipfs-http-client/esm/src/block/put.js
-var import_native_abort_controller = __toModule(require_src6());
+var import_native_abort_controller = __toModule(require_src2());
 var createPut = configure((api) => {
   async function put(data, options = {}) {
     const controller = new import_native_abort_controller.AbortController();
@@ -33140,7 +33141,7 @@ function createBlock(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/add.js
-var import_multiaddr3 = __toModule(require_src3());
+var import_multiaddr3 = __toModule(require_src4());
 var createAdd = configure((api) => {
   async function add(addr, options = {}) {
     const res = await api.post("bootstrap/add", {
@@ -33157,7 +33158,7 @@ var createAdd = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/clear.js
-var import_multiaddr4 = __toModule(require_src3());
+var import_multiaddr4 = __toModule(require_src4());
 var createClear = configure((api) => {
   async function clear(options = {}) {
     const res = await api.post("bootstrap/rm", {
@@ -33174,7 +33175,7 @@ var createClear = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/list.js
-var import_multiaddr5 = __toModule(require_src3());
+var import_multiaddr5 = __toModule(require_src4());
 var createList = configure((api) => {
   async function list(options = {}) {
     const res = await api.post("bootstrap/list", {
@@ -33189,7 +33190,7 @@ var createList = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/reset.js
-var import_multiaddr6 = __toModule(require_src3());
+var import_multiaddr6 = __toModule(require_src4());
 var createReset = configure((api) => {
   async function reset(options = {}) {
     const res = await api.post("bootstrap/add", {
@@ -33206,7 +33207,7 @@ var createReset = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/rm.js
-var import_multiaddr7 = __toModule(require_src3());
+var import_multiaddr7 = __toModule(require_src4());
 var createRm2 = configure((api) => {
   async function rm(addr, options = {}) {
     const res = await api.post("bootstrap/rm", {
@@ -33327,7 +33328,7 @@ var createGetAll = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/config/replace.js
-var import_native_abort_controller2 = __toModule(require_src6());
+var import_native_abort_controller2 = __toModule(require_src2());
 var createReplace = configure((api) => {
   const replace = async (config, options = {}) => {
     const controller = new import_native_abort_controller2.AbortController();
@@ -33478,7 +33479,7 @@ var createGet3 = (codecs2, options) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/dag/import.js
-var import_native_abort_controller3 = __toModule(require_src6());
+var import_native_abort_controller3 = __toModule(require_src2());
 var createImport = configure((api) => {
   async function* dagImport(source, options = {}) {
     const controller = new import_native_abort_controller3.AbortController();
@@ -33509,7 +33510,7 @@ var createImport = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dag/put.js
-var import_native_abort_controller4 = __toModule(require_src6());
+var import_native_abort_controller4 = __toModule(require_src2());
 var createPut2 = (codecs2, options) => {
   const fn = configure((api) => {
     const put = async (dagNode, options2 = {}) => {
@@ -33566,7 +33567,7 @@ function createDag(codecs2, config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/dht/find-peer.js
-var import_multiaddr8 = __toModule(require_src3());
+var import_multiaddr8 = __toModule(require_src4());
 
 // node_modules/ipfs-http-client/esm/src/dht/response-types.js
 var FinalPeer = 2;
@@ -33598,7 +33599,7 @@ var createFindPeer = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/find-provs.js
-var import_multiaddr9 = __toModule(require_src3());
+var import_multiaddr9 = __toModule(require_src4());
 var createFindProvs = configure((api) => {
   async function* findProvs(cid, options = {}) {
     const res = await api.post("dht/findprovs", {
@@ -33652,7 +33653,7 @@ var createGet4 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/provide.js
-var import_multiaddr10 = __toModule(require_src3());
+var import_multiaddr10 = __toModule(require_src4());
 var createProvide = configure((api) => {
   async function* provide(cids, options = { recursive: false }) {
     const cidArr = Array.isArray(cids) ? cids : [cids];
@@ -33680,8 +33681,8 @@ var createProvide = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/put.js
-var import_multiaddr11 = __toModule(require_src3());
-var import_native_abort_controller5 = __toModule(require_src6());
+var import_multiaddr11 = __toModule(require_src4());
+var import_native_abort_controller5 = __toModule(require_src2());
 var createPut3 = configure((api) => {
   async function* put(key, value, options = {}) {
     const controller = new import_native_abort_controller5.AbortController();
@@ -33707,7 +33708,7 @@ var createPut3 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/query.js
-var import_multiaddr12 = __toModule(require_src3());
+var import_multiaddr12 = __toModule(require_src4());
 var createQuery = configure((api) => {
   async function* query(peerId, options = {}) {
     const res = await api.post("dht/query", {
@@ -33996,7 +33997,7 @@ var createTouch = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/files/write.js
-var import_native_abort_controller6 = __toModule(require_src6());
+var import_native_abort_controller6 = __toModule(require_src2());
 var createWrite = configure((api) => {
   async function write(path, input, options = {}) {
     const controller = new import_native_abort_controller6.AbortController();
@@ -34430,7 +34431,7 @@ var createAddLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/append-data.js
-var import_native_abort_controller7 = __toModule(require_src6());
+var import_native_abort_controller7 = __toModule(require_src2());
 var createAppendData = configure((api) => {
   async function appendData(cid, data, options = {}) {
     const controller = new import_native_abort_controller7.AbortController();
@@ -34467,7 +34468,7 @@ var createRmLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/set-data.js
-var import_native_abort_controller8 = __toModule(require_src6());
+var import_native_abort_controller8 = __toModule(require_src2());
 var createSetData = configure((api) => {
   async function setData(cid, data, options = {}) {
     const controller = new import_native_abort_controller8.AbortController();
@@ -34980,7 +34981,7 @@ var createPeers = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/pubsub/publish.js
-var import_native_abort_controller9 = __toModule(require_src6());
+var import_native_abort_controller9 = __toModule(require_src2());
 var createPublish2 = configure((api) => {
   async function publish2(topic, data, options = {}) {
     const searchParams = toUrlSearchParams(__spreadValues({
@@ -35084,7 +35085,7 @@ var createUnsubscribe = (options, subsTracker) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/pubsub/subscription-tracker.js
-var import_native_abort_controller10 = __toModule(require_src6());
+var import_native_abort_controller10 = __toModule(require_src2());
 var SubscriptionTracker = class {
   constructor() {
     this._subs = new Map();
@@ -35254,7 +35255,7 @@ function createStats(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/swarm/addrs.js
-var import_multiaddr13 = __toModule(require_src3());
+var import_multiaddr13 = __toModule(require_src4());
 var createAddrs = configure((api) => {
   async function addrs(options = {}) {
     const res = await api.post("swarm/addrs", {
@@ -35304,7 +35305,7 @@ var createDisconnect = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/swarm/local-addrs.js
-var import_multiaddr14 = __toModule(require_src3());
+var import_multiaddr14 = __toModule(require_src4());
 var createLocalAddrs = configure((api) => {
   async function localAddrs(options = {}) {
     const res = await api.post("swarm/addrs/local", {
@@ -35319,7 +35320,7 @@ var createLocalAddrs = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/swarm/peers.js
-var import_multiaddr15 = __toModule(require_src3());
+var import_multiaddr15 = __toModule(require_src4());
 var createPeers2 = configure((api) => {
   async function peers(options = {}) {
     const res = await api.post("swarm/peers", {
@@ -35354,7 +35355,7 @@ function createSwarm(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/add-all.js
-var import_native_abort_controller11 = __toModule(require_src6());
+var import_native_abort_controller11 = __toModule(require_src2());
 var createAddAll2 = configure((api) => {
   async function* addAll(source, options = {}) {
     const controller = new import_native_abort_controller11.AbortController();
@@ -35580,7 +35581,7 @@ var createGet6 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/id.js
-var import_multiaddr16 = __toModule(require_src3());
+var import_multiaddr16 = __toModule(require_src4());
 var createId = configure((api) => {
   async function id(options = {}) {
     const res = await api.post("id", {
@@ -35766,7 +35767,7 @@ var createVersion2 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/index.js
 var import_glob_source = __toModule(require_glob_source());
-var import_multiaddr17 = __toModule(require_src3());
+var import_multiaddr17 = __toModule(require_src4());
 var import_url_source = __toModule(require_url_source());
 function create2(options = {}) {
   const id = {
@@ -36067,7 +36068,7 @@ var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await
 // src/network/ipfsPubSub.js
 var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src());
-var import_native_abort_controller12 = __toModule(require_src6());
+var import_native_abort_controller12 = __toModule(require_src2());
 var import_queueable = __toModule(require_lib5());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
@@ -36337,7 +36338,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 // src/backend/ipfs/sender.js
 var import_debug11 = __toModule(require_src());
 var import_fs4 = __toModule(require("fs"));
-var import_native_abort_controller13 = __toModule(require_src6());
+var import_native_abort_controller13 = __toModule(require_src2());
 
 // src/backend/ipfs/folderSync.js
 var import_debug10 = __toModule(require_src());
@@ -36549,7 +36550,7 @@ else {
   }
 }
 function getSignal() {
-  const executeController = new AbortController();
+  const executeController = new import_native_abort_controller14.AbortController();
   const executeSignal = executeController.signal;
   return [executeSignal, () => executeController.abort()];
 }

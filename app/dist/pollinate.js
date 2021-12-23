@@ -36507,7 +36507,7 @@ var execute = async (command, logfile = null, signal) => new Promise((resolve2, 
   }
   signal.addEventListener("abort", () => {
     debug12("Abort requested. Killing child process");
-    childProc.kill();
+    childProc.kill("SIGINT");
   });
 });
 if (executeCommand)

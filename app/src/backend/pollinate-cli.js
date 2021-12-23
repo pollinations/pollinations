@@ -48,7 +48,7 @@ const execute = async (command, logfile = null, signal) =>
     }
     signal.addEventListener("abort", () => {
       debug("Abort requested. Killing child process")
-      childProc.kill()
+      childProc.kill('SIGINT')
     })
   });
 

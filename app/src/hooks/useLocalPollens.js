@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import useIPFS from "./useIPFS";
 import useLocalStorage from "./useLocalStorage";
 
@@ -25,7 +25,7 @@ export default function useLocalPollens( node ){
         if (!node.contentID) return
         pushCID(node.contentID)
 
-    },[node.contentID, ipfs.output?.done, pushCID])
+    },[node.contentID, ipfs?.output?.done, pushCID])
 
     return { pollens, pushCID, popCID }
 }

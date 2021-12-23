@@ -1,18 +1,14 @@
 #!/usr/bin/env node
-import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
-import { createWriteStream, mkdirSync } from "fs"
-import { emptyDirSync } from "fs-extra"
-import { join } from "path"
+import { createWriteStream } from "fs"
+import { AbortController } from "native-abort-controller"
 import process from "process"
 import Readline from 'readline'
+import treeKill from 'tree-kill'
 import { receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"
-
-
-
 
 export const debug = Debug("pollinate")
 
@@ -34,7 +30,7 @@ const enableReceive = !options.send
 const executeCommand = options.execute
 const sleepBeforeExit = options.debounce * 2 + 10000
 
-const execute = async (command, logfile = null) =>
+const execute = async (command, logfile = null, signal) =>
   new Promise((resolve, reject) => {
     debug("Executing command", command)
     const childProc = spawn(command)
@@ -51,6 +47,10 @@ const execute = async (command, logfile = null) =>
       childProc.stdout.pipe(logout)
       childProc.stderr.pipe(logout)
     }
+    signal.addEventListener("abort", () => {
+      debug("Abort requested. Killing child process")
+      treeKill(childProc.pid)
+    })
   });
 
 
@@ -62,37 +62,28 @@ if (executeCommand)
 
 
     const { startSending, close, stopSending } = sender({ ...options, once: false })
-
-    while (true) {
-      emptyDirSync(rootPath)
-      mkdirSync(join(rootPath, "/input"))
-      mkdirSync(join(rootPath, "/output"))
-
-
-      await receive({ ...options, once: true })
-
-
-      const doSend = async () => {
-        for await (const sentCID of startSending()) {
-          debug("sent", sentCID)
-          console.log(sentCID)
-        }
+    const doSend = async () => {
+      for await (const sentCID of startSending()) {
+        debug("sent", sentCID)
+        console.log(sentCID)
       }
-
-      const doExecute = async () => {
-        await execute(executeCommand, options.logout)
-        debug("done executing", executeCommand, ". Waiting...")
-        await awaitSleep(2000)
-        stopSending()
-      }
-
-
-      await Promise.all([doSend(), doExecute()])
-
-      debug("finished. Starting again")
-
     }
 
+    doSend()
+
+
+    let [executeSignal, abortExecute] = [null, null]
+
+    for await (const receiveidCID of receive(options)) {
+      debug("received CID", receiveidCID)
+      if (abortExecute) {
+        debug("aborting previous execution")
+        abortExecute()
+      }
+      [executeSignal, abortExecute] = getSignal()
+      execute(executeCommand, options.logout, executeSignal)
+      debug("done executing", executeCommand, ". Waiting...")
+    }
 
   })();
 
@@ -110,13 +101,23 @@ else {
 
   if (enableReceive) {
     (async () => {
-      await receive(options)
+      const receiveStream = await receive(options)
+      for await (const cid of receiveStream) {
+        console.log(cid)
+      }
       process.exit(0)
     })();
   }
 }
 
 
+
+
+function getSignal() {
+  const executeController = new AbortController()
+  const executeSignal = executeController.signal
+  return [executeSignal, () => executeController.abort()]
+}
 
 // ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
 //   const newContentID = new TextDecoder().decode(data);

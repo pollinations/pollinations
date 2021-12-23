@@ -36531,6 +36531,7 @@ if (executeCommand)
       debug12("done executing", executeCommand, ". Waiting...");
     }
     while (true) {
+      await awaitSleep(2e3);
       const doExecute = async () => {
       };
       await Promise.all([doSend(), doExecute()]);

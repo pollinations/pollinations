@@ -9,8 +9,6 @@ import { sender } from './ipfs/sender.js'
 import options from "./options.js"
 
 
-
-
 export const debug = Debug("pollinate")
 
 const readline = Readline.createInterface({
@@ -90,6 +88,7 @@ if (executeCommand)
 
 
 
+      await awaitSleep(2000)
 
 
 

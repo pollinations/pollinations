@@ -1,19 +1,17 @@
-import process from "process";
-import { getIPFSState } from '../../network/ipfsState.js';
+import Debug from 'debug';
+import { stream } from "event-iterator";
+import { mkdirSync, writeFileSync } from 'fs';
+import { dirname, join } from "path";
 import { stringCID } from "../../network/ipfsConnector.js";
 import { subscribeGenerator } from "../../network/ipfsPubSub.js";
-import { join } from "path";
+import { getIPFSState } from '../../network/ipfsState.js';
 import { noop } from '../../network/utils.js';
-import Debug from 'debug';
-import { stream } from "event-iterator"
 
-import { dirname } from "path";
-import { writeFileSync, mkdirSync } from 'fs';
 
 const debug = Debug("ipfs/receiver");
 
 // Receives a stream of updates from IPFS pubsub or stdin and writes them to disk
-export const receive = async function ({ ipns, nodeid, once, path: rootPath }, process=processRemoteCID, suffix="/input") {
+export const receive = async function* ({ ipns, nodeid, once, path: rootPath }, process=processRemoteCID, suffix="/input") {
   // subscribe to content id updates either via IPNS or stdin
   const [cidStream, unsubscribe] = ipns ?
     subscribeGenerator(nodeid, suffix)
@@ -25,6 +23,7 @@ export const receive = async function ({ ipns, nodeid, once, path: rootPath }, p
     remoteCID = stringCID(remoteCID);
     debug("remoteCID", remoteCID);
     await process(stringCID(remoteCID), rootPath);
+    yield remoteCID
     if (once) {
       unsubscribe();
       break;

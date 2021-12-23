@@ -30315,12 +30315,15 @@ if (process.argv[2]) {
 } else {
   (async () => {
     const { pin } = writer();
-    receive({
+    const receiveStream = receive({
       ipns: true,
       nodeid: "done_pollen"
     }, async (cid) => {
       console.log("pinning result", await pin(cid));
     }, "");
+    for await (const cid of receiveStream) {
+      console.log("Received", cid);
+    }
     console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and pinning`);
   })();
 }

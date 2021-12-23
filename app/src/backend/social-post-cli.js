@@ -13,7 +13,7 @@ if (process.argv[2]) {
     }
     run();
 } else {
-    receive({
+    const receiveStream = receive({
         ipns: true,
         nodeid: "post_pollen",
     }, async cid => {
@@ -25,4 +25,9 @@ if (process.argv[2]) {
     },
         "");
     console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`)
+    (async function run() {
+        for await (const cid of receiveStream) {
+            console.log("Received", cid);
+        }
+    })
 }

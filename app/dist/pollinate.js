@@ -36544,7 +36544,10 @@ else {
     })();
   if (enableReceive) {
     (async () => {
-      await receive(options_default);
+      const receiveStream = await receive(options_default);
+      for await (const cid of receiveStream) {
+        console.log(cid);
+      }
       import_process.default.exit(0);
     })();
   }

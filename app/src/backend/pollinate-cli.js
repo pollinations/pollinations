@@ -100,7 +100,10 @@ else {
 
   if (enableReceive) {
     (async () => {
-      await receive(options)
+      const receiveStream = await receive(options)
+      for await (const cid of receiveStream) {
+        console.log(cid)
+      }
       process.exit(0)
     })();
   }

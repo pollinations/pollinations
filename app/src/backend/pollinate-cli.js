@@ -84,30 +84,6 @@ if (executeCommand)
       debug("done executing", executeCommand, ". Waiting...")
     }
 
-    while (true) {
-
-
-
-      await awaitSleep(2000)
-
-
-
-
-
-
-      const doExecute = async () => {
-
-        // stopSending()
-      }
-
-
-      await Promise.all([doSend(), doExecute()])
-
-      debug("finished. Starting again")
-
-    }
-
-
   })();
 
 else {

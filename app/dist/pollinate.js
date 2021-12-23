@@ -36530,13 +36530,6 @@ if (executeCommand)
       execute(executeCommand, options_default.logout, executeSignal);
       debug12("done executing", executeCommand, ". Waiting...");
     }
-    while (true) {
-      await awaitSleep(2e3);
-      const doExecute = async () => {
-      };
-      await Promise.all([doSend(), doExecute()]);
-      debug12("finished. Starting again");
-    }
   })();
 else {
   if (enableSend)

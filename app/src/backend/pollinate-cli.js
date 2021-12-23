@@ -5,6 +5,7 @@ import { createWriteStream } from "fs"
 import { AbortController } from "native-abort-controller"
 import process from "process"
 import Readline from 'readline'
+import treeKill from 'tree-kill'
 import { receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"
@@ -48,7 +49,7 @@ const execute = async (command, logfile = null, signal) =>
     }
     signal.addEventListener("abort", () => {
       debug("Abort requested. Killing child process")
-      childProc.kill('SIGINT')
+      treeKill(childProc.pid)
     })
   });
 

@@ -12,7 +12,8 @@ If you are having dificulties understanding how to use Pollinations, just follow
 
 <iframe allowautoplay='false' class='video_container' src="help.mp4" frameborder="0" allowfullscreen="true" > </iframe>
 
-
+&nbsp;
+&nbsp;
 
 #### Written instructions: 
 &nbsp;
@@ -31,8 +32,3 @@ Note 2: *There are some bugs in the code of Pollinations which result in it beco
 &nbsp; &nbsp; 
 Note 3: *Data is stored on the Interplanetary Filesystem. No information about the user is saved.*
 
-
-
-
-
-Discuss, get help and contribute on [ Github ](https://github.com/pollinations/pollinations) or [ Discord ](https://discord.com/invite/XXd99CrkCr).

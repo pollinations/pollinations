@@ -22,10 +22,17 @@ const debug = Debug("ResultViewer");
 
 export default memo(function ResultViewer({ ipfs }) {
 
-  const contentID = ipfs[".cid"]
-  debug("ModelViewer CID", contentID)
-  debug("ModelViewer IPFS", ipfs)
+
+
+  const { images, first } = useMemo(() => {
+    return mediaToDisplay(ipfs.output)
+  }, [ipfs?.output])
+
+  if (!ipfs?.output)
+    return null
+
   const metadata = getNotebookMetadata(ipfs)
+  const contentID = ipfs[".cid"]
 
   const primaryInputField = metadata?.primaryInput
   const primaryInput = ipfs?.input?.[primaryInputField]
@@ -33,10 +40,9 @@ export default memo(function ResultViewer({ ipfs }) {
 
   const success = ipfs?.output?.success !== false
   debug("success", success, ipfs?.output)
+  debug("ModelViewer CID", contentID)
+  debug("ModelViewer IPFS", ipfs)
 
-  const { images, first } = useMemo(() => {
-    return mediaToDisplay(ipfs.output)
-  }, [ipfs.output])
 
 
 

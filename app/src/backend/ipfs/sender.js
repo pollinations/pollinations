@@ -1,24 +1,19 @@
 
-import awaitSleep from "await-sleep";
-import chokidar from "chokidar";
 import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
-import { join } from "path";
-import { Channel } from "queueable";
-import { last, uniqBy } from "ramda";
-import { getClient, writer } from "../../network/ipfsConnector.js";
-import { publisher } from "../../network/ipfsPubSub.js";
+import { AbortController } from "native-abort-controller";
+import { writer } from "../../network/ipfsConnector.js";
+import { publisher } from '../../network/ipfsPubSub.js';
+import folderSync from "./folderSync.js";
 
 const debug = Debug("ipfs/sender");
 
 
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
-export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
+export const sender = ({ path, debounce, ipns, once, nodeid }) => {
 
-  let processing = Promise.resolve(true)
-
-  const { addFile, mkDir, rm, cid, close: closeWriter } = writer()
+  const ipfsWriter = writer()
 
   // publisher to pollinations frontend
   const { publish, close: closePublisher } = publisher(nodeid, "/output")
@@ -26,172 +21,55 @@ export const sender = ({ path: watchPath, debounce: debounceTime, ipns, once, no
   // publisher to pollen feed
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
 
+  // const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
 
+  let abortController = null;
   // Close function closes both the writer and the publisher.
   // executeOnce makes sure it is called only once
-  const close = executeOnce(async (error) => {
+  const close = async (error) => {
     debug("Closing sender", nodeid)
-    await closeWriter()
+    if (abortController)
+      abortController.abort()
+
+    await ipfsWriter.close()
     await closePublisher()
     await closePollenPublisher()
-  });
+    debug("closed all")
+  };
 
-  async function start() {
+  async function* startSending() {
 
-    if (!existsSync(watchPath)) {
-      debug("Local: Root directory does not exist. Creating", watchPath)
-      mkdirSync(watchPath, { recursive: true })
-    }
+    abortController = new AbortController()
+    const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal })
 
-    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime)
-
-
-    let done = null
-
-
-    for await (const changed of changedFiles$) {
-
-      debug("Changed files", changed)
-      processing = new Promise(resolve => done = resolve)
-
-      const lastChanged = changed; // deduplicateChangedFiles(changed)
-      //for (const { event, path: file } of lastChanged) {
-      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
-
-        // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
-        debug("Local:", event, file);
-        const localPath = join(watchPath, file)
-        const ipfsPath = file
-
-        if (event === "addDir") {
-          await mkDir(ipfsPath)
-        }
-
-        if (event === "add" || event === "change") {
-          debug("adding", ipfsPath, localPath)
-          await addFile(ipfsPath, localPath)
-        }
-
-        if (event === "unlink" || event === "unlinkDir") {
-          debug("removing", file, event)
-          await rm(ipfsPath)
-
-        }
-      }))
-
-      debug("synched all changes")
-
-      const newContentID = await cid();
-      // currentContentID = newContentID;
-      console.log(newContentID);
-
-      if (ipns) {
-        debug("publish", newContentID);
-        // publish to frontend
-        await publish(newContentID);
-        await awaitSleep(1000)
-        // publish to feed
-        await publishPollen(newContentID);
-      }
-
-
-
-
-      if (once) {
-        break;
-      }
-      done();
+    debug("start consuming watched files")
+    if (!existsSync(path)) {
+      debug("Local: Root directory does not exist. Creating", path)
+      mkdirSync(path, { recursive: true })
     }
 
 
-    await close();
+    debug("getting cid stream")
+    for await (const cid of cid$) {
+      debug("publishing new cid", cid)
+      await publishPollen(cid)
+      await publish(cid)
+      yield cid
+      if (once)
+        await close()
+    }
+
+    debug("closed sender")
+  }
+
+  const stopSending = () => {
+    abortController.abort()
   }
 
   return {
-    start,
-    processing: () => processing,
-    close
-  };
-
-};
-
-
-
-const chunkedFilewatcher = (watchPath, debounceTime) => {
-  debug("Local: Watching", watchPath);
-  const channel$ = new Channel();
-
-  let changeQueue = [];
-
-  const watcher = chokidar.watch(watchPath, {
-    awaitWriteFinish: {
-      stabilityThreshold: debounceTime,
-      pollInterval: debounceTime / 2
-    },
-    ignored: /(^|[\/\\])\../,
-    cwd: watchPath,
-    interval: debounceTime,
-  })
-
-
-  // rewrite the above
-  async function transmitQueue() {
-    while (true) {
-      const files = changeQueue
-      changeQueue = []
-      if (files.length > 0) {
-        const deduplicatedFiles = deduplicateChangedFiles(files)
-        debug("Pushing to channel:", deduplicatedFiles)
-        await channel$.push(deduplicatedFiles)
-      }
-      // the use of debounce is not quite right here. Will change later
-      // debug("Sleeping", debounceTime)
-      await awaitSleep(debounceTime)
-    }
+    startSending,
+    close,
+    stopSending
   }
 
-  transmitQueue()
-
-  watcher.on("all", async (event, path) => {
-
-    debug("got watcher event", event, path);
-
-    if (path !== '') {
-
-      const lastChanged = last(changeQueue)
-
-      // add to queue only if it is not a repetition of the last change
-      // if (lastChanged && lastChanged.path == path && lastChanged.event == event) {
-      //   debug(`Last change "${event}" for "${path}" was duplicate. Ignoring.`)
-      // } else {
-      changeQueue.push({ event, path });
-      debug("Queue", changeQueue)
-      //sendQueuedFiles();
-      // }
-    }
-  })
-
-  return channel$;
-}
-
-// publishes a message that pollinating is done which triggers pinning on the server
-const publishDonePollinate = async cid => {
-  const client = await getClient();
-  debug("Publishing done pollinate", cid);
-  await client.pubsub.publish("done_pollination", cid);
 };
-
-
-
-const executeOnce = f => {
-  let executed = false
-  return async (...args) => {
-    if (!executed) {
-      executed = true
-      await f(...args)
-    }
-  }
-}
-
-const deduplicateChangedFiles = (changed) =>
-  uniqBy(({ event, path }) => `${event}-${path}`, changed)

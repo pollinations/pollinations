@@ -11,7 +11,7 @@ Generative media algorithms usually impose a barrier to people that are not used
 
 This, in turn, creates all kinds of problems, making generative art monotonous and elitist.  
 
-Pollinations values inclusivity and diversity, attempting to remove obstacles for creators. We believe that we urgently need **diverse perspectives in the AI ecosystem,**. We want to make AI-generated media simple to access and available for everyone. 
+Pollinations values inclusivity and diversity, attempting to remove obstacles for creators. We believe that we urgently need **diverse perspectives in the AI ecosystem**. We want to make AI-generated media simple to access and available for everyone. 
 
 Pollinations prioritizes equitable distribution of value for hackers, creators, and all the busy bees who play a part in making art. Pollinations is a community-based, open-source, AI art ecosystem, to join the conversation and talk directly with the coders and creators, come to our [ Discord ](https://discord.com/invite/XXd99CrkCr). 
 

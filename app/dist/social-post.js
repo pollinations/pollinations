@@ -36289,6 +36289,7 @@ function publisher(nodeID, suffix = "/output") {
   const _publish = async (cid) => {
     const client = await getClient();
     await publish(client, nodeID, cid, suffix, nodeID);
+    await (0, import_await_sleep2.default)(100);
     lastPublishCID = cid;
   };
   const sendHeartbeat = async () => {
@@ -36989,8 +36990,8 @@ var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
 var notebookMetadata_default = readMetadata;
 
 // src/data/media.js
-var import_ramda2 = __toModule(require_src7());
 var import_debug8 = __toModule(require_src());
+var import_ramda2 = __toModule(require_src7());
 var debug8 = (0, import_debug8.default)("media");
 var _mediaTypeMap = {
   "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
@@ -37219,21 +37220,20 @@ var autoHashtag = async (text) => {
 };
 
 // src/backend/ipfs/receiver.js
-var import_process = __toModule(require("process"));
-var import_path4 = __toModule(require("path"));
 var import_debug12 = __toModule(require_src());
 var import_event_iterator = __toModule(require_node2());
-var import_path5 = __toModule(require("path"));
 var import_fs2 = __toModule(require("fs"));
+var import_path4 = __toModule(require("path"));
 var debug12 = (0, import_debug12.default)("ipfs/receiver");
-var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = processRemoteCID, suffix = "/input") {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
+var receive = async function* ({ ipns, nodeid, once, path: rootPath }, process2 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process2.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug12("received CID", remoteCID);
     remoteCID = stringCID(remoteCID);
     debug12("remoteCID", remoteCID);
-    await process3(stringCID(remoteCID), rootPath);
+    await process2(stringCID(remoteCID), rootPath);
+    yield remoteCID;
     if (once) {
       unsubscribe();
       break;
@@ -37243,8 +37243,8 @@ var receive = async function({ ipns, nodeid, once, path: rootPath }, process3 = 
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
-  debug12("creating folder if it does not exist", (0, import_path5.dirname)(path));
-  (0, import_fs2.mkdirSync)((0, import_path5.dirname)(path), { recursive: true });
+  debug12("creating folder if it does not exist", (0, import_path4.dirname)(path));
+  (0, import_fs2.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
   debug12("writing file of length", content.size, "to folder", path);
   (0, import_fs2.writeFileSync)(path, content);
   return path;
@@ -37276,7 +37276,7 @@ if (process.argv[2]) {
   }
   run();
 } else {
-  receive({
+  const receiveStream = receive({
     ipns: true,
     nodeid: "post_pollen"
   }, async (cid) => {
@@ -37286,5 +37286,9 @@ if (process.argv[2]) {
       console.log("done");
     }
   }, "");
-  console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`);
+  console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`)(async function run() {
+    for await (const cid of receiveStream) {
+      console.log("Received", cid);
+    }
+  });
 }

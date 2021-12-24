@@ -55,13 +55,6 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
-// node_modules/await-sleep/index.js
-var require_await_sleep = __commonJS({
-  "node_modules/await-sleep/index.js"(exports2, module2) {
-    module2.exports = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
-  }
-});
-
 // node_modules/ms/index.js
 var require_ms = __commonJS({
   "node_modules/ms/index.js"(exports2, module2) {
@@ -206,11 +199,11 @@ var require_common = __commonJS({
         let enableOverride = null;
         let namespacesCache;
         let enabledCache;
-        function debug11(...args) {
-          if (!debug11.enabled) {
+        function debug13(...args) {
+          if (!debug13.enabled) {
             return;
           }
-          const self2 = debug11;
+          const self2 = debug13;
           const curr = Number(new Date());
           const ms = curr - (prevTime || curr);
           self2.diff = ms;
@@ -240,12 +233,12 @@ var require_common = __commonJS({
           const logFn = self2.log || createDebug.log;
           logFn.apply(self2, args);
         }
-        debug11.namespace = namespace;
-        debug11.useColors = createDebug.useColors();
-        debug11.color = createDebug.selectColor(namespace);
-        debug11.extend = extend;
-        debug11.destroy = createDebug.destroy;
-        Object.defineProperty(debug11, "enabled", {
+        debug13.namespace = namespace;
+        debug13.useColors = createDebug.useColors();
+        debug13.color = createDebug.selectColor(namespace);
+        debug13.extend = extend;
+        debug13.destroy = createDebug.destroy;
+        Object.defineProperty(debug13, "enabled", {
           enumerable: true,
           configurable: false,
           get: () => {
@@ -263,9 +256,9 @@ var require_common = __commonJS({
           }
         });
         if (typeof createDebug.init === "function") {
-          createDebug.init(debug11);
+          createDebug.init(debug13);
         }
-        return debug11;
+        return debug13;
       }
       function extend(namespace, delimiter) {
         const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
@@ -762,11 +755,11 @@ var require_node = __commonJS({
     function load() {
       return process.env.DEBUG;
     }
-    function init(debug11) {
-      debug11.inspectOpts = {};
+    function init(debug13) {
+      debug13.inspectOpts = {};
       const keys = Object.keys(exports2.inspectOpts);
       for (let i = 0; i < keys.length; i++) {
-        debug11.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
+        debug13.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
       }
     }
     module2.exports = require_common()(exports2);
@@ -790,6 +783,802 @@ var require_src = __commonJS({
     } else {
       module2.exports = require_node();
     }
+  }
+});
+
+// node_modules/event-target-shim/dist/event-target-shim.js
+var require_event_target_shim = __commonJS({
+  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var privateData = new WeakMap();
+    var wrappers = new WeakMap();
+    function pd(event) {
+      const retv = privateData.get(event);
+      console.assert(retv != null, "'this' is expected an Event object, but got", event);
+      return retv;
+    }
+    function setCancelFlag(data) {
+      if (data.passiveListener != null) {
+        if (typeof console !== "undefined" && typeof console.error === "function") {
+          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
+        }
+        return;
+      }
+      if (!data.event.cancelable) {
+        return;
+      }
+      data.canceled = true;
+      if (typeof data.event.preventDefault === "function") {
+        data.event.preventDefault();
+      }
+    }
+    function Event(eventTarget, event) {
+      privateData.set(this, {
+        eventTarget,
+        event,
+        eventPhase: 2,
+        currentTarget: eventTarget,
+        canceled: false,
+        stopped: false,
+        immediateStopped: false,
+        passiveListener: null,
+        timeStamp: event.timeStamp || Date.now()
+      });
+      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
+      const keys = Object.keys(event);
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in this)) {
+          Object.defineProperty(this, key, defineRedirectDescriptor(key));
+        }
+      }
+    }
+    Event.prototype = {
+      get type() {
+        return pd(this).event.type;
+      },
+      get target() {
+        return pd(this).eventTarget;
+      },
+      get currentTarget() {
+        return pd(this).currentTarget;
+      },
+      composedPath() {
+        const currentTarget = pd(this).currentTarget;
+        if (currentTarget == null) {
+          return [];
+        }
+        return [currentTarget];
+      },
+      get NONE() {
+        return 0;
+      },
+      get CAPTURING_PHASE() {
+        return 1;
+      },
+      get AT_TARGET() {
+        return 2;
+      },
+      get BUBBLING_PHASE() {
+        return 3;
+      },
+      get eventPhase() {
+        return pd(this).eventPhase;
+      },
+      stopPropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.stopPropagation === "function") {
+          data.event.stopPropagation();
+        }
+      },
+      stopImmediatePropagation() {
+        const data = pd(this);
+        data.stopped = true;
+        data.immediateStopped = true;
+        if (typeof data.event.stopImmediatePropagation === "function") {
+          data.event.stopImmediatePropagation();
+        }
+      },
+      get bubbles() {
+        return Boolean(pd(this).event.bubbles);
+      },
+      get cancelable() {
+        return Boolean(pd(this).event.cancelable);
+      },
+      preventDefault() {
+        setCancelFlag(pd(this));
+      },
+      get defaultPrevented() {
+        return pd(this).canceled;
+      },
+      get composed() {
+        return Boolean(pd(this).event.composed);
+      },
+      get timeStamp() {
+        return pd(this).timeStamp;
+      },
+      get srcElement() {
+        return pd(this).eventTarget;
+      },
+      get cancelBubble() {
+        return pd(this).stopped;
+      },
+      set cancelBubble(value) {
+        if (!value) {
+          return;
+        }
+        const data = pd(this);
+        data.stopped = true;
+        if (typeof data.event.cancelBubble === "boolean") {
+          data.event.cancelBubble = true;
+        }
+      },
+      get returnValue() {
+        return !pd(this).canceled;
+      },
+      set returnValue(value) {
+        if (!value) {
+          setCancelFlag(pd(this));
+        }
+      },
+      initEvent() {
+      }
+    };
+    Object.defineProperty(Event.prototype, "constructor", {
+      value: Event,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
+      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
+      wrappers.set(window.Event.prototype, Event);
+    }
+    function defineRedirectDescriptor(key) {
+      return {
+        get() {
+          return pd(this).event[key];
+        },
+        set(value) {
+          pd(this).event[key] = value;
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineCallDescriptor(key) {
+      return {
+        value() {
+          const event = pd(this).event;
+          return event[key].apply(event, arguments);
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineWrapper(BaseEvent, proto) {
+      const keys = Object.keys(proto);
+      if (keys.length === 0) {
+        return BaseEvent;
+      }
+      function CustomEvent(eventTarget, event) {
+        BaseEvent.call(this, eventTarget, event);
+      }
+      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
+        constructor: { value: CustomEvent, configurable: true, writable: true }
+      });
+      for (let i = 0; i < keys.length; ++i) {
+        const key = keys[i];
+        if (!(key in BaseEvent.prototype)) {
+          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
+          const isFunc = typeof descriptor.value === "function";
+          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
+        }
+      }
+      return CustomEvent;
+    }
+    function getWrapper(proto) {
+      if (proto == null || proto === Object.prototype) {
+        return Event;
+      }
+      let wrapper = wrappers.get(proto);
+      if (wrapper == null) {
+        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
+        wrappers.set(proto, wrapper);
+      }
+      return wrapper;
+    }
+    function wrapEvent(eventTarget, event) {
+      const Wrapper = getWrapper(Object.getPrototypeOf(event));
+      return new Wrapper(eventTarget, event);
+    }
+    function isStopped(event) {
+      return pd(event).immediateStopped;
+    }
+    function setEventPhase(event, eventPhase) {
+      pd(event).eventPhase = eventPhase;
+    }
+    function setCurrentTarget(event, currentTarget) {
+      pd(event).currentTarget = currentTarget;
+    }
+    function setPassiveListener(event, passiveListener) {
+      pd(event).passiveListener = passiveListener;
+    }
+    var listenersMap = new WeakMap();
+    var CAPTURE = 1;
+    var BUBBLE = 2;
+    var ATTRIBUTE = 3;
+    function isObject(x) {
+      return x !== null && typeof x === "object";
+    }
+    function getListeners(eventTarget) {
+      const listeners = listenersMap.get(eventTarget);
+      if (listeners == null) {
+        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
+      }
+      return listeners;
+    }
+    function defineEventAttributeDescriptor(eventName) {
+      return {
+        get() {
+          const listeners = getListeners(this);
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              return node.listener;
+            }
+            node = node.next;
+          }
+          return null;
+        },
+        set(listener) {
+          if (typeof listener !== "function" && !isObject(listener)) {
+            listener = null;
+          }
+          const listeners = getListeners(this);
+          let prev = null;
+          let node = listeners.get(eventName);
+          while (node != null) {
+            if (node.listenerType === ATTRIBUTE) {
+              if (prev !== null) {
+                prev.next = node.next;
+              } else if (node.next !== null) {
+                listeners.set(eventName, node.next);
+              } else {
+                listeners.delete(eventName);
+              }
+            } else {
+              prev = node;
+            }
+            node = node.next;
+          }
+          if (listener !== null) {
+            const newNode = {
+              listener,
+              listenerType: ATTRIBUTE,
+              passive: false,
+              once: false,
+              next: null
+            };
+            if (prev === null) {
+              listeners.set(eventName, newNode);
+            } else {
+              prev.next = newNode;
+            }
+          }
+        },
+        configurable: true,
+        enumerable: true
+      };
+    }
+    function defineEventAttribute(eventTargetPrototype, eventName) {
+      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
+    }
+    function defineCustomEventTarget(eventNames) {
+      function CustomEventTarget() {
+        EventTarget.call(this);
+      }
+      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
+        constructor: {
+          value: CustomEventTarget,
+          configurable: true,
+          writable: true
+        }
+      });
+      for (let i = 0; i < eventNames.length; ++i) {
+        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
+      }
+      return CustomEventTarget;
+    }
+    function EventTarget() {
+      if (this instanceof EventTarget) {
+        listenersMap.set(this, new Map());
+        return;
+      }
+      if (arguments.length === 1 && Array.isArray(arguments[0])) {
+        return defineCustomEventTarget(arguments[0]);
+      }
+      if (arguments.length > 0) {
+        const types = new Array(arguments.length);
+        for (let i = 0; i < arguments.length; ++i) {
+          types[i] = arguments[i];
+        }
+        return defineCustomEventTarget(types);
+      }
+      throw new TypeError("Cannot call a class as a function");
+    }
+    EventTarget.prototype = {
+      addEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        if (typeof listener !== "function" && !isObject(listener)) {
+          throw new TypeError("'listener' should be a function or an object.");
+        }
+        const listeners = getListeners(this);
+        const optionsIsObj = isObject(options);
+        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        const newNode = {
+          listener,
+          listenerType,
+          passive: optionsIsObj && Boolean(options.passive),
+          once: optionsIsObj && Boolean(options.once),
+          next: null
+        };
+        let node = listeners.get(eventName);
+        if (node === void 0) {
+          listeners.set(eventName, newNode);
+          return;
+        }
+        let prev = null;
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+        prev.next = newNode;
+      },
+      removeEventListener(eventName, listener, options) {
+        if (listener == null) {
+          return;
+        }
+        const listeners = getListeners(this);
+        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
+        const listenerType = capture ? CAPTURE : BUBBLE;
+        let prev = null;
+        let node = listeners.get(eventName);
+        while (node != null) {
+          if (node.listener === listener && node.listenerType === listenerType) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+            return;
+          }
+          prev = node;
+          node = node.next;
+        }
+      },
+      dispatchEvent(event) {
+        if (event == null || typeof event.type !== "string") {
+          throw new TypeError('"event.type" should be a string.');
+        }
+        const listeners = getListeners(this);
+        const eventName = event.type;
+        let node = listeners.get(eventName);
+        if (node == null) {
+          return true;
+        }
+        const wrappedEvent = wrapEvent(this, event);
+        let prev = null;
+        while (node != null) {
+          if (node.once) {
+            if (prev !== null) {
+              prev.next = node.next;
+            } else if (node.next !== null) {
+              listeners.set(eventName, node.next);
+            } else {
+              listeners.delete(eventName);
+            }
+          } else {
+            prev = node;
+          }
+          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
+          if (typeof node.listener === "function") {
+            try {
+              node.listener.call(this, wrappedEvent);
+            } catch (err) {
+              if (typeof console !== "undefined" && typeof console.error === "function") {
+                console.error(err);
+              }
+            }
+          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
+            node.listener.handleEvent(wrappedEvent);
+          }
+          if (isStopped(wrappedEvent)) {
+            break;
+          }
+          node = node.next;
+        }
+        setPassiveListener(wrappedEvent, null);
+        setEventPhase(wrappedEvent, 0);
+        setCurrentTarget(wrappedEvent, null);
+        return !wrappedEvent.defaultPrevented;
+      }
+    };
+    Object.defineProperty(EventTarget.prototype, "constructor", {
+      value: EventTarget,
+      configurable: true,
+      writable: true
+    });
+    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
+      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
+    }
+    exports2.defineEventAttribute = defineEventAttribute;
+    exports2.EventTarget = EventTarget;
+    exports2.default = EventTarget;
+    module2.exports = EventTarget;
+    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
+    module2.exports.defineEventAttribute = defineEventAttribute;
+  }
+});
+
+// node_modules/abort-controller/dist/abort-controller.js
+var require_abort_controller = __commonJS({
+  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var eventTargetShim = require_event_target_shim();
+    var AbortSignal = class extends eventTargetShim.EventTarget {
+      constructor() {
+        super();
+        throw new TypeError("AbortSignal cannot be constructed directly");
+      }
+      get aborted() {
+        const aborted = abortedFlags.get(this);
+        if (typeof aborted !== "boolean") {
+          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
+        }
+        return aborted;
+      }
+    };
+    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
+    function createAbortSignal() {
+      const signal = Object.create(AbortSignal.prototype);
+      eventTargetShim.EventTarget.call(signal);
+      abortedFlags.set(signal, false);
+      return signal;
+    }
+    function abortSignal2(signal) {
+      if (abortedFlags.get(signal) !== false) {
+        return;
+      }
+      abortedFlags.set(signal, true);
+      signal.dispatchEvent({ type: "abort" });
+    }
+    var abortedFlags = new WeakMap();
+    Object.defineProperties(AbortSignal.prototype, {
+      aborted: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortSignal"
+      });
+    }
+    var AbortController15 = class {
+      constructor() {
+        signals.set(this, createAbortSignal());
+      }
+      get signal() {
+        return getSignal2(this);
+      }
+      abort() {
+        abortSignal2(getSignal2(this));
+      }
+    };
+    var signals = new WeakMap();
+    function getSignal2(controller) {
+      const signal = signals.get(controller);
+      if (signal == null) {
+        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
+      }
+      return signal;
+    }
+    Object.defineProperties(AbortController15.prototype, {
+      signal: { enumerable: true },
+      abort: { enumerable: true }
+    });
+    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
+      Object.defineProperty(AbortController15.prototype, Symbol.toStringTag, {
+        configurable: true,
+        value: "AbortController"
+      });
+    }
+    exports2.AbortController = AbortController15;
+    exports2.AbortSignal = AbortSignal;
+    exports2.default = AbortController15;
+    module2.exports = AbortController15;
+    module2.exports.AbortController = module2.exports["default"] = AbortController15;
+    module2.exports.AbortSignal = AbortSignal;
+  }
+});
+
+// node_modules/native-abort-controller/src/index.js
+var require_src2 = __commonJS({
+  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
+    "use strict";
+    var impl;
+    if (globalThis.AbortController && globalThis.AbortSignal) {
+      impl = globalThis;
+    } else {
+      impl = require_abort_controller();
+    }
+    module2.exports.AbortSignal = impl.AbortSignal;
+    module2.exports.AbortController = impl.AbortController;
+  }
+});
+
+// node_modules/tree-kill/index.js
+var require_tree_kill = __commonJS({
+  "node_modules/tree-kill/index.js"(exports2, module2) {
+    "use strict";
+    var childProcess = require("child_process");
+    var spawn2 = childProcess.spawn;
+    var exec = childProcess.exec;
+    module2.exports = function(pid, signal, callback) {
+      if (typeof signal === "function" && callback === void 0) {
+        callback = signal;
+        signal = void 0;
+      }
+      pid = parseInt(pid);
+      if (Number.isNaN(pid)) {
+        if (callback) {
+          return callback(new Error("pid must be a number"));
+        } else {
+          throw new Error("pid must be a number");
+        }
+      }
+      var tree = {};
+      var pidsToProcess = {};
+      tree[pid] = [];
+      pidsToProcess[pid] = 1;
+      switch (process.platform) {
+        case "win32":
+          exec("taskkill /pid " + pid + " /T /F", callback);
+          break;
+        case "darwin":
+          buildProcessTree(pid, tree, pidsToProcess, function(parentPid) {
+            return spawn2("pgrep", ["-P", parentPid]);
+          }, function() {
+            killAll(tree, signal, callback);
+          });
+          break;
+        default:
+          buildProcessTree(pid, tree, pidsToProcess, function(parentPid) {
+            return spawn2("ps", ["-o", "pid", "--no-headers", "--ppid", parentPid]);
+          }, function() {
+            killAll(tree, signal, callback);
+          });
+          break;
+      }
+    };
+    function killAll(tree, signal, callback) {
+      var killed = {};
+      try {
+        Object.keys(tree).forEach(function(pid) {
+          tree[pid].forEach(function(pidpid) {
+            if (!killed[pidpid]) {
+              killPid(pidpid, signal);
+              killed[pidpid] = 1;
+            }
+          });
+          if (!killed[pid]) {
+            killPid(pid, signal);
+            killed[pid] = 1;
+          }
+        });
+      } catch (err) {
+        if (callback) {
+          return callback(err);
+        } else {
+          throw err;
+        }
+      }
+      if (callback) {
+        return callback();
+      }
+    }
+    function killPid(pid, signal) {
+      try {
+        process.kill(parseInt(pid, 10), signal);
+      } catch (err) {
+        if (err.code !== "ESRCH")
+          throw err;
+      }
+    }
+    function buildProcessTree(parentPid, tree, pidsToProcess, spawnChildProcessesList, cb) {
+      var ps = spawnChildProcessesList(parentPid);
+      var allData = "";
+      ps.stdout.on("data", function(data) {
+        var data = data.toString("ascii");
+        allData += data;
+      });
+      var onClose = function(code5) {
+        delete pidsToProcess[parentPid];
+        if (code5 != 0) {
+          if (Object.keys(pidsToProcess).length == 0) {
+            cb();
+          }
+          return;
+        }
+        allData.match(/\d+/g).forEach(function(pid) {
+          pid = parseInt(pid, 10);
+          tree[parentPid].push(pid);
+          tree[pid] = [];
+          pidsToProcess[pid] = 1;
+          buildProcessTree(pid, tree, pidsToProcess, spawnChildProcessesList, cb);
+        });
+      };
+      ps.on("close", onClose);
+    }
+  }
+});
+
+// node_modules/event-iterator/lib/event-iterator.js
+var require_event_iterator = __commonJS({
+  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var EventQueue = class {
+      constructor() {
+        this.pullQueue = [];
+        this.pushQueue = [];
+        this.eventHandlers = {};
+        this.isPaused = false;
+        this.isStopped = false;
+      }
+      push(value) {
+        if (this.isStopped)
+          return;
+        const resolution = { value, done: false };
+        if (this.pullQueue.length) {
+          const placeholder = this.pullQueue.shift();
+          if (placeholder)
+            placeholder.resolve(resolution);
+        } else {
+          this.pushQueue.push(Promise.resolve(resolution));
+          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
+            this.isPaused = true;
+            if (this.eventHandlers.highWater) {
+              this.eventHandlers.highWater();
+            } else if (console) {
+              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
+            }
+          }
+        }
+      }
+      stop() {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        for (const placeholder of this.pullQueue) {
+          placeholder.resolve({ value: void 0, done: true });
+        }
+        this.pullQueue.length = 0;
+      }
+      fail(error) {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        if (this.pullQueue.length) {
+          for (const placeholder of this.pullQueue) {
+            placeholder.reject(error);
+          }
+          this.pullQueue.length = 0;
+        } else {
+          const rejection = Promise.reject(error);
+          rejection.catch(() => {
+          });
+          this.pushQueue.push(rejection);
+        }
+      }
+      remove() {
+        Promise.resolve().then(() => {
+          if (this.removeCallback)
+            this.removeCallback();
+        });
+      }
+      [Symbol.asyncIterator]() {
+        return {
+          next: (value) => {
+            const result = this.pushQueue.shift();
+            if (result) {
+              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
+                this.isPaused = false;
+                if (this.eventHandlers.lowWater) {
+                  this.eventHandlers.lowWater();
+                }
+              }
+              return result;
+            } else if (this.isStopped) {
+              return Promise.resolve({ value: void 0, done: true });
+            } else {
+              return new Promise((resolve2, reject) => {
+                this.pullQueue.push({ resolve: resolve2, reject });
+              });
+            }
+          },
+          return: () => {
+            this.isStopped = true;
+            this.pushQueue.length = 0;
+            this.remove();
+            return Promise.resolve({ value: void 0, done: true });
+          }
+        };
+      }
+    };
+    var EventIterator = class {
+      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
+        const queue = new EventQueue();
+        queue.highWaterMark = highWaterMark;
+        queue.lowWaterMark = lowWaterMark;
+        queue.removeCallback = listen({
+          push: (value) => queue.push(value),
+          stop: () => queue.stop(),
+          fail: (error) => queue.fail(error),
+          on: (event, fn) => {
+            queue.eventHandlers[event] = fn;
+          }
+        }) || (() => {
+        });
+        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
+        Object.freeze(this);
+      }
+    };
+    exports2.EventIterator = EventIterator;
+    exports2.default = EventIterator;
+  }
+});
+
+// node_modules/event-iterator/lib/node.js
+var require_node2 = __commonJS({
+  "node_modules/event-iterator/lib/node.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var event_iterator_1 = require_event_iterator();
+    exports2.EventIterator = event_iterator_1.EventIterator;
+    function stream2(evOptions) {
+      return new event_iterator_1.EventIterator((queue) => {
+        this.addListener("data", queue.push);
+        this.addListener("end", queue.stop);
+        this.addListener("error", queue.fail);
+        queue.on("highWater", () => this.pause());
+        queue.on("lowWater", () => this.resume());
+        return () => {
+          this.removeListener("data", queue.push);
+          this.removeListener("end", queue.stop);
+          this.removeListener("error", queue.fail);
+          if (this.destroy) {
+            this.destroy();
+          } else if (typeof this.close == "function") {
+            ;
+            this.close();
+          }
+        };
+      }, evOptions);
+    }
+    exports2.stream = stream2;
+    exports2.default = event_iterator_1.EventIterator;
   }
 });
 
@@ -1989,7 +2778,7 @@ if (cid) {
 });
 
 // node_modules/multiformats/cjs/src/index.js
-var require_src2 = __commonJS({
+var require_src3 = __commonJS({
   "node_modules/multiformats/cjs/src/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -2024,7 +2813,7 @@ var require_basics = __commonJS({
     var identity$1 = require_identity2();
     var raw = require_raw();
     var json = require_json();
-    require_src2();
+    require_src3();
     var cid = require_cid();
     var hasher = require_hasher();
     var digest = require_digest();
@@ -2815,7 +3604,7 @@ var require_equals = __commonJS({
 });
 
 // node_modules/multiaddr/src/index.js
-var require_src3 = __commonJS({
+var require_src4 = __commonJS({
   "node_modules/multiaddr/src/index.js"(exports2, module2) {
     "use strict";
     var codec = require_codec();
@@ -10580,7 +11369,7 @@ var require_lib4 = __commonJS({
 });
 
 // node_modules/native-fetch/src/index.js
-var require_src4 = __commonJS({
+var require_src5 = __commonJS({
   "node_modules/native-fetch/src/index.js"(exports2, module2) {
     "use strict";
     if (globalThis.fetch && globalThis.Headers && globalThis.Request && globalThis.Response) {
@@ -10609,7 +11398,7 @@ var require_fetch = __commonJS({
     if (isElectronMain) {
       module2.exports = require_lib2();
     } else {
-      module2.exports = require_src4();
+      module2.exports = require_src5();
     }
   }
 });
@@ -10744,12 +11533,12 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last7 = this.buffer[this.btm];
-        if (last7 === void 0)
+        const last6 = this.buffer[this.btm];
+        if (last6 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last7;
+        return last6;
       }
       isEmpty() {
         return this.buffer[this.btm] === void 0;
@@ -10945,7 +11734,7 @@ var require_transform = __commonJS({
 });
 
 // node_modules/it-to-stream/src/index.js
-var require_src5 = __commonJS({
+var require_src6 = __commonJS({
   "node_modules/it-to-stream/src/index.js"(exports2, module2) {
     "use strict";
     var toTransform = require_transform();
@@ -10969,7 +11758,7 @@ var require_fetch_node = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.node.js"(exports2, module2) {
     "use strict";
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
-    var toStream2 = require_src5();
+    var toStream2 = require_src6();
     var { Buffer: Buffer2 } = require("buffer");
     var fetch = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
@@ -11235,552 +12024,12 @@ var require_iso_url = __commonJS({
   }
 });
 
-// node_modules/event-target-shim/dist/event-target-shim.js
-var require_event_target_shim = __commonJS({
-  "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var privateData = new WeakMap();
-    var wrappers = new WeakMap();
-    function pd(event) {
-      const retv = privateData.get(event);
-      console.assert(retv != null, "'this' is expected an Event object, but got", event);
-      return retv;
-    }
-    function setCancelFlag(data) {
-      if (data.passiveListener != null) {
-        if (typeof console !== "undefined" && typeof console.error === "function") {
-          console.error("Unable to preventDefault inside passive event listener invocation.", data.passiveListener);
-        }
-        return;
-      }
-      if (!data.event.cancelable) {
-        return;
-      }
-      data.canceled = true;
-      if (typeof data.event.preventDefault === "function") {
-        data.event.preventDefault();
-      }
-    }
-    function Event(eventTarget, event) {
-      privateData.set(this, {
-        eventTarget,
-        event,
-        eventPhase: 2,
-        currentTarget: eventTarget,
-        canceled: false,
-        stopped: false,
-        immediateStopped: false,
-        passiveListener: null,
-        timeStamp: event.timeStamp || Date.now()
-      });
-      Object.defineProperty(this, "isTrusted", { value: false, enumerable: true });
-      const keys = Object.keys(event);
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in this)) {
-          Object.defineProperty(this, key, defineRedirectDescriptor(key));
-        }
-      }
-    }
-    Event.prototype = {
-      get type() {
-        return pd(this).event.type;
-      },
-      get target() {
-        return pd(this).eventTarget;
-      },
-      get currentTarget() {
-        return pd(this).currentTarget;
-      },
-      composedPath() {
-        const currentTarget = pd(this).currentTarget;
-        if (currentTarget == null) {
-          return [];
-        }
-        return [currentTarget];
-      },
-      get NONE() {
-        return 0;
-      },
-      get CAPTURING_PHASE() {
-        return 1;
-      },
-      get AT_TARGET() {
-        return 2;
-      },
-      get BUBBLING_PHASE() {
-        return 3;
-      },
-      get eventPhase() {
-        return pd(this).eventPhase;
-      },
-      stopPropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.stopPropagation === "function") {
-          data.event.stopPropagation();
-        }
-      },
-      stopImmediatePropagation() {
-        const data = pd(this);
-        data.stopped = true;
-        data.immediateStopped = true;
-        if (typeof data.event.stopImmediatePropagation === "function") {
-          data.event.stopImmediatePropagation();
-        }
-      },
-      get bubbles() {
-        return Boolean(pd(this).event.bubbles);
-      },
-      get cancelable() {
-        return Boolean(pd(this).event.cancelable);
-      },
-      preventDefault() {
-        setCancelFlag(pd(this));
-      },
-      get defaultPrevented() {
-        return pd(this).canceled;
-      },
-      get composed() {
-        return Boolean(pd(this).event.composed);
-      },
-      get timeStamp() {
-        return pd(this).timeStamp;
-      },
-      get srcElement() {
-        return pd(this).eventTarget;
-      },
-      get cancelBubble() {
-        return pd(this).stopped;
-      },
-      set cancelBubble(value) {
-        if (!value) {
-          return;
-        }
-        const data = pd(this);
-        data.stopped = true;
-        if (typeof data.event.cancelBubble === "boolean") {
-          data.event.cancelBubble = true;
-        }
-      },
-      get returnValue() {
-        return !pd(this).canceled;
-      },
-      set returnValue(value) {
-        if (!value) {
-          setCancelFlag(pd(this));
-        }
-      },
-      initEvent() {
-      }
-    };
-    Object.defineProperty(Event.prototype, "constructor", {
-      value: Event,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.Event !== "undefined") {
-      Object.setPrototypeOf(Event.prototype, window.Event.prototype);
-      wrappers.set(window.Event.prototype, Event);
-    }
-    function defineRedirectDescriptor(key) {
-      return {
-        get() {
-          return pd(this).event[key];
-        },
-        set(value) {
-          pd(this).event[key] = value;
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineCallDescriptor(key) {
-      return {
-        value() {
-          const event = pd(this).event;
-          return event[key].apply(event, arguments);
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineWrapper(BaseEvent, proto) {
-      const keys = Object.keys(proto);
-      if (keys.length === 0) {
-        return BaseEvent;
-      }
-      function CustomEvent(eventTarget, event) {
-        BaseEvent.call(this, eventTarget, event);
-      }
-      CustomEvent.prototype = Object.create(BaseEvent.prototype, {
-        constructor: { value: CustomEvent, configurable: true, writable: true }
-      });
-      for (let i = 0; i < keys.length; ++i) {
-        const key = keys[i];
-        if (!(key in BaseEvent.prototype)) {
-          const descriptor = Object.getOwnPropertyDescriptor(proto, key);
-          const isFunc = typeof descriptor.value === "function";
-          Object.defineProperty(CustomEvent.prototype, key, isFunc ? defineCallDescriptor(key) : defineRedirectDescriptor(key));
-        }
-      }
-      return CustomEvent;
-    }
-    function getWrapper(proto) {
-      if (proto == null || proto === Object.prototype) {
-        return Event;
-      }
-      let wrapper = wrappers.get(proto);
-      if (wrapper == null) {
-        wrapper = defineWrapper(getWrapper(Object.getPrototypeOf(proto)), proto);
-        wrappers.set(proto, wrapper);
-      }
-      return wrapper;
-    }
-    function wrapEvent(eventTarget, event) {
-      const Wrapper = getWrapper(Object.getPrototypeOf(event));
-      return new Wrapper(eventTarget, event);
-    }
-    function isStopped(event) {
-      return pd(event).immediateStopped;
-    }
-    function setEventPhase(event, eventPhase) {
-      pd(event).eventPhase = eventPhase;
-    }
-    function setCurrentTarget(event, currentTarget) {
-      pd(event).currentTarget = currentTarget;
-    }
-    function setPassiveListener(event, passiveListener) {
-      pd(event).passiveListener = passiveListener;
-    }
-    var listenersMap = new WeakMap();
-    var CAPTURE = 1;
-    var BUBBLE = 2;
-    var ATTRIBUTE = 3;
-    function isObject(x) {
-      return x !== null && typeof x === "object";
-    }
-    function getListeners(eventTarget) {
-      const listeners = listenersMap.get(eventTarget);
-      if (listeners == null) {
-        throw new TypeError("'this' is expected an EventTarget object, but got another value.");
-      }
-      return listeners;
-    }
-    function defineEventAttributeDescriptor(eventName) {
-      return {
-        get() {
-          const listeners = getListeners(this);
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              return node.listener;
-            }
-            node = node.next;
-          }
-          return null;
-        },
-        set(listener) {
-          if (typeof listener !== "function" && !isObject(listener)) {
-            listener = null;
-          }
-          const listeners = getListeners(this);
-          let prev = null;
-          let node = listeners.get(eventName);
-          while (node != null) {
-            if (node.listenerType === ATTRIBUTE) {
-              if (prev !== null) {
-                prev.next = node.next;
-              } else if (node.next !== null) {
-                listeners.set(eventName, node.next);
-              } else {
-                listeners.delete(eventName);
-              }
-            } else {
-              prev = node;
-            }
-            node = node.next;
-          }
-          if (listener !== null) {
-            const newNode = {
-              listener,
-              listenerType: ATTRIBUTE,
-              passive: false,
-              once: false,
-              next: null
-            };
-            if (prev === null) {
-              listeners.set(eventName, newNode);
-            } else {
-              prev.next = newNode;
-            }
-          }
-        },
-        configurable: true,
-        enumerable: true
-      };
-    }
-    function defineEventAttribute(eventTargetPrototype, eventName) {
-      Object.defineProperty(eventTargetPrototype, `on${eventName}`, defineEventAttributeDescriptor(eventName));
-    }
-    function defineCustomEventTarget(eventNames) {
-      function CustomEventTarget() {
-        EventTarget.call(this);
-      }
-      CustomEventTarget.prototype = Object.create(EventTarget.prototype, {
-        constructor: {
-          value: CustomEventTarget,
-          configurable: true,
-          writable: true
-        }
-      });
-      for (let i = 0; i < eventNames.length; ++i) {
-        defineEventAttribute(CustomEventTarget.prototype, eventNames[i]);
-      }
-      return CustomEventTarget;
-    }
-    function EventTarget() {
-      if (this instanceof EventTarget) {
-        listenersMap.set(this, new Map());
-        return;
-      }
-      if (arguments.length === 1 && Array.isArray(arguments[0])) {
-        return defineCustomEventTarget(arguments[0]);
-      }
-      if (arguments.length > 0) {
-        const types = new Array(arguments.length);
-        for (let i = 0; i < arguments.length; ++i) {
-          types[i] = arguments[i];
-        }
-        return defineCustomEventTarget(types);
-      }
-      throw new TypeError("Cannot call a class as a function");
-    }
-    EventTarget.prototype = {
-      addEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        if (typeof listener !== "function" && !isObject(listener)) {
-          throw new TypeError("'listener' should be a function or an object.");
-        }
-        const listeners = getListeners(this);
-        const optionsIsObj = isObject(options);
-        const capture = optionsIsObj ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        const newNode = {
-          listener,
-          listenerType,
-          passive: optionsIsObj && Boolean(options.passive),
-          once: optionsIsObj && Boolean(options.once),
-          next: null
-        };
-        let node = listeners.get(eventName);
-        if (node === void 0) {
-          listeners.set(eventName, newNode);
-          return;
-        }
-        let prev = null;
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-        prev.next = newNode;
-      },
-      removeEventListener(eventName, listener, options) {
-        if (listener == null) {
-          return;
-        }
-        const listeners = getListeners(this);
-        const capture = isObject(options) ? Boolean(options.capture) : Boolean(options);
-        const listenerType = capture ? CAPTURE : BUBBLE;
-        let prev = null;
-        let node = listeners.get(eventName);
-        while (node != null) {
-          if (node.listener === listener && node.listenerType === listenerType) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-            return;
-          }
-          prev = node;
-          node = node.next;
-        }
-      },
-      dispatchEvent(event) {
-        if (event == null || typeof event.type !== "string") {
-          throw new TypeError('"event.type" should be a string.');
-        }
-        const listeners = getListeners(this);
-        const eventName = event.type;
-        let node = listeners.get(eventName);
-        if (node == null) {
-          return true;
-        }
-        const wrappedEvent = wrapEvent(this, event);
-        let prev = null;
-        while (node != null) {
-          if (node.once) {
-            if (prev !== null) {
-              prev.next = node.next;
-            } else if (node.next !== null) {
-              listeners.set(eventName, node.next);
-            } else {
-              listeners.delete(eventName);
-            }
-          } else {
-            prev = node;
-          }
-          setPassiveListener(wrappedEvent, node.passive ? node.listener : null);
-          if (typeof node.listener === "function") {
-            try {
-              node.listener.call(this, wrappedEvent);
-            } catch (err) {
-              if (typeof console !== "undefined" && typeof console.error === "function") {
-                console.error(err);
-              }
-            }
-          } else if (node.listenerType !== ATTRIBUTE && typeof node.listener.handleEvent === "function") {
-            node.listener.handleEvent(wrappedEvent);
-          }
-          if (isStopped(wrappedEvent)) {
-            break;
-          }
-          node = node.next;
-        }
-        setPassiveListener(wrappedEvent, null);
-        setEventPhase(wrappedEvent, 0);
-        setCurrentTarget(wrappedEvent, null);
-        return !wrappedEvent.defaultPrevented;
-      }
-    };
-    Object.defineProperty(EventTarget.prototype, "constructor", {
-      value: EventTarget,
-      configurable: true,
-      writable: true
-    });
-    if (typeof window !== "undefined" && typeof window.EventTarget !== "undefined") {
-      Object.setPrototypeOf(EventTarget.prototype, window.EventTarget.prototype);
-    }
-    exports2.defineEventAttribute = defineEventAttribute;
-    exports2.EventTarget = EventTarget;
-    exports2.default = EventTarget;
-    module2.exports = EventTarget;
-    module2.exports.EventTarget = module2.exports["default"] = EventTarget;
-    module2.exports.defineEventAttribute = defineEventAttribute;
-  }
-});
-
-// node_modules/abort-controller/dist/abort-controller.js
-var require_abort_controller = __commonJS({
-  "node_modules/abort-controller/dist/abort-controller.js"(exports2, module2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var eventTargetShim = require_event_target_shim();
-    var AbortSignal = class extends eventTargetShim.EventTarget {
-      constructor() {
-        super();
-        throw new TypeError("AbortSignal cannot be constructed directly");
-      }
-      get aborted() {
-        const aborted = abortedFlags.get(this);
-        if (typeof aborted !== "boolean") {
-          throw new TypeError(`Expected 'this' to be an 'AbortSignal' object, but got ${this === null ? "null" : typeof this}`);
-        }
-        return aborted;
-      }
-    };
-    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
-    function createAbortSignal() {
-      const signal = Object.create(AbortSignal.prototype);
-      eventTargetShim.EventTarget.call(signal);
-      abortedFlags.set(signal, false);
-      return signal;
-    }
-    function abortSignal2(signal) {
-      if (abortedFlags.get(signal) !== false) {
-        return;
-      }
-      abortedFlags.set(signal, true);
-      signal.dispatchEvent({ type: "abort" });
-    }
-    var abortedFlags = new WeakMap();
-    Object.defineProperties(AbortSignal.prototype, {
-      aborted: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortSignal"
-      });
-    }
-    var AbortController13 = class {
-      constructor() {
-        signals.set(this, createAbortSignal());
-      }
-      get signal() {
-        return getSignal(this);
-      }
-      abort() {
-        abortSignal2(getSignal(this));
-      }
-    };
-    var signals = new WeakMap();
-    function getSignal(controller) {
-      const signal = signals.get(controller);
-      if (signal == null) {
-        throw new TypeError(`Expected 'this' to be an 'AbortController' object, but got ${controller === null ? "null" : typeof controller}`);
-      }
-      return signal;
-    }
-    Object.defineProperties(AbortController13.prototype, {
-      signal: { enumerable: true },
-      abort: { enumerable: true }
-    });
-    if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController13.prototype, Symbol.toStringTag, {
-        configurable: true,
-        value: "AbortController"
-      });
-    }
-    exports2.AbortController = AbortController13;
-    exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController13;
-    module2.exports = AbortController13;
-    module2.exports.AbortController = module2.exports["default"] = AbortController13;
-    module2.exports.AbortSignal = AbortSignal;
-  }
-});
-
-// node_modules/native-abort-controller/src/index.js
-var require_src6 = __commonJS({
-  "node_modules/native-abort-controller/src/index.js"(exports2, module2) {
-    "use strict";
-    var impl;
-    if (globalThis.AbortController && globalThis.AbortSignal) {
-      impl = globalThis;
-    } else {
-      impl = require_abort_controller();
-    }
-    module2.exports.AbortSignal = impl.AbortSignal;
-    module2.exports.AbortController = impl.AbortController;
-  }
-});
-
 // node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
   "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController: AbortController13 } = require_src6();
+    var { AbortController: AbortController15 } = require_src2();
     function anySignal2(signals) {
-      const controller = new AbortController13();
+      const controller = new AbortController15();
       function onAbort() {
         controller.abort();
         for (const signal of signals) {
@@ -11813,7 +12062,7 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController: AbortController13 } = require_src6();
+    var { AbortController: AbortController15 } = require_src2();
     var anySignal2 = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -11876,7 +12125,7 @@ var require_http = __commonJS({
           opts.body = JSON.stringify(opts.json);
           headers.set("content-type", "application/json");
         }
-        const abortController = new AbortController13();
+        const abortController = new AbortController15();
         const signal = anySignal2([abortController.signal, opts.signal]);
         const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
@@ -12001,15 +12250,15 @@ var require_http = __commonJS({
 // node_modules/multiaddr-to-uri/index.js
 var require_multiaddr_to_uri = __commonJS({
   "node_modules/multiaddr-to-uri/index.js"(exports2, module2) {
-    var { Multiaddr: Multiaddr18 } = require_src3();
+    var { Multiaddr: Multiaddr18 } = require_src4();
     var reduceValue = (_, v) => v;
     var tcpUri = (str, port, parts, opts) => {
       if (opts && opts.assumeHttp === false)
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last7 = parts[parts.length - 1];
-      if (last7.protocol === "tcp") {
+      const last6 = parts[parts.length - 1];
+      if (last6.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -13476,14 +13725,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last7 = async (source) => {
+    var last6 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last7;
+    module2.exports = last6;
   }
 });
 
@@ -16123,8 +16372,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last7 = init.pop();
-      return compose(compose.apply(this, map4(chain, init)), last7);
+      var last6 = init.pop();
+      return compose(compose.apply(this, map4(chain, init)), last6);
     }
     module2.exports = composeK;
   }
@@ -17471,8 +17720,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last7 = /* @__PURE__ */ nth(-1);
-    module2.exports = last7;
+    var last6 = /* @__PURE__ */ nth(-1);
+    module2.exports = last6;
   }
 });
 
@@ -17482,7 +17731,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last7 = require_last();
+    var last6 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -17490,7 +17739,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last7(result), list[idx])) {
+          if (!pred(last6(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -20648,6 +20897,504 @@ var require_src7 = __commonJS({
   }
 });
 
+// node_modules/await-sleep/index.js
+var require_await_sleep = __commonJS({
+  "node_modules/await-sleep/index.js"(exports2, module2) {
+    module2.exports = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
+  }
+});
+
+// node_modules/queueable/dist/lib/Deferred.js
+var require_Deferred = __commonJS({
+  "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred = class {
+      constructor() {
+        this.promise = new Promise((resolve2, reject) => {
+          this.resolve = (value) => {
+            resolve2(value);
+            return this.promise;
+          };
+          this.reject = (reason) => {
+            reject(reason);
+            return this.promise;
+          };
+        });
+      }
+    };
+    exports2.default = Deferred;
+  }
+});
+
+// node_modules/fast-list/fast-list.js
+var require_fast_list = __commonJS({
+  "node_modules/fast-list/fast-list.js"(exports2, module2) {
+    (function() {
+      function Item(data, prev, next) {
+        this.next = next;
+        if (next)
+          next.prev = this;
+        this.prev = prev;
+        if (prev)
+          prev.next = this;
+        this.data = data;
+      }
+      function FastList() {
+        if (!(this instanceof FastList))
+          return new FastList();
+        this._head = null;
+        this._tail = null;
+        this.length = 0;
+      }
+      FastList.prototype = {
+        push: function(data) {
+          this._tail = new Item(data, this._tail, null);
+          if (!this._head)
+            this._head = this._tail;
+          this.length++;
+        },
+        pop: function() {
+          if (this.length === 0)
+            return void 0;
+          var t = this._tail;
+          this._tail = t.prev;
+          if (t.prev) {
+            t.prev = this._tail.next = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._head = this._tail;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return t.data;
+        },
+        unshift: function(data) {
+          this._head = new Item(data, null, this._head);
+          if (!this._tail)
+            this._tail = this._head;
+          this.length++;
+        },
+        shift: function() {
+          if (this.length === 0)
+            return void 0;
+          var h = this._head;
+          this._head = h.next;
+          if (h.next) {
+            h.next = this._head.prev = null;
+          }
+          this.length--;
+          if (this.length === 1)
+            this._tail = this._head;
+          else if (this.length === 0)
+            this._head = this._tail = null;
+          return h.data;
+        },
+        item: function(n) {
+          if (n < 0)
+            n = this.length + n;
+          var h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          return h ? h.data : void 0;
+        },
+        slice: function(n, m) {
+          if (!n)
+            n = 0;
+          if (!m)
+            m = this.length;
+          if (m < 0)
+            m = this.length + m;
+          if (n < 0)
+            n = this.length + n;
+          if (m === n) {
+            return [];
+          }
+          if (m < n) {
+            throw new Error("invalid offset: " + n + "," + m + " (length=" + this.length + ")");
+          }
+          var len = m - n, ret = new Array(len), i = 0, h = this._head;
+          while (n-- > 0 && h)
+            h = h.next;
+          while (i < len && h) {
+            ret[i++] = h.data;
+            h = h.next;
+          }
+          return ret;
+        },
+        drop: function() {
+          FastList.call(this);
+        },
+        forEach: function(fn, thisp) {
+          var p = this._head, i = 0, len = this.length;
+          while (i < len && p) {
+            fn.call(thisp || this, p.data, i, this);
+            p = p.next;
+            i++;
+          }
+        },
+        map: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            n.push(fn.call(thisp || me, v, i, me));
+          });
+          return n;
+        },
+        filter: function(fn, thisp) {
+          var n = new FastList();
+          this.forEach(function(v, i, me) {
+            if (fn.call(thisp || me, v, i, me))
+              n.push(v);
+          });
+          return n;
+        },
+        reduce: function(fn, val, thisp) {
+          var i = 0, p = this._head, len = this.length;
+          if (!val) {
+            i = 1;
+            val = p && p.data;
+            p = p && p.next;
+          }
+          while (i < len && p) {
+            val = fn.call(thisp || this, val, p.data, this);
+            i++;
+            p = p.next;
+          }
+          return val;
+        }
+      };
+      if (typeof exports2 !== "undefined")
+        module2.exports = FastList;
+      else if (typeof define === "function" && define.amd) {
+        define("FastList", function() {
+          return FastList;
+        });
+      } else
+        (function() {
+          return this;
+        })().FastList = FastList;
+    })();
+  }
+});
+
+// node_modules/queueable/dist/lib/LinkedQueue.js
+var require_LinkedQueue = __commonJS({
+  "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fast_list_1 = __importDefault(require_fast_list());
+    var Queue = class {
+      constructor(limit = 0) {
+        this.limit = limit;
+        this.length = 0;
+        this.list = new fast_list_1.default();
+      }
+      enqueue(value) {
+        const { list } = this;
+        if (this.limit > 0 && list.length === this.limit) {
+          list.shift();
+        }
+        this.length += 1;
+        list.push(value);
+      }
+      dequeue() {
+        if (this.length === 0) {
+          throw Error("Queue is empty");
+        }
+        this.length -= 1;
+        return this.list.shift();
+      }
+      clear() {
+        this.length = 0;
+        this.list.drop();
+      }
+      forEach(f) {
+        this.list.forEach(f);
+      }
+    };
+    exports2.default = Queue;
+  }
+});
+
+// node_modules/queueable/dist/lib/common.js
+var require_common2 = __commonJS({
+  "node_modules/queueable/dist/lib/common.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.doneResult = Object.freeze({
+      value: void 0,
+      done: true
+    });
+    exports2.donePromise = Promise.resolve(exports2.doneResult);
+  }
+});
+
+// node_modules/queueable/dist/lib/fromDom.js
+var require_fromDom = __commonJS({
+  "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromDom = (init) => (type, target, options) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      target.addEventListener(type, listener, options);
+      return adapter.wrap(() => target.removeEventListener(type, listener, options));
+    };
+    exports2.default = fromDom;
+  }
+});
+
+// node_modules/queueable/dist/lib/fromEmitter.js
+var require_fromEmitter = __commonJS({
+  "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var fromEmitter = (init) => (type, emitter) => {
+      const adapter = init();
+      const listener = (event) => void adapter.push(event);
+      emitter.addListener(type, listener);
+      return adapter.wrap(() => void emitter.removeListener(type, listener));
+    };
+    exports2.default = fromEmitter;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Channel.js
+var require_Channel = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var LinkedQueue_1 = __importDefault(require_LinkedQueue());
+    var common_1 = require_common2();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var Channel2 = class {
+      constructor(pushLimit = 0, pullLimit = 0) {
+        this.closed = false;
+        this.pushBuffer = new LinkedQueue_1.default(pushLimit);
+        this.pullBuffer = new LinkedQueue_1.default(pullLimit);
+      }
+      next() {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        if (this.pushBuffer.length === 0) {
+          const defer2 = new Deferred_1.default();
+          this.pullBuffer.enqueue(defer2);
+          return defer2.promise;
+        }
+        const { result, defer } = this.pushBuffer.dequeue();
+        defer.resolve(result);
+        if (result.done) {
+          this.close();
+        }
+        return defer.promise;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          return Promise.resolve(common_1.doneResult);
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.pullBuffer.length > 0) {
+          return this.pullBuffer.dequeue().resolve(result);
+        }
+        const defer = new Deferred_1.default();
+        this.pushBuffer.enqueue({ result, defer });
+        return defer.promise;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+      async return(value) {
+        this.close();
+        return {
+          done: true,
+          value
+        };
+      }
+      close() {
+        if (this.closed) {
+          return;
+        }
+        this.closed = true;
+        this.pushBuffer.forEach(({ defer: { resolve: resolve2 } }) => void resolve2(common_1.doneResult));
+        this.pushBuffer.clear();
+        this.pullBuffer.forEach(({ resolve: resolve2 }) => void resolve2(common_1.doneResult));
+        this.pullBuffer.clear();
+      }
+      wrap(onReturn) {
+        if (this.closed) {
+          throw Error("Balancer is closed");
+        }
+        return {
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          next: () => this.next(),
+          return: async (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+      }
+    };
+    exports2.default = Channel2;
+    Channel2.fromDom = fromDom_1.default(() => new Channel2());
+    Channel2.fromEmitter = fromEmitter_1.default(() => new Channel2());
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/Multicast.js
+var require_Multicast = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Channel_1 = __importDefault(require_Channel());
+    var Multicast = class {
+      constructor(init = () => new Channel_1.default()) {
+        this.init = init;
+        this.receivers = new Set();
+      }
+      push(value) {
+        this.receivers.forEach((balancer) => balancer.push(value));
+        return this;
+      }
+      [Symbol.asyncIterator]() {
+        const producer = this.init();
+        const { receivers } = this;
+        receivers.add(producer);
+        if (this.onStart && receivers.size === 1) {
+          this.onStart();
+        }
+        return producer.wrap(() => {
+          receivers.delete(producer);
+          if (this.onStop && receivers.size === 0) {
+            this.onStop();
+          }
+        });
+      }
+    };
+    exports2.default = Multicast;
+  }
+});
+
+// node_modules/queueable/dist/lib/adapters/LastResult.js
+var require_LastResult = __commonJS({
+  "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Deferred_1 = __importDefault(require_Deferred());
+    var common_1 = require_common2();
+    var fromDom_1 = __importDefault(require_fromDom());
+    var fromEmitter_1 = __importDefault(require_fromEmitter());
+    var LastResult = class {
+      constructor() {
+        this.buffer = new Deferred_1.default();
+        this.closed = false;
+        this.resolved = false;
+        this.requested = false;
+      }
+      push(value, done = false) {
+        if (this.closed) {
+          throw Error("Iterator closed");
+        }
+        const result = {
+          value,
+          done
+        };
+        if (this.resolved === false) {
+          this.resolved = true;
+        } else {
+          this.buffer = new Deferred_1.default();
+          this.resolved = false;
+        }
+        this.requested = false;
+        this.buffer.resolve(result);
+        return this.buffer.promise;
+      }
+      async next() {
+        if (this.closed) {
+          return common_1.doneResult;
+        }
+        this.requested = true;
+        return this.buffer.promise;
+      }
+      async return(value) {
+        this.closed = true;
+        if (!this.resolved && this.requested) {
+          this.buffer.resolve(common_1.doneResult);
+        }
+        return Promise.resolve({
+          value,
+          done: true
+        });
+      }
+      wrap(onReturn) {
+        const wrapped = {
+          next: () => this.next(),
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+          return: (value) => {
+            if (onReturn) {
+              onReturn();
+            }
+            return this.return(value);
+          }
+        };
+        return wrapped;
+      }
+      [Symbol.asyncIterator]() {
+        return this;
+      }
+    };
+    exports2.default = LastResult;
+    LastResult.fromDom = fromDom_1.default(() => new LastResult());
+    LastResult.fromEmitter = fromEmitter_1.default(() => new LastResult());
+  }
+});
+
+// node_modules/queueable/dist/lib/index.js
+var require_lib5 = __commonJS({
+  "node_modules/queueable/dist/lib/index.js"(exports2) {
+    "use strict";
+    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
+      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
+    };
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Multicast_1 = __importDefault(require_Multicast());
+    exports2.Multicast = Multicast_1.default;
+    var Channel_1 = __importDefault(require_Channel());
+    exports2.Channel = Channel_1.default;
+    var LastResult_1 = __importDefault(require_LastResult());
+    exports2.LastResult = LastResult_1.default;
+    var Deferred_1 = __importDefault(require_Deferred());
+    exports2.Deferred = Deferred_1.default;
+    var fromDom_1 = require_fromDom();
+    exports2.fromDom = fromDom_1.default;
+    var fromEmitter_1 = require_fromEmitter();
+    exports2.fromEmitter = fromEmitter_1.default;
+  }
+});
+
 // node_modules/json5/lib/unicode.js
 var require_unicode = __commonJS({
   "node_modules/json5/lib/unicode.js"(exports2, module2) {
@@ -21721,7 +22468,7 @@ var require_stringify = __commonJS({
 });
 
 // node_modules/json5/lib/index.js
-var require_lib5 = __commonJS({
+var require_lib6 = __commonJS({
   "node_modules/json5/lib/index.js"(exports2, module2) {
     var parse3 = require_parse();
     var stringify = require_stringify();
@@ -21730,647 +22477,6 @@ var require_lib5 = __commonJS({
       stringify
     };
     module2.exports = JSON5;
-  }
-});
-
-// node_modules/queueable/dist/lib/Deferred.js
-var require_Deferred = __commonJS({
-  "node_modules/queueable/dist/lib/Deferred.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred = class {
-      constructor() {
-        this.promise = new Promise((resolve2, reject) => {
-          this.resolve = (value) => {
-            resolve2(value);
-            return this.promise;
-          };
-          this.reject = (reason) => {
-            reject(reason);
-            return this.promise;
-          };
-        });
-      }
-    };
-    exports2.default = Deferred;
-  }
-});
-
-// node_modules/fast-list/fast-list.js
-var require_fast_list = __commonJS({
-  "node_modules/fast-list/fast-list.js"(exports2, module2) {
-    (function() {
-      function Item(data, prev, next) {
-        this.next = next;
-        if (next)
-          next.prev = this;
-        this.prev = prev;
-        if (prev)
-          prev.next = this;
-        this.data = data;
-      }
-      function FastList() {
-        if (!(this instanceof FastList))
-          return new FastList();
-        this._head = null;
-        this._tail = null;
-        this.length = 0;
-      }
-      FastList.prototype = {
-        push: function(data) {
-          this._tail = new Item(data, this._tail, null);
-          if (!this._head)
-            this._head = this._tail;
-          this.length++;
-        },
-        pop: function() {
-          if (this.length === 0)
-            return void 0;
-          var t = this._tail;
-          this._tail = t.prev;
-          if (t.prev) {
-            t.prev = this._tail.next = null;
-          }
-          this.length--;
-          if (this.length === 1)
-            this._head = this._tail;
-          else if (this.length === 0)
-            this._head = this._tail = null;
-          return t.data;
-        },
-        unshift: function(data) {
-          this._head = new Item(data, null, this._head);
-          if (!this._tail)
-            this._tail = this._head;
-          this.length++;
-        },
-        shift: function() {
-          if (this.length === 0)
-            return void 0;
-          var h = this._head;
-          this._head = h.next;
-          if (h.next) {
-            h.next = this._head.prev = null;
-          }
-          this.length--;
-          if (this.length === 1)
-            this._tail = this._head;
-          else if (this.length === 0)
-            this._head = this._tail = null;
-          return h.data;
-        },
-        item: function(n) {
-          if (n < 0)
-            n = this.length + n;
-          var h = this._head;
-          while (n-- > 0 && h)
-            h = h.next;
-          return h ? h.data : void 0;
-        },
-        slice: function(n, m) {
-          if (!n)
-            n = 0;
-          if (!m)
-            m = this.length;
-          if (m < 0)
-            m = this.length + m;
-          if (n < 0)
-            n = this.length + n;
-          if (m === n) {
-            return [];
-          }
-          if (m < n) {
-            throw new Error("invalid offset: " + n + "," + m + " (length=" + this.length + ")");
-          }
-          var len = m - n, ret = new Array(len), i = 0, h = this._head;
-          while (n-- > 0 && h)
-            h = h.next;
-          while (i < len && h) {
-            ret[i++] = h.data;
-            h = h.next;
-          }
-          return ret;
-        },
-        drop: function() {
-          FastList.call(this);
-        },
-        forEach: function(fn, thisp) {
-          var p = this._head, i = 0, len = this.length;
-          while (i < len && p) {
-            fn.call(thisp || this, p.data, i, this);
-            p = p.next;
-            i++;
-          }
-        },
-        map: function(fn, thisp) {
-          var n = new FastList();
-          this.forEach(function(v, i, me) {
-            n.push(fn.call(thisp || me, v, i, me));
-          });
-          return n;
-        },
-        filter: function(fn, thisp) {
-          var n = new FastList();
-          this.forEach(function(v, i, me) {
-            if (fn.call(thisp || me, v, i, me))
-              n.push(v);
-          });
-          return n;
-        },
-        reduce: function(fn, val, thisp) {
-          var i = 0, p = this._head, len = this.length;
-          if (!val) {
-            i = 1;
-            val = p && p.data;
-            p = p && p.next;
-          }
-          while (i < len && p) {
-            val = fn.call(thisp || this, val, p.data, this);
-            i++;
-            p = p.next;
-          }
-          return val;
-        }
-      };
-      if (typeof exports2 !== "undefined")
-        module2.exports = FastList;
-      else if (typeof define === "function" && define.amd) {
-        define("FastList", function() {
-          return FastList;
-        });
-      } else
-        (function() {
-          return this;
-        })().FastList = FastList;
-    })();
-  }
-});
-
-// node_modules/queueable/dist/lib/LinkedQueue.js
-var require_LinkedQueue = __commonJS({
-  "node_modules/queueable/dist/lib/LinkedQueue.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fast_list_1 = __importDefault(require_fast_list());
-    var Queue = class {
-      constructor(limit = 0) {
-        this.limit = limit;
-        this.length = 0;
-        this.list = new fast_list_1.default();
-      }
-      enqueue(value) {
-        const { list } = this;
-        if (this.limit > 0 && list.length === this.limit) {
-          list.shift();
-        }
-        this.length += 1;
-        list.push(value);
-      }
-      dequeue() {
-        if (this.length === 0) {
-          throw Error("Queue is empty");
-        }
-        this.length -= 1;
-        return this.list.shift();
-      }
-      clear() {
-        this.length = 0;
-        this.list.drop();
-      }
-      forEach(f) {
-        this.list.forEach(f);
-      }
-    };
-    exports2.default = Queue;
-  }
-});
-
-// node_modules/queueable/dist/lib/common.js
-var require_common2 = __commonJS({
-  "node_modules/queueable/dist/lib/common.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.doneResult = Object.freeze({
-      value: void 0,
-      done: true
-    });
-    exports2.donePromise = Promise.resolve(exports2.doneResult);
-  }
-});
-
-// node_modules/queueable/dist/lib/fromDom.js
-var require_fromDom = __commonJS({
-  "node_modules/queueable/dist/lib/fromDom.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fromDom = (init) => (type, target, options) => {
-      const adapter = init();
-      const listener = (event) => void adapter.push(event);
-      target.addEventListener(type, listener, options);
-      return adapter.wrap(() => target.removeEventListener(type, listener, options));
-    };
-    exports2.default = fromDom;
-  }
-});
-
-// node_modules/queueable/dist/lib/fromEmitter.js
-var require_fromEmitter = __commonJS({
-  "node_modules/queueable/dist/lib/fromEmitter.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var fromEmitter = (init) => (type, emitter) => {
-      const adapter = init();
-      const listener = (event) => void adapter.push(event);
-      emitter.addListener(type, listener);
-      return adapter.wrap(() => void emitter.removeListener(type, listener));
-    };
-    exports2.default = fromEmitter;
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/Channel.js
-var require_Channel = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/Channel.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred_1 = __importDefault(require_Deferred());
-    var LinkedQueue_1 = __importDefault(require_LinkedQueue());
-    var common_1 = require_common2();
-    var fromDom_1 = __importDefault(require_fromDom());
-    var fromEmitter_1 = __importDefault(require_fromEmitter());
-    var Channel3 = class {
-      constructor(pushLimit = 0, pullLimit = 0) {
-        this.closed = false;
-        this.pushBuffer = new LinkedQueue_1.default(pushLimit);
-        this.pullBuffer = new LinkedQueue_1.default(pullLimit);
-      }
-      next() {
-        if (this.closed) {
-          return Promise.resolve(common_1.doneResult);
-        }
-        if (this.pushBuffer.length === 0) {
-          const defer2 = new Deferred_1.default();
-          this.pullBuffer.enqueue(defer2);
-          return defer2.promise;
-        }
-        const { result, defer } = this.pushBuffer.dequeue();
-        defer.resolve(result);
-        if (result.done) {
-          this.close();
-        }
-        return defer.promise;
-      }
-      push(value, done = false) {
-        if (this.closed) {
-          return Promise.resolve(common_1.doneResult);
-        }
-        const result = {
-          value,
-          done
-        };
-        if (this.pullBuffer.length > 0) {
-          return this.pullBuffer.dequeue().resolve(result);
-        }
-        const defer = new Deferred_1.default();
-        this.pushBuffer.enqueue({ result, defer });
-        return defer.promise;
-      }
-      [Symbol.asyncIterator]() {
-        return this;
-      }
-      async return(value) {
-        this.close();
-        return {
-          done: true,
-          value
-        };
-      }
-      close() {
-        if (this.closed) {
-          return;
-        }
-        this.closed = true;
-        this.pushBuffer.forEach(({ defer: { resolve: resolve2 } }) => void resolve2(common_1.doneResult));
-        this.pushBuffer.clear();
-        this.pullBuffer.forEach(({ resolve: resolve2 }) => void resolve2(common_1.doneResult));
-        this.pullBuffer.clear();
-      }
-      wrap(onReturn) {
-        if (this.closed) {
-          throw Error("Balancer is closed");
-        }
-        return {
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-          next: () => this.next(),
-          return: async (value) => {
-            if (onReturn) {
-              onReturn();
-            }
-            return this.return(value);
-          }
-        };
-      }
-    };
-    exports2.default = Channel3;
-    Channel3.fromDom = fromDom_1.default(() => new Channel3());
-    Channel3.fromEmitter = fromEmitter_1.default(() => new Channel3());
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/Multicast.js
-var require_Multicast = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/Multicast.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Channel_1 = __importDefault(require_Channel());
-    var Multicast = class {
-      constructor(init = () => new Channel_1.default()) {
-        this.init = init;
-        this.receivers = new Set();
-      }
-      push(value) {
-        this.receivers.forEach((balancer) => balancer.push(value));
-        return this;
-      }
-      [Symbol.asyncIterator]() {
-        const producer = this.init();
-        const { receivers } = this;
-        receivers.add(producer);
-        if (this.onStart && receivers.size === 1) {
-          this.onStart();
-        }
-        return producer.wrap(() => {
-          receivers.delete(producer);
-          if (this.onStop && receivers.size === 0) {
-            this.onStop();
-          }
-        });
-      }
-    };
-    exports2.default = Multicast;
-  }
-});
-
-// node_modules/queueable/dist/lib/adapters/LastResult.js
-var require_LastResult = __commonJS({
-  "node_modules/queueable/dist/lib/adapters/LastResult.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Deferred_1 = __importDefault(require_Deferred());
-    var common_1 = require_common2();
-    var fromDom_1 = __importDefault(require_fromDom());
-    var fromEmitter_1 = __importDefault(require_fromEmitter());
-    var LastResult = class {
-      constructor() {
-        this.buffer = new Deferred_1.default();
-        this.closed = false;
-        this.resolved = false;
-        this.requested = false;
-      }
-      push(value, done = false) {
-        if (this.closed) {
-          throw Error("Iterator closed");
-        }
-        const result = {
-          value,
-          done
-        };
-        if (this.resolved === false) {
-          this.resolved = true;
-        } else {
-          this.buffer = new Deferred_1.default();
-          this.resolved = false;
-        }
-        this.requested = false;
-        this.buffer.resolve(result);
-        return this.buffer.promise;
-      }
-      async next() {
-        if (this.closed) {
-          return common_1.doneResult;
-        }
-        this.requested = true;
-        return this.buffer.promise;
-      }
-      async return(value) {
-        this.closed = true;
-        if (!this.resolved && this.requested) {
-          this.buffer.resolve(common_1.doneResult);
-        }
-        return Promise.resolve({
-          value,
-          done: true
-        });
-      }
-      wrap(onReturn) {
-        const wrapped = {
-          next: () => this.next(),
-          [Symbol.asyncIterator]() {
-            return this;
-          },
-          return: (value) => {
-            if (onReturn) {
-              onReturn();
-            }
-            return this.return(value);
-          }
-        };
-        return wrapped;
-      }
-      [Symbol.asyncIterator]() {
-        return this;
-      }
-    };
-    exports2.default = LastResult;
-    LastResult.fromDom = fromDom_1.default(() => new LastResult());
-    LastResult.fromEmitter = fromEmitter_1.default(() => new LastResult());
-  }
-});
-
-// node_modules/queueable/dist/lib/index.js
-var require_lib6 = __commonJS({
-  "node_modules/queueable/dist/lib/index.js"(exports2) {
-    "use strict";
-    var __importDefault = exports2 && exports2.__importDefault || function(mod2) {
-      return mod2 && mod2.__esModule ? mod2 : { "default": mod2 };
-    };
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Multicast_1 = __importDefault(require_Multicast());
-    exports2.Multicast = Multicast_1.default;
-    var Channel_1 = __importDefault(require_Channel());
-    exports2.Channel = Channel_1.default;
-    var LastResult_1 = __importDefault(require_LastResult());
-    exports2.LastResult = LastResult_1.default;
-    var Deferred_1 = __importDefault(require_Deferred());
-    exports2.Deferred = Deferred_1.default;
-    var fromDom_1 = require_fromDom();
-    exports2.fromDom = fromDom_1.default;
-    var fromEmitter_1 = require_fromEmitter();
-    exports2.fromEmitter = fromEmitter_1.default;
-  }
-});
-
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = { value, done: false };
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({ value: void 0, done: true });
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({ value: void 0, done: true });
-            } else {
-              return new Promise((resolve2, reject) => {
-                this.pullQueue.push({ resolve: resolve2, reject });
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({ value: void 0, done: true });
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
   }
 });
 
@@ -28395,18 +28501,22 @@ Expecting one of '${allowedValues.join("', '")}'`);
 
 // src/backend/pollinate-cli.js
 __export(exports, {
-  debug: () => debug10,
+  debug: () => debug12,
   rootPath: () => rootPath
 });
-var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
-var import_debug10 = __toModule(require_src());
-var import_fs4 = __toModule(require("fs"));
-var import_process2 = __toModule(require("process"));
+var import_debug12 = __toModule(require_src());
+var import_fs5 = __toModule(require("fs"));
+var import_native_abort_controller14 = __toModule(require_src2());
+var import_process = __toModule(require("process"));
 var import_readline = __toModule(require("readline"));
+var import_tree_kill = __toModule(require_tree_kill());
 
 // src/backend/ipfs/receiver.js
-var import_process = __toModule(require("process"));
+var import_debug8 = __toModule(require_src());
+var import_event_iterator = __toModule(require_node2());
+var import_fs2 = __toModule(require("fs"));
+var import_path3 = __toModule(require("path"));
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toModule(require_src());
@@ -31789,7 +31899,7 @@ var codecs = {
 };
 
 // node_modules/ipfs-http-client/esm/src/lib/core.js
-var import_multiaddr2 = __toModule(require_src3());
+var import_multiaddr2 = __toModule(require_src4());
 var import_env = __toModule(require_env());
 
 // node_modules/parse-duration/index.mjs
@@ -31828,7 +31938,7 @@ var import_index2 = __toModule(require_merge_options());
 var merge_options_default = import_index2.default;
 
 // node_modules/ipfs-core-utils/esm/src/to-url-string.js
-var import_multiaddr = __toModule(require_src3());
+var import_multiaddr = __toModule(require_src4());
 var import_multiaddr_to_uri = __toModule(require_multiaddr_to_uri());
 function toUrlString(url) {
   try {
@@ -32869,7 +32979,7 @@ function modeToString2(mode) {
 }
 
 // node_modules/ipfs-core-utils/esm/src/multipart-request.node.js
-var import_it_to_stream = __toModule(require_src5());
+var import_it_to_stream = __toModule(require_src6());
 var import_debug2 = __toModule(require_src());
 var import_it_peekable3 = __toModule(require_it_peekable());
 var merge2 = merge_options_default.bind({ ignoreUndefined: true });
@@ -33051,7 +33161,7 @@ function abortSignal(...signals) {
 }
 
 // node_modules/ipfs-http-client/esm/src/block/put.js
-var import_native_abort_controller = __toModule(require_src6());
+var import_native_abort_controller = __toModule(require_src2());
 var createPut = configure((api) => {
   async function put(data, options = {}) {
     const controller = new import_native_abort_controller.AbortController();
@@ -33138,7 +33248,7 @@ function createBlock(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/add.js
-var import_multiaddr3 = __toModule(require_src3());
+var import_multiaddr3 = __toModule(require_src4());
 var createAdd = configure((api) => {
   async function add(addr, options = {}) {
     const res = await api.post("bootstrap/add", {
@@ -33155,7 +33265,7 @@ var createAdd = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/clear.js
-var import_multiaddr4 = __toModule(require_src3());
+var import_multiaddr4 = __toModule(require_src4());
 var createClear = configure((api) => {
   async function clear(options = {}) {
     const res = await api.post("bootstrap/rm", {
@@ -33172,7 +33282,7 @@ var createClear = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/list.js
-var import_multiaddr5 = __toModule(require_src3());
+var import_multiaddr5 = __toModule(require_src4());
 var createList = configure((api) => {
   async function list(options = {}) {
     const res = await api.post("bootstrap/list", {
@@ -33187,7 +33297,7 @@ var createList = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/reset.js
-var import_multiaddr6 = __toModule(require_src3());
+var import_multiaddr6 = __toModule(require_src4());
 var createReset = configure((api) => {
   async function reset(options = {}) {
     const res = await api.post("bootstrap/add", {
@@ -33204,7 +33314,7 @@ var createReset = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/bootstrap/rm.js
-var import_multiaddr7 = __toModule(require_src3());
+var import_multiaddr7 = __toModule(require_src4());
 var createRm2 = configure((api) => {
   async function rm(addr, options = {}) {
     const res = await api.post("bootstrap/rm", {
@@ -33325,7 +33435,7 @@ var createGetAll = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/config/replace.js
-var import_native_abort_controller2 = __toModule(require_src6());
+var import_native_abort_controller2 = __toModule(require_src2());
 var createReplace = configure((api) => {
   const replace = async (config, options = {}) => {
     const controller = new import_native_abort_controller2.AbortController();
@@ -33476,7 +33586,7 @@ var createGet3 = (codecs2, options) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/dag/import.js
-var import_native_abort_controller3 = __toModule(require_src6());
+var import_native_abort_controller3 = __toModule(require_src2());
 var createImport = configure((api) => {
   async function* dagImport(source, options = {}) {
     const controller = new import_native_abort_controller3.AbortController();
@@ -33507,7 +33617,7 @@ var createImport = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dag/put.js
-var import_native_abort_controller4 = __toModule(require_src6());
+var import_native_abort_controller4 = __toModule(require_src2());
 var createPut2 = (codecs2, options) => {
   const fn = configure((api) => {
     const put = async (dagNode, options2 = {}) => {
@@ -33564,7 +33674,7 @@ function createDag(codecs2, config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/dht/find-peer.js
-var import_multiaddr8 = __toModule(require_src3());
+var import_multiaddr8 = __toModule(require_src4());
 
 // node_modules/ipfs-http-client/esm/src/dht/response-types.js
 var FinalPeer = 2;
@@ -33596,7 +33706,7 @@ var createFindPeer = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/find-provs.js
-var import_multiaddr9 = __toModule(require_src3());
+var import_multiaddr9 = __toModule(require_src4());
 var createFindProvs = configure((api) => {
   async function* findProvs(cid, options = {}) {
     const res = await api.post("dht/findprovs", {
@@ -33650,7 +33760,7 @@ var createGet4 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/provide.js
-var import_multiaddr10 = __toModule(require_src3());
+var import_multiaddr10 = __toModule(require_src4());
 var createProvide = configure((api) => {
   async function* provide(cids, options = { recursive: false }) {
     const cidArr = Array.isArray(cids) ? cids : [cids];
@@ -33678,8 +33788,8 @@ var createProvide = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/put.js
-var import_multiaddr11 = __toModule(require_src3());
-var import_native_abort_controller5 = __toModule(require_src6());
+var import_multiaddr11 = __toModule(require_src4());
+var import_native_abort_controller5 = __toModule(require_src2());
 var createPut3 = configure((api) => {
   async function* put(key, value, options = {}) {
     const controller = new import_native_abort_controller5.AbortController();
@@ -33705,7 +33815,7 @@ var createPut3 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/dht/query.js
-var import_multiaddr12 = __toModule(require_src3());
+var import_multiaddr12 = __toModule(require_src4());
 var createQuery = configure((api) => {
   async function* query(peerId, options = {}) {
     const res = await api.post("dht/query", {
@@ -33994,7 +34104,7 @@ var createTouch = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/files/write.js
-var import_native_abort_controller6 = __toModule(require_src6());
+var import_native_abort_controller6 = __toModule(require_src2());
 var createWrite = configure((api) => {
   async function write(path, input, options = {}) {
     const controller = new import_native_abort_controller6.AbortController();
@@ -34428,7 +34538,7 @@ var createAddLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/append-data.js
-var import_native_abort_controller7 = __toModule(require_src6());
+var import_native_abort_controller7 = __toModule(require_src2());
 var createAppendData = configure((api) => {
   async function appendData(cid, data, options = {}) {
     const controller = new import_native_abort_controller7.AbortController();
@@ -34465,7 +34575,7 @@ var createRmLink = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/object/patch/set-data.js
-var import_native_abort_controller8 = __toModule(require_src6());
+var import_native_abort_controller8 = __toModule(require_src2());
 var createSetData = configure((api) => {
   async function setData(cid, data, options = {}) {
     const controller = new import_native_abort_controller8.AbortController();
@@ -34978,7 +35088,7 @@ var createPeers = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/pubsub/publish.js
-var import_native_abort_controller9 = __toModule(require_src6());
+var import_native_abort_controller9 = __toModule(require_src2());
 var createPublish2 = configure((api) => {
   async function publish2(topic, data, options = {}) {
     const searchParams = toUrlSearchParams(__spreadValues({
@@ -35082,7 +35192,7 @@ var createUnsubscribe = (options, subsTracker) => {
 };
 
 // node_modules/ipfs-http-client/esm/src/pubsub/subscription-tracker.js
-var import_native_abort_controller10 = __toModule(require_src6());
+var import_native_abort_controller10 = __toModule(require_src2());
 var SubscriptionTracker = class {
   constructor() {
     this._subs = new Map();
@@ -35252,7 +35362,7 @@ function createStats(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/swarm/addrs.js
-var import_multiaddr13 = __toModule(require_src3());
+var import_multiaddr13 = __toModule(require_src4());
 var createAddrs = configure((api) => {
   async function addrs(options = {}) {
     const res = await api.post("swarm/addrs", {
@@ -35302,7 +35412,7 @@ var createDisconnect = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/swarm/local-addrs.js
-var import_multiaddr14 = __toModule(require_src3());
+var import_multiaddr14 = __toModule(require_src4());
 var createLocalAddrs = configure((api) => {
   async function localAddrs(options = {}) {
     const res = await api.post("swarm/addrs/local", {
@@ -35317,7 +35427,7 @@ var createLocalAddrs = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/swarm/peers.js
-var import_multiaddr15 = __toModule(require_src3());
+var import_multiaddr15 = __toModule(require_src4());
 var createPeers2 = configure((api) => {
   async function peers(options = {}) {
     const res = await api.post("swarm/peers", {
@@ -35352,7 +35462,7 @@ function createSwarm(config) {
 }
 
 // node_modules/ipfs-http-client/esm/src/add-all.js
-var import_native_abort_controller11 = __toModule(require_src6());
+var import_native_abort_controller11 = __toModule(require_src2());
 var createAddAll2 = configure((api) => {
   async function* addAll(source, options = {}) {
     const controller = new import_native_abort_controller11.AbortController();
@@ -35578,7 +35688,7 @@ var createGet6 = configure((api) => {
 });
 
 // node_modules/ipfs-http-client/esm/src/id.js
-var import_multiaddr16 = __toModule(require_src3());
+var import_multiaddr16 = __toModule(require_src4());
 var createId = configure((api) => {
   async function id(options = {}) {
     const res = await api.post("id", {
@@ -35764,7 +35874,7 @@ var createVersion2 = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/index.js
 var import_glob_source = __toModule(require_glob_source());
-var import_multiaddr17 = __toModule(require_src3());
+var import_multiaddr17 = __toModule(require_src4());
 var import_url_source = __toModule(require_url_source());
 function create2(options = {}) {
   const id = {
@@ -36062,8 +36172,168 @@ async function getCID(client, path = "/") {
 }
 var ipfsResolve = async (client, path) => stringCID((0, import_ramda.last)(await toPromise(client.name.resolve(path, { nocache: true }))));
 
-// src/network/ipfsState.js
+// src/network/ipfsPubSub.js
+var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src());
+var import_native_abort_controller12 = __toModule(require_src2());
+var import_queueable = __toModule(require_lib5());
+var debug6 = (0, import_debug6.default)("ipfs:pubsub");
+var HEARTBEAT_FREQUENCY = 12;
+function publisher(nodeID, suffix = "/output") {
+  debug6("Creating publisher for", nodeID, suffix);
+  let lastPublishCID = null;
+  const _publish = async (cid) => {
+    const client = await getClient();
+    await publish(client, nodeID, cid, suffix, nodeID);
+    await (0, import_await_sleep2.default)(100);
+    lastPublishCID = cid;
+  };
+  const sendHeartbeat = async () => {
+    const client = await getClient();
+    publishHeartbeat(client, suffix, nodeID);
+  };
+  const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
+  sendHeartbeat();
+  const close = () => {
+    debug6("Closing publisher", handle);
+    clearInterval(handle);
+  };
+  return {
+    publish: _publish,
+    close
+  };
+}
+var publishHeartbeat = async (client, suffix, nodeID) => {
+  if (nodeID === "ipns")
+    return;
+  try {
+    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
+  } catch (e) {
+    debug6("Exception. Couldn't publish heartbeat. Ignoring...", e.name);
+  }
+};
+async function publish(client, nodeID, rootCID, suffix = "/output") {
+  const retryPublish = retryException(client.pubsub.publish);
+  debug6("publish pubsub", nodeID + suffix, rootCID);
+  try {
+    if (nodeID === "ipns")
+      await experimentalIPNSPublish(client, rootCID);
+    else
+      await retryPublish(nodeID + suffix, rootCID);
+  } catch (e) {
+    debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
+  }
+}
+var abortPublish = null;
+async function experimentalIPNSPublish(client, rootCID) {
+  debug6("publishing to ipns...", rootCID);
+  if (abortPublish)
+    abortPublish.abort();
+  abortPublish = new import_native_abort_controller12.AbortController();
+  await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true }).then(() => {
+    debug6("published...", rootCID);
+    abortPublish = null;
+  }).catch((e) => {
+    debug6("exception on publish.", e);
+  });
+}
+function subscribeGenerator(nodeID, suffix = "/input") {
+  const channel = new import_queueable.Channel();
+  debug6("Subscribing to pubsub events from", nodeID, suffix);
+  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
+  return [channel, unsubscribe];
+}
+function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
+  const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
+  const unsubscribe = subscribeCallback(nodeID + suffix, (message) => {
+    if (message === "HEARTBEAT") {
+      gotHeartbeat();
+    } else {
+      callback(message);
+    }
+  });
+  return () => {
+    debug6("Unsubscribing from pubsub events from", nodeID, suffix);
+    unsubscribe();
+    closeHeartbeat();
+  };
+}
+function heartbeatChecker(heartbeatStateCallback) {
+  let lastHeartbeat = new Date().getTime();
+  let heartbeatTimeout = null;
+  function setHeartbeatTimeout() {
+    heartbeatTimeout = setTimeout(() => {
+      const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
+      debug6("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
+      heartbeatStateCallback({ lastHeartbeat, alive: false });
+    }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
+  }
+  const gotHeartbeat = () => {
+    const time = new Date().getTime();
+    debug6("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
+    lastHeartbeat = time;
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+    heartbeatStateCallback({ alive: true });
+    setHeartbeatTimeout();
+  };
+  const closeHeartbeat = () => {
+    if (heartbeatTimeout)
+      clearTimeout(heartbeatTimeout);
+  };
+  setHeartbeatTimeout();
+  return { gotHeartbeat, closeHeartbeat };
+}
+function subscribeCallback(topic, callback) {
+  let abort = new import_native_abort_controller12.AbortController();
+  (async () => {
+    const onError = async (...errorArgs) => {
+      debug6("onError", ...errorArgs, "aborting");
+      if (abort.signal.aborted)
+        return;
+      abort.abort();
+      await (0, import_await_sleep2.default)(300);
+      debug6("resubscribing");
+      await doSub();
+    };
+    const handler = ({ data }) => {
+      if (abort.signal.aborted) {
+        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
+      } else {
+        const message = new TextDecoder().decode(data);
+        callback(message);
+      }
+    };
+    const doSub = async () => {
+      var _a;
+      const client = await getClient();
+      try {
+        abort.abort();
+        abort = new import_native_abort_controller12.AbortController();
+        debug6("Executing subscribe", topic);
+        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+      } catch (e) {
+        debug6("subscribe error", e, e.name);
+        if (e.name === "DOMException") {
+          debug6("subscription was aborted. returning");
+          return;
+        }
+        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
+          return;
+        await (0, import_await_sleep2.default)(300);
+        await doSub();
+      }
+    };
+    doSub();
+  })();
+  return () => {
+    debug6("subscribe abort was called");
+    abort.abort();
+  };
+}
+
+// src/network/ipfsState.js
+var import_debug7 = __toModule(require_src());
 var import_ramda2 = __toModule(require_src7());
 var import_path2 = __toModule(require("path"));
 
@@ -36071,11 +36341,11 @@ var import_path2 = __toModule(require("path"));
 var PromiseAllProgress = (name5, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toModule(require_lib5());
-var debug6 = (0, import_debug6.default)("ipfsState");
+var import_json5 = __toModule(require_lib6());
+var debug7 = (0, import_debug7.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
-  debug6("Getting state for CID", contentID);
+  debug7("Getting state for CID", contentID);
   try {
     return await cachedIPFSState(ipfsReader, { cid: contentID, name: "root", type: "dir", path: "/", rootCID: contentID }, callback, skipCache);
   } catch (e) {
@@ -36087,17 +36357,17 @@ var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
   var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
-    debug6("cache miss", cid);
+    debug7("cache miss", cid);
     cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
   } else
-    debug6("cache hit", cid);
+    debug7("cache hit", cid);
   return cache[key];
 };
 var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }, processFile2, skipCache) => {
-  debug6("ipfs state getter callback name", processFile2.toString());
+  debug7("ipfs state getter callback name", processFile2.toString());
   const { ls, get } = ipfsReader;
   cid = stringCID(cid);
-  const _debug = debug6.extend(`_getIPFSState(${path})`);
+  const _debug = debug7.extend(`_getIPFSState(${path})`);
   _debug("Getting state for", type, name5, cid);
   if (type === "dir") {
     const files = await ls(cid);
@@ -36121,7 +36391,7 @@ var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }
   throw `Unknown file type "${type}" encountered. Path: "${path}", CID: "${cid}".`;
 };
 var dataFetchers = (cid, { get }) => {
-  debug6("creating data fetchers for cid", cid);
+  debug7("creating data fetchers for cid", cid);
   return {
     json: async () => (0, import_json5.parse)((await get(cid)).toString()),
     text: async () => (await get(cid)).toString(),
@@ -36129,180 +36399,17 @@ var dataFetchers = (cid, { get }) => {
   };
 };
 
-// src/network/ipfsPubSub.js
-var import_await_sleep2 = __toModule(require_await_sleep());
-var import_debug7 = __toModule(require_src());
-var import_native_abort_controller12 = __toModule(require_src6());
-var import_queueable = __toModule(require_lib6());
-var debug7 = (0, import_debug7.default)("ipfs:pubsub");
-var HEARTBEAT_FREQUENCY = 12;
-function publisher(nodeID, suffix = "/output") {
-  debug7("Creating publisher for", nodeID, suffix);
-  let lastPublishCID = null;
-  const _publish = async (cid) => {
-    const client = await getClient();
-    await publish(client, nodeID, cid, suffix, nodeID);
-    lastPublishCID = cid;
-  };
-  const sendHeartbeat = async () => {
-    const client = await getClient();
-    publishHeartbeat(client, suffix, nodeID);
-  };
-  const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
-  sendHeartbeat();
-  const close = () => {
-    debug7("Closing publisher", handle);
-    clearInterval(handle);
-  };
-  return {
-    publish: _publish,
-    close
-  };
-}
-var publishHeartbeat = async (client, suffix, nodeID) => {
-  if (nodeID === "ipns")
-    return;
-  try {
-    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
-  } catch (e) {
-    debug7("Exception. Couldn't publish heartbeat. Ignoring...", e.name);
-  }
-};
-async function publish(client, nodeID, rootCID, suffix = "/output") {
-  const retryPublish = retryException(client.pubsub.publish);
-  debug7("publish pubsub", nodeID + suffix, rootCID);
-  try {
-    if (nodeID === "ipns")
-      await experimentalIPNSPublish(client, rootCID);
-    else
-      await retryPublish(nodeID + suffix, rootCID);
-  } catch (e) {
-    debug7("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
-  }
-}
-var abortPublish = null;
-async function experimentalIPNSPublish(client, rootCID) {
-  debug7("publishing to ipns...", rootCID);
-  if (abortPublish)
-    abortPublish.abort();
-  abortPublish = new import_native_abort_controller12.AbortController();
-  await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true }).then(() => {
-    debug7("published...", rootCID);
-    abortPublish = null;
-  }).catch((e) => {
-    debug7("exception on publish.", e);
-  });
-}
-function subscribeGenerator(nodeID, suffix = "/input") {
-  const channel = new import_queueable.Channel();
-  debug7("Subscribing to pubsub events from", nodeID, suffix);
-  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
-  return [channel, unsubscribe];
-}
-function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
-  const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
-  const unsubscribe = subscribeCallback(nodeID + suffix, (message) => {
-    if (message === "HEARTBEAT") {
-      gotHeartbeat();
-    } else {
-      callback(message);
-    }
-  });
-  return () => {
-    debug7("Unsubscribing from pubsub events from", nodeID, suffix);
-    unsubscribe();
-    closeHeartbeat();
-  };
-}
-function heartbeatChecker(heartbeatStateCallback) {
-  let lastHeartbeat = new Date().getTime();
-  let heartbeatTimeout = null;
-  function setHeartbeatTimeout() {
-    heartbeatTimeout = setTimeout(() => {
-      const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
-      debug7("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
-      heartbeatStateCallback({ lastHeartbeat, alive: false });
-    }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
-  }
-  const gotHeartbeat = () => {
-    const time = new Date().getTime();
-    debug7("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
-    lastHeartbeat = time;
-    if (heartbeatTimeout)
-      clearTimeout(heartbeatTimeout);
-    heartbeatStateCallback({ alive: true });
-    setHeartbeatTimeout();
-  };
-  const closeHeartbeat = () => {
-    if (heartbeatTimeout)
-      clearTimeout(heartbeatTimeout);
-  };
-  setHeartbeatTimeout();
-  return { gotHeartbeat, closeHeartbeat };
-}
-function subscribeCallback(topic, callback) {
-  let abort = new import_native_abort_controller12.AbortController();
-  (async () => {
-    const onError = async (...errorArgs) => {
-      debug7("onError", ...errorArgs, "aborting");
-      if (abort.signal.aborted)
-        return;
-      abort.abort();
-      await (0, import_await_sleep2.default)(300);
-      debug7("resubscribing");
-      await doSub();
-    };
-    const handler = ({ data }) => {
-      if (abort.signal.aborted) {
-        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
-      } else {
-        const message = new TextDecoder().decode(data);
-        callback(message);
-      }
-    };
-    const doSub = async () => {
-      var _a;
-      const client = await getClient();
-      try {
-        abort.abort();
-        abort = new import_native_abort_controller12.AbortController();
-        debug7("Executing subscribe", topic);
-        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
-      } catch (e) {
-        debug7("subscribe error", e, e.name);
-        if (e.name === "DOMException") {
-          debug7("subscription was aborted. returning");
-          return;
-        }
-        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
-          return;
-        await (0, import_await_sleep2.default)(300);
-        await doSub();
-      }
-    };
-    doSub();
-  })();
-  return () => {
-    debug7("subscribe abort was called");
-    abort.abort();
-  };
-}
-
 // src/backend/ipfs/receiver.js
-var import_path3 = __toModule(require("path"));
-var import_debug8 = __toModule(require_src());
-var import_event_iterator = __toModule(require_node2());
-var import_path4 = __toModule(require("path"));
-var import_fs2 = __toModule(require("fs"));
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function({ ipns, nodeid, once, path: rootPath2 }, process4 = processRemoteCID, suffix = "/input") {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process4.stdin), noop];
+var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, process3 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
   let remoteCID = null;
   for await (remoteCID of await cidStream) {
     debug8("received CID", remoteCID);
     remoteCID = stringCID(remoteCID);
     debug8("remoteCID", remoteCID);
-    await process4(stringCID(remoteCID), rootPath2);
+    await process3(stringCID(remoteCID), rootPath2);
+    yield remoteCID;
     if (once) {
       unsubscribe();
       break;
@@ -36312,8 +36419,8 @@ var receive = async function({ ipns, nodeid, once, path: rootPath2 }, process4 =
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
-  debug8("creating folder if it does not exist", (0, import_path4.dirname)(path));
-  (0, import_fs2.mkdirSync)((0, import_path4.dirname)(path), { recursive: true });
+  debug8("creating folder if it does not exist", (0, import_path3.dirname)(path));
+  (0, import_fs2.mkdirSync)((0, import_path3.dirname)(path), { recursive: true });
   debug8("writing file of length", content.size, "to folder", path);
   (0, import_fs2.writeFileSync)(path, content);
   return path;
@@ -36336,120 +36443,140 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
+var import_debug11 = __toModule(require_src());
+var import_fs4 = __toModule(require("fs"));
+var import_native_abort_controller13 = __toModule(require_src2());
+
+// src/backend/ipfs/folderSync.js
+var import_debug10 = __toModule(require_src());
+var import_fs3 = __toModule(require("fs"));
+var import_path4 = __toModule(require("path"));
+
+// src/backend/fileWatcher.js
 var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
-var import_fs3 = __toModule(require("fs"));
-var import_path5 = __toModule(require("path"));
-var import_queueable2 = __toModule(require_lib6());
 var import_ramda3 = __toModule(require_src7());
-var debug9 = (0, import_debug9.default)("ipfs/sender");
-var sender = ({ path: watchPath, debounce: debounceTime, ipns, once, nodeid }) => {
-  let processing = Promise.resolve(true);
-  const { addFile, mkDir, rm, cid, close: closeWriter } = writer();
-  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
-  const close = executeOnce(async (error) => {
-    debug9("Closing sender", nodeid);
-    await closeWriter();
-    await closePublisher();
-    await closePollenPublisher();
-  });
-  async function start() {
-    if (!(0, import_fs3.existsSync)(watchPath)) {
-      debug9("Local: Root directory does not exist. Creating", watchPath);
-      (0, import_fs3.mkdirSync)(watchPath, { recursive: true });
-    }
-    const changedFiles$ = chunkedFilewatcher(watchPath, debounceTime);
-    let done = null;
-    for await (const changed of changedFiles$) {
-      debug9("Changed files", changed);
-      processing = new Promise((resolve2) => done = resolve2);
-      const lastChanged = changed;
-      await Promise.all(lastChanged.map(async ({ event, path: file }) => {
-        debug9("Local:", event, file);
-        const localPath = (0, import_path5.join)(watchPath, file);
-        const ipfsPath = file;
-        if (event === "addDir") {
-          await mkDir(ipfsPath);
-        }
-        if (event === "add" || event === "change") {
-          debug9("adding", ipfsPath, localPath);
-          await addFile(ipfsPath, localPath);
-        }
-        if (event === "unlink" || event === "unlinkDir") {
-          debug9("removing", file, event);
-          await rm(ipfsPath);
-        }
-      }));
-      debug9("synched all changes");
-      const newContentID = await cid();
-      console.log(newContentID);
-      if (ipns) {
-        debug9("publish", newContentID);
-        await publish2(newContentID);
-        await (0, import_await_sleep3.default)(1e3);
-        await publishPollen(newContentID);
-      }
-      if (once) {
-        break;
-      }
-      done();
-    }
-    await close();
-  }
-  return {
-    start,
-    processing: () => processing,
-    close
-  };
-};
-var chunkedFilewatcher = (watchPath, debounceTime) => {
-  debug9("Local: Watching", watchPath);
-  const channel$ = new import_queueable2.Channel();
-  let changeQueue = [];
-  const watcher = import_chokidar.default.watch(watchPath, {
+var debug9 = (0, import_debug9.default)("fileWatcher");
+async function* chunkedFilewatcher({ path, debounce, signal }) {
+  debug9("Local: Watching", path);
+  const watcher = import_chokidar.default.watch(path, {
     awaitWriteFinish: {
-      stabilityThreshold: debounceTime,
-      pollInterval: debounceTime / 2
+      stabilityThreshold: debounce,
+      pollInterval: debounce / 2
     },
     ignored: /(^|[\/\\])\../,
-    cwd: watchPath,
-    interval: debounceTime
+    cwd: path,
+    interval: debounce
   });
-  async function transmitQueue() {
-    while (true) {
-      const files = changeQueue;
-      changeQueue = [];
-      if (files.length > 0) {
-        const deduplicatedFiles = deduplicateChangedFiles(files);
-        debug9("Pushing to channel:", deduplicatedFiles);
-        await channel$.push(deduplicatedFiles);
-      }
-      await (0, import_await_sleep3.default)(debounceTime);
-    }
-  }
-  transmitQueue();
-  watcher.on("all", async (event, path) => {
-    debug9("got watcher event", event, path);
-    if (path !== "") {
-      const lastChanged = (0, import_ramda3.last)(changeQueue);
-      changeQueue.push({ event, path });
+  let changeQueue = [];
+  debug9("registering watcher for path", path);
+  watcher.on("all", async (event, path2) => {
+    debug9("got watcher event", event, path2);
+    if (path2 !== "") {
+      changeQueue.push({ event, path: path2 });
       debug9("Queue", changeQueue);
     }
   });
-  return channel$;
-};
-var executeOnce = (f) => {
-  let executed = false;
-  return async (...args) => {
-    if (!executed) {
-      executed = true;
-      await f(...args);
+  debug9("signal", signal);
+  while (!signal.aborted) {
+    const files = changeQueue;
+    changeQueue = [];
+    if (files.length > 0) {
+      const deduplicatedFiles = deduplicateChangedFiles(files);
+      debug9("Pushing to channel:", deduplicatedFiles);
+      yield deduplicatedFiles;
+      debug9("Yielded files. Sleeping");
     }
+    await (0, import_await_sleep3.default)(debounce);
+  }
+  debug9("fileWatcher aborted. closing watcher");
+  watcher.removeAllListeners();
+  watcher.unwatch(path);
+  await watcher.close();
+  debug9("closed filewatcher");
+}
+var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
+var fileWatcher_default = chunkedFilewatcher;
+
+// src/backend/ipfs/folderSync.js
+var debug10 = (0, import_debug10.default)("senderLight");
+async function* folderSync({ writer: writer2, path, debounce, signal }) {
+  const { addFile, mkDir, rm, cid } = writer2;
+  debug10("start consuming watched files");
+  if (!(0, import_fs3.existsSync)(path)) {
+    debug10("Local: Root directory does not exist. Creating", path);
+    mkdirSync(path, { recursive: true });
+  }
+  const fileChanges$ = fileWatcher_default({ path, debounce, signal });
+  for await (const changed of fileChanges$) {
+    debug10("Changed files", changed);
+    for (const { event, path: file } of changed) {
+      debug10("Local:", event, file);
+      const localPath = (0, import_path4.join)(path, file);
+      const ipfsPath = file;
+      if (event === "addDir") {
+        debug10("mkdir", ipfsPath);
+        await mkDir(ipfsPath);
+      }
+      if (event === "add" || event === "change") {
+        debug10("adding", ipfsPath, localPath);
+        await addFile(ipfsPath, localPath);
+      }
+      if (event === "unlink" || event === "unlinkDir") {
+        debug10("removing", file, event);
+        await rm(ipfsPath);
+      }
+    }
+    const newContentID = await cid();
+    yield newContentID;
+  }
+}
+
+// src/backend/ipfs/sender.js
+var debug11 = (0, import_debug11.default)("ipfs/sender");
+var sender = ({ path, debounce, ipns, once, nodeid }) => {
+  const ipfsWriter = writer();
+  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
+  let abortController = null;
+  const close = async (error) => {
+    debug11("Closing sender", nodeid);
+    if (abortController)
+      abortController.abort();
+    await ipfsWriter.close();
+    await closePublisher();
+    await closePollenPublisher();
+    debug11("closed all");
+  };
+  async function* startSending() {
+    abortController = new import_native_abort_controller13.AbortController();
+    const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal });
+    debug11("start consuming watched files");
+    if (!(0, import_fs4.existsSync)(path)) {
+      debug11("Local: Root directory does not exist. Creating", path);
+      (0, import_fs4.mkdirSync)(path, { recursive: true });
+    }
+    debug11("getting cid stream");
+    for await (const cid of cid$) {
+      debug11("publishing new cid", cid);
+      await publishPollen(cid);
+      await publish2(cid);
+      yield cid;
+      if (once)
+        await close();
+    }
+    debug11("closed sender");
+  }
+  const stopSending = () => {
+    abortController.abort();
+  };
+  return {
+    startSending,
+    close,
+    stopSending
   };
 };
-var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
 
 // src/backend/options.js
 var import_commander = __toModule(require_commander());
@@ -36458,76 +36585,84 @@ import_commander.program.parse(process.argv);
 var options_default = import_commander.program.opts();
 
 // src/backend/pollinate-cli.js
-var debug10 = (0, import_debug10.default)("pollinate");
+var debug12 = (0, import_debug12.default)("pollinate");
 var readline = import_readline.default.createInterface({
-  input: import_process2.default.stdin,
-  output: import_process2.default.stdout
+  input: import_process.default.stdin,
+  output: import_process.default.stdout
 });
-debug10("CLI options", options_default);
+debug12("CLI options", options_default);
 var rootPath = options_default.path;
 var enableSend = !options_default.receive;
 var enableReceive = !options_default.send;
 var executeCommand = options_default.execute;
 var sleepBeforeExit = options_default.debounce * 2 + 1e4;
-var execute = async (command, logfile = null) => new Promise((resolve2, reject) => {
-  debug10("Executing command", command);
+var execute = async (command, logfile = null, signal) => new Promise((resolve2, reject) => {
+  debug12("Executing command", command);
   const childProc = (0, import_child_process.spawn)(command);
   childProc.on("error", (err) => {
-    debug10("Error executing command", err);
+    debug12("Error executing command", err);
     reject(err);
   });
   childProc.on("close", resolve2);
-  childProc.stdout.pipe(import_process2.default.stderr);
-  childProc.stderr.pipe(import_process2.default.stderr);
+  childProc.stdout.pipe(import_process.default.stderr);
+  childProc.stderr.pipe(import_process.default.stderr);
   if (logfile) {
-    debug10("creating a write stream to ", logfile);
-    const logout = (0, import_fs4.createWriteStream)(logfile, { "flags": "a" });
+    debug12("creating a write stream to ", logfile);
+    const logout = (0, import_fs5.createWriteStream)(logfile, { "flags": "a" });
     childProc.stdout.pipe(logout);
     childProc.stderr.pipe(logout);
   }
+  signal.addEventListener("abort", () => {
+    debug12("Abort requested. Killing child process");
+    (0, import_tree_kill.default)(childProc.pid);
+  });
 });
 if (executeCommand)
   (async () => {
-    const { start: startSending, processing, close } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
-    let startedSending = false;
-    while (true) {
-      await receive(__spreadProps(__spreadValues({}, options_default), { once: true }));
-      if (!startedSending) {
-        startedSending = true;
-        startSending();
+    const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    const doSend = async () => {
+      for await (const sentCID of startSending()) {
+        debug12("sent", sentCID);
+        console.log(sentCID);
       }
-      await execute(executeCommand, options_default.logout);
-      debug10("done executing", executeCommand, ". Waiting...");
-      debug10("awaiting termination of state sync");
-      await processing();
-      await (0, import_await_sleep4.default)(sleepBeforeExit);
-      await processing();
+    };
+    doSend();
+    let [executeSignal, abortExecute] = [null, null];
+    for await (const receiveidCID of receive(options_default)) {
+      debug12("received CID", receiveidCID);
+      if (abortExecute) {
+        debug12("aborting previous execution");
+        abortExecute();
+      }
+      [executeSignal, abortExecute] = getSignal();
+      execute(executeCommand, options_default.logout, executeSignal);
+      debug12("done executing", executeCommand, ". Waiting...");
     }
-    await close();
-    await (0, import_await_sleep4.default)(sleepBeforeExit);
-    debug10("awaiting termination of state sync");
-    await processing();
-    debug10("calling sender's close function.");
-    await close();
-    debug10("state sync done. exiting");
-    import_process2.default.exit(0);
   })();
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = sender(options_default);
-      await start();
-      await (0, import_await_sleep4.default)(sleepBeforeExit);
-      await processing();
-      await close();
-      import_process2.default.exit(0);
+      const { startSending } = sender(options_default);
+      for await (const cid of startSending()) {
+        console.log(cid);
+      }
+      debug12("process should exit");
+      import_process.default.exit(0);
     })();
   if (enableReceive) {
     (async () => {
-      await receive(options_default);
-      import_process2.default.exit(0);
+      const receiveStream = await receive(options_default);
+      for await (const cid of receiveStream) {
+        console.log(cid);
+      }
+      import_process.default.exit(0);
     })();
   }
+}
+function getSignal() {
+  const executeController = new import_native_abort_controller14.AbortController();
+  const executeSignal = executeController.signal;
+  return [executeSignal, () => executeController.abort()];
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

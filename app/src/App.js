@@ -17,7 +17,6 @@ import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
 import Help from "./pages/Help"
 import Home from "./pages/Home"
-import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
 
 
@@ -75,7 +74,7 @@ const Pollinations = () => {
                 <Route exact path='help' element={<Help/>}/>
                 <Route exact path='about' element={<About/>}/>
                 <Route exact path='blankMarkdown' element={<BlankMarkdown/>}/>
-                <Route exact path='localpollens' element={<LocalPollens node={node}/>}/>
+                {/* <Route exact path='localpollens' element={<LocalPollens node={node}/>}/> */}
                 <Route exact path='christmas' element={<ChristmasSpecial/>}/>
 
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />

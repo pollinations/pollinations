@@ -1,34 +1,35 @@
-import { useEffect, useMemo, useState } from "react"
-import useIPFS from "../hooks/useIPFS"
-import { subscribeCID } from "../network/ipfsPubSub"
-import ResultViewer from "./ResultViewer"
+import { Box } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
-import { getNotebookMetadata } from "../utils/notebookMetadata"
-import { mediaToDisplay } from "../data/media"
-import { Box, Button, Link } from "@material-ui/core"
+import { useEffect, useMemo } from "react"
 import { SEO } from "../components/Helmet"
-import NotebookTitle from "../components/NotebookTitle"
-import { NotebookProgress } from "../components/NotebookProgress"
-import { IpfsLog } from "../components/Logs"
-import MediaViewer from "../components/MediaViewer"
 import BigPreview from "../components/molecules/BigPreview"
+import { mediaToDisplay } from "../data/media"
+import useIPFS from "../hooks/useIPFS"
+import useSubscribe from "../hooks/useSubscribe"
+import { subscribeCID } from "../network/ipfsPubSub"
+import { getNotebookMetadata } from "../utils/notebookMetadata"
 
 const Feed = () => {
-    const [cid, setCid] = useState(null)
 
+    const cid = useSubscribe("processing_pollen")
+    
     const ipfs = useIPFS(cid)
 
     useEffect(() => subscribeCID("processing_pollen", "", setCid),[])
-    
-    const contentID = ipfs[".cid"];
-  const metadata = getNotebookMetadata(ipfs);
+   
+    const {images, first} = useMemo(() => {
+      return mediaToDisplay(ipfs?.output)
+    }, [ipfs?.output])
   
-  const primaryInputField = metadata?.primaryInput;
-  const primaryInput = ipfs?.input?.[primaryInputField];
+    if (!ipfs)
+      return null
+      
+    const contentID = ipfs[".cid"]
+    const metadata = getNotebookMetadata(ipfs)
+    
+    const primaryInputField = metadata?.primaryInput
+    const primaryInput = ipfs?.input?.[primaryInputField]
 
-  const {images, first} = useMemo(() => {
-    return mediaToDisplay(ipfs.output);
-  }, [ipfs.output]);
 
     return <>
     <Box my={2} marginBottom='5em'>

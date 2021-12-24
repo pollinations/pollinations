@@ -11,8 +11,6 @@ echo "IPFS_ROOT: $IPFS_ROOT"
 
 
 # --- Construct Parameters
-
-
 echo "---" > $NOTEBOOK_PARAMS_FILE
 echo "output_path : $IPFS_ROOT/output" >> $NOTEBOOK_PARAMS_FILE
 echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
@@ -20,6 +18,7 @@ echo "input_path : $IPFS_ROOT/input" >> $NOTEBOOK_PARAMS_FILE
 
 echo "🐝: Removing last run output if there was any."
 rm -rv $IPFS_ROOT/output/*
+
 
 for path in $IPFS_ROOT/input/*; do
     key=$(basename $path)

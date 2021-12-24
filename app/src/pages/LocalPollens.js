@@ -1,4 +1,4 @@
-import { Box, Card, CardHeader } from "@material-ui/core"
+import { Box, Button, Card, CardHeader } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
 import RouterLink from "../components/molecules/RouterLink"
 import { mediaToDisplay } from "../data/media"
@@ -9,7 +9,10 @@ import { CardContainerStyle } from "./styles/card"
 
 const LocalPollens = ({ node }) => {
 
-    const { pollens, pushCID } = useLocalPollens(node)
+    const { pollens, popCID } = useLocalPollens(node)
+
+    if (!pollens) 
+        return <> </>
 
     return <>
 
@@ -18,17 +21,19 @@ const LocalPollens = ({ node }) => {
 
         <Box margin='2em 0' display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {
-
-                pollens?.reverse().map(pollen => <EachPollen key={pollen.cid} {...pollen} />)
+                pollens
+                .sort( (a,b) => new Date(b.date) - new Date(a.date) )
+                .map(pollen => <EachPollen key={pollen.cid} {...pollen} popCID={popCID}  />)
             }
         </Box>
 
     </>
 }
 
-const EachPollen = cid => {
+const EachPollen = ({date, cid, popCID}) => {
+    console.log(date, cid, popCID)
 
-    const ipfs = useIPFS(cid, true)
+    const ipfs = useIPFS(cid)
 
     if (!ipfs?.output)
         return null
@@ -41,7 +46,7 @@ const EachPollen = cid => {
 
     return <Box>
         <Card style={CardContainerStyle}>
-            <CardHeader subheader={<SubHeader cid={cid?.cid} />} />
+            <CardHeader subheader={<SubHeader cid={cid} />} />
 
             <Box padding='1em'>
                 <br />
@@ -55,6 +60,14 @@ const EachPollen = cid => {
                         width: '100%', marginTop: '2em'
                     }} />
             }
+            <Box minWidth='100%' display='flex' justifyContent='space-around' padding='1em 0'>
+                <Button onClick={()=>popCID(cid)}>
+                    [ Remove Pollen ]
+                </Button>
+                {/* <Button disabled>
+                    [ Mint Pollen ]
+                </Button> */}
+            </Box>
         </Card>
     </Box>
 }

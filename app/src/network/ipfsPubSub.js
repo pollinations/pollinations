@@ -21,8 +21,11 @@ export function publisher(nodeID, suffix = "/output") {
     let lastPublishCID = null;
 
     const _publish = async cid => {
-        const client = await getClient();
-        await publish(client, nodeID, cid, suffix, nodeID);
+        const client = await getClient()
+        await publish(client, nodeID, cid, suffix, nodeID)
+
+        // for some reason publishing twice in a row causes a socket error. sleep just in case
+        await awaitSleep(100)
         lastPublishCID = cid;
     };
 
@@ -174,14 +177,14 @@ function heartbeatChecker(heartbeatStateCallback) {
 // Subscribe to an ipfs topic with some rather ugly code to handle errors that probably don't even occur
 function subscribeCallback(topic, callback) {
     let abort = new AbortController();
-    
+
     (async () => {
         const onError = async (...errorArgs) => {
             debug("onError", ...errorArgs, "aborting")
-            
+
             if (abort.signal.aborted)
                 return;
-            
+
             abort.abort()
             await awaitSleep(300)
             debug("resubscribing")
@@ -191,7 +194,7 @@ function subscribeCallback(topic, callback) {
         const handler = ({ data }) => {
 
             if (abort.signal.aborted) {
-                console.error("Subscription to",topic,"was aborted. Shouldn't receive any more messages.");
+                console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
             } else {
                 const message = new TextDecoder().decode(data)
                 callback(message);

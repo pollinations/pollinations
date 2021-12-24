@@ -1,54 +1,56 @@
 #!/usr/bin/env node
-import awaitSleep from "await-sleep";
-import { spawn } from "child_process";
-import Debug from "debug";
-import { createWriteStream } from "fs";
-import process from "process";
-import Readline from 'readline';
-import { receive } from "./ipfs/receiver.js";
-import { sender } from './ipfs/sender.js';
-import options from "./options.js";
-
-
-
+import { spawn } from "child_process"
+import Debug from "debug"
+import { createWriteStream } from "fs"
+import { AbortController } from "native-abort-controller"
+import process from "process"
+import Readline from 'readline'
+import treeKill from 'tree-kill'
+import { receive } from "./ipfs/receiver.js"
+import { sender } from './ipfs/sender.js'
+import options from "./options.js"
 
 export const debug = Debug("pollinate")
 
 const readline = Readline.createInterface({
   input: process.stdin,
   output: process.stdout
-});
+})
 
-debug("CLI options", options);
-
-
-
-export const rootPath = options.path;
-
-const enableSend = !options.receive;
-const enableReceive = !options.send;
+debug("CLI options", options)
 
 
-const executeCommand = options.execute;
-const sleepBeforeExit = options.debounce * 2 + 10000;
 
-const execute = async (command, logfile = null) =>
+export const rootPath = options.path
+
+const enableSend = !options.receive
+const enableReceive = !options.send
+
+
+const executeCommand = options.execute
+const sleepBeforeExit = options.debounce * 2 + 10000
+
+const execute = async (command, logfile = null, signal) =>
   new Promise((resolve, reject) => {
-    debug("Executing command", command);
-    const childProc = spawn(command);
+    debug("Executing command", command)
+    const childProc = spawn(command)
     childProc.on("error", err => {
-      debug("Error executing command", err);
-      reject(err);
+      debug("Error executing command", err)
+      reject(err)
     });
-    childProc.on("close", resolve);
-    childProc.stdout.pipe(process.stderr);
-    childProc.stderr.pipe(process.stderr);
+    childProc.on("close", resolve)
+    childProc.stdout.pipe(process.stderr)
+    childProc.stderr.pipe(process.stderr)
     if (logfile) {
-      debug("creating a write stream to ", logfile);
-      const logout = createWriteStream(logfile, { 'flags': 'a' });
-      childProc.stdout.pipe(logout);
-      childProc.stderr.pipe(logout);
+      debug("creating a write stream to ", logfile)
+      const logout = createWriteStream(logfile, { 'flags': 'a' })
+      childProc.stdout.pipe(logout)
+      childProc.stderr.pipe(logout)
     }
+    signal.addEventListener("abort", () => {
+      debug("Abort requested. Killing child process")
+      treeKill(childProc.pid)
+    })
   });
 
 
@@ -59,65 +61,63 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
-    const { start: startSending, processing, close } = sender({ ...options, once: false });
-
-
-    let startedSending = false;
-    while (true) {
-
-      await receive({ ...options, once: true });
-
-      if (!startedSending) {  
-        startedSending = true;
-        startSending();
+    const { startSending, close, stopSending } = sender({ ...options, once: false })
+    const doSend = async () => {
+      for await (const sentCID of startSending()) {
+        debug("sent", sentCID)
+        console.log(sentCID)
       }
-
-      await execute(executeCommand, options.logout);
-      debug("done executing", executeCommand, ". Waiting...");
-
-      // This waiting logic is quite hacky. Should improve it.
-      debug("awaiting termination of state sync");
-      await processing();
-      await awaitSleep(sleepBeforeExit);
-      await processing();
-
     }
-    await close();
 
-    await awaitSleep(sleepBeforeExit);
-    debug("awaiting termination of state sync");
-    await processing();
+    doSend()
 
-    // not sure if this is the right order
-    debug("calling sender's close function.")
-    await close();
 
-    debug("state sync done. exiting");
-    process.exit(0);
+    let [executeSignal, abortExecute] = [null, null]
+
+    for await (const receiveidCID of receive(options)) {
+      debug("received CID", receiveidCID)
+      if (abortExecute) {
+        debug("aborting previous execution")
+        abortExecute()
+      }
+      [executeSignal, abortExecute] = getSignal()
+      execute(executeCommand, options.logout, executeSignal)
+      debug("done executing", executeCommand, ". Waiting...")
+    }
 
   })();
 
 else {
   if (enableSend)
     (async () => {
-      const { start, processing, close } = sender(options);
-      await start();
-      await awaitSleep(sleepBeforeExit);
-      await processing();
-      await close();
-      process.exit(0);
+      const { startSending } = sender(options)
+      for await (const cid of startSending()) {
+        console.log(cid)
+      }
+      debug("process should exit")
+      process.exit(0)
     })();
 
 
   if (enableReceive) {
     (async () => {
-      await receive(options);
-      process.exit(0);
+      const receiveStream = await receive(options)
+      for await (const cid of receiveStream) {
+        console.log(cid)
+      }
+      process.exit(0)
     })();
   }
 }
 
 
+
+
+function getSignal() {
+  const executeController = new AbortController()
+  const executeSignal = executeController.signal
+  return [executeSignal, () => executeController.abort()]
+}
 
 // ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
 //   const newContentID = new TextDecoder().decode(data);

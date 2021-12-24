@@ -127,7 +127,7 @@ const ModelRoutes = ({ node, navigateToNode }) => {
         const contentID = await dispatchInput(inputs)
         debug("dispatched Form")
         navigateToNode(contentID)
-    }, [ipfs.input, node])
+    }, [ipfs?.input, node])
 
     return (
         <Routes>

@@ -78,10 +78,10 @@ if (executeCommand)
       debug("received CID", receiveidCID)
       if (abortExecute) {
         debug("aborting previous execution")
-        abortExecute()
+        // abortExecute()
       }
       [executeSignal, abortExecute] = getSignal()
-      execute(executeCommand, options.logout, executeSignal)
+      await execute(executeCommand, options.logout, executeSignal)
       debug("done executing", executeCommand, ". Waiting...")
     }
 

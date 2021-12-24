@@ -10,7 +10,6 @@ import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
 import useLocalPollens from "./hooks/useLocalPollens"
-
 import About from "./pages/About"
 import BlankMarkdown from "./pages/BlankMarkdown"
 import ChristmasSpecial from "./pages/ChristmaSpecial"
@@ -19,8 +18,9 @@ import Feed from "./pages/Feed"
 import Help from "./pages/Help"
 import Home from "./pages/Home"
 import LocalPollens from "./pages/LocalPollens"
-
 import ResultViewer from "./pages/ResultViewer"
+
+
 
 
 
@@ -128,7 +128,7 @@ const ModelRoutes = ({ node, navigateToNode }) => {
         const contentID = await dispatchInput(inputs)
         debug("dispatched Form")
         navigateToNode(contentID)
-    }, [ipfs.input, node])
+    }, [ipfs?.input, node])
 
     return (
         <Routes>

@@ -34,11 +34,11 @@ export default function AppBar() {
               help
             </RouterLink>
           </Typography>
-          {/* <Typography variant="h6">
+          <Typography variant="h6">
             <RouterLink to={"/localpollens"}>
               my pollen
             </RouterLink>
-          </Typography> */}
+          </Typography>
 
         </Box>
 

@@ -1,12 +1,11 @@
 import { Box } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { SEO } from "../components/Helmet"
 import BigPreview from "../components/molecules/BigPreview"
 import { mediaToDisplay } from "../data/media"
 import useIPFS from "../hooks/useIPFS"
 import useSubscribe from "../hooks/useSubscribe"
-import { subscribeCID } from "../network/ipfsPubSub"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
 
 const Feed = () => {
@@ -14,9 +13,7 @@ const Feed = () => {
     const cid = useSubscribe("processing_pollen")
     
     const ipfs = useIPFS(cid)
-
-    useEffect(() => subscribeCID("processing_pollen", "", setCid),[])
-   
+    
     const {images, first} = useMemo(() => {
       return mediaToDisplay(ipfs?.output)
     }, [ipfs?.output])

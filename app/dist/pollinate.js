@@ -36632,10 +36632,9 @@ if (executeCommand)
       debug12("received CID", receiveidCID);
       if (abortExecute) {
         debug12("aborting previous execution");
-        abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
-      execute(executeCommand, options_default.logout, executeSignal);
+      await execute(executeCommand, options_default.logout, executeSignal);
       debug12("done executing", executeCommand, ". Waiting...");
     }
   })();

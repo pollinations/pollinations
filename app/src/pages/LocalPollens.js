@@ -33,7 +33,7 @@ const LocalPollens = ({ node }) => {
 const EachPollen = ({date, cid, popCID}) => {
     console.log(date, cid, popCID)
 
-    const ipfs = useIPFS({date, cid}, true)
+    const ipfs = useIPFS(cid, true)
 
     if (!ipfs?.output)
         return null
@@ -64,9 +64,9 @@ const EachPollen = ({date, cid, popCID}) => {
                 <Button onClick={()=>popCID(cid)}>
                     [ Delete Pollen ]
                 </Button>
-                <Button disabled>
+                {/* <Button disabled>
                     [ Mint Pollen ]
-                </Button>
+                </Button> */}
             </Box>
         </Card>
     </Box>

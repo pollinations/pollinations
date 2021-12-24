@@ -74,7 +74,7 @@ const Pollinations = () => {
                 <Route exact path='help' element={<Help/>}/>
                 <Route exact path='about' element={<About/>}/>
                 <Route exact path='blankMarkdown' element={<BlankMarkdown/>}/>
-                {/* <Route exact path='localpollens' element={<LocalPollens node={node}/>}/> */}
+                <Route exact path='localpollens' element={<LocalPollens node={node}/>}/>
                 <Route exact path='christmas' element={<ChristmasSpecial/>}/>
 
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />

@@ -1,5 +1,5 @@
-import { any, identity, last } from "ramda";
 import Debug from "debug";
+import { any, identity, last } from "ramda";
 
 const debug = Debug("media");
 
@@ -26,10 +26,10 @@ export const getCoverVideo = output => output && getMedia(output, "video")[0];
 // get all images and videos from ipfs output folder
 //
 // the parameter output is of the form 
-// { 
-//  "example1.jpg":"/ipfs/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s", 
+// [ 
+//  ["example1.jpg","/ipfs/QmdkHMPgS3gU4hQv4aY3Gchn9mwoHoBh4RVj53znzqGz8s"], 
 //  ...
-// }
+// ]
 export function getMedia(output, type="all") {
   
     const extensions = _mediaTypeMap[type];
@@ -53,16 +53,15 @@ const gzipProxy = path => {
 
 
 export function mediaToDisplay(output) {
-  const imagesIn = getMedia(output);
-  if (!imagesIn || imagesIn.length === 0) return EMPTY_MEDIA;
+  const mediaIn = getMedia(output);
+  if (!mediaIn || mediaIn.length === 0) return EMPTY_MEDIA;
 
   // remove first image for large display
-  const firstImage = imagesIn.shift()
+  const firstImage = mediaIn.shift()
 
-  const images = every_nth(imagesIn);
+  const images = every_nth(mediaIn);
 
   const first = {
-      isVideo: firstImage[0].toLowerCase().endsWith(".mp4"),
       filename: firstImage[0],
       url: firstImage[1]
   }

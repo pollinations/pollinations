@@ -17,6 +17,7 @@ import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
 import Help from "./pages/Help"
 import Home from "./pages/Home"
+import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
 
 

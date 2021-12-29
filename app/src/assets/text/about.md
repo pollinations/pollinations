@@ -18,6 +18,7 @@ Pollinations prioritizes equitable distribution of value for hackers, creators, 
 
 As for now, all the people involved are contributing hours for free to help the platform grow. 
 
+
 Support Pollinations' development by donating to one of these crypto wallets:
 
 - **Ethereum**: 0x6c5c60EeC96c494D51e054ea415441a73795C612 
@@ -28,4 +29,6 @@ Support Pollinations' development by donating to one of these crypto wallets:
 
 Tezos and Solana have a much lower energy usage / carbon footprint so consider sending through one of those. 
 
+
 **Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.
+

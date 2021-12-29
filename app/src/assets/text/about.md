@@ -20,12 +20,12 @@ As for now, all the people involved are contributing hours for free to help the 
 
 Support Pollinations' development by donating to one of these crypto wallets:
 
-- **Ethereum**: 0x5eFC585868B539D85D8Fba9b53ED1F3cb985EF22 
+- **Ethereum**: 0x6c5c60EeC96c494D51e054ea415441a73795C612 
 - **Bitcoin**: bc1q670man5rdj44gj3sd79pm4cp4kwed9p7xjkz66
 - **Tezos**: tz1ZGdzKEaa1Gi7GV68qfxEuLVnxY5cUX1Yt
 - **Solana**: FBakTf1bVzqpX5UEa5AkP12e16JwvmGrXdqwDP1fmAFk
 - **Doge**: DRiCRNHNpdNq7Y3WmQUvEshVk1yPdXtD6B
 
-Tezos and Solana have a much lower energy usage / carbon footprint so ideally send through one of those. 
+Tezos and Solana have a much lower energy usage / carbon footprint so consider sending through one of those. 
 
-**Feel free to mint your nfts made with Pollinations!** Consider donating a small percentage of the profits to help our platform sustain itself.
+**Feel free to mint your nfts made with Pollinations!** but consider donating a percentage of the profits to help our platform sustain itself.

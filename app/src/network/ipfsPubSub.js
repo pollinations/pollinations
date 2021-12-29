@@ -133,8 +133,8 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
     (async () => {
         while (!aborted) {
             unsubscribe = subscribeCallback(nodeID + suffix, handleMessage)
-            // resubscribe every 10 minutes
-            await awaitSleep(10*60*1000)
+            // resubscribe every 5 minutes
+            await awaitSleep(5*60*1000)
             unsubscribe()
         }
     })()

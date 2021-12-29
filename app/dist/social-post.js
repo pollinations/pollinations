@@ -36361,7 +36361,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   (async () => {
     while (!aborted) {
       unsubscribe = subscribeCallback(nodeID + suffix, handleMessage);
-      await (0, import_await_sleep2.default)(10 * 60 * 1e3);
+      await (0, import_await_sleep2.default)(5 * 60 * 1e3);
       unsubscribe();
     }
   })();

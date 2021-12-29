@@ -36349,17 +36349,27 @@ function subscribeGenerator(nodeID, suffix = "/input") {
 }
 function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
   const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
-  const unsubscribe = subscribeCallback(nodeID + suffix, (message) => {
+  let unsubscribe = null;
+  let aborted = false;
+  const handleMessage = (message) => {
     if (message === "HEARTBEAT") {
       gotHeartbeat();
     } else {
       callback(message);
     }
-  });
+  };
+  (async () => {
+    while (!aborted) {
+      unsubscribe = subscribeCallback(nodeID + suffix, handleMessage);
+      await (0, import_await_sleep2.default)(5 * 60 * 1e3);
+      unsubscribe();
+    }
+  })();
   return () => {
     debug6("Unsubscribing from pubsub events from", nodeID, suffix);
     unsubscribe();
     closeHeartbeat();
+    aborted = true;
   };
 }
 function heartbeatChecker(heartbeatStateCallback) {
@@ -36415,7 +36425,7 @@ function subscribeCallback(topic, callback) {
         abort.abort();
         abort = new import_native_abort_controller12.AbortController();
         debug6("Executing subscribe", topic);
-        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "4h" });
       } catch (e) {
         debug6("subscribe error", e, e.name);
         if (e.name === "DOMException") {

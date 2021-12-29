@@ -28,4 +28,4 @@ Support Pollinations' development by donating to one of these crypto wallets:
 
 Tezos and Solana have a much lower energy usage / carbon footprint so consider sending through one of those. 
 
-**Feel free to mint your nfts made with Pollinations!** but consider donating a percentage of the profits to help our platform sustain itself.
+**Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.

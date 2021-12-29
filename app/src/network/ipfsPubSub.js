@@ -120,18 +120,30 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
 
     const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
 
-    const unsubscribe = subscribeCallback(nodeID + suffix, message => {
+    let unsubscribe = null
+    let aborted = false
+    const handleMessage = message => {
         if (message === "HEARTBEAT") {
             gotHeartbeat();
         } else {
             callback(message);
         }
-    });
+    }
+
+    (async () => {
+        while (!aborted) {
+            unsubscribe = subscribeCallback(nodeID + suffix, handleMessage)
+            // resubscribe every 10 minutes
+            await awaitSleep(10*60*1000)
+            unsubscribe()
+        }
+    })()
 
     return () => {
-        debug("Unsubscribing from pubsub events from", nodeID, suffix);
-        unsubscribe();
-        closeHeartbeat();
+        debug("Unsubscribing from pubsub events from", nodeID, suffix)
+        unsubscribe()
+        closeHeartbeat()
+        aborted = true
     }
 };
 
@@ -207,7 +219,7 @@ function subscribeCallback(topic, callback) {
                 abort.abort();
                 abort = new AbortController()
                 debug("Executing subscribe", topic);
-                await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "1h" });
+                await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "4h" });
             } catch (e) {
                 debug("subscribe error", e, e.name);
                 if (e.name === "DOMException") {

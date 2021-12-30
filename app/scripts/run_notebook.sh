@@ -112,6 +112,14 @@ echo -n waiting > $IPFS_ROOT/output/status
 echo "🐝: Sleeping 10 seconds"
 sleep 10
 
+# --- Cleanup
+#kill $NVIDIA_SMI_PID
+
+# -- Sleep
+echo "🐝: Sleeping to make sure synchronization finished"
+sleep 10
+
+
 
 # --- Pin
 CID=$( tail -n 1 /content/cid )
@@ -124,11 +132,3 @@ if [[ "$RUN_COUNT" < 2  ]]; then
     echo "🐝: Posting $CID to social media"
     node /usr/local/bin/social_post.js $CID
 fi
-
-
-# --- Cleanup
-#kill $NVIDIA_SMI_PID
-
-# -- Sleep
-echo "🐝: Sleeping to make sure synchronization finished"
-sleep 10

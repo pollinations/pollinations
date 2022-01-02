@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import useIPFS from "./useIPFS";
-import useIsModelDone from "./useIsModelDone";
 import useLocalStorage from "./useLocalStorage";
+import usePollenDone from "./usePollenDone";
 
 
 export default function useLocalPollens( node ){
@@ -18,7 +18,7 @@ export default function useLocalPollens( node ){
 
     const popCID = cid => setPollens( pollens => pollens.filter( pollen => pollen.cid !== cid) )
 
-    useIsModelDone(ipfs, ipfs => {
+    usePollenDone(ipfs, ipfs => {
         pushCID(ipfs[".cid"])
     })
 

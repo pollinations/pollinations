@@ -1,5 +1,6 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import useIPFS from "./useIPFS";
+import useIsModelDone from "./useIsModelDone";
 import useLocalStorage from "./useLocalStorage";
 
 
@@ -17,15 +18,9 @@ export default function useLocalPollens( node ){
 
     const popCID = cid => setPollens( pollens => pollens.filter( pollen => pollen.cid !== cid) )
 
-
-
-    useEffect(()=>{
-        console.log('fx')
-        if (!ipfs?.output?.done) return 
-        if (!node.contentID) return
-        pushCID(node.contentID)
-
-    },[node.contentID, ipfs?.output?.done, pushCID])
+    useIsModelDone(ipfs, ipfs => {
+        pushCID(ipfs[".cid"])
+    })
 
     return { pollens, pushCID, popCID }
 }

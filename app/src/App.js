@@ -9,7 +9,7 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
-import useLocalPollens from "./hooks/useLocalPollens"
+import useIsModelDone from "./hooks/useIsModelDone"
 import About from "./pages/About"
 import BlankMarkdown from "./pages/BlankMarkdown"
 import ChristmasSpecial from "./pages/ChristmaSpecial"
@@ -39,20 +39,6 @@ const Pollinations = () => {
     debug("got colab node info", node);
 
     const navigate = useNavigate()
-
-
-
-    // temporary way of getting around done state
-    const { pushCID } = useLocalPollens(node)
-    const ipfs = useIPFS(node.contentID);
-    useEffect(()=>{
-        if (ipfs?.output?.done) {
-            pushCID(ipfs[".cid"])
-        }
-    },[ipfs?.output?.done])
-
-
-
 
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
@@ -107,10 +93,8 @@ const NodeWithData = ({ node, overrideNodeID }) => {
             overrideNodeID(nodeID)
     }, [nodeID])
 
-    if (ipfs?.output?.done) {
-        // pushCID(ipfs[".cid"])
+    if (useIsModelDone(ipfs))
         return <Navigate to={`/p/${ipfs[".cid"]}`} />
-    }
 
     return <ResultViewer ipfs={ipfs} />
 }
@@ -119,7 +103,6 @@ const ModelRoutes = ({ node, navigateToNode }) => {
     const { contentID } = useParams();
 
     const ipfs = useIPFS(contentID);
-
 
     const dispatchInput = useIPFSWrite(ipfs, node)
 

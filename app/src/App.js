@@ -9,7 +9,7 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
-import useIsModelDone from "./hooks/useIsModelDone"
+import usePollenDone from "./hooks/usePollenDone"
 import About from "./pages/About"
 import BlankMarkdown from "./pages/BlankMarkdown"
 import ChristmasSpecial from "./pages/ChristmaSpecial"
@@ -93,7 +93,7 @@ const NodeWithData = ({ node, overrideNodeID }) => {
             overrideNodeID(nodeID)
     }, [nodeID])
 
-    if (useIsModelDone(ipfs))
+    if (usePollenDone(ipfs))
         return <Navigate to={`/p/${ipfs[".cid"]}`} />
 
     return <ResultViewer ipfs={ipfs} />

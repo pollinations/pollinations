@@ -4,6 +4,7 @@ import RouterLink from "../components/molecules/RouterLink"
 import { mediaToDisplay } from "../data/media"
 import useIPFS from "../hooks/useIPFS"
 import useLocalPollens from "../hooks/useLocalPollens"
+import { displayContentID } from "../network/utils"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
 import { CardContainerStyle } from "./styles/card"
 
@@ -23,14 +24,14 @@ const LocalPollens = ({ node }) => {
             {
                 pollens
                 .sort( (a,b) => new Date(b.date) - new Date(a.date) )
-                .map(pollen => <EachPollen key={pollen.cid} {...pollen} popCID={popCID}  />)
+                .map(pollen => <Pollen key={pollen.cid} {...pollen} popCID={popCID}  />)
             }
         </Box>
 
     </>
 }
 
-const EachPollen = ({date, cid, popCID}) => {
+const Pollen = ({date, cid, popCID}) => {
     console.log(date, cid, popCID)
 
     const ipfs = useIPFS(cid)
@@ -55,7 +56,7 @@ const EachPollen = ({date, cid, popCID}) => {
                 </Typography>
             </Box>
             { // catch other formats
-                <video muted autoplay controls loop
+                <video controls loop
                     src={first.url} style={{
                         width: '100%', marginTop: '2em'
                     }} />
@@ -77,7 +78,7 @@ export default LocalPollens
 const SubHeader = ({ cid }) => <>
     <Typography className='Lato noMargin' variant="h4" component="h4" gutterBottom>
         <RouterLink to={`/p/${cid}`}>
-            {`${cid.slice(0, 13)}...`}
+            {displayContentID(cid)}
         </RouterLink>
     </Typography>
 </>

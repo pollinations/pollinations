@@ -29,7 +29,7 @@ export default memo(function ResultViewer({ ipfs }) {
   }, [ipfs?.output])
 
   if (!ipfs?.output)
-    return null
+    return <h2>Warming up... Results should start appearing soon.</h2>
 
   const metadata = getNotebookMetadata(ipfs)
   const contentID = ipfs[".cid"]

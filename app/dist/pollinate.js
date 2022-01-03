@@ -18239,7 +18239,7 @@ var require_groupBy = __commonJS({
 var require_groupWith = __commonJS({
   "node_modules/ramda/src/groupWith.js"(exports2, module2) {
     var _curry2 = require_curry2();
-    var groupWith = /* @__PURE__ */ _curry2(function(fn, list) {
+    var groupWith2 = /* @__PURE__ */ _curry2(function(fn, list) {
       var res = [];
       var idx = 0;
       var len = list.length;
@@ -18253,7 +18253,7 @@ var require_groupWith = __commonJS({
       }
       return res;
     });
-    module2.exports = groupWith;
+    module2.exports = groupWith2;
   }
 });
 
@@ -36461,6 +36461,7 @@ var import_native_abort_controller13 = __toModule(require_src2());
 var import_debug10 = __toModule(require_src());
 var import_fs3 = __toModule(require("fs"));
 var import_path4 = __toModule(require("path"));
+var import_ramda4 = __toModule(require_src7());
 
 // src/backend/fileWatcher.js
 var import_await_sleep3 = __toModule(require_await_sleep());
@@ -36511,32 +36512,56 @@ var fileWatcher_default = chunkedFilewatcher;
 
 // src/backend/ipfs/folderSync.js
 var debug10 = (0, import_debug10.default)("senderLight");
-async function* folderSync({ writer: writer2, path, debounce, signal }) {
-  const { addFile, mkDir, rm, cid } = writer2;
+async function* folderSync({
+  writer: writer2,
+  path,
+  debounce,
+  signal
+}) {
+  const {
+    addFile,
+    mkDir,
+    rm,
+    cid
+  } = writer2;
   debug10("start consuming watched files");
   if (!(0, import_fs3.existsSync)(path)) {
     debug10("Local: Root directory does not exist. Creating", path);
-    mkdirSync(path, { recursive: true });
+    mkdirSync(path, {
+      recursive: true
+    });
   }
-  const fileChanges$ = fileWatcher_default({ path, debounce, signal });
-  for await (const changed of fileChanges$) {
-    debug10("Changed files", changed);
-    for (const { event, path: file } of changed) {
-      debug10("Local:", event, file);
-      const localPath = (0, import_path4.join)(path, file);
-      const ipfsPath = file;
-      if (event === "addDir") {
-        debug10("mkdir", ipfsPath);
-        await mkDir(ipfsPath);
-      }
-      if (event === "add" || event === "change") {
-        debug10("adding", ipfsPath, localPath);
-        await addFile(ipfsPath, localPath);
-      }
-      if (event === "unlink" || event === "unlinkDir") {
-        debug10("removing", file, event);
-        await rm(ipfsPath);
-      }
+  const fileChanges$ = fileWatcher_default({
+    path,
+    debounce,
+    signal
+  });
+  for await (const changedFlat of fileChanges$) {
+    debug10("Changed files", changedFlat);
+    const changedGrouped = (0, import_ramda4.groupWith)(({
+      event
+    }) => event, changedFlat);
+    for (const changed of changedGrouped) {
+      await Promise.all(changed.map(async ({
+        event,
+        path: file
+      }) => {
+        debug10("Local:", event, file);
+        const localPath = (0, import_path4.join)(path, file);
+        const ipfsPath = file;
+        if (event === "addDir") {
+          debug10("mkdir", ipfsPath);
+          await mkDir(ipfsPath);
+        }
+        if (event === "add" || event === "change") {
+          debug10("adding", ipfsPath, localPath);
+          await addFile(ipfsPath, localPath);
+        }
+        if (event === "unlink" || event === "unlinkDir") {
+          debug10("removing", file, event);
+          await rm(ipfsPath);
+        }
+      }));
     }
     const newContentID = await cid();
     yield newContentID;

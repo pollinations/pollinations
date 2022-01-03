@@ -1,5 +1,6 @@
 import Container from "@material-ui/core/Container"
 import Link from '@material-ui/core/Link'
+import awaitSleep from "await-sleep"
 import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
@@ -9,6 +10,7 @@ import ToolBar from "./components/ToolBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
+import useLocalPollens from "./hooks/useLocalPollens"
 import usePollenDone from "./hooks/usePollenDone"
 import About from "./pages/About"
 import BlankMarkdown from "./pages/BlankMarkdown"
@@ -39,6 +41,9 @@ const Pollinations = () => {
     debug("got colab node info", node);
 
     const navigate = useNavigate()
+
+    // to save pollens since we are not necessarily on the localpollens page
+    useLocalPollens(node)
 
     const navigateToNode = useCallback((contentID) => {
         if (contentID)
@@ -85,16 +90,24 @@ const HomeWithData = () => {
 }
 
 const NodeWithData = ({ node, overrideNodeID }) => {
-    const ipfs = useIPFS(node.contentID);
-    const { nodeID } = useParams();
-
+    const ipfs = useIPFS(node.contentID)
+    const { nodeID } = useParams()
+    const navigateTo = useNavigate()
     useEffect(() => {
         if (nodeID)
             overrideNodeID(nodeID)
     }, [nodeID])
 
-    if (usePollenDone(ipfs))
-        return <Navigate to={`/p/${ipfs[".cid"]}`} />
+    const done = usePollenDone(ipfs)
+    useEffect(() => {  
+        if (done) {
+            (async () => {
+                await awaitSleep(300)
+                navigateTo(`/p/${ipfs[".cid"]}`)
+            })()
+        }
+    }, [done, ipfs, navigateTo])
+
 
     return <ResultViewer ipfs={ipfs} />
 }

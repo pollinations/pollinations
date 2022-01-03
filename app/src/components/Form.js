@@ -3,7 +3,7 @@ import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
 import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
-import React from "react";
+import React, { useState } from "react";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 
@@ -11,22 +11,22 @@ const debug = Debug("Form");
 
 const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
 
-    debug("metadata", metadata);
+    debug("metadata", metadata)
 
     // some variables for conditionally rendering the form parts
     // TODO: has a lot of redundancy. refactor this
-    const showSubmit = true; //colabState !== "running";
-    const showCancel = false; //!showSubmit && input.formAction !== "cancel";
-    const inProgress = false//!!(input && input.formAction);
-    const formDisabled = !connected;// || inProgress;
+    const showSubmit = true //colabState !== "running";
+    const showCancel = false //!showSubmit && input.formAction !== "cancel";
+    const [inProgress, setInProgress] = useState(false)//!!(input && input.formAction);
+    const formDisabled = !connected || inProgress
 
 
     // Fill in the form inputs and override default values if they are in the ipfs object
-    const filledForm = getFormInputs(input, metadata);
+    const filledForm = getFormInputs(input, metadata)
     if (!filledForm)
-        return null;
+        return null
 
-    debug("filledForm", filledForm);
+    debug("filledForm", filledForm)
 
     // the UI schema for the form defines which widgets are used for each input
     const uiSchema = getUISchema(filledForm, showSubmit)
@@ -43,7 +43,8 @@ const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
         schema={{ properties: filledForm }}
         uiSchema={uiSchema}
         onSubmit={({ formData }) => {
-            debug("submitted", formData);
+            debug("submitted", formData)
+            setInProgress(true)
             onSubmit(formData)
         }}
         disabled={formDisabled}

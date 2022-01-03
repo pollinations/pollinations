@@ -3,22 +3,27 @@ import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
 import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata)
 
     // some variables for conditionally rendering the form parts
 
     const [inProgress, setInProgress] = useState(false)
+    const [input, setInput] = useState(originalInput)
     const formDisabled = !connected || inProgress
     const showSubmit = true
 
+    // don't know why this is necessary, but it is
+    useEffect(() => {
+        setInput(originalInput)
+    }, [originalInput])
 
     const [properties, uiSchema ] = useMemo(() => {
 
@@ -50,6 +55,7 @@ const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
         uiSchema={uiSchema}
         onSubmit={({ formData }) => {
             debug("submitted", formData)
+            setInput(formData)
             setInProgress(true)
             onSubmit(formData)
         }}

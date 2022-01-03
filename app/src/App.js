@@ -45,9 +45,7 @@ const Pollinations = () => {
     // to save pollens since we are not necessarily on the localpollens page
     useLocalPollens(node)
 
-    const navigateToNode = useCallback((contentID) => {
-        if (contentID)
-            overrideContentID(contentID)
+    const navigateToNode = useCallback(() => {
         if (node.nodeID)
             navigate(`/n/${node.nodeID}`)
         else {
@@ -70,7 +68,7 @@ const Pollinations = () => {
                 <Route exact path='christmas' element={<ChristmasSpecial/>}/>
 
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
-                <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} />} />
+                <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} overrideContentID={overrideContentID} />} />
                 <Route path='c/:selected' element={<HomeWithData />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
@@ -112,7 +110,7 @@ const NodeWithData = ({ node, overrideNodeID }) => {
     return <ResultViewer ipfs={ipfs} />
 }
 
-const ModelRoutes = ({ node, navigateToNode }) => {
+const ModelRoutes = ({ node, navigateToNode, overrideContentID }) => {
     const { contentID } = useParams();
 
     const ipfs = useIPFS(contentID);
@@ -123,7 +121,9 @@ const ModelRoutes = ({ node, navigateToNode }) => {
         debug("dispatching inputs", inputs)
         const contentID = await dispatchInput(inputs)
         debug("dispatched Form")
-        navigateToNode(contentID)
+        if (overrideContentID)
+            overrideContentID(contentID)
+        navigateToNode()
     }, [ipfs?.input, dispatchInput])
 
     return (

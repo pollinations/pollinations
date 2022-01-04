@@ -27,7 +27,7 @@ As for now, all the people involved are contributing hours for free to help the 
 
 ###### Support Pollinations
 
-Support Pollinations' development by joining our **[Patreon](https://www.patreon.com/pollinations)** or donating to one of these crypto wallets:
+Support Pollinations' development through **[Paypal](https://www.paypal.com/donate/?hosted_button_id=DQSRC48ZZND7Y)**, by joining our **[Patreon](https://www.patreon.com/pollinations)** or donating to one of these crypto wallets:
 
 - **Ethereum**: 0x6c5c60EeC96c494D51e054ea415441a73795C612 
 - **Bitcoin**: bc1q670man5rdj44gj3sd79pm4cp4kwed9p7xjkz66

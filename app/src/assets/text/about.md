@@ -19,7 +19,7 @@ Pollinations prioritizes equitable distribution of value for hackers, creators, 
 As for now, all the people involved are contributing hours for free to help the platform grow. 
 
 
-Support Pollinations' development by donating to one of these crypto wallets:
+Support Pollinations' development by joining our **[Patreon](https://www.patreon.com/pollinations)** or donating to one of these crypto wallets:
 
 - **Ethereum**: 0x6c5c60EeC96c494D51e054ea415441a73795C612 
 - **Bitcoin**: bc1q670man5rdj44gj3sd79pm4cp4kwed9p7xjkz66
@@ -27,7 +27,7 @@ Support Pollinations' development by donating to one of these crypto wallets:
 - **Solana**: FBakTf1bVzqpX5UEa5AkP12e16JwvmGrXdqwDP1fmAFk
 - **Doge**: DRiCRNHNpdNq7Y3WmQUvEshVk1yPdXtD6B
 
-At this time, Tezos and Solana promise a lower carbon footprint per transaction. If you have the option we suggest using those.
+At this time, Tezos and Solana promise a lower carbon footprint per transaction. If you have the option we suggest using one of these.
 
 
 **Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.

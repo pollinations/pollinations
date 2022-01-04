@@ -3,47 +3,59 @@ import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
 import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
+const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel }) => {
 
     debug("metadata", metadata)
 
     // some variables for conditionally rendering the form parts
-    // TODO: has a lot of redundancy. refactor this
-    const showSubmit = true //colabState !== "running";
-    const showCancel = false //!showSubmit && input.formAction !== "cancel";
-    const [inProgress, setInProgress] = useState(false)//!!(input && input.formAction);
+
+    const [inProgress, setInProgress] = useState(false)
+    const [input, setInput] = useState(originalInput)
     const formDisabled = !connected || inProgress
+    const showSubmit = true
 
+    // don't know why this is necessary, but it is
+    useEffect(() => {
+        setInput(originalInput)
+    }, [originalInput])
 
-    // Fill in the form inputs and override default values if they are in the ipfs object
-    const filledForm = getFormInputs(input, metadata)
-    if (!filledForm)
+    const [properties, uiSchema ] = useMemo(() => {
+
+        // Fill in the form inputs and override default values if they are in the ipfs object
+        const filledForm = getFormInputs(input, metadata)
+        if (!filledForm)
+            return [null,null]
+
+        debug("filledForm", filledForm)
+
+        // the UI schema for the form defines which widgets are used for each input
+        const uiSchema = getUISchema(filledForm, showSubmit)
+
+        debug("form uiSchema", uiSchema, filledForm, showSubmit)
+
+        // Hacky way to remove default entries for files
+        Object.entries(uiSchema).forEach(([field, prop]) => {
+            if (prop["ui:widget"] === "file")
+                filledForm[field].default = undefined;
+        });
+        return [filledForm, uiSchema]
+    }, [input, metadata, showSubmit])
+
+    if (!properties)
         return null
-
-    debug("filledForm", filledForm)
-
-    // the UI schema for the form defines which widgets are used for each input
-    const uiSchema = getUISchema(filledForm, showSubmit)
-
-    debug("form uiSchema", uiSchema, filledForm, showSubmit)
-
-    // Hacky way to remove default entries for files
-    Object.entries(uiSchema).forEach(([field, prop]) => {
-        if (prop["ui:widget"] === "file")
-            filledForm[field].default = undefined;
-    });
-
+        
     return <Form
-        schema={{ properties: filledForm }}
+        schema={{ properties }}
         uiSchema={uiSchema}
         onSubmit={({ formData }) => {
             debug("submitted", formData)
+            setInput(formData)
             setInProgress(true)
             onSubmit(formData)
         }}
@@ -57,10 +69,6 @@ const FormView = ({ input, connected, metadata, onSubmit, onCancel }) => {
                 : null
             }
 
-            {showCancel && <Button type="button" color="secondary" onClick={onCancel} disabled={formDisabled} >
-                [ {inProgress ? "Stopping..." : "Stop"} ]
-            </Button>
-            }
             <HelpModal />
 
         </Box>

@@ -130,6 +130,6 @@ node /usr/local/bin/pin.js $CID
 
 # --- Post if run successfull ---
 if [[ "$RUN_COUNT" < 2  ]]; then
-    echo "🐝: Posting $CID to social media"
+    echo "🐝: Posting $CID to social media (if it was enabled by the user)"
     node /usr/local/bin/social_post.js $CID
 fi

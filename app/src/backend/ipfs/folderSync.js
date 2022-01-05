@@ -3,7 +3,7 @@ import { existsSync } from "fs";
 import { dirname, join } from "path";
 import { groupWith } from "ramda";
 import chunkedFilewatcher from "../fileWatcher";
-const debug = Debug("senderLight");
+const debug = Debug("folderSync");
 
 export default async function* folderSync({ writer, path, debounce, signal }) {
   const { addFile, mkDir, rm, cid } = writer;

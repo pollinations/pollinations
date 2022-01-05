@@ -18,6 +18,14 @@ Pollinations prioritizes equitable distribution of value for hackers, creators, 
 
 As for now, all the people involved are contributing hours for free to help the platform grow. 
 
+&nbsp;
+
+
+---
+
+&nbsp;
+
+###### Support Pollinations
 
 Support Pollinations' development through **[Paypal](https://www.paypal.com/donate/?hosted_button_id=DQSRC48ZZND7Y)**, by joining our **[Patreon](https://www.patreon.com/pollinations)** or donating to one of these crypto wallets:
 

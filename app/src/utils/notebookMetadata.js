@@ -21,7 +21,12 @@ function readMetadata(notebookJSON) {
     .join("\n") : null;
 
   const parameterTexts = parameterCell ? parameterCell["source"] : null;
+
   debug("parameter texts", parameterTexts)
+
+  if (!parameterTexts)
+    return null
+
   const allParameters = parameterTexts
     .map(extractParametersWithComment)
     .filter(param => param)

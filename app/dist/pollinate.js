@@ -36527,7 +36527,7 @@ async function* folderSync({ writer: writer2, path, debounce, signal }) {
   });
   for await (const changedFlat of fileChanges$) {
     debug10("Changed files", changedFlat);
-    const changedGrouped = (0, import_ramda4.groupWith)(({ event, path: path2 }) => (0, import_path4.dirname)(path2) + "_" + event, changedFlat);
+    const changedGrouped = groupSyncQueue(changedFlat);
     debug10("changedGrouped", changedGrouped);
     for (const changed of changedGrouped) {
       await Promise.all(changed.map(async ({ event, path: file }) => {
@@ -36552,6 +36552,8 @@ async function* folderSync({ writer: writer2, path, debounce, signal }) {
     yield newContentID;
   }
 }
+var groupKey = ({ event, path }) => (0, import_path4.dirname)(path) + "_" + event;
+var groupSyncQueue = (0, import_ramda4.groupWith)((a, b) => groupKey(a) === groupKey(b));
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");

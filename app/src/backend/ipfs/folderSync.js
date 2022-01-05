@@ -21,16 +21,14 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
     path,
     debounce,
     signal,
-  });
+  })
 
   for await (const changedFlat of fileChanges$) {
     debug("Changed files", changedFlat);
 
-    const changedGrouped = groupWith(
-      ({ event, path }) => dirname(path) + "_" + event,
-      changedFlat
-    );
-    debug("changedGrouped", changedGrouped);
+    const changedGrouped = groupSyncQueue(changedFlat)
+    
+    debug("changedGrouped", changedGrouped)
 
     for (const changed of changedGrouped) {
       await Promise.all(
@@ -63,3 +61,10 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
     yield newContentID;
   }
 }
+
+
+const groupKey = ({ event, path }) => dirname(path) + "_" + event;
+
+const groupSyncQueue = groupWith(
+    (a,b) => groupKey(a) === groupKey(b)
+  )

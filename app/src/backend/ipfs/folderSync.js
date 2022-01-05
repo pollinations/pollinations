@@ -3,6 +3,7 @@ import {
     existsSync
 } from "fs";
 import {
+    dirname,
     join
 } from "path";
 import {
@@ -43,8 +44,8 @@ export default async function* folderSync({
         debug("Changed files", changedFlat);
 
         const changedGrouped = groupWith(({
-            event
-        }) => event, changedFlat);
+            event, path
+        }) => dirname(path) + "_" + event, changedFlat);
 
         for (const changed of changedGrouped) {
             await Promise.all(

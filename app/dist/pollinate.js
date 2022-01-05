@@ -26052,9 +26052,9 @@ var require_nodefs_handler = __commonJS({
         if (this.fsw.closed) {
           return;
         }
-        const dirname3 = sysPath.dirname(file);
+        const dirname4 = sysPath.dirname(file);
         const basename2 = sysPath.basename(file);
-        const parent = this.fsw._getWatchedDir(dirname3);
+        const parent = this.fsw._getWatchedDir(dirname4);
         let prevStats = stats;
         if (parent.has(basename2))
           return;
@@ -26079,7 +26079,7 @@ var require_nodefs_handler = __commonJS({
                 prevStats = newStats2;
               }
             } catch (error) {
-              this.fsw._remove(dirname3, basename2);
+              this.fsw._remove(dirname4, basename2);
             }
           } else if (parent.has(basename2)) {
             const at = newStats.atimeMs;
@@ -36539,8 +36539,9 @@ async function* folderSync({
   for await (const changedFlat of fileChanges$) {
     debug10("Changed files", changedFlat);
     const changedGrouped = (0, import_ramda4.groupWith)(({
-      event
-    }) => event, changedFlat);
+      event,
+      path: path2
+    }) => (0, import_path4.dirname)(path2) + "_" + event, changedFlat);
     for (const changed of changedGrouped) {
       await Promise.all(changed.map(async ({
         event,

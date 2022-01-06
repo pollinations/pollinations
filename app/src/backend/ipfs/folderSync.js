@@ -24,7 +24,7 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
   })
 
   for await (const changedFlat of fileChanges$) {
-    debug("Changed files", changedFlat);
+    // debug("Changed files", changedFlat);
 
     const changedGrouped = groupSyncQueue(changedFlat)
     

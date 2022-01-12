@@ -4,7 +4,6 @@ import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import Markdown from 'markdown-to-jsx';
 import React, { useCallback, useMemo } from "react";
-import Acordion from "../components/Acordion";
 import FormView from '../components/Form';
 import { SEO } from "../components/Helmet";
 import MediaViewer from '../components/MediaViewer';
@@ -36,9 +35,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       {/* control panel */}
-      <NotebookTitle metadata={metadata} />
-      {/* just in case */}
-      <NotebookDescription metadata={metadata} />
+      <NotebookTitle name={metadata?.name} />
 
 
       {/* inputs */}
@@ -54,10 +51,13 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
         />
       </div>
 
+      {/* just in case */}
+      
+
       {/* previews */}
-      {ipfs.output && <div >
+      {ipfs.output ? (<div >
         <MediaViewer output={ipfs.output} contentID={contentID} />
-      </div>
+      </div>) : (<NotebookDescription metadata={metadata} />)
       }
 
     </Box>
@@ -70,13 +70,16 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
 const NotebookDescription = ({ metadata }) => {
   if (metadata === null) return null
-  return (
-    <Acordion visibleContent='Details'
-      hiddenContent={
-        <Typography color="textSecondary">
-          <Markdown children={metadata.description} />
-        </Typography>}
-    />);
+  return (<Box mt={8}>
+            <Typography 
+                variant="h5" 
+                component="h5" 
+                gutterBottom>
+                Details
+            </Typography>
+          <Typography color="textSecondary">
+            <Markdown children={metadata.description} />
+          </Typography></Box>)
 }
 
 

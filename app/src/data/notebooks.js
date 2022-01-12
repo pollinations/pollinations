@@ -1,16 +1,10 @@
 import WallpaperIcon from '@material-ui/icons/Wallpaper';
-import { useEffect, useState } from 'react';
-
 import Debug from 'debug';
-import { fetchAndMakeURL } from '../network/ipfsWebClient';
 import readMetadata from '../utils/notebookMetadata';
-import { getIPFSState } from '../network/ipfsState';
 
-import { parse } from 'json5';
+
 
 const debug = Debug('notebooks');
-
-const DEFAULT_HIVE_PATH = "/ipns/k51qzi5uqu5dk56owjc245w1z3i5kgzn1rq6ly6n152iw00px6zx2vv4uzkkh9";
 
 // get list of notebooks from IPNS path
 // this should be refactored once we cleaned the IFPS state code

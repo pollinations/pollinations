@@ -29,7 +29,7 @@ async function* chunkedFilewatcher({ path, debounce, signal }) {
 
         if (path !== '') {
             changeQueue.push({ event, path })
-            debug("Queue", changeQueue)
+            //debug("Queue", changeQueue)
         }
     })
     debug("signal", signal)

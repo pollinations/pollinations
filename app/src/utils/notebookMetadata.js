@@ -10,26 +10,31 @@ function readMetadata(notebookJSON) {
     return null;
 
   let { metadata, cells } = notebookJSON;
-  debug("cells", cells, "metadata", metadata);
-  const { name } = metadata["colab"];
+  debug("cells", cells, "metadata", metadata)
+  const { name } = metadata["colab"]
 
-  const descriptionCell = cells.find(isMarkdownCell);
-  const parameterCell = cells.find(isParameterCell);
+  const descriptionCell = cells.find(isMarkdownCell)
+  const parameterCell = cells.find(isParameterCell)
 
-  debug("parameter cell", parameterCell);
+  debug("parameter cell", parameterCell)
   const description = descriptionCell ? descriptionCell["source"]
     .join("\n") : null;
 
-  const parameterTexts = parameterCell ? parameterCell["source"] : null;
+  const parameterTexts = parameterCell ? parameterCell["source"] : null
+
   debug("parameter texts", parameterTexts)
+
+  if (!parameterTexts)
+    return null
+
   const allParameters = parameterTexts
     .map(extractParametersWithComment)
     .filter(param => param)
     .map(mapToJSONFormField)
 
-  const properties = Object.fromEntries(allParameters);
-  const primaryInput = allParameters[0][0];
-  debug("got parameters", allParameters, "primary input", primaryInput);
+  const properties = Object.fromEntries(allParameters)
+  const primaryInput = allParameters[0][0]
+  debug("got parameters", allParameters, "primary input", primaryInput)
   return {
     form: {
       // "title": name,
@@ -41,7 +46,7 @@ function readMetadata(notebookJSON) {
     description,
     numCells: cells.length,
     primaryInput
-  };
+  }
 
 };
 

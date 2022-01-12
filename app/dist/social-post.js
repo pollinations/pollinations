@@ -36944,6 +36944,8 @@ function readMetadata(notebookJSON) {
   const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
   const parameterTexts = parameterCell ? parameterCell["source"] : null;
   debug7("parameter texts", parameterTexts);
+  if (!parameterTexts)
+    return null;
   const allParameters = parameterTexts.map(extractParametersWithComment).filter((param) => param).map(mapToJSONFormField);
   const properties = Object.fromEntries(allParameters);
   const primaryInput = allParameters[0][0];

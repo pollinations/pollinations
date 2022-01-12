@@ -57,7 +57,7 @@ export default memo(function ResultViewer({ ipfs }) {
       </Typography>
     }
 
-    <NotebookTitle metadata={metadata}>
+    <NotebookTitle name={metadata?.name}>
       <Button color="default" to={`/p/${contentID}/create`} component={Link}>
         [ Clone ]
       </Button>

@@ -36486,7 +36486,6 @@ async function* chunkedFilewatcher({ path, debounce, signal }) {
     debug9("got watcher event", event, path2);
     if (path2 !== "") {
       changeQueue.push({ event, path: path2 });
-      debug9("Queue", changeQueue);
     }
   });
   debug9("signal", signal);
@@ -36511,19 +36510,9 @@ var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, p
 var fileWatcher_default = chunkedFilewatcher;
 
 // src/backend/ipfs/folderSync.js
-var debug10 = (0, import_debug10.default)("senderLight");
-async function* folderSync({
-  writer: writer2,
-  path,
-  debounce,
-  signal
-}) {
-  const {
-    addFile,
-    mkDir,
-    rm,
-    cid
-  } = writer2;
+var debug10 = (0, import_debug10.default)("folderSync");
+async function* folderSync({ writer: writer2, path, debounce, signal }) {
+  const { addFile, mkDir, rm, cid } = writer2;
   debug10("start consuming watched files");
   if (!(0, import_fs3.existsSync)(path)) {
     debug10("Local: Root directory does not exist. Creating", path);
@@ -36537,16 +36526,10 @@ async function* folderSync({
     signal
   });
   for await (const changedFlat of fileChanges$) {
-    debug10("Changed files", changedFlat);
-    const changedGrouped = (0, import_ramda4.groupWith)(({
-      event,
-      path: path2
-    }) => (0, import_path4.dirname)(path2) + "_" + event, changedFlat);
+    const changedGrouped = groupSyncQueue(changedFlat);
+    debug10("changedGrouped", changedGrouped);
     for (const changed of changedGrouped) {
-      await Promise.all(changed.map(async ({
-        event,
-        path: file
-      }) => {
+      await Promise.all(changed.map(async ({ event, path: file }) => {
         debug10("Local:", event, file);
         const localPath = (0, import_path4.join)(path, file);
         const ipfsPath = file;
@@ -36568,6 +36551,8 @@ async function* folderSync({
     yield newContentID;
   }
 }
+var groupKey = ({ event, path }) => (0, import_path4.dirname)(path) + "_" + event;
+var groupSyncQueue = (0, import_ramda4.groupWith)((a, b) => groupKey(a) === groupKey(b));
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");

@@ -1,17 +1,12 @@
+import { Backdrop, Box, Modal, styled } from "@material-ui/core"
+import Typography from "@material-ui/core/Typography"
 import { useEffect, useMemo, useState } from "react"
+import { SEO } from "../components/Helmet"
+import BigPreview from "../components/molecules/BigPreview"
+import { mediaToDisplay } from "../data/media"
 import useIPFS from "../hooks/useIPFS"
 import { subscribeCID } from "../network/ipfsPubSub"
-import ResultViewer from "./ResultViewer"
-import Typography from "@material-ui/core/Typography"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
-import { mediaToDisplay } from "../data/media"
-import { Backdrop, Box, Button, Link, Modal, styled } from "@material-ui/core"
-import { SEO } from "../components/Helmet"
-import NotebookTitle from "../components/NotebookTitle"
-import { NotebookProgress } from "../components/NotebookProgress"
-import { IpfsLog } from "../components/Logs"
-import MediaViewer from "../components/MediaViewer"
-import BigPreview from "../components/molecules/BigPreview"
 
 const ChristmasSpecial = () => {
     const [cid, setCid] = useState(null)

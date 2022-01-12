@@ -36510,7 +36510,7 @@ var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, p
 var fileWatcher_default = chunkedFilewatcher;
 
 // src/backend/ipfs/folderSync.js
-var debug10 = (0, import_debug10.default)("senderLight");
+var debug10 = (0, import_debug10.default)("folderSync");
 async function* folderSync({ writer: writer2, path, debounce, signal }) {
   const { addFile, mkDir, rm, cid } = writer2;
   debug10("start consuming watched files");
@@ -36526,7 +36526,6 @@ async function* folderSync({ writer: writer2, path, debounce, signal }) {
     signal
   });
   for await (const changedFlat of fileChanges$) {
-    debug10("Changed files", changedFlat);
     const changedGrouped = groupSyncQueue(changedFlat);
     debug10("changedGrouped", changedGrouped);
     for (const changed of changedGrouped) {

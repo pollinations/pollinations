@@ -88,7 +88,7 @@ done
 
 
 # Write if run succeeded to output/success
-if [[ "$RUN_COUNT" < 2  ]]; then
+if [[ "$STATUS" == 0  ]]; then
     echo "🐝: Run succeeded. Writing 'true' to output/success"
     echo -n true > $IPFS_ROOT/output/success
 else
@@ -129,7 +129,7 @@ node /usr/local/bin/pin.js $CID
 
 
 # --- Post if run successfull ---
-if [[ "$RUN_COUNT" < 2  ]]; then
-    echo "🐝: Posting $CID to social media (if it was enabled by the user)"
+if [[ "$STATUS" != 1  ]]; then
+    echo "🐝: Posting $CID to social media (if posting was enabled by the user)"
     node /usr/local/bin/social_post.js $CID
 fi

@@ -25,7 +25,7 @@ export default function Home({ ipfs }) {
   debug("got notebooks", notebooks);
   return <>
     {
-      !options.length && <Alert severity="error">Model list temporarily unavailable. Please retry in a little while</Alert>
+      !options.length && <Alert severity="error">Hey, pollinations.ai is having temporary issues, please retry in few hours.</Alert>
     }
     <HeroSection />
 

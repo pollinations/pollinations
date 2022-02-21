@@ -24,9 +24,14 @@ export const getNotebooks = (ipfs) => {
     return notebooks.map(([name, notebookFolder]) => {
       const cid = notebookFolder[".cid"];
       debug("got cid for",name,notebookFolder,":", cid);
-      const notebookJSON = notebookFolder["input"]["notebook.ipynb"];
-      debug("getting metadata for", notebookJSON);
-      const { description } = readMetadata(notebookJSON)
+      const notebookJSON = notebookFolder["input"]["notebook.ipynb"]
+      debug("getting metadata for", notebookJSON)
+      const metadata = readMetadata(notebookJSON)
+     
+      if (!metadata) return null
+
+      const { description } = metadata
+
       debug("notebookMetadata", name, description);
       return {
         category, 
@@ -35,7 +40,7 @@ export const getNotebooks = (ipfs) => {
         description,
         Icon: WallpaperIcon
       };
-    });
+    }).filter(n => n !== null);
   }).flat();
   
   debug('getNotebooks parsed', allNotebooks);

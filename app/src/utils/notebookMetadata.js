@@ -33,7 +33,14 @@ function readMetadata(notebookJSON) {
     .map(mapToJSONFormField)
 
   const properties = Object.fromEntries(allParameters)
+  
+  if (!allParameters[0]) 
+    return null
+
   const primaryInput = allParameters[0][0]
+  
+
+
   debug("got parameters", allParameters, "primary input", primaryInput)
   return {
     form: {
@@ -93,7 +100,9 @@ const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions }
 
   debug("Parsing JSON:", { defaultVal, enumOptions })
   return [name, {
-    enum: enumOptions, type, default: parse(defaultVal),
+    enum: enumOptions, 
+    type, 
+    default: parse(defaultVal),
     // title: description || name, 
     title: name,
     description

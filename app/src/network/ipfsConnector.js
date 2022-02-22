@@ -13,7 +13,9 @@ import { AUTH, noop, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://public-ipfs-api.pollinations.ai";
+// Get IPFS_API_ENDPOINT from env
+const IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://public-ipfs-api.pollinations.ai"
+
 
 let _client = null;
 

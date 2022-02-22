@@ -35987,7 +35987,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = "https://api.pollinations.ai";
+var IPFS_HOST = "https://public-ipfs-api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -36097,7 +36097,7 @@ var ipfsLsCID = async (client, cid) => {
     console.log(e);
   }
 };
-var ipfsAdd = async (client, path, content, options = {}) => {
+var ipfsAdd = async (client, path, content, options = { pin: false }) => {
   debug5("adding", path, "options", options);
   let cid = null;
   try {

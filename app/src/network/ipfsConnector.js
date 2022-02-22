@@ -13,7 +13,7 @@ import { AUTH, noop, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://api.pollinations.ai";
+const IPFS_HOST = "https://public-ipfs-api.pollinations.ai";
 
 let _client = null;
 
@@ -149,11 +149,11 @@ const ipfsPin = async (client, cid) => {
 
 export const getWebURL = (cid, name = null) => {
     const filename = name ? `?filename=${name}` : '';
-    return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`
+    return `https://public-ipfs-gateway.pollinations.ai/ipfs/${cid}${filename}`
 };
 
 export const getIPNSURL = (id) => {
-    return `https://ipfs.pollinations.ai/ipns/${id}`;
+    return `https://public-ipfs-gateway.pollinations.ai/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => {
@@ -183,8 +183,9 @@ const ipfsLsCID = async (client, cid) => {
 }
 
 
-const ipfsAdd = async (client, path, content, options = {}) => {
+const ipfsAdd = async (client, path, content, options = { pin: false }) => {
     debug("adding", path, "options", options)
+
     let cid = null
     try {
         // check if content has the async iterator symbol

@@ -100,7 +100,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
 
     try {
         if (nodeID === "ipns" || ipnsKeyName !== null)
-            await experimentalIPNSPublish(client, rootCID, ipnsKeyName);
+            experimentalIPNSPublish(client, rootCID, ipnsKeyName);
         
         await retryPublish(nodeID + suffix, rootCID)
         

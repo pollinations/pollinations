@@ -30132,7 +30132,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
   debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
     if (nodeID === "ipns" || ipnsKeyName !== null)
-      await experimentalIPNSPublish(client, rootCID, ipnsKeyName);
+      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
     await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {
     debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);

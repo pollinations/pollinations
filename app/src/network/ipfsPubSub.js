@@ -3,7 +3,7 @@ import Debug from 'debug';
 import { AbortController } from 'native-abort-controller';
 import { Channel } from 'queueable';
 import { getClient } from './ipfsConnector';
-import { noop, retryException } from './utils';
+import { noop, retryException, toPromise1 } from './utils';
 
 
 const debug = Debug('ipfs:pubsub');
@@ -14,20 +14,45 @@ const HEARTBEAT_FREQUENCY = 12;
 
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
-export function publisher(nodeID, suffix = "/output") {
+export function publisher(nodeID, suffix = "/output", useIPNS=true) {
 
-    debug("Creating publisher for", nodeID, suffix);
+    debug("Creating publisher for", nodeID, suffix)
 
     let lastPublishCID = null;
 
+    let ipnsKeyName = null
+
+
     const _publish = async cid => {
         const client = await getClient()
-        await publish(client, nodeID, cid, suffix, nodeID)
+
+        if (useIPNS && ipnsKeyName === null) {
+
+            const keyName = nodeID + suffix
+            const keys = await client.key.list()
+
+            debug("IPNS keys", keys)
+
+            if (!keys.find(({name}) => name === keyName)) {
+
+                const { name } = await client.key.gen(keyName)
+                debug("Generated IPNS key with name", name)
+            } else
+                debug("IPNS key already exists. Reusing")
+            
+            ipnsKeyName = keyName
+            
+        }
+
+        debug("ipnsKeyName", ipnsKeyName)
+
+        
+        await publish(client, nodeID, cid, suffix, ipnsKeyName)
 
         // for some reason publishing twice in a row causes a socket error. sleep just in case
         await awaitSleep(100)
-        lastPublishCID = cid;
-    };
+        lastPublishCID = cid
+    }
 
     // const interval = setInterval(() => {
     //     if (lastPublishCID)
@@ -35,8 +60,8 @@ export function publisher(nodeID, suffix = "/output") {
     // }, 5000);
 
     const sendHeartbeat = async () => {
-        const client = await getClient();
-        publishHeartbeat(client, suffix, nodeID);
+        const client = await getClient()
+        publishHeartbeat(client, suffix, nodeID)
     };
 
     const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1000);
@@ -68,15 +93,16 @@ const publishHeartbeat = async (client, suffix, nodeID) => {
     }
 }
 
-async function publish(client, nodeID, rootCID, suffix = "/output") {
+async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName = null) {
     const retryPublish = retryException(client.pubsub.publish)
-    debug("publish pubsub", nodeID + suffix, rootCID);
+    debug("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
 
     try {
-        if (nodeID === "ipns")
-            await experimentalIPNSPublish(client, rootCID);
-        else
-            await retryPublish(nodeID + suffix, rootCID)
+        if (nodeID === "ipns" || ipnsKeyName !== null)
+            await experimentalIPNSPublish(client, rootCID, ipnsKeyName);
+        
+        await retryPublish(nodeID + suffix, rootCID)
+        
     } catch (e) {
         debug("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
     }
@@ -85,12 +111,21 @@ async function publish(client, nodeID, rootCID, suffix = "/output") {
 
 let abortPublish = null;
 
-async function experimentalIPNSPublish(client, rootCID) {
-    debug("publishing to ipns...", rootCID);
+async function experimentalIPNSPublish(client, rootCID, ipnsKeyName = null) {
+    if (ipnsKeyName === null)
+        ipnsKeyName = "self"
+
+    debug("publishing to ipns...", ipnsKeyName, rootCID)
+
     if (abortPublish)
         abortPublish.abort();
-    abortPublish = new AbortController();
-    await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true })
+    abortPublish = new AbortController()
+    
+    await client.name.publish(rootCID, { 
+        signal: abortPublish.signal, 
+        allowOffline: true,
+        key: ipnsKeyName
+    })
         .then(() => {
             debug("published...", rootCID);
             abortPublish = null;
@@ -130,9 +165,16 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
         }
     }
 
+
+
+
     (async () => {
+        const keyName = nodeID + suffix
+
+        await getInitialStateFromIPNS(keyName, callback)
+
         while (!aborted) {
-            unsubscribe = subscribeCallback(nodeID + suffix, handleMessage)
+            unsubscribe = subscribeCallback(keyName, handleMessage)
             // resubscribe every 5 minutes
             await awaitSleep(5*60*1000)
             unsubscribe()
@@ -146,6 +188,22 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
         aborted = true
     }
 };
+
+async function getInitialStateFromIPNS(keyName, callback) {
+    const client = await getClient();
+
+    const keys = await client.key.list();
+
+
+    const ipnsKey = keys.find(({ name }) => name === keyName);
+
+    if (ipnsKey) {
+        const cidString = await toPromise1(client.pubsub.name.resolve(`/ipns/${ipnsKey.id}`));
+        debug("got initial CID through IPNS. Calling callback with", cidString);
+        const cid = cidString.split("/")[1];
+        callback(cid);
+    }
+}
 
 // if we don't receive a heartbeat from the publisher in 2 x HEARTBEAT_FREQUENCY seconds, 
 // we assume the publisher is dead and call heartbeatDeadCallback
@@ -200,7 +258,7 @@ function subscribeCallback(topic, callback) {
             abort.abort()
             await awaitSleep(300)
             debug("resubscribing")
-            await doSub();
+            await doSub()
         };
 
         const handler = ({ data }) => {

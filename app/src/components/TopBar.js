@@ -6,7 +6,7 @@ import Button from '@material-ui/core/Button'
 
 import RouterLink from './molecules/RouterLink'
 // import { HorizontalBorder } from '../atoms/Borders'
-// import { BigTitle } from '../atoms/BigTitle'
+import { BigTitle } from './atoms/BigTitle'
 import { SocialLinks } from './Social'
 import LaunchColabButton from './molecules/LaunchColabButton'
 
@@ -37,11 +37,11 @@ const TopBar = ({ node, showNode }) => {
                 <Button onClick={()=> setOpen(state=>!state)}>
                     [ Menu ]
                 </Button>
-            {/* <BigTitle> */}
+            <BigTitle>
                 <RouterLink to={"/"}>
                 pollinations.ai
                 </RouterLink>
-            {/* </BigTitle> */}
+            </BigTitle>
                 { (node.connected && node.contentID) ?
                 <Button onClick={go2Pollen}>
                     [ Current Pollen ]

@@ -9,7 +9,7 @@ import { SEO } from "../components/Helmet";
 import MediaViewer from '../components/MediaViewer';
 import NotebookTitle from "../components/NotebookTitle";
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-
+import styled from '@emotion/styled'
 
 
 
@@ -30,56 +30,72 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
   debug("ipfs state before rendering model", ipfs)
 
 
-  return <>
-    <Box my={2}>
+  return <Box my={2}>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-      {/* control panel */}
       <NotebookTitle name={metadata?.name} />
-
-
-      {/* inputs */}
-      <div style={{ width: '100%' }}>
-        {
-          !connected && <Alert severity="info">The inputs are <b>disabled</b> because <b>no Colab node is running</b>! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.</Alert>
-        }
-        <FormView
-          input={ipfs?.input}
-          connected={connected}
-          metadata={metadata}
-          onSubmit={dispatch}
-        />
-      </div>
-
-      {/* just in case */}
+      <AlertMessage connected={connected}/>
       
+      <TwoColumns>
 
-      {/* previews */}
-      {ipfs.output ? (<div >
-        <MediaViewer output={ipfs.output} contentID={contentID} />
-      </div>) : (<NotebookDescription metadata={metadata} />)
-      }
+        {/* FORM INPUTS */}
+        <div style={{ width: '100%' }}>
+          <Typography variant="h5" gutterBottom>
+            Inputs
+          </Typography>
 
+          <FormView
+            input={ipfs?.input}
+            connected={connected}
+            metadata={metadata}
+            onSubmit={dispatch}
+          />
+        </div>      
+
+        {/* PREVIEWS OR DESCRIPTION? */}
+        { ipfs.output ? <div >
+          <MediaViewer output={ipfs.output} contentID={contentID} />
+          </div> : <NotebookDescription metadata={metadata} />
+        }
+
+      </TwoColumns>
     </Box>
-  </>
 });
+
+const TwoColumns = styled.div`
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+grid-gap: 4em;
+
+width: 100%;
+margin-top: 1em;
+`
 
 
 
 // Notebook Description
 
 const NotebookDescription = ({ metadata }) => {
-  if (metadata === null) return null
-  return (<Box mt={8}>
-            <Typography 
-                variant="h5" 
-                component="h5" 
-                gutterBottom>
-                Details
-            </Typography>
-          <Typography color="textSecondary">
-            <Markdown children={metadata.description} />
-          </Typography></Box>)
+  if (metadata === null) return <></>
+  return <Box >
+    <Typography variant="h5" gutterBottom>
+        Details
+    </Typography>
+    <Typography color="textSecondary">
+      <Markdown children={metadata.description} />
+    </Typography>
+  </Box>
+}
+
+
+// Alert Message
+
+const AlertMessage = ({ connected }) => {
+  if (connected) return <></>
+  return <Alert severity="info">
+    The inputs are <b>disabled</b> because <b>no Colab node is running</b>
+    ! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.
+  </Alert>
 }
 
 

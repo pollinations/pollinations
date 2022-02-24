@@ -2,6 +2,7 @@ import awaitSleep from 'await-sleep';
 import Debug from 'debug';
 import { AbortController } from 'native-abort-controller';
 import { Channel } from 'queueable';
+import { last } from 'ramda';
 import { getClient } from './ipfsConnector';
 import { noop, retryException, toPromise1 } from './utils';
 
@@ -200,7 +201,7 @@ async function getInitialStateFromIPNS(keyName, callback) {
     if (ipnsKey) {
         const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
         debug("got initial CID through IPNS. Calling callback with", cidString);
-        const cid = cidString.split("/")[2];
+        const cid = last(cidString.split("/"))
         callback(cid);
     }
 }

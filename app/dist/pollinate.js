@@ -36320,7 +36320,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   };
   (async () => {
     const keyName = nodeID + suffix;
-    await getInitialStateFromIPNS(keyName, callback);
+    getInitialStateFromIPNS(keyName, callback);
     while (!aborted) {
       unsubscribe = subscribeCallback(keyName, handleMessage);
       await (0, import_await_sleep2.default)(5 * 60 * 1e3);
@@ -36339,7 +36339,7 @@ async function getInitialStateFromIPNS(keyName, callback) {
   const keys = await client.key.list();
   const ipnsKey = keys.find(({ name: name5 }) => name5 === keyName);
   if (ipnsKey) {
-    const cidString = await toPromise1(client.pubsub.name.resolve(`/ipns/${ipnsKey.id}`));
+    const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
     debug6("got initial CID through IPNS. Calling callback with", cidString);
     const cid = cidString.split("/")[1];
     callback(cid);

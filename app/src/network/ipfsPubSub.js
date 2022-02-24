@@ -200,7 +200,7 @@ async function getInitialStateFromIPNS(keyName, callback) {
     if (ipnsKey) {
         const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
         debug("got initial CID through IPNS. Calling callback with", cidString);
-        const cid = cidString.split("/")[1];
+        const cid = cidString.split("/")[2];
         callback(cid);
     }
 }

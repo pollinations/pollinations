@@ -31,24 +31,16 @@ const TopBar = ({ node, showNode }) => {
     return <Container maxWidth='lg'>
 
         <VisibleContentStyle>
-            {/* <div style={{display: 'flex', alignItems: 'flex-end', gridGap: '1em'}}> */}
                 
-
-                <Button onClick={()=> setOpen(state=>!state)}>
-                    [ Menu ]
-                </Button>
             <BigTitle>
                 <RouterLink to={"/"}>
                 pollinations.ai
                 </RouterLink>
             </BigTitle>
-                { (node.connected && node.contentID) ?
-                <Button onClick={go2Pollen}>
-                    [ Current Pollen ]
-                </Button>
-                : <LaunchColabButton {...node} />
-                }
-            {/* </div> */}
+            <Button onClick={()=> setOpen(state=>!state)}>
+                [ Menu ]
+            </Button>
+
         </VisibleContentStyle>
 
         {/* <HorizontalBorder /> */}

@@ -39,7 +39,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
       <TwoColumns>
 
         {/* FORM INPUTS */}
-        <div style={{ width: '100%' }}>
+        <div>
           <Typography variant="h5" gutterBottom>
             Inputs
           </Typography>
@@ -52,12 +52,9 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           />
         </div>      
 
-        {/* PREVIEWS OR DESCRIPTION? */}
-        { ipfs.output ? <div >
-          <MediaViewer output={ipfs.output} contentID={contentID} />
-          </div> : <NotebookDescription metadata={metadata} />
-        }
-
+        {/* NOTEBOOK DESCRIPTION */}
+        <NotebookDescription metadata={metadata} />
+        
       </TwoColumns>
     </Box>
 });
@@ -71,10 +68,7 @@ width: 100%;
 margin-top: 1em;
 `
 
-
-
 // Notebook Description
-
 const NotebookDescription = ({ metadata }) => {
   if (metadata === null) return <></>
   return <Box >
@@ -89,7 +83,6 @@ const NotebookDescription = ({ metadata }) => {
 
 
 // Alert Message
-
 const AlertMessage = ({ connected }) => {
   if (connected) return <></>
   return <Alert severity="info">

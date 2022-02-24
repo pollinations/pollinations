@@ -172,7 +172,7 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
     (async () => {
         const keyName = nodeID + suffix
 
-        getInitialStateFromIPNS(keyName, callback)
+        await getInitialStateFromIPNS(keyName, callback)
 
         while (!aborted) {
             unsubscribe = subscribeCallback(keyName, handleMessage)

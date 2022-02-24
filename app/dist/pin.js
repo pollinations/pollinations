@@ -10736,12 +10736,12 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last6 = this.buffer[this.btm];
-        if (last6 === void 0)
+        const last7 = this.buffer[this.btm];
+        if (last7 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last6;
+        return last7;
       }
       peek() {
         return this.buffer[this.btm];
@@ -11465,8 +11465,8 @@ var require_multiaddr_to_uri = __commonJS({
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last6 = parts[parts.length - 1];
-      if (last6.protocol === "tcp") {
+      const last7 = parts[parts.length - 1];
+      if (last7.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -13503,14 +13503,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last6 = async (source) => {
+    var last7 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last6;
+    module2.exports = last7;
   }
 });
 
@@ -16150,8 +16150,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last6 = init.pop();
-      return compose(compose.apply(this, map4(chain, init)), last6);
+      var last7 = init.pop();
+      return compose(compose.apply(this, map4(chain, init)), last7);
     }
     module2.exports = composeK;
   }
@@ -17498,8 +17498,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last6 = /* @__PURE__ */ nth(-1);
-    module2.exports = last6;
+    var last7 = /* @__PURE__ */ nth(-1);
+    module2.exports = last7;
   }
 });
 
@@ -17509,7 +17509,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last6 = require_last();
+    var last7 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -17517,7 +17517,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last6(result), list[idx])) {
+          if (!pred(last7(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -30078,6 +30078,7 @@ var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src());
 var import_native_abort_controller12 = __toModule(require_src6());
 var import_queueable = __toModule(require_lib5());
+var import_ramda2 = __toModule(require_src7());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output", useIPNS = true) {
@@ -30175,7 +30176,7 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   };
   (async () => {
     const keyName = nodeID + suffix;
-    getInitialStateFromIPNS(keyName, callback);
+    await getInitialStateFromIPNS(keyName, callback);
     while (!aborted) {
       unsubscribe = subscribeCallback(keyName, handleMessage);
       await (0, import_await_sleep2.default)(5 * 60 * 1e3);
@@ -30196,7 +30197,7 @@ async function getInitialStateFromIPNS(keyName, callback) {
   if (ipnsKey) {
     const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
     debug6("got initial CID through IPNS. Calling callback with", cidString);
-    const cid = cidString.split("/")[1];
+    const cid = (0, import_ramda2.last)(cidString.split("/"));
     callback(cid);
   }
 }
@@ -30282,7 +30283,7 @@ var import_path3 = __toModule(require("path"));
 
 // src/network/ipfsState.js
 var import_debug7 = __toModule(require_src());
-var import_ramda2 = __toModule(require_src7());
+var import_ramda3 = __toModule(require_src7());
 var import_path2 = __toModule(require("path"));
 
 // src/utils/logProgressToConsole.js
@@ -30322,7 +30323,7 @@ var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }
     _debug("Got files for", name5, cid, files);
     const filenames = files.map(({ name: name6 }) => name6);
     const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
-    const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
+    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });
     return contentResult;

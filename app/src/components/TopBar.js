@@ -5,12 +5,9 @@ import Container from '@material-ui/core/Container'
 import Button from '@material-ui/core/Button'
 
 import RouterLink from './molecules/RouterLink'
-// import { HorizontalBorder } from '../atoms/Borders'
+import { HorizontalBorder } from './atoms/Borders'
 import { BigTitle } from './atoms/BigTitle'
 import { SocialLinks } from './Social'
-import LaunchColabButton from './molecules/LaunchColabButton'
-
-
 
 const MenuLinks = [
   // { children: 'models', to: '/models' },
@@ -20,39 +17,34 @@ const MenuLinks = [
   { children: 'my pollens', to: '/localpollens' },
 ]
 
-const TopBar = ({ node, showNode }) => {
+const TopBar = ({ showNode }) => {
     const [open, setOpen] = useState(true)
-
-    function go2Pollen() {
-        setOpen(false)
-        showNode()
-    }
 
     return <Container maxWidth='lg'>
 
         <VisibleContentStyle>
-                
             <BigTitle>
                 <RouterLink to={"/"}>
-                pollinations.ai
+                    pollinations.ai
                 </RouterLink>
             </BigTitle>
             <Button onClick={()=> setOpen(state=>!state)}>
                 [ Menu ]
             </Button>
-
         </VisibleContentStyle>
 
-        {/* <HorizontalBorder /> */}
+        <HorizontalBorder />
 
         <HiddenContentStyle open={open}>
+            <MenuItems> 
             {
                 MenuLinks
-                .map( linkProps => <h6 key={linkProps.to} onClick={()=>setOpen(true)}>
-                    <RouterLink {...linkProps} />
-                </h6>)
+                .map( linkProps => <li key={linkProps.to} onClick={() => setOpen(true)}>
+                    <RouterLink {...linkProps}/>
+                </li>)
             }
             <SocialLinks style={{ alignSelf: 'end' }}/>
+            </MenuItems>
         </HiddenContentStyle>
         
     </Container>
@@ -77,6 +69,17 @@ text-transform: uppercase;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(calc(90vw / 6), 1fr));
 align-items: center;
+`
+
+const MenuItems = styled.ul`
+display: flex;
+justify-content: space-between;
+align-items: center;
+width: 100%;
+list-style: none;
+li {
+
+}
 `
 
 export default TopBar

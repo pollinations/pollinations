@@ -1,13 +1,13 @@
-import { useState } from 'react'
-import styled  from '@emotion/styled'
-
-import Container from '@material-ui/core/Container'
+import styled from '@emotion/styled'
 import Button from '@material-ui/core/Button'
-
-import RouterLink from './molecules/RouterLink'
-import { HorizontalBorder } from './atoms/Borders'
+import Container from '@material-ui/core/Container'
+import { useState } from 'react'
 import { BigTitle } from './atoms/BigTitle'
+import { HorizontalBorder } from './atoms/Borders'
+import RouterLink from './molecules/RouterLink'
 import { SocialLinks } from './Social'
+
+
 
 const MenuLinks = [
   // { children: 'models', to: '/models' },
@@ -18,7 +18,7 @@ const MenuLinks = [
 ]
 
 const TopBar = ({ showNode }) => {
-    const [open, setOpen] = useState(true)
+    const [open, setOpen] = useState(false)
 
     return <Container maxWidth='lg'>
 
@@ -39,7 +39,7 @@ const TopBar = ({ showNode }) => {
             <MenuItems> 
             {
                 MenuLinks
-                .map( linkProps => <li key={linkProps.to} onClick={() => setOpen(true)}>
+                .map( linkProps => <li key={linkProps.to} onClick={() => setOpen(false)}>
                     <RouterLink {...linkProps}/>
                 </li>)
             }

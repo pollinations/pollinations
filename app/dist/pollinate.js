@@ -36227,21 +36227,22 @@ var import_ramda2 = __toModule(require_src7());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output", useIPNS = true) {
+  if (nodeID === "ipns")
+    suffix = "";
   debug6("Creating publisher for", nodeID, suffix);
-  let lastPublishCID = null;
-  let ipnsKeyName = null;
+  let createdIPNSKey = nodeID === "ipns";
   const _publish = async (cid) => {
     const client = await getClient();
-    if (useIPNS && ipnsKeyName === null) {
-      const keyName = nodeID + suffix;
+    const ipnsKeyName = nodeID === "ipns" ? "self" : nodeID + suffix;
+    if (useIPNS && !createdIPNSKey) {
       const keys = await client.key.list();
       debug6("IPNS keys", keys);
-      if (!keys.find(({ name: name5 }) => name5 === keyName)) {
-        const { name: name5 } = await client.key.gen(keyName);
+      if (!keys.find(({ name: name5 }) => name5 === ipnsKeyName)) {
+        const { name: name5 } = await client.key.gen(ipnsKeyName);
         debug6("Generated IPNS key with name", name5);
       } else
         debug6("IPNS key already exists. Reusing");
-      ipnsKeyName = keyName;
+      createdIPNSKey = true;
     }
     debug6("ipnsKeyName", ipnsKeyName);
     await publish(client, nodeID, cid, suffix, ipnsKeyName);
@@ -36276,28 +36277,21 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
   const retryPublish = retryException(client.pubsub.publish);
   debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
-    if (nodeID === "ipns" || ipnsKeyName !== null)
+    if (ipnsKeyName !== null)
       experimentalIPNSPublish(client, rootCID, ipnsKeyName);
-    await retryPublish(nodeID + suffix, rootCID);
+    if (nodeID !== "ipns")
+      await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {
     debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
   }
 }
-var abortPublish = null;
-async function experimentalIPNSPublish(client, rootCID, ipnsKeyName = null) {
-  if (ipnsKeyName === null)
-    ipnsKeyName = "self";
+async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
   debug6("publishing to ipns...", ipnsKeyName, rootCID);
-  if (abortPublish)
-    abortPublish.abort();
-  abortPublish = new import_native_abort_controller12.AbortController();
   await client.name.publish(rootCID, {
-    signal: abortPublish.signal,
     allowOffline: true,
     key: ipnsKeyName
   }).then(() => {
     debug6("published...", rootCID);
-    abortPublish = null;
   }).catch((e) => {
     debug6("exception on publish.", e);
   });
@@ -36330,7 +36324,8 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   })();
   return () => {
     debug6("Unsubscribing from pubsub events from", nodeID, suffix);
-    unsubscribe();
+    if (unsubscribe)
+      unsubscribe();
     closeHeartbeat();
     aborted = true;
   };

@@ -36227,6 +36227,8 @@ var import_ramda2 = __toModule(require_src7());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output", useIPNS = true) {
+  if (nodeID === "ipns")
+    suffix = "";
   debug6("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;
   let ipnsKeyName = null;
@@ -36330,7 +36332,8 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   })();
   return () => {
     debug6("Unsubscribing from pubsub events from", nodeID, suffix);
-    unsubscribe();
+    if (unsubscribe)
+      unsubscribe();
     closeHeartbeat();
     aborted = true;
   };

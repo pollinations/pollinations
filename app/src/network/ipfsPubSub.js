@@ -17,6 +17,9 @@ const HEARTBEAT_FREQUENCY = 12;
 // create a publisher that sends periodic heartbeats as well as contentid updates
 export function publisher(nodeID, suffix = "/output", useIPNS=true) {
 
+    if (nodeID === "ipns")
+        suffix = ""
+        
     debug("Creating publisher for", nodeID, suffix)
 
     let lastPublishCID = null;

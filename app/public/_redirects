@@ -1,6 +1,6 @@
 /ipfs/*/image.png http://ipfs.pollinations.ai/ipfs/:splat 200
-/ipfs/* http://ipfs.pollinations.ai/ipfs/:splat 200
-/ipns/* http://ipfs.pollinations.ai/ipns/:splat 200
+/ipfs/* http://public-ipfs-gateway.pollinations.ai/ipfs/:splat 200
+/ipns/* http://public-ipfs-gateway.pollinations.ai/ipns/:splat 200
 /p/* / 200
 /n/* / 200
 /c/* / 200

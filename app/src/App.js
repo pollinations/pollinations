@@ -7,6 +7,7 @@ import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
 import AppBar from "./components/AppBar"
 import ToolBar from "./components/ToolBar"
+import TopBar from "./components/TopBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
@@ -56,7 +57,9 @@ const Pollinations = () => {
 
     return (<>
         {/* Nav Bar     */}
-        <AppBar />
+        {/* <AppBar /> */}
+        <TopBar node={node} showNode={navigateToNode}/>
+
         {/* Children that get IPFS state */}
         <Container maxWidth='lg'>
             <Routes>

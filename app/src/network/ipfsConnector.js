@@ -13,7 +13,9 @@ import { AUTH, noop, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
-const IPFS_HOST = "https://api.pollinations.ai";
+// Get IPFS_API_ENDPOINT from env
+const IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai"
+
 
 let _client = null;
 
@@ -183,8 +185,9 @@ const ipfsLsCID = async (client, cid) => {
 }
 
 
-const ipfsAdd = async (client, path, content, options = {}) => {
+const ipfsAdd = async (client, path, content, options = { pin: false }) => {
     debug("adding", path, "options", options)
+
     let cid = null
     try {
         // check if content has the async iterator symbol

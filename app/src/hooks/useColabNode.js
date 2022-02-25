@@ -2,6 +2,7 @@ import Debug from "debug";
 import { useCallback, useEffect, useState } from "react";
 import { publisher, subscribeCID } from "../network/ipfsPubSub";
 import colabConnectionManager from "../network/localColabConnection";
+import useLocalStorage from "./useLocalStorage";
 
 
 const debug = Debug("useColabNode");
@@ -12,9 +13,15 @@ const debug = Debug("useColabNode");
 const useColabNode = () => {
 
 
-    const [node, setNode] = useState({ connected: false, publish: NOOP_PUBLISH })
+    const [localStorageNodeID, setLocalStorageNodeID] = useLocalStorage("nodeID", null)
+
+    const [node, setNode] = useState({ connected: false, publish: NOOP_PUBLISH, nodeID: localStorageNodeID })
 
     const updateNode = useCallback(props => {
+        
+        if (props.nodeID && props.nodeID !== localStorageNodeID)
+            setLocalStorageNodeID(props.nodeID)
+
         setNode(node => propsSame(node, props) ? node : ({ ...node, ...props }))
     }, [])
 

@@ -1273,7 +1273,7 @@ var require_abort_controller = __commonJS({
         value: "AbortSignal"
       });
     }
-    var AbortController15 = class {
+    var AbortController16 = class {
       constructor() {
         signals.set(this, createAbortSignal());
       }
@@ -1292,21 +1292,21 @@ var require_abort_controller = __commonJS({
       }
       return signal;
     }
-    Object.defineProperties(AbortController15.prototype, {
+    Object.defineProperties(AbortController16.prototype, {
       signal: { enumerable: true },
       abort: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortController15.prototype, Symbol.toStringTag, {
+      Object.defineProperty(AbortController16.prototype, Symbol.toStringTag, {
         configurable: true,
         value: "AbortController"
       });
     }
-    exports2.AbortController = AbortController15;
+    exports2.AbortController = AbortController16;
     exports2.AbortSignal = AbortSignal;
-    exports2.default = AbortController15;
-    module2.exports = AbortController15;
-    module2.exports.AbortController = module2.exports["default"] = AbortController15;
+    exports2.default = AbortController16;
+    module2.exports = AbortController16;
+    module2.exports.AbortController = module2.exports["default"] = AbortController16;
     module2.exports.AbortSignal = AbortSignal;
   }
 });
@@ -11533,12 +11533,15 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last6 = this.buffer[this.btm];
-        if (last6 === void 0)
+        const last7 = this.buffer[this.btm];
+        if (last7 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last6;
+        return last7;
+      }
+      peek() {
+        return this.buffer[this.btm];
       }
       isEmpty() {
         return this.buffer[this.btm] === void 0;
@@ -11573,6 +11576,9 @@ var require_fast_fifo = __commonJS({
           return this.tail.shift();
         }
         return val;
+      }
+      peek() {
+        return this.tail.peek();
       }
       isEmpty() {
         return this.head.isEmpty();
@@ -12024,12 +12030,12 @@ var require_iso_url = __commonJS({
   }
 });
 
-// node_modules/any-signal/index.js
+// node_modules/ipfs-utils/node_modules/any-signal/index.js
 var require_any_signal = __commonJS({
-  "node_modules/any-signal/index.js"(exports2, module2) {
-    var { AbortController: AbortController15 } = require_src2();
+  "node_modules/ipfs-utils/node_modules/any-signal/index.js"(exports2, module2) {
+    var { AbortController: AbortController16 } = globalThis;
     function anySignal2(signals) {
-      const controller = new AbortController15();
+      const controller = new AbortController16();
       function onAbort() {
         controller.abort();
         for (const signal of signals) {
@@ -12062,7 +12068,6 @@ var require_http = __commonJS({
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
-    var { AbortController: AbortController15 } = require_src2();
     var anySignal2 = require_any_signal();
     var timeout = (promise, ms, abortController) => {
       if (ms === void 0) {
@@ -12125,7 +12130,7 @@ var require_http = __commonJS({
           opts.body = JSON.stringify(opts.json);
           headers.set("content-type", "application/json");
         }
-        const abortController = new AbortController15();
+        const abortController = new AbortController();
         const signal = anySignal2([abortController.signal, opts.signal]);
         const response = await timeout(fetch(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
@@ -12257,8 +12262,8 @@ var require_multiaddr_to_uri = __commonJS({
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last6 = parts[parts.length - 1];
-      if (last6.protocol === "tcp") {
+      const last7 = parts[parts.length - 1];
+      if (last7.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -13707,6 +13712,36 @@ var require_minimal2 = __commonJS({
   }
 });
 
+// node_modules/any-signal/index.js
+var require_any_signal2 = __commonJS({
+  "node_modules/any-signal/index.js"(exports2, module2) {
+    var { AbortController: AbortController16 } = require_src2();
+    function anySignal2(signals) {
+      const controller = new AbortController16();
+      function onAbort() {
+        controller.abort();
+        for (const signal of signals) {
+          if (!signal || !signal.removeEventListener)
+            continue;
+          signal.removeEventListener("abort", onAbort);
+        }
+      }
+      for (const signal of signals) {
+        if (!signal || !signal.addEventListener)
+          continue;
+        if (signal.aborted) {
+          onAbort();
+          break;
+        }
+        signal.addEventListener("abort", onAbort);
+      }
+      return controller.signal;
+    }
+    module2.exports = anySignal2;
+    module2.exports.anySignal = anySignal2;
+  }
+});
+
 // node_modules/it-first/index.js
 var require_it_first = __commonJS({
   "node_modules/it-first/index.js"(exports2, module2) {
@@ -13725,14 +13760,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last6 = async (source) => {
+    var last7 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last6;
+    module2.exports = last7;
   }
 });
 
@@ -16372,8 +16407,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last6 = init.pop();
-      return compose(compose.apply(this, map4(chain, init)), last6);
+      var last7 = init.pop();
+      return compose(compose.apply(this, map4(chain, init)), last7);
     }
     module2.exports = composeK;
   }
@@ -17720,8 +17755,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last6 = /* @__PURE__ */ nth(-1);
-    module2.exports = last6;
+    var last7 = /* @__PURE__ */ nth(-1);
+    module2.exports = last7;
   }
 });
 
@@ -17731,7 +17766,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last6 = require_last();
+    var last7 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -17739,7 +17774,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last6(result), list[idx])) {
+          if (!pred(last7(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -30971,6 +31006,8 @@ var MINOR_UNDEFINED = 23;
 function decodeUndefined(_data, _pos, _minor, options) {
   if (options.allowUndefined === false) {
     throw new Error(`${decodeErrPrefix} undefined values are not supported`);
+  } else if (options.coerceUndefinedToNull === true) {
+    return new Token(Type.null, null, 1);
   }
   return new Token(Type.undefined, void 0, 1);
 }
@@ -33152,7 +33189,7 @@ async function multipartRequest3(source, abortController, headers = {}, boundary
 }
 
 // node_modules/ipfs-http-client/esm/src/lib/abort-signal.js
-var import_any_signal = __toModule(require_any_signal());
+var import_any_signal = __toModule(require_any_signal2());
 function filter(signals) {
   return signals.filter(Boolean);
 }
@@ -35968,6 +36005,15 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
+var toPromise1 = async (asyncGen) => {
+  debug4("getting values of asyncGen");
+  for await (const value of asyncGen) {
+    debug4("Got value", value);
+    return value;
+  }
+  debug4("No value found to convert to Promise");
+  return null;
+};
 var noop = () => null;
 var retryException = (f) => {
   return async (...args) => {
@@ -35987,7 +36033,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = "https://api.pollinations.ai";
+var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -36097,7 +36143,7 @@ var ipfsLsCID = async (client, cid) => {
     console.log(e);
   }
 };
-var ipfsAdd = async (client, path, content, options = {}) => {
+var ipfsAdd = async (client, path, content, options = { pin: false }) => {
   debug5("adding", path, "options", options);
   let cid = null;
   try {
@@ -36177,14 +36223,28 @@ var import_await_sleep2 = __toModule(require_await_sleep());
 var import_debug6 = __toModule(require_src());
 var import_native_abort_controller12 = __toModule(require_src2());
 var import_queueable = __toModule(require_lib5());
+var import_ramda2 = __toModule(require_src7());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
-function publisher(nodeID, suffix = "/output") {
+function publisher(nodeID, suffix = "/output", useIPNS = true) {
   debug6("Creating publisher for", nodeID, suffix);
   let lastPublishCID = null;
+  let ipnsKeyName = null;
   const _publish = async (cid) => {
     const client = await getClient();
-    await publish(client, nodeID, cid, suffix, nodeID);
+    if (useIPNS && ipnsKeyName === null) {
+      const keyName = nodeID + suffix;
+      const keys = await client.key.list();
+      debug6("IPNS keys", keys);
+      if (!keys.find(({ name: name5 }) => name5 === keyName)) {
+        const { name: name5 } = await client.key.gen(keyName);
+        debug6("Generated IPNS key with name", name5);
+      } else
+        debug6("IPNS key already exists. Reusing");
+      ipnsKeyName = keyName;
+    }
+    debug6("ipnsKeyName", ipnsKeyName);
+    await publish(client, nodeID, cid, suffix, ipnsKeyName);
     await (0, import_await_sleep2.default)(100);
     lastPublishCID = cid;
   };
@@ -36212,25 +36272,30 @@ var publishHeartbeat = async (client, suffix, nodeID) => {
     debug6("Exception. Couldn't publish heartbeat. Ignoring...", e.name);
   }
 };
-async function publish(client, nodeID, rootCID, suffix = "/output") {
+async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName = null) {
   const retryPublish = retryException(client.pubsub.publish);
-  debug6("publish pubsub", nodeID + suffix, rootCID);
+  debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
-    if (nodeID === "ipns")
-      await experimentalIPNSPublish(client, rootCID);
-    else
-      await retryPublish(nodeID + suffix, rootCID);
+    if (nodeID === "ipns" || ipnsKeyName !== null)
+      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
+    await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {
     debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
   }
 }
 var abortPublish = null;
-async function experimentalIPNSPublish(client, rootCID) {
-  debug6("publishing to ipns...", rootCID);
+async function experimentalIPNSPublish(client, rootCID, ipnsKeyName = null) {
+  if (ipnsKeyName === null)
+    ipnsKeyName = "self";
+  debug6("publishing to ipns...", ipnsKeyName, rootCID);
   if (abortPublish)
     abortPublish.abort();
   abortPublish = new import_native_abort_controller12.AbortController();
-  await client.name.publish(rootCID, { signal: abortPublish.signal, allowOffline: true }).then(() => {
+  await client.name.publish(rootCID, {
+    signal: abortPublish.signal,
+    allowOffline: true,
+    key: ipnsKeyName
+  }).then(() => {
     debug6("published...", rootCID);
     abortPublish = null;
   }).catch((e) => {
@@ -36255,8 +36320,10 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     }
   };
   (async () => {
+    const keyName = nodeID + suffix;
+    await getInitialStateFromIPNS(keyName, callback);
     while (!aborted) {
-      unsubscribe = subscribeCallback(nodeID + suffix, handleMessage);
+      unsubscribe = subscribeCallback(keyName, handleMessage);
       await (0, import_await_sleep2.default)(5 * 60 * 1e3);
       unsubscribe();
     }
@@ -36267,6 +36334,17 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     closeHeartbeat();
     aborted = true;
   };
+}
+async function getInitialStateFromIPNS(keyName, callback) {
+  const client = await getClient();
+  const keys = await client.key.list();
+  const ipnsKey = keys.find(({ name: name5 }) => name5 === keyName);
+  if (ipnsKey) {
+    const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
+    debug6("got initial CID through IPNS. Calling callback with", cidString);
+    const cid = (0, import_ramda2.last)(cidString.split("/"));
+    callback(cid);
+  }
 }
 function heartbeatChecker(heartbeatStateCallback) {
   let lastHeartbeat = new Date().getTime();
@@ -36344,7 +36422,7 @@ function subscribeCallback(topic, callback) {
 
 // src/network/ipfsState.js
 var import_debug7 = __toModule(require_src());
-var import_ramda2 = __toModule(require_src7());
+var import_ramda3 = __toModule(require_src7());
 var import_path2 = __toModule(require("path"));
 
 // src/utils/logProgressToConsole.js
@@ -36384,7 +36462,7 @@ var _getIPFSState = async (ipfsReader, { cid, type, name: name5, path, rootCID }
     _debug("Got files for", name5, cid, files);
     const filenames = files.map(({ name: name6 }) => name6);
     const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
-    const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
+    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });
     return contentResult;
@@ -36461,13 +36539,13 @@ var import_native_abort_controller13 = __toModule(require_src2());
 var import_debug10 = __toModule(require_src());
 var import_fs3 = __toModule(require("fs"));
 var import_path4 = __toModule(require("path"));
-var import_ramda4 = __toModule(require_src7());
+var import_ramda5 = __toModule(require_src7());
 
 // src/backend/fileWatcher.js
 var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
-var import_ramda3 = __toModule(require_src7());
+var import_ramda4 = __toModule(require_src7());
 var debug9 = (0, import_debug9.default)("fileWatcher");
 async function* chunkedFilewatcher({ path, debounce, signal }) {
   debug9("Local: Watching", path);
@@ -36506,7 +36584,7 @@ async function* chunkedFilewatcher({ path, debounce, signal }) {
   await watcher.close();
   debug9("closed filewatcher");
 }
-var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
+var deduplicateChangedFiles = (changed) => (0, import_ramda4.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
 var fileWatcher_default = chunkedFilewatcher;
 
 // src/backend/ipfs/folderSync.js
@@ -36552,7 +36630,7 @@ async function* folderSync({ writer: writer2, path, debounce, signal }) {
   }
 }
 var groupKey = ({ event, path }) => (0, import_path4.dirname)(path) + "_" + event;
-var groupSyncQueue = (0, import_ramda4.groupWith)((a, b) => groupKey(a) === groupKey(b));
+var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === groupKey(b));
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");

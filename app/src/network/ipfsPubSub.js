@@ -16,32 +16,35 @@ const HEARTBEAT_FREQUENCY = 12;
 
 // create a publisher that sends periodic heartbeats as well as contentid updates
 export function publisher(nodeID, suffix = "/output", useIPNS=true) {
-
+    
+    if (nodeID === "ipns")
+        suffix = ""
+        
     debug("Creating publisher for", nodeID, suffix)
 
-    let lastPublishCID = null;
-
-    let ipnsKeyName = null
-
+    // if the nodeID is "ipns" means we are publishing to the API node and don't need to create a key
+    let createdIPNSKey = nodeID === "ipns"
 
     const _publish = async cid => {
+
         const client = await getClient()
 
-        if (useIPNS && ipnsKeyName === null) {
+        const ipnsKeyName = nodeID === "ipns" ? "self" : nodeID + suffix
 
-            const keyName = nodeID + suffix
+        if (useIPNS && !createdIPNSKey) {
+
             const keys = await client.key.list()
 
             debug("IPNS keys", keys)
 
-            if (!keys.find(({name}) => name === keyName)) {
+            if (!keys.find(({name}) => name === ipnsKeyName)) {
 
-                const { name } = await client.key.gen(keyName)
+                const { name } = await client.key.gen(ipnsKeyName)
                 debug("Generated IPNS key with name", name)
             } else
                 debug("IPNS key already exists. Reusing")
             
-            ipnsKeyName = keyName
+            createdIPNSKey = true
             
         }
 
@@ -99,10 +102,11 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
     debug("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
 
     try {
-        if (nodeID === "ipns" || ipnsKeyName !== null)
-            experimentalIPNSPublish(client, rootCID, ipnsKeyName);
-        
-        await retryPublish(nodeID + suffix, rootCID)
+        if (ipnsKeyName !== null)
+            experimentalIPNSPublish(client, rootCID, ipnsKeyName)
+
+        if (nodeID !== "ipns")
+            await retryPublish(nodeID + suffix, rootCID)
         
     } catch (e) {
         debug("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
@@ -110,26 +114,24 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
 }
 
 
-let abortPublish = null;
+// let abortPublish = null;
 
-async function experimentalIPNSPublish(client, rootCID, ipnsKeyName = null) {
-    if (ipnsKeyName === null)
-        ipnsKeyName = "self"
+async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
 
     debug("publishing to ipns...", ipnsKeyName, rootCID)
 
-    if (abortPublish)
-        abortPublish.abort();
-    abortPublish = new AbortController()
+    // if (abortPublish)
+    //     abortPublish.abort();
+    // abortPublish = new AbortController()
     
     await client.name.publish(rootCID, { 
-        signal: abortPublish.signal, 
+        // signal: abortPublish.signal, 
         allowOffline: true,
         key: ipnsKeyName
     })
         .then(() => {
             debug("published...", rootCID);
-            abortPublish = null;
+            // abortPublish = null;
         })
         .catch(e => {
             debug("exception on publish.", e);

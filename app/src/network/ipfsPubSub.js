@@ -184,7 +184,8 @@ export function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallbac
 
     return () => {
         debug("Unsubscribing from pubsub events from", nodeID, suffix)
-        unsubscribe()
+        if (unsubscribe)
+            unsubscribe()
         closeHeartbeat()
         aborted = true
     }

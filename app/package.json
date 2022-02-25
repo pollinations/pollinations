@@ -6,6 +6,7 @@
   "type": "module",
   "dependencies": {
     "@cto.af/textdecoder": "0.0.0",
+    "@emotion/styled": "^11.8.1",
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.60",
@@ -78,7 +79,7 @@
       "\\.js$": [
         "esbuild-jest",
         {
-          "target": "node15"
+          "target": "node14"
         }
       ]
     }
@@ -94,7 +95,7 @@
     "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node15 --bundle --external:fsevents --external:electron > dist/pin.js && chmod ugoa+x dist/*.js",
+    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pin.js && chmod ugoa+x dist/*.js",
     "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v dist/social-post.js /usr/local/bin/social_post.js && cp -v dist/pin.js /usr/local/bin/pin.js && cp -v scripts/*.sh /usr/local/bin"
   },
   "bin": {

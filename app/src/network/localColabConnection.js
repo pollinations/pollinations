@@ -1,4 +1,5 @@
 import Debug from "debug";
+import throttle from "lodash.throttle";
 import { noop } from "./utils";
 const debug = Debug("localColabConnection");
 
@@ -9,9 +10,9 @@ const colabConnectionManager = async (onNodeInfo = noop) => {
 
     const colabChannel = new BroadcastChannel("colabconnection");
     colabChannel.postMessage("get_nodeid");
-    colabChannel.onmessage = async ({ data }) => {
+    colabChannel.onmessage = throttle(async ({ data }) => {
         onNodeInfo(data);
-    }
+    }, 10000)
 }
 
 export default colabConnectionManager;

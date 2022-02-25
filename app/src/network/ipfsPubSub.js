@@ -114,24 +114,24 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
 }
 
 
-let abortPublish = null;
+// let abortPublish = null;
 
 async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
 
     debug("publishing to ipns...", ipnsKeyName, rootCID)
 
-    if (abortPublish)
-        abortPublish.abort();
-    abortPublish = new AbortController()
+    // if (abortPublish)
+    //     abortPublish.abort();
+    // abortPublish = new AbortController()
     
     await client.name.publish(rootCID, { 
-        signal: abortPublish.signal, 
+        // signal: abortPublish.signal, 
         allowOffline: true,
         key: ipnsKeyName
     })
         .then(() => {
             debug("published...", rootCID);
-            abortPublish = null;
+            // abortPublish = null;
         })
         .catch(e => {
             debug("exception on publish.", e);

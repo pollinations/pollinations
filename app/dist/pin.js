@@ -30085,7 +30085,6 @@ function publisher(nodeID, suffix = "/output", useIPNS = true) {
   if (nodeID === "ipns")
     suffix = "";
   debug6("Creating publisher for", nodeID, suffix);
-  let lastPublishCID = null;
   let createdIPNSKey = nodeID === "ipns";
   const _publish = async (cid) => {
     const client = await getClient();
@@ -30141,19 +30140,13 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
     debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
   }
 }
-var abortPublish = null;
 async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
   debug6("publishing to ipns...", ipnsKeyName, rootCID);
-  if (abortPublish)
-    abortPublish.abort();
-  abortPublish = new import_native_abort_controller12.AbortController();
   await client.name.publish(rootCID, {
-    signal: abortPublish.signal,
     allowOffline: true,
     key: ipnsKeyName
   }).then(() => {
     debug6("published...", rootCID);
-    abortPublish = null;
   }).catch((e) => {
     debug6("exception on publish.", e);
   });

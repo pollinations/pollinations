@@ -55,7 +55,7 @@ export function publisher(nodeID, suffix = "/output", useIPNS=true) {
 
         // for some reason publishing twice in a row causes a socket error. sleep just in case
         await awaitSleep(100)
-        lastPublishCID = cid
+        // lastPublishCID = cid
     }
 
     // const interval = setInterval(() => {

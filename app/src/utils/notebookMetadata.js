@@ -73,7 +73,7 @@ const extractParametersWithComment = (text, i, codeRows) => {
 
 // Extracts the parameters from a Colab parameter row
 const extractParameters = text => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*[\"\'](.*)[\"\']}/);
   if (!match)
     return null;
   const [_text, name, defaultVal, type] = match;
@@ -97,6 +97,9 @@ const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions }
 
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase()
+
+  if (defaultVal == "None")
+    defaultVal = '""'
 
   debug("Parsing JSON:", { defaultVal, enumOptions })
   return [name, {

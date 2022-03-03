@@ -21,6 +21,8 @@ rm -rv $IPFS_ROOT/output/*
 
 echo -n false > $IPFS_ROOT/output/done
 
+date +%s > $IPFS_ROOT/output/time_start
+
 for path in $IPFS_ROOT/input/*; do
     key=$(basename $path)
 
@@ -102,6 +104,9 @@ fi
 echo "🐝: Setting the state to signify the run has ended"
 echo -n true > $IPFS_ROOT/output/done
 rm -v $IPFS_ROOT/input/formAction
+
+date +%s > $IPFS_ROOT/output/time_end
+
 
 
 # -- Done

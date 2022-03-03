@@ -1,7 +1,7 @@
 import Debug from "debug";
 import mature from "../backend/mature.js";
 import readMetadata from "../utils/notebookMetadata.js";
-import { getCoverImage, getCoverVideo, getMedia } from "./media.js";
+import { getCoverImage, getCoverVideo } from "./media.js";
 const debug = Debug("summaryData");
 
 // Get summary data that will be used for SEO, crawlers and social posts
@@ -20,7 +20,7 @@ export function getPostData(ipfs, cid, shortenPost = true) {
 
   // Check if a text was output by the run. Otherwise use the input text
   // In the future we may want to refactor this to be more flexible. E.g. when we have image inputs
-  const possibleText = getMedia(ipfs.output, "text")[0];
+  const possibleText = false; // getMedia(ipfs.output, "text")[0];
   const text = possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
 
   // Replace mature words with ***'s

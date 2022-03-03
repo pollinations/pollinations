@@ -36351,7 +36351,6 @@ function publisher(nodeID, suffix = "/output", useIPNS = true) {
     debug6("ipnsKeyName", ipnsKeyName);
     await publish(client, nodeID, cid, suffix, ipnsKeyName);
     await (0, import_await_sleep2.default)(100);
-    lastPublishCID = cid;
   };
   const sendHeartbeat = async () => {
     const client = await getClient();
@@ -37045,7 +37044,7 @@ var extractParametersWithComment = (text, i, codeRows) => {
   return params;
 };
 var extractParameters = (text) => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s+#@param\s*{type:\s*"(.*)"}/);
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s*#@param\s*{type:\s*[\"\'](.*)[\"\']}/);
   if (!match)
     return null;
   const [_text, name5, defaultVal, type] = match;
@@ -37063,6 +37062,8 @@ var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOpti
   defaultVal = defaultVal.trim();
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase();
+  if (defaultVal == "None")
+    defaultVal = '""';
   debug7("Parsing JSON:", { defaultVal, enumOptions });
   return [name5, {
     enum: enumOptions,
@@ -37116,7 +37117,7 @@ function getPostData(ipfs, cid, shortenPost = true) {
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
   const url = `https://pollinations.ai/p/${cid}/`;
-  const possibleText = getMedia(ipfs.output, "text")[0];
+  const possibleText = false;
   const text = possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
   const maturityFilteredText = mature_default(text);
   const { post, title } = formatPostAndTitle(name5, maturityFilteredText, url, shortenPost);

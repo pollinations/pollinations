@@ -36247,7 +36247,6 @@ function publisher(nodeID, suffix = "/output", useIPNS = true) {
     debug6("ipnsKeyName", ipnsKeyName);
     await publish(client, nodeID, cid, suffix, ipnsKeyName);
     await (0, import_await_sleep2.default)(100);
-    lastPublishCID = cid;
   };
   const sendHeartbeat = async () => {
     const client = await getClient();

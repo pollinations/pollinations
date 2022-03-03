@@ -44,10 +44,6 @@ echo "🐝: Logging GPU info."
 nvidia-smi -L > $IPFS_ROOT/output/gpu
 nvidia-smi --query-gpu=memory.total --format=noheader,nounits,csv >> $IPFS_ROOT/output/gpu_memory
 
-#NVIDIA_SMI_PID=$!
-
-echo "🐝: Setting colab status to 'running'"
-echo -n running > $IPFS_ROOT/output/status
 echo "Starting notebook..." > $IPFS_ROOT/output/log
 
 
@@ -108,11 +104,6 @@ rm -v $IPFS_ROOT/input/formAction
 date +%s > $IPFS_ROOT/output/time_end
 
 
-
-# -- Done
-echo "🐝: Setting colab status to waiting"
-rm -v $IPFS_ROOT/output/status
-echo -n waiting > $IPFS_ROOT/output/status
 
 # -- Sleep to make sure files are uploaded
 echo "🐝: Sleeping 10 seconds"

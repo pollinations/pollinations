@@ -1,11 +1,11 @@
+import { createMuiTheme, ThemeProvider } from '@material-ui/core'
+import CssBaseline from '@material-ui/core/CssBaseline'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.css'
 import App from './App'
+import './index.css'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration'
-import CssBaseline from '@material-ui/core/CssBaseline'
 
-import { createMuiTheme, ThemeProvider } from '@material-ui/core';
 
 const darkTheme = createMuiTheme({
   typography: {
@@ -17,7 +17,7 @@ const darkTheme = createMuiTheme({
       main: 'rgb(255, 236, 249)',
       },
     secondary: {
-      main: 'rgb(62, 0, 156)'
+      main: 'rgb(166, 213, 250)'
     }
   },
 })

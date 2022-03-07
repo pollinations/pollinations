@@ -84,6 +84,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
     
 done
 
+FAILED_STATUS=""
 
 # Write if run succeeded to output/success
 if [[ "$STATUS" == 0  ]]; then
@@ -92,6 +93,7 @@ if [[ "$STATUS" == 0  ]]; then
 else
     echo "🐝: Run failed. Writing 'false' to output/success"
     echo -n false > $IPFS_ROOT/output/success
+    FAILED_STATUS = "failed"
 fi
 
 
@@ -121,7 +123,7 @@ sleep 10
 # --- Pin
 CID=$( tail -n 1 /content/cid )
 echo "🐝: Pinning $CID"
-node /usr/local/bin/pin.js $CID
+node /usr/local/bin/pin.js $CID $FAILED_STATUS
 
 
 # --- Post if run successfull ---

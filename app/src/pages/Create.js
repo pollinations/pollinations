@@ -1,3 +1,4 @@
+import styled from '@emotion/styled';
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
@@ -6,10 +7,8 @@ import Markdown from 'markdown-to-jsx';
 import React, { useCallback, useMemo } from "react";
 import FormView from '../components/Form';
 import { SEO } from "../components/Helmet";
-import MediaViewer from '../components/MediaViewer';
 import NotebookTitle from "../components/NotebookTitle";
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-import styled from '@emotion/styled'
 
 
 
@@ -35,8 +34,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <NotebookTitle name={metadata?.name} />
       <AlertMessage connected={connected}/>
-      
-      <TwoColumns>
+
 
         {/* FORM INPUTS */}
         <div>
@@ -52,10 +50,10 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           />
         </div>      
 
+        <br/><br/><br/>
         {/* NOTEBOOK DESCRIPTION */}
         <NotebookDescription metadata={metadata} />
-        
-      </TwoColumns>
+
     </Box>
 });
 

@@ -37010,8 +37010,10 @@ function readMetadata(notebookJSON) {
   let { metadata, cells } = notebookJSON;
   debug7("cells", cells, "metadata", metadata);
   const { name: name5 } = metadata["colab"];
-  const descriptionCell = cells.find(isMarkdownCell);
+  const descriptionCell = cells.find(isDescriptionCell);
   const parameterCell = cells.find(isParameterCell);
+  const colabLinkCell = cells.find(isColabLinkCell);
+  const colabLink = colabLinkCell ? getColabLinkURL(colabLinkCell) : null;
   debug7("parameter cell", parameterCell);
   const description = descriptionCell ? descriptionCell["source"].join("\n") : null;
   const parameterTexts = parameterCell ? parameterCell["source"] : null;
@@ -37031,7 +37033,8 @@ function readMetadata(notebookJSON) {
     name: name5,
     description,
     numCells: cells.length,
-    primaryInput
+    primaryInput,
+    colabLink
   };
 }
 var extractParametersWithComment = (text, i, codeRows) => {
@@ -37062,8 +37065,6 @@ var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOpti
   defaultVal = defaultVal.trim();
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase();
-  if (defaultVal == "None")
-    defaultVal = '""';
   debug7("Parsing JSON:", { defaultVal, enumOptions });
   return [name5, {
     enum: enumOptions,
@@ -37075,6 +37076,16 @@ var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOpti
 };
 var isParameterCell = (cell) => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
 var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
+var isDescriptionCell = (cell) => {
+  var _a;
+  return isMarkdownCell(cell) && ((_a = cell.metadata) == null ? void 0 : _a.id) !== "view-in-github";
+};
+var isColabLinkCell = (cell) => {
+  var _a;
+  return isMarkdownCell(cell) && ((_a = cell.metadata) == null ? void 0 : _a.id) === "view-in-github";
+};
+var getColabLinkURL = (cell) => getColabLink(cell).match(/.*href=\"([^\"]*)\".*/)[1];
+var getColabLink = (cell) => cell["source"][0];
 var notebookMetadata_default = readMetadata;
 
 // src/data/media.js

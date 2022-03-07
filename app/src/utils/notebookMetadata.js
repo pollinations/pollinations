@@ -13,8 +13,10 @@ function readMetadata(notebookJSON) {
   debug("cells", cells, "metadata", metadata)
   const { name } = metadata["colab"]
 
-  const descriptionCell = cells.find(isMarkdownCell)
+  const descriptionCell = cells.find(isDescriptionCell)
   const parameterCell = cells.find(isParameterCell)
+  const colabLinkCell = cells.find(isColabLinkCell)
+  const colabLink = colabLinkCell ? getColabLinkURL(colabLinkCell) : null
 
   debug("parameter cell", parameterCell)
   const description = descriptionCell ? descriptionCell["source"]
@@ -52,7 +54,8 @@ function readMetadata(notebookJSON) {
     name,
     description,
     numCells: cells.length,
-    primaryInput
+    primaryInput,
+    colabLink
   }
 
 };
@@ -73,7 +76,7 @@ const extractParametersWithComment = (text, i, codeRows) => {
 
 // Extracts the parameters from a Colab parameter row
 const extractParameters = text => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s*#@param\s*{type:\s*[\"\'](.*)[\"\']}/);
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s=\s(.*)\s*#@param\s*{type:\s*[\"\'](.*)[\"\']}/)
   if (!match)
     return null;
   const [_text, name, defaultVal, type] = match;
@@ -98,9 +101,6 @@ const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions }
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase()
 
-  if (defaultVal == "None")
-    defaultVal = '""'
-
   debug("Parsing JSON:", { defaultVal, enumOptions })
   return [name, {
     enum: enumOptions, 
@@ -113,13 +113,23 @@ const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions }
 }
 
 // finds the first cell that contains code and the string #@param
-const isParameterCell = cell => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
+const isParameterCell = cell => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param")
 
 // finds the first cell of type markdown
-const isMarkdownCell = cell => cell["cell_type"] === "markdown";
+const isMarkdownCell = cell => cell["cell_type"] === "markdown"
+
+const isDescriptionCell = cell => isMarkdownCell(cell) && cell.metadata?.id !== "view-in-github"
+
+const isColabLinkCell = cell => isMarkdownCell(cell) && cell.metadata?.id === "view-in-github"
 
 
-export default readMetadata;
+// extract the url from link string
+const getColabLinkURL = cell => getColabLink(cell).match(/.*href=\"([^\"]*)\".*/)[1]
+
+const getColabLink = cell => cell["source"][0] 
+
+
+export default readMetadata
 
 
 // for backward compatibility we check if the notebook.ipynb is at / or at /input

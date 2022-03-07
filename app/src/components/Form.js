@@ -1,4 +1,4 @@
-import { Box } from "@material-ui/core";
+import { Box, Link } from "@material-ui/core";
 import Button from '@material-ui/core/Button';
 import Form from "@rjsf/material-ui";
 import Debug from "debug";
@@ -13,6 +13,7 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
 
     debug("metadata", metadata)
 
+    const colabLink = metadata?.colabLink
     // some variables for conditionally rendering the form parts
 
     const [inProgress, setInProgress] = useState(false)
@@ -70,6 +71,8 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
             }
 
             <HelpModal />
+
+          {colabLink && <Link href={colabLink} target="_blank">[ OPEN IN COLAB ]</Link> }
 
         </Box>
     </Form>

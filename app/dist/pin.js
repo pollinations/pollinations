@@ -1954,11 +1954,11 @@ var require_cid = __commonJS({
       configurable: false
     };
     var version2 = "0.0.0-dev";
-    var deprecate2 = (range, message) => {
+    var deprecate2 = (range, message2) => {
       if (range.test(version2)) {
-        console.warn(message);
+        console.warn(message2);
       } else {
-        throw new Error(message);
+        throw new Error(message2);
       }
     };
     var IS_CID_DEPRECATION2 = `CID.isCID(v) is deprecated and will be removed in the next major release.
@@ -3085,15 +3085,15 @@ var require_error = __commonJS({
   "node_modules/ipfs-utils/src/http/error.js"(exports2) {
     "use strict";
     var TimeoutError = class extends Error {
-      constructor(message = "Request timed out") {
-        super(message);
+      constructor(message2 = "Request timed out") {
+        super(message2);
         this.name = "TimeoutError";
       }
     };
     exports2.TimeoutError = TimeoutError;
     var AbortError = class extends Error {
-      constructor(message = "The operation was aborted.") {
-        super(message);
+      constructor(message2 = "The operation was aborted.") {
+        super(message2);
         this.name = "AbortError";
       }
     };
@@ -6916,18 +6916,18 @@ var require_lib2 = __commonJS({
       ERR_CONTENT_DECODING_FAILED: "Z_DATA_ERROR",
       ERR_CONTENT_DECODING_INIT_FAILED: "Z_DATA_ERROR"
     };
-    function FetchError(message, type, systemError) {
-      Error.call(this, message);
+    function FetchError(message2, type, systemError) {
+      Error.call(this, message2);
       const regex = /^.*net::(.*)/;
-      if (regex.test(message)) {
-        let errorCode = regex.exec(message)[1];
+      if (regex.test(message2)) {
+        let errorCode = regex.exec(message2)[1];
         if (Object.prototype.hasOwnProperty.call(netErrorMap, errorCode))
           errorCode = netErrorMap[errorCode];
         systemError = {
           code: errorCode
         };
       }
-      this.message = message;
+      this.message = message2;
       this.type = type;
       if (systemError) {
         this.code = this.errno = systemError.code;
@@ -9632,9 +9632,9 @@ var require_lib4 = __commonJS({
       enumerable: false,
       configurable: true
     });
-    function FetchError(message, type, systemError) {
-      Error.call(this, message);
-      this.message = message;
+    function FetchError(message2, type, systemError) {
+      Error.call(this, message2);
+      this.message = message2;
       this.type = type;
       if (systemError) {
         this.code = this.errno = systemError.code;
@@ -10383,10 +10383,10 @@ var require_lib4 = __commonJS({
         agent
       });
     }
-    function AbortError(message) {
-      Error.call(this, message);
+    function AbortError(message2) {
+      Error.call(this, message2);
       this.type = "aborted";
-      this.message = message;
+      this.message = message2;
       Error.captureStackTrace(this, this.constructor);
     }
     AbortError.prototype = Object.create(Error.prototype);
@@ -12254,11 +12254,11 @@ var require_minimal = __commonJS({
       return str.charAt(0).toLowerCase() + str.substring(1);
     };
     function newError(name5) {
-      function CustomError(message, properties) {
+      function CustomError(message2, properties) {
         if (!(this instanceof CustomError))
-          return new CustomError(message, properties);
+          return new CustomError(message2, properties);
         Object.defineProperty(this, "message", { get: function() {
-          return message;
+          return message2;
         } });
         if (Error.captureStackTrace)
           Error.captureStackTrace(this, CustomError);
@@ -22167,8 +22167,8 @@ var require_parse = __commonJS({
       }
       return c2;
     }
-    function syntaxError(message) {
-      const err = new SyntaxError(message);
+    function syntaxError(message2) {
+      const err = new SyntaxError(message2);
       err.lineNumber = line;
       err.columnNumber = column;
       return err;
@@ -23336,11 +23336,11 @@ var hidden = {
   configurable: false
 };
 var version = "0.0.0-dev";
-var deprecate = (range, message) => {
+var deprecate = (range, message2) => {
   if (range.test(version)) {
-    console.warn(message);
+    console.warn(message2);
   } else {
-    throw new Error(message);
+    throw new Error(message2);
   }
 };
 var IS_CID_DEPRECATION = `CID.isCID(v) is deprecated and will be removed in the next major release.
@@ -27608,9 +27608,9 @@ var createFindProvs = configure((api) => {
       }, options)),
       headers: options.headers
     });
-    for await (const message of res.ndjson()) {
-      if (message.Type === Provider && message.Responses) {
-        for (const { ID, Addrs } of message.Responses) {
+    for await (const message2 of res.ndjson()) {
+      if (message2.Type === Provider && message2.Responses) {
+        for (const { ID, Addrs } of message2.Responses) {
           yield {
             id: ID,
             addrs: (Addrs || []).map((a) => new import_multiaddr9.Multiaddr(a))
@@ -27641,9 +27641,9 @@ var createGet4 = configure((api) => {
       }, options)),
       headers: options.headers
     });
-    for await (const message of res.ndjson()) {
-      if (message.Type === Value) {
-        return fromString3(message.Extra, "base64pad");
+    for await (const message2 of res.ndjson()) {
+      if (message2.Type === Value) {
+        return fromString3(message2.Extra, "base64pad");
       }
     }
     throw new Error("not found");
@@ -27663,17 +27663,17 @@ var createProvide = configure((api) => {
       }, options)),
       headers: options.headers
     });
-    for await (let message of res.ndjson()) {
-      message = objectToCamel(message);
-      if (message.responses) {
-        message.responses = message.responses.map(({ ID, Addrs }) => ({
+    for await (let message2 of res.ndjson()) {
+      message2 = objectToCamel(message2);
+      if (message2.responses) {
+        message2.responses = message2.responses.map(({ ID, Addrs }) => ({
           id: ID,
           addrs: (Addrs || []).map((a) => new import_multiaddr10.Multiaddr(a))
         }));
       } else {
-        message.responses = [];
+        message2.responses = [];
       }
-      yield message;
+      yield message2;
     }
   }
   return provide;
@@ -27692,15 +27692,15 @@ var createPut3 = configure((api) => {
         arg: toString3(key)
       }, options))
     }, await multipartRequest3([value], controller, options.headers)));
-    for await (let message of res.ndjson()) {
-      message = objectToCamel(message);
-      if (message.responses) {
-        message.responses = message.responses.map(({ ID, Addrs }) => ({
+    for await (let message2 of res.ndjson()) {
+      message2 = objectToCamel(message2);
+      if (message2.responses) {
+        message2.responses = message2.responses.map(({ ID, Addrs }) => ({
           id: ID,
           addrs: (Addrs || []).map((a) => new import_multiaddr11.Multiaddr(a))
         }));
       }
-      yield message;
+      yield message2;
     }
   }
   return put;
@@ -27717,13 +27717,13 @@ var createQuery = configure((api) => {
       }, options)),
       headers: options.headers
     });
-    for await (let message of res.ndjson()) {
-      message = objectToCamel(message);
-      message.responses = (message.responses || []).map(({ ID, Addrs }) => ({
+    for await (let message2 of res.ndjson()) {
+      message2 = objectToCamel(message2);
+      message2.responses = (message2.responses || []).map(({ ID, Addrs }) => ({
         id: ID,
         addrs: (Addrs || []).map((a) => new import_multiaddr12.Multiaddr(a))
       }));
-      yield message;
+      yield message2;
     }
   }
   return query;
@@ -30160,11 +30160,11 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
   let unsubscribe = null;
   let aborted = false;
-  const handleMessage = (message) => {
-    if (message === "HEARTBEAT") {
+  const handleMessage = (message2) => {
+    if (message2 === "HEARTBEAT") {
       gotHeartbeat();
     } else {
-      callback(message);
+      callback(message2);
     }
   };
   (async () => {
@@ -30237,8 +30237,8 @@ function subscribeCallback(topic, callback) {
       if (abort.signal.aborted) {
         console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
       } else {
-        const message = new TextDecoder().decode(data);
-        callback(message);
+        const message2 = new TextDecoder().decode(data);
+        callback(message2);
       }
     };
     const doSub = async () => {
@@ -30387,13 +30387,13 @@ async function processFile({ path, cid }, rootPath, { get }) {
 
 // src/backend/pinning-cli.js
 var PUBSUB_TOPIC = "done_pollen";
-if (process.argv[2]) {
-  const { publish: publish2, close } = publisher(PUBSUB_TOPIC, "");
-  async function run() {
-    await publish2(process.argv[2]);
-    close();
-  }
-  run();
+var FAILED_PUBSUB_TOPIC = "failed_pollen";
+var message = process.argv[2];
+var failed = process.argv[3] === "failed";
+if (message) {
+  publishMessage(PUBSUB_TOPIC, message);
+  if (failed)
+    publishMessage(FAILED_PUBSUB_TOPIC, message);
 } else {
   (async () => {
     const { pin } = writer();
@@ -30408,4 +30408,12 @@ if (process.argv[2]) {
     }
     console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and pinning`);
   })();
+}
+function publishMessage(topic, message2) {
+  const { publish: publish2, close } = publisher(topic, "");
+  async function run() {
+    await publish2(message2);
+    close();
+  }
+  run();
 }

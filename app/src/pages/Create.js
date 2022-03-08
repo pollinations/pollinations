@@ -64,7 +64,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           <Typography variant="h5" gutterBottom>
           Details
           </Typography>
-          <NotebookInfo noImg description={metadata.description}/>
+          <NotebookInfo noImg description={metadata?.description}/>
         </div>
           
     </Box>

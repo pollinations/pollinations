@@ -3,9 +3,9 @@ import Markdown from "markdown-to-jsx"
 
 const NotebookInfo = ({ description, noImg }) => {
 
-    if (noImg) return <Markdown options={MarkDownOptions}>
-        {description}
-    </Markdown>
+    if (!description) return <></>
+
+    if (noImg) return <Markdown options={MarkDownOptions} children={description}/>
 
     return <Markdown children={description}/>
 }

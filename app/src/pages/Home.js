@@ -107,10 +107,14 @@ const HeroSection = props => <Box paddingTop={3}>
 // Component
 
 const NotebookCard = ({ notebook }) => {
+  
   let test = compiler(notebook.description, { wrapper: null })
 
-  const { category, name, path, description } = notebook
-
+  let { category, name, path, description } = notebook
+  
+  // remove credits etc (they are separated by a horizontal rule)
+  description = description.split("---")[0]
+  
   return <Box>
     <Card style={CardContainerStyle}>
 

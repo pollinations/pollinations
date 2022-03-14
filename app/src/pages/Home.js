@@ -6,7 +6,6 @@ import CardHeader from '@material-ui/core/CardHeader'
 import Typography from '@material-ui/core/Typography'
 import Alert from "@material-ui/lab/Alert"
 import Debug from "debug"
-import Markdown, { compiler } from "markdown-to-jsx"
 import { useMemo } from "react"
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import RouterLink from "../components/molecules/RouterLink"
@@ -110,8 +109,11 @@ const HeroSection = props => <Box paddingTop={3}>
 
 const NotebookCard = ({ notebook }) => {
 
-  const { category, name, path, description } = notebook
-
+  let { category, name, path, description } = notebook
+  
+  // remove credits etc (they are separated by a horizontal rule)
+  description = description.split("---")[0]
+  
   return <Box>
     <Card style={CardContainerStyle}>
 

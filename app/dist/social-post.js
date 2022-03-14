@@ -37065,6 +37065,8 @@ var mapToJSONFormField = ({ name: name5, defaultVal, type, description, enumOpti
   defaultVal = defaultVal.trim();
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase();
+  if (defaultVal == "None")
+    defaultVal = '""';
   debug7("Parsing JSON:", { defaultVal, enumOptions });
   return [name5, {
     enum: enumOptions,

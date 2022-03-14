@@ -56,12 +56,14 @@
     "react-use": "^17.3.2",
     "react-usestateref": "^1.0.8",
     "readline": "^1.3.0",
+    "readline-async-generator": "^1.0.0",
     "robot3": "^0.2.19",
     "sass": "^1.42.0",
     "social-post-api": "^1.0.19",
     "throttle-debounce": "^3.0.1",
     "tree-kill": "^1.2.2",
     "web-vitals": "^1.1.2",
+    "webhook-discord": "^3.7.8",
     "workbox-background-sync": "^6.1.5",
     "workbox-broadcast-update": "^6.1.5",
     "workbox-cacheable-response": "^6.1.5",
@@ -95,8 +97,8 @@
     "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
-    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pin.js && chmod ugoa+x dist/*.js",
-    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v dist/social-post.js /usr/local/bin/social_post.js && cp -v dist/pin.js /usr/local/bin/pin.js && cp -v scripts/*.sh /usr/local/bin"
+    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pin.js&& esbuild src/backend/discord-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/discord-post.js && chmod ugoa+x dist/*.js",
+    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v dist/social-post.js /usr/local/bin/social_post.js && cp -v dist/pin.js /usr/local/bin/pin.js && cp -v dist/discord-post.js /usr/local/bin/discord-post.js && cp -v scripts/*.sh /usr/local/bin"
   },
   "bin": {
     "pollinate": "./src/backend/pollinate-cli.js"

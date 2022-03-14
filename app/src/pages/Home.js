@@ -6,10 +6,11 @@ import CardHeader from '@material-ui/core/CardHeader'
 import Typography from '@material-ui/core/Typography'
 import Alert from "@material-ui/lab/Alert"
 import Debug from "debug"
-import Markdown, { compiler } from "markdown-to-jsx"
 import { useMemo } from "react"
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import RouterLink from "../components/molecules/RouterLink"
+import NotebookImage from '../components/organisms/markdownParsers/NotebookImage'
+import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo'
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import { CardContainerStyle } from "./styles/card"
@@ -107,8 +108,6 @@ const HeroSection = props => <Box paddingTop={3}>
 // Component
 
 const NotebookCard = ({ notebook }) => {
-  
-  let test = compiler(notebook.description, { wrapper: null })
 
   let { category, name, path, description } = notebook
   
@@ -122,16 +121,10 @@ const NotebookCard = ({ notebook }) => {
         subheader={<CardTitle children={name?.slice(2)} to={path} variant='h4' />}
         title={<CardTitle children={category?.slice(2)} to={path} variant='h6' />} />
 
-      <img src={
-        test[0]?.props?.src ?
-          test[0]?.props?.src
-          : test[0]?.props?.children[0]?.props?.src}
-        style={{ width: '100%' }} />
-
+      <NotebookImage metadata={notebook} style={{width: '100%'}}/>
+      
       <CardContent>
-        <Markdown options={MarkDownOptions}>
-          {description}
-        </Markdown>
+        <NotebookInfo description={description} noImg/>
       </CardContent>
 
     </Card>
@@ -146,12 +139,3 @@ const CardTitle = ({ to, children, variant }) => <>
   </Typography>
 </>
 
-// surprise, it's a div instead!
-const gambiarraImg = ({ children, ...props }) => (
-  <div />
-)
-const MarkDownOptions = {
-  overrides: {
-    img: { component: gambiarraImg }
-  }
-}

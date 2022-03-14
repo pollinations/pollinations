@@ -24,7 +24,7 @@
     "event-iterator": "^2.0.0",
     "file-watch-iterator": "^0.7.0",
     "fs-extra": "^10.0.0",
-    "ipfs-http-client": "^54.0.2",
+    "ipfs-http-client": "^56.0.1",
     "is-ipfs": "^6.0.2",
     "is-port-reachable": "^3.0.0",
     "it-all": "^1.0.5",

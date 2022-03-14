@@ -5,7 +5,6 @@ import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
-import AppBar from "./components/AppBar"
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
 import useColabNode from "./hooks/useColabNode"
@@ -83,7 +82,7 @@ const Pollinations = () => {
 }
 
 const HomeWithData = () => {
-    const ipfs = useIPFS("/ipns/k51qzi5uqu5dk56owjc245w1z3i5kgzn1rq6ly6n152iw00px6zx2vv4uzkkh9");
+    const ipfs = useIPFS("/ipns/k51qzi5uqu5dh357wyr6q0eb96xdsgtm2q25go6ob13gahxwobevzbx1prl0nk");
 
     debug("home ipfs", ipfs);
 

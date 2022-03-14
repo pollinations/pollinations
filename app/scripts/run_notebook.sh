@@ -93,7 +93,7 @@ if [[ "$STATUS" == 0  ]]; then
 else
     echo "🐝: Run failed. Writing 'false' to output/success"
     echo -n false > $IPFS_ROOT/output/success
-    FAILED_STATUS = "failed"
+    FAILED_STATUS="failed"
 fi
 
 

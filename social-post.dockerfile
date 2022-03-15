@@ -1,4 +1,4 @@
-FROM node:14
+FROM node:16
 RUN ["mkdir","app"]
 ADD ./app /app
 WORKDIR /app

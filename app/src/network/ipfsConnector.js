@@ -8,9 +8,6 @@ import { basename, dirname, join } from "path";
 import { last } from "ramda";
 import { AUTH, noop, toPromise } from "./utils.js";
 
-
-
-
 const debug = Debug("ipfsConnector")
 
 // Get IPFS_API_ENDPOINT from env
@@ -146,9 +143,9 @@ const ipfsCp = async (client, cid, ipfsPath) => {
 
 const ipfsPin = async (client, cid) => {
     debug("Pinning to remote nft.storage", cid)
-    //await client.pin.remote.add(cid, {recursive: true, service: "nft.storage" })
+    await client.pin.remote.add(CID.parse(cid), {recursive: true, service: "nft_storage", background: true  })
     debug("Pinning to pollinations", cid)
-    return await client.pin.add(cid, { recursive: true })
+    return await client.pin.add(CID.parse(cid), { recursive: true })
 }
 
 export const getWebURL = (cid, name = null) => {
@@ -200,7 +197,7 @@ const ipfsAdd = async (client, path, content, options = { pin: false }) => {
         cid = stringCID(await client.add(content, options))
         // }
     } catch (e) {
-        debug("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?")
+        debug("could not add file", path, "because of", e.message, ". Maybe the content was deleted before it could be added?")
         return null
     }
 
@@ -290,5 +287,14 @@ async function getCID(client, path = "/") {
 const ipfsResolve = async (client, path) =>
     stringCID(last(await toPromise(client.name.resolve(path, { nocache: true }))));
 
+
+const isCID = (cid) => {
+    try {
+        CID.parse(cid)
+        return true
+    } catch (e) {
+        return false
+    }
+}
 
 // test();

@@ -8,13 +8,10 @@ import { basename, dirname, join } from "path";
 import { last } from "ramda";
 import { AUTH, noop, toPromise } from "./utils.js";
 
-
-
-
 const debug = Debug("ipfsConnector")
 
 // Get IPFS_API_ENDPOINT from env
-const IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai"
+const IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://public-ipfs-api.pollinations.ai"
 
 
 let _client = null;
@@ -140,22 +137,24 @@ const getIPFSDaemonURL = async () => {
 
 
 const ipfsCp = async (client, cid, ipfsPath) => {
-    debug("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
-    return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
+    debug("Copying from ", `/ipfs/${cid}`, "to", ipfsPath)
+    return await client.files.cp(`/ipfs/${cid}`, ipfsPath)
 }
 
 const ipfsPin = async (client, cid) => {
-    debug("Pinning", cid);
-    return await client.pin.add(cid, { recursive: true });
+    debug("Pinning to remote nft.storage", cid)
+    await client.pin.remote.add(CID.parse(cid), {recursive: true, service: "nft_storage", background: true  })
+    debug("Pinning to pollinations", cid)
+    return await client.pin.add(CID.parse(cid), { recursive: true })
 }
 
 export const getWebURL = (cid, name = null) => {
     const filename = name ? `?filename=${name}` : '';
-    return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`
+    return `https://public-ipfs-gateway.pollinations.ai/ipfs/${cid}${filename}`
 };
 
 export const getIPNSURL = (id) => {
-    return `https://ipfs.pollinations.ai/ipns/${id}`;
+    return `https://public-ipfs-gateway.pollinations.ai/ipns/${id}`;
 };
 
 const stripSlashIPFS = cidString => {
@@ -198,7 +197,7 @@ const ipfsAdd = async (client, path, content, options = { pin: false }) => {
         cid = stringCID(await client.add(content, options))
         // }
     } catch (e) {
-        debug("could not add file", path, "becaus of", e.message, ". Maybe the content was deleted before it could be added?")
+        debug("could not add file", path, "because of", e.message, ". Maybe the content was deleted before it could be added?")
         return null
     }
 
@@ -288,5 +287,14 @@ async function getCID(client, path = "/") {
 const ipfsResolve = async (client, path) =>
     stringCID(last(await toPromise(client.name.resolve(path, { nocache: true }))));
 
+
+const isCID = (cid) => {
+    try {
+        CID.parse(cid)
+        return true
+    } catch (e) {
+        return false
+    }
+}
 
 // test();

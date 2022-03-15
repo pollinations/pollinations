@@ -29,5 +29,5 @@ if (process.argv[2]) {
         for await (const cid of receiveStream) {
             console.log("Received", cid);
         }
-    })
+    })();
 }

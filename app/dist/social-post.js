@@ -45606,11 +45606,12 @@ if (process.argv[2]) {
       console.log("done");
     }
   }, "");
-  console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`)(async function run() {
+  console.log(`listening to publish of "${PUBSUB_TOPIC}" topic and posting to social`);
+  (async function run() {
     for await (const cid of receiveStream) {
       console.log("Received", cid);
     }
-  });
+  })();
 }
 /**
  * @license

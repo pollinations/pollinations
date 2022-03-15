@@ -34888,11 +34888,14 @@ var require_social_post_api = __commonJS({
       analyticsPost(data) {
         return doPost2("analytics/post", data, this.headers);
       }
+      analyticsSocial(data) {
+        return doPost2("analytics/social", data, this.headers);
+      }
       user(params) {
         return doGet("user", this.headers, params);
       }
       upload(data) {
-        const { file, fileName, description } = data;
+        const { file } = data;
         if (!file) {
           return ERROR_MSG;
         }
@@ -44619,7 +44622,7 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
     debug6("exception on publish.", e);
   });
 }
-var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 3e3, 5e3);
+var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 2e3);
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);

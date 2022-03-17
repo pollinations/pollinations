@@ -51,11 +51,11 @@ const TopBar = ({showNode}) => {
                 {/*If current user is not null show the login button otherwise show the logout button. */}
                 {currentUser ?
                     <Button onClick={() => signOut()}>
-                        Logout
+                        [ Logout ]
                     </Button>
                     :
                     <Button onClick={() => setLoginOpen(true)}>
-                        Login
+                        [ Login ]
                     </Button>
                 }
                 <Button onClick={() => setOpen(state => !state)}>

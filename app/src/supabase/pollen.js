@@ -18,6 +18,18 @@ export function createPollen(input, cid, ipns) {
     })
 }
 
+export function updatePollen(id, input, cid, ipns) {
+    return supabase.from("baseapp_pollen").update([{
+        "id": id,
+        "cid": cid,
+        "ipns": ipns,
+        "input": input,
+        "modified": new Date()
+    }]).match({"id": id}).then(response => {
+        return response.data
+    })
+}
+
 export function deletePollen(id) {
     return supabase.from("baseapp_pollen").delete().match({"id": id}).then(response => {
         return response.data

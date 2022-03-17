@@ -32,3 +32,4 @@ The GPU ran out of memory. If you are generating images try reducing the resolut
 const noGPUText = `##### No GPU found
 
 Pollinations.AI requires a GPU on Google Colab to run. It seems we cannot find the GPU. Try clicking *Runtime -> Change Runtime Type* and selecting GPU.`
+

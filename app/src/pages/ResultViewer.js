@@ -4,11 +4,11 @@ import Typography from "@material-ui/core/Typography";
 import Debug from "debug";
 import { memo, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { FailureViewer } from '../components/FailureViewer';
 import { SEO } from "../components/Helmet";
 import { IpfsLog } from "../components/Logs";
 import MediaViewer from "../components/MediaViewer";
 import BigPreview from "../components/molecules/BigPreview";
-import MarkDownContent from '../components/molecules/MarkDownContent';
 import { NotebookProgress } from "../components/NotebookProgress";
 import NotebookTitle from "../components/NotebookTitle";
 import { mediaToDisplay } from "../data/media";
@@ -64,7 +64,7 @@ export default memo(function ResultViewer({ ipfs }) {
     </NotebookTitle>
 
     <NotebookProgress output={ipfs?.output} metadata={metadata} />
-    {success ? <Preview {...{ first, primaryInput, ipfs }} /> : <MarkDownContent id={"failure"} contentID={contentID} />}
+    {success ? <Preview {...{ first, primaryInput, ipfs }} /> : <FailureViewer contentID={contentID} ipfs={ipfs} />}
 
     <div style={{ width: '100%' }}>
       <IpfsLog ipfs={ipfs} contentID={contentID} />

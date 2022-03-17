@@ -3,6 +3,7 @@ import CssBaseline from '@material-ui/core/CssBaseline'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
+import { AuthProvider } from './hooks/useAuth'
 import './index.css'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 
@@ -24,8 +25,10 @@ const darkTheme = createMuiTheme({
 
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
-     <CssBaseline />
-     <App />
+      <AuthProvider>
+        <CssBaseline />
+        <App />
+      </AuthProvider>
     </ThemeProvider>,
   document.getElementById('root')
 );

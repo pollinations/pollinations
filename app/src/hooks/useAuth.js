@@ -1,4 +1,5 @@
 import * as React from 'react'
+import supabase from '../supabase/client'
 import { getCurrentUser, handleSocialLogin, signOut } from '../supabase/user'
 
 const AuthContext = React.createContext()
@@ -19,15 +20,22 @@ function AuthProvider({ children }) {
     
 
     React.useEffect(() => {
-        async function getUser(){
-            const user = await getCurrentUser()
-            if (user) return setUser(user)
-            return setUser(null)
+        // Check active sessions and sets the user
+        const session = supabase.auth.session()
+    
+        setUser(session?.user ?? null)
+    
+        // Listen for changes on auth state (logged in, signed out, etc.)
+        const { data: listener } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            setUser(session?.user ?? null)
+          }
+        )
+    
+        return () => {
+          listener?.unsubscribe()
         }
-        setTimeout(() => {
-            getUser()
-        }, 100);
-    },[])
+      }, [])
 
     async function handleSignOut() {
         await signOut()

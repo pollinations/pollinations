@@ -16,7 +16,6 @@ const failureHelpers = {
     outOfGPUMemory: log => log.includes("RuntimeError: CUDA out of memory.") ? outOfGPUMemoryText : null,
     generalException: log => {
         const lastLine =  last(log.split("\n").filter(line => line.trim() !== ""))
-        console.log("lastLine", lastLine)
         if (lastLine.startsWith("Exception: "))
             return lastLine.replace("Exception: ", "#####")+"\n&nbsp;\n"
         return null

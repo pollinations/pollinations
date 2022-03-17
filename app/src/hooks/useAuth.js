@@ -12,12 +12,9 @@ const loginProviders = [
     "facebook",
 ]
 
-
 function AuthProvider({ children }) {
 
     const [ user, setUser ] = React.useState(null)
-
-    
 
     React.useEffect(() => {
         // Check active sessions and sets the user
@@ -58,7 +55,7 @@ function useAuth() {
   const context = React.useContext(AuthContext)
 
   if (context === undefined) {
-    throw new Error('useAuth must be used within a CountProvider')
+    throw new Error('useAuth must be used within a AuthProvider')
   }
   return context
 }

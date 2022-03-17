@@ -4,6 +4,10 @@
   "version": "0.4.8",
   "private": false,
   "type": "module",
+  "engines": {
+    "node": ">=15.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "@cto.af/textdecoder": "0.0.0",
     "@emotion/styled": "^11.8.1",
@@ -60,7 +64,7 @@
     "readline-async-generator": "^1.0.0",
     "robot3": "^0.2.19",
     "sass": "^1.42.0",
-    "social-post-api": "^1.0.19",
+    "social-post-api": "^1.0.20",
     "throttle-debounce": "^3.0.1",
     "tree-kill": "^1.2.2",
     "web-vitals": "^1.1.2",

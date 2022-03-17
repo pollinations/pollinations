@@ -5,16 +5,20 @@ import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
+
+// Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
+
+// Hooks
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSWrite"
 import useLocalPollens from "./hooks/useLocalPollens"
 import usePollenDone from "./hooks/usePollenDone"
+
+// Pages
 import About from "./pages/About"
-import BlankMarkdown from "./pages/BlankMarkdown"
-import ChristmasSpecial from "./pages/ChristmaSpecial"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
 import Help from "./pages/Help"
@@ -65,13 +69,13 @@ const Pollinations = () => {
                 <Route exact path='feed' element={<Feed />} />
                 <Route exact path='help' element={<Help/>}/>
                 <Route exact path='about' element={<About/>}/>
-                <Route exact path='blankMarkdown' element={<BlankMarkdown/>}/>
+
+                <Route path='c/:selected' element={<Home />} />
                 <Route exact path='localpollens' element={<LocalPollens node={node}/>}/>
-                <Route exact path='christmas' element={<ChristmasSpecial/>}/>
+
 
                 <Route path='n/:nodeID' element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />} />
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} overrideContentID={overrideContentID} />} />
-                <Route path='c/:selected' element={<HomeWithData />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
             <More />
@@ -81,13 +85,6 @@ const Pollinations = () => {
     </>)
 }
 
-const HomeWithData = () => {
-    const ipfs = useIPFS("/ipns/k51qzi5uqu5dh357wyr6q0eb96xdsgtm2q25go6ob13gahxwobevzbx1prl0nk");
-
-    debug("home ipfs", ipfs);
-
-    return <Home ipfs={ipfs} />
-}
 
 const NodeWithData = ({ node, overrideNodeID }) => {
     const ipfs = useIPFS(node.contentID)

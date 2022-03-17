@@ -3,8 +3,11 @@
 
 ### Failed Pollen
 
+---
 
-&nbsp;
+
+{failureMessage}
+
 
 
 The Hitchhiker's Guide to the Galaxy recommends: **Don't Panic!**. 

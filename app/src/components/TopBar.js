@@ -6,7 +6,7 @@ import {BigTitle} from './atoms/BigTitle'
 import {HorizontalBorder} from './atoms/Borders'
 import RouterLink from './molecules/RouterLink'
 import {SocialLinks} from './Social'
-import {getCurrentUser, handleSocialLogin, signOut} from "../supabase/user.js";
+
 import {
     Avatar,
     Dialog, DialogActions,
@@ -15,6 +15,8 @@ import {
     ListItem,
     ListItemAvatar, ListItemText
 } from "@material-ui/core";
+import { useAuth } from '../hooks/useAuth'
+import { composeP } from 'ramda'
 
 
 const MenuLinks = [
@@ -25,19 +27,17 @@ const MenuLinks = [
     {children: 'my pollens', to: '/localpollens'},
 ]
 
-const TopBar = ({showNode}) => {
+const TopBar = ({ showNode }) => {
     const [open, setOpen] = useState(false)
     const [loginOpen, setLoginOpen] = useState(false)
 
-    const loginProviders = [
-        "discord",
-        "google",
-        "github",
-        "twitter",
-        "facebook",
-    ]
+    const {
+        user,
+        loginProviders, 
+        handleSignOut,
+        handleSignIn } = useAuth()
 
-    const currentUser = getCurrentUser();
+        console.log(user)
 
     return <Container maxWidth='lg'>
 
@@ -49,14 +49,16 @@ const TopBar = ({showNode}) => {
             </BigTitle>
             <span>
                 {/*If current user is not null show the login button otherwise show the logout button. */}
-                {currentUser ?
-                    <Button onClick={() => signOut()}>
-                        [ Logout ]
-                    </Button>
-                    :
+                {(user === null) ?
                     <Button onClick={() => setLoginOpen(true)}>
-                        [ Login ]
-                    </Button>
+                       [ Login ]
+                    </Button>   
+                    :
+                    <Button onClick={handleSignOut}>
+                        [ Logout ]
+                    </Button>   
+                    
+                    
                 }
                 <Button onClick={() => setOpen(state => !state)}>
                 [ Menu ]
@@ -84,8 +86,8 @@ const TopBar = ({showNode}) => {
         <Dialog open={loginOpen}>
             <DialogTitle>Login</DialogTitle>
             <List sx={{pt: 0}}>
-                {loginProviders.map((provider) => (
-                    <ListItem button onClick={() => handleSocialLogin(provider)} key={provider}>
+                {loginProviders?.map((provider) => (
+                    <ListItem button onClick={() => handleSignIn(provider)} key={provider}>
                         <ListItemAvatar>
                             <Avatar src={`/socials/${provider}.png`}/>
                         </ListItemAvatar>
@@ -98,6 +100,15 @@ const TopBar = ({showNode}) => {
             </DialogActions>
         </Dialog>
     </Container>
+}
+
+const LogOutButton = ({ signOut, getCurrentUser }) => {
+
+ 
+
+    return <>
+        
+    </>
 }
 
 const VisibleContentStyle = styled.div`

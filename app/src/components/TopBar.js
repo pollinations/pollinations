@@ -55,9 +55,8 @@ const TopBar = () => {
                 <Button onClick={() => setOpen(state => !state)}>
                     [ Menu ]
                 </Button>
-                {
-                    user !== null &&  <LoggedUser user={user}/>
-                }
+
+                { user !== null &&  <LoggedUser user={user}/> }
             </div>
         </VisibleContentStyle>
 
@@ -66,10 +65,10 @@ const TopBar = () => {
         <HiddenContentStyle open={open}>
             <MenuItems>
                 {
-                    MenuLinks
-                        .map(linkProps => <li key={linkProps.to} onClick={() => setOpen(false)}>
-                            <RouterLink {...linkProps}/>
-                        </li>)
+                    MenuLinks.map(linkProps => 
+                    <li key={linkProps.to} onClick={() => setOpen(false)}>
+                        <RouterLink {...linkProps}/>
+                    </li>)
                 }
                 <SocialLinks style={{alignSelf: 'end'}}/>
             </MenuItems>
@@ -78,20 +77,23 @@ const TopBar = () => {
 
         <Dialog open={loginOpen}>
             <DialogTitle>Login</DialogTitle>
-            <List sx={{pt: 0}}>
+            <List style={{minWidth: 300}}>
                 {loginProviders?.map((provider) => (
                     <ListItem button onClick={() => handleSignIn(provider)} key={provider}>
                         <ListItemAvatar>
-                            <Avatar src={`/socials/${provider}.png`}/>
+                            <Avatar src={`/socials/${provider}_white.png`}/>
                         </ListItemAvatar>
                         <ListItemText primary={provider}/>
                     </ListItem>
                 ))}
             </List>
             <DialogActions>
-                <Button onClick={() => setLoginOpen(state => !state)}>Close</Button>
+                <Button onClick={() => setLoginOpen(state => !state)}> [ Close ]</Button>
             </DialogActions>
         </Dialog>
+
+
+
     </Container>
 }
 
@@ -105,7 +107,7 @@ const LoggedUser = ({ user }) => {
  
     return <>
         <Avatar onClick={e => setAnchorEl(e.currentTarget)} src={user?.user_metadata?.avatar_url}/>
-        <Menu  anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} style={{marginTop: '2em'}}>
+        <Menu  anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} style={{ marginTop: '2em' }}>
 
             <MenuItem onClick={() => {
                 setAnchorEl(null)

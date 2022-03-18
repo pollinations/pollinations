@@ -8,15 +8,15 @@ import RouterLink from './molecules/RouterLink'
 import {SocialLinks} from './Social'
 
 import {
-    Avatar,
+    Avatar, MenuItem,
     Dialog, DialogActions,
     DialogTitle,
     List,
     ListItem,
-    ListItemAvatar, ListItemText
+    ListItemAvatar, ListItemText, Menu, 
 } from "@material-ui/core";
 import { useAuth } from '../hooks/useAuth'
-import { composeP } from 'ramda'
+import { useNavigate } from 'react-router-dom'
 
 
 const MenuLinks = [
@@ -27,17 +27,15 @@ const MenuLinks = [
     {children: 'my pollens', to: '/localpollens'},
 ]
 
-const TopBar = ({ showNode }) => {
+const TopBar = () => {
     const [open, setOpen] = useState(false)
     const [loginOpen, setLoginOpen] = useState(false)
 
     const {
         user,
         loginProviders, 
-        handleSignOut,
         handleSignIn } = useAuth()
 
-        console.log(user)
 
     return <Container maxWidth='lg'>
 
@@ -47,25 +45,20 @@ const TopBar = ({ showNode }) => {
                     pollinations.ai
                 </RouterLink>
             </BigTitle>
-            <span>
-                {/*If current user is not null show the login button otherwise show the logout button. */}
-                {(user === null) ?
+            <div style={{display: 'flex', gap: '1em'}}>
+                {
+                    user === null &&
                     <Button onClick={() => setLoginOpen(true)}>
                        [ Login ]
                     </Button>   
-                    :
-                    <Button onClick={handleSignOut}>
-                        [ Logout ]
-                    </Button>   
-                    
-                    
                 }
                 <Button onClick={() => setOpen(state => !state)}>
-                [ Menu ]
-            </Button>
-            </span>
-
-
+                    [ Menu ]
+                </Button>
+                {
+                    user !== null &&  <LoggedUser user={user}/>
+                }
+            </div>
         </VisibleContentStyle>
 
         <HorizontalBorder/>
@@ -102,14 +95,37 @@ const TopBar = ({ showNode }) => {
     </Container>
 }
 
-const LogOutButton = ({ signOut, getCurrentUser }) => {
 
+const LoggedUser = ({ user }) => {
+    const { handleSignOut } = useAuth()
+    const navigate = useNavigate()
+    
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
  
-
     return <>
-        
+        <Avatar onClick={e => setAnchorEl(e.currentTarget)} src={user?.user_metadata?.avatar_url}/>
+        <Menu  anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} style={{marginTop: '2em'}}>
+
+            <MenuItem onClick={() => {
+                setAnchorEl(null)
+                navigate("profile")
+            }} > Profile </MenuItem>
+
+            <MenuItem onClick={() => {
+                setAnchorEl(null)
+                navigate("localpollens")
+            }}> My Pollens </MenuItem>
+
+            <MenuItem onClick={() => {
+                setAnchorEl(null)
+                handleSignOut()
+            }}> Logout </MenuItem>
+
+      </Menu>
     </>
 }
+
 
 const VisibleContentStyle = styled.div`
   display: flex;

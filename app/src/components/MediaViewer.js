@@ -9,6 +9,9 @@ import { getWebURL } from "../network/ipfsConnector";
 
 export const MediaViewer =  ({ filename, content, type }) => {
   const Viewer = TypeMaps[type]
+  if (!Viewer)
+    return null
+  debug("MediaViewer", filename, content, type, Viewer)
   return <Viewer filename={filename} content={content} />
 }
 
@@ -20,7 +23,8 @@ const ImageDisplay = ({filename, content}) => <img alt={filename} src={content} 
 
 
 
-function ImageViewer({output}) {
+function MediaListView({output}) {
+  
     let images = getMedia(output);
     debug("images", images)
     if (!images || images.length === 0)
@@ -52,12 +56,13 @@ function ImageViewer({output}) {
 }
 
 
-function AudioViewer(filename, url) {
-  return <audio controls src={url} />
+function AudioViewer({ content }) {
+  debug("AudioViewer", content)
+  return <audio controls src={content} />
 }
 
-function MarkdownViewer(filename, markdown) {
-  return( <Paper variant="outlined"><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper>);
+function MarkdownViewer({content, filename}) {
+  return( <Paper variant="outlined"><Box m={2}><Markdown key={filename}>{content}</Markdown></Box></Paper>);
   
 }
 
@@ -72,7 +77,7 @@ export default ({output, contentID}) => {
           target="_blank">
             Open Folder
       </Button>]</h3>
-      <ImageViewer output={output} />
+      <MediaListView output={output} />
     </Box>
 }
 

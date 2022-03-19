@@ -7,19 +7,19 @@ import { getMedia } from "../data/media";
 import { getWebURL } from "../network/ipfsConnector";
 
 
-export const MediaViewer =  ({ filename, content, type }) => {
+export const MediaViewer =  ({ filename, content, type, style }) => {
   const Viewer = TypeMaps[type]
   if (!Viewer)
     return null
-  debug("MediaViewer", filename, content, type, Viewer)
-  return <Viewer filename={filename} content={content} />
+  debug("MediaViewer", filename, content, type)
+  return <Viewer filename={filename} content={content} style={style} />
 }
 
 
 const debug = Debug("ImageViewer");
 
-const VideoDisplay = ({filename, content}) => <video alt={filename} controls src={content} width="100%" height="auto" preload="metadata" />
-const ImageDisplay = ({filename, content}) => <img alt={filename} src={content} width="100%" height="auto"/>
+const VideoDisplay = ({filename, content, style}) => <video alt={filename} controls src={content} width="100%" height="auto" preload="metadata" style={style}/>
+const ImageDisplay = ({filename, content, style}) => <img alt={filename} src={content} width="100%" height="auto" style={style}/>
 
 
 
@@ -56,13 +56,13 @@ function MediaListView({output}) {
 }
 
 
-function AudioViewer({ content }) {
+function AudioViewer({ content, style }) {
   debug("AudioViewer", content)
-  return <audio controls src={content} />
+  return <audio controls src={content} style={style}/>
 }
 
 function MarkdownViewer({content, filename}) {
-  return( <Paper variant="outlined"><Box m={2}><Markdown key={filename}>{content}</Markdown></Box></Paper>);
+  return( <Paper variant="outlined" style={style}><Box m={2}><Markdown key={filename}>{content}</Markdown></Box></Paper>);
   
 }
 

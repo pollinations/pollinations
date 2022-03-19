@@ -13,13 +13,15 @@ import NotebookImage from '../components/organisms/markdownParsers/NotebookImage
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo'
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
+import useIPFS from '../hooks/useIPFS'
 import { CardContainerStyle } from "./styles/card"
 
 
 const debug = Debug("home");
 
-export default function Home({ ipfs }) {
+export default function Home() {
 
+  const ipfs = useIPFS("/ipns/k51qzi5uqu5dh357wyr6q0eb96xdsgtm2q25go6ob13gahxwobevzbx1prl0nk");
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
 

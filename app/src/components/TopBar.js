@@ -7,16 +7,8 @@ import {HorizontalBorder} from './atoms/Borders'
 import RouterLink from './molecules/RouterLink'
 import {SocialLinks} from './Social'
 
-import {
-    Avatar, MenuItem,
-    Dialog, DialogActions,
-    DialogTitle,
-    List,
-    ListItem,
-    ListItemAvatar, ListItemText, Menu, 
-} from "@material-ui/core";
 import { useAuth } from '../hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
+
 import LoginDialog from './organisms/LoginDialog'
 import LoggedUser from './organisms/LoggedUser'
 

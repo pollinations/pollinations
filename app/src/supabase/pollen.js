@@ -10,7 +10,8 @@ export function createPollen(input, cid, ipns) {
     return supabase.from("baseapp_pollen").insert([{
         "cid": cid,
         "ipns": ipns,
-        "input": input,
+        "text_prompt": text_prompt,
+        "model_name": model_name,
         "created": new Date(),
         "modified": new Date()
     }]).then(response => {
@@ -18,12 +19,13 @@ export function createPollen(input, cid, ipns) {
     })
 }
 
-export function updatePollen(id, input, cid, ipns) {
+export function updatePollen(id, text_prompt, model, cid, ipns) {
     return supabase.from("baseapp_pollen").update([{
         "id": id,
         "cid": cid,
+        "text_prompt": text_prompt,
+        "model_name": model_name,
         "ipns": ipns,
-        "input": input,
         "modified": new Date()
     }]).match({"id": id}).then(response => {
         return response.data

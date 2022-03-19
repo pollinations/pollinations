@@ -109,10 +109,10 @@ const LoggedUser = ({ user }) => {
         <Avatar onClick={e => setAnchorEl(e.currentTarget)} src={user?.user_metadata?.avatar_url}/>
         <Menu  anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} style={{ marginTop: '2em' }}>
 
-            <MenuItem onClick={() => {
-                setAnchorEl(null)
-                navigate("profile")
-            }} > Profile </MenuItem>
+            {/*<MenuItem onClick={() => {*/}
+            {/*    setAnchorEl(null)*/}
+            {/*    navigate("profile")*/}
+            {/*}} > Profile </MenuItem>*/}
 
             <MenuItem onClick={() => {
                 setAnchorEl(null)

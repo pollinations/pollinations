@@ -38372,7 +38372,7 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
     debug6("exception on publish.", e);
   });
 }
-var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 3e3, 5e3);
+var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 2e3);
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);

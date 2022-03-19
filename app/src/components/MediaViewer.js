@@ -1,21 +1,28 @@
-import React from "react";
-import { GridList, GridListTile, Button, Paper, Box } from "@material-ui/core"
-import Markdown from 'markdown-to-jsx';
+import { Box, Button, GridList, GridListTile, Paper } from "@material-ui/core";
 import Debug from "debug";
-
-// Icons
-
-import { getWebURL } from "../network/ipfsConnector";
+import Markdown from 'markdown-to-jsx';
+import React from "react";
 import { getMedia } from "../data/media";
+// Icons
+import { getWebURL } from "../network/ipfsConnector";
+
+
+export const MediaViewer =  ({ filename, content, type }) => {
+  const Viewer = TypeMaps[type]
+  return <Viewer filename={filename} content={content} />
+}
+
 
 const debug = Debug("ImageViewer");
 
-const MediaDisplay = ({filename, ...props}) => 
-  filename.toLowerCase().endsWith(".mp4") ? <video alt={filename} controls {...props} /> : <img alt={filename} {...props} />;
+const VideoDisplay = ({filename, content}) => <video alt={filename} controls src={content} width="100%" height="auto" preload="metadata" />
+const ImageDisplay = ({filename, content}) => <img alt={filename} src={content} width="100%" height="auto"/>
+
+
 
 function ImageViewer({output}) {
     let images = getMedia(output);
-
+    debug("images", images)
     if (!images || images.length === 0)
       return null;
     
@@ -33,15 +40,10 @@ function ImageViewer({output}) {
 
     return (
         <Box paddingTop='2em'>
-          {/* <div style={{ maxWidth:'500px', margin: '20px auto' }}>
-            <MediaDisplay src={firstURL} filename={firstFilename} style={{ width: '100%'}} />
-            {firstFilename}
-          </div> */}
-            
           <GridList cellHeight={200} cols={4}
-            children={images.map(([filename, url]) => (
+            children={images.map(([filename, url, type]) => (
               <GridListTile key={filename} cols={1}>
-                <MediaDisplay src={url} filename={filename} style={{ margin:"5px", height:"100%" }} />
+                <Box m={2} style={{width:"100%"}}><MediaViewer content={url} filename={filename} type={type} style={{ margin:"5px", height:"100%" }} /></Box>
               </GridListTile>
             ))}/>
 
@@ -50,34 +52,36 @@ function ImageViewer({output}) {
 }
 
 
-function AudioViewer({output}) {
-  let audio = getMedia(output,"audio");
-
-  if (!audio || audio.length === 0)
-    return null;
-  
-  return audio.map(([filename, url]) => (<audio controls src={url} />));
+function AudioViewer(filename, url) {
+  return <audio controls src={url} />
 }
 
-function MarkdownViewer({output}) {
-  let documents = getMedia(output,"text");
-
-  if (!documents || documents.length === 0)
-    return null;
-  
-  return documents.map((([filename, markdown]) => (<Box m={2}><Paper variant="outlined"><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper></Box>)));
+function MarkdownViewer(filename, markdown) {
+  return( <Paper variant="outlined"><Box m={2}><Markdown key={filename}>{markdown}</Markdown></Box></Paper>);
   
 }
 
-export default ({output, contentID}) => <Box paddingTop='2em'>
-    <h3>Output [<Button
-        href={getWebURL(`${contentID}/output`)} 
-        target="_blank">
-          Open Folder
-    </Button>]</h3>
-    <ImageViewer output={output}  />
-    <MarkdownViewer output={output} />
-    <AudioViewer output={output} />
-  </Box>
+export default ({output, contentID}) => { 
+  const media = getMedia(output)
+
+  if (!media || media.length === 0)
+    return null
+  return <Box paddingTop='2em'>
+      <h3>Output [<Button
+          href={getWebURL(`${contentID}/output`)} 
+          target="_blank">
+            Open Folder
+      </Button>]</h3>
+      <ImageViewer output={output} />
+    </Box>
+}
 
 const every_nth = (arr, nth) => arr.filter((e, i) => i % nth === nth - 1)
+
+
+const TypeMaps = {
+  "image": ImageDisplay,
+  "video": VideoDisplay,
+  "audio": AudioViewer,
+  "text": MarkdownViewer
+}

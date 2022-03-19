@@ -5,18 +5,15 @@ import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
-
 // Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
-
 // Hooks
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
-import useIPFSWrite from "./hooks/useIPFSWrite"
+import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import useLocalPollens from "./hooks/useLocalPollens"
 import usePollenDone from "./hooks/usePollenDone"
-
 // Pages
 import About from "./pages/About"
 import Creator from "./pages/Create"
@@ -25,6 +22,9 @@ import Help from "./pages/Help"
 import Home from "./pages/Home"
 import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
+
+
+
 
 
 

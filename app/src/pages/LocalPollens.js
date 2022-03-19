@@ -1,17 +1,22 @@
 import { Box, Button, Card, CardHeader } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
+import Debug from "debug"
+import { values } from "ramda"
+import { MediaViewer } from "../components/MediaViewer"
 import RouterLink from "../components/molecules/RouterLink"
 import { mediaToDisplay } from "../data/media"
-import useIPFS from "../hooks/useIPFS"
 import useLocalPollens from "../hooks/useLocalPollens"
 import { displayContentID } from "../network/utils"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
 import { CardContainerStyle } from "./styles/card"
 
+const debug = Debug("localpollens")
+
 const LocalPollens = ({ node }) => {
 
     const { pollens, popCID } = useLocalPollens(node)
 
+    debug("Localpollens", pollens)
     if (!pollens) 
         return <> </>
 
@@ -22,28 +27,27 @@ const LocalPollens = ({ node }) => {
 
         <Box margin='2em 0' display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {
-                pollens
-                .sort( (a,b) => new Date(b.date) - new Date(a.date) )
-                .map(pollen => <Pollen key={pollen.cid} {...pollen} popCID={popCID}  />)
+                values(pollens)
+                //.sort( (a,b) => new Date(b.date) - new Date(a.date) )
+                .map(pollen => <Pollen key={pollen[".cid"]} pollen={pollen} popCID={popCID}  />)
             }
         </Box>
 
     </>
 }
 
-const Pollen = ({date, cid, popCID}) => {
-    console.log(date, cid, popCID)
+const Pollen = ({ pollen, popCID }) => {
+    // console.log(date, cid, popCID)
 
-    const ipfs = useIPFS(cid)
-
-    if (!ipfs?.output)
+    const cid = pollen[".cid"]
+    if (!pollen?.output)
         return null
 
-    const { first } = mediaToDisplay(ipfs.output)
-    const metadata = getNotebookMetadata(ipfs)
+    const { first } = mediaToDisplay(pollen.output)
+    const metadata = getNotebookMetadata(pollen)
 
     const primaryInputField = metadata?.primaryInput
-    const primaryInput = ipfs?.input?.[primaryInputField]
+    const primaryInput = pollen?.input?.[primaryInputField]
 
     return <Box>
         <Card style={CardContainerStyle}>
@@ -56,13 +60,15 @@ const Pollen = ({date, cid, popCID}) => {
                 </Typography>
             </Box>
             { // catch other formats
-                <video controls loop
-                    src={first.url} style={{
-                        width: '100%', marginTop: '2em'
-                    }} />
+                // <video controls loop
+                //     src={first.url} style={{
+                //         width: '100%', marginTop: '2em'
+                //     }} />
             }
+            <MediaViewer filename={first.filename} content={first.url} type={first.type} />
+            
             <Box minWidth='100%' display='flex' justifyContent='space-around' padding='1em 0'>
-                <Button onClick={()=>popCID(cid)}>
+                <Button onClick={()=> popCID(cid)}>
                     [ Remove Pollen ]
                 </Button>
                 {/* <Button disabled>

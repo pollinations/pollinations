@@ -139,7 +139,7 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
         });
 }
 
-const throttledExperimentalIPNSPublish = debounce(experimentalIPNSPublish, 3000, 5000)
+const throttledExperimentalIPNSPublish = debounce(experimentalIPNSPublish, 2000)
 
 // Generate an async iterable by subscribing to CIDs from a specific node id and suffix
 export function subscribeGenerator(nodeID, suffix = "/input") {

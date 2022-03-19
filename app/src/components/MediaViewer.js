@@ -58,7 +58,7 @@ function MediaListView({output}) {
 
 function AudioViewer({ content, style }) {
   debug("AudioViewer", content)
-  return <audio controls src={content} style={style}/>
+  return <audio controls src={content} style={{...style, height: null}}/>
 }
 
 function MarkdownViewer({content, filename}) {

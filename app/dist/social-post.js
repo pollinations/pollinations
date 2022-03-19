@@ -45330,12 +45330,18 @@ var notebookMetadata_default = readMetadata;
 var import_debug8 = __toModule(require_src());
 var import_ramda3 = __toModule(require_src3());
 var debug8 = (0, import_debug8.default)("media");
-var _mediaTypeMap = {
-  "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
+var _mediaTypeMapWithoutAll = {
   "video": [".mp4", ".webm"],
   "image": [".jpg", ".jpeg", ".png"],
   "text": [".md", ".txt"],
   "audio": [".mp3", ".wav", ".ogg", ".flac"]
+};
+var _mediaTypeMap = __spreadProps(__spreadValues({}, _mediaTypeMapWithoutAll), {
+  "all": [...Object.values(_mediaTypeMapWithoutAll)].flat()
+});
+var getFileType = (filename) => {
+  const extension = (0, import_ramda3.last)(filename.split("."));
+  return Object.entries(_mediaTypeMap).find(([type, exts]) => (0, import_ramda3.any)((ext) => ext.endsWith(extension), exts))[0];
 };
 var getCoverImage = (output) => {
   const image = output && getMedia(output, "image")[0];
@@ -45347,7 +45353,7 @@ function getMedia(output, type = "all") {
   const extensions = _mediaTypeMap[type];
   const filterByExtensions = (filename) => (0, import_ramda3.any)(import_ramda3.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
   const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
-  const media = mediaFilenames.map((filename) => [filename, output[filename]]);
+  const media = mediaFilenames.map((filename) => [filename, output[filename], getFileType(filename)]);
   media.reverse();
   return media;
 }

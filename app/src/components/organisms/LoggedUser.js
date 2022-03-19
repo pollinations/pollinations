@@ -1,4 +1,5 @@
-import * as React from 'react'
+import { Avatar, Menu, MenuItem } from '@material-ui/core';
+import * as React from 'react';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 

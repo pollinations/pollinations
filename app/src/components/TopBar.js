@@ -17,6 +17,8 @@ import {
 } from "@material-ui/core";
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from 'react-router-dom'
+import LoginDialog from './organisms/LoginDialog'
+import LoggedUser from './organisms/LoggedUser'
 
 
 const MenuLinks = [
@@ -29,15 +31,12 @@ const MenuLinks = [
 
 const TopBar = () => {
     const [open, setOpen] = useState(false)
-    const [loginOpen, setLoginOpen] = useState(false)
+    const isLoginDialogOpen = useState(false)
 
-    const {
-        user,
-        loginProviders, 
-        handleSignIn } = useAuth()
-
+    const { user } = useAuth()
 
     return <Container maxWidth='lg'>
+        
 
         <VisibleContentStyle>
             <BigTitle>
@@ -48,7 +47,7 @@ const TopBar = () => {
             <div style={{display: 'flex', gap: '1em'}}>
                 {
                     user === null &&
-                    <Button onClick={() => setLoginOpen(true)}>
+                    <Button onClick={() => isLoginDialogOpen[1](true)}>
                        [ Login ]
                     </Button>   
                 }
@@ -74,59 +73,13 @@ const TopBar = () => {
             </MenuItems>
         </HiddenContentStyle>
 
-
-        <Dialog open={loginOpen}>
-            <DialogTitle>Login</DialogTitle>
-            <List style={{minWidth: 300}}>
-                {loginProviders?.map((provider) => (
-                    <ListItem button onClick={() => handleSignIn(provider)} key={provider}>
-                        <ListItemAvatar>
-                            <Avatar src={`/socials/${provider}_white.png`}/>
-                        </ListItemAvatar>
-                        <ListItemText primary={provider}/>
-                    </ListItem>
-                ))}
-            </List>
-            <DialogActions>
-                <Button onClick={() => setLoginOpen(state => !state)}> [ Close ]</Button>
-            </DialogActions>
-        </Dialog>
-
-
+        <LoginDialog state={isLoginDialogOpen} />
 
     </Container>
 }
 
 
-const LoggedUser = ({ user }) => {
-    const { handleSignOut } = useAuth()
-    const navigate = useNavigate()
-    
-    const [anchorEl, setAnchorEl] = useState(null);
-    const open = Boolean(anchorEl);
- 
-    return <>
-        <Avatar onClick={e => setAnchorEl(e.currentTarget)} src={user?.user_metadata?.avatar_url}/>
-        <Menu  anchorEl={anchorEl} open={open} onClose={() => setAnchorEl(null)} style={{ marginTop: '2em' }}>
 
-            <MenuItem onClick={() => {
-                setAnchorEl(null)
-                navigate("profile")
-            }} > Profile </MenuItem>
-
-            <MenuItem onClick={() => {
-                setAnchorEl(null)
-                navigate("localpollens")
-            }}> My Pollens </MenuItem>
-
-            <MenuItem onClick={() => {
-                setAnchorEl(null)
-                handleSignOut()
-            }}> Logout </MenuItem>
-
-      </Menu>
-    </>
-}
 
 
 const VisibleContentStyle = styled.div`

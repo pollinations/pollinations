@@ -13275,8 +13275,13 @@ var require_lib5 = __commonJS({
     AbortError.prototype = Object.create(Error.prototype);
     AbortError.prototype.constructor = AbortError;
     AbortError.prototype.name = "AbortError";
+    var URL$1 = Url.URL || whatwgUrl.URL;
     var PassThrough$1 = Stream.PassThrough;
-    var resolve_url = Url.resolve;
+    var isDomainOrSubdomain = function isDomainOrSubdomain2(destination, original) {
+      const orig = new URL$1(original).hostname;
+      const dest = new URL$1(destination).hostname;
+      return orig === dest || orig[orig.length - dest.length - 1] === "." && orig.endsWith(dest);
+    };
     function fetch(url, opts) {
       if (!fetch.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
@@ -13334,7 +13339,16 @@ var require_lib5 = __commonJS({
           const headers = createHeadersLenient(res.headers);
           if (fetch.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
-            const locationURL = location2 === null ? null : resolve_url(request.url, location2);
+            let locationURL = null;
+            try {
+              locationURL = location2 === null ? null : new URL$1(location2, request.url).toString();
+            } catch (err) {
+              if (request.redirect !== "manual") {
+                reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location2}`, "invalid-redirect"));
+                finalize();
+                return;
+              }
+            }
             switch (request.redirect) {
               case "error":
                 reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, "no-redirect"));
@@ -13370,6 +13384,11 @@ var require_lib5 = __commonJS({
                   timeout: request.timeout,
                   size: request.size
                 };
+                if (!isDomainOrSubdomain(request.url, locationURL)) {
+                  for (const name6 of ["authorization", "www-authenticate", "cookie", "cookie2"]) {
+                    requestOpts.headers.delete(name6);
+                  }
+                }
                 if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
                   reject(new FetchError("Cannot follow redirect with body being a readable stream", "unsupported-redirect"));
                   finalize();
@@ -38863,56 +38882,43 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
-  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
   const returnRootCID = (func) => async (path = "/", ...args) => {
+    const mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}_${Math.round(Math.random() * 1e3)}`;
     const client = await getClient();
-    await initializedFolder;
+    let initializedFolder = await initializeMFSFolder(client, initialRootCID, mfsRoot);
     debug5("join", mfsRoot, path);
     const tmpPath = (0, import_path.join)(mfsRoot, path);
     await func(client, tmpPath, ...args);
-    return await getCID(client, mfsRoot);
+    const rootCID = await getCID(client, mfsRoot);
+    debug5("closing input writer. Deleting", mfsRoot);
+    await ipfsRm(await getClient(), mfsRoot);
+    initialRootCID = rootCID;
+    return rootCID;
   };
   const methods = {
     add: returnRootCID(ipfsAdd),
     addFile: returnRootCID(ipfsAddFile),
+    cp: returnRootCID(ipfsCp),
     rm: returnRootCID(ipfsRm),
     mkDir: returnRootCID(ipfsMkdir),
     cid: returnRootCID(noop),
-    close: async () => {
-      debug5("closing input writer. Deleting", mfsRoot);
-      await initializedFolder;
-      await ipfsRm(await getClient(), mfsRoot);
-    },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
   return methods;
 }
-async function initializeMFSFolder(client, initialRootCID) {
+async function initializeMFSFolder(client, initialRootCID, mfsRoot) {
   const getRootCID = async () => await getCID(client, mfsRoot);
-  let rootCid = await getRootCID();
-  debug5("existing root CID", rootCid);
-  if (rootCid === null) {
-    if (initialRootCID === null) {
-      debug5("Creating mfs root since it did not exist.");
-      await ipfsMkdir(client, mfsRoot);
-    } else {
-      debug5("Copying supplied rootCID", initialRootCID, "to MFS root.");
-      await ipfsCp(client, initialRootCID, mfsRoot);
-    }
-    rootCid = await getRootCID();
-    debug5("new root CID", rootCid);
+  if (initialRootCID === null) {
+    debug5("Creating mfs root since it did not exist.", mfsRoot);
+    await ipfsMkdir(client, mfsRoot);
   } else {
-    debug5("Checking if supplied cid is the same as root cid");
-    if (rootCid !== initialRootCID) {
-      debug5("CIDs are different. Removing existing  MFS root");
-      await ipfsRm(client, mfsRoot);
-      debug5("Copying", rootCid, "to mfs root.");
-      await ipfsCp(client, rootCid, mfsRoot);
-    }
+    debug5("Copying supplied rootCID", initialRootCID, "to MFS root.");
+    await ipfsCp(client, mfsRoot, initialRootCID);
   }
-  return await getRootCID();
+  const rootCid = await getRootCID();
+  debug5("new root CID", rootCid);
+  return rootCid;
 }
 var localIPFSAvailable = async () => {
   return false;
@@ -38925,7 +38931,7 @@ var getIPFSDaemonURL = async () => {
   debug5("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
-var ipfsCp = async (client, cid, ipfsPath) => {
+var ipfsCp = async (client, ipfsPath, cid) => {
   debug5("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
 };
@@ -39448,7 +39454,6 @@ var sender = ({ path, debounce, ipns, once, nodeid }) => {
     debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
-    await ipfsWriter.close();
     await closePublisher();
     await closePollenPublisher();
     debug11("closed all");

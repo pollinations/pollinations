@@ -19743,8 +19743,13 @@ var require_lib6 = __commonJS({
     AbortError.prototype = Object.create(Error.prototype);
     AbortError.prototype.constructor = AbortError;
     AbortError.prototype.name = "AbortError";
+    var URL$1 = Url.URL || whatwgUrl.URL;
     var PassThrough$1 = Stream.PassThrough;
-    var resolve_url = Url.resolve;
+    var isDomainOrSubdomain = function isDomainOrSubdomain2(destination, original) {
+      const orig = new URL$1(original).hostname;
+      const dest = new URL$1(destination).hostname;
+      return orig === dest || orig[orig.length - dest.length - 1] === "." && orig.endsWith(dest);
+    };
     function fetch2(url, opts) {
       if (!fetch2.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
@@ -19802,7 +19807,16 @@ var require_lib6 = __commonJS({
           const headers = createHeadersLenient(res.headers);
           if (fetch2.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
-            const locationURL = location2 === null ? null : resolve_url(request.url, location2);
+            let locationURL = null;
+            try {
+              locationURL = location2 === null ? null : new URL$1(location2, request.url).toString();
+            } catch (err) {
+              if (request.redirect !== "manual") {
+                reject(new FetchError(`uri requested responds with an invalid redirect URL: ${location2}`, "invalid-redirect"));
+                finalize();
+                return;
+              }
+            }
             switch (request.redirect) {
               case "error":
                 reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, "no-redirect"));
@@ -19838,6 +19852,11 @@ var require_lib6 = __commonJS({
                   timeout: request.timeout,
                   size: request.size
                 };
+                if (!isDomainOrSubdomain(request.url, locationURL)) {
+                  for (const name6 of ["authorization", "www-authenticate", "cookie", "cookie2"]) {
+                    requestOpts.headers.delete(name6);
+                  }
+                }
                 if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
                   reject(new FetchError("Cannot follow redirect with body being a readable stream", "unsupported-redirect"));
                   finalize();
@@ -29477,14 +29496,11 @@ var require_social_post_api = __commonJS({
       analyticsPost(data) {
         return doPost2("analytics/post", data, this.headers);
       }
-      analyticsSocial(data) {
-        return doPost2("analytics/social", data, this.headers);
-      }
       user(params) {
         return doGet("user", this.headers, params);
       }
       upload(data) {
-        const { file } = data;
+        const { file, fileName, description } = data;
         if (!file) {
           return ERROR_MSG;
         }
@@ -39083,7 +39099,6 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 var localIPFSAvailable = async () => {
   return false;
 };
@@ -39902,12 +39917,18 @@ var notebookMetadata_default = readMetadata;
 var import_debug8 = __toModule(require_src());
 var import_ramda3 = __toModule(require_src3());
 var debug8 = (0, import_debug8.default)("media");
-var _mediaTypeMap = {
-  "all": [".jpg", ".jpeg", ".png", ".mp4", ".webm"],
+var _mediaTypeMapWithoutAll = {
   "video": [".mp4", ".webm"],
   "image": [".jpg", ".jpeg", ".png"],
   "text": [".md", ".txt"],
   "audio": [".mp3", ".wav", ".ogg", ".flac"]
+};
+var _mediaTypeMap = __spreadProps(__spreadValues({}, _mediaTypeMapWithoutAll), {
+  "all": [...Object.values(_mediaTypeMapWithoutAll)].flat()
+});
+var getFileType = (filename) => {
+  const extension = (0, import_ramda3.last)(filename.split("."));
+  return Object.entries(_mediaTypeMap).find(([type, exts]) => (0, import_ramda3.any)((ext) => ext.endsWith(extension), exts))[0];
 };
 var getCoverImage = (output) => {
   const image = output && getMedia(output, "image")[0];
@@ -39919,7 +39940,7 @@ function getMedia(output, type = "all") {
   const extensions = _mediaTypeMap[type];
   const filterByExtensions = (filename) => (0, import_ramda3.any)(import_ramda3.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
   const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
-  const media = mediaFilenames.map((filename) => [filename, output[filename]]);
+  const media = mediaFilenames.map((filename) => [filename, output[filename], getFileType(filename)]);
   media.reverse();
   return media;
 }

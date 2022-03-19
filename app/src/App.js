@@ -53,7 +53,6 @@ const Pollinations = () => {
         if (node.nodeID)
             navigate(`/n/${node.nodeID}`)
         else {
-            // history.go(0)
             console.error("For some reason NodeID is not set...", node)
         }
     }, [node.nodeID])

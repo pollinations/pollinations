@@ -4,14 +4,24 @@ import { any, identity, last } from "ramda";
 const debug = Debug("media");
 
 // recognized media types
-const _mediaTypeMap = {
-    "all": [".jpg", ".jpeg", ".png", ".mp4",".webm"],
+const _mediaTypeMapWithoutAll = {
+
     "video": [".mp4",".webm"],
     "image": [".jpg", ".jpeg", ".png"],
     "text": [".md", ".txt"],
     "audio": [".mp3", ".wav", ".ogg",".flac"],
   }
+
+const _mediaTypeMap = {
+  ..._mediaTypeMapWithoutAll,
+  "all": [...Object.values( _mediaTypeMapWithoutAll )].flat(),
+}
   
+export const getFileType = filename => {
+  const extension = last(filename.split("."))
+  return Object.entries(_mediaTypeMap).find(([type, exts]) => any(ext => ext.endsWith(extension), exts))[0]
+}
+
 // get first image for social media and other stuff    
 export const getCoverImage = output => { 
   const image = output && getMedia(output, "image")[0];
@@ -40,7 +50,7 @@ export function getMedia(output, type="all") {
     const mediaFilenames = output ? Object.keys(output)
       .filter(filterByExtensions) : [];
   
-    const media = mediaFilenames.map(filename => [filename, output[filename]]);
+    const media = mediaFilenames.map(filename => [filename, output[filename], getFileType(filename)]);
     media.reverse();
     return media;
   }
@@ -63,7 +73,8 @@ export function mediaToDisplay(output) {
 
   const first = {
       filename: firstImage[0],
-      url: firstImage[1]
+      url: firstImage[1],
+      type: firstImage[2]
   }
 
   return { images, first }

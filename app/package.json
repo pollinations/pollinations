@@ -16,6 +16,7 @@
     "@material-ui/lab": "^4.0.0-alpha.60",
     "@rjsf/core": "^3.2.0",
     "@rjsf/material-ui": "^3.2.0",
+    "@supabase/supabase-js": "^1.31.1",
     "ansi-to-react": "^6.1.6",
     "async": "^3.2.1",
     "await-sleep": "^0.0.1",

@@ -20,6 +20,12 @@ const failureHelpers = {
         if (lastLine.startsWith("Exception: "))
             return lastLine.replace("Exception: ", "#####")+"\n&nbsp;\n"
         return null
+    },
+    runtimeException: log => {
+        const lastLine =  last(log.split("\n").filter(line => line.trim() !== ""))
+        if (lastLine.startsWith("RuntimeError: "))
+            return lastLine.replace("RuntimeError: ", "#####")+"\n&nbsp;\n"
+        return null
     }
 }
 

@@ -21,29 +21,43 @@ footer {
   border-radius: 10px 10px 0 0;
   right: 50;
   bottom: 0;
-  background-color: #424242 !important; 
+  background-color: #424242 !important;
 }
 
-h1, h2, h3, h4, h5, h6, p {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
   color: rgb(255, 236, 249) !important;
 }
-
-.MuiAccordionSummary-root{padding: 0 !important;}
-.MuiAccordionDetails-root{padding: 8px 0px 16px !important;}
-.MuiAccordion-root:before{display: none;}
-h3{
+.MuiPaper-root {
+  background-color: rgb(26, 26, 26) !important;
+}
+.MuiAccordionSummary-root {
+  padding: 0 !important;
+}
+.MuiAccordionDetails-root {
+  padding: 8px 0px 16px !important;
+}
+.MuiAccordion-root:before {
+  display: none;
+}
+h3 {
   margin-bottom: 0;
 }
 h1 {
   font-size: 4rem !important;
-  font-family: 'Lato' !important;
+  font-family: "Lato" !important;
 }
 @media screen and (min-width: 700px) {
   h1 {
     font-size: 6rem !important;
   }
 }
-@media screen and (min-width:1200px) {
+@media screen and (min-width: 1200px) {
   h1 {
     font-size: 9rem !important;
   }
@@ -54,17 +68,16 @@ a {
   padding: 10px 0;
 }
 
-.Lato{
-  font-family: 'Lato' !important;
+.Lato {
+  font-family: "Lato" !important;
 }
 
-.MuiCardHeader-root{
-  background-color: rgb(62, 0, 156) !important; 
+.MuiCardHeader-root {
+  background-color: rgb(62, 0, 156) !important;
   /* background: linear-gradient(0deg, transparent 0%, rgba(62,0,156,1) 100%) !important;  */
 }
 
-
-.noMargin{
+.noMargin {
   margin: 0 !important;
 }
 
@@ -74,7 +87,7 @@ error {
   font-size: large;
 }
 
-.video_container{
+.video_container {
   width: 100%;
   min-height: 480px;
 }

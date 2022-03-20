@@ -1,26 +1,49 @@
-import { useCallback } from "react";
-import useIPFS from "./useIPFS";
-import useLocalStorage from "./useLocalStorage";
-import usePollenDone from "./usePollenDone";
+import Debug from "debug"
+import { values } from "ramda"
+import { useCallback } from "react"
+import useIPFS from "./useIPFS"
+import useIPFSWrite from "./useIPFSWrite"
+import useLocalStorage from "./useLocalStorage"
+import usePollenDone from "./usePollenDone"
 
+const debug = Debug("useLocalPollens")
 
-export default function useLocalPollens( node ){
+// an empty folder
+const EMPTY_CID = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
 
-    const [ pollens, setPollens ] = useLocalStorage('pollens', [])
-    const ipfs = useIPFS(node.contentID)
+export default function useLocalPollens( node ) {
 
-    const pushCID = useCallback( value => {
-        let isPresent = pollens.find( pollen => pollen.cid === value)
+    const [ pollensCID, setPollensCID ] = useLocalStorage('localpollens', EMPTY_CID)
+   
+    const currentNodeContent = useIPFS(node.contentID)
+
+    const pollens = useIPFS(pollensCID)
+
+    debug("pollens", pollens)
+    
+    const writer = useIPFSWrite(pollens)
+    
+    const pushCID = useCallback(async cid => {
+        let isPresent = values(pollens).find( pollen => pollen[".cid"] === cid)
         if (isPresent) return 
-        setPollens( pollens => [ ...pollens, { date: new Date(), cid: value} ])
+        
+        const path = (new Date()).toISOString().replace(/[\W_]+/g, "_")
+        const newCID = await writer.cp(path, cid)
+        setPollensCID(newCID)
 
-    }, [pollens])
+    }, [pollens, writer])
 
-    const popCID = cid => setPollens( pollens => pollens.filter( pollen => pollen.cid !== cid) )
+    const popCID = useCallback(async cid => {
+        const [path, _] = Object.entries(pollens).find(([path, pollen]) => pollen[".cid"] === cid)
+        const newCID = await writer.rm(path)
+        setPollensCID(newCID)
+    }, [pollens, writer])
 
-    usePollenDone(ipfs, ipfs => {
+    usePollenDone(currentNodeContent, ipfs => {
         pushCID(ipfs[".cid"])
     })
+
+    // pushCID(currentNodeContent[".cid"])
 
     return { pollens, pushCID, popCID }
 }

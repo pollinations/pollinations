@@ -6,7 +6,7 @@ import {writeFileSync} from "fs";
 // const debug = Debug("ipfsConnector:test");
 
 // RUN until getting create-react-app tests to work:
-// watch "esbuild --bundle --platform=node --external:fsevents --external:electron  src/network/ipfsConnector.test2.js | DEBUG=* node" --interval 1
+// watch "esbuild --bundle --platform=node --external:fsevents --external:electron  src/network/ipfsConnector.test_backup.js | DEBUG=* node" --interval 1
 
 // test that when we add a file the CID changes and when we remove it again the CID is the same as before
 // both when starting from an existing CID or from a scratch

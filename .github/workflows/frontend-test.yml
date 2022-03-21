@@ -2,10 +2,8 @@ name: Pollinations.ai Frontend Test
 
 on:
   push:
-    branches:
-      - frontend-tests
-#  pull_request:
-#    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
 
 jobs:
   test:

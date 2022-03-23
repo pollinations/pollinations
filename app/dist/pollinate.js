@@ -39415,26 +39415,22 @@ async function* folderSync({ writer: writer2, path, debounce, signal }) {
     signal
   });
   for await (const changedFlat of fileChanges$) {
-    const changedGrouped = groupSyncQueue(changedFlat);
-    debug10("changedGrouped", changedGrouped);
-    for (const changed of changedGrouped) {
-      await Promise.all(changed.map(async ({ event, path: file }) => {
-        debug10("Local:", event, file);
-        const localPath = (0, import_path4.join)(path, file);
-        const ipfsPath = file;
-        if (event === "addDir") {
-          debug10("mkdir", ipfsPath);
-          await mkDir(ipfsPath);
-        }
-        if (event === "add" || event === "change") {
-          debug10("adding", ipfsPath, localPath);
-          await addFile(ipfsPath, localPath);
-        }
-        if (event === "unlink" || event === "unlinkDir") {
-          debug10("removing", file, event);
-          await rm(ipfsPath);
-        }
-      }));
+    for (const { event, path: file } of changedFlat) {
+      debug10("Local:", event, file);
+      const localPath = (0, import_path4.join)(path, file);
+      const ipfsPath = file;
+      if (event === "addDir") {
+        debug10("mkdir", ipfsPath);
+        await mkDir(ipfsPath);
+      }
+      if (event === "add" || event === "change") {
+        debug10("adding", ipfsPath, localPath);
+        await addFile(ipfsPath, localPath);
+      }
+      if (event === "unlink" || event === "unlinkDir") {
+        debug10("removing", file, event);
+        await rm(ipfsPath);
+      }
     }
     const newContentID = await cid();
     yield newContentID;

@@ -26,13 +26,12 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
   for await (const changedFlat of fileChanges$) {
     // debug("Changed files", changedFlat);
 
-    const changedGrouped = groupSyncQueue(changedFlat)
+    //const changedGrouped = groupSyncQueue(changedFlat)
     
-    debug("changedGrouped", changedGrouped)
+    // debug("changedGrouped", changedGrouped)
 
-    for (const changed of changedGrouped) {
-      await Promise.all(
-        changed.map(async ({ event, path: file }) => {
+    for (const { event, path: file } of changedFlat) {
+
           // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
           debug("Local:", event, file);
           const localPath = join(path, file);
@@ -52,8 +51,7 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
             debug("removing", file, event);
             await rm(ipfsPath);
           }
-        })
-      );
+      
     }
 
     const newContentID = await cid();

@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
 import { createWriteStream } from "fs"
@@ -96,10 +95,6 @@ else {
         console.log(cid)
       }
       debug("process should exit")
-      
-      // if we publish to IPNS wait a little bit before exiting
-      if (options.ipns)
-        await awaitSleep(sleepBeforeExit)
       process.exit(0)
     })();
 

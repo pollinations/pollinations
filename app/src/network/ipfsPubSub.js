@@ -104,7 +104,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
 
     try {
         if (ipnsKeyName !== null)
-            throttledExperimentalIPNSPublish(client, rootCID, ipnsKeyName)
+            experimentalIPNSPublish(client, rootCID, ipnsKeyName)
 
         if (nodeID !== "ipns")
             await retryPublish(nodeID + suffix, rootCID)

@@ -38373,7 +38373,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
   debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
     if (ipnsKeyName !== null)
-      throttledExperimentalIPNSPublish(client, rootCID, ipnsKeyName);
+      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
     if (nodeID !== "ipns")
       await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {

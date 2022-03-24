@@ -13638,12 +13638,12 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last7 = this.buffer[this.btm];
-        if (last7 === void 0)
+        const last6 = this.buffer[this.btm];
+        if (last6 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last7;
+        return last6;
       }
       peek() {
         return this.buffer[this.btm];
@@ -14366,8 +14366,8 @@ var require_multiaddr_to_uri = __commonJS({
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last7 = parts[parts.length - 1];
-      if (last7.protocol === "tcp") {
+      const last6 = parts[parts.length - 1];
+      if (last6.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -15834,14 +15834,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last7 = async (source) => {
+    var last6 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last7;
+    module2.exports = last6;
   }
 });
 
@@ -18481,8 +18481,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last7 = init.pop();
-      return compose(compose.apply(this, map4(chain, init)), last7);
+      var last6 = init.pop();
+      return compose(compose.apply(this, map4(chain, init)), last6);
     }
     module2.exports = composeK;
   }
@@ -19829,8 +19829,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last7 = /* @__PURE__ */ nth(-1);
-    module2.exports = last7;
+    var last6 = /* @__PURE__ */ nth(-1);
+    module2.exports = last6;
   }
 });
 
@@ -19840,7 +19840,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last7 = require_last();
+    var last6 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -19848,7 +19848,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last7(result), list[idx])) {
+          if (!pred(last6(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -24363,7 +24363,7 @@ var require_lodash = __commonJS({
         function baseInvoke(object, path, args) {
           path = castPath(path, object);
           object = parent(object, path);
-          var func = object == null ? object : object[toKey(last7(path))];
+          var func = object == null ? object : object[toKey(last6(path))];
           return func == null ? undefined2 : apply(func, object, args);
         }
         function baseIsArguments(value) {
@@ -24896,7 +24896,7 @@ var require_lodash = __commonJS({
         function baseUnset(object, path) {
           path = castPath(path, object);
           object = parent(object, path);
-          return object == null || delete object[toKey(last7(path))];
+          return object == null || delete object[toKey(last6(path))];
         }
         function baseUpdate(object, path, updater, customizer) {
           return baseSet(object, path, updater(baseGet(object, path)), customizer);
@@ -26111,14 +26111,14 @@ var require_lodash = __commonJS({
           return isArrayLikeObject(array2) ? baseDifference(array2, baseFlatten(values2, 1, isArrayLikeObject, true)) : [];
         });
         var differenceBy = baseRest(function(array2, values2) {
-          var iteratee2 = last7(values2);
+          var iteratee2 = last6(values2);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return isArrayLikeObject(array2) ? baseDifference(array2, baseFlatten(values2, 1, isArrayLikeObject, true), getIteratee(iteratee2, 2)) : [];
         });
         var differenceWith = baseRest(function(array2, values2) {
-          var comparator = last7(values2);
+          var comparator = last6(values2);
           if (isArrayLikeObject(comparator)) {
             comparator = undefined2;
           }
@@ -26228,8 +26228,8 @@ var require_lodash = __commonJS({
           return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped) : [];
         });
         var intersectionBy = baseRest(function(arrays) {
-          var iteratee2 = last7(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
-          if (iteratee2 === last7(mapped)) {
+          var iteratee2 = last6(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
+          if (iteratee2 === last6(mapped)) {
             iteratee2 = undefined2;
           } else {
             mapped.pop();
@@ -26237,7 +26237,7 @@ var require_lodash = __commonJS({
           return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped, getIteratee(iteratee2, 2)) : [];
         });
         var intersectionWith = baseRest(function(arrays) {
-          var comparator = last7(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
+          var comparator = last6(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           if (comparator) {
             mapped.pop();
@@ -26247,7 +26247,7 @@ var require_lodash = __commonJS({
         function join5(array2, separator) {
           return array2 == null ? "" : nativeJoin.call(array2, separator);
         }
-        function last7(array2) {
+        function last6(array2) {
           var length2 = array2 == null ? 0 : array2.length;
           return length2 ? array2[length2 - 1] : undefined2;
         }
@@ -26385,14 +26385,14 @@ var require_lodash = __commonJS({
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
         });
         var unionBy = baseRest(function(arrays) {
-          var iteratee2 = last7(arrays);
+          var iteratee2 = last6(arrays);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), getIteratee(iteratee2, 2));
         });
         var unionWith = baseRest(function(arrays) {
-          var comparator = last7(arrays);
+          var comparator = last6(arrays);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), undefined2, comparator);
         });
@@ -26440,14 +26440,14 @@ var require_lodash = __commonJS({
           return baseXor(arrayFilter(arrays, isArrayLikeObject));
         });
         var xorBy = baseRest(function(arrays) {
-          var iteratee2 = last7(arrays);
+          var iteratee2 = last6(arrays);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return baseXor(arrayFilter(arrays, isArrayLikeObject), getIteratee(iteratee2, 2));
         });
         var xorWith = baseRest(function(arrays) {
-          var comparator = last7(arrays);
+          var comparator = last6(arrays);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           return baseXor(arrayFilter(arrays, isArrayLikeObject), undefined2, comparator);
         });
@@ -28162,7 +28162,7 @@ var require_lodash = __commonJS({
         lodash.isWeakSet = isWeakSet;
         lodash.join = join5;
         lodash.kebabCase = kebabCase2;
-        lodash.last = last7;
+        lodash.last = last6;
         lodash.lastIndexOf = lastIndexOf;
         lodash.lowerCase = lowerCase;
         lodash.lowerFirst = lowerFirst;
@@ -44244,15 +44244,6 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
-var toPromise1 = async (asyncGen) => {
-  debug4("getting values of asyncGen");
-  for await (const value of asyncGen) {
-    debug4("Got value", value);
-    return value;
-  }
-  debug4("No value found to convert to Promise");
-  return null;
-};
 var noop = () => null;
 var retryException = (f) => {
   return async (...args) => {
@@ -44465,7 +44456,6 @@ var import_debug6 = __toModule(require_src());
 var import_lodash = __toModule(require_lodash());
 var import_native_abort_controller = __toModule(require_src2());
 var import_queueable = __toModule(require_lib6());
-var import_ramda2 = __toModule(require_src7());
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
 function publisher(nodeID, suffix = "/output", useIPNS = true) {
@@ -44557,7 +44547,6 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
   };
   (async () => {
     const keyName = nodeID + suffix;
-    await getInitialStateFromIPNS(keyName, callback);
     while (!aborted) {
       unsubscribe = subscribeCallback(keyName, handleMessage);
       await (0, import_await_sleep2.default)(5 * 60 * 1e3);
@@ -44571,17 +44560,6 @@ function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noo
     closeHeartbeat();
     aborted = true;
   };
-}
-async function getInitialStateFromIPNS(keyName, callback) {
-  const client = await getClient();
-  const keys = await client.key.list();
-  const ipnsKey = keys.find(({ name: name6 }) => name6 === keyName);
-  if (ipnsKey) {
-    const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
-    debug6("got initial CID through IPNS. Calling callback with", cidString);
-    const cid = (0, import_ramda2.last)(cidString.split("/"));
-    callback(cid);
-  }
 }
 function heartbeatChecker(heartbeatStateCallback) {
   let lastHeartbeat = new Date().getTime();
@@ -44659,7 +44637,7 @@ function subscribeCallback(topic, callback) {
 
 // src/network/ipfsState.js
 var import_debug7 = __toModule(require_src());
-var import_ramda3 = __toModule(require_src7());
+var import_ramda2 = __toModule(require_src7());
 var import_path2 = __toModule(require("path"));
 
 // src/utils/logProgressToConsole.js
@@ -44699,7 +44677,7 @@ var _getIPFSState = async (ipfsReader, { cid, type, name: name6, path, rootCID }
     _debug("Got files for", name6, cid, files);
     const filenames = files.map(({ name: name7 }) => name7);
     const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path2.join)(path, file.name), rootCID }), processFile2, skipCache)));
-    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
+    const contentResult = Object.fromEntries((0, import_ramda2.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });
     return contentResult;
@@ -44776,13 +44754,13 @@ var import_native_abort_controller2 = __toModule(require_src2());
 var import_debug10 = __toModule(require_src());
 var import_fs3 = __toModule(require("fs"));
 var import_path4 = __toModule(require("path"));
-var import_ramda5 = __toModule(require_src7());
+var import_ramda4 = __toModule(require_src7());
 
 // src/backend/fileWatcher.js
 var import_await_sleep3 = __toModule(require_await_sleep());
 var import_chokidar = __toModule(require_chokidar());
 var import_debug9 = __toModule(require_src());
-var import_ramda4 = __toModule(require_src7());
+var import_ramda3 = __toModule(require_src7());
 var debug9 = (0, import_debug9.default)("fileWatcher");
 async function* chunkedFilewatcher({ path, debounce: debounce2, signal }) {
   debug9("Local: Watching", path);
@@ -44821,7 +44799,7 @@ async function* chunkedFilewatcher({ path, debounce: debounce2, signal }) {
   await watcher.close();
   debug9("closed filewatcher");
 }
-var deduplicateChangedFiles = (changed) => (0, import_ramda4.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
+var deduplicateChangedFiles = (changed) => (0, import_ramda3.uniqBy)(({ event, path }) => `${event}-${path}`, changed);
 var fileWatcher_default = chunkedFilewatcher;
 
 // src/backend/ipfs/folderSync.js
@@ -44867,7 +44845,7 @@ async function* folderSync({ writer: writer2, path, debounce: debounce2, signal 
   }
 }
 var groupKey = ({ event, path }) => (0, import_path4.dirname)(path) + "_" + event;
-var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === groupKey(b));
+var groupSyncQueue = (0, import_ramda4.groupWith)((a, b) => groupKey(a) === groupKey(b));
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");

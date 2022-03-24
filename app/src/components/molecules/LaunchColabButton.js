@@ -1,10 +1,12 @@
-import {Button} from '@material-ui/core'
+import { Button } from '@material-ui/core';
 import { useEffect, useState } from 'react';
 import { pollinatorColabURL } from '../../data/globals';
+import GpuInfo from './GpuInfo';
 
 
-const LaunchColabButton = ({ connected }) => {
+const LaunchColabButton = (node) => {
 
+    const { connected } = node
     const [loading ,setLoading ] = useState(false)
 
     useEffect(()=>{
@@ -27,7 +29,7 @@ const LaunchColabButton = ({ connected }) => {
             {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}
         </Button>
 
-    return <Button disabled children='Connected to GPU'/>
+    return <Button>Connected to&nbsp;<GpuInfo {...node} /></Button> 
 }
 
 export default LaunchColabButton

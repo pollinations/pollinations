@@ -37,15 +37,15 @@ export const IPFSWebState = (contentID, skipCache = false) => {
 
 export const getWriter = ipfs => {
     debug("getting input writer for cid", ipfs[".cid"]);
-    const w = writer(ipfs ? ipfs[".cid"] : null);
+    const w = writer(ipfs[".cid"]);
 
     // try to close the writer when window is closed
-    // const previousUnload = window.onbeforeunload;
-    // window.onbeforeunload = () => {
-    //     previousUnload && previousUnload();
-    //     // w.close();
-    //     return undefined;
-    // };
+    const previousUnload = window.onbeforeunload;
+    window.onbeforeunload = () => {
+        previousUnload && previousUnload();
+        w.close();
+        return undefined;
+    };
 
     return w;
 }

@@ -41,6 +41,9 @@ export async function reader() {
     }
 }
 
+// randomly assign a temporary folder in the IPFS mutable filesystem
+// in the future ideally we'd be running nodes in the browser and on colab and could work in the root
+const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}`;
 
 
 // Create a writer to modify the IPFS state
@@ -49,18 +52,15 @@ export async function reader() {
 export function writer(initialRootCID = null) {
 
 
+    // Promise to a temporary folder in the IPFS mutable filesystem
+    let initializedFolder = getClient().then(client => initializeMFSFolder(client, initialRootCID))
 
     // calls the function with client and absolute path and finally return the root CID
     const returnRootCID = func => async (path = "/", ...args) => {
 
-        // randomly assign a temporary folder in the IPFS mutable filesystem
-        // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
-        const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}_${Math.round(Math.random()*1000)}`;
-        // Promise to a temporary folder in the IPFS mutable filesystem
-
         const client = await getClient()
 
-        let initializedFolder = await initializeMFSFolder(client, initialRootCID, mfsRoot)
+        await initializedFolder
         debug("join", mfsRoot, path)
         const tmpPath = join(mfsRoot, path)
 
@@ -68,21 +68,20 @@ export function writer(initialRootCID = null) {
         await func(client, tmpPath, ...args)
 
         // return the root CID
-        const rootCID =  await getCID(client, mfsRoot)
-        
-        debug("closing input writer. Deleting", mfsRoot)
-        await ipfsRm(await getClient(), mfsRoot)
-        initialRootCID = rootCID
-        return rootCID
+        return await getCID(client, mfsRoot)
     };
 
     const methods = {
         add: returnRootCID(ipfsAdd),
         addFile: returnRootCID(ipfsAddFile),
-        cp: returnRootCID(ipfsCp),
         rm: returnRootCID(ipfsRm),
         mkDir: returnRootCID(ipfsMkdir),
         cid: returnRootCID(noop),
+        close: async () => {
+            debug("closing input writer. Deleting", mfsRoot)
+            await initializedFolder
+            await ipfsRm(await getClient(), mfsRoot)
+        },
         pin: async cid => await ipfsPin(await getClient(), cid)
     }
 
@@ -93,24 +92,33 @@ export function writer(initialRootCID = null) {
 
 
 // Initializes a folder in `mfsRoot` with the given CID
-async function initializeMFSFolder(client, initialRootCID, mfsRoot) {
+async function initializeMFSFolder(client, initialRootCID) {
 
-    const getRootCID = async () => await getCID(client, mfsRoot)
+    const getRootCID = async () => await getCID(client, mfsRoot);
 
-    // let rootCid = await getRootCID();
-    // debug("existing root CID", rootCid);
+    let rootCid = await getRootCID();
+    debug("existing root CID", rootCid);
 
-    if (initialRootCID === null) {
-        debug("Creating mfs root since it did not exist.", mfsRoot)
-        await ipfsMkdir(client, mfsRoot)
+    if (rootCid === null) {
+        if (initialRootCID === null) {
+            debug("Creating mfs root since it did not exist.");
+            await ipfsMkdir(client, mfsRoot);
+        } else {
+            debug("Copying supplied rootCID", initialRootCID, "to MFS root.");
+            await ipfsCp(client, initialRootCID, mfsRoot);
+        }
+        rootCid = await getRootCID();
+        debug("new root CID", rootCid);
     } else {
-        debug("Copying supplied rootCID", initialRootCID, "to MFS root.")
-        await ipfsCp(client,  mfsRoot, initialRootCID)
+        debug("Checking if supplied cid is the same as root cid");
+        if (rootCid !== initialRootCID) {
+            debug("CIDs are different. Removing existing  MFS root");
+            await ipfsRm(client, mfsRoot);
+            debug("Copying", rootCid, "to mfs root.");
+            await ipfsCp(client, rootCid, mfsRoot);
+        }
     }
-    const rootCid = await getRootCID()
-    debug("new root CID", rootCid)
-
-    return rootCid
+    return await getRootCID();
 }
 
 
@@ -128,7 +136,7 @@ const getIPFSDaemonURL = async () => {
 }
 
 
-const ipfsCp = async (client, ipfsPath, cid) => {
+const ipfsCp = async (client, cid, ipfsPath) => {
     debug("Copying from ", `/ipfs/${cid}`, "to", ipfsPath)
     return await client.files.cp(`/ipfs/${cid}`, ipfsPath)
 }
@@ -259,7 +267,7 @@ async function ipfsMkdir(client, path) {
 }
 
 async function ipfsRm(client, path) {
-    debug("Deleting", path)
+    debug("Deleting", path);
     try {
         await client.files.rm(path, { force: true, recursive: true });
     } catch (e) {

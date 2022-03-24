@@ -55,6 +55,13 @@ var __toModule = (module2) => {
   return __reExport(__markAsModule(__defProp(module2 != null ? __create(__getProtoOf(module2)) : {}, "default", module2 && module2.__esModule && "default" in module2 ? { get: () => module2.default, enumerable: true } : { value: module2, enumerable: true })), module2);
 };
 
+// node_modules/await-sleep/index.js
+var require_await_sleep = __commonJS({
+  "node_modules/await-sleep/index.js"(exports2, module2) {
+    module2.exports = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
+  }
+});
+
 // node_modules/ms/index.js
 var require_ms = __commonJS({
   "node_modules/ms/index.js"(exports2, module2) {
@@ -22999,13 +23006,6 @@ var require_src7 = __commonJS({
   }
 });
 
-// node_modules/await-sleep/index.js
-var require_await_sleep = __commonJS({
-  "node_modules/await-sleep/index.js"(exports2, module2) {
-    module2.exports = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
-  }
-});
-
 // node_modules/lodash/lodash.js
 var require_lodash = __commonJS({
   "node_modules/lodash/lodash.js"(exports2, module2) {
@@ -36017,6 +36017,7 @@ __export(exports, {
   debug: () => debug12,
   rootPath: () => rootPath
 });
+var import_await_sleep4 = __toModule(require_await_sleep());
 var import_child_process = __toModule(require("child_process"));
 var import_debug12 = __toModule(require_src());
 var import_fs5 = __toModule(require("fs"));
@@ -44292,43 +44293,56 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
+  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
   const returnRootCID = (func) => async (path = "/", ...args) => {
-    const mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}_${Math.round(Math.random() * 1e3)}`;
     const client = await getClient();
-    let initializedFolder = await initializeMFSFolder(client, initialRootCID, mfsRoot);
+    await initializedFolder;
     debug5("join", mfsRoot, path);
     const tmpPath = (0, import_path.join)(mfsRoot, path);
     await func(client, tmpPath, ...args);
-    const rootCID = await getCID(client, mfsRoot);
-    debug5("closing input writer. Deleting", mfsRoot);
-    await ipfsRm(await getClient(), mfsRoot);
-    initialRootCID = rootCID;
-    return rootCID;
+    return await getCID(client, mfsRoot);
   };
   const methods = {
     add: returnRootCID(ipfsAdd),
     addFile: returnRootCID(ipfsAddFile),
-    cp: returnRootCID(ipfsCp),
     rm: returnRootCID(ipfsRm),
     mkDir: returnRootCID(ipfsMkdir),
     cid: returnRootCID(noop),
+    close: async () => {
+      debug5("closing input writer. Deleting", mfsRoot);
+      await initializedFolder;
+      await ipfsRm(await getClient(), mfsRoot);
+    },
     pin: async (cid) => await ipfsPin(await getClient(), cid)
   };
   return methods;
 }
-async function initializeMFSFolder(client, initialRootCID, mfsRoot) {
+async function initializeMFSFolder(client, initialRootCID) {
   const getRootCID = async () => await getCID(client, mfsRoot);
-  if (initialRootCID === null) {
-    debug5("Creating mfs root since it did not exist.", mfsRoot);
-    await ipfsMkdir(client, mfsRoot);
+  let rootCid = await getRootCID();
+  debug5("existing root CID", rootCid);
+  if (rootCid === null) {
+    if (initialRootCID === null) {
+      debug5("Creating mfs root since it did not exist.");
+      await ipfsMkdir(client, mfsRoot);
+    } else {
+      debug5("Copying supplied rootCID", initialRootCID, "to MFS root.");
+      await ipfsCp(client, initialRootCID, mfsRoot);
+    }
+    rootCid = await getRootCID();
+    debug5("new root CID", rootCid);
   } else {
-    debug5("Copying supplied rootCID", initialRootCID, "to MFS root.");
-    await ipfsCp(client, mfsRoot, initialRootCID);
+    debug5("Checking if supplied cid is the same as root cid");
+    if (rootCid !== initialRootCID) {
+      debug5("CIDs are different. Removing existing  MFS root");
+      await ipfsRm(client, mfsRoot);
+      debug5("Copying", rootCid, "to mfs root.");
+      await ipfsCp(client, rootCid, mfsRoot);
+    }
   }
-  const rootCid = await getRootCID();
-  debug5("new root CID", rootCid);
-  return rootCid;
+  return await getRootCID();
 }
 var localIPFSAvailable = async () => {
   return false;
@@ -44341,7 +44355,7 @@ var getIPFSDaemonURL = async () => {
   debug5("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
-var ipfsCp = async (client, ipfsPath, cid) => {
+var ipfsCp = async (client, cid, ipfsPath) => {
   debug5("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
 };
@@ -44505,7 +44519,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
   debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
     if (ipnsKeyName !== null)
-      throttledExperimentalIPNSPublish(client, rootCID, ipnsKeyName);
+      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
     if (nodeID !== "ipns")
       await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {
@@ -44523,7 +44537,7 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
     debug6("exception on publish.", e);
   });
 }
-var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 2e3);
+var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 3e3, 5e3);
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);
@@ -44866,6 +44880,7 @@ var sender = ({ path, debounce: debounce2, ipns, once, nodeid }) => {
     debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
+    await ipfsWriter.close();
     await closePublisher();
     await closePollenPublisher();
     debug11("closed all");
@@ -44968,6 +44983,8 @@ else {
         console.log(cid);
       }
       debug12("process should exit");
+      if (options_default.ipns)
+        await (0, import_await_sleep4.default)(sleepBeforeExit);
       import_process.default.exit(0);
     })();
   if (enableReceive) {

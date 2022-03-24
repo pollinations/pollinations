@@ -54,7 +54,7 @@ const ToolBar = ({ children, node, showNode }) => {
         bottom: 0,
         right: 30,
         minWidth: '30%',
-        maxWidth: '90%',
+        maxWidth: '470px',
         minHeight: 50,
         maxHeight: 500,
         height: open ? 500 : 50,

@@ -61,7 +61,7 @@ function AudioViewer({ content, style, filename }) {
   return <><audio controls src={content} style={{...style, height: null}}/>{filename}</>
 }
 
-function MarkdownViewer({content, filename, style}) {
+function MarkdownViewer({content, filename}) {
   return( <Paper variant="outlined" style={style}><Box m={2}><Markdown key={filename}>{content}</Markdown></Box></Paper>);
   
 }

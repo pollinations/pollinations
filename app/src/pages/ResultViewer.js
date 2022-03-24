@@ -24,7 +24,7 @@ export default memo(function ResultViewer({ ipfs }) {
 
 
 
-  const { first } = useMemo(() => {
+  const { images, first } = useMemo(() => {
     return mediaToDisplay(ipfs.output)
   }, [ipfs?.output])
 

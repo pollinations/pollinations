@@ -3,18 +3,18 @@ import { Typography } from "@material-ui/core"
 
 const GpuInfo = ({ ...node }) => {
     if (!node.connected) return <div/>
-    return <Typography>GPU: { gpu2string(node?.gpu) }</Typography>
+    return <Typography children={`GPU: ${gpu2string(node?.gpu)}`}/>
 }
 
 let gpu2string = gpu => {
-    let parsed = gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "").replace("Tesla ","")?.split("-")[0]?.trim()
-    return parsed && <><i style={{fontSize: "90%"}}>{parsed}</i> {gpuSmilie[parsed]}</>
+    let parsed = gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim()
+    return parsed && `${parsed} ${gpuSmilie[parsed]}`
 }
 const gpuSmilie = {
-    "T4" : "😐",
-    "K80" : "😴",
-    "P100" : "😀",
-    "V100" : "😍",
+    "Tesla T4" : "😐",
+    "Tesla K80" : "😴",
+    "Tesla P100" : "😀",
+    "Tesla V100" : "😍",
 }
 
 export default GpuInfo

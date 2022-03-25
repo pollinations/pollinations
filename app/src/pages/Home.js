@@ -15,7 +15,7 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import useIPFS from '../hooks/useIPFS'
 import { CardContainerStyle } from "./styles/card"
-
+import Masonry from '../components/Masonry'
 
 const debug = Debug("home");
 
@@ -65,14 +65,11 @@ export default function Home() {
       }
     </Box>
 
-    <Box display='grid' gridGap='2em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
-      {
-        notebookList
-          .map(notebook =>
-            <NotebookCard key={notebook.name} notebook={notebook} />
-          )
-      }
-    </Box>
+    <Masonry 
+        data={notebookList} 
+        renderItems={(notebook) => <NotebookCard key={notebook.name} notebook={notebook} /> }
+        options={{ columnGap: 1.5, columnCount: 3 }}
+    />
   </>
 }
 
@@ -109,7 +106,7 @@ const HeroSection = props => <Box paddingTop={3}>
 // Cards 
 // Component
 
-const NotebookCard = ({ notebook }) => {
+export const NotebookCard = ({ notebook }) => {
 
   let { category, name, path, description } = notebook
   

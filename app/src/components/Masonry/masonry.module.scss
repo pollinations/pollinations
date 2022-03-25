@@ -1,0 +1,14 @@
+.list {
+    // Initial definition should be here for future mutations.
+    --item-width: 50%;
+    --column-gap: 1.5%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    column-gap: var(--column-gap); // Needs to be dynamic
+}
+
+.item {
+    width: var(--item-width);
+    margin-bottom: var(--column-gap); // Needs to be dynamic
+}

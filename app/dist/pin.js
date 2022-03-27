@@ -38164,6 +38164,7 @@ function writer(initialRootCID = null) {
     rm: returnRootCID(ipfsRm),
     mkDir: returnRootCID(ipfsMkdir),
     cid: returnRootCID(noop),
+    cp: returnRootCID(ipfsCp),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
       await initializedFolder;
@@ -38176,14 +38177,14 @@ function writer(initialRootCID = null) {
 async function initializeMFSFolder(client, initialRootCID) {
   const getRootCID = async () => await getCID(client, mfsRoot);
   let rootCid = await getRootCID();
-  debug5("existing root CID", rootCid);
+  debug5("existing root CID", rootCid, "supplied", initialRootCID);
   if (rootCid === null) {
     if (initialRootCID === null) {
       debug5("Creating mfs root since it did not exist.");
       await ipfsMkdir(client, mfsRoot);
     } else {
       debug5("Copying supplied rootCID", initialRootCID, "to MFS root.");
-      await ipfsCp(client, initialRootCID, mfsRoot);
+      await ipfsCp(client, mfsRoot, initialRootCID);
     }
     rootCid = await getRootCID();
     debug5("new root CID", rootCid);
@@ -38193,7 +38194,7 @@ async function initializeMFSFolder(client, initialRootCID) {
       debug5("CIDs are different. Removing existing  MFS root");
       await ipfsRm(client, mfsRoot);
       debug5("Copying", rootCid, "to mfs root.");
-      await ipfsCp(client, rootCid, mfsRoot);
+      await ipfsCp(client, mfsRoot, initialRootCID);
     }
   }
   return await getRootCID();
@@ -38209,7 +38210,7 @@ var getIPFSDaemonURL = async () => {
   debug5("localhost:5001 is not reachable. Connecting to", IPFS_HOST);
   return IPFS_HOST;
 };
-var ipfsCp = async (client, cid, ipfsPath) => {
+var ipfsCp = async (client, ipfsPath, cid) => {
   debug5("Copying from ", `/ipfs/${cid}`, "to", ipfsPath);
   return await client.files.cp(`/ipfs/${cid}`, ipfsPath);
 };

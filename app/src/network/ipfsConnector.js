@@ -77,6 +77,7 @@ export function writer(initialRootCID = null) {
         rm: returnRootCID(ipfsRm),
         mkDir: returnRootCID(ipfsMkdir),
         cid: returnRootCID(noop),
+        cp: returnRootCID(ipfsCp),
         close: async () => {
             debug("closing input writer. Deleting", mfsRoot)
             await initializedFolder
@@ -97,7 +98,7 @@ async function initializeMFSFolder(client, initialRootCID) {
     const getRootCID = async () => await getCID(client, mfsRoot);
 
     let rootCid = await getRootCID();
-    debug("existing root CID", rootCid);
+    debug("existing root CID", rootCid, "supplied", initialRootCID);
 
     if (rootCid === null) {
         if (initialRootCID === null) {
@@ -105,7 +106,7 @@ async function initializeMFSFolder(client, initialRootCID) {
             await ipfsMkdir(client, mfsRoot);
         } else {
             debug("Copying supplied rootCID", initialRootCID, "to MFS root.");
-            await ipfsCp(client, initialRootCID, mfsRoot);
+            await ipfsCp(client, mfsRoot, initialRootCID);
         }
         rootCid = await getRootCID();
         debug("new root CID", rootCid);
@@ -115,7 +116,7 @@ async function initializeMFSFolder(client, initialRootCID) {
             debug("CIDs are different. Removing existing  MFS root");
             await ipfsRm(client, mfsRoot);
             debug("Copying", rootCid, "to mfs root.");
-            await ipfsCp(client, rootCid, mfsRoot);
+            await ipfsCp(client, mfsRoot, initialRootCID);
         }
     }
     return await getRootCID();
@@ -136,7 +137,7 @@ const getIPFSDaemonURL = async () => {
 }
 
 
-const ipfsCp = async (client, cid, ipfsPath) => {
+const ipfsCp = async (client, ipfsPath, cid) => {
     debug("Copying from ", `/ipfs/${cid}`, "to", ipfsPath)
     return await client.files.cp(`/ipfs/${cid}`, ipfsPath)
 }

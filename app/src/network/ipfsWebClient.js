@@ -85,15 +85,18 @@ export const updateInput = async (inputWriter, inputs) => {
             val = `/content/ipfs/input/${filename}`
             writtenFiles.push(path)
         }
+        
+        const path = "input/" + key
 
+        // If the key contains an ipfs url or has copy it directly into the folder
         if (typeof val === "string" && val.startsWith("http") && val.includes("/ipfs/")) {
             debug("found ipfs url", val)
             const cid = val.split("/ipfs/")[1].split("?")[0]
             await inputWriter.rm(`input/${key}`)
             await inputWriter.cp(`input/${key}`, cid)
+            writtenFiles.push(`input/${key}`)
         }
 
-        const path = "input/" + key
         if (!writtenFiles.includes(path))
             await inputWriter.add(path, JSON.stringify(val))
     }

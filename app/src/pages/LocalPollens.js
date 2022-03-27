@@ -6,7 +6,6 @@ import { MediaViewer } from "../components/MediaViewer"
 import RouterLink from "../components/molecules/RouterLink"
 import { mediaToDisplay } from "../data/media"
 import useLocalPollens from "../hooks/useLocalPollens"
-import { displayContentID } from "../network/utils"
 import { getNotebookMetadata } from "../utils/notebookMetadata"
 import { CardContainerStyle } from "./styles/card"
 
@@ -46,12 +45,13 @@ const Pollen = ({ pollen, popCID }) => {
     const { first } = mediaToDisplay(pollen.output)
     const metadata = getNotebookMetadata(pollen)
 
+
     const primaryInputField = metadata?.primaryInput
     const primaryInput = pollen?.input?.[primaryInputField]
 
     return <Box>
         <Card style={CardContainerStyle}>
-            <CardHeader subheader={<SubHeader cid={cid} />} />
+            <CardHeader subheader={<SubHeader modelName={metadata.name} cid={cid} />} />
 
             <Box padding='1em'>
                 <br />
@@ -81,10 +81,10 @@ const Pollen = ({ pollen, popCID }) => {
 
 export default LocalPollens
 
-const SubHeader = ({ cid }) => <>
+const SubHeader = ({ modelName, cid }) => <>
     <Typography className='Lato noMargin' variant="h4" component="h4" gutterBottom>
         <RouterLink to={`/p/${cid}`}>
-            {displayContentID(cid)}
+            {modelName}
         </RouterLink>
     </Typography>
 </>

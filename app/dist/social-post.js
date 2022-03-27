@@ -44511,6 +44511,7 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
+var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 var localIPFSAvailable = async () => {
   return false;
 };
@@ -44619,7 +44620,7 @@ async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName 
   debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
   try {
     if (ipnsKeyName !== null)
-      throttledExperimentalIPNSPublish(client, rootCID, ipnsKeyName);
+      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
     if (nodeID !== "ipns")
       await retryPublish(nodeID + suffix, rootCID);
   } catch (e) {
@@ -44637,7 +44638,7 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
     debug6("exception on publish.", e);
   });
 }
-var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 2e3);
+var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 3e3, 5e3);
 function subscribeGenerator(nodeID, suffix = "/input") {
   const channel = new import_queueable.Channel();
   debug6("Subscribing to pubsub events from", nodeID, suffix);

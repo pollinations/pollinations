@@ -31,7 +31,7 @@ export const sender = ({ path, debounce, ipns, once, nodeid }) => {
     if (abortController)
       abortController.abort()
 
-    // await ipfsWriter.close()
+    await ipfsWriter.close()
     await closePublisher()
     await closePollenPublisher()
     debug("closed all")

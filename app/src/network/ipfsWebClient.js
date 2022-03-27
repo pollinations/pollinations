@@ -2,7 +2,7 @@
 import Debug from "debug";
 import { parse } from "json5";
 import { extname } from "path";
-import { getWebURL, writer } from "./ipfsConnector.js";
+import { getWebURL, reader, writer } from "./ipfsConnector.js";
 import { getIPFSState } from "./ipfsState.js";
 
 const debug = Debug("ipfsWebClient")
@@ -38,8 +38,15 @@ export const IPFSWebState = (contentID, skipCache = false) => {
 export const getWriter = ipfs => {
     if (!ipfs) return null
     debug("getting input writer for cid", ipfs[".cid"]);
-
     const w = writer(ipfs[".cid"]);
+
+    // try to close the writer when window is closed
+    const previousUnload = window.onbeforeunload;
+    window.onbeforeunload = () => {
+        previousUnload && previousUnload();
+        w.close();
+        return undefined;
+    };
 
     return w;
 }
@@ -52,6 +59,7 @@ export const updateInput = async (inputWriter, inputs) => {
     await inputWriter.rm("output")
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid())
 
+    const { get } = await reader()
     // this is a bit hacky due to some wacky file naming we are doing
     // will clean this up later
     const writtenFiles = []
@@ -78,8 +86,18 @@ export const updateInput = async (inputWriter, inputs) => {
             val = `/content/ipfs/input/${filename}`
             writtenFiles.push(path)
         }
-
+        
         const path = "input/" + key
+
+        // If the key contains an ipfs url or has copy it directly into the folder
+        if (typeof val === "string" && val.startsWith("http") && val.includes("/ipfs/")) {
+            debug("found ipfs url", val)
+            const cid = val.split("/ipfs/")[1].split("?")[0]
+            await inputWriter.rm(`input/${key}`)
+            await inputWriter.cp(`input/${key}`, cid)
+            writtenFiles.push(`input/${key}`)
+        }
+
         if (!writtenFiles.includes(path))
             await inputWriter.add(path, JSON.stringify(val))
     }

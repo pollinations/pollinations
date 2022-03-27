@@ -36,6 +36,7 @@ export const IPFSWebState = (contentID, skipCache = false) => {
 }
 
 export const getWriter = ipfs => {
+    if (!ipfs) return null
     debug("getting input writer for cid", ipfs[".cid"]);
     const w = writer(ipfs[".cid"]);
 

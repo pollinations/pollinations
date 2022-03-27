@@ -2,7 +2,7 @@
 import Debug from "debug";
 import { parse } from "json5";
 import { extname } from "path";
-import { getWebURL, writer } from "./ipfsConnector.js";
+import { getWebURL, reader, writer } from "./ipfsConnector.js";
 import { getIPFSState } from "./ipfsState.js";
 
 const debug = Debug("ipfsWebClient")
@@ -58,6 +58,7 @@ export const updateInput = async (inputWriter, inputs) => {
     await inputWriter.rm("output")
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid())
 
+    const { get } = await reader()
     // this is a bit hacky due to some wacky file naming we are doing
     // will clean this up later
     const writtenFiles = []
@@ -83,6 +84,13 @@ export const updateInput = async (inputWriter, inputs) => {
             // Will fix on the pollinator side later
             val = `/content/ipfs/input/${filename}`
             writtenFiles.push(path)
+        }
+
+        if (typeof val === "string" && val.startsWith("http") && val.includes("/ipfs/")) {
+            debug("found ipfs url", val)
+            const cid = val.split("/ipfs/")[1].split("?")[0]
+            await inputWriter.rm(`input/${key}`)
+            await inputWriter.cp(`input/${key}`, cid)
         }
 
         const path = "input/" + key

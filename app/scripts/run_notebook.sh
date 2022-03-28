@@ -54,6 +54,9 @@ python /content/pollinations/pollinations/prepare_for_papermill.py $NOTEBOOK_PAT
 STATUS=1
 RUN_COUNT=0
 
+# Save installed python packages before run
+pip freeze > $IPFS_ROOT/output/requirements_before_run.txt
+
 # --- Run
 while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 
@@ -83,6 +86,9 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
     #deactivate
     
 done
+
+# Save installed python packages after run
+pip freeze > $IPFS_ROOT/output/requirements_after_run.txt
 
 FAILED_STATUS=""
 

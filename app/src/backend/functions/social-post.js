@@ -34,7 +34,7 @@ export async function socialPost(platform, cid) {
     return;
   }
 
-  const shortenPost = platform === "twitter" ? true : false
+  const shortenPost = platform === "twitter"
   const data = getPostData(ipfs, cid, shortenPost);
 
   // Return early if the post title includes mature words.

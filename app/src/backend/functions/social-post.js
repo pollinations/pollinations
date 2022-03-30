@@ -3,6 +3,7 @@ import fetch from "node-fetch";
 import SocialPost from "social-post-api";
 import { getPostData } from "../../data/summaryData";
 import { IPFSWebState } from "../../network/ipfsWebClient.js";
+import {discordPollenPostWebhook} from "./discord-pollen-post.js";
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +33,9 @@ export async function socialPost(platform, cid) {
     console.log("Social post disabled. Aborting...");
     return;
   }
-  const data = getPostData(ipfs, cid, platform === "twitter");
+
+  const shortenPost = platform === "twitter"
+  const data = getPostData(ipfs, cid, shortenPost);
 
   // Return early if the post title includes mature words.
   if (data.title.includes("*")) {
@@ -48,6 +51,8 @@ export async function socialPost(platform, cid) {
     console.error("error", e);
     res = e;
   }
+  // Send discord webhook.
+  await discordPollenPostWebhook(data);
   return res;
 }
 

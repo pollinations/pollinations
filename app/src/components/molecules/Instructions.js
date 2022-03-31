@@ -1,12 +1,10 @@
-import Markdown from "markdown-to-jsx"
-import useContent from '../../hooks/useContent'
+import Markdown from 'markdown-to-jsx';
+import useContent from '../../hooks/useContent';
 
-const InstructionsView = () => {
+function InstructionsView() {
+  const content = useContent('instructions');
 
-let content = useContent('instructions')
-
-return <Markdown>{content}</Markdown>
-
+  return <Markdown>{content}</Markdown>;
 }
 
-export default InstructionsView
+export default InstructionsView;

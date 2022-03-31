@@ -12,8 +12,8 @@
 //     fps:8
 // });
 
-// const logProgress = (total, name="") => { 
-    
+// const logProgress = (total, name="") => {
+
 //     const bar = multibar.create(total, 0, {name});
 
 //     const update = increment => {
@@ -26,7 +26,7 @@
 //     }
 
 //     return [update, remove];
-// } 
+// }
 
 // export default logProgress;
 
@@ -46,9 +46,9 @@
 
 export default () => null;
 
-export const logProgressAsync = it => it;
+export const logProgressAsync = (it) => it;
 
-let globalBarIndex = 0;
+const globalBarIndex = 0;
 
 export const PromiseAllProgress = (name, promises) => Promise.all(promises);
 // {
@@ -66,4 +66,3 @@ export const PromiseAllProgress = (name, promises) => Promise.all(promises);
 //     })
 //     return promiseProgress;
 // };
-

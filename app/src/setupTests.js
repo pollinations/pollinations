@@ -7,4 +7,4 @@
 //   });
 
 process.env.DEBUG = '*';
-console.log("setting up tests")
+console.log('setting up tests');

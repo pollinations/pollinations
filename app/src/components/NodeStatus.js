@@ -1,69 +1,82 @@
-import React from "react";
-import { displayContentID } from "../network/utils";
-import { getIPNSURL, getWebURL } from "../network/ipfsConnector";
-import { Button, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box} from "@material-ui/core"
+import React from 'react';
+import {
+  Button, ListItem as MuiListItem, Table, TableRow, TableBody, TableCell as MuiTableCell, withStyles, styled, List, Typography, Box,
+} from '@material-ui/core';
 import WarningIcon from '@material-ui/icons/Error';
-import Debug from "debug";
-import { Link } from "react-router-dom";
+import Debug from 'debug';
+import { Link } from 'react-router-dom';
+import { getIPNSURL, getWebURL } from '../network/ipfsConnector';
+import { displayContentID } from '../network/utils';
 
-import { pollinatorColabURL } from "./molecules/LaunchColabButton";
+import { pollinatorColabURL } from './molecules/LaunchColabButton';
 
-const debug = Debug("NodeStatus");
-
+const debug = Debug('NodeStatus');
 
 // Display the connection status to colab and currect IPFS content ID
-export default ({ nodeID, contentID,  gpu, connected }) => {
-    
-    gpu = parseGPU(gpu);
-    debug("parsed GPU", gpu);
+export default function ({
+  nodeID, contentID, gpu, connected,
+}) {
+  gpu = parseGPU(gpu);
+  debug('parsed GPU', gpu);
 
-    const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
-    
-    const nodeInfo = !connected ? <ColabConnectButton connected={!connected} />  : gpuInfo || displayContentID(nodeID);
+  const gpuInfo = gpu && `${gpu} ${gpuSmilie[gpu]}`;
 
-    return <Box style={{width:"220px", marginLeft:"auto"}}>
-        <Table size="small" aria-label="a dense table" >
-                    <TableBody>
-                        <TableRow>
-                            <TableCell><b>GPU</b></TableCell>
-                            <TableCell>{ nodeInfo}</TableCell>
-                        </TableRow>
-                        <TableRow>
-                        <TableCell ><b>ContentID</b></TableCell>
-                            <TableCell>
-                                {
-                                    contentID ?
-                                        <Link to="/n">{displayContentID(contentID)}</Link>
-                                    : 
-                                    <p>N/A</p>
+  const nodeInfo = !connected ? <ColabConnectButton connected={!connected} /> : gpuInfo || displayContentID(nodeID);
+
+  return (
+    <Box style={{ width: '220px', marginLeft: 'auto' }}>
+      <Table size="small" aria-label="a dense table">
+        <TableBody>
+          <TableRow>
+            <TableCell><b>GPU</b></TableCell>
+            <TableCell>{ nodeInfo}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell><b>ContentID</b></TableCell>
+            <TableCell>
+              {
+                                    contentID
+                                      ? <Link to="/n">{displayContentID(contentID)}</Link>
+                                      : <p>N/A</p>
                                 }
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </Box>;
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </Box>
+  );
 }
-
 
 const gpuSmilie = {
-    "Tesla T4" : "😐",
-    "Tesla K80" : "😴",
-    "Tesla P100" : "😀",
-    "Tesla V100" : "😍",
-}
+  'Tesla T4': '😐',
+  'Tesla K80': '😴',
+  'Tesla P100': '😀',
+  'Tesla V100': '😍',
+};
 
 // extract GPU name from ipfs
 // the GPU was written to ipfs by running `nvidia-smi` on colab
-const parseGPU = gpu  => 
-    gpu?.replace(/\(.*\)/g, "")?.replace("GPU 0:", "")?.split("-")[0]?.trim();
+const parseGPU = (gpu) => gpu?.replace(/\(.*\)/g, '')?.replace('GPU 0:', '')?.split('-')[0]?.trim();
 
-
-const ColabConnectButton = ({connected}) => <Button color="secondary" href={pollinatorColabURL} target="colab">[ {connected ?  "Launch":<><WarningIcon />Launch</>}  ]</Button>;
+function ColabConnectButton({ connected }) {
+  return (
+    <Button color="secondary" href={pollinatorColabURL} target="colab">
+      [
+      {connected ? 'Launch' : (
+        <>
+          <WarningIcon />
+          Launch
+        </>
+      )}
+      {' '}
+      ]
+    </Button>
+  );
+}
 
 const TableCell = withStyles({
-    root: {
-      borderBottom: "none",
-      padding: "2px"
-    }
-  })(MuiTableCell);
-
+  root: {
+    borderBottom: 'none',
+    padding: '2px',
+  },
+})(MuiTableCell);

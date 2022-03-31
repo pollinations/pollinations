@@ -1,11 +1,12 @@
-import MarkDownContent from "../components/molecules/MarkDownContent"
-import { SmallContainer } from "./styles/base"
+import MarkDownContent from '../components/molecules/MarkDownContent';
+import { SmallContainer } from './styles/base';
 
-const About = () => {
-
-    return <SmallContainer>
-        <MarkDownContent id='about'/>
+function About() {
+  return (
+    <SmallContainer>
+      <MarkDownContent id="about" />
     </SmallContainer>
+  );
 }
 
-export default About
+export default About;

@@ -1,7 +1,7 @@
-import LimitConcurrency from "p-limit";
+import LimitConcurrency from 'p-limit';
 
 const concurrencyLimiter = LimitConcurrency(1);
 
-const limit = f => (...args) => concurrencyLimiter(() => f(...args));
+const limit = (f) => (...args) => concurrencyLimiter(() => f(...args));
 
 export default limit;

@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react';
-import { textContent } from "../assets/index.js";
-
+import { textContent } from '../assets/index.js';
 
 const useContent = (id) => {
+  const [content, setContent] = useState('\n\n*loading...*\n\n');
 
-    let [content, setContent] = useState('\n\n*loading...*\n\n')
+  useEffect(() => {
+    const markdown = textContent[id];
+    fetch(markdown)
+      .then((res) => res && res.text())
+      .then((md) => md && setContent(md));
+  }, []);
 
-    useEffect(() => {
-        let markdown = textContent[id]
-        fetch(markdown)
-            .then(res => res && res.text())
-            .then(md => md && setContent(md))
-    }, [])
+  return content;
+};
 
-    return content
-}
-
-export default useContent
+export default useContent;

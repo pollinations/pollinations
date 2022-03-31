@@ -4,17 +4,19 @@ import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
+export default function Acordion({ visibleContent, hiddenContent }) {
+  return (
+    <Accordion style={{ backgroundColor: 'transparent', boxShadow: 'none', padding: 0 }}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        aria-controls="panel1a-content"
+        id="panel1a-header"
+        children={visibleContent}
+      />
 
-export default function Acordion({visibleContent, hiddenContent,}) {
-
-  return <Accordion style={{backgroundColor: 'transparent', boxShadow: 'none', padding: 0}}>
-        <AccordionSummary 
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1a-content"
-          id="panel1a-header"
-          children={visibleContent}/>
-        
-        <AccordionDetails
-        children={hiddenContent}/>
-      </Accordion>
+      <AccordionDetails
+        children={hiddenContent}
+      />
+    </Accordion>
+  );
 }

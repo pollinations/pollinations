@@ -1,36 +1,35 @@
-import { createMuiTheme, ThemeProvider } from '@material-ui/core'
-import CssBaseline from '@material-ui/core/CssBaseline'
-import React from 'react'
-import ReactDOM from 'react-dom'
-import App from './App'
-import { AuthProvider } from './hooks/useAuth'
-import './index.css'
-import * as serviceWorkerRegistration from './serviceWorkerRegistration'
-
+import { createMuiTheme, ThemeProvider } from '@material-ui/core';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+import { AuthProvider } from './hooks/useAuth';
+import './index.css';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const darkTheme = createMuiTheme({
   typography: {
-    fontFamily: 'Source Code Pro'
+    fontFamily: 'Source Code Pro',
   },
   palette: {
     type: 'dark',
     primary: {
       main: 'rgb(255, 236, 249)',
-      },
+    },
     secondary: {
-      main: 'rgb(166, 213, 250)'
-    }
+      main: 'rgb(166, 213, 250)',
+    },
   },
-})
+});
 
 ReactDOM.render(
-    <ThemeProvider theme={darkTheme}>
-      <AuthProvider>
-        <CssBaseline />
-        <App />
-      </AuthProvider>
-    </ThemeProvider>,
-  document.getElementById('root')
+  <ThemeProvider theme={darkTheme}>
+    <AuthProvider>
+      <CssBaseline />
+      <App />
+    </AuthProvider>
+  </ThemeProvider>,
+  document.getElementById('root'),
 );
 
 // If you want your app to work offline and load faster, you can change

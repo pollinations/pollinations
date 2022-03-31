@@ -1,7 +1,7 @@
-import Debug from "debug";
-import {getClient, writer} from "./ipfsConnector.js"
-import assert from "assert";
-import {writeFileSync} from "fs";
+import Debug from 'debug';
+import assert from 'assert';
+import { writeFileSync } from 'fs';
+import { getClient, writer } from './ipfsConnector.js';
 
 // const debug = Debug("ipfsConnector:test");
 
@@ -23,7 +23,6 @@ import {writeFileSync} from "fs";
 //     // expect(mature("the ass.")).toBe("the ***.")
 // });
 
-
 // test that when we add a file the CID changes and when we remove it again the CID is the same as before
 // async function testAddRemove(client, startCID, filepath) {
 //     const {add, rm, cid, close} = await writer(client, startCID);
@@ -39,7 +38,6 @@ import {writeFileSync} from "fs";
 //     assert(deletedCID === initialCid);
 //     await close();
 // }
-
 
 // test adding a nested subdirectory
 // async function testNestedAdd(client, startCID, folder = "/folder") {
@@ -82,17 +80,15 @@ import {writeFileSync} from "fs";
 //     // expect(mature("the ass.")).toBe("the ***.")
 // });
 
-
 // test('adding and removing file yields same CID', async () => {
 //     const { addFile, cid, close } = await getWriter();
 //     const content = "testString";
 //     const filepath = "/tmp/_pollinationsTestUpload"
 //     writeFileSync(filepath, content);
 //     await addFile("test",filepath)
-//     expect(await cid()).toBe("QmX6ceFQPT6ghgHbzskeCHpakjYrgQwjCE8RKEE57a3nFw");    
+//     expect(await cid()).toBe("QmX6ceFQPT6ghgHbzskeCHpakjYrgQwjCE8RKEE57a3nFw");
 //     await close();
 // });
-
 
 // const getWriter = async () => {
 //     const client = await getClient();

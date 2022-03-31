@@ -1,49 +1,47 @@
-import Debug from "debug"
-import { values } from "ramda"
-import { useCallback } from "react"
-import useIPFS from "./useIPFS"
-import useIPFSWrite from "./useIPFSWrite"
-import useLocalStorage from "./useLocalStorage"
-import usePollenDone from "./usePollenDone"
+import Debug from 'debug';
+import { values } from 'ramda';
+import { useCallback } from 'react';
+import useIPFS from './useIPFS';
+import useIPFSWrite from './useIPFSWrite';
+import useLocalStorage from './useLocalStorage';
+import usePollenDone from './usePollenDone';
 
-const debug = Debug("useLocalPollens")
+const debug = Debug('useLocalPollens');
 
 // an empty folder
-const EMPTY_CID = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
+const EMPTY_CID = 'QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn';
 
-export default function useLocalPollens( node ) {
+export default function useLocalPollens(node) {
+  const [pollensCID, setPollensCID] = useLocalStorage('localpollens', EMPTY_CID);
 
-    const [ pollensCID, setPollensCID ] = useLocalStorage('localpollens', EMPTY_CID)
-   
-    const currentNodeContent = useIPFS(node.contentID)
+  const currentNodeContent = useIPFS(node.contentID);
 
-    const pollens = useIPFS(pollensCID)
+  const pollens = useIPFS(pollensCID);
 
-    debug("pollens", pollens)
-    
-    const writer = useIPFSWrite(pollens)
-    
-    const pushCID = useCallback(async cid => {
-        let isPresent = values(pollens).find( pollen => pollen[".cid"] === cid)
-        if (isPresent) return 
-        
-        const path = (new Date()).toISOString().replace(/[\W_]+/g, "_")
-        const newCID = await writer.cp(path, cid)
-        setPollensCID(newCID)
+  debug('pollens', pollens);
 
-    }, [pollens, writer])
+  const writer = useIPFSWrite(pollens);
 
-    const popCID = useCallback(async cid => {
-        const [path, _] = Object.entries(pollens).find(([path, pollen]) => pollen[".cid"] === cid)
-        const newCID = await writer.rm(path)
-        setPollensCID(newCID)
-    }, [pollens, writer])
+  const pushCID = useCallback(async (cid) => {
+    const isPresent = values(pollens).find((pollen) => pollen['.cid'] === cid);
+    if (isPresent) return;
 
-    usePollenDone(currentNodeContent, ipfs => {
-        pushCID(ipfs[".cid"])
-    })
+    const path = (new Date()).toISOString().replace(/[\W_]+/g, '_');
+    const newCID = await writer.cp(path, cid);
+    setPollensCID(newCID);
+  }, [pollens, writer]);
 
-    // pushCID(currentNodeContent[".cid"])
+  const popCID = useCallback(async (cid) => {
+    const [path, _] = Object.entries(pollens).find(([path, pollen]) => pollen['.cid'] === cid);
+    const newCID = await writer.rm(path);
+    setPollensCID(newCID);
+  }, [pollens, writer]);
 
-    return { pollens, pushCID, popCID }
+  usePollenDone(currentNodeContent, (ipfs) => {
+    pushCID(ipfs['.cid']);
+  });
+
+  // pushCID(currentNodeContent[".cid"])
+
+  return { pollens, pushCID, popCID };
 }

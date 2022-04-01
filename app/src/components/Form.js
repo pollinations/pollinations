@@ -4,12 +4,16 @@ import Form from "@rjsf/material-ui";
 import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
 import React, { useEffect, useMemo, useState } from "react";
+import FormikForm from "./Formik";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 
 const debug = Debug("Form");
 
-const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel }) => {
+const FormView = (props) => {
+
+    // remove this
+    let { input:originalInput, connected, metadata, onSubmit, onCancel } = props
 
     debug("metadata", metadata)
 
@@ -51,7 +55,10 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
     if (!properties)
         return null
         
-    return <Form
+    return <>
+    <FormikForm {...props}/>
+    
+    <Form
         schema={{ properties }}
         uiSchema={uiSchema}
         onSubmit={({ formData }) => {
@@ -62,7 +69,7 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
         }}
         disabled={formDisabled}
     >
-        {/* <FileUpload />  */}
+        
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
                 [ {inProgress ? "Submitting..." : "Submit"} ]
@@ -76,6 +83,7 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
 
         </Box>
     </Form>
+    </>
 
 }
 

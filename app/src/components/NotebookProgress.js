@@ -16,9 +16,9 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!inProgress)
       return null;
 
-    return  <><Box display="flex" alignItems="center">
+    return  <><Box display="flex" alignItems="center" m={1}>
       <Box width="100%" mr={1}>
-         Overall:
+         Overall Progress:
           <LinearProgress value={progress} variant="determinate" color="secondary" />
       </Box>
       <Box minWidth={35}>
@@ -28,7 +28,7 @@ export const NotebookProgress = ({output, metadata}) => {
       </Box>
       </Box>
       
-      { fineProgress && <Box display="flex" alignItems="center">
+      { fineProgress && <Box display="flex" alignItems="center" m={1}>
         <Box width="100%" mr={1}>
           Current Step:
           <LinearProgress value={fineProgress} variant="determinate" color="primary" /> 

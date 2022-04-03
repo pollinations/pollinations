@@ -63,7 +63,9 @@ export default memo(function ResultViewer({ ipfs }) {
       </Button>
     </NotebookTitle>
 
+
     <NotebookProgress output={ipfs?.output} metadata={metadata} />
+
     {success ? <Preview {...{ first, primaryInput, ipfs }} /> : <FailureViewer contentID={contentID} ipfs={ipfs} />}
 
     <div style={{ width: '100%' }}>

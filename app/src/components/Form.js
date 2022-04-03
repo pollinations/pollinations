@@ -4,7 +4,7 @@ import Form from "@rjsf/material-ui";
 import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
 import React, { useEffect, useMemo, useState } from "react";
-import FormikForm from "./Formik";
+import FormikForm from "./form/Formik";
 import HelpModal from "./HelpModal";
 // import { useDropzone } from 'react-dropzone'
 

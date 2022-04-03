@@ -7,7 +7,6 @@ import {
     Button, Link } from "@material-ui/core"
 import HelpModal from "../HelpModal";
 
-
 export const InputField = (props) => {
 
     if (!props)
@@ -17,15 +16,17 @@ export const InputField = (props) => {
     if (props.type === 'boolean') 
       return <>
       <label> {props.title} </label>
-      <RadioGroup value={props.value} onChange={e => props.setFieldValue(props.id, e.target.value === 'true' ? true : false)}>
+      <RadioGroup  value={props.value} onChange={e => props.setFieldValue(props.id, e.target.value === 'true' ? true : false)}>
         <FormControlLabel
           label='Yes'
           value={true}
-          control={<Radio  />}/>
+          control={<Radio  />}
+          disabled={props.disabled}/>
         <FormControlLabel
           label='No'
           value={false}
-          control={<Radio  />}/>      
+          control={<Radio  />}
+          disabled={props.disabled}/>      
       </RadioGroup> 
     </>
     

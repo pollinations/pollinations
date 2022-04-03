@@ -28,7 +28,7 @@ export const NotebookProgress = ({output, metadata}) => {
       </Box>
       </Box>
       
-      { fineProgress && <Box display="flex" alignItems="center" m={1}>
+      { fineProgress ? <Box display="flex" alignItems="center" m={1}>
         <Box width="100%" mr={1}>
           Current Step:
           <LinearProgress value={fineProgress} variant="determinate" color="primary" /> 
@@ -38,7 +38,7 @@ export const NotebookProgress = ({output, metadata}) => {
           fineProgress
         )}%`}</Typography>    
         </Box>   
-        </Box> 
+        </Box> : null
         }
  
        <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>

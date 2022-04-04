@@ -76,11 +76,12 @@ const extractParametersWithComment = (text, i, codeRows) => {
 
 // Extracts the parameters from a Colab parameter row
 const extractParameters = text => {
-  const match = text.match(/^([a-zA-Z0-9-_]+)\s*=\s*(.*)\s*#@param\s*{type:\s*[\"\'](.*)[\"\']}/)
+  const match = text.match(/^([a-zA-Z0-9-_]+)\s*=\s*(.*)\s*#@param\s*({.*})/)
   if (!match)
     return null;
-  const [_text, name, defaultVal, type] = match;
-  return { name, defaultVal, type };
+  const [_text, name, defaultVal, typedata] = match;
+  debug ("Parsing typedata", typedata)
+  return { name, defaultVal, ...parse(typedata) };
 }
 
 // Extracts the enumerable parameters from a Colab parameter row

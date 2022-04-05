@@ -22,7 +22,7 @@ const FormView = (props) => {
 
     const [inProgress, setInProgress] = useState(false)
     const [input, setInput] = useState(originalInput)
-    const formDisabled = !connected || inProgress
+    const formDisabled = !connected || inProgress 
     const showSubmit = true
 
     // don't know why this is necessary, but it is
@@ -41,7 +41,6 @@ const FormView = (props) => {
 
         // the UI schema for the form defines which widgets are used for each input
         const uiSchema = getUISchema(filledForm, showSubmit)
-
         debug("form uiSchema", uiSchema, filledForm, showSubmit)
 
         // Hacky way to remove default entries for files
@@ -65,7 +64,7 @@ const FormView = (props) => {
             debug("submitted", formData)
             setInput(formData)
             setInProgress(true)
-            onSubmit(formData)
+            console.log(formData)
         }}
         disabled={formDisabled}
     >

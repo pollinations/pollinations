@@ -16,8 +16,12 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
   const formik = useFormik({
     initialValues: initialValues,
     // validationSchema: validationSchema,
-    onSubmit: (values) => { onSubmit(values); }
+    onSubmit: (values) => { 
+      onSubmit(values); 
+      console.log(values);
+    }
   });
+
 
   return <form onSubmit={formik.handleSubmit}>
     {

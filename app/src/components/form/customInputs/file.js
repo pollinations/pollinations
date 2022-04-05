@@ -52,17 +52,17 @@ export default function Previews(props) {
 }
 
 function getType(id){
-  if(  `${id}`.includes('image') )
+  if(`${id}`.includes('image'))
     return 'image'
-  if( `${id}`.includes('video'))
+  if(`${id}`.includes('video'))
     return 'video'
-  if( `${id}`.includes('audio'))
+  if(`${id}`.includes('audio'))
     return 'audio'
 }
 
 function addName(string, name){
   let array = string.split(';')
-  return `${array[0]};name=${name};${array[1]};`
+  return `${array[0]};name=${name.replace(/\s/g, '')};${array[1]};`
 }
 
 const Disable = styled.div`

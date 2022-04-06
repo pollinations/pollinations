@@ -13,8 +13,6 @@ export const InputField = (props) => {
     if (!props)
       return null
 
-    console.log(props)
-
     // Dropzone file input
     if (`${props.id}`.includes('file'))
         return <DropZone {...props} />

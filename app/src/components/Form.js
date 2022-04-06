@@ -54,9 +54,7 @@ const FormView = (props) => {
     if (!properties)
         return null
         
-    return <>
-    <FormikForm {...props}/>
-    
+    return <>    
     <Form
         schema={{ properties }}
         uiSchema={uiSchema}

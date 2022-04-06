@@ -2,23 +2,27 @@ import { useFormik } from 'formik';
 import { getForm } from './helpers';
 import { FormActions, InputField } from './InputsUI';
 
-// TODO render input fields accordingly, clean more
-// TODO rename the file to form after its done
+
 const FormikForm = ({ input, connected, metadata, onSubmit }) => {
     
+  if (!input)
+    return null;
+
   const { inputs, initialValues } = getForm(input, metadata);
+
   const colabLink = metadata?.colabLink;
   const isDisabled = !connected;
 
-  if (!inputs)
+  if (!inputs || !initialValues)
     return null
 
+  // Formik hook holds the form state and methods 
   const formik = useFormik({
     initialValues: initialValues,
     // validationSchema: validationSchema,
     onSubmit: (values) => { 
       onSubmit(values); 
-      console.log(values);
+      // console.log(values);
     }
   });
 

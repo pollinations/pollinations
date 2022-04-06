@@ -4,8 +4,6 @@ import { mapObjIndexed, zipObj } from "ramda";
 // Get the form inputs from the ipfs object. 
 // Use the metadata to find default values
 export function getForm(ipfsInput, metadata) {
-    if ((metadata === undefined) || (metadata === null)) return;
-    ipfsInput = ipfsInput || {};
   
     // Merge Social checkbox with the form inputs
     const propertiesWithSocial = ({...metadata.form.properties, ...SocialField});
@@ -19,7 +17,10 @@ export function getForm(ipfsInput, metadata) {
     // Get the initial values for the form
     const keys = Object.keys(inputs);
     const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
-  
+
+    if (!initialValues || !keys.length)
+      return null
+    
     // Return the form inputs and initial values
     return { inputs, initialValues }
   }

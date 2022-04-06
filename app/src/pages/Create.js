@@ -11,6 +11,7 @@ import { getNotebookMetadata } from "../utils/notebookMetadata";
 
 import NotebookImage from '../components/organisms/markdownParsers/NotebookImage';
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
+import FormikForm from '../components/form/Formik';
 
 const debug = Debug("Create");
 
@@ -42,12 +43,13 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
               Inputs
             </Typography>
 
-            <FormView
+            <FormikForm
               input={ipfs?.input}
               connected={connected}
               metadata={metadata}
               onSubmit={dispatch}
             />
+            
           </div> 
 
           {/* OUTPUTS */}

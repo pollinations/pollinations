@@ -33,6 +33,8 @@ const Thumbs = ({ files, type }) => <Container>
                     (type === 'video' && <video src={file?.preview} autoPlay controls/>)
                     ||
                     (type === 'image' && <img src={file?.preview} />)
+                    ||
+                    (type === 'audio' && <p children={file?.name} />)
                 }
             </div>
         </Thumb>

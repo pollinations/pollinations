@@ -91,3 +91,13 @@ error {
   width: 100%;
   min-height: 480px;
 }
+
+
+
+
+.MuiAccordionSummary-root{
+  border: 1px solid rgba(127,127,127) !important;
+  padding: 0.1rem 1rem !important;
+  border-radius: 5px !important;
+  margin-bottom: 2em !important;
+}

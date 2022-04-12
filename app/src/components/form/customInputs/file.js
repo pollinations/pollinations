@@ -2,21 +2,43 @@ import React, {useEffect, useState} from 'react';
 import {useDropzone} from 'react-dropzone';
 import styled from '@emotion/styled';
 import Thumbs from '../../atoms/Thumb';
+import { useParams } from 'react-router'
 
 export default function Previews(props) {
+
+  const { contentID } = useParams()
 
   const [files, setFiles] = useState([]);
   const type = getType(props.id)
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: `${type}/*`,
-    onDrop: acceptedFiles => {
-      setFiles(acceptedFiles.map(file => Object.assign(file, {
-        preview: URL.createObjectURL(file)
-      })));
-      handleChange(props.id, acceptedFiles[0], props.setFieldValue);
-    }
+    onDrop: onNew
   });
+
+  useEffect(() => {
+    
+    async function hackyFetchOnMount(){
+      const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
+      const fileName = props.value.slice(20, props.value.length);
+
+      const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
+      const buf = await res.arrayBuffer()
+      const file = new File([buf], fileName, { type: `${type}/${props.default.split('.').pop()}` })
+
+      onNew([file])
+    }
+    hackyFetchOnMount()
+    
+  },[])
+
+
+  function onNew(acceptedFiles) {
+    setFiles(acceptedFiles.map(file => Object.assign(file, {
+      preview: URL.createObjectURL(file)
+    })));
+    handleChange(props.id, acceptedFiles[0], props.setFieldValue);
+  }
 
   function handleChange(key, file, callback){
     var reader = new FileReader();
@@ -59,7 +81,6 @@ function getType(id){
   if(`${id}`.includes('audio'))
     return 'audio'
 }
-
 function addName(string, name){
   let array = string.split(';')
   return `${array[0]};name=${name.replace(/\s/g, '')};${array[1]};`

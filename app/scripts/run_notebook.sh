@@ -55,7 +55,7 @@ STATUS=1
 RUN_COUNT=0
 
 # Save installed python packages before run
-pip freeze > $IPFS_ROOT/output/requirements_before_run.txt
+pip freeze > $IPFS_ROOT/output/requirements_before_run.pip
 
 # --- Run
 while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
@@ -76,7 +76,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
     set -o pipefail
 
     # Run notebook
-    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee $IPFS_ROOT/output/log
+    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee -a $IPFS_ROOT/output/log
 
     # Get exit code
     STATUS=$?
@@ -88,7 +88,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 done
 
 # Save installed python packages after run
-pip freeze > $IPFS_ROOT/output/requirements_after_run.txt
+pip freeze > $IPFS_ROOT/output/requirements_after_run.pip
 
 FAILED_STATUS=""
 

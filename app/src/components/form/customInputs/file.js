@@ -17,7 +17,10 @@ export default function Previews(props) {
   });
 
   useEffect(() => {
-    
+
+    if (!props.value)
+      return;
+
     async function hackyFetchOnMount(){
       const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
       const fileName = props.value.slice(20, props.value.length);

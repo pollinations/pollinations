@@ -55,7 +55,7 @@ STATUS=1
 RUN_COUNT=0
 
 # Save installed python packages before run
-pip freeze > $IPFS_ROOT/output/requirements_before_run.txt
+pip freeze > $IPFS_ROOT/output/requirements_before_run.pip
 
 # --- Run
 while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
@@ -88,7 +88,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 done
 
 # Save installed python packages after run
-pip freeze > $IPFS_ROOT/output/requirements_after_run.txt
+pip freeze > $IPFS_ROOT/output/requirements_after_run.pip
 
 FAILED_STATUS=""
 

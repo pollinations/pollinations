@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useParams } from 'react-router';
 import Thumbs from '../../atoms/Thumb';
+import Clear from '@material-ui/icons/Clear'
+import { Button } from '@material-ui/core';
 
 const debug = Debug('form/file');
 
@@ -58,16 +60,23 @@ export default function Previews(props) {
       console.log('Error: ', error);
     };
   }
+
+  function onClear(e){
+    setFiles([]);
+  }
+
   
   // useEffect(() => {
   //   // Make sure to revoke the data uris to avoid memory leaks
   //   files.forEach(file => URL.revokeObjectURL(file.preview));
   // }, [files]);
 
-  return (
+  return (<>
+    
     <Disable disabled={props.disabled} className="container">
       <label>{props.id}</label>
       <Style {...getRootProps({className: 'dropzone'})} isEmpty={!files.length}>
+        
         <input {...getInputProps()} />
         {
             files.length ? 
@@ -77,7 +86,14 @@ export default function Previews(props) {
         }
       </Style>
     </Disable>
-  );
+    {
+          files.length > 0 
+          && 
+          <Button onClick={() => setFiles([])}>
+            [ Remove {type} ]
+          </Button>
+    }
+  </>);
 }
 
 function getType(id){

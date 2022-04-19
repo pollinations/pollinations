@@ -1,8 +1,8 @@
 import { Accordion, AccordionSummary } from '@material-ui/core';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { useFormik } from 'formik';
 import { getForm } from './helpers';
 import { FormActions, InputField } from './InputsUI';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
 
 const FormikForm = ({ input, connected, metadata, onSubmit }) => {
     
@@ -14,6 +14,8 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
   const colabLink = metadata?.colabLink;
   const isDisabled = !connected;
 
+  const hasAdvancedFields = Object.values(inputs).some(({ advanced }) => advanced);
+  
   if (!inputs || !initialValues)
     return null
 
@@ -49,7 +51,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
       </>
       )
     }   
-      <Accordion>
+    { hasAdvancedFields &&  <Accordion>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls={`advanced_inputs`}
@@ -76,7 +78,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
             </>
             )
         }
-      </Accordion>
+      </Accordion> }
        
     <FormActions 
       isDisabled={isDisabled} 

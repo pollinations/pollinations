@@ -1,8 +1,11 @@
-import React, {useEffect, useState} from 'react';
-import {useDropzone} from 'react-dropzone';
 import styled from '@emotion/styled';
+import Debug from 'debug';
+import React, { useEffect, useState } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { useParams } from 'react-router';
 import Thumbs from '../../atoms/Thumb';
-import { useParams } from 'react-router'
+
+const debug = Debug('form/file');
 
 export default function Previews(props) {
 
@@ -23,6 +26,7 @@ export default function Previews(props) {
 
     async function hackyFetchOnMount(){
       const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
+      debug("fetchOnMount", props)
       const fileName = props.value.slice(20, props.value.length);
 
       const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
@@ -55,10 +59,10 @@ export default function Previews(props) {
     };
   }
   
-  useEffect(() => {
-    // Make sure to revoke the data uris to avoid memory leaks
-    files.forEach(file => URL.revokeObjectURL(file.preview));
-  }, [files]);
+  // useEffect(() => {
+  //   // Make sure to revoke the data uris to avoid memory leaks
+  //   files.forEach(file => URL.revokeObjectURL(file.preview));
+  // }, [files]);
 
   return (
     <Disable disabled={props.disabled} className="container">
@@ -84,6 +88,7 @@ function getType(id){
   if(`${id}`.includes('audio'))
     return 'audio'
 }
+
 function addName(string, name){
   let array = string.split(';')
   return `${array[0]};name=${name.replace(/\s/g, '')};${array[1]};`

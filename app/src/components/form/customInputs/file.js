@@ -77,7 +77,7 @@ export default function Previews(props) {
       <label>{props.id}</label>
       <Style {...getRootProps({className: 'dropzone'})} isEmpty={!files.length}>
         
-        <input {...getInputProps()} />
+        <input {...getInputProps()} disabled={props.disabled} />
         {
             files.length ? 
             <Thumbs files={files} type={type} />

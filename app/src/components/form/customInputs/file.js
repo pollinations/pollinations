@@ -10,8 +10,6 @@ import { Button } from '@material-ui/core';
 const debug = Debug('form/file');
 
 export default function Previews(props) {
-  console.log(props)
-
 
   const { contentID } = useParams()
 

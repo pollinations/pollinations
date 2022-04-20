@@ -10,6 +10,8 @@ import { Button } from '@material-ui/core';
 const debug = Debug('form/file');
 
 export default function Previews(props) {
+  console.log(props)
+
 
   const { contentID } = useParams()
 
@@ -28,7 +30,7 @@ export default function Previews(props) {
 
     async function hackyFetchOnMount(){
       const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
-      debug("fetchOnMount", props)
+      // debug("fetchOnMount", props)
       const fileName = props.value.slice(20, props.value.length);
 
       const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
@@ -77,7 +79,7 @@ export default function Previews(props) {
             files.length ? 
             <Thumbs files={files} type={type} />
             :
-            <p>Drag 'n' drop a {type} here, or click to select.</p>
+            props.description
         }
       </Style>
     </Disable>

@@ -28,7 +28,7 @@ export default function Previews(props) {
 
     async function hackyFetchOnMount(){
       const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
-      // debug("fetchOnMount", props)
+      debug("fetchOnMount", props)
       const fileName = props.value.slice(20, props.value.length);
 
       const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
@@ -76,8 +76,10 @@ export default function Previews(props) {
         {
             files.length ? 
             <Thumbs files={files} type={type} />
-            :
-            props.description
+            : <>
+              <p>{props.description}<br/>
+              Drag 'n' drop here.  </p>
+            </>
         }
       </Style>
     </Disable>

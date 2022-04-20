@@ -60,11 +60,6 @@ export default function Previews(props) {
       console.log('Error: ', error);
     };
   }
-
-  function onClear(e){
-    setFiles([]);
-  }
-
   
   // useEffect(() => {
   //   // Make sure to revoke the data uris to avoid memory leaks

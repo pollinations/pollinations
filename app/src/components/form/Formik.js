@@ -51,7 +51,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
       </>
       )
     }   
-    { hasAdvancedFields &&  <Accordion>
+    { hasAdvancedFields && <Accordion elevation={0}>
         <AccordionSummary
           expandIcon={<ExpandMoreIcon />}
           aria-controls={`advanced_inputs`}

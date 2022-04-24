@@ -21,7 +21,8 @@ const debug = Debug("home");
 
 export default function Home() {
 
-  const ipfs = useIPFS("/ipns/k51qzi5uqu5dgre2ch723cjy2taefr3txfplc3ba3vetmwdx76rf49uotm804v");
+  const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1");
+
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
 

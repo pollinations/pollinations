@@ -44490,7 +44490,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://public-ipfs-api.pollinations.ai";
+var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -44525,7 +44525,7 @@ var getIPFSDaemonURL = async () => {
 };
 var getWebURL = (cid, name6 = null) => {
   const filename = name6 ? `?filename=${name6}` : "";
-  return `https://public-ipfs-gateway.pollinations.ai/ipfs/${cid}${filename}`;
+  return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)

@@ -1,6 +1,6 @@
 /ipfs/*/image.png http://nftstorage.link/ipfs/:splat 200
 /ipfs/* http://nftstorage.link/ipfs/:splat 200
-/ipns/* http://nftstorage.link/ipns/:splat 200
+/ipns/* http://ipfs.pollinations.ai/ipns/:splat 200
 /p/* / 200
 /n/* / 200
 /c/* / 200

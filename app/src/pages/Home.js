@@ -72,7 +72,7 @@ export default function Home() {
         // takes in notebook list and filter the length of a given category
         // notebooks: array, category: string, max: number
         // returns array
-        notebookFilter(notebooks, '1 Text-To-Image', 3).map(notebookMapCallback)
+        notebookFilter(notebooks, '1 Text-To-Image', 2).map(notebookMapCallback)
         :
         notebookList.map(notebookMapCallback)
       }

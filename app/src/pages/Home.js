@@ -26,7 +26,6 @@ export default function Home() {
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs]);
   const { notebookList, options, option } = useFilter(notebooks)
 
-  debug("got notebooks", notebooks);
   return <>
     {
       !options.length && <Alert severity="error">Hey, pollinations.ai is having temporary issues, please retry in few hours.</Alert>
@@ -68,16 +67,26 @@ export default function Home() {
 
     <Box display='grid' gridGap='2em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
       {
-        notebookList
-          .map(notebook =>
-            <NotebookCard key={notebook.name} notebook={notebook} />
-          )
+        // maybe implement this in the useFilter hook?
+        option?.selected === 'Anything' ?
+        // takes in notebook list and filter the length of a given category
+        // notebooks: array, category: string, max: number
+        // returns array
+        notebookFilter(notebooks, '1 Text-To-Image', 3).map(notebookMapCallback)
+        :
+        notebookList.map(notebookMapCallback)
       }
     </Box>
   </>
 }
 
-
+const notebookMapCallback = notebook => <NotebookCard key={notebook.name} notebook={notebook} />
+function notebookFilter(notebooks, category, max){
+  return notebooks.filter( (notebook, idx) => 
+      !((notebook.category === category) &&
+      (idx > max))
+  )
+}
 
 
 

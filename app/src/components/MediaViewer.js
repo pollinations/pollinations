@@ -5,7 +5,7 @@ import React from "react";
 import { getMedia } from "../data/media";
 // Icons
 import { getWebURL } from "../network/ipfsConnector";
-
+import { GridStyle } from '../pages/styles/base';
 
 export const MediaViewer =  ({ filename, content, type, style }) => {
   const Viewer = TypeMaps[type]
@@ -43,15 +43,17 @@ function MediaListView({output}) {
     debug("first",firstFilename, firstURL)
 
     return (
-        <Box paddingTop='2em'>
-          <GridList cellHeight={200} cols={4}
-            children={images.map(([filename, url, type]) => (
-              <GridListTile key={filename} cols={1}>
-                <Box m={2} style={{width:"100%"}}><MediaViewer content={url} filename={filename} type={type} style={{ margin:"5px", height:"100%" }} /></Box>
-              </GridListTile>
-            ))}/>
-
-        </Box>
+      <GridStyle>
+        {
+          images.map(([filename, url, type]) => (
+            <MediaViewer 
+              content={url} 
+              filename={filename} 
+              type={type}
+            />
+          ))
+        }
+      </GridStyle>
     )
 }
 

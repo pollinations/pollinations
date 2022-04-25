@@ -22321,7 +22321,7 @@ var require_lib4 = __commonJS({
       electron = require("electron");
     }
     var isReady = electron && electron.app && !electron.app.isReady() ? new Promise((resolve2) => electron.app.once("ready", resolve2)) : Promise.resolve();
-    function fetch2(url$1, opts = {}) {
+    function fetch3(url$1, opts = {}) {
       return isReady.then(() => new Promise((resolve2, reject) => {
         const request = new Request(url$1, opts);
         const options = getNodeRequestOptions(request);
@@ -22410,7 +22410,7 @@ var require_lib4 = __commonJS({
           if (request.signal) {
             request.signal.removeEventListener("abort", abortRequest);
           }
-          if (fetch2.isRedirect(res.statusCode) && request.redirect !== "manual") {
+          if (fetch3.isRedirect(res.statusCode) && request.redirect !== "manual") {
             if (request.redirect === "error") {
               reject(new FetchError(`redirect mode is set to error: ${request.url}`, "no-redirect"));
               return;
@@ -22429,7 +22429,7 @@ var require_lib4 = __commonJS({
               request.headers.delete("content-length");
             }
             request.counter++;
-            resolve2(fetch2(url.resolve(request.url, res.headers.location), request));
+            resolve2(fetch3(url.resolve(request.url, res.headers.location), request));
             return;
           }
           const headers2 = new Headers();
@@ -22498,12 +22498,12 @@ var require_lib4 = __commonJS({
         writeToStream(req, request);
       }));
     }
-    fetch2.isRedirect = (code6) => code6 === 301 || code6 === 302 || code6 === 303 || code6 === 307 || code6 === 308;
+    fetch3.isRedirect = (code6) => code6 === 301 || code6 === 302 || code6 === 303 || code6 === 307 || code6 === 308;
     exports2.FetchError = FetchError;
     exports2.Headers = Headers;
     exports2.Request = Request;
     exports2.Response = Response2;
-    exports2["default"] = fetch2;
+    exports2["default"] = fetch3;
   }
 });
 
@@ -25161,12 +25161,12 @@ var require_lib6 = __commonJS({
       const dest = new URL$1(destination).hostname;
       return orig === dest || orig[orig.length - dest.length - 1] === "." && orig.endsWith(dest);
     };
-    function fetch2(url, opts) {
-      if (!fetch2.Promise) {
+    function fetch3(url, opts) {
+      if (!fetch3.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch2.Promise;
-      return new fetch2.Promise(function(resolve2, reject) {
+      Body.Promise = fetch3.Promise;
+      return new fetch3.Promise(function(resolve2, reject) {
         const request = new Request(url, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https2 : http2).request;
@@ -25216,7 +25216,7 @@ var require_lib6 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch2.isRedirect(res.statusCode)) {
+          if (fetch3.isRedirect(res.statusCode)) {
             const location2 = headers.get("Location");
             let locationURL = null;
             try {
@@ -25278,7 +25278,7 @@ var require_lib6 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve2(fetch2(new Request(locationURL, requestOpts)));
+                resolve2(fetch3(new Request(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -25338,11 +25338,11 @@ var require_lib6 = __commonJS({
         writeToStream(req, request);
       });
     }
-    fetch2.isRedirect = function(code6) {
+    fetch3.isRedirect = function(code6) {
       return code6 === 301 || code6 === 302 || code6 === 303 || code6 === 307 || code6 === 308;
     };
-    fetch2.Promise = global.Promise;
-    module2.exports = exports2 = fetch2;
+    fetch3.Promise = global.Promise;
+    module2.exports = exports2 = fetch3;
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.default = exports2;
     exports2.Headers = Headers;
@@ -25392,7 +25392,7 @@ var require_fetch_browser = __commonJS({
   "node_modules/ipfs-utils/src/http/fetch.browser.js"(exports2, module2) {
     "use strict";
     var { TimeoutError, AbortError } = require_error();
-    var { Response: Response2, Request, Headers, default: fetch2 } = require_fetch();
+    var { Response: Response2, Request, Headers, default: fetch3 } = require_fetch();
     var fetchWithProgress = (url, options = {}) => {
       const request = new XMLHttpRequest();
       request.open(options.method || "GET", url.toString(), true);
@@ -25450,7 +25450,7 @@ var require_fetch_browser = __commonJS({
         request.send(options.body);
       });
     };
-    var fetchWithStreaming = fetch2;
+    var fetchWithStreaming = fetch3;
     var fetchWith = (url, options = {}) => options.onUploadProgress != null ? fetchWithProgress(url, options) : fetchWithStreaming(url, options);
     var parseHeaders = (input) => {
       const headers = new Headers();
@@ -25750,7 +25750,7 @@ var require_fetch_node = __commonJS({
     var { Request, Response: Response2, Headers, default: nativeFetch } = require_fetch();
     var toStream2 = require_src7();
     var { Buffer: Buffer2 } = require("buffer");
-    var fetch2 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
+    var fetch3 = (url, options = {}) => nativeFetch(url, withUploadProgress(options));
     var withUploadProgress = (options) => {
       const { onUploadProgress, body } = options;
       if (onUploadProgress && body) {
@@ -25794,7 +25794,7 @@ var require_fetch_node = __commonJS({
       }
     };
     module2.exports = {
-      fetch: fetch2,
+      fetch: fetch3,
       Request,
       Headers
     };
@@ -26047,7 +26047,7 @@ var require_any_signal = __commonJS({
 var require_http = __commonJS({
   "node_modules/ipfs-utils/src/http.js"(exports2, module2) {
     "use strict";
-    var { fetch: fetch2, Request, Headers } = require_fetch2();
+    var { fetch: fetch3, Request, Headers } = require_fetch2();
     var { TimeoutError, HTTPError: HTTPError2 } = require_error();
     var merge3 = require_merge_options().bind({ ignoreUndefined: true });
     var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_iso_url();
@@ -26115,7 +26115,7 @@ var require_http = __commonJS({
         }
         const abortController = new AbortController();
         const signal = anySignal2([abortController.signal, opts.signal]);
-        const response = await timeout(fetch2(url.toString(), __spreadProps(__spreadValues({}, opts), {
+        const response = await timeout(fetch3(url.toString(), __spreadProps(__spreadValues({}, opts), {
           signal,
           timeout: void 0,
           headers
@@ -34907,11 +34907,14 @@ var require_social_post_api = __commonJS({
       analyticsPost(data) {
         return doPost2("analytics/post", data, this.headers);
       }
+      analyticsSocial(data) {
+        return doPost2("analytics/social", data, this.headers);
+      }
       user(params) {
         return doGet("user", this.headers, params);
       }
       upload(data) {
-        const { file, fileName, description } = data;
+        const { file } = data;
         if (!file) {
           return ERROR_MSG;
         }
@@ -40500,12 +40503,12 @@ var Client = class extends import_http2.default {
     delete this.put;
     delete this.delete;
     delete this.options;
-    const fetch2 = this.fetch;
+    const fetch3 = this.fetch;
     this.fetch = (resource, options2 = {}) => {
       if (typeof resource === "string" && !resource.startsWith("/")) {
         resource = `${opts.url}/${resource}`;
       }
-      return fetch2.call(this, resource, merge(options2, { method: "POST" }));
+      return fetch3.call(this, resource, merge(options2, { method: "POST" }));
     };
   }
 };
@@ -44490,7 +44493,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://public-ipfs-api.pollinations.ai";
+var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -44511,7 +44514,6 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 var localIPFSAvailable = async () => {
   return false;
 };
@@ -44525,7 +44527,7 @@ var getIPFSDaemonURL = async () => {
 };
 var getWebURL = (cid, name6 = null) => {
   const filename = name6 ? `?filename=${name6}` : "";
-  return `https://public-ipfs-gateway.pollinations.ai/ipfs/${cid}${filename}`;
+  return `https://ipfs.pollinations.ai/ipfs/${cid}${filename}`;
 };
 var stripSlashIPFS = (cidString) => {
   if (!cidString)
@@ -45501,6 +45503,32 @@ function shouldImport(ext) {
   return ext.length === 0 || ext.toLowerCase() === ".json" || ext.toLowerCase() === ".ipynb" || ext.toLowerCase() === ".md";
 }
 
+// src/backend/functions/discord-pollen-post.js
+var pollenPostWebhookUrl = process.env["POLLEN_POST_WEBHOOK_URL"];
+async function discordPollenPostWebhook({ title, coverImage, url }) {
+  const discordMessage = {
+    "username": "PollenPost",
+    "avatar_url": "https://avatars.githubusercontent.com/u/86964862?s=200&v=4",
+    "content": title,
+    "embeds": [
+      {
+        "title": title,
+        "image": {
+          "url": coverImage
+        },
+        "url": url
+      }
+    ]
+  };
+  return fetch(pollenPostWebhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(discordMessage)
+  });
+}
+
 // src/backend/functions/social-post.js
 async function socialPost(platform, cid) {
   var _a;
@@ -45510,7 +45538,12 @@ async function socialPost(platform, cid) {
     console.log("Social post disabled. Aborting...");
     return;
   }
-  const data = getPostData(ipfs, cid, platform === "twitter");
+  const shortenPost = platform === "twitter";
+  const data = getPostData(ipfs, cid, shortenPost);
+  if (data.title.includes("*")) {
+    console.log("Post contains mature words. Aborting...");
+    return null;
+  }
   let res = null;
   try {
     res = await doPost(data, platform);
@@ -45519,6 +45552,7 @@ async function socialPost(platform, cid) {
     console.error("error", e);
     res = e;
   }
+  await discordPollenPostWebhook(data);
   return res;
 }
 async function doPost({ post, title, videoURL, coverImage, url }, platform) {

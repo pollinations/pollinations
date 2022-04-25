@@ -40468,7 +40468,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://public-ipfs-api.pollinations.ai";
+var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -40489,7 +40489,6 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 var localIPFSAvailable = async () => {
   return false;
 };

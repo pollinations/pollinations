@@ -41,9 +41,6 @@ export async function reader() {
     }
 }
 
-// randomly assign a temporary folder in the IPFS mutable filesystem
-// in the future ideally we'd be running nodes in the browser and on colab and could work in the root
-const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}`;
 
 
 // Create a writer to modify the IPFS state
@@ -51,9 +48,13 @@ const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}`;
 // so calling close is important
 export function writer(initialRootCID = null) {
 
+    // randomly assign a temporary folder in the IPFS mutable filesystem
+    // in the future ideally we'd be running nodes in the browser and on colab and could work in the root
+    const mfsRoot = `/tmp_${(new Date()).toISOString().replace(/[\W_]+/g, "_")}`;
+
 
     // Promise to a temporary folder in the IPFS mutable filesystem
-    let initializedFolder = getClient().then(client => initializeMFSFolder(client, initialRootCID))
+    let initializedFolder = getClient().then(client => initializeMFSFolder(client, initialRootCID, mfsRoot))
 
     // calls the function with client and absolute path and finally return the root CID
     const returnRootCID = func => async (path = "/", ...args) => {
@@ -93,7 +94,7 @@ export function writer(initialRootCID = null) {
 
 
 // Initializes a folder in `mfsRoot` with the given CID
-async function initializeMFSFolder(client, initialRootCID) {
+async function initializeMFSFolder(client, initialRootCID, mfsRoot) {
 
     const getRootCID = async () => await getCID(client, mfsRoot);
 

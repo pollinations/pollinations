@@ -1,20 +1,21 @@
 import styled from '@emotion/styled';
+import { Button } from '@material-ui/core';
 import Debug from 'debug';
+import { last } from 'ramda';
 import React, { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useParams } from 'react-router';
 import Thumbs from '../../atoms/Thumb';
-import Clear from '@material-ui/icons/Clear'
-import { Button } from '@material-ui/core';
 
 const debug = Debug('form/file');
 
 export default function Previews(props) {
 
+  const { value, id } = props;
   const { contentID } = useParams()
 
   const [files, setFiles] = useState([]);
-  const type = getType(props.id)
+  const type = getType(id)
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: `${type}/*`,
@@ -23,13 +24,13 @@ export default function Previews(props) {
 
   useEffect(() => {
 
-    if (!props.value)
+    if (!value)
       return;
 
     async function hackyFetchOnMount(){
-      const baseUrl = 'https://public-ipfs-gateway.pollinations.ai/ipfs/';
-      debug("fetchOnMount", props)
-      const fileName = props.value.slice(20, props.value.length);
+      const baseUrl = 'https://ipfs.pollinations.ai/ipfs/';
+
+      const fileName = last(value.split("/"))
 
       const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
       const buf = await res.arrayBuffer()

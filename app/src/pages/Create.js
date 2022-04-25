@@ -4,7 +4,7 @@ import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import React, { useCallback, useMemo } from "react";
-import FormView from '../components/Form';
+
 import { SEO } from "../components/Helmet";
 import NotebookTitle from "../components/NotebookTitle";
 import { getNotebookMetadata } from "../utils/notebookMetadata";

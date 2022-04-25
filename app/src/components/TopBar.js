@@ -21,6 +21,8 @@ const MenuLinks = [
     {children: 'my pollens', to: '/localpollens'},
 ]
 
+const isLoginEnabled = false;
+
 const TopBar = () => {
     const [open, setOpen] = useState(false)
     const isLoginDialogOpen = useState(false)
@@ -38,7 +40,7 @@ const TopBar = () => {
             </BigTitle>
             <div style={{display: 'flex', gap: '1em'}}>
                 {
-                    user === null &&
+                    user === null && isLoginEnabled &&
                     <Button onClick={() => isLoginDialogOpen[1](true)}>
                        [ Login ]
                     </Button>   
@@ -47,7 +49,7 @@ const TopBar = () => {
                     [ Menu ]
                 </Button>
 
-                { user !== null &&  <LoggedUser user={user}/> }
+                { user !== null && isLoginEnabled && <LoggedUser user={user}/> }
             </div>
         </VisibleContentStyle>
 

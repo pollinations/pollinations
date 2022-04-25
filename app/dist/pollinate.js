@@ -44293,9 +44293,9 @@ async function reader() {
     get: async (cid, options = {}) => await ipfsGet(client, cid, options)
   };
 }
-var mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
 function writer(initialRootCID = null) {
-  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID));
+  const mfsRoot = `/tmp_${new Date().toISOString().replace(/[\W_]+/g, "_")}`;
+  let initializedFolder = getClient().then((client) => initializeMFSFolder(client, initialRootCID, mfsRoot));
   const returnRootCID = (func) => async (path = "/", ...args) => {
     const client = await getClient();
     await initializedFolder;
@@ -44320,7 +44320,7 @@ function writer(initialRootCID = null) {
   };
   return methods;
 }
-async function initializeMFSFolder(client, initialRootCID) {
+async function initializeMFSFolder(client, initialRootCID, mfsRoot) {
   const getRootCID = async () => await getCID(client, mfsRoot);
   let rootCid = await getRootCID();
   debug5("existing root CID", rootCid, "supplied", initialRootCID);

@@ -40,6 +40,7 @@ export default function useLocalPollens( node ) {
     }, [pollens, writer])
 
     usePollenDone(currentNodeContent, ipfs => {
+        debug("pollen done. Pushing CID", ipfs[".cid"])
         pushCID(ipfs[".cid"])
     })
 

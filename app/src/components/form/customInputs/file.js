@@ -7,7 +7,7 @@ import { useDropzone } from 'react-dropzone';
 import { useParams } from 'react-router';
 import Thumbs from '../../atoms/Thumb';
 
-const debug = Debug('form/file');
+const debug = Debug('formfile');
 
 export default function Previews(props) {
 
@@ -15,10 +15,10 @@ export default function Previews(props) {
   const { contentID } = useParams()
 
   const [files, setFiles] = useState([]);
-  const type = getType(id)
+  const expectedType = getType(id)
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: `${type}/*`,
+    accept: expectedType ? `${expectedType}/*` : undefined,
     onDrop: onNew
   });
 
@@ -31,10 +31,12 @@ export default function Previews(props) {
       const baseUrl = 'https://ipfs.pollinations.ai/ipfs/';
 
       const fileName = last(value.split("/"))
+      const type = mime.lookup(fileName)
 
       const res = await fetch(`${baseUrl}${contentID}/input/${fileName}`)
       const buf = await res.arrayBuffer()
-      const file = new File([buf], fileName, { type: `${type}/${props.default.split('.').pop()}` })
+
+      const file = new File([buf], fileName, { type })
 
       onNew([file])
     }
@@ -76,7 +78,7 @@ export default function Previews(props) {
         <input {...getInputProps()} disabled={props.disabled} />
         {
             files.length ? 
-            <Thumbs files={files} type={type} />
+            <Thumbs files={files} />
             : <>
               <p>{props.description}<br/>
               Drag 'n' drop here.  </p>
@@ -88,7 +90,7 @@ export default function Previews(props) {
           files.length > 0 
           && 
           <Button onClick={() => setFiles([])}>
-            [ Remove {type} ]
+            [ Remove {expectedType} ]
           </Button>
     }
   </>);

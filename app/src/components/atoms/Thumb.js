@@ -1,6 +1,7 @@
-import styled from '@emotion/styled'
+import styled from '@emotion/styled';
+import mime from 'mime-types';
 
-const Thumb = styled.div`
+const ThumbContainer = styled.div`
 display: inline-flex;
 border-radius: 2px;
 width: 90%;
@@ -24,22 +25,28 @@ const Container = styled.aside`
     flex-wrap: wrap;
 `
 
-const Thumbs = ({ files, type }) => <Container>
+const Thumbs = ({ files }) => <Container>
     {
-        files.map(file => 
-        <Thumb key={file?.name}>
-            <div>
-                {
-                    (type === 'video' && <video src={file?.preview} autoPlay controls/>)
-                    ||
-                    (type === 'image' && <img src={file?.preview} />)
-                    ||
-                    (type === 'audio' && <p children={file?.name} />)
-                }
-            </div>
-        </Thumb>
-        )
+        files.map(Thumb)
     }
 </Container>;
+
+
+const Thumb = ({name, preview}) => {
+    const mimeType = mime.lookup(name);
+    const type = mimeType.split('/')[0];
+    
+    return <ThumbContainer key={name}>
+        <div>
+            {
+                (type === 'video' && <video src={preview} autoPlay controls/>)
+                ||
+                (type === 'image' && <img src={preview} />)
+                ||
+                (type === 'audio' && <p children={name} />)
+            }
+        </div>
+    </ThumbContainer>
+}
 
 export default Thumbs

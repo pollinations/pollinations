@@ -4,13 +4,13 @@ import Card from '@material-ui/core/Card'
 import CardContent from '@material-ui/core/CardContent'
 import CardHeader from '@material-ui/core/CardHeader'
 import Typography from '@material-ui/core/Typography'
-import Alert from "@material-ui/lab/Alert"
 import Debug from "debug"
 import { useMemo } from "react"
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import RouterLink from "../components/molecules/RouterLink"
 import NotebookImage from '../components/organisms/markdownParsers/NotebookImage'
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo'
+import TopAlert from '../components/organisms/TopAlert'
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import useIPFS from '../hooks/useIPFS'
@@ -28,9 +28,7 @@ export default function Home() {
 
   debug("got notebooks", notebooks);
   return <>
-    {
-      !options.length && <Alert severity="error">Hey, pollinations.ai is having temporary issues, please retry in few hours.</Alert>
-    }
+    <TopAlert options={options}/>
     <HeroSection />
 
     <Box margin='calc(1.5em + 50px) 0 1.5em 0'>
@@ -76,7 +74,6 @@ export default function Home() {
     </Box>
   </>
 }
-
 
 
 

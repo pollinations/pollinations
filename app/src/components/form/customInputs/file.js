@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useParams } from 'react-router';
 import Thumbs from '../../atoms/Thumb';
+import mime from 'mime-types'
 
 const debug = Debug('formfile');
 
@@ -16,6 +17,8 @@ export default function Previews(props) {
 
   const [files, setFiles] = useState([]);
   const expectedType = getType(id)
+
+  console.log(expectedType)
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: expectedType ? `${expectedType}/*` : undefined,

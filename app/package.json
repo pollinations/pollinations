@@ -46,7 +46,6 @@
     "native-abort-controller": "^1.0.4",
     "node-abort-controller": "^3.0.1",
     "node-fetch": "^2.6.1",
-    "npm": "^8.6.0",
     "p-queue": "^7.1.0",
     "progress-stream": "^2.0.0",
     "queueable": "^4.1.4",

@@ -12,7 +12,6 @@ import TopBar from "./components/TopBar"
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSInputWrite"
-import useLocalPollens from "./hooks/useLocalPollens"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import About from "./pages/About"
@@ -47,7 +46,7 @@ const Pollinations = () => {
     const navigate = useNavigate()
 
     // to save pollens since we are not necessarily on the localpollens page
-    useLocalPollens(node)
+    // useLocalPollens(node)
 
     const navigateToNode = useCallback(() => {
         if (node.nodeID)

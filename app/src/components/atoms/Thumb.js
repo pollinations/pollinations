@@ -1,5 +1,8 @@
 import styled from '@emotion/styled';
+import Debug from 'debug';
 import mime from 'mime-types';
+
+const debug = Debug("Thumb")
 
 const ThumbContainer = styled.div`
 display: inline-flex;
@@ -32,16 +35,19 @@ const Thumbs = ({ files }) => <Container>
 </Container>;
 
 
-const Thumb = ({path, preview}) => {
-    const mimeType = mime.lookup(path);
+const Thumb = ({name, url}) => {
+    
+    const mimeType = mime.lookup(name);
     const type = mimeType.split('/')[0];
     
+    debug("type", type, "name", name, "url", url)
+
     return <ThumbContainer key={name}>
         <div>
             {
-                (type === 'video' && <video src={preview} autoPlay controls/>)
+                (type === 'video' && <video src={url} autoPlay controls/>)
                 ||
-                (type === 'image' && <img src={preview} />)
+                (type === 'image' && <img src={url} />)
                 ||
                 (type === 'audio' && <p children={name} />)
             }

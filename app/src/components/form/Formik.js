@@ -1,8 +1,11 @@
 import { Accordion, AccordionSummary } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import Debug from "debug";
 import { useFormik } from 'formik';
 import { getForm } from './helpers';
 import { FormActions, InputField } from './InputsUI';
+
+const debug = Debug("Formik")
 
 const FormikForm = ({ input, connected, metadata, onSubmit }) => {
     
@@ -23,12 +26,9 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
   const formik = useFormik({
     initialValues: initialValues,
     // validationSchema: validationSchema,
-    onSubmit: (values) => { 
-      onSubmit(values); 
-      // console.log(values);
-    }
+    onSubmit
   });
-
+  debug("formik", formik)
 
   return <form onSubmit={formik.handleSubmit}>
     { // Basic Inputs

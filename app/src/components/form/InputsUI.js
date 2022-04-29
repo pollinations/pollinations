@@ -1,18 +1,20 @@
-import { 
-    FormControlLabel, 
-    MenuItem, 
-    Radio, 
-    RadioGroup, 
-    TextField,
-    Button, Link } from "@material-ui/core"
+import {
+  Button, FormControlLabel, Link, MenuItem,
+  Radio,
+  RadioGroup,
+  TextField
+} from "@material-ui/core";
+import Debug from "debug";
 import HelpModal from "../HelpModal";
 import DropZone from "./customInputs/file";
+
+const debug = Debug("InputsUI")
 
 export const InputField = (props) => {
 
     if (!props)
       return null
-
+    debug("props", props)
     // Dropzone file input
     if (`${props.id}`.includes('file'))
         return <DropZone {...props} />

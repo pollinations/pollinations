@@ -17,7 +17,8 @@ const debug = Debug('formfile');
 
 export default function Previews(props) {
 
-  const { value, id, setFieldValue, disabled, description } = props;
+  debug('props', props);
+  const { value, id,  disabled, description } = props;
 
   const [files, setFiles] = useState([]);
   const expectedType = getType(id)
@@ -35,17 +36,21 @@ export default function Previews(props) {
     
     debug("dropped files", acceptedFiles);
 
-    setFiles(await Promise.all(acceptedFiles.map(async file => {
+    const newFiles = await Promise.all(acceptedFiles.map(async file => {
 
       const { cid } = await (await getClient()).add({content: file.stream(), path: file.path});
 
       return {
-        ...file, 
-        preview: getWebURL(cid)
+        name: file.path, 
+        url: getWebURL(cid)
       }
-    })));
+    }));
     
-    setFieldValue(id, acceptedFiles[0].preview);
+    setFiles(newFiles)
+
+    debug("setting field value",id, newFiles[0].url)
+    
+    props.setFieldValue(id, `"${acceptedFiles[0].url}"`);
   }
 
 

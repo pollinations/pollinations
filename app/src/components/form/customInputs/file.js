@@ -50,7 +50,7 @@ export default function Previews(props) {
 
     debug("setting field value",id, newFiles[0].url)
     
-    props.setFieldValue(id, `"${acceptedFiles[0].url}"`);
+    props.setFieldValue(id, newFiles[0].url);
   }
 
 

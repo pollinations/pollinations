@@ -1,9 +1,11 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
 import Debug from 'debug';
-import React, { useState } from 'react';
+import { last } from 'ramda';
+import React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { getClient, getWebURL } from '../../../network/ipfsConnector';
+import useIPFSWrite from '../../../hooks/useIPFSWrite';
+import { getWebURL } from '../../../network/ipfsConnector';
 import Thumbs from '../../atoms/Thumb';
 
 const debug = Debug('formfile');
@@ -17,10 +19,13 @@ const debug = Debug('formfile');
 
 export default function Previews(props) {
 
+
+  const { add, cid } = useIPFSWrite()
+
+
   debug('props', props);
   const { value, id,  disabled, description } = props;
 
-  const [files, setFiles] = useState([]);
   const expectedType = getType(id)
 
 
@@ -38,24 +43,27 @@ export default function Previews(props) {
 
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
 
-      const { cid } = await (await getClient()).add({content: file.stream(), path: file.path});
+      await add(file.path, file.stream())
 
-      return {
-        name: file.path, 
-        url: getWebURL(cid)
-      }
+      return file.path
     }));
-    
-    setFiles(newFiles)
 
-    debug("setting field value",id, newFiles[0].url)
+    const rootCID = await cid()
+
+    const files = newFiles.map(name => ({name, url: getWebURL(rootCID+"/"+name, name)}))
     
-    props.setFieldValue(id, newFiles[0].url);
+    await close()
+
+    debug("setting field value",id, files[0].url)
+    
+    props.setFieldValue(id, files[0].url);
   }
 
 
-  debug("files", files)
+  // debug("files", files)
+  const files = value ? [{url: value, name: last(value.split("/"))}] : []
   
+  debug("flls",files)
   return (<>
     
     <Disable disabled={disabled} className="container">

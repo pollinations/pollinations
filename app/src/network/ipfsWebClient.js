@@ -2,7 +2,7 @@
 import Debug from "debug";
 import { parse } from "json5";
 import { extname } from "path";
-import { getWebURL, reader, writer } from "./ipfsConnector.js";
+import { getWebURL, writer } from "./ipfsConnector.js";
 import { getIPFSState } from "./ipfsState.js";
 
 const debug = Debug("ipfsWebClient")
@@ -56,36 +56,16 @@ export const updateInput = async (inputWriter, inputs) => {
     debug("updateInput", inputs);
     debug("removing output")
     await inputWriter.rm("output")
+    await inputWriter.rm("input")
+    await inputWriter.mkDir("input")
     debug("Triggered dispatch. Inputs:", inputs, "cid before", await inputWriter.cid())
 
-    const { get } = await reader()
     // this is a bit hacky due to some wacky file naming we are doing
     // will clean this up later
     const writtenFiles = []
 
     for (let [key, val] of Object.entries(inputs)) {
-        // check if value is a string and base64 encoded file and convert it to a separate file input
-        if (typeof val === "string" && val.startsWith("data:")) {
 
-            // Parse file details from data url
-            debug("Found base64 encoded file", key);
-            // const mimeType = val.split(";")[0].split(":")[1];
-            const filename = val.split(";")[1].split("=")[1]
-            const fileContent = val.split(",")[1]
-
-            // convert fileContent to buffer
-            const buffer = Buffer.from(fileContent, "base64")
-            const path = "input/" + filename
-
-            debug("Writing file", filename)
-            await inputWriter.add(path, buffer)
-
-            // We should not need to reference the absolute path here.
-            // Will fix on the pollinator side later
-            val = `/content/ipfs/input/${filename}`
-            writtenFiles.push(path)
-        }
-        
         const path = "input/" + key
 
         // If the key contains an ipfs url or has copy it directly into the folder

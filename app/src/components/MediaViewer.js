@@ -5,7 +5,7 @@ import React from "react";
 import { getMedia } from "../data/media";
 // Icons
 import { getWebURL } from "../network/ipfsConnector";
-
+import { GridStyle } from '../pages/styles/base';
 
 export const MediaViewer =  ({ filename, content, type, style }) => {
   const Viewer = TypeMaps[type]
@@ -30,28 +30,21 @@ function MediaListView({output}) {
     if (!images || images.length === 0)
       return null;
     
-    // remove first image for large display
-    const firstImage = images.shift();
-
-    const firstFilename = firstImage[0];
-    const firstURL = firstImage[1];
-    
     // if more than 20 images take every nth image
     images = every_nth(images, Math.max(1,Math.floor(images.length / 20)));
 
-    debug("images", images);
-    debug("first",firstFilename, firstURL)
-
     return (
-        <Box paddingTop='2em'>
-          <GridList cellHeight={200} cols={4}
-            children={images.map(([filename, url, type]) => (
-              <GridListTile key={filename} cols={1}>
-                <Box m={2} style={{width:"100%"}}><MediaViewer content={url} filename={filename} type={type} style={{ margin:"5px", height:"100%" }} /></Box>
-              </GridListTile>
-            ))}/>
-
-        </Box>
+      <GridStyle>
+        {
+          images.map(([filename, url, type]) => (
+            <MediaViewer 
+              content={url} 
+              filename={filename} 
+              type={type}
+            />
+          ))
+        }
+      </GridStyle>
     )
 }
 

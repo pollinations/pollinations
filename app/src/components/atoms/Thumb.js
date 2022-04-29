@@ -32,8 +32,8 @@ const Thumbs = ({ files }) => <Container>
 </Container>;
 
 
-const Thumb = ({name, preview}) => {
-    const mimeType = mime.lookup(name);
+const Thumb = ({path, preview}) => {
+    const mimeType = mime.lookup(path);
     const type = mimeType.split('/')[0];
     
     return <ThumbContainer key={name}>

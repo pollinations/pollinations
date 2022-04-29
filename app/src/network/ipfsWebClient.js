@@ -35,10 +35,9 @@ export const IPFSWebState = (contentID, skipCache = false) => {
     return getIPFSState(contentID, fetchAndMakeURL, skipCache);
 }
 
-export const getWriter = ipfs => {
-    if (!ipfs) return null
-    debug("getting input writer for cid", ipfs[".cid"]);
-    const w = writer(ipfs[".cid"]);
+export const getWriter = cid => {
+    debug("getting input writer for cid", cid);
+    const w = writer(cid);
 
     // try to close the writer when window is closed
     const previousUnload = window.onbeforeunload;

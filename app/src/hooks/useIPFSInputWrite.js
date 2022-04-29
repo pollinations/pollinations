@@ -24,7 +24,7 @@ export default (ipfs, node) => {
         if (!cid)
             return
 
-        const writer = getWriter(ipfs);
+        const writer = getWriter(cid);
         debug("dispatching", ipfs)
         const newContentID = await updateInput(writer, { ...ipfs.input, ...inputState })
 

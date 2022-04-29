@@ -12,6 +12,7 @@
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.60",
     "@supabase/supabase-js": "^1.31.1",
+    "abort-controller": "^3.0.0",
     "ansi-to-react": "^6.1.6",
     "async": "^3.2.1",
     "await-sleep": "^0.0.1",

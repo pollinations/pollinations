@@ -10,12 +10,6 @@ import Thumbs from '../../atoms/Thumb';
 
 const debug = Debug('formfile');
 
-//     const onDrop = useCallback(async acceptedFiles => {
-//       // Do something with the files
-//       debug("dropped files", acceptedFiles);
-//       const file = acceptedFiles[0];
-//       const { cid } = await _client.add({content: file.stream(), path: file.path});
-
 
 export default function Previews(props) {
 
@@ -63,7 +57,6 @@ export default function Previews(props) {
   // debug("files", files)
   const files = value ? [{url: value, name: last(value.split("/"))}] : []
   
-  debug("flls",files)
   return (<>
     
     <Disable disabled={disabled} className="container">

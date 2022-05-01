@@ -33,6 +33,11 @@ for path in $IPFS_ROOT/input/*; do
 
     value=$(<$path)
 
+    # if parameter references a file in the input, add ipfs base path in front
+    if [[ "$value" =~ ^/input/.*| ]]; then
+        value = $IPFS_ROOT"$value"
+    fi
+
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done
 

@@ -18,7 +18,7 @@ export default function Previews(props) {
 
 
   debug('props', props);
-  const { value, id,  disabled, description } = props;
+  const { value, id,  disabled, description, setFieldValue } = props;
 
   const expectedType = getType(id)
 
@@ -50,23 +50,23 @@ export default function Previews(props) {
 
     debug("setting field value",id, files[0].url)
     
-    props.setFieldValue(id, files[0].url);
+    setFieldValue(id, files[0].url);
   }
 
 
   // debug("files", files)
-  const files = value ? [{url: value, name: last(value.split("/"))}] : []
+  const file = value ? {url: value.startsWith("/content/ipfs/input") ? value.replace("/content/ipfs/input", `/ipfs/${inputCID}`) : value, name: last(value.split("/"))} : null
   
   return (<>
     
     <Disable disabled={disabled} className="container">
       <label>{id}</label>
-      <Style {...getRootProps({className: 'dropzone'})} isEmpty={!files.length}>
+      <Style {...getRootProps({className: 'dropzone'})} isEmpty={!file}>
         
         <input {...getInputProps()} disabled={disabled} />
         {
-            files.length ? 
-            <Thumbs files={files} />
+            file ? 
+            <Thumbs files={[file]} />
             : <>
               <p>{description}<br/>
               Drag 'n' drop here.  </p>
@@ -75,9 +75,9 @@ export default function Previews(props) {
       </Style>
     </Disable>
     {
-          files.length > 0 
+          file 
           && 
-          <Button onClick={() => setFiles([])}>
+          <Button onClick={() => setFieldValue(id, "")}>
             [ Remove {expectedType} ]
           </Button>
     }

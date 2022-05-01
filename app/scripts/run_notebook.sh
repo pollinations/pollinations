@@ -32,7 +32,7 @@ for path in $IPFS_ROOT/input/*; do
     fi
 
     value=$(<$path)
-
+    echo "${key} : ${value}"
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done
 

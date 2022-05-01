@@ -18,7 +18,7 @@ export default function Previews(props) {
 
 
   debug('props', props);
-  const { value, id,  disabled, description, setFieldValue } = props;
+  const { value, id,  disabled, description, setFieldValue, inputCID } = props;
 
   const expectedType = getType(id)
 
@@ -55,7 +55,7 @@ export default function Previews(props) {
 
 
   // debug("files", files)
-  const file = value ? {url: value.startsWith("/content/ipfs/input") ? value.replace("/content/ipfs/input", `/ipfs/${inputCID}`) : value, name: last(value.split("/"))} : null
+  const file = value ? {url: value.startsWith("/content/ipfs/input") ? value.replace("/content/ipfs/input", `https://pollinations.ai/ipfs/${inputCID}`) : value, name: last(value.split("/"))} : null
   
   return (<>
     

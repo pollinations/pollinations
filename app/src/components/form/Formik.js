@@ -45,6 +45,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
           type={inputs[key].type}
           helperText={inputs[key].description}
           value={formik.values[key]}
+          inputCID={input[".cid"]}
           onChange={formik.handleChange}
           style={{ margin: '1rem 0' }}
         />

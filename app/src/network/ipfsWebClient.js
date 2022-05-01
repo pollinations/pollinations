@@ -70,18 +70,23 @@ export const updateInput = async (inputWriter, inputs) => {
 
         // If the key contains an ipfs url or has copy it directly into the folder
         if (typeof val === "string" && val.startsWith("http") && val.includes("/ipfs/")) {
-            debug("found ipfs url", val)
+            debug("found ipfs url", key, val)
             
             // use regex to get the cid and filename from the url
             // filename is matched until end of line or question mark
             // e.g. /ipfs/bla/blubb?asd -> ["bla","blubb"]
             // and /ipfs/bla/blubb -> ["bla","blubb"]
-            const [_ , cid, filename] = val.match(/\/ipfs\/([^\/\?]+)(?:\/([^\?]+))?/)
+            let [_ , cid, filename] = val.match(/\/ipfs\/([^\/\?]+)(?:\/([^\?]+))?/)
 
-            await inputWriter.rm(`input/${key}`)
-            await inputWriter.rm(`input/${filename}`)
-            await inputWriter.cp(`input/${filename}`, `${cid}/${filename}`)
-            await inputWriter.add(`input/${key}`, JSON.stringify(`/input/${filename}`))
+            if (!filename) {
+                await inputWriter.rm(`input/${key}`)
+                await inputWriter.cp(`input/${key}`, cid)
+            } else {
+                await inputWriter.rm(`input/${key}`)
+                await inputWriter.rm(`input/${filename}`)
+                await inputWriter.cp(`input/${filename}`, `${cid}/${filename}`)
+                await inputWriter.add(`input/${key}`, JSON.stringify(`/content/ipfs/input/${filename}`))
+            }
         } else {
             await inputWriter.add(path, JSON.stringify(val))
         }

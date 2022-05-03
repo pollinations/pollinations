@@ -34,10 +34,9 @@ for path in $IPFS_ROOT/input/*; do
     fi
 
 
-    # if it is a directory then save list of files to $value
-    # when dealing with multiple files later on
+    # if it is a directory then save list of absolute file paths to $value in one line
     if [[ -d $path ]]; then
-        value=(`ls $path`)
+        value=$(ls -1 -d $path/*)
     else
         value=$(<$path)
     fi

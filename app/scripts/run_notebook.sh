@@ -36,7 +36,7 @@ for path in $IPFS_ROOT/input/*; do
 
     # if it is a directory then save list of files to $value
     # when dealing with multiple files later on
-    if [[ -d $PASSED ]]; then
+    if [[ -d $path ]]; then
         value=(`ls $path`)
     else
         value=$(<$path)

@@ -19,7 +19,8 @@ const fetchAndMakeURL = async ({ name, cid, text }) => {
 
         try {
             const json = parse(textContent);
-            Object.defineProperty(json, ".cid", { value: cid });
+            if (typeof json === "object") 
+                Object.defineProperty(json, ".cid", { value: cid });
             return json;
         } catch (_e) {
             debug("result was not json. returning raw.")

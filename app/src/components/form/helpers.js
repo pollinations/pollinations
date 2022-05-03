@@ -1,5 +1,7 @@
+import Debug from "debug";
 import { mapObjIndexed, zipObj } from "ramda";
 
+const debug = Debug("helpers");
 
 // Get the form inputs from the ipfs object. 
 // Use the metadata to find default values

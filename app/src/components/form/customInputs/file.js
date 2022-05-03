@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
 import Debug from 'debug';
-import { last } from 'ramda';
 import React from 'react';
 import { useDropzone } from 'react-dropzone';
 import useIPFSWrite from '../../../hooks/useIPFSWrite';
@@ -14,7 +13,7 @@ const debug = Debug('formfile');
 export default function Previews(props) {
 
 
-  const { add, cid } = useIPFSWrite()
+  const { add, cid, mkDir } = useIPFSWrite()
 
 
   debug('props', props);
@@ -37,36 +36,36 @@ export default function Previews(props) {
 
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
 
+
       await add(file.path, file.stream())
 
       return file.path
     }));
 
     const rootCID = await cid()
-
-    const files = newFiles.map(name => ({name, url: getWebURL(rootCID+"/"+name, name)}))
+    debug("rootCID", rootCID)
+    const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
     
-    await close()
+    Object.defineProperty(files, ".cid", {value: rootCID})
 
-    debug("setting field value",id, files[0].url)
-    
-    setFieldValue(id, files[0].url);
+    setFieldValue(id, files)
   }
 
 
-  // debug("files", files)
-  const file = value ? {url: value.startsWith("/content/ipfs/input") ? value.replace("/content/ipfs/input", `https://pollinations.ai/ipfs/${inputCID}`) : value, name: last(value.split("/"))} : null
+  const files = value ? Object.values(value) : []
+
+  debug("files", files)
   
   return (<>
     
     <Disable disabled={disabled} className="container">
       <label>{id}</label>
-      <Style {...getRootProps({className: 'dropzone'})} isEmpty={!file}>
+      <Style {...getRootProps({className: 'dropzone'})} isEmpty={files.length === 0}>
         
         <input {...getInputProps()} disabled={disabled} />
         {
-            file ? 
-            <Thumbs files={[file]} />
+            files.length > 0 ? 
+            <Thumbs files={files} />
             : <>
               <p>{description}<br/>
               Drag 'n' drop here.  </p>
@@ -75,7 +74,7 @@ export default function Previews(props) {
       </Style>
     </Disable>
     {
-          file 
+          files.length > 0
           && 
           <Button onClick={() => setFieldValue(id, "")}>
             [ Remove {expectedType} ]

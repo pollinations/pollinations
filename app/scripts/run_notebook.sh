@@ -31,7 +31,15 @@ for path in $IPFS_ROOT/input/*; do
         continue
     fi
 
-    value=$(<$path)
+
+    # if it is a directory then save list of files to $value
+    # when dealing with multiple files later on
+    if [[ -d $PASSED ]]; then
+        value=$(ls $path)
+    else
+        value=$(<$path)
+    fi
+    
     echo "${key} : ${value}"
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done

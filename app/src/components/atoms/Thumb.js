@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 import Debug from 'debug';
 import mime from 'mime-types';
+import { last } from 'ramda';
 
 const debug = Debug("Thumb")
 
@@ -35,8 +36,9 @@ const Thumbs = ({ files }) => <Container>
 </Container>;
 
 
-const Thumb = ({name, url}) => {
+const Thumb = (url) => {
     
+    const name =  last(url.split("/"))
     const mimeType = mime.lookup(name);
     const type = mimeType.split('/')[0];
     

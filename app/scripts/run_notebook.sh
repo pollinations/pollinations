@@ -34,7 +34,7 @@ for path in $IPFS_ROOT/input/*; do
 
     # if it is a directory then save list of absolute file paths to $value in one line
     if [[ -d $path ]]; then
-        value=$(ls -1 -d $path/* | awk '{print "\x27" $1 "\x27" }')
+        value=$(ls -1 -d $path/* | sed "s/\(.*\).*/'\1'/")
     else
         value=$(<$path)
     fi

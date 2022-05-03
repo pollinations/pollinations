@@ -23,8 +23,8 @@ echo -n false > $IPFS_ROOT/output/done
 
 date +%s > $IPFS_ROOT/output/time_start
 
-for path in $IPFS_ROOT/input/*; do
-    key=$(basename $path)
+for pth in $IPFS_ROOT/input/*; do
+    key=$(basename $pth)
 
     # skip if file has extension
     if [[ $key == *.* ]]; then
@@ -33,10 +33,12 @@ for path in $IPFS_ROOT/input/*; do
 
 
     # if it is a directory then save list of absolute file paths to $value in one line
-    if [[ -d $path ]]; then
-        value=\"$(ls -1 -d $path/*)\"
+    if [[ -d $pth ]]; then
+        echo pth "$pth"
+        value=\"$(ls -1 -d $pth/*)\"
+        echo "value: $value"
     else
-        value=$(<$path)
+        value=$(<$pth)
     fi
     
     echo "${key} : ${value}"

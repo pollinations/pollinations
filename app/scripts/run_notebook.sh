@@ -25,6 +25,8 @@ date +%s > $IPFS_ROOT/output/time_start
 
 for path in $IPFS_ROOT/input/*; do
     key=$(basename $path)
+    echo "path" $path
+    ls $path
 
     # skip if file has extension
     if [[ $key == *.* ]]; then

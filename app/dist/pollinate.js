@@ -44795,7 +44795,7 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid: nodeid2, once, path: rootPath2 }, suffix = "/input") {
+var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -44926,12 +44926,12 @@ var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === grou
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");
-var sender = ({ path, debounce: debounce2, once, nodeid: nodeid2, publish: publish2 }) => {
+var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) => {
   const ipfsWriter = writer();
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   let abortController = null;
   const close = async (error) => {
-    debug11("Closing sender", nodeid2);
+    debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
     await ipfsWriter.close();
@@ -45011,7 +45011,7 @@ if (executeCommand)
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
     let receivedCID = null;
-    const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+    const { publish: publish2, close: closePublisher } = publisher(options_default.nodeid, "/output");
     for await (receivedCID of await cidStream) {
       debug12("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);

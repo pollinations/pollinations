@@ -78,7 +78,7 @@ if (executeCommand)
 
     let receivedCID = null;
 
-    const { publish, close: closePublisher } = publisher(nodeid, "/output")
+    const { publish, close: closePublisher } = publisher(options.nodeid, "/output")
 
     for await (receivedCID of await cidStream) {
       debug("received CID", receivedCID);

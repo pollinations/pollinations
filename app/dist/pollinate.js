@@ -42646,7 +42646,7 @@ function createLog(config) {
 
 // node_modules/ipfs-http-client/esm/src/name/publish.js
 var createPublish = configure((api) => {
-  async function publish2(path, options = {}) {
+  async function publish(path, options = {}) {
     const res = await api.post("name/publish", {
       signal: options.signal,
       searchParams: toUrlSearchParams(__spreadValues({
@@ -42656,7 +42656,7 @@ var createPublish = configure((api) => {
     });
     return objectToCamel(await res.json());
   }
-  return publish2;
+  return publish;
 });
 
 // node_modules/ipfs-http-client/esm/src/name/resolve.js
@@ -43428,7 +43428,7 @@ var createPeers = configure((api) => {
 
 // node_modules/ipfs-http-client/esm/src/pubsub/publish.js
 var createPublish2 = configure((api) => {
-  async function publish2(topic, data, options = {}) {
+  async function publish(topic, data, options = {}) {
     const searchParams = toUrlSearchParams(__spreadValues({
       arg: textToUrlSafeRpc(topic)
     }, options));
@@ -43440,7 +43440,7 @@ var createPublish2 = configure((api) => {
     }, await multipartRequest3([data], controller, options.headers)));
     await res.text();
   }
-  return publish2;
+  return publish;
 });
 
 // node_modules/ipfs-http-client/esm/src/pubsub/subscribe.js
@@ -44316,20 +44316,6 @@ var toPromise1 = async (asyncGen) => {
   return null;
 };
 var noop2 = () => null;
-var retryException = (f) => {
-  return async (...args) => {
-    let n = 5;
-    while (n-- > 0) {
-      try {
-        return await f(...args);
-      } catch (e) {
-        debug4(`retryException #${n}`, e);
-        await (0, import_await_sleep.default)(1e3);
-      }
-    }
-    throw new Error("Too many retries");
-  };
-};
 var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBVWGt6";
 
 // src/network/ipfsConnector.js
@@ -44532,64 +44518,6 @@ var import_queueable = __toESM(require_lib6(), 1);
 var import_ramda2 = __toESM(require_src7(), 1);
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
-function publisher(nodeID, suffix = "/output", useIPNS = true) {
-  if (nodeID === "ipns")
-    suffix = "";
-  debug6("Creating publisher for", nodeID, suffix);
-  let createdIPNSKey = nodeID === "ipns";
-  const _publish = async (cid) => {
-    const client = await getClient();
-    const ipnsKeyName = nodeID === "ipns" ? "self" : nodeID + suffix;
-    if (useIPNS && !createdIPNSKey) {
-      const keys = await client.key.list();
-      debug6("IPNS keys", keys);
-      if (!keys.find(({ name: name7 }) => name7 === ipnsKeyName)) {
-        const { name: name7 } = await client.key.gen(ipnsKeyName);
-        debug6("Generated IPNS key with name", name7);
-      } else
-        debug6("IPNS key already exists. Reusing");
-      createdIPNSKey = true;
-    }
-    debug6("ipnsKeyName", ipnsKeyName);
-    await publish(client, nodeID, cid, suffix, ipnsKeyName);
-    await (0, import_await_sleep2.default)(100);
-  };
-  const sendHeartbeat = async () => {
-    const client = await getClient();
-    publishHeartbeat(client, suffix, nodeID);
-  };
-  const handle = setInterval(sendHeartbeat, HEARTBEAT_FREQUENCY * 1e3);
-  sendHeartbeat();
-  const close = () => {
-    debug6("Closing publisher", handle);
-    clearInterval(handle);
-  };
-  return {
-    publish: _publish,
-    close
-  };
-}
-var publishHeartbeat = async (client, suffix, nodeID) => {
-  if (nodeID === "ipns")
-    return;
-  try {
-    await client.pubsub.publish(nodeID + suffix, "HEARTBEAT");
-  } catch (e) {
-    debug6("Exception. Couldn't publish heartbeat. Ignoring...", e.name);
-  }
-};
-async function publish(client, nodeID, rootCID, suffix = "/output", ipnsKeyName = null) {
-  const retryPublish = retryException(client.pubsub.publish);
-  debug6("publish pubsub", nodeID + suffix, rootCID, ipnsKeyName);
-  try {
-    if (ipnsKeyName !== null)
-      experimentalIPNSPublish(client, rootCID, ipnsKeyName);
-    if (nodeID !== "ipns")
-      await retryPublish(nodeID + suffix, rootCID);
-  } catch (e) {
-    debug6("Exception. Couldn't publish to", nodeID, suffix, "exception:", e.name);
-  }
-}
 async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
   debug6("publishing to ipns...", ipnsKeyName, rootCID);
   await client.name.publish(rootCID, {
@@ -44795,7 +44723,7 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
+var receive = async function* ({ ipns, nodeid: nodeid2, once, path: rootPath2 }, suffix = "/input") {
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -44926,17 +44854,15 @@ var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === grou
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");
-var sender = ({ path, debounce: debounce2, ipns, once, nodeid }) => {
+var sender = ({ path, debounce: debounce2, once, nodeid: nodeid2, publish }) => {
   const ipfsWriter = writer();
-  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   let abortController = null;
   const close = async (error) => {
-    debug11("Closing sender", nodeid);
+    debug11("Closing sender", nodeid2);
     if (abortController)
       abortController.abort();
     await ipfsWriter.close();
-    await closePublisher();
     await closePollenPublisher();
     debug11("closed all");
   };
@@ -44952,7 +44878,7 @@ var sender = ({ path, debounce: debounce2, ipns, once, nodeid }) => {
     for await (const cid of cid$) {
       debug11("publishing new cid", cid);
       await publishPollen(cid);
-      await publish2(cid);
+      await publish(cid);
       yield cid;
       if (once)
         await close();
@@ -45013,6 +44939,7 @@ if (executeCommand)
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
     let receivedCID = null;
+    const { publish, close: closePublisher } = publisher(nodeid, "/output");
     for await (receivedCID of await cidStream) {
       debug12("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
@@ -45027,7 +44954,7 @@ if (executeCommand)
         abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
-      const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish }));
       const doSend = async () => {
         for await (const sentCID of startSending()) {
           debug12("sent", sentCID);
@@ -45036,8 +44963,8 @@ if (executeCommand)
       };
       doSend();
       await execute(executeCommand, options_default.logout, executeSignal);
-      close();
     }
+    await closePublisher();
   })();
 else {
   if (enableSend)

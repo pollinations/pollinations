@@ -3,7 +3,6 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { AbortController } from "native-abort-controller";
 import { writer } from "../../network/ipfsConnector.js";
-import { publisher } from '../../network/ipfsPubSub.js';
 import folderSync from "./folderSync.js";
 
 const debug = Debug("ipfs/sender");
@@ -11,12 +10,12 @@ const debug = Debug("ipfs/sender");
 
 // Watch local path and and update IPFS incrementally.
 // Optionally send updates via PubSub.
-export const sender = ({ path, debounce, ipns, once, nodeid }) => {
+export const sender = ({ path, debounce, once, nodeid, publish }) => {
 
   const ipfsWriter = writer()
 
   // publisher to pollinations frontend
-  const { publish, close: closePublisher } = publisher(nodeid, "/output")
+
 
   // publisher to pollen feed
   const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
@@ -32,7 +31,6 @@ export const sender = ({ path, debounce, ipns, once, nodeid }) => {
       abortController.abort()
 
     await ipfsWriter.close()
-    await closePublisher()
     await closePollenPublisher()
     debug("closed all")
   };

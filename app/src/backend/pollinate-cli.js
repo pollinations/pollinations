@@ -77,6 +77,9 @@ if (executeCommand)
       : [stream.call(process.stdin), noop];
 
     let receivedCID = null;
+
+    const { publish, close: closePublisher } = publisher(nodeid, "/output")
+
     for await (receivedCID of await cidStream) {
       debug("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
@@ -100,18 +103,24 @@ if (executeCommand)
       
       [executeSignal, abortExecute] = getSignal()
 
-      const { startSending, close, stopSending } = sender({ ...options, once: false })
+      const { startSending, close, stopSending } = sender({ ...options, once: false, publish })
+      
       const doSend = async () => {
         for await (const sentCID of startSending()) {
           debug("sent", sentCID)
           console.log(sentCID)
         }
       }
+            
       doSend()
+
       await execute(executeCommand, options.logout, executeSignal)
-      close()
+
       //debug("done executing", executeCommand, ". Waiting...")
     }
+
+    await closePublisher()
+
 
   })();
 

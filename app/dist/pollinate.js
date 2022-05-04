@@ -45035,6 +45035,7 @@ if (executeCommand)
       };
       doSend();
       await execute(executeCommand, options_default.logout, executeSignal);
+      await close();
     }
     await closePublisher();
   })();

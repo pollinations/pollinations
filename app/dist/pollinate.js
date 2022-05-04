@@ -45026,7 +45026,7 @@ if (executeCommand)
       debug12("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
       debug12("remoteCID", receivedCID);
-      await processRemoteCID(remoteCID, options_default.path);
+      await processRemoteCID(receivedCID, options_default.path);
       if (abortExecute) {
         debug12("aborting previous execution");
         abortExecute();

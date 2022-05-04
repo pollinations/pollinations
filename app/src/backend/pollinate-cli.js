@@ -87,7 +87,7 @@ if (executeCommand)
       debug("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
       debug("remoteCID", receivedCID);
-      await processRemoteCID(remoteCID, options.path);
+      await processRemoteCID(receivedCID, options.path);
       if (abortExecute) {
         debug("aborting previous execution")
         abortExecute()

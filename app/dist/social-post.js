@@ -45654,16 +45654,17 @@ var import_path2 = require("path");
 
 // src/network/ipfsState.js
 var import_debug10 = __toESM(require_src(), 1);
-var import_ramda4 = __toESM(require_src3(), 1);
+var import_json52 = __toESM(require_lib7(), 1);
 var import_path = require("path");
+var import_ramda4 = __toESM(require_src3(), 1);
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json52 = __toESM(require_lib7(), 1);
 var debug10 = (0, import_debug10.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
+  skipCache = true;
   const ipfsReader = await reader();
   debug10("Getting state for CID", contentID);
   try {

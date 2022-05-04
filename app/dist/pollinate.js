@@ -44727,16 +44727,17 @@ function subscribeCallback(topic, callback) {
 
 // src/network/ipfsState.js
 var import_debug7 = __toESM(require_src(), 1);
-var import_ramda3 = __toESM(require_src7(), 1);
+var import_json5 = __toESM(require_lib7(), 1);
 var import_path2 = require("path");
+var import_ramda3 = __toESM(require_src7(), 1);
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toESM(require_lib7(), 1);
 var debug7 = (0, import_debug7.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
+  skipCache = true;
   const ipfsReader = await reader();
   debug7("Getting state for CID", contentID);
   try {

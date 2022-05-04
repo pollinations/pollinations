@@ -116,8 +116,9 @@ if (executeCommand)
 
       await execute(executeCommand, options.logout, executeSignal)
 
-      close()
-      //debug("done executing", executeCommand, ". Waiting...")
+      debug("done executing", executeCommand, ". Closing writer...")
+      await close()
+      debug("closed writer. waiting for next CID")
     }
 
     await closePublisher()

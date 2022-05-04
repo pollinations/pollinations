@@ -45035,7 +45035,9 @@ if (executeCommand)
       };
       doSend();
       await execute(executeCommand, options_default.logout, executeSignal);
-      close();
+      debug12("done executing", executeCommand, ". Closing writer...");
+      await close();
+      debug12("closed writer. waiting for next CID");
     }
     await closePublisher();
   })();

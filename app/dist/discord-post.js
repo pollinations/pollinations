@@ -18572,8 +18572,8 @@ var require_curry2 = __commonJS({
               return fn(a, _b);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b);
             }) : fn(a, b);
@@ -18767,22 +18767,22 @@ var require_curry3 = __commonJS({
               return fn(a, _b, _c);
             });
           case 2:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
             }) : _curry1(function(_c) {
               return fn(a, b, _c);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
-              return fn(_a, _b, c);
-            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a2, _b) {
+              return fn(_a2, _b, c);
+            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
-            }) : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b, c);
+            }) : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b, c);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b, c);
             }) : _isPlaceholder(c) ? _curry1(function(_c) {
@@ -20402,8 +20402,8 @@ var require_equals2 = __commonJS({
     function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
       var a = _arrayFromIterator(aIterator);
       var b = _arrayFromIterator(bIterator);
-      function eq(_a, _b) {
-        return _equals(_a, _b, stackA.slice(), stackB.slice());
+      function eq(_a2, _b) {
+        return _equals(_a2, _b, stackA.slice(), stackB.slice());
       }
       return !_includesWith(function(b2, aItem) {
         return !_includesWith(eq, aItem, b2);
@@ -36619,8 +36619,8 @@ function parseMtime(input) {
 }
 
 // node_modules/ipfs-http-client/esm/src/lib/to-url-search-params.js
-function toUrlSearchParams(_a = {}) {
-  var _b = _a, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
+function toUrlSearchParams(_a2 = {}) {
+  var _b = _a2, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
   if (searchParams) {
     options = __spreadValues(__spreadValues({}, options), searchParams);
   }
@@ -39406,8 +39406,8 @@ var encodeAddParams = ({ cid, service, background, name: name7, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function add(cid, _a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
@@ -39423,8 +39423,8 @@ function createAdd3(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/ls.js
 function createLs4(client) {
-  async function* ls(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function* ls(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/ls", {
       timeout,
       signal,
@@ -39440,8 +39440,8 @@ function createLs4(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm.js
 function createRm6(client) {
-  async function rm(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rm(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -39456,8 +39456,8 @@ function createRm6(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm-all.js
 function createRmAll2(client) {
-  async function rmAll(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rmAll(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -40522,7 +40522,8 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
+var _a;
+var IPFS_HOST = ((_a = process == null ? void 0 : process.env) == null ? void 0 : _a.IPFS_API_ENDPOINT) || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -40706,7 +40707,7 @@ function subscribeCallback(topic, callback) {
       }
     };
     const doSub = async () => {
-      var _a;
+      var _a2;
       const client = await getClient();
       try {
         abort.abort();
@@ -40719,7 +40720,7 @@ function subscribeCallback(topic, callback) {
           debug6("subscription was aborted. returning");
           return;
         }
-        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
+        if ((_a2 = e.message) == null ? void 0 : _a2.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
         await doSub();
@@ -40754,8 +40755,8 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   }
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
+var cachedIPFSState = (ipfsReader, _a2, processFile2, skipCache) => {
+  var _b = _a2, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
     debug7("cache miss", cid);
@@ -40828,6 +40829,8 @@ var writeFileAndCreateFolder = async (path, content) => {
 };
 async function processRemoteCID(contentID, rootPath) {
   debug8("Processing remote CID", contentID);
+  rmSync(rootPath, { recursive: true });
+  (0, import_fs.mkdirSync)(rootPath);
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
   debug8("got remote state", ipfsState);
 }

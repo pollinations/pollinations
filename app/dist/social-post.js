@@ -7301,8 +7301,8 @@ var require_curry2 = __commonJS({
               return fn(a, _b);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b);
             }) : fn(a, b);
@@ -7496,22 +7496,22 @@ var require_curry3 = __commonJS({
               return fn(a, _b, _c);
             });
           case 2:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
             }) : _curry1(function(_c) {
               return fn(a, b, _c);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
-              return fn(_a, _b, c);
-            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a2, _b) {
+              return fn(_a2, _b, c);
+            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
-            }) : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b, c);
+            }) : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b, c);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b, c);
             }) : _isPlaceholder(c) ? _curry1(function(_c) {
@@ -9131,8 +9131,8 @@ var require_equals = __commonJS({
     function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
       var a = _arrayFromIterator(aIterator);
       var b = _arrayFromIterator(bIterator);
-      function eq(_a, _b) {
-        return _equals(_a, _b, stackA.slice(), stackB.slice());
+      function eq(_a2, _b) {
+        return _equals(_a2, _b, stackA.slice(), stackB.slice());
       }
       return !_includesWith(function(b2, aItem) {
         return !_includesWith(eq, aItem, b2);
@@ -28827,29 +28827,29 @@ var require_dist = __commonJS({
       return value.every(assertion);
     };
     is2.buffer = (value) => {
-      var _a, _b, _c, _d;
-      return (_d = (_c = (_b = (_a = value) === null || _a === void 0 ? void 0 : _a.constructor) === null || _b === void 0 ? void 0 : _b.isBuffer) === null || _c === void 0 ? void 0 : _c.call(_b, value)) !== null && _d !== void 0 ? _d : false;
+      var _a2, _b, _c, _d;
+      return (_d = (_c = (_b = (_a2 = value) === null || _a2 === void 0 ? void 0 : _a2.constructor) === null || _b === void 0 ? void 0 : _b.isBuffer) === null || _c === void 0 ? void 0 : _c.call(_b, value)) !== null && _d !== void 0 ? _d : false;
     };
     is2.blob = (value) => isObjectOfType("Blob")(value);
     is2.nullOrUndefined = (value) => is2.null_(value) || is2.undefined(value);
     is2.object = (value) => !is2.null_(value) && (typeof value === "object" || is2.function_(value));
     is2.iterable = (value) => {
-      var _a;
-      return is2.function_((_a = value) === null || _a === void 0 ? void 0 : _a[Symbol.iterator]);
+      var _a2;
+      return is2.function_((_a2 = value) === null || _a2 === void 0 ? void 0 : _a2[Symbol.iterator]);
     };
     is2.asyncIterable = (value) => {
-      var _a;
-      return is2.function_((_a = value) === null || _a === void 0 ? void 0 : _a[Symbol.asyncIterator]);
+      var _a2;
+      return is2.function_((_a2 = value) === null || _a2 === void 0 ? void 0 : _a2[Symbol.asyncIterator]);
     };
     is2.generator = (value) => {
-      var _a, _b;
-      return is2.iterable(value) && is2.function_((_a = value) === null || _a === void 0 ? void 0 : _a.next) && is2.function_((_b = value) === null || _b === void 0 ? void 0 : _b.throw);
+      var _a2, _b;
+      return is2.iterable(value) && is2.function_((_a2 = value) === null || _a2 === void 0 ? void 0 : _a2.next) && is2.function_((_b = value) === null || _b === void 0 ? void 0 : _b.throw);
     };
     is2.asyncGenerator = (value) => is2.asyncIterable(value) && is2.function_(value.next) && is2.function_(value.throw);
     is2.nativePromise = (value) => isObjectOfType("Promise")(value);
     var hasPromiseAPI = (value) => {
-      var _a, _b;
-      return is2.function_((_a = value) === null || _a === void 0 ? void 0 : _a.then) && is2.function_((_b = value) === null || _b === void 0 ? void 0 : _b.catch);
+      var _a2, _b;
+      return is2.function_((_a2 = value) === null || _a2 === void 0 ? void 0 : _a2.then) && is2.function_((_b = value) === null || _b === void 0 ? void 0 : _b.catch);
     };
     is2.promise = (value) => is2.nativePromise(value) || hasPromiseAPI(value);
     is2.generatorFunction = isObjectOfType("GeneratorFunction");
@@ -28887,7 +28887,7 @@ var require_dist = __commonJS({
       try {
         new URL(value);
         return true;
-      } catch (_a) {
+      } catch (_a2) {
         return false;
       }
     };
@@ -28928,11 +28928,11 @@ var require_dist = __commonJS({
       return is2.object(value) && value.nodeType === NODE_TYPE_ELEMENT && is2.string(value.nodeName) && !is2.plainObject(value) && DOM_PROPERTIES_TO_CHECK.every((property) => property in value);
     };
     is2.observable = (value) => {
-      var _a, _b, _c, _d;
+      var _a2, _b, _c, _d;
       if (!value) {
         return false;
       }
-      if (value === ((_b = (_a = value)[Symbol.observable]) === null || _b === void 0 ? void 0 : _b.call(_a))) {
+      if (value === ((_b = (_a2 = value)[Symbol.observable]) === null || _b === void 0 ? void 0 : _b.call(_a2))) {
         return true;
       }
       if (value === ((_d = (_c = value)["@@observable"]) === null || _d === void 0 ? void 0 : _d.call(_c))) {
@@ -29335,9 +29335,9 @@ var require_source3 = __commonJS({
         request.prependOnceListener("socket", onSocket);
       }
       const onUpload = () => {
-        var _a;
+        var _a2;
         timings.upload = Date.now();
-        timings.phases.request = timings.upload - ((_a = timings.secureConnect) !== null && _a !== void 0 ? _a : timings.connect);
+        timings.phases.request = timings.upload - ((_a2 = timings.secureConnect) !== null && _a2 !== void 0 ? _a2 : timings.connect);
       };
       const writableFinished = () => {
         if (typeof request.writableFinished === "boolean") {
@@ -32729,9 +32729,9 @@ var require_timed_out = __commonJS({
       const cancelers = [];
       const { once, unhandleAll } = unhandle_1.default();
       const addTimeout = (delay, callback, event) => {
-        var _a;
+        var _a2;
         const timeout = setTimeout(callback, delay, delay, event);
-        (_a = timeout.unref) === null || _a === void 0 ? void 0 : _a.call(timeout);
+        (_a2 = timeout.unref) === null || _a2 === void 0 ? void 0 : _a2.call(timeout);
         const cancel = () => {
           clearTimeout(timeout);
         };
@@ -32771,10 +32771,10 @@ var require_timed_out = __commonJS({
         });
       }
       once(request, "socket", (socket) => {
-        var _a;
+        var _a2;
         const { socketPath } = request;
         if (socket.connecting) {
-          const hasPath = Boolean(socketPath !== null && socketPath !== void 0 ? socketPath : net.isIP((_a = hostname !== null && hostname !== void 0 ? hostname : host) !== null && _a !== void 0 ? _a : "") !== 0);
+          const hasPath = Boolean(socketPath !== null && socketPath !== void 0 ? socketPath : net.isIP((_a2 = hostname !== null && hostname !== void 0 ? hostname : host) !== null && _a2 !== void 0 ? _a2 : "") !== 0);
           if (typeof delays.lookup !== "undefined" && !hasPath && typeof socket.address().address === "undefined") {
             const cancelTimeout = addTimeout(delays.lookup, timeoutHandler, "lookup");
             once(socket, "lookup", cancelTimeout);
@@ -32864,7 +32864,7 @@ var require_options_to_url = __commonJS({
       "search"
     ];
     exports2.default = (origin, options) => {
-      var _a, _b;
+      var _a2, _b;
       if (options.path) {
         if (options.pathname) {
           throw new TypeError("Parameters `path` and `pathname` are mutually exclusive.");
@@ -32883,7 +32883,7 @@ var require_options_to_url = __commonJS({
         if (!options.protocol) {
           throw new TypeError("No URL protocol specified");
         }
-        origin = `${options.protocol}//${(_b = (_a = options.hostname) !== null && _a !== void 0 ? _a : options.host) !== null && _b !== void 0 ? _b : ""}`;
+        origin = `${options.protocol}//${(_b = (_a2 = options.hostname) !== null && _a2 !== void 0 ? _a2 : options.host) !== null && _b !== void 0 ? _b : ""}`;
       }
       const url = new url_1.URL(origin);
       if (options.path) {
@@ -33236,11 +33236,11 @@ var require_core = __commonJS({
     };
     var RequestError = class extends Error {
       constructor(message, error, self2) {
-        var _a, _b;
+        var _a2, _b;
         super(message);
         Error.captureStackTrace(this, this.constructor);
         this.name = "RequestError";
-        this.code = (_a = error.code) !== null && _a !== void 0 ? _a : "ERR_GOT_REQUEST_ERROR";
+        this.code = (_a2 = error.code) !== null && _a2 !== void 0 ? _a2 : "ERR_GOT_REQUEST_ERROR";
         if (self2 instanceof Request) {
           Object.defineProperty(this, "request", {
             enumerable: false,
@@ -33391,7 +33391,7 @@ var require_core = __commonJS({
           }
         }
         (async () => {
-          var _a;
+          var _a2;
           try {
             if (this.options.body instanceof fs_1.ReadStream) {
               await waitForOpenFile(this.options.body);
@@ -33405,7 +33405,7 @@ var require_core = __commonJS({
             await this._finalizeBody();
             await this._makeRequest();
             if (this.destroyed) {
-              (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.destroy();
+              (_a2 = this[kRequest]) === null || _a2 === void 0 ? void 0 : _a2.destroy();
               return;
             }
             for (const job of this[kJobs]) {
@@ -33425,7 +33425,7 @@ var require_core = __commonJS({
         })();
       }
       static normalizeArguments(url, options, defaults) {
-        var _a, _b, _c, _d, _e;
+        var _a2, _b, _c, _d, _e;
         const rawOptions = options;
         if (is_1.default.object(url) && !is_1.default.urlInstance(url)) {
           options = __spreadValues(__spreadValues(__spreadValues({}, defaults), url), options);
@@ -33510,7 +33510,7 @@ var require_core = __commonJS({
                 }
               }
             }
-            (_a = defaults === null || defaults === void 0 ? void 0 : defaults.searchParams) === null || _a === void 0 ? void 0 : _a.forEach((value, key) => {
+            (_a2 = defaults === null || defaults === void 0 ? void 0 : defaults.searchParams) === null || _a2 === void 0 ? void 0 : _a2.forEach((value, key) => {
               if (!searchParameters.has(key)) {
                 searchParameters.append(key, value);
               }
@@ -33602,7 +33602,7 @@ var require_core = __commonJS({
                       try {
                         const request = await result;
                         request.once("abort", handler2);
-                      } catch (_a2) {
+                      } catch (_a3) {
                       }
                     })();
                   } else {
@@ -33926,9 +33926,9 @@ var require_core = __commonJS({
           void this._onResponse(response);
         });
         request.once("error", (error) => {
-          var _a;
+          var _a2;
           request.destroy();
-          (_a = request.res) === null || _a === void 0 ? void 0 : _a.removeAllListeners("end");
+          (_a2 = request.res) === null || _a2 === void 0 ? void 0 : _a2.removeAllListeners("end");
           error = error instanceof timed_out_1.TimeoutError ? new TimeoutError(error, this.timings, this) : new RequestError(error.message, error, this);
           this._beforeError(error);
         });
@@ -33977,7 +33977,7 @@ var require_core = __commonJS({
         });
       }
       async _makeRequest() {
-        var _a, _b, _c, _d, _e;
+        var _a2, _b, _c, _d, _e;
         const { options } = this;
         const { headers } = options;
         for (const key in headers) {
@@ -34028,7 +34028,7 @@ var require_core = __commonJS({
         } else {
           fallbackFn = isHttps ? https2.request : http2.request;
         }
-        const realFn = (_a = options.request) !== null && _a !== void 0 ? _a : fallbackFn;
+        const realFn = (_a2 = options.request) !== null && _a2 !== void 0 ? _a2 : fallbackFn;
         const fn = options.cache ? this._createCacheableRequest : realFn;
         if (agent && !options.http2) {
           options.agent = agent[isHttps ? "https" : "http"];
@@ -34149,7 +34149,7 @@ var require_core = __commonJS({
             try {
               response.rawBody = await get_buffer_1.default(response);
               response.body = response.rawBody.toString();
-            } catch (_a) {
+            } catch (_a2) {
             }
           }
           if (this.listenerCount("retry") !== 0) {
@@ -34283,12 +34283,12 @@ var require_core = __commonJS({
         }
       }
       _destroy(error, callback) {
-        var _a;
+        var _a2;
         this[kStopReading] = true;
         clearTimeout(this[kRetryTimeout]);
         if (kRequest in this) {
           this[kCancelTimeouts]();
-          if (!((_a = this[kResponse]) === null || _a === void 0 ? void 0 : _a.complete)) {
+          if (!((_a2 = this[kResponse]) === null || _a2 === void 0 ? void 0 : _a2.complete)) {
             this[kRequest].destroy();
           }
         }
@@ -34301,16 +34301,16 @@ var require_core = __commonJS({
         return this[kStopReading];
       }
       get ip() {
-        var _a;
-        return (_a = this.socket) === null || _a === void 0 ? void 0 : _a.remoteAddress;
+        var _a2;
+        return (_a2 = this.socket) === null || _a2 === void 0 ? void 0 : _a2.remoteAddress;
       }
       get aborted() {
-        var _a, _b, _c;
-        return ((_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.destroyed) !== null && _b !== void 0 ? _b : this.destroyed) && !((_c = this[kOriginalResponse]) === null || _c === void 0 ? void 0 : _c.complete);
+        var _a2, _b, _c;
+        return ((_b = (_a2 = this[kRequest]) === null || _a2 === void 0 ? void 0 : _a2.destroyed) !== null && _b !== void 0 ? _b : this.destroyed) && !((_c = this[kOriginalResponse]) === null || _c === void 0 ? void 0 : _c.complete);
       }
       get socket() {
-        var _a, _b;
-        return (_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.socket) !== null && _b !== void 0 ? _b : void 0;
+        var _a2, _b;
+        return (_b = (_a2 = this[kRequest]) === null || _a2 === void 0 ? void 0 : _a2.socket) !== null && _b !== void 0 ? _b : void 0;
       }
       get downloadProgress() {
         let percent;
@@ -34343,8 +34343,8 @@ var require_core = __commonJS({
         };
       }
       get timings() {
-        var _a;
-        return (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.timings;
+        var _a2;
+        return (_a2 = this[kRequest]) === null || _a2 === void 0 ? void 0 : _a2.timings;
       }
       get isFromCache() {
         return this[kIsFromCache];
@@ -34498,7 +34498,7 @@ var require_as_promise = __commonJS({
           onCancel(() => reject(new types_1.CancelError(request)));
           globalRequest = request;
           request.once("response", async (response) => {
-            var _a;
+            var _a2;
             response.retryCount = retryCount;
             if (response.request.aborted) {
               return;
@@ -34513,7 +34513,7 @@ var require_as_promise = __commonJS({
             if (request._isAboutToError) {
               return;
             }
-            const contentEncoding = ((_a = response.headers["content-encoding"]) !== null && _a !== void 0 ? _a : "").toLowerCase();
+            const contentEncoding = ((_a2 = response.headers["content-encoding"]) !== null && _a2 !== void 0 ? _a2 : "").toLowerCase();
             const isCompressed = ["gzip", "deflate", "br"].includes(contentEncoding);
             const { options } = request;
             if (isCompressed && !options.decompress) {
@@ -34578,8 +34578,8 @@ var require_as_promise = __commonJS({
           request.once("error", onError);
           const previousBody = request.options.body;
           request.once("retry", (newRetryCount, error) => {
-            var _a, _b;
-            if (previousBody === ((_a = error.request) === null || _a === void 0 ? void 0 : _a.options.body) && is_1.default.nodeStream((_b = error.request) === null || _b === void 0 ? void 0 : _b.options.body)) {
+            var _a2, _b;
+            if (previousBody === ((_a2 = error.request) === null || _a2 === void 0 ? void 0 : _a2.options.body) && is_1.default.nodeStream((_b = error.request) === null || _b === void 0 ? void 0 : _b.options.body)) {
               onError(error);
               return;
             }
@@ -34766,7 +34766,7 @@ var require_create = __commonJS({
         return result;
       });
       const got = (url, options = {}, _defaults) => {
-        var _a, _b;
+        var _a2, _b;
         let iteration = 0;
         const iterateHandlers = (newOptions) => {
           return defaults.handlers[iteration++](newOptions, iteration === defaults.handlers.length ? getPromiseOrStream : iterateHandlers);
@@ -34781,7 +34781,7 @@ var require_create = __commonJS({
           let initHookError;
           try {
             callInitHooks(defaults.options.hooks.init, options);
-            callInitHooks((_a = options.hooks) === null || _a === void 0 ? void 0 : _a.init, options);
+            callInitHooks((_a2 = options.hooks) === null || _a2 === void 0 ? void 0 : _a2.init, options);
           } catch (error) {
             initHookError = error;
           }
@@ -40816,8 +40816,8 @@ function parseMtime(input) {
 }
 
 // node_modules/ipfs-http-client/esm/src/lib/to-url-search-params.js
-function toUrlSearchParams(_a = {}) {
-  var _b = _a, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
+function toUrlSearchParams(_a2 = {}) {
+  var _b = _a2, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
   if (searchParams) {
     options = __spreadValues(__spreadValues({}, options), searchParams);
   }
@@ -43603,8 +43603,8 @@ var encodeAddParams = ({ cid, service, background, name: name7, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function add(cid, _a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
@@ -43620,8 +43620,8 @@ function createAdd3(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/ls.js
 function createLs4(client) {
-  async function* ls(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function* ls(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/ls", {
       timeout,
       signal,
@@ -43637,8 +43637,8 @@ function createLs4(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm.js
 function createRm6(client) {
-  async function rm(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rm(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -43653,8 +43653,8 @@ function createRm6(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm-all.js
 function createRmAll2(client) {
-  async function rmAll(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rmAll(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -44733,7 +44733,8 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
+var _a;
+var IPFS_HOST = ((_a = process == null ? void 0 : process.env) == null ? void 0 : _a.IPFS_API_ENDPOINT) || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -44973,7 +44974,7 @@ function subscribeCallback(topic, callback) {
       }
     };
     const doSub = async () => {
-      var _a;
+      var _a2;
       const client = await getClient();
       try {
         abort.abort();
@@ -44986,7 +44987,7 @@ function subscribeCallback(topic, callback) {
           debug6("subscription was aborted. returning");
           return;
         }
-        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
+        if ((_a2 = e.message) == null ? void 0 : _a2.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
         await doSub();
@@ -45560,12 +45561,12 @@ var mapToJSONFormField = ({ name: name7, defaultVal, type, description, enumOpti
 var isParameterCell = (cell) => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
 var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";
 var isDescriptionCell = (cell) => {
-  var _a;
-  return isMarkdownCell(cell) && ((_a = cell.metadata) == null ? void 0 : _a.id) !== "view-in-github";
+  var _a2;
+  return isMarkdownCell(cell) && ((_a2 = cell.metadata) == null ? void 0 : _a2.id) !== "view-in-github";
 };
 var isColabLinkCell = (cell) => {
-  var _a;
-  return isMarkdownCell(cell) && ((_a = cell.metadata) == null ? void 0 : _a.id) === "view-in-github";
+  var _a2;
+  return isMarkdownCell(cell) && ((_a2 = cell.metadata) == null ? void 0 : _a2.id) === "view-in-github";
 };
 var getColabLinkURL = (cell) => getColabLink(cell).match(/.*href=\"([^\"]*)\".*/)[1];
 var getColabLink = (cell) => cell["source"][0];
@@ -45672,8 +45673,8 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   }
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
+var cachedIPFSState = (ipfsReader, _a2, processFile2, skipCache) => {
+  var _b = _a2, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
     debug10("cache miss", cid);
@@ -45728,7 +45729,10 @@ var fetchAndMakeURL = async ({ name: name7, cid, text }) => {
   if (doImport) {
     const textContent = await text();
     try {
-      return (0, import_json53.parse)(textContent);
+      const json = (0, import_json53.parse)(textContent);
+      if (typeof json === "object")
+        Object.defineProperty(json, ".cid", { value: cid });
+      return json;
     } catch (_e) {
       debug11("result was not json. returning raw.");
       return textContent;
@@ -45773,10 +45777,10 @@ async function discordPollenPostWebhook({ title, coverImage, url }) {
 
 // src/backend/functions/social-post.js
 async function socialPost(platform, cid) {
-  var _a;
+  var _a2;
   console.log("platform", platform, "cid", cid, ". Fetching IPFS state");
   const ipfs = await IPFSWebState(cid);
-  if (!((_a = ipfs == null ? void 0 : ipfs.input) == null ? void 0 : _a.social)) {
+  if (!((_a2 = ipfs == null ? void 0 : ipfs.input) == null ? void 0 : _a2.social)) {
     console.log("Social post disabled. Aborting...");
     return;
   }
@@ -45871,6 +45875,8 @@ var writeFileAndCreateFolder = async (path, content) => {
 };
 async function processRemoteCID(contentID, rootPath) {
   debug12("Processing remote CID", contentID);
+  rmSync(rootPath, { recursive: true });
+  (0, import_fs.mkdirSync)(rootPath);
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
   debug12("got remote state", ipfsState);
 }

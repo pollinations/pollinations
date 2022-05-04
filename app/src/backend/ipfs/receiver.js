@@ -58,6 +58,10 @@ async function processRemoteCID(contentID, rootPath) {
   // if (isSameContentID(stringCID(contentID)))
   //   return;
   debug("Processing remote CID", contentID);
+  // empty the root path
+  rmSync(rootPath, { recursive: true });
+  // create the root path
+  mkdirSync(rootPath);
   const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));
   debug("got remote state", ipfsState);
 }

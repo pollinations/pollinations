@@ -44737,7 +44737,6 @@ var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 // src/network/ipfsState.js
 var debug7 = (0, import_debug7.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
-  skipCache = true;
   const ipfsReader = await reader();
   debug7("Getting state for CID", contentID);
   try {
@@ -45033,7 +45032,6 @@ if (executeCommand)
         console.log(sentCID);
       }
     };
-    doSend();
     let [executeSignal, abortExecute] = [null, null];
     for await (const receiveidCID of receive(options_default)) {
       debug12("received CID", receiveidCID);
@@ -45042,7 +45040,10 @@ if (executeCommand)
         abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
-      execute(executeCommand, options_default.logout, executeSignal);
+      doSend()(async () => {
+        await execute(executeCommand, options_default.logout, executeSignal);
+        stopSending();
+      })();
       debug12("done executing", executeCommand, ". Waiting...");
     }
   })();

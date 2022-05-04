@@ -45664,7 +45664,6 @@ var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 // src/network/ipfsState.js
 var debug10 = (0, import_debug10.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
-  skipCache = true;
   const ipfsReader = await reader();
   debug10("Getting state for CID", contentID);
   try {

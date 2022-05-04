@@ -70,7 +70,7 @@ if (executeCommand)
       }
     }
 
-    doSend()
+ 
 
 
     let [executeSignal, abortExecute] = [null, null]
@@ -82,7 +82,11 @@ if (executeCommand)
         abortExecute()
       }
       [executeSignal, abortExecute] = getSignal()
-      execute(executeCommand, options.logout, executeSignal)
+      doSend()
+      (async () => {
+        await execute(executeCommand, options.logout, executeSignal)
+        stopSending()
+      })()
       debug("done executing", executeCommand, ". Waiting...")
     }
 

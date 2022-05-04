@@ -76,14 +76,18 @@ if (executeCommand)
       subscribeGenerator(options.nodeid, "/input")
       : [stream.call(process.stdin), noop];
 
-    let receivedCID = null;
 
     const { publish, close: closePublisher } = publisher(options.nodeid, "/output")
 
-    for await (receivedCID of await cidStream) {
-      debug("received CID", receivedCID);
+    for await (let receivedCID of await cidStream) {
+
       receivedCID = stringCID(receivedCID);
       debug("remoteCID", receivedCID);
+   
+      if (abortExecute) {
+        debug("aborting previous execution")
+        abortExecute()
+      }
 
       // empty the root path
       rmSync(options.path, { recursive: true, force: true });
@@ -95,24 +99,20 @@ if (executeCommand)
         mkdirSync(dirname(options.logout), { recursive: true });
 
       await processRemoteCID(receivedCID, options.path);
-      
-      if (abortExecute) {
-        debug("aborting previous execution")
-        abortExecute()
-      }
+
       
       [executeSignal, abortExecute] = getSignal()
 
-      const { startSending, close, stopSending } = sender({ ...options, once: false, publish })
+      const { startSending, close } = sender({ ...options, once: false, publish })
       
-      const doSend = async () => {
-        for await (const sentCID of startSending()) {
-          debug("sent", sentCID)
-          console.log(sentCID)
-        }
-      }
+      // const doSend = async () => {
+      //   for await (const sentCID of startSending()) {
+      //     debug("sent", sentCID)
+      //     console.log(sentCID)
+      //   }
+      // }
             
-      doSend()
+      startSending()
 
       await execute(executeCommand, options.logout, executeSignal)
 

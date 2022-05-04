@@ -1,5 +1,5 @@
 import Debug from 'debug';
-import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { dirname, join } from "path";
 import { getIPFSState } from '../../network/ipfsState.js';
 
@@ -10,7 +10,7 @@ const debug = Debug("ipfs/receiver");
 export const receive = async function* ({ ipns, nodeid, once, path: rootPath }, suffix="/input") {
   // subscribe to content id updates either via IPNS or stdin
 
-    await process(remoteCID, rootPath);
+   
 
   return remoteCID;
 };
@@ -30,13 +30,7 @@ export async function processRemoteCID(contentID, rootPath) {
   // if (isSameContentID(stringCID(contentID)))
   //   return;
   debug("Processing remote CID", contentID);
-  
-  //TODO: do this elsewhere
-  // empty the root path
-  rmSync(rootPath+"/input", { recursive: true, force: true });
-  // create the root path
-  mkdirSync(rootPath+"/input");
-  
+    
   const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));
   debug("got remote state", ipfsState);
 }

@@ -45568,7 +45568,6 @@ var autoHashtag = async (text) => {
 var import_debug12 = __toESM(require_src(), 1);
 var debug12 = (0, import_debug12.default)("ipfs/receiver");
 var receive = async function* ({ ipns, nodeid, once, path: rootPath }, suffix = "/input") {
-  await process(remoteCID, rootPath);
   return remoteCID;
 };
 

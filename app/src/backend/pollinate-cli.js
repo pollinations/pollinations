@@ -3,8 +3,9 @@ import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
 import { stream } from "event-iterator"
-import { createWriteStream } from "fs"
+import { createWriteStream, mkdirSync, rmSync } from "fs"
 import { AbortController } from "native-abort-controller"
+import { dirname } from "path"
 import process from "process"
 import Readline from 'readline'
 import treeKill from 'tree-kill'
@@ -87,11 +88,23 @@ if (executeCommand)
       debug("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
       debug("remoteCID", receivedCID);
+
+      // empty the root path
+      rmSync(options.path, { recursive: true, force: true });
+      // create the root path
+      mkdirSync(options.path);
+      
+      // create folder for log file extracted from options.path
+      if (options.logout)
+        mkdirSync(dirname(options.logout), { recursive: true });
+
       await processRemoteCID(receivedCID, options.path);
+      
       if (abortExecute) {
         debug("aborting previous execution")
         abortExecute()
       }
+      
       [executeSignal, abortExecute] = getSignal()
       doSend()
       await execute(executeCommand, options.logout, executeSignal)

@@ -25160,7 +25160,6 @@ var debug6 = (0, import_debug6.default)("ipfsState");
 // src/backend/ipfs/receiver.js
 var debug7 = (0, import_debug7.default)("ipfs/receiver");
 var receive = async function* ({ ipns, nodeid, once, path: rootPath }, suffix = "/input") {
-  await process(remoteCID, rootPath);
   return remoteCID;
 };
 

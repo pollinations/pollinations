@@ -33603,9 +33603,9 @@ var require_nodefs_handler = __commonJS({
         if (this.fsw.closed) {
           return;
         }
-        const dirname4 = sysPath.dirname(file);
+        const dirname5 = sysPath.dirname(file);
         const basename2 = sysPath.basename(file);
-        const parent = this.fsw._getWatchedDir(dirname4);
+        const parent = this.fsw._getWatchedDir(dirname5);
         let prevStats = stats;
         if (parent.has(basename2))
           return;
@@ -33630,7 +33630,7 @@ var require_nodefs_handler = __commonJS({
                 prevStats = newStats2;
               }
             } catch (error) {
-              this.fsw._remove(dirname4, basename2);
+              this.fsw._remove(dirname5, basename2);
             }
           } else if (parent.has(basename2)) {
             const at = newStats.atimeMs;
@@ -36069,6 +36069,7 @@ var import_debug12 = __toESM(require_src(), 1);
 var import_event_iterator = __toESM(require_node2(), 1);
 var import_fs5 = require("fs");
 var import_native_abort_controller3 = __toESM(require_src2(), 1);
+var import_path5 = require("path");
 var import_process = __toESM(require("process"), 1);
 var import_readline = __toESM(require("readline"), 1);
 var import_tree_kill = __toESM(require_tree_kill(), 1);
@@ -44795,7 +44796,6 @@ var dataFetchers = (cid, { get }) => {
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
 var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
-  await process(remoteCID, rootPath2);
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -44807,8 +44807,6 @@ var writeFileAndCreateFolder = async (path, content) => {
 };
 async function processRemoteCID(contentID, rootPath2) {
   debug8("Processing remote CID", contentID);
-  (0, import_fs2.rmSync)(rootPath2 + "/input", { recursive: true, force: true });
-  (0, import_fs2.mkdirSync)(rootPath2 + "/input");
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
   debug8("got remote state", ipfsState);
 }
@@ -45026,6 +45024,10 @@ if (executeCommand)
       debug12("received CID", receivedCID);
       receivedCID = stringCID(receivedCID);
       debug12("remoteCID", receivedCID);
+      (0, import_fs5.rmSync)(options_default.path, { recursive: true, force: true });
+      (0, import_fs5.mkdirSync)(options_default.path);
+      if (options_default.logout)
+        (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
       await processRemoteCID(receivedCID, options_default.path);
       if (abortExecute) {
         debug12("aborting previous execution");

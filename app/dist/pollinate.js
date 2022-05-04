@@ -45040,7 +45040,8 @@ if (executeCommand)
         abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
-      doSend()(async () => {
+      doSend();
+      (async () => {
         await execute(executeCommand, options_default.logout, executeSignal);
         stopSending();
       })();

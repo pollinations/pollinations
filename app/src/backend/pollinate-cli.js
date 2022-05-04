@@ -81,12 +81,12 @@ if (executeCommand)
         debug("aborting previous execution")
         abortExecute()
       }
-      [executeSignal, abortExecute] = getSignal()
-      doSend()
+      [executeSignal, abortExecute] = getSignal();
+      doSend();
       (async () => {
         await execute(executeCommand, options.logout, executeSignal)
         stopSending()
-      })()
+      })();
       debug("done executing", executeCommand, ". Waiting...")
     }
 

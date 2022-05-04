@@ -45010,13 +45010,6 @@ var execute = async (command, logfile = null, signal) => new Promise((resolve2, 
 });
 if (executeCommand)
   (async () => {
-    const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
-    const doSend = async () => {
-      for await (const sentCID of startSending()) {
-        debug12("sent", sentCID);
-        console.log(sentCID);
-      }
-    };
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
     let receivedCID = null;
@@ -45034,9 +45027,16 @@ if (executeCommand)
         abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
+      const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug12("sent", sentCID);
+          console.log(sentCID);
+        }
+      };
       doSend();
       await execute(executeCommand, options_default.logout, executeSignal);
-      stopSending();
+      close();
     }
   })();
 else {

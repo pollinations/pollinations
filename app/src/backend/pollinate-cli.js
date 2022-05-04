@@ -66,13 +66,6 @@ if (executeCommand)
     // debug("received IPFS content", receivedCID);
 
 
-    const { startSending, close, stopSending } = sender({ ...options, once: false })
-    const doSend = async () => {
-      for await (const sentCID of startSending()) {
-        debug("sent", sentCID)
-        console.log(sentCID)
-      }
-    }
 
  
 
@@ -106,9 +99,17 @@ if (executeCommand)
       }
       
       [executeSignal, abortExecute] = getSignal()
+
+      const { startSending, close, stopSending } = sender({ ...options, once: false })
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug("sent", sentCID)
+          console.log(sentCID)
+        }
+      }
       doSend()
       await execute(executeCommand, options.logout, executeSignal)
-      stopSending()
+      close()
       //debug("done executing", executeCommand, ". Waiting...")
     }
 

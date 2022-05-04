@@ -79,6 +79,8 @@ if (executeCommand)
 
     const { publish, close: closePublisher } = publisher(options.nodeid, "/output")
 
+    let close = null;
+
     for await (let receivedCID of await cidStream) {
 
       receivedCID = stringCID(receivedCID);
@@ -87,6 +89,7 @@ if (executeCommand)
       if (abortExecute) {
         debug("aborting previous execution")
         abortExecute()
+        await close()
       }
 
       // empty the root path
@@ -101,25 +104,28 @@ if (executeCommand)
       await processRemoteCID(receivedCID, options.path);
 
       
-      [executeSignal, abortExecute] = getSignal()
 
-      const { startSending, close } = sender({ ...options, once: false, publish })
-      
-      // const doSend = async () => {
-      //   for await (const sentCID of startSending()) {
-      //     debug("sent", sentCID)
-      //     console.log(sentCID)
-      //   }
-      // }
+      const { startSending, close:closeSender } = sender({ ...options, once: false, publish })
+      close = closeSender
+
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug("sent", sentCID)
+          console.log(sentCID)
+        }
+      }
             
-      startSending()
+      doSend()
+      
+      [executeSignal, abortExecute] = getSignal();
 
-      await execute(executeCommand, options.logout, executeSignal)
+      execute(executeCommand, options.logout, executeSignal)
 
-      debug("done executing", executeCommand, ". Closing writer...")
-      await close()
-      debug("closed writer. waiting for next CID")
+      debug("done executing", executeCommand)
+
     }
+
+    await close()
 
     await closePublisher()
 

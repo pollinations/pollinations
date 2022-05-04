@@ -45011,26 +45011,33 @@ if (executeCommand)
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
     const { publish: publish2, close: closePublisher } = publisher(options_default.nodeid, "/output");
+    let close = null;
     for await (let receivedCID of await cidStream) {
       receivedCID = stringCID(receivedCID);
       debug12("remoteCID", receivedCID);
       if (abortExecute) {
         debug12("aborting previous execution");
         abortExecute();
+        await close();
       }
       (0, import_fs5.rmSync)(options_default.path, { recursive: true, force: true });
       (0, import_fs5.mkdirSync)(options_default.path);
       if (options_default.logout)
         (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
       await processRemoteCID(receivedCID, options_default.path);
-      [executeSignal, abortExecute] = getSignal();
-      const { startSending, close } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish: publish2 }));
-      startSending();
-      await execute(executeCommand, options_default.logout, executeSignal);
-      debug12("done executing", executeCommand, ". Closing writer...");
-      await close();
-      debug12("closed writer. waiting for next CID");
+      const { startSending, close: closeSender } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish: publish2 }));
+      close = closeSender;
+      const doSend = async () => {
+        for await (const sentCID of startSending()) {
+          debug12("sent", sentCID);
+          console.log(sentCID);
+        }
+      };
+      doSend()[executeSignal, abortExecute] = getSignal();
+      execute(executeCommand, options_default.logout, executeSignal);
+      debug12("done executing", executeCommand);
     }
+    await close();
     await closePublisher();
   })();
 else {

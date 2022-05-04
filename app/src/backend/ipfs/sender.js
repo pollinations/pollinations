@@ -3,6 +3,7 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { AbortController } from "native-abort-controller";
 import { writer } from "../../network/ipfsConnector.js";
+import { publisher } from '../../network/ipfsPubSub.js';
 import folderSync from "./folderSync.js";
 
 const debug = Debug("ipfs/sender");

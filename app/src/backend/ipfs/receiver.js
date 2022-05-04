@@ -1,6 +1,6 @@
 import Debug from 'debug';
 import { stream } from "event-iterator";
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join } from "path";
 import { stringCID } from "../../network/ipfsConnector.js";
 import { subscribeGenerator } from "../../network/ipfsPubSub.js";
@@ -59,7 +59,7 @@ async function processRemoteCID(contentID, rootPath) {
   //   return;
   debug("Processing remote CID", contentID);
   // empty the root path
-  rmSync(rootPath, { recursive: true });
+  rmSync(rootPath, { recursive: true, force: true });
   // create the root path
   mkdirSync(rootPath);
   const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));

@@ -116,7 +116,7 @@ if (executeCommand)
 
       await execute(executeCommand, options.logout, executeSignal)
 
-      await close()
+      close()
       //debug("done executing", executeCommand, ". Waiting...")
     }
 

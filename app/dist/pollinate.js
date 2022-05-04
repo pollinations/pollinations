@@ -45025,6 +45025,7 @@ if (executeCommand)
       if (options_default.logout)
         (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
       await processRemoteCID(receivedCID, options_default.path);
+      [executeSignal, abortExecute] = getSignal();
       const { startSending, close: closeSender } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish: publish2 }));
       close = closeSender;
       const doSend = async () => {
@@ -45033,9 +45034,8 @@ if (executeCommand)
           console.log(sentCID);
         }
       };
-      doSend()[executeSignal, abortExecute] = getSignal();
+      doSend();
       execute(executeCommand, options_default.logout, executeSignal);
-      debug12("done executing", executeCommand);
     }
     await close();
     await closePublisher();

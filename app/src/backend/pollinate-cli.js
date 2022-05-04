@@ -104,6 +104,8 @@ if (executeCommand)
       await processRemoteCID(receivedCID, options.path);
 
       
+      [executeSignal, abortExecute] = getSignal();
+
 
       const { startSending, close:closeSender } = sender({ ...options, once: false, publish })
       close = closeSender
@@ -117,11 +119,9 @@ if (executeCommand)
             
       doSend()
       
-      [executeSignal, abortExecute] = getSignal();
-
       execute(executeCommand, options.logout, executeSignal)
 
-      debug("done executing", executeCommand)
+      // debug("done executing", executeCommand)
 
     }
 

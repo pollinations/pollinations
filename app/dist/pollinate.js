@@ -44820,8 +44820,8 @@ var writeFileAndCreateFolder = async (path, content) => {
 };
 async function processRemoteCID(contentID, rootPath2) {
   debug8("Processing remote CID", contentID);
-  (0, import_fs2.rmSync)(rootPath2, { recursive: true, force: true });
-  (0, import_fs2.mkdirSync)(rootPath2);
+  (0, import_fs2.rmSync)(rootPath2 + "/input", { recursive: true, force: true });
+  (0, import_fs2.mkdirSync)(rootPath2 + "/input");
   const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
   debug8("got remote state", ipfsState);
 }

@@ -59,9 +59,9 @@ async function processRemoteCID(contentID, rootPath) {
   //   return;
   debug("Processing remote CID", contentID);
   // empty the root path
-  rmSync(rootPath, { recursive: true, force: true });
+  rmSync(rootPath+"/input", { recursive: true, force: true });
   // create the root path
-  mkdirSync(rootPath);
+  mkdirSync(rootPath+"/input");
   const ipfsState = (await getIPFSState(contentID, (file, reader) => processFile(file, rootPath, reader), true));
   debug("got remote state", ipfsState);
 }

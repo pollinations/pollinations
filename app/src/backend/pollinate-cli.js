@@ -2,12 +2,15 @@
 import awaitSleep from "await-sleep"
 import { spawn } from "child_process"
 import Debug from "debug"
+import { stream } from "event-iterator"
 import { createWriteStream } from "fs"
 import { AbortController } from "native-abort-controller"
 import process from "process"
 import Readline from 'readline'
 import treeKill from 'tree-kill'
-import { receive } from "./ipfs/receiver.js"
+import { stringCID } from "../network/ipfsConnector.js"
+import { subscribeGenerator } from "../network/ipfsPubSub.js"
+import { processRemoteCID, receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"
 
@@ -75,19 +78,25 @@ if (executeCommand)
 
     let [executeSignal, abortExecute] = [null, null]
 
-    for await (const receiveidCID of receive(options)) {
-      debug("received CID", receiveidCID)
+    const [cidStream, unsubscribe] = options.ipns ?
+      subscribeGenerator(options.nodeid, "/input")
+      : [stream.call(process.stdin), noop];
+
+    let receivedCID = null;
+    for await (receivedCID of await cidStream) {
+      debug("received CID", receivedCID);
+      receivedCID = stringCID(receivedCID);
+      debug("remoteCID", receivedCID);
+      await processRemoteCID(remoteCID, options.path);
       if (abortExecute) {
         debug("aborting previous execution")
         abortExecute()
       }
-      [executeSignal, abortExecute] = getSignal();
-      doSend();
-      (async () => {
-        await execute(executeCommand, options.logout, executeSignal)
-        stopSending()
-      })();
-      debug("done executing", executeCommand, ". Waiting...")
+      [executeSignal, abortExecute] = getSignal()
+      doSend()
+      await execute(executeCommand, options.logout, executeSignal)
+      stopSending()
+      //debug("done executing", executeCommand, ". Waiting...")
     }
 
   })();

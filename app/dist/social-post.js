@@ -538,7 +538,7 @@ var require_supports_color = __commonJS({
         has16m: level >= 3
       };
     }
-    function supportsColor(stream2) {
+    function supportsColor(stream) {
       if (forceColor === false) {
         return 0;
       }
@@ -548,7 +548,7 @@ var require_supports_color = __commonJS({
       if (hasFlag("color=256")) {
         return 2;
       }
-      if (stream2 && !stream2.isTTY && forceColor !== true) {
+      if (stream && !stream.isTTY && forceColor !== true) {
         return 0;
       }
       const min = forceColor ? 1 : 0;
@@ -594,8 +594,8 @@ var require_supports_color = __commonJS({
       }
       return min;
     }
-    function getSupportLevel(stream2) {
-      const level = supportsColor(stream2);
+    function getSupportLevel(stream) {
+      const level = supportsColor(stream);
       return translateLevel(level);
     }
     module2.exports = {
@@ -2145,7 +2145,7 @@ var require_lodash = __commonJS({
         function baseInvoke(object, path, args) {
           path = castPath(path, object);
           object = parent(object, path);
-          var func = object == null ? object : object[toKey(last8(path))];
+          var func = object == null ? object : object[toKey(last7(path))];
           return func == null ? undefined2 : apply(func, object, args);
         }
         function baseIsArguments(value) {
@@ -2678,7 +2678,7 @@ var require_lodash = __commonJS({
         function baseUnset(object, path) {
           path = castPath(path, object);
           object = parent(object, path);
-          return object == null || delete object[toKey(last8(path))];
+          return object == null || delete object[toKey(last7(path))];
         }
         function baseUpdate(object, path, updater, customizer) {
           return baseSet(object, path, updater(baseGet(object, path)), customizer);
@@ -3893,14 +3893,14 @@ var require_lodash = __commonJS({
           return isArrayLikeObject(array) ? baseDifference(array, baseFlatten(values2, 1, isArrayLikeObject, true)) : [];
         });
         var differenceBy = baseRest(function(array, values2) {
-          var iteratee2 = last8(values2);
+          var iteratee2 = last7(values2);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return isArrayLikeObject(array) ? baseDifference(array, baseFlatten(values2, 1, isArrayLikeObject, true), getIteratee(iteratee2, 2)) : [];
         });
         var differenceWith = baseRest(function(array, values2) {
-          var comparator = last8(values2);
+          var comparator = last7(values2);
           if (isArrayLikeObject(comparator)) {
             comparator = undefined2;
           }
@@ -4010,8 +4010,8 @@ var require_lodash = __commonJS({
           return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped) : [];
         });
         var intersectionBy = baseRest(function(arrays) {
-          var iteratee2 = last8(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
-          if (iteratee2 === last8(mapped)) {
+          var iteratee2 = last7(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
+          if (iteratee2 === last7(mapped)) {
             iteratee2 = undefined2;
           } else {
             mapped.pop();
@@ -4019,17 +4019,17 @@ var require_lodash = __commonJS({
           return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped, getIteratee(iteratee2, 2)) : [];
         });
         var intersectionWith = baseRest(function(arrays) {
-          var comparator = last8(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
+          var comparator = last7(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           if (comparator) {
             mapped.pop();
           }
           return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped, undefined2, comparator) : [];
         });
-        function join3(array, separator) {
+        function join2(array, separator) {
           return array == null ? "" : nativeJoin.call(array, separator);
         }
-        function last8(array) {
+        function last7(array) {
           var length2 = array == null ? 0 : array.length;
           return length2 ? array[length2 - 1] : undefined2;
         }
@@ -4167,14 +4167,14 @@ var require_lodash = __commonJS({
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true));
         });
         var unionBy = baseRest(function(arrays) {
-          var iteratee2 = last8(arrays);
+          var iteratee2 = last7(arrays);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), getIteratee(iteratee2, 2));
         });
         var unionWith = baseRest(function(arrays) {
-          var comparator = last8(arrays);
+          var comparator = last7(arrays);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), undefined2, comparator);
         });
@@ -4222,14 +4222,14 @@ var require_lodash = __commonJS({
           return baseXor(arrayFilter(arrays, isArrayLikeObject));
         });
         var xorBy = baseRest(function(arrays) {
-          var iteratee2 = last8(arrays);
+          var iteratee2 = last7(arrays);
           if (isArrayLikeObject(iteratee2)) {
             iteratee2 = undefined2;
           }
           return baseXor(arrayFilter(arrays, isArrayLikeObject), getIteratee(iteratee2, 2));
         });
         var xorWith = baseRest(function(arrays) {
-          var comparator = last8(arrays);
+          var comparator = last7(arrays);
           comparator = typeof comparator == "function" ? comparator : undefined2;
           return baseXor(arrayFilter(arrays, isArrayLikeObject), undefined2, comparator);
         });
@@ -5942,9 +5942,9 @@ var require_lodash = __commonJS({
         lodash.isUndefined = isUndefined;
         lodash.isWeakMap = isWeakMap;
         lodash.isWeakSet = isWeakSet;
-        lodash.join = join3;
+        lodash.join = join2;
         lodash.kebabCase = kebabCase2;
-        lodash.last = last8;
+        lodash.last = last7;
         lodash.lastIndexOf = lastIndexOf;
         lodash.lowerCase = lowerCase;
         lodash.lowerFirst = lowerFirst;
@@ -8939,8 +8939,8 @@ var require_composeK = __commonJS({
         throw new Error("composeK requires at least one argument");
       }
       var init = Array.prototype.slice.call(arguments);
-      var last8 = init.pop();
-      return compose(compose.apply(this, map3(chain, init)), last8);
+      var last7 = init.pop();
+      return compose(compose.apply(this, map3(chain, init)), last7);
     }
     module2.exports = composeK;
   }
@@ -10287,8 +10287,8 @@ var require_xdropRepeatsWith = __commonJS({
 var require_last = __commonJS({
   "node_modules/ramda/src/last.js"(exports2, module2) {
     var nth = require_nth();
-    var last8 = /* @__PURE__ */ nth(-1);
-    module2.exports = last8;
+    var last7 = /* @__PURE__ */ nth(-1);
+    module2.exports = last7;
   }
 });
 
@@ -10298,7 +10298,7 @@ var require_dropRepeatsWith = __commonJS({
     var _curry2 = require_curry2();
     var _dispatchable = require_dispatchable();
     var _xdropRepeatsWith = require_xdropRepeatsWith();
-    var last8 = require_last();
+    var last7 = require_last();
     var dropRepeatsWith = /* @__PURE__ */ _curry2(/* @__PURE__ */ _dispatchable([], _xdropRepeatsWith, function dropRepeatsWith2(pred, list) {
       var result = [];
       var idx = 1;
@@ -10306,7 +10306,7 @@ var require_dropRepeatsWith = __commonJS({
       if (len !== 0) {
         result[0] = list[0];
         while (idx < len) {
-          if (!pred(last8(result), list[idx])) {
+          if (!pred(last7(result), list[idx])) {
             result[result.length] = list[idx];
           }
           idx += 1;
@@ -11290,8 +11290,8 @@ var require_isEmpty = __commonJS({
 var require_join = __commonJS({
   "node_modules/ramda/src/join.js"(exports2, module2) {
     var invoker = require_invoker();
-    var join3 = /* @__PURE__ */ invoker(1, "join");
-    module2.exports = join3;
+    var join2 = /* @__PURE__ */ invoker(1, "join");
+    module2.exports = join2;
   }
 });
 
@@ -25534,12 +25534,12 @@ var require_fixed_size = __commonJS({
         return true;
       }
       shift() {
-        const last8 = this.buffer[this.btm];
-        if (last8 === void 0)
+        const last7 = this.buffer[this.btm];
+        if (last7 === void 0)
           return void 0;
         this.buffer[this.btm] = void 0;
         this.btm = this.btm + 1 & this.mask;
-        return last8;
+        return last7;
       }
       peek() {
         return this.buffer[this.btm];
@@ -25698,7 +25698,7 @@ var require_duplex = __commonJS({
         };
       }
       Object.assign(options, readable, writable);
-      const stream2 = new Stream(options);
+      const stream = new Stream(options);
       if (duplex.sink) {
         duplex.sink({
           [Symbol.asyncIterator]() {
@@ -25709,16 +25709,16 @@ var require_duplex = __commonJS({
             return chunk === END_CHUNK ? { done: true } : { value: chunk };
           },
           async throw(err) {
-            stream2.destroy(err);
+            stream.destroy(err);
             return { done: true };
           },
           async return() {
-            stream2.destroy();
+            stream.destroy();
             return { done: true };
           }
         });
       }
-      return stream2;
+      return stream;
     };
   }
 });
@@ -26262,8 +26262,8 @@ var require_multiaddr_to_uri = __commonJS({
         return `tcp://${str}:${port}`;
       let protocol = "tcp";
       let explicitPort = `:${port}`;
-      const last8 = parts[parts.length - 1];
-      if (last8.protocol === "tcp") {
+      const last7 = parts[parts.length - 1];
+      if (last7.protocol === "tcp") {
         protocol = port === "443" ? "https" : "http";
         explicitPort = port === "443" || port === "80" ? "" : explicitPort;
       }
@@ -26307,8 +26307,8 @@ var require_multiaddr_to_uri = __commonJS({
 var require_browser_readablestream_to_it = __commonJS({
   "node_modules/browser-readablestream-to-it/index.js"(exports2, module2) {
     "use strict";
-    async function* browserReadableStreamToIt(stream2, options = {}) {
-      const reader2 = stream2.getReader();
+    async function* browserReadableStreamToIt(stream, options = {}) {
+      const reader2 = stream.getReader();
       try {
         while (true) {
           const result = await reader2.read();
@@ -27730,14 +27730,14 @@ var require_it_first = __commonJS({
 var require_it_last = __commonJS({
   "node_modules/it-last/index.js"(exports2, module2) {
     "use strict";
-    var last8 = async (source) => {
+    var last7 = async (source) => {
       let res;
       for await (const entry of source) {
         res = entry;
       }
       return res;
     };
-    module2.exports = last8;
+    module2.exports = last7;
   }
 });
 
@@ -29952,42 +29952,42 @@ var require_end_of_stream = __commonJS({
     var once = require_once2();
     var noop2 = function() {
     };
-    var isRequest = function(stream2) {
-      return stream2.setHeader && typeof stream2.abort === "function";
+    var isRequest = function(stream) {
+      return stream.setHeader && typeof stream.abort === "function";
     };
-    var isChildProcess = function(stream2) {
-      return stream2.stdio && Array.isArray(stream2.stdio) && stream2.stdio.length === 3;
+    var isChildProcess = function(stream) {
+      return stream.stdio && Array.isArray(stream.stdio) && stream.stdio.length === 3;
     };
-    var eos = function(stream2, opts, callback) {
+    var eos = function(stream, opts, callback) {
       if (typeof opts === "function")
-        return eos(stream2, null, opts);
+        return eos(stream, null, opts);
       if (!opts)
         opts = {};
       callback = once(callback || noop2);
-      var ws = stream2._writableState;
-      var rs = stream2._readableState;
-      var readable = opts.readable || opts.readable !== false && stream2.readable;
-      var writable = opts.writable || opts.writable !== false && stream2.writable;
+      var ws = stream._writableState;
+      var rs = stream._readableState;
+      var readable = opts.readable || opts.readable !== false && stream.readable;
+      var writable = opts.writable || opts.writable !== false && stream.writable;
       var cancelled = false;
       var onlegacyfinish = function() {
-        if (!stream2.writable)
+        if (!stream.writable)
           onfinish();
       };
       var onfinish = function() {
         writable = false;
         if (!readable)
-          callback.call(stream2);
+          callback.call(stream);
       };
       var onend = function() {
         readable = false;
         if (!writable)
-          callback.call(stream2);
+          callback.call(stream);
       };
       var onexit = function(exitCode) {
-        callback.call(stream2, exitCode ? new Error("exited with error code: " + exitCode) : null);
+        callback.call(stream, exitCode ? new Error("exited with error code: " + exitCode) : null);
       };
       var onerror = function(err) {
-        callback.call(stream2, err);
+        callback.call(stream, err);
       };
       var onclose = function() {
         process.nextTick(onclosenexttick);
@@ -29996,45 +29996,45 @@ var require_end_of_stream = __commonJS({
         if (cancelled)
           return;
         if (readable && !(rs && (rs.ended && !rs.destroyed)))
-          return callback.call(stream2, new Error("premature close"));
+          return callback.call(stream, new Error("premature close"));
         if (writable && !(ws && (ws.ended && !ws.destroyed)))
-          return callback.call(stream2, new Error("premature close"));
+          return callback.call(stream, new Error("premature close"));
       };
       var onrequest = function() {
-        stream2.req.on("finish", onfinish);
+        stream.req.on("finish", onfinish);
       };
-      if (isRequest(stream2)) {
-        stream2.on("complete", onfinish);
-        stream2.on("abort", onclose);
-        if (stream2.req)
+      if (isRequest(stream)) {
+        stream.on("complete", onfinish);
+        stream.on("abort", onclose);
+        if (stream.req)
           onrequest();
         else
-          stream2.on("request", onrequest);
+          stream.on("request", onrequest);
       } else if (writable && !ws) {
-        stream2.on("end", onlegacyfinish);
-        stream2.on("close", onlegacyfinish);
+        stream.on("end", onlegacyfinish);
+        stream.on("close", onlegacyfinish);
       }
-      if (isChildProcess(stream2))
-        stream2.on("exit", onexit);
-      stream2.on("end", onend);
-      stream2.on("finish", onfinish);
+      if (isChildProcess(stream))
+        stream.on("exit", onexit);
+      stream.on("end", onend);
+      stream.on("finish", onfinish);
       if (opts.error !== false)
-        stream2.on("error", onerror);
-      stream2.on("close", onclose);
+        stream.on("error", onerror);
+      stream.on("close", onclose);
       return function() {
         cancelled = true;
-        stream2.removeListener("complete", onfinish);
-        stream2.removeListener("abort", onclose);
-        stream2.removeListener("request", onrequest);
-        if (stream2.req)
-          stream2.req.removeListener("finish", onfinish);
-        stream2.removeListener("end", onlegacyfinish);
-        stream2.removeListener("close", onlegacyfinish);
-        stream2.removeListener("finish", onfinish);
-        stream2.removeListener("exit", onexit);
-        stream2.removeListener("end", onend);
-        stream2.removeListener("error", onerror);
-        stream2.removeListener("close", onclose);
+        stream.removeListener("complete", onfinish);
+        stream.removeListener("abort", onclose);
+        stream.removeListener("request", onrequest);
+        if (stream.req)
+          stream.req.removeListener("finish", onfinish);
+        stream.removeListener("end", onlegacyfinish);
+        stream.removeListener("close", onlegacyfinish);
+        stream.removeListener("finish", onfinish);
+        stream.removeListener("exit", onexit);
+        stream.removeListener("end", onend);
+        stream.removeListener("error", onerror);
+        stream.removeListener("close", onclose);
       };
     };
     module2.exports = eos;
@@ -30053,23 +30053,23 @@ var require_pump = __commonJS({
     var isFn = function(fn) {
       return typeof fn === "function";
     };
-    var isFS = function(stream2) {
+    var isFS = function(stream) {
       if (!ancient)
         return false;
       if (!fs)
         return false;
-      return (stream2 instanceof (fs.ReadStream || noop2) || stream2 instanceof (fs.WriteStream || noop2)) && isFn(stream2.close);
+      return (stream instanceof (fs.ReadStream || noop2) || stream instanceof (fs.WriteStream || noop2)) && isFn(stream.close);
     };
-    var isRequest = function(stream2) {
-      return stream2.setHeader && isFn(stream2.abort);
+    var isRequest = function(stream) {
+      return stream.setHeader && isFn(stream.abort);
     };
-    var destroyer = function(stream2, reading, writing, callback) {
+    var destroyer = function(stream, reading, writing, callback) {
       callback = once(callback);
       var closed = false;
-      stream2.on("close", function() {
+      stream.on("close", function() {
         closed = true;
       });
-      eos(stream2, { readable: reading, writable: writing }, function(err) {
+      eos(stream, { readable: reading, writable: writing }, function(err) {
         if (err)
           return callback(err);
         closed = true;
@@ -30082,12 +30082,12 @@ var require_pump = __commonJS({
         if (destroyed)
           return;
         destroyed = true;
-        if (isFS(stream2))
-          return stream2.close(noop2);
-        if (isRequest(stream2))
-          return stream2.abort();
-        if (isFn(stream2.destroy))
-          return stream2.destroy();
+        if (isFS(stream))
+          return stream.close(noop2);
+        if (isRequest(stream))
+          return stream.abort();
+        if (isFn(stream.destroy))
+          return stream.destroy();
         callback(err || new Error("stream was destroyed"));
       };
     };
@@ -30105,10 +30105,10 @@ var require_pump = __commonJS({
       if (streams.length < 2)
         throw new Error("pump requires two streams per minimum");
       var error;
-      var destroys = streams.map(function(stream2, i) {
+      var destroys = streams.map(function(stream, i) {
         var reading = i < streams.length - 1;
         var writing = i > 0;
-        return destroyer(stream2, reading, writing, function(err) {
+        return destroyer(stream, reading, writing, function(err) {
           if (!error)
             error = err;
           if (err)
@@ -30144,13 +30144,13 @@ var require_buffer_stream = __commonJS({
       if (isBuffer3) {
         encoding = null;
       }
-      const stream2 = new PassThroughStream({ objectMode });
+      const stream = new PassThroughStream({ objectMode });
       if (encoding) {
-        stream2.setEncoding(encoding);
+        stream.setEncoding(encoding);
       }
       let length2 = 0;
       const chunks = [];
-      stream2.on("data", (chunk) => {
+      stream.on("data", (chunk) => {
         chunks.push(chunk);
         if (objectMode) {
           length2 = chunks.length;
@@ -30158,14 +30158,14 @@ var require_buffer_stream = __commonJS({
           length2 += chunk.length;
         }
       });
-      stream2.getBufferedValue = () => {
+      stream.getBufferedValue = () => {
         if (array) {
           return chunks;
         }
         return isBuffer3 ? Buffer.concat(chunks, length2) : chunks.join("");
       };
-      stream2.getBufferedLength = () => length2;
-      return stream2;
+      stream.getBufferedLength = () => length2;
+      return stream;
     };
   }
 });
@@ -30191,33 +30191,33 @@ var require_get_stream = __commonJS({
         maxBuffer: Infinity
       }, options);
       const { maxBuffer } = options;
-      let stream2;
+      let stream;
       await new Promise((resolve2, reject) => {
         const rejectPromise = (error) => {
-          if (error && stream2.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
-            error.bufferedData = stream2.getBufferedValue();
+          if (error && stream.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
+            error.bufferedData = stream.getBufferedValue();
           }
           reject(error);
         };
-        stream2 = pump(inputStream, bufferStream(options), (error) => {
+        stream = pump(inputStream, bufferStream(options), (error) => {
           if (error) {
             rejectPromise(error);
             return;
           }
           resolve2();
         });
-        stream2.on("data", () => {
-          if (stream2.getBufferedLength() > maxBuffer) {
+        stream.on("data", () => {
+          if (stream.getBufferedLength() > maxBuffer) {
             rejectPromise(new MaxBufferError());
           }
         });
       });
-      return stream2.getBufferedValue();
+      return stream.getBufferedValue();
     }
     module2.exports = getStream;
     module2.exports.default = getStream;
-    module2.exports.buffer = (stream2, options) => getStream(stream2, __spreadProps(__spreadValues({}, options), { encoding: "buffer" }));
-    module2.exports.array = (stream2, options) => getStream(stream2, __spreadProps(__spreadValues({}, options), { array: true }));
+    module2.exports.buffer = (stream, options) => getStream(stream, __spreadProps(__spreadValues({}, options), { encoding: "buffer" }));
+    module2.exports.array = (stream, options) => getStream(stream, __spreadProps(__spreadValues({}, options), { array: true }));
     module2.exports.MaxBufferError = MaxBufferError;
   }
 });
@@ -31801,13 +31801,13 @@ Please report this to https://github.com/szmarczak/http2-wrapper/`);
                 if (session[kGracefullyClosing]) {
                   throw new Error("The session is gracefully closing. No new streams are allowed.");
                 }
-                const stream2 = session[kRequest](headers, streamOptions);
+                const stream = session[kRequest](headers, streamOptions);
                 session.ref();
                 ++session[kCurrentStreamsCount];
                 if (session[kCurrentStreamsCount] === session.remoteSettings.maxConcurrentStreams) {
                   this._freeSessionsCount--;
                 }
-                stream2.once("close", () => {
+                stream.once("close", () => {
                   wasFree = isFree();
                   --session[kCurrentStreamsCount];
                   if (!session.destroyed && !session.closed) {
@@ -31830,7 +31830,7 @@ Please report this to https://github.com/szmarczak/http2-wrapper/`);
                     }
                   }
                 });
-                return stream2;
+                return stream;
               };
             } catch (error) {
               for (const listener of listeners) {
@@ -32246,14 +32246,14 @@ var require_client_request = __commonJS({
         }
         this[kFlushedHeaders] = true;
         const isConnectMethod = this.method === HTTP2_METHOD_CONNECT;
-        const onStream = (stream2) => {
-          this._request = stream2;
+        const onStream = (stream) => {
+          this._request = stream;
           if (this.destroyed) {
-            stream2.destroy();
+            stream.destroy();
             return;
           }
           if (!isConnectMethod) {
-            proxyEvents(stream2, this, ["timeout", "continue", "close", "error"]);
+            proxyEvents(stream, this, ["timeout", "continue", "close", "error"]);
           }
           const waitForEnd = (fn) => {
             return (...args) => {
@@ -32266,8 +32266,8 @@ var require_client_request = __commonJS({
               }
             };
           };
-          stream2.once("response", waitForEnd((headers, flags, rawHeaders) => {
-            const response = new IncomingMessage(this.socket, stream2.readableHighWaterMark);
+          stream.once("response", waitForEnd((headers, flags, rawHeaders) => {
+            const response = new IncomingMessage(this.socket, stream.readableHighWaterMark);
             this.res = response;
             response.req = this;
             response.statusCode = headers[HTTP2_HEADER_STATUS];
@@ -32285,18 +32285,18 @@ var require_client_request = __commonJS({
             });
             if (isConnectMethod) {
               response.upgrade = true;
-              if (this.emit("connect", response, stream2, Buffer.alloc(0))) {
+              if (this.emit("connect", response, stream, Buffer.alloc(0))) {
                 this.emit("close");
               } else {
-                stream2.destroy();
+                stream.destroy();
               }
             } else {
-              stream2.on("data", (chunk) => {
+              stream.on("data", (chunk) => {
                 if (!response._dumped && !response.push(chunk)) {
-                  stream2.pause();
+                  stream.pause();
                 }
               });
-              stream2.once("end", () => {
+              stream.once("end", () => {
                 response.push(null);
               });
               if (!this.emit("response", response)) {
@@ -32304,13 +32304,13 @@ var require_client_request = __commonJS({
               }
             }
           }));
-          stream2.once("headers", waitForEnd((headers) => this.emit("information", { statusCode: headers[HTTP2_HEADER_STATUS] })));
-          stream2.once("trailers", waitForEnd((trailers, flags, rawTrailers) => {
+          stream.once("headers", waitForEnd((headers) => this.emit("information", { statusCode: headers[HTTP2_HEADER_STATUS] })));
+          stream.once("trailers", waitForEnd((trailers, flags, rawTrailers) => {
             const { res } = this;
             res.trailers = trailers;
             res.rawTrailers = rawTrailers;
           }));
-          const { socket } = stream2.session;
+          const { socket } = stream.session;
           this.socket = socket;
           this.connection = socket;
           for (const job of this[kJobs]) {
@@ -32945,10 +32945,10 @@ var require_get_buffer = __commonJS({
   "node_modules/got/dist/source/core/utils/get-buffer.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    var getBuffer = async (stream2) => {
+    var getBuffer = async (stream) => {
       const chunks = [];
       let length2 = 0;
-      for await (const chunk of stream2) {
+      for await (const chunk of stream) {
         chunks.push(chunk);
         length2 += Buffer.byteLength(chunk);
       }
@@ -36317,163 +36317,12 @@ var require_lib7 = __commonJS({
   }
 });
 
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = { value, done: false };
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({ value: void 0, done: true });
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({ value: void 0, done: true });
-            } else {
-              return new Promise((resolve2, reject) => {
-                this.pullQueue.push({ resolve: resolve2, reject });
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({ value: void 0, done: true });
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
-  }
-});
-
 // src/network/ipfsPubSub.js
 var import_await_sleep2 = __toESM(require_await_sleep(), 1);
 var import_debug6 = __toESM(require_src(), 1);
 var import_lodash = __toESM(require_lodash(), 1);
 var import_native_abort_controller = __toESM(require_src2(), 1);
 var import_queueable = __toESM(require_lib(), 1);
-var import_ramda2 = __toESM(require_src3(), 1);
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toESM(require_src(), 1);
@@ -41749,9 +41598,9 @@ async function normaliseContent2(input) {
   }
   throw (0, import_err_code5.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
 }
-async function itToBlob(stream2) {
+async function itToBlob(stream) {
   const parts = [];
-  for await (const chunk of stream2) {
+  for await (const chunk of stream) {
     parts.push(chunk);
   }
   return new Blob(parts);
@@ -44705,16 +44554,6 @@ var toPromise = async (asyncGen) => {
   }
   return contents;
 };
-var toPromise1 = async (asyncGen) => {
-  debug4("getting values of asyncGen");
-  for await (const value of asyncGen) {
-    debug4("Got value", value);
-    return value;
-  }
-  debug4("No value found to convert to Promise");
-  return null;
-};
-var noop = () => null;
 var retryException = (f) => {
   return async (...args) => {
     let n = 5;
@@ -44882,124 +44721,6 @@ async function experimentalIPNSPublish(client, rootCID, ipnsKeyName) {
   });
 }
 var throttledExperimentalIPNSPublish = (0, import_lodash.debounce)(experimentalIPNSPublish, 3e3, 5e3);
-function subscribeGenerator(nodeID, suffix = "/input") {
-  const channel = new import_queueable.Channel();
-  debug6("Subscribing to pubsub events from", nodeID, suffix);
-  const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
-  return [channel, unsubscribe];
-}
-function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
-  const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
-  let unsubscribe = null;
-  let aborted = false;
-  const handleMessage = (message) => {
-    if (message === "HEARTBEAT") {
-      gotHeartbeat();
-    } else {
-      callback(message);
-    }
-  };
-  (async () => {
-    const keyName = nodeID + suffix;
-    await getInitialStateFromIPNS(keyName, callback);
-    while (!aborted) {
-      unsubscribe = subscribeCallback(keyName, handleMessage);
-      await (0, import_await_sleep2.default)(5 * 60 * 1e3);
-      unsubscribe();
-    }
-  })();
-  return () => {
-    debug6("Unsubscribing from pubsub events from", nodeID, suffix);
-    if (unsubscribe)
-      unsubscribe();
-    closeHeartbeat();
-    aborted = true;
-  };
-}
-async function getInitialStateFromIPNS(keyName, callback) {
-  const client = await getClient();
-  const keys = await client.key.list();
-  const ipnsKey = keys.find(({ name: name7 }) => name7 === keyName);
-  if (ipnsKey) {
-    const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
-    debug6("got initial CID through IPNS. Calling callback with", cidString);
-    const cid = (0, import_ramda2.last)(cidString.split("/"));
-    callback(cid);
-  }
-}
-function heartbeatChecker(heartbeatStateCallback) {
-  let lastHeartbeat = new Date().getTime();
-  let heartbeatTimeout = null;
-  function setHeartbeatTimeout() {
-    heartbeatTimeout = setTimeout(() => {
-      const timeSinceLastHeartbeat = (new Date().getTime() - lastHeartbeat) / 1e3;
-      debug6("Heartbeat timeout. Time since last:", timeSinceLastHeartbeat);
-      heartbeatStateCallback({ lastHeartbeat, alive: false });
-    }, HEARTBEAT_FREQUENCY * 1.5 * 1e3);
-  }
-  const gotHeartbeat = () => {
-    const time = new Date().getTime();
-    debug6("Heartbeat from pubsub. Time since last:", (time - lastHeartbeat) / 1e3);
-    lastHeartbeat = time;
-    if (heartbeatTimeout)
-      clearTimeout(heartbeatTimeout);
-    heartbeatStateCallback({ alive: true });
-    setHeartbeatTimeout();
-  };
-  const closeHeartbeat = () => {
-    if (heartbeatTimeout)
-      clearTimeout(heartbeatTimeout);
-  };
-  setHeartbeatTimeout();
-  return { gotHeartbeat, closeHeartbeat };
-}
-function subscribeCallback(topic, callback) {
-  let abort = new import_native_abort_controller.AbortController();
-  (async () => {
-    const onError = async (...errorArgs) => {
-      debug6("onError", ...errorArgs, "aborting");
-      if (abort.signal.aborted)
-        return;
-      abort.abort();
-      await (0, import_await_sleep2.default)(300);
-      debug6("resubscribing");
-      await doSub();
-    };
-    const handler = ({ data }) => {
-      if (abort.signal.aborted) {
-        console.error("Subscription to", topic, "was aborted. Shouldn't receive any more messages.");
-      } else {
-        const message = new TextDecoder().decode(data);
-        callback(message);
-      }
-    };
-    const doSub = async () => {
-      var _a2;
-      const client = await getClient();
-      try {
-        abort.abort();
-        abort = new import_native_abort_controller.AbortController();
-        debug6("Executing subscribe", topic);
-        await client.pubsub.subscribe(topic, (...args) => handler(...args), { onError, signal: abort.signal, timeout: "4h" });
-      } catch (e) {
-        debug6("subscribe error", e, e.name);
-        if (e.name === "DOMException") {
-          debug6("subscription was aborted. returning");
-          return;
-        }
-        if ((_a2 = e.message) == null ? void 0 : _a2.startsWith("Already subscribed"))
-          return;
-        await (0, import_await_sleep2.default)(300);
-        await doSub();
-      }
-    };
-    doSub();
-  })();
-  return () => {
-    debug6("subscribe abort was called");
-    abort.abort();
-  };
-}
 
 // src/backend/functions/social-post.js
 var import_node_fetch = __toESM(require_lib6(), 1);
@@ -45574,7 +45295,7 @@ var notebookMetadata_default = readMetadata;
 
 // src/data/media.js
 var import_debug8 = __toESM(require_src(), 1);
-var import_ramda3 = __toESM(require_src3(), 1);
+var import_ramda2 = __toESM(require_src3(), 1);
 var debug8 = (0, import_debug8.default)("media");
 var _mediaTypeMapWithoutAll = {
   "video": [".mp4", ".webm"],
@@ -45586,8 +45307,8 @@ var _mediaTypeMap = __spreadProps(__spreadValues({}, _mediaTypeMapWithoutAll), {
   "all": [...Object.values(_mediaTypeMapWithoutAll)].flat()
 });
 var getFileType = (filename) => {
-  const extension = (0, import_ramda3.last)(filename.split("."));
-  return Object.entries(_mediaTypeMap).find(([type, exts]) => (0, import_ramda3.any)((ext) => ext.endsWith(extension), exts))[0];
+  const extension = (0, import_ramda2.last)(filename.split("."));
+  return Object.entries(_mediaTypeMap).find(([type, exts]) => (0, import_ramda2.any)((ext) => ext.endsWith(extension), exts))[0];
 };
 var getCoverImage = (output) => {
   const image = output && getMedia(output, "image")[0];
@@ -45597,14 +45318,14 @@ var getCoverImage = (output) => {
 var getCoverVideo = (output) => output && getMedia(output, "video")[0];
 function getMedia(output, type = "all") {
   const extensions = _mediaTypeMap[type];
-  const filterByExtensions = (filename) => (0, import_ramda3.any)(import_ramda3.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
+  const filterByExtensions = (filename) => (0, import_ramda2.any)(import_ramda2.identity, extensions.map((ext) => filename.toLowerCase().endsWith(ext)));
   const mediaFilenames = output ? Object.keys(output).filter(filterByExtensions) : [];
   const media = mediaFilenames.map((filename) => [filename, output[filename], getFileType(filename)]);
   media.reverse();
   return media;
 }
 var gzipProxy = (path) => {
-  const cid = (0, import_ramda3.last)(path.split("/"));
+  const cid = (0, import_ramda2.last)(path.split("/"));
   return `https://images.weserv.nl/?url=https://pollinations.ai/ipfs/${cid}`;
 };
 
@@ -45656,7 +45377,7 @@ var import_path2 = require("path");
 var import_debug10 = __toESM(require_src(), 1);
 var import_json52 = __toESM(require_lib7(), 1);
 var import_path = require("path");
-var import_ramda4 = __toESM(require_src3(), 1);
+var import_ramda3 = __toESM(require_src3(), 1);
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name7, promises) => Promise.all(promises);
@@ -45673,18 +45394,18 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   }
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a2, processFile2, skipCache) => {
+var cachedIPFSState = (ipfsReader, _a2, processFile, skipCache) => {
   var _b = _a2, { cid } = _b, rest = __objRest(_b, ["cid"]);
-  const key = `${cid} - ${processFile2.toString()}`;
+  const key = `${cid} - ${processFile.toString()}`;
   if (!cache[key] || skipCache) {
     debug10("cache miss", cid);
-    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile2, skipCache);
+    cache[key] = _getIPFSState(ipfsReader, __spreadValues({ cid }, rest), processFile, skipCache);
   } else
     debug10("cache hit", cid);
   return cache[key];
 };
-var _getIPFSState = async (ipfsReader, { cid, type, name: name7, path, rootCID }, processFile2, skipCache) => {
-  debug10("ipfs state getter callback name", processFile2.toString());
+var _getIPFSState = async (ipfsReader, { cid, type, name: name7, path, rootCID }, processFile, skipCache) => {
+  debug10("ipfs state getter callback name", processFile.toString());
   const { ls, get } = ipfsReader;
   cid = stringCID(cid);
   const _debug = debug10.extend(`_getIPFSState(${path})`);
@@ -45693,14 +45414,14 @@ var _getIPFSState = async (ipfsReader, { cid, type, name: name7, path, rootCID }
     const files = await ls(cid);
     _debug("Got files for", name7, cid, files);
     const filenames = files.map(({ name: name8 }) => name8);
-    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path.join)(path, file.name), rootCID }), processFile2, skipCache)));
-    const contentResult = Object.fromEntries((0, import_ramda4.zip)(filenames, contents));
+    const contents = await PromiseAllProgress(path, files.map((file) => cachedIPFSState(ipfsReader, __spreadProps(__spreadValues({}, file), { path: (0, import_path.join)(path, file.name), rootCID }), processFile, skipCache)));
+    const contentResult = Object.fromEntries((0, import_ramda3.zip)(filenames, contents));
     _debug("contents", contentResult);
     Object.defineProperty(contentResult, ".cid", { value: cid });
     return contentResult;
   }
   if (type === "file") {
-    const fileResult = await processFile2(__spreadValues({
+    const fileResult = await processFile(__spreadValues({
       cid,
       path,
       name: name7,
@@ -45845,52 +45566,11 @@ var autoHashtag = async (text) => {
 
 // src/backend/ipfs/receiver.js
 var import_debug12 = __toESM(require_src(), 1);
-var import_event_iterator = __toESM(require_node2(), 1);
-var import_fs = require("fs");
-var import_path3 = require("path");
 var debug12 = (0, import_debug12.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid, once, path: rootPath }, process2 = processRemoteCID, suffix = "/input") {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process2.stdin), noop];
-  let remoteCID = null;
-  for await (remoteCID of await cidStream) {
-    debug12("received CID", remoteCID);
-    remoteCID = stringCID(remoteCID);
-    debug12("remoteCID", remoteCID);
-    await process2(stringCID(remoteCID), rootPath);
-    yield remoteCID;
-    if (once) {
-      unsubscribe();
-      break;
-    }
-  }
-  ;
+var receive = async function* ({ ipns, nodeid, once, path: rootPath }, suffix = "/input") {
+  await process(remoteCID, rootPath);
   return remoteCID;
 };
-var writeFileAndCreateFolder = async (path, content) => {
-  debug12("creating folder if it does not exist", (0, import_path3.dirname)(path));
-  (0, import_fs.mkdirSync)((0, import_path3.dirname)(path), { recursive: true });
-  debug12("writing file of length", content.size, "to folder", path);
-  (0, import_fs.writeFileSync)(path, content);
-  return path;
-};
-async function processRemoteCID(contentID, rootPath) {
-  debug12("Processing remote CID", contentID);
-  (0, import_fs.rmSync)(rootPath + "/input", { recursive: true, force: true });
-  (0, import_fs.mkdirSync)(rootPath + "/input");
-  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
-  debug12("got remote state", ipfsState);
-}
-async function processFile({ path, cid }, rootPath, { get }) {
-  const _debug = debug12.extend(`processFile(${path})`);
-  _debug("started");
-  const destPath = (0, import_path3.join)(rootPath, path);
-  _debug("writeFile", destPath, cid, "queued");
-  const content = await get(cid, { stream: true });
-  _debug("writefile content", content.length);
-  await writeFileAndCreateFolder(destPath, content);
-  _debug("done");
-  return destPath;
-}
 
 // src/backend/social-post-cli.js
 var PUBSUB_TOPIC = "post_pollen";

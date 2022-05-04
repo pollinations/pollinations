@@ -790,6 +790,156 @@ var require_src = __commonJS({
   }
 });
 
+// node_modules/event-iterator/lib/event-iterator.js
+var require_event_iterator = __commonJS({
+  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var EventQueue = class {
+      constructor() {
+        this.pullQueue = [];
+        this.pushQueue = [];
+        this.eventHandlers = {};
+        this.isPaused = false;
+        this.isStopped = false;
+      }
+      push(value) {
+        if (this.isStopped)
+          return;
+        const resolution = { value, done: false };
+        if (this.pullQueue.length) {
+          const placeholder = this.pullQueue.shift();
+          if (placeholder)
+            placeholder.resolve(resolution);
+        } else {
+          this.pushQueue.push(Promise.resolve(resolution));
+          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
+            this.isPaused = true;
+            if (this.eventHandlers.highWater) {
+              this.eventHandlers.highWater();
+            } else if (console) {
+              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
+            }
+          }
+        }
+      }
+      stop() {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        for (const placeholder of this.pullQueue) {
+          placeholder.resolve({ value: void 0, done: true });
+        }
+        this.pullQueue.length = 0;
+      }
+      fail(error) {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        if (this.pullQueue.length) {
+          for (const placeholder of this.pullQueue) {
+            placeholder.reject(error);
+          }
+          this.pullQueue.length = 0;
+        } else {
+          const rejection = Promise.reject(error);
+          rejection.catch(() => {
+          });
+          this.pushQueue.push(rejection);
+        }
+      }
+      remove() {
+        Promise.resolve().then(() => {
+          if (this.removeCallback)
+            this.removeCallback();
+        });
+      }
+      [Symbol.asyncIterator]() {
+        return {
+          next: (value) => {
+            const result = this.pushQueue.shift();
+            if (result) {
+              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
+                this.isPaused = false;
+                if (this.eventHandlers.lowWater) {
+                  this.eventHandlers.lowWater();
+                }
+              }
+              return result;
+            } else if (this.isStopped) {
+              return Promise.resolve({ value: void 0, done: true });
+            } else {
+              return new Promise((resolve2, reject) => {
+                this.pullQueue.push({ resolve: resolve2, reject });
+              });
+            }
+          },
+          return: () => {
+            this.isStopped = true;
+            this.pushQueue.length = 0;
+            this.remove();
+            return Promise.resolve({ value: void 0, done: true });
+          }
+        };
+      }
+    };
+    var EventIterator = class {
+      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
+        const queue = new EventQueue();
+        queue.highWaterMark = highWaterMark;
+        queue.lowWaterMark = lowWaterMark;
+        queue.removeCallback = listen({
+          push: (value) => queue.push(value),
+          stop: () => queue.stop(),
+          fail: (error) => queue.fail(error),
+          on: (event, fn) => {
+            queue.eventHandlers[event] = fn;
+          }
+        }) || (() => {
+        });
+        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
+        Object.freeze(this);
+      }
+    };
+    exports2.EventIterator = EventIterator;
+    exports2.default = EventIterator;
+  }
+});
+
+// node_modules/event-iterator/lib/node.js
+var require_node2 = __commonJS({
+  "node_modules/event-iterator/lib/node.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var event_iterator_1 = require_event_iterator();
+    exports2.EventIterator = event_iterator_1.EventIterator;
+    function stream2(evOptions) {
+      return new event_iterator_1.EventIterator((queue) => {
+        this.addListener("data", queue.push);
+        this.addListener("end", queue.stop);
+        this.addListener("error", queue.fail);
+        queue.on("highWater", () => this.pause());
+        queue.on("lowWater", () => this.resume());
+        return () => {
+          this.removeListener("data", queue.push);
+          this.removeListener("end", queue.stop);
+          this.removeListener("error", queue.fail);
+          if (this.destroy) {
+            this.destroy();
+          } else if (typeof this.close == "function") {
+            ;
+            this.close();
+          }
+        };
+      }, evOptions);
+    }
+    exports2.stream = stream2;
+    exports2.default = event_iterator_1.EventIterator;
+  }
+});
+
 // node_modules/event-target-shim/dist/event-target-shim.js
 var require_event_target_shim = __commonJS({
   "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
@@ -1433,156 +1583,6 @@ var require_tree_kill = __commonJS({
       };
       ps.on("close", onClose);
     }
-  }
-});
-
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = { value, done: false };
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({ value: void 0, done: true });
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({ value: void 0, done: true });
-            } else {
-              return new Promise((resolve2, reject) => {
-                this.pullQueue.push({ resolve: resolve2, reject });
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({ value: void 0, done: true });
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
   }
 });
 
@@ -15252,7 +15252,7 @@ var require_writer = __commonJS({
       this.next = void 0;
       this.val = val;
     }
-    function noop2() {
+    function noop3() {
     }
     function State(writer2) {
       this.head = writer2.head;
@@ -15262,7 +15262,7 @@ var require_writer = __commonJS({
     }
     function Writer() {
       this.len = 0;
-      this.head = new Op(noop2, 0, 0);
+      this.head = new Op(noop3, 0, 0);
       this.tail = this.head;
       this.states = null;
     }
@@ -15381,7 +15381,7 @@ var require_writer = __commonJS({
     };
     Writer.prototype.fork = function fork() {
       this.states = new State(this);
-      this.head = this.tail = new Op(noop2, 0, 0);
+      this.head = this.tail = new Op(noop3, 0, 0);
       this.len = 0;
       return this;
     };
@@ -15392,7 +15392,7 @@ var require_writer = __commonJS({
         this.len = this.states.len;
         this.states = this.states.next;
       } else {
-        this.head = this.tail = new Op(noop2, 0, 0);
+        this.head = this.tail = new Op(noop3, 0, 0);
         this.len = 0;
       }
       return this;
@@ -25452,7 +25452,7 @@ var require_lodash = __commonJS({
             return func(number);
           };
         }
-        var createSet2 = !(Set2 && 1 / setToArray(new Set2([, -0]))[1] == INFINITY) ? noop2 : function(values2) {
+        var createSet2 = !(Set2 && 1 / setToArray(new Set2([, -0]))[1] == INFINITY) ? noop3 : function(values2) {
           return new Set2(values2);
         };
         function createToPairs(keysFunc) {
@@ -25679,7 +25679,7 @@ var require_lodash = __commonJS({
         function getAllKeysIn(object) {
           return baseGetAllKeys(object, keysIn, getSymbolsIn);
         }
-        var getData = !metaMap ? noop2 : function(func) {
+        var getData = !metaMap ? noop3 : function(func) {
           return metaMap.get(func);
         };
         function getFuncName(func) {
@@ -27864,7 +27864,7 @@ var require_lodash = __commonJS({
           }
           return this;
         }
-        function noop2() {
+        function noop3() {
         }
         function nthArg(n) {
           n = toInteger(n);
@@ -28219,7 +28219,7 @@ var require_lodash = __commonJS({
         lodash.multiply = multiply;
         lodash.nth = nth;
         lodash.noConflict = noConflict;
-        lodash.noop = noop2;
+        lodash.noop = noop3;
         lodash.now = now;
         lodash.pad = pad;
         lodash.padEnd = padEnd;
@@ -36066,17 +36066,12 @@ module.exports = __toCommonJS(pollinate_cli_exports);
 var import_await_sleep4 = __toESM(require_await_sleep(), 1);
 var import_child_process = require("child_process");
 var import_debug12 = __toESM(require_src(), 1);
+var import_event_iterator = __toESM(require_node2(), 1);
 var import_fs5 = require("fs");
 var import_native_abort_controller3 = __toESM(require_src2(), 1);
 var import_process = __toESM(require("process"), 1);
 var import_readline = __toESM(require("readline"), 1);
 var import_tree_kill = __toESM(require_tree_kill(), 1);
-
-// src/backend/ipfs/receiver.js
-var import_debug8 = __toESM(require_src(), 1);
-var import_event_iterator = __toESM(require_node2(), 1);
-var import_fs2 = require("fs");
-var import_path3 = require("path");
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toESM(require_src(), 1);
@@ -44319,7 +44314,7 @@ var toPromise1 = async (asyncGen) => {
   debug4("No value found to convert to Promise");
   return null;
 };
-var noop = () => null;
+var noop2 = () => null;
 var retryException = (f) => {
   return async (...args) => {
     let n = 5;
@@ -44376,7 +44371,7 @@ function writer(initialRootCID = null) {
     addFile: returnRootCID(ipfsAddFile),
     rm: returnRootCID(ipfsRm),
     mkDir: returnRootCID(ipfsMkdir),
-    cid: returnRootCID(noop),
+    cid: returnRootCID(noop2),
     cp: returnRootCID(ipfsCp),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
@@ -44612,7 +44607,7 @@ function subscribeGenerator(nodeID, suffix = "/input") {
   const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
-function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
+function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop2) {
   const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
   let unsubscribe = null;
   let aborted = false;
@@ -44725,6 +44720,11 @@ function subscribeCallback(topic, callback) {
   };
 }
 
+// src/backend/ipfs/receiver.js
+var import_debug8 = __toESM(require_src(), 1);
+var import_fs2 = require("fs");
+var import_path3 = require("path");
+
 // src/network/ipfsState.js
 var import_debug7 = __toESM(require_src(), 1);
 var import_json5 = __toESM(require_lib7(), 1);
@@ -44794,21 +44794,8 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, process3 = processRemoteCID, suffix = "/input") {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
-  let remoteCID = null;
-  for await (remoteCID of await cidStream) {
-    debug8("received CID", remoteCID);
-    remoteCID = stringCID(remoteCID);
-    debug8("remoteCID", remoteCID);
-    await process3(stringCID(remoteCID), rootPath2);
-    yield remoteCID;
-    if (once) {
-      unsubscribe();
-      break;
-    }
-  }
-  ;
+var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
+  await process(remoteCID, rootPath2);
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -45033,19 +45020,21 @@ if (executeCommand)
       }
     };
     let [executeSignal, abortExecute] = [null, null];
-    for await (const receiveidCID of receive(options_default)) {
-      debug12("received CID", receiveidCID);
+    const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
+    let receivedCID = null;
+    for await (receivedCID of await cidStream) {
+      debug12("received CID", receivedCID);
+      receivedCID = stringCID(receivedCID);
+      debug12("remoteCID", receivedCID);
+      await processRemoteCID(remoteCID, options_default.path);
       if (abortExecute) {
         debug12("aborting previous execution");
         abortExecute();
       }
       [executeSignal, abortExecute] = getSignal();
       doSend();
-      (async () => {
-        await execute(executeCommand, options_default.logout, executeSignal);
-        stopSending();
-      })();
-      debug12("done executing", executeCommand, ". Waiting...");
+      await execute(executeCommand, options_default.logout, executeSignal);
+      stopSending();
     }
   })();
 else {

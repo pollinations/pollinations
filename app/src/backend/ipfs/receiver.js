@@ -1,48 +1,20 @@
 import Debug from 'debug';
-import { stream } from "event-iterator";
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { dirname, join } from "path";
-import { stringCID } from "../../network/ipfsConnector.js";
-import { subscribeGenerator } from "../../network/ipfsPubSub.js";
 import { getIPFSState } from '../../network/ipfsState.js';
-import { noop } from '../../network/utils.js';
 
 
 const debug = Debug("ipfs/receiver");
 
 // Receives a stream of updates from IPFS pubsub or stdin and writes them to disk
-export const receive = async function* ({ ipns, nodeid, once, path: rootPath }, process=processRemoteCID, suffix="/input") {
+export const receive = async function* ({ ipns, nodeid, once, path: rootPath }, suffix="/input") {
   // subscribe to content id updates either via IPNS or stdin
-  const [cidStream, unsubscribe] = ipns ?
-    subscribeGenerator(nodeid, suffix)
-    : [stream.call(process.stdin), noop];
 
-  let remoteCID = null;
-  for await (remoteCID of await cidStream) {
-    debug("received CID",remoteCID);
-    remoteCID = stringCID(remoteCID);
-    debug("remoteCID", remoteCID);
-    await process(stringCID(remoteCID), rootPath);
-    yield remoteCID
-    if (once) {
-      unsubscribe();
-      break;
-    }
-  };
+    await process(remoteCID, rootPath);
+
   return remoteCID;
 };
 
-
-// Easy way to skip duplicate content updates
-let _lastContentID = null;
-const isSameContentID = cid => {
-  if (_lastContentID === cid) {
-    debug("contentid was the same. probably skipping");
-    return true;
-  }
-  _lastContentID = cid;
-  return false;
-};
 
 export const writeFileAndCreateFolder = async (path, content) => {
     debug("creating folder if it does not exist", dirname(path));
@@ -54,7 +26,7 @@ export const writeFileAndCreateFolder = async (path, content) => {
   
 
 // Fetch the IPFS state and write to disk  
-async function processRemoteCID(contentID, rootPath) {
+export async function processRemoteCID(contentID, rootPath) {
   // if (isSameContentID(stringCID(contentID)))
   //   return;
   debug("Processing remote CID", contentID);

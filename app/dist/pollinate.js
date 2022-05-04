@@ -44532,7 +44532,7 @@ var import_queueable = __toESM(require_lib6(), 1);
 var import_ramda2 = __toESM(require_src7(), 1);
 var debug6 = (0, import_debug6.default)("ipfs:pubsub");
 var HEARTBEAT_FREQUENCY = 12;
-function publisher2(nodeID, suffix = "/output", useIPNS = true) {
+function publisher(nodeID, suffix = "/output", useIPNS = true) {
   if (nodeID === "ipns")
     suffix = "";
   debug6("Creating publisher for", nodeID, suffix);
@@ -44928,7 +44928,7 @@ var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === grou
 var debug11 = (0, import_debug11.default)("ipfs/sender");
 var sender = ({ path, debounce: debounce2, once, nodeid: nodeid2, publish: publish2 }) => {
   const ipfsWriter = writer();
-  const { publish: publishPollen, close: closePollenPublisher } = publisher2("processing_pollen", "");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   let abortController = null;
   const close = async (error) => {
     debug11("Closing sender", nodeid2);

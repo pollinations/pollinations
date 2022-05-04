@@ -10,7 +10,7 @@ import process from "process"
 import Readline from 'readline'
 import treeKill from 'tree-kill'
 import { stringCID } from "../network/ipfsConnector.js"
-import { subscribeGenerator } from "../network/ipfsPubSub.js"
+import { publisher, subscribeGenerator } from "../network/ipfsPubSub.js"
 import { processRemoteCID, receive } from "./ipfs/receiver.js"
 import { sender } from './ipfs/sender.js'
 import options from "./options.js"

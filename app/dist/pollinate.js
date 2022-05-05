@@ -44936,7 +44936,7 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     await ipfsWriter.close();
     debug11("closed all");
   };
-  async function* startSending() {
+  async function startSending() {
     abortController = new import_native_abort_controller2.AbortController();
     const cid$ = folderSync({ path, debounce: debounce2, writer: ipfsWriter, once, signal: abortController.signal });
     debug11("start consuming watched files");
@@ -44948,7 +44948,6 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     for await (const cid of cid$) {
       debug11("publishing new cid", cid);
       await publish2(cid);
-      yield cid;
       if (once)
         await close();
     }
@@ -45007,12 +45006,7 @@ if (executeCommand)
   (async () => {
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
-    const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(options_default.nodeid, "/output");
-    const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
-    const publish2 = async (cid) => {
-      await publishFrontend(cid);
-      await publishPollen(cid);
-    };
+    const publish2 = getPublisher(options_default.nodeid);
     let close = null;
     for await (let receivedCID of await cidStream) {
       receivedCID = stringCID(receivedCID);
@@ -45030,13 +45024,7 @@ if (executeCommand)
       [executeSignal, abortExecute] = getSignal();
       const { startSending, close: closeSender } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish: publish2 }));
       close = closeSender;
-      const doSend = async () => {
-        for await (const sentCID of startSending()) {
-          debug12("sent", sentCID);
-          console.log(sentCID);
-        }
-      };
-      doSend();
+      startSending();
       execute(executeCommand, options_default.logout, executeSignal);
     }
     await close();
@@ -45070,6 +45058,15 @@ function getSignal() {
   const executeSignal = executeController.signal;
   return [executeSignal, () => executeController.abort()];
 }
+var getPublisher = (nodeid) => {
+  const { publish: publishFrontend, close: closeFrontendPublisher2 } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher2 } = publisher("processing_pollen", "");
+  const publish2 = async (cid) => {
+    await publishFrontend(cid);
+    await publishPollen(cid);
+  };
+  return publish2;
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   debug,

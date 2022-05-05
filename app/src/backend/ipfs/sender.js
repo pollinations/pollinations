@@ -29,7 +29,7 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
     debug("closed all")
   };
 
-  async function* startSending() {
+  async function startSending() {
 
     abortController = new AbortController()
     const cid$ = folderSync({ path, debounce, writer: ipfsWriter, once, signal: abortController.signal })
@@ -45,7 +45,7 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
     for await (const cid of cid$) {
       debug("publishing new cid", cid)
       await publish(cid)
-      yield cid
+      // yield cid
       if (once)
         await close()
     }

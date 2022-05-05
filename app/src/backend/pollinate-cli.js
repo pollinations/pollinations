@@ -62,14 +62,6 @@ const execute = async (command, logfile = null, signal) =>
 if (executeCommand)
   (async () => {
 
-    // const receivedCID = await receive({...options, once: true});
-    // debug("received IPFS content", receivedCID);
-
-
-
- 
-
-
     let [executeSignal, abortExecute] = [null, null]
 
     const [cidStream, unsubscribe] = options.ipns ?
@@ -77,17 +69,7 @@ if (executeCommand)
       : [stream.call(process.stdin), noop];
 
 
-    // publisher to pollinations frontend
-    const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(options.nodeid, "/output")
-
-    
-    // publisher to pollen feed
-    const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
-
-    const publish = async (cid) => {
-      await publishFrontend(cid)
-      await publishPollen(cid)
-    }
+    const publish = getPublisher(options.nodeid)
 
     let close = null;
 
@@ -120,19 +102,12 @@ if (executeCommand)
       const { startSending, close: closeSender } = sender({ ...options, once: false, publish })
       close = closeSender
 
-      const doSend = async () => {
-        for await (const sentCID of startSending()) {
-          debug("sent", sentCID)
-          console.log(sentCID)
-        }
-      }
+
             
-      doSend()
+      startSending()
       
       execute(executeCommand, options.logout, executeSignal)
-
-      // debug("done executing", executeCommand)
-
+      
     }
 
     await close()
@@ -177,6 +152,21 @@ function getSignal() {
   const executeSignal = executeController.signal
   return [executeSignal, () => executeController.abort()]
 }
+
+const getPublisher = (nodeid) => {
+      // publisher to pollinations frontend
+      const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(nodeid, "/output")
+    
+      // publisher to pollen feed
+      const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
+  
+      const publish = async (cid) => {
+        await publishFrontend(cid)
+        await publishPollen(cid)
+      }
+
+      return publish
+  }
 
 // ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
 //   const newContentID = new TextDecoder().decode(data);

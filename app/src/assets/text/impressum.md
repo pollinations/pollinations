@@ -6,25 +6,13 @@
 
 Angaben gem. § 5 TMG:
 
-Vorname, Name
+Pollinations GmbH  
+Köpenicker Chaussee, 26  
+10317  
+Berlin, Germany
 
-Adresse
-
-PLZ
-
-Kontaktaufnahme:
-
-Telefon:
-
-Fax:
-
-E-Mail:
-
-Umsatzsteuer-ID
-
-Umsatzsteuer-Identifikationsnummer gem. § 27 a Umsatzsteuergesetz:
-
-DE XXX XXX XXX
+E-Mail:  
+help@pollinations.ai
 
 Haftungsausschluss – Disclaimer:
 
@@ -47,8 +35,6 @@ Werden uns Rechtsverletzungen bekannt, werden die externen Links durch uns unver
 Urheberrecht
 
 Die auf unserer Webseite veröffentlichen Inhalte und Werke unterliegen dem deutschen Urheberrecht (http://www.gesetze-im-internet.de/bundesrecht/urhg/gesamt.pdf) . Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung des geistigen Eigentums in ideeller und materieller Sicht des Urhebers außerhalb der Grenzen des Urheberrechtes bedürfen der vorherigen schriftlichen Zustimmung des jeweiligen Urhebers i.S.d. Urhebergesetzes (http://www.gesetze-im-internet.de/bundesrecht/urhg/gesamt.pdf ). Downloads und Kopien dieser Seite sind nur für den privaten und nicht kommerziellen Gebrauch erlaubt. Sind die Inhalte auf unserer Webseite nicht von uns erstellt wurden, sind die Urheberrechte Dritter zu beachten. Die Inhalte Dritter werden als solche kenntlich gemacht. Sollten Sie trotzdem auf eine Urheberrechtsverletzung aufmerksam werden, bitten wir um einen entsprechenden Hinweis. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Inhalte unverzüglich entfernen.
-
-Dieses Impressum wurde freundlicherweise von jurarat.de zur Verfügung gestellt.
 
 &nbsp;
 

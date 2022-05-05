@@ -3,7 +3,6 @@ import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { AbortController } from "native-abort-controller";
 import { writer } from "../../network/ipfsConnector.js";
-import { publisher } from '../../network/ipfsPubSub.js';
 import folderSync from "./folderSync.js";
 
 const debug = Debug("ipfs/sender");
@@ -15,11 +14,6 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
 
   const ipfsWriter = writer()
 
-  // publisher to pollinations frontend
-
-
-  // publisher to pollen feed
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
 
   // const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
 
@@ -32,7 +26,6 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
       abortController.abort()
 
     await ipfsWriter.close()
-    await closePollenPublisher()
     debug("closed all")
   };
 
@@ -51,7 +44,6 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
     debug("getting cid stream")
     for await (const cid of cid$) {
       debug("publishing new cid", cid)
-      await publishPollen(cid)
       await publish(cid)
       yield cid
       if (once)

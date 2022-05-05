@@ -77,7 +77,17 @@ if (executeCommand)
       : [stream.call(process.stdin), noop];
 
 
-    const { publish, close: closePublisher } = publisher(options.nodeid, "/output")
+    // publisher to pollinations frontend
+    const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(options.nodeid, "/output")
+
+    
+    // publisher to pollen feed
+    const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
+
+    const publish = async (cid) => {
+      await publishFrontend(cid)
+      await publishPollen(cid)
+    }
 
     let close = null;
 
@@ -107,7 +117,7 @@ if (executeCommand)
       [executeSignal, abortExecute] = getSignal();
 
 
-      const { startSending, close:closeSender } = sender({ ...options, once: false, publish })
+      const { startSending, close: closeSender } = sender({ ...options, once: false, publish })
       close = closeSender
 
       const doSend = async () => {
@@ -127,8 +137,8 @@ if (executeCommand)
 
     await close()
 
-    await closePublisher()
-
+    await closeFrontendPublisher()
+    await closePollenPublisher()
 
   })();
 

@@ -44928,14 +44928,12 @@ var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === grou
 var debug11 = (0, import_debug11.default)("ipfs/sender");
 var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) => {
   const ipfsWriter = writer();
-  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   let abortController = null;
   const close = async (error) => {
     debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
     await ipfsWriter.close();
-    await closePollenPublisher();
     debug11("closed all");
   };
   async function* startSending() {
@@ -44949,7 +44947,6 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     debug11("getting cid stream");
     for await (const cid of cid$) {
       debug11("publishing new cid", cid);
-      await publishPollen(cid);
       await publish2(cid);
       yield cid;
       if (once)
@@ -45010,7 +45007,12 @@ if (executeCommand)
   (async () => {
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
-    const { publish: publish2, close: closePublisher } = publisher(options_default.nodeid, "/output");
+    const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(options_default.nodeid, "/output");
+    const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
+    const publish2 = async (cid) => {
+      await publishFrontend(cid);
+      await publishPollen(cid);
+    };
     let close = null;
     for await (let receivedCID of await cidStream) {
       receivedCID = stringCID(receivedCID);
@@ -45038,7 +45040,8 @@ if (executeCommand)
       execute(executeCommand, options_default.logout, executeSignal);
     }
     await close();
-    await closePublisher();
+    await closeFrontendPublisher();
+    await closePollenPublisher();
   })();
 else {
   if (enableSend)

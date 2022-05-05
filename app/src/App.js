@@ -1,10 +1,10 @@
 import Container from "@material-ui/core/Container"
-import Link from '@material-ui/core/Link'
 import awaitSleep from "await-sleep"
 import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
+import Footer from "./components/Footer"
 // Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
@@ -78,7 +78,7 @@ const Pollinations = () => {
                 <Route path='p/:contentID/*' element={<ModelRoutes node={node} navigateToNode={navigateToNode} overrideContentID={overrideContentID} />} />
                 <Route index element={<Navigate replace to="c/Anything" />} />
             </Routes>
-            <More />
+            <Footer />
         </Container>
 
         <ToolBar node={node} showNode={navigateToNode} />
@@ -134,10 +134,6 @@ const ModelRoutes = ({ node, navigateToNode, overrideContentID }) => {
     )
 }
 
-const More = () => <div style={{ margin: '1em auto 4em auto' }}>
-    Discuss, get help and contribute on
-    <Link href="https://github.com/pollinations/pollinations" target="_blank"> [ Github ] </Link>
-    or <Link href="https://discord.gg/XXd99CrkCr" target="_blank">[ Discord ]</Link>.
-</div>
+
 
 export default App;

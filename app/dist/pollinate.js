@@ -44975,6 +44975,19 @@ var readline = import_readline.default.createInterface({
   input: import_process.default.stdin,
   output: import_process.default.stdout
 });
+var getPublisher = (nodeid) => {
+  const { publish: publishFrontend, close: closeFrontendPublisher2 } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher2 } = publisher("processing_pollen", "");
+  const publish2 = async (cid) => {
+    await publishFrontend(cid);
+    await publishPollen(cid);
+  };
+  const close = async () => {
+    await closeFrontendPublisher2();
+    await closePollenPublisher2();
+  };
+  return { publish: publish2, close };
+};
 debug12("CLI options", options_default);
 var rootPath = options_default.path;
 var enableSend = !options_default.receive;
@@ -45062,19 +45075,6 @@ function getSignal() {
   const executeSignal = executeController.signal;
   return [executeSignal, () => executeController.abort()];
 }
-var getPublisher = (nodeid) => {
-  const { publish: publishFrontend, close: closeFrontendPublisher2 } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher2 } = publisher("processing_pollen", "");
-  const publish2 = async (cid) => {
-    await publishFrontend(cid);
-    await publishPollen(cid);
-  };
-  const close = async () => {
-    await closeFrontendPublisher2();
-    await closePollenPublisher2();
-  };
-  return { publish: publish2, close };
-};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   debug,

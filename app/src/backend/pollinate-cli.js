@@ -22,6 +22,27 @@ const readline = Readline.createInterface({
   output: process.stdout
 })
 
+
+const getPublisher = (nodeid) => {
+  // publisher to pollinations frontend
+  const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(nodeid, "/output")
+
+  // publisher to pollen feed
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
+
+  const publish = async (cid) => {
+    await publishFrontend(cid)
+    await publishPollen(cid)
+  }
+
+  const close = async () => {
+    await closeFrontendPublisher()
+    await closePollenPublisher()
+  }
+
+  return { publish, close }
+}
+
 debug("CLI options", options)
 
 
@@ -156,25 +177,6 @@ function getSignal() {
   return [executeSignal, () => executeController.abort()]
 }
 
-const getPublisher = (nodeid) => {
-      // publisher to pollinations frontend
-      const { publish: publishFrontend, close: closeFrontendPublisher } = publisher(nodeid, "/output")
-    
-      // publisher to pollen feed
-      const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "")
-  
-      const publish = async (cid) => {
-        await publishFrontend(cid)
-        await publishPollen(cid)
-      }
-
-      const close = async () => {
-        await closeFrontendPublisher()
-        await closePollenPublisher()
-      }
-
-      return { publish, close }
-  }
 
 // ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {
 //   const newContentID = new TextDecoder().decode(data);

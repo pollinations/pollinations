@@ -89,6 +89,7 @@ if (executeCommand)
       // create the root path
       mkdirSync(options.path, { recursive: true });
       mkdirSync(options.path+"/input", { recursive: true });
+      mkdirSync(options.path+"/output", { recursive: true });
       
       // create folder for log file extracted from options.path
       if (options.logout)

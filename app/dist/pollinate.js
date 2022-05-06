@@ -45019,6 +45019,7 @@ if (executeCommand)
       (0, import_fs5.rmSync)(options_default.path, { recursive: true, force: true });
       (0, import_fs5.mkdirSync)(options_default.path, { recursive: true });
       (0, import_fs5.mkdirSync)(options_default.path + "/input", { recursive: true });
+      (0, import_fs5.mkdirSync)(options_default.path + "/output", { recursive: true });
       if (options_default.logout)
         (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
       await processRemoteCID(receivedCID, options_default.path);

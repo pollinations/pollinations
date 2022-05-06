@@ -69,7 +69,7 @@ if (executeCommand)
       : [stream.call(process.stdin), noop];
 
 
-    const publish = getPublisher(options.nodeid)
+    const {publish, close: closePublish} = getPublisher(options.nodeid)
 
     let close = null;
 
@@ -87,7 +87,8 @@ if (executeCommand)
       // empty the root path
       rmSync(options.path, { recursive: true, force: true });
       // create the root path
-      mkdirSync(options.path);
+      mkdirSync(options.path, { recursive: true });
+      mkdirSync(options.path+"/input", { recursive: true });
       
       // create folder for log file extracted from options.path
       if (options.logout)
@@ -111,10 +112,11 @@ if (executeCommand)
     }
 
     await close()
+    await closePublish()
 
     await closeFrontendPublisher()
     await closePollenPublisher()
-
+    unsubscribe()
   })();
 
 else {
@@ -165,7 +167,12 @@ const getPublisher = (nodeid) => {
         await publishPollen(cid)
       }
 
-      return publish
+      const close = async () => {
+        await closeFrontendPublisher()
+        await closePollenPublisher()
+      }
+
+      return { publish, close }
   }
 
 // ipfsClient.pubsub.subscribe(nodeID, async ({ data }) => {

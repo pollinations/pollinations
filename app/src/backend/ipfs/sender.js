@@ -14,12 +14,9 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
 
   const ipfsWriter = writer()
 
-
-  // const { channel$: changedFiles$, close: closeFileWatcher, setPaused } = chunkedFilewatcher(watchPath, debounceTime)
-
   let abortController = null;
+  
   // Close function closes both the writer and the publisher.
-  // executeOnce makes sure it is called only once
   const close = async (error) => {
     debug("Closing sender", nodeid)
     if (abortController)

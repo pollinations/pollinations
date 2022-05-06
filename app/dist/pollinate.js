@@ -45006,7 +45006,7 @@ if (executeCommand)
   (async () => {
     let [executeSignal, abortExecute] = [null, null];
     const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
-    const publish2 = getPublisher(options_default.nodeid);
+    const { publish: publish2, close: closePublish } = getPublisher(options_default.nodeid);
     let close = null;
     for await (let receivedCID of await cidStream) {
       receivedCID = stringCID(receivedCID);
@@ -45017,7 +45017,8 @@ if (executeCommand)
         await close();
       }
       (0, import_fs5.rmSync)(options_default.path, { recursive: true, force: true });
-      (0, import_fs5.mkdirSync)(options_default.path);
+      (0, import_fs5.mkdirSync)(options_default.path, { recursive: true });
+      (0, import_fs5.mkdirSync)(options_default.path + "/input", { recursive: true });
       if (options_default.logout)
         (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
       await processRemoteCID(receivedCID, options_default.path);
@@ -45028,8 +45029,10 @@ if (executeCommand)
       execute(executeCommand, options_default.logout, executeSignal);
     }
     await close();
+    await closePublish();
     await closeFrontendPublisher();
     await closePollenPublisher();
+    unsubscribe();
   })();
 else {
   if (enableSend)
@@ -45065,7 +45068,11 @@ var getPublisher = (nodeid) => {
     await publishFrontend(cid);
     await publishPollen(cid);
   };
-  return publish2;
+  const close = async () => {
+    await closeFrontendPublisher2();
+    await closePollenPublisher2();
+  };
+  return { publish: publish2, close };
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

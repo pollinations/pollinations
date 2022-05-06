@@ -44948,6 +44948,7 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     for await (const cid of cid$) {
       debug11("publishing new cid", cid);
       await publish2(cid);
+      console.log(cid);
       if (once)
         await close();
     }

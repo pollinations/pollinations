@@ -43,6 +43,7 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
       debug("publishing new cid", cid)
       await publish(cid)
       // yield cid
+      console.log(cid)
       if (once)
         await close()
     }

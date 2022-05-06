@@ -1,4 +1,5 @@
 
+import awaitSleep from 'await-sleep';
 import Debug from 'debug';
 import { existsSync, mkdirSync } from 'fs';
 import { AbortController } from "native-abort-controller";
@@ -21,7 +22,7 @@ export const sender = ({ path, debounce, once, nodeid, publish }) => {
     debug("Closing sender", nodeid)
     if (abortController)
       abortController.abort()
-
+    await awaitSleep(debounce*2+1000)
     await ipfsWriter.close()
     debug("closed all")
   };

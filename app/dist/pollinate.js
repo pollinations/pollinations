@@ -36063,7 +36063,7 @@ __export(pollinate_cli_exports, {
   rootPath: () => rootPath
 });
 module.exports = __toCommonJS(pollinate_cli_exports);
-var import_await_sleep4 = __toESM(require_await_sleep(), 1);
+var import_await_sleep5 = __toESM(require_await_sleep(), 1);
 var import_child_process = require("child_process");
 var import_debug12 = __toESM(require_src(), 1);
 var import_event_iterator = __toESM(require_node2(), 1);
@@ -44823,6 +44823,7 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
+var import_await_sleep4 = __toESM(require_await_sleep(), 1);
 var import_debug11 = __toESM(require_src(), 1);
 var import_fs4 = require("fs");
 var import_native_abort_controller2 = __toESM(require_src2(), 1);
@@ -44900,6 +44901,8 @@ async function* folderSync({ writer: writer2, path, debounce: debounce2, signal 
     debug10("changedGrouped", changedGrouped);
     for (const changed of changedGrouped) {
       await Promise.all(changed.map(async ({ event, path: file }) => {
+        if (signal.aborted)
+          return;
         debug10("Local:", event, file);
         const localPath = (0, import_path4.join)(path, file);
         const ipfsPath = file;
@@ -44933,6 +44936,7 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
+    await (0, import_await_sleep4.default)(debounce2 * 2 + 1e3);
     await ipfsWriter.close();
     debug11("closed all");
   };
@@ -45058,7 +45062,7 @@ else {
       }
       debug12("process should exit");
       if (options_default.ipns)
-        await (0, import_await_sleep4.default)(sleepBeforeExit);
+        await (0, import_await_sleep5.default)(sleepBeforeExit);
       import_process.default.exit(0);
     })();
   if (enableReceive) {

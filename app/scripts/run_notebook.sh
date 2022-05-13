@@ -91,10 +91,11 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
 
     # Copy output to Google Drive while papermill is running
     while kill -0 $PAPERMILL_PID 2> /dev/null; do
-        sleep 30        
+        sleep 60        
 
         # Check if google drive is mounted
         if [ -d /content/drive ]; then
+            echo "🐝: Copying output to Google Drive."
             mkdir -p $GDRIVE_SAVE_PATH
             cp -r $IPFS_ROOT $GDRIVE_SAVE_PATH
         fi

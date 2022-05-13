@@ -97,7 +97,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
         if [ -d /content/drive ]; then
             echo "🐝: Copying output to Google Drive."
             mkdir -p "$GDRIVE_SAVE_PATH"
-            cp -r "$IPFS_ROOT" "$GDRIVE_SAVE_PATH"
+            cp -r "$IPFS_ROOT"/* "$GDRIVE_SAVE_PATH"
         fi
     done
 

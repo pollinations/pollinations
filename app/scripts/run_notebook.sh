@@ -26,7 +26,7 @@ date +%s > $IPFS_ROOT/output/time_start
 
 # Save date for Google Drive folder name
 NOW=$( date '+%F_%H:%M:%S' )
-GDRIVE_SAVE_PATH=$IPFS_ROOT/output/GDRIVE/$NOW
+GDRIVE_SAVE_PATH=/content/drive/pollinations/$NOW
 
 
 

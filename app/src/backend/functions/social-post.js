@@ -3,7 +3,6 @@ import fetch from "node-fetch";
 import SocialPost from "social-post-api";
 import { getPostData } from "../../data/summaryData";
 import { IPFSWebState } from "../../network/ipfsWebClient.js";
-import {discordPollenPostWebhook} from "./discord-pollen-post.js";
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +51,7 @@ export async function socialPost(platform, cid) {
     res = e;
   }
   // Send discord webhook.
-  await discordPollenPostWebhook(data);
+  // await discordPollenPostWebhook(data);
   return res;
 }
 

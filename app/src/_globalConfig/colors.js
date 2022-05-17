@@ -1,5 +1,6 @@
 export const COLORS = {
   font: {
-    default: 'white',
+    default: "white",
+    greyedOut: "grey",
   },
 }

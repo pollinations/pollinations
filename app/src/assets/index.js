@@ -6,6 +6,7 @@ import instructions from "./text/instructions.md"
 import landingLeft from "./text/landingLeft.md"
 import landingRight from "./text/landingRight.md"
 import impressum from "./text/impressum.md"
+import expo from "./text/expo.md"
 
 export const textContent = {
   help,
@@ -16,6 +17,7 @@ export const textContent = {
   landingLeft,
   landingRight,
   impressum,
+  expo,
 }
 
 const expoCtx = require.context("./expo", false, /\.md$/)

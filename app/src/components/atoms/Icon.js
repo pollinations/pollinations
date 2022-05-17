@@ -1,20 +1,19 @@
-import React from 'react';
-import styled from '@emotion/styled';
+import React from "react"
+import styled from "@emotion/styled"
 // interface Props extends SVGAttributes<SVGElement> {
 //   path: string;
 //   size?: number;
 //   color?: string;
 // }
-const Icon = (props) => {
-  const { path, size, ...rest } = props;
+const Icon = ({ path, size, ...rest }) => {
   return (
     <Wrapper viewBox="0 0 1024 1024" size={size || 16} {...rest}>
       <path d={path}></path>
     </Wrapper>
-  );
-};
+  )
+}
 
-export default Icon;
+export default Icon
 
 const Wrapper = styled.svg`
   display: inline-block;
@@ -25,4 +24,4 @@ const Wrapper = styled.svg`
   path {
     fill: ${(p) => p.color};
   }
-`;
+`

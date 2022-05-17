@@ -28,6 +28,7 @@
     "debug": "^4.3.2",
     "event-iterator": "^2.0.0",
     "file-watch-iterator": "^0.7.0",
+    "front-matter": "^4.0.2",
     "fs-extra": "^10.0.0",
     "ipfs-http-client": "^56.0.1",
     "is-ipfs": "^6.0.2",

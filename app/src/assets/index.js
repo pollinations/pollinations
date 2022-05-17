@@ -5,9 +5,9 @@ import help from './text/help.md'
 import instructions from './text/instructions.md'
 import landingLeft from './text/landingLeft.md'
 import landingRight from './text/landingRight.md'
-
+import impressum from './text/impressum.md'
 
 export const textContent = {
-    help, about, instructions, blank, failure, landingLeft, landingRight
+    help, about, instructions, blank, failure, landingLeft, landingRight, impressum
 }
 

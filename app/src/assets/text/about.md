@@ -40,3 +40,6 @@ At this time, Tezos and Solana promise a lower carbon footprint per transaction.
 
 **Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.
 
+
+[Impressum](/impressum)
+

@@ -32,10 +32,7 @@ const ROUTES = {
   help: { children: "help", to: "/help" },
   imprint: { children: "impressum", to: "/impressum" },
   myPollens: { children: "my pollens", to: "/localpollens" },
-  // madeWithPollinations: {
-  //   children: 'made with pollinations',
-  //   to: '/madeWithPollinations',
-  // },
+  // expo: { children: "made with pollinations", to: "/expo" },
 }
 
 const App = () => (
@@ -76,8 +73,8 @@ const Pollinations = () => {
 
           <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
           <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
-          <Route exact path={ROUTES.expo.to} element={<ExpoPage />} />
-          <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} />
+          {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
+          {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}
 
           <Route path="c/:selected" element={<Home />} />
 

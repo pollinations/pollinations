@@ -31,7 +31,7 @@ h4,
 h5,
 h6,
 p {
-  color: rgb(255, 236, 249) !important;
+  color: rgb(255, 236, 249);
 }
 .MuiPaper-root {
   background-color: rgb(26, 26, 26) !important;

@@ -1,39 +1,36 @@
 import Typography from "@material-ui/core/Typography"
 import Markdown from "markdown-to-jsx"
 import { range, zipObj } from "ramda"
-import useContent from "../../hooks/useContent"
+import useFetchText from "../../hooks/useFetchText"
+import useMarkdown from "../../hooks/useMarkdown"
 
 // replacements allow replacing dynamic content in the markdown
 // the syntax is {[key]} which will be matched with the props passed to this object
 
-const MarkDownContent = ({ id, ...replacements }) => {
+const MarkDownContent = ({ url, ...replacements }) => {
+  const raw = useFetchText(url)
+  const { body } = useMarkdown(raw)
+  const headersToInclude = range(1, 7)
 
-    let content = useContent(id)
+  // header tags
+  const tags = headersToInclude.map((i) => `h${i}`)
 
-    const headersToInclude = range(1, 7)
+  // elements to override the header tags with
+  const overrideElements = tags.map((tag) => ({ children }) => (
+    <Typography variant={tag} children={children} />
+  ))
 
-    // header tags
-    const tags = headersToInclude.map(i => `h${i}`)
+  const overrides = zipObj(tags, overrideElements)
 
-    // elements to override the header tags with
-    const overrideElements = tags.map(tag =>
-        ({ children }) => <Typography variant={tag} children={children} />
-    )
+  const contentWithReplacements = applyReplacements(replacements, body)
 
-    const overrides = zipObj(tags, overrideElements)
-
-    const contentWithReplacements = applyReplacements(replacements, content)
-
-    return <Markdown options={{ overrides }}>
-        {contentWithReplacements}
-    </Markdown>
+  return <Markdown options={{ overrides }}>{contentWithReplacements}</Markdown>
 }
-
 
 export default MarkDownContent
 
 // transform all {[key]} strings to the replacements coming from the props
 const applyReplacements = (replacements, content) =>
-    Object.entries(replacements).reduce(replaceOne, content)
+  Object.entries(replacements).reduce(replaceOne, content)
 
 const replaceOne = (content, [key, replacement]) => content.replaceAll(`{${key}}`, replacement)

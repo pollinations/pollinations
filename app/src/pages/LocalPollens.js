@@ -27,7 +27,7 @@ const LocalPollens = ({ node }) => {
         <Box margin='2em 0' display='grid' gridGap='5em' gridTemplateColumns='repeat(auto-fill, minmax(300px, 1fr))'>
             {
                 values(pollens)
-                //.sort( (a,b) => new Date(b.date) - new Date(a.date) )
+                .reverse()
                 .map(pollen => <Pollen key={pollen[".cid"]} pollen={pollen} popCID={popCID}  />)
             }
         </Box>

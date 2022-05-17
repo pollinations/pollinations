@@ -51,7 +51,7 @@ const Pollinations = () => {
   const navigate = useNavigate()
 
   // to save pollens since we are not necessarily on the localpollens page
-  useLocalPollens(node)
+  // useLocalPollens(node)
 
   const navigateToNode = useCallback(() => {
     if (node.nodeID) navigate(`/n/${node.nodeID}`)

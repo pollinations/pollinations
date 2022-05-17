@@ -27,13 +27,14 @@ import ResultViewer from "./pages/ResultViewer"
 const debug = Debug("AppContainer")
 
 const ROUTES = {
-  about: { children: "about", to: "/about" },
-  feed: { children: "feed", to: "/feed" },
-  help: { children: "help", to: "/help" },
-  imprint: { children: "impressum", to: "/impressum" },
-  myPollens: { children: "my pollens", to: "/localpollens" },
+  about: { label: "about", to: "/about" },
+  feed: { label: "feed", to: "/feed" },
+  help: { label: "help", to: "/help" },
+  impressum: { label: "impressum", to: "/impressum" },
+  myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
+const MAIN_NAV_ROUTES = [ROUTES.about, ROUTES.feed, ROUTES.help, ROUTES.myPollens]
 
 const App = () => (
   <BrowserRouter>
@@ -61,7 +62,7 @@ const Pollinations = () => {
     <>
       {/* Nav Bar     */}
       {/* <AppBar /> */}
-      <TopBar node={node} showNode={navigateToNode} navRoutes={ROUTES} />
+      <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
@@ -69,9 +70,7 @@ const Pollinations = () => {
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           <Route exact path={ROUTES.help.to} element={<Help />} />
           <Route exact path={ROUTES.about.to} element={<About />} />
-          <Route exact path={ROUTES.imprint.to} element={<Impressum />} />
-
-          <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
+          <Route exact path={ROUTES.impressum.to} element={<Impressum />} />
           <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
           {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
           {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}

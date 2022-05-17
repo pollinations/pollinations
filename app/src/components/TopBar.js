@@ -1,16 +1,16 @@
 import styled from '@emotion/styled'
 import Button from '@material-ui/core/Button'
 import Container from '@material-ui/core/Container'
-import {useState} from 'react'
-import {BigTitle} from './atoms/BigTitle'
-import {HorizontalBorder} from './atoms/Borders'
-import RouterLink from './molecules/RouterLink'
-import {SocialLinks} from './Social'
-
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
-
-import LoginDialog from './organisms/LoginDialog'
+import { BigTitle } from './atoms/BigTitle'
+import { HorizontalBorder } from './atoms/Borders'
+import RouterLink from './molecules/RouterLink'
 import LoggedUser from './organisms/LoggedUser'
+import LoginDialog from './organisms/LoginDialog'
+import { SocialLinks } from './Social'
+
+
 
 
 const MenuLinks = [
@@ -18,7 +18,7 @@ const MenuLinks = [
     {children: 'about', to: '/about'},
     {children: 'feed', to: '/feed'},
     {children: 'help', to: '/help'},
-    {children: 'my pollens', to: '/localpollens'},
+    // {children: 'my pollens', to: '/localpollens'},
 ]
 
 const isLoginEnabled = false;

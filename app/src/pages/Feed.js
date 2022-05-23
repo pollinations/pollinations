@@ -1,17 +1,17 @@
-import {Box} from "@material-ui/core"
+import { Box } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
-import {useMemo, useState} from "react"
-import {SEO} from "../components/Helmet"
+import { useMemo } from "react"
+import { useThrottle } from "react-use"
+import { SEO } from "../components/Helmet"
 import BigPreview from "../components/molecules/BigPreview"
-import {mediaToDisplay} from "../data/media"
+import { mediaToDisplay } from "../data/media"
 import useIPFS from "../hooks/useIPFS"
 import useSubscribe from "../hooks/useSubscribe"
-import {getNotebookMetadata} from "../utils/notebookMetadata"
-import {useThrottle} from "react-use"
+import { getNotebookMetadata } from "../utils/notebookMetadata"
 
 const Feed = () => {
 
-    const cid = useSubscribe("processing_pollen")
+    const cid = useSubscribe("cinema/output")
 
     const ipfs = useIPFS(cid)
 
@@ -19,7 +19,7 @@ const Feed = () => {
         return mediaToDisplay(ipfs?.output)
     }, [ipfs?.output])
 
-    const throttledResult = useThrottle(result, 3000);
+    const throttledResult = useThrottle(result, 100);
 
 
     if (!ipfs)
@@ -29,9 +29,9 @@ const Feed = () => {
     const metadata = getNotebookMetadata(ipfs)
 
     const primaryInputField = metadata?.primaryInput
-    const primaryInput = ipfs?.input?.[primaryInputField]
+    const primaryInput = ipfs?.input?.text_input
 
-    const throttledPrimaryInput = useThrottle(primaryInput, 3000);
+    const throttledPrimaryInput = useThrottle(primaryInput, 100);
 
 
     return <>

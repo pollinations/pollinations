@@ -27,11 +27,10 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-
   return <Box my={2}>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-      <NotebookTitle name={metadata?.name} />
+      <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
       <AlertMessage node={node}/>
 
         <TwoColumns>

@@ -8,10 +8,9 @@ import FormView from '../components/Form';
 import { SEO } from "../components/Helmet";
 import NotebookTitle from "../components/NotebookTitle";
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-
 import NotebookImage from '../components/organisms/markdownParsers/NotebookImage';
-import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
-
+import { StartHereButton } from '../components/molecules/LaunchColabButton';
+import NotebookInfo from "../components/organisms/markdownParsers/NotebookInfo";
 const debug = Debug("Create");
 
 export default React.memo(function Create({ ipfs, node, dispatch }) {
@@ -33,7 +32,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <NotebookTitle name={metadata?.name} />
-      <AlertMessage connected={connected}/>
+      <AlertMessage node={node}/>
 
         <TwoColumns>
           {/* FORM INPUTS */}
@@ -80,12 +79,15 @@ margin-top: 1em;
 `
 
 // Alert Message
-const AlertMessage = ({ connected }) => {
-  if (connected) return <></>
-  return <Alert severity="info" style={{margin: '2em 0'}}>
-    The inputs are <b>disabled</b> because <b>no Colab node is running</b>
-    ! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.
-  </Alert>
+const AlertMessage = ({ node }) => {
+  if (node?.connected) return <></>
+  return <>
+      <Alert severity="info" style={{margin: '2em 0'}}>
+      If the text bar is locked, start here to unlock it. Don’t worry about the pop ups, it’s safe (:
+      <br/>
+      <StartHereButton {...node} />
+    </Alert>
+  </>
 }
 
 

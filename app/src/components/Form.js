@@ -65,14 +65,14 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
         {/* <FileUpload />  */}
         <Box m={1}>
             {showSubmit ? <Button type="submit" disabled={formDisabled} >
-                [ {inProgress ? "Submitting..." : "Submit"} ]
+                [ {inProgress ? "Creating..." : "Create"} ]
             </Button>
                 : null
             }
 
-            <HelpModal />
+            {/* <HelpModal /> */}
 
-          {colabLink && <Link href={colabLink} target="_blank">[ OPEN IN COLAB ]</Link> }
+            {/* {colabLink && <Link href={colabLink} target="_blank">[ OPEN IN COLAB ]</Link> } */}
 
         </Box>
     </Form>

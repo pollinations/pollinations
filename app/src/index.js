@@ -10,7 +10,7 @@ import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 
 const darkTheme = createMuiTheme({
   typography: {
-    fontFamily: 'Source Code Pro'
+    fontFamily: 'Open Sans'
   },
   palette: {
     type: 'dark',

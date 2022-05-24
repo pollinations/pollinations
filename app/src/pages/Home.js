@@ -1,3 +1,4 @@
+import styled from "@emotion/styled"
 import Box from "@material-ui/core/Box"
 import Button from "@material-ui/core/Button"
 import Card from "@material-ui/core/Card"
@@ -16,6 +17,7 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import useIPFS from "../hooks/useIPFS"
 import { CardContainerStyle } from "./styles/card"
+import Logo from '../components/Logo'
 
 const debug = Debug("home")
 
@@ -75,11 +77,10 @@ export default function Home() {
 // HERO
 // Component
 const HeroSection = (props) => (
-  <Box paddingTop={3}>
-    <Typography align="center" variant="h1" gutterBottom>
-      pollinations.ai
-    </Typography>
-
+  <Box paddingTop={3} display='flex' flexDirection='column' alignItems='center'>
+    
+    <Logo/>
+    
     <Box
       display="grid"
       gridTemplateColumns="repeat(auto-fill, minmax(300px, 2fr))"
@@ -95,6 +96,7 @@ const HeroSection = (props) => (
     </Box>
   </Box>
 )
+
 
 // Cards
 // Component

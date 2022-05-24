@@ -34,7 +34,12 @@ const ROUTES = {
   myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
-const MAIN_NAV_ROUTES = [ROUTES.about, ROUTES.feed, ROUTES.help, ROUTES.myPollens]
+const MAIN_NAV_ROUTES = [
+  ROUTES.about, 
+  ROUTES.feed, 
+  ROUTES.help, 
+  // ROUTES.myPollens
+]
 
 const App = () => (
   <BrowserRouter>

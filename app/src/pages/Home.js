@@ -18,6 +18,7 @@ import useFilter from "../hooks/useFilter"
 import useIPFS from "../hooks/useIPFS"
 import { CardContainerStyle } from "./styles/card"
 import Logo from '../components/Logo'
+import { Link } from "react-router-dom"
 
 const debug = Debug("home")
 
@@ -107,23 +108,32 @@ const NotebookCard = ({ notebook }) => {
   // remove credits etc (they are separated by a horizontal rule)
   description = description.split("---")[0]
 
+  // parse category
+  const parsedCategory = category?.slice(2)
+    .replace('-', ' ')
+    .replace('-', ' ')
+    .toLowerCase();
+
   return (
     <Box>
       <Card style={CardContainerStyle}>
-        <CardHeader
-          subheader={<CardTitle children={name?.slice(2)} to={path} variant="h4" />}
-          title={<CardTitle children={category?.slice(2)} to={path} variant="h6" />}
-        />
+          <Link to={path} style={{textDecoration: 'none'}}>
+            <CardHeader
+              subheader={<CardTitle children={name?.slice(2)} to={path} variant="h4" />}
+              title={<CardTitle children={parsedCategory} to={path} variant="h6" />}
+            />
 
-        <NotebookImage metadata={notebook} style={{ width: "100%" }} />
+            <NotebookImage metadata={notebook} style={{ width: "100%" }} />
 
-        <CardContent>
-          <NotebookInfo description={description} noImg />
-        </CardContent>
+            <CardContent>
+              <NotebookInfo description={description} noImg />
+            </CardContent>
+          </Link>
       </Card>
     </Box>
   )
 }
+
 
 const CardTitle = ({ to, children, variant }) => (
   <>

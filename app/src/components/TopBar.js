@@ -13,7 +13,7 @@ const TopBar = ({ navRoutes }) => {
 
         <TopContainer>
             <NavLink to='/' style={{ padding: 0 }}>
-                <Logo size='200px' small='150px' margin='0' />  
+                <Logo size='180px' small='150px' margin='0' />  
             </NavLink>
             <SocialLinks style={{ alignSelf: "end" }} />
             {/* <Button onClick={() => setOpen((state) => !state)}>[ Menu ]</Button> */}

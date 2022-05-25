@@ -82,7 +82,7 @@ const AlertMessage = ({ node }) => {
   if (node?.connected) return <></>
   return <>
       <Alert severity="info" style={{margin: '2em 0'}}>
-      If the text bar is locked, start here to unlock it. Don’t worry about the pop ups, it’s safe (:
+      If the text bar is locked, click on start here to unlock it. Don’t worry about the pop ups, it’s safe (:
       <br/>
       <StartHereButton {...node} />
     </Alert>

@@ -58,7 +58,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
         </TwoColumns>
 
         {/* NOTEBOOK DESCRIPTION */}
-        <div>
+        <div style={{marginTop: '3em'}}>
           <Typography variant="h5" gutterBottom>
           Details
           </Typography>

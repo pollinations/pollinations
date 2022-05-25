@@ -25,7 +25,7 @@ const LaunchColabButton = (node) => {
             color="primary" 
             href={pollinatorColabURL} 
             target="colab">
-            {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}
+            {loading ? 'Waiting for connection...' : '[ Start here ]'}
         </Button>
 
     return <Button>Connected to&nbsp;<GpuInfo {...node} /></Button> 

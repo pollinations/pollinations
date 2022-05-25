@@ -42,11 +42,13 @@ export const StartHereButton = node => {
 
     if (connected === false)
         return  <Button 
+            style={{marginTop: '1em'}}
+            variant='outlined'
             onClick={()=>setLoading(true)}
             color="primary" 
             href={pollinatorColabURL} 
             target="colab">
-            {loading ? 'Waiting for connection...' : '[ Start here ]'}
+            {loading ? 'Waiting for connection...' : 'Start here'}
         </Button>
 
     return <> </>

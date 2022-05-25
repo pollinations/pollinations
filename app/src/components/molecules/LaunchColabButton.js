@@ -11,7 +11,6 @@ const LaunchColabButton = (node) => {
 
     useEffect(()=>{
         if (connected) setLoading(false)
-
     },[connected])
 
     // Connected should be null right after connecting to a node but before a heartbeat has been received
@@ -26,10 +25,33 @@ const LaunchColabButton = (node) => {
             color="primary" 
             href={pollinatorColabURL} 
             target="colab">
-            {loading ? 'Waiting for connection...' : '[ Launch GPU ]'}
+            {loading ? 'Waiting for connection...' : '[ Start here ]'}
         </Button>
 
     return <Button>Connected to&nbsp;<GpuInfo {...node} /></Button> 
+}
+
+export const StartHereButton = node => {
+
+    const { connected } = node
+    const [loading ,setLoading ] = useState(false)
+
+    useEffect(()=>{
+        if (connected) setLoading(false)
+    },[connected])
+
+    if (connected === false)
+        return  <Button 
+            style={{marginTop: '1em'}}
+            variant='outlined'
+            onClick={()=>setLoading(true)}
+            color="primary" 
+            href={pollinatorColabURL} 
+            target="colab">
+            {loading ? 'Waiting for connection...' : 'Start here'}
+        </Button>
+
+    return <> </>
 }
 
 export default LaunchColabButton

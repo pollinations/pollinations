@@ -1,5 +1,6 @@
 @import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
 @import url(//fonts.googleapis.com/css?family=Lato);
+@import url(//fonts.googleapis.com/css?family=Open+Sans);
 
 ::selection {
   background: blue; /* WebKit/Blink Browsers */
@@ -50,7 +51,6 @@ h3 {
 }
 h1 {
   font-size: 4rem !important;
-  font-family: "Lato" !important;
 }
 @media screen and (min-width: 700px) {
   h1 {

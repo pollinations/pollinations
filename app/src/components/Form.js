@@ -64,7 +64,7 @@ const FormView = ({ input:originalInput, connected, metadata, onSubmit, onCancel
     >
         {/* <FileUpload />  */}
         <Box display="flex" justifyContent="center" >
-            {showSubmit && <Button type="submit" disabled={formDisabled} variant='contained'>
+            {showSubmit && <Button type="submit" disabled={formDisabled} variant='outlined'>
                 <p style={{fontSize: '1.1em', margin: 0}} children={inProgress ? "Creating..." : "Create"}/> 
             </Button>
             }

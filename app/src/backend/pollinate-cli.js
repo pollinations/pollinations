@@ -144,15 +144,15 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { startSending } = sender(options)
-      for await (const cid of startSending()) {
-        console.log(cid)
-      }
+      const {publish, close: closePublish} = getPublisher(options.nodeid)
+      const { startSending } = sender({...options, publish})
+      await startSending()
       debug("process should exit")
       
       // if we publish to IPNS wait a little bit before exiting
       if (options.ipns)
         await awaitSleep(sleepBeforeExit)
+      await closePublish()
       process.exit(0)
     })();
 

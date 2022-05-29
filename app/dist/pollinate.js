@@ -45056,13 +45056,13 @@ if (executeCommand)
 else {
   if (enableSend)
     (async () => {
-      const { startSending } = sender(options_default);
-      for await (const cid of startSending()) {
-        console.log(cid);
-      }
+      const { publish: publish2, close: closePublish } = getPublisher(options_default.nodeid);
+      const { startSending } = sender(__spreadProps(__spreadValues({}, options_default), { publish: publish2 }));
+      await startSending();
       debug12("process should exit");
       if (options_default.ipns)
         await (0, import_await_sleep5.default)(sleepBeforeExit);
+      await closePublish();
       import_process.default.exit(0);
     })();
   if (enableReceive) {

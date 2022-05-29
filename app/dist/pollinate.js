@@ -790,156 +790,6 @@ var require_src = __commonJS({
   }
 });
 
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = { value, done: false };
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({ value: void 0, done: true });
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({ value: void 0, done: true });
-            } else {
-              return new Promise((resolve2, reject) => {
-                this.pullQueue.push({ resolve: resolve2, reject });
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({ value: void 0, done: true });
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
-  }
-});
-
 // node_modules/event-target-shim/dist/event-target-shim.js
 var require_event_target_shim = __commonJS({
   "node_modules/event-target-shim/dist/event-target-shim.js"(exports2, module2) {
@@ -1583,6 +1433,156 @@ var require_tree_kill = __commonJS({
       };
       ps.on("close", onClose);
     }
+  }
+});
+
+// node_modules/event-iterator/lib/event-iterator.js
+var require_event_iterator = __commonJS({
+  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var EventQueue = class {
+      constructor() {
+        this.pullQueue = [];
+        this.pushQueue = [];
+        this.eventHandlers = {};
+        this.isPaused = false;
+        this.isStopped = false;
+      }
+      push(value) {
+        if (this.isStopped)
+          return;
+        const resolution = { value, done: false };
+        if (this.pullQueue.length) {
+          const placeholder = this.pullQueue.shift();
+          if (placeholder)
+            placeholder.resolve(resolution);
+        } else {
+          this.pushQueue.push(Promise.resolve(resolution));
+          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
+            this.isPaused = true;
+            if (this.eventHandlers.highWater) {
+              this.eventHandlers.highWater();
+            } else if (console) {
+              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
+            }
+          }
+        }
+      }
+      stop() {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        for (const placeholder of this.pullQueue) {
+          placeholder.resolve({ value: void 0, done: true });
+        }
+        this.pullQueue.length = 0;
+      }
+      fail(error) {
+        if (this.isStopped)
+          return;
+        this.isStopped = true;
+        this.remove();
+        if (this.pullQueue.length) {
+          for (const placeholder of this.pullQueue) {
+            placeholder.reject(error);
+          }
+          this.pullQueue.length = 0;
+        } else {
+          const rejection = Promise.reject(error);
+          rejection.catch(() => {
+          });
+          this.pushQueue.push(rejection);
+        }
+      }
+      remove() {
+        Promise.resolve().then(() => {
+          if (this.removeCallback)
+            this.removeCallback();
+        });
+      }
+      [Symbol.asyncIterator]() {
+        return {
+          next: (value) => {
+            const result = this.pushQueue.shift();
+            if (result) {
+              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
+                this.isPaused = false;
+                if (this.eventHandlers.lowWater) {
+                  this.eventHandlers.lowWater();
+                }
+              }
+              return result;
+            } else if (this.isStopped) {
+              return Promise.resolve({ value: void 0, done: true });
+            } else {
+              return new Promise((resolve2, reject) => {
+                this.pullQueue.push({ resolve: resolve2, reject });
+              });
+            }
+          },
+          return: () => {
+            this.isStopped = true;
+            this.pushQueue.length = 0;
+            this.remove();
+            return Promise.resolve({ value: void 0, done: true });
+          }
+        };
+      }
+    };
+    var EventIterator = class {
+      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
+        const queue = new EventQueue();
+        queue.highWaterMark = highWaterMark;
+        queue.lowWaterMark = lowWaterMark;
+        queue.removeCallback = listen({
+          push: (value) => queue.push(value),
+          stop: () => queue.stop(),
+          fail: (error) => queue.fail(error),
+          on: (event, fn) => {
+            queue.eventHandlers[event] = fn;
+          }
+        }) || (() => {
+        });
+        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
+        Object.freeze(this);
+      }
+    };
+    exports2.EventIterator = EventIterator;
+    exports2.default = EventIterator;
+  }
+});
+
+// node_modules/event-iterator/lib/node.js
+var require_node2 = __commonJS({
+  "node_modules/event-iterator/lib/node.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var event_iterator_1 = require_event_iterator();
+    exports2.EventIterator = event_iterator_1.EventIterator;
+    function stream2(evOptions) {
+      return new event_iterator_1.EventIterator((queue) => {
+        this.addListener("data", queue.push);
+        this.addListener("end", queue.stop);
+        this.addListener("error", queue.fail);
+        queue.on("highWater", () => this.pause());
+        queue.on("lowWater", () => this.resume());
+        return () => {
+          this.removeListener("data", queue.push);
+          this.removeListener("end", queue.stop);
+          this.removeListener("error", queue.fail);
+          if (this.destroy) {
+            this.destroy();
+          } else if (typeof this.close == "function") {
+            ;
+            this.close();
+          }
+        };
+      }, evOptions);
+    }
+    exports2.stream = stream2;
+    exports2.default = event_iterator_1.EventIterator;
   }
 });
 
@@ -15252,7 +15252,7 @@ var require_writer = __commonJS({
       this.next = void 0;
       this.val = val;
     }
-    function noop3() {
+    function noop2() {
     }
     function State(writer2) {
       this.head = writer2.head;
@@ -15262,7 +15262,7 @@ var require_writer = __commonJS({
     }
     function Writer() {
       this.len = 0;
-      this.head = new Op(noop3, 0, 0);
+      this.head = new Op(noop2, 0, 0);
       this.tail = this.head;
       this.states = null;
     }
@@ -15381,7 +15381,7 @@ var require_writer = __commonJS({
     };
     Writer.prototype.fork = function fork() {
       this.states = new State(this);
-      this.head = this.tail = new Op(noop3, 0, 0);
+      this.head = this.tail = new Op(noop2, 0, 0);
       this.len = 0;
       return this;
     };
@@ -15392,7 +15392,7 @@ var require_writer = __commonJS({
         this.len = this.states.len;
         this.states = this.states.next;
       } else {
-        this.head = this.tail = new Op(noop3, 0, 0);
+        this.head = this.tail = new Op(noop2, 0, 0);
         this.len = 0;
       }
       return this;
@@ -16880,8 +16880,8 @@ var require_curry2 = __commonJS({
               return fn(a, _b);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a2) {
-              return fn(_a2, b);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
+              return fn(_a, b);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b);
             }) : fn(a, b);
@@ -17075,22 +17075,22 @@ var require_curry3 = __commonJS({
               return fn(a, _b, _c);
             });
           case 2:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a2, _c) {
-              return fn(_a2, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
+              return fn(_a, b, _c);
             }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
             }) : _curry1(function(_c) {
               return fn(a, b, _c);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a2, _b) {
-              return fn(_a2, _b, c);
-            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a2, _c) {
-              return fn(_a2, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
+              return fn(_a, _b, c);
+            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
+              return fn(_a, b, _c);
             }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
-            }) : _isPlaceholder(a) ? _curry1(function(_a2) {
-              return fn(_a2, b, c);
+            }) : _isPlaceholder(a) ? _curry1(function(_a) {
+              return fn(_a, b, c);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b, c);
             }) : _isPlaceholder(c) ? _curry1(function(_c) {
@@ -18710,8 +18710,8 @@ var require_equals2 = __commonJS({
     function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
       var a = _arrayFromIterator(aIterator);
       var b = _arrayFromIterator(bIterator);
-      function eq(_a2, _b) {
-        return _equals(_a2, _b, stackA.slice(), stackB.slice());
+      function eq(_a, _b) {
+        return _equals(_a, _b, stackA.slice(), stackB.slice());
       }
       return !_includesWith(function(b2, aItem) {
         return !_includesWith(eq, aItem, b2);
@@ -25452,7 +25452,7 @@ var require_lodash = __commonJS({
             return func(number);
           };
         }
-        var createSet2 = !(Set2 && 1 / setToArray(new Set2([, -0]))[1] == INFINITY) ? noop3 : function(values2) {
+        var createSet2 = !(Set2 && 1 / setToArray(new Set2([, -0]))[1] == INFINITY) ? noop2 : function(values2) {
           return new Set2(values2);
         };
         function createToPairs(keysFunc) {
@@ -25679,7 +25679,7 @@ var require_lodash = __commonJS({
         function getAllKeysIn(object) {
           return baseGetAllKeys(object, keysIn, getSymbolsIn);
         }
-        var getData = !metaMap ? noop3 : function(func) {
+        var getData = !metaMap ? noop2 : function(func) {
           return metaMap.get(func);
         };
         function getFuncName(func) {
@@ -27864,7 +27864,7 @@ var require_lodash = __commonJS({
           }
           return this;
         }
-        function noop3() {
+        function noop2() {
         }
         function nthArg(n) {
           n = toInteger(n);
@@ -28219,7 +28219,7 @@ var require_lodash = __commonJS({
         lodash.multiply = multiply;
         lodash.nth = nth;
         lodash.noConflict = noConflict;
-        lodash.noop = noop3;
+        lodash.noop = noop2;
         lodash.now = now;
         lodash.pad = pad;
         lodash.padEnd = padEnd;
@@ -33603,9 +33603,9 @@ var require_nodefs_handler = __commonJS({
         if (this.fsw.closed) {
           return;
         }
-        const dirname5 = sysPath.dirname(file);
+        const dirname4 = sysPath.dirname(file);
         const basename2 = sysPath.basename(file);
-        const parent = this.fsw._getWatchedDir(dirname5);
+        const parent = this.fsw._getWatchedDir(dirname4);
         let prevStats = stats;
         if (parent.has(basename2))
           return;
@@ -33630,7 +33630,7 @@ var require_nodefs_handler = __commonJS({
                 prevStats = newStats2;
               }
             } catch (error) {
-              this.fsw._remove(dirname5, basename2);
+              this.fsw._remove(dirname4, basename2);
             }
           } else if (parent.has(basename2)) {
             const at = newStats.atimeMs;
@@ -36063,16 +36063,20 @@ __export(pollinate_cli_exports, {
   rootPath: () => rootPath
 });
 module.exports = __toCommonJS(pollinate_cli_exports);
-var import_await_sleep5 = __toESM(require_await_sleep(), 1);
+var import_await_sleep4 = __toESM(require_await_sleep(), 1);
 var import_child_process = require("child_process");
 var import_debug12 = __toESM(require_src(), 1);
-var import_event_iterator = __toESM(require_node2(), 1);
 var import_fs5 = require("fs");
 var import_native_abort_controller3 = __toESM(require_src2(), 1);
-var import_path5 = require("path");
 var import_process = __toESM(require("process"), 1);
 var import_readline = __toESM(require("readline"), 1);
 var import_tree_kill = __toESM(require_tree_kill(), 1);
+
+// src/backend/ipfs/receiver.js
+var import_debug8 = __toESM(require_src(), 1);
+var import_event_iterator = __toESM(require_node2(), 1);
+var import_fs2 = require("fs");
+var import_path3 = require("path");
 
 // src/network/ipfsConnector.js
 var import_debug5 = __toESM(require_src(), 1);
@@ -40416,8 +40420,8 @@ function parseMtime(input) {
 }
 
 // node_modules/ipfs-http-client/esm/src/lib/to-url-search-params.js
-function toUrlSearchParams(_a2 = {}) {
-  var _b = _a2, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
+function toUrlSearchParams(_a = {}) {
+  var _b = _a, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
   if (searchParams) {
     options = __spreadValues(__spreadValues({}, options), searchParams);
   }
@@ -43203,8 +43207,8 @@ var encodeAddParams = ({ cid, service, background, name: name7, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a2) {
-    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function add(cid, _a) {
+    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
@@ -43220,8 +43224,8 @@ function createAdd3(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/ls.js
 function createLs4(client) {
-  async function* ls(_a2) {
-    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function* ls(_a) {
+    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/ls", {
       timeout,
       signal,
@@ -43237,8 +43241,8 @@ function createLs4(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm.js
 function createRm6(client) {
-  async function rm(_a2) {
-    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rm(_a) {
+    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -43253,8 +43257,8 @@ function createRm6(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm-all.js
 function createRmAll2(client) {
-  async function rmAll(_a2) {
-    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rmAll(_a) {
+    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -44315,7 +44319,7 @@ var toPromise1 = async (asyncGen) => {
   debug4("No value found to convert to Promise");
   return null;
 };
-var noop2 = () => null;
+var noop = () => null;
 var retryException = (f) => {
   return async (...args) => {
     let n = 5;
@@ -44334,8 +44338,7 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var _a;
-var IPFS_HOST = ((_a = process == null ? void 0 : process.env) == null ? void 0 : _a.IPFS_API_ENDPOINT) || "https://api.pollinations.ai";
+var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -44372,7 +44375,7 @@ function writer(initialRootCID = null) {
     addFile: returnRootCID(ipfsAddFile),
     rm: returnRootCID(ipfsRm),
     mkDir: returnRootCID(ipfsMkdir),
-    cid: returnRootCID(noop2),
+    cid: returnRootCID(noop),
     cp: returnRootCID(ipfsCp),
     close: async () => {
       debug5("closing input writer. Deleting", mfsRoot);
@@ -44608,7 +44611,7 @@ function subscribeGenerator(nodeID, suffix = "/input") {
   const unsubscribe = subscribeCID(nodeID, suffix, (cid) => channel.push(cid));
   return [channel, unsubscribe];
 }
-function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop2) {
+function subscribeCID(nodeID, suffix = "", callback, heartbeatDeadCallback = noop) {
   const { gotHeartbeat, closeHeartbeat } = heartbeatChecker(heartbeatDeadCallback);
   let unsubscribe = null;
   let aborted = false;
@@ -44694,7 +44697,7 @@ function subscribeCallback(topic, callback) {
       }
     };
     const doSub = async () => {
-      var _a2;
+      var _a;
       const client = await getClient();
       try {
         abort.abort();
@@ -44707,7 +44710,7 @@ function subscribeCallback(topic, callback) {
           debug6("subscription was aborted. returning");
           return;
         }
-        if ((_a2 = e.message) == null ? void 0 : _a2.startsWith("Already subscribed"))
+        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
         await doSub();
@@ -44721,21 +44724,16 @@ function subscribeCallback(topic, callback) {
   };
 }
 
-// src/backend/ipfs/receiver.js
-var import_debug8 = __toESM(require_src(), 1);
-var import_fs2 = require("fs");
-var import_path3 = require("path");
-
 // src/network/ipfsState.js
 var import_debug7 = __toESM(require_src(), 1);
-var import_json5 = __toESM(require_lib7(), 1);
-var import_path2 = require("path");
 var import_ramda3 = __toESM(require_src7(), 1);
+var import_path2 = require("path");
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
+var import_json5 = __toESM(require_lib7(), 1);
 var debug7 = (0, import_debug7.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -44747,8 +44745,8 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   }
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a2, processFile2, skipCache) => {
-  var _b = _a2, { cid } = _b, rest = __objRest(_b, ["cid"]);
+var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
+  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
     debug7("cache miss", cid);
@@ -44795,7 +44793,21 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
+var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, process3 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process3.stdin), noop];
+  let remoteCID = null;
+  for await (remoteCID of await cidStream) {
+    debug8("received CID", remoteCID);
+    remoteCID = stringCID(remoteCID);
+    debug8("remoteCID", remoteCID);
+    await process3(stringCID(remoteCID), rootPath2);
+    yield remoteCID;
+    if (once) {
+      unsubscribe();
+      break;
+    }
+  }
+  ;
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -44823,7 +44835,6 @@ async function processFile({ path, cid }, rootPath2, { get }) {
 }
 
 // src/backend/ipfs/sender.js
-var import_await_sleep4 = __toESM(require_await_sleep(), 1);
 var import_debug11 = __toESM(require_src(), 1);
 var import_fs4 = require("fs");
 var import_native_abort_controller2 = __toESM(require_src2(), 1);
@@ -44901,8 +44912,6 @@ async function* folderSync({ writer: writer2, path, debounce: debounce2, signal 
     debug10("changedGrouped", changedGrouped);
     for (const changed of changedGrouped) {
       await Promise.all(changed.map(async ({ event, path: file }) => {
-        if (signal.aborted)
-          return;
         debug10("Local:", event, file);
         const localPath = (0, import_path4.join)(path, file);
         const ipfsPath = file;
@@ -44929,18 +44938,21 @@ var groupSyncQueue = (0, import_ramda5.groupWith)((a, b) => groupKey(a) === grou
 
 // src/backend/ipfs/sender.js
 var debug11 = (0, import_debug11.default)("ipfs/sender");
-var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) => {
+var sender = ({ path, debounce: debounce2, ipns, once, nodeid }) => {
   const ipfsWriter = writer();
+  const { publish: publish2, close: closePublisher } = publisher(nodeid, "/output");
+  const { publish: publishPollen, close: closePollenPublisher } = publisher("processing_pollen", "");
   let abortController = null;
   const close = async (error) => {
     debug11("Closing sender", nodeid);
     if (abortController)
       abortController.abort();
-    await (0, import_await_sleep4.default)(debounce2 * 2 + 1e3);
     await ipfsWriter.close();
+    await closePublisher();
+    await closePollenPublisher();
     debug11("closed all");
   };
-  async function startSending() {
+  async function* startSending() {
     abortController = new import_native_abort_controller2.AbortController();
     const cid$ = folderSync({ path, debounce: debounce2, writer: ipfsWriter, once, signal: abortController.signal });
     debug11("start consuming watched files");
@@ -44951,8 +44963,9 @@ var sender = ({ path, debounce: debounce2, once, nodeid, publish: publish2 }) =>
     debug11("getting cid stream");
     for await (const cid of cid$) {
       debug11("publishing new cid", cid);
+      await publishPollen(cid);
       await publish2(cid);
-      console.log(cid);
+      yield cid;
       if (once)
         await close();
     }
@@ -44980,19 +44993,6 @@ var readline = import_readline.default.createInterface({
   input: import_process.default.stdin,
   output: import_process.default.stdout
 });
-var getPublisher = (nodeid) => {
-  const { publish: publishFrontend, close: closeFrontendPublisher2 } = publisher(nodeid, "/output");
-  const { publish: publishPollen, close: closePollenPublisher2 } = publisher("processing_pollen", "");
-  const publish2 = async (cid) => {
-    await publishFrontend(cid);
-    await publishPollen(cid);
-  };
-  const close = async () => {
-    await closeFrontendPublisher2();
-    await closePollenPublisher2();
-  };
-  return { publish: publish2, close };
-};
 debug12("CLI options", options_default);
 var rootPath = options_default.path;
 var enableSend = !options_default.receive;
@@ -45022,36 +45022,25 @@ var execute = async (command, logfile = null, signal) => new Promise((resolve2, 
 });
 if (executeCommand)
   (async () => {
+    const { startSending, close, stopSending } = sender(__spreadProps(__spreadValues({}, options_default), { once: false }));
+    const doSend = async () => {
+      for await (const sentCID of startSending()) {
+        debug12("sent", sentCID);
+        console.log(sentCID);
+      }
+    };
+    doSend();
     let [executeSignal, abortExecute] = [null, null];
-    const [cidStream, unsubscribe] = options_default.ipns ? subscribeGenerator(options_default.nodeid, "/input") : [import_event_iterator.stream.call(import_process.default.stdin), noop];
-    const { publish: publish2, close: closePublish } = getPublisher(options_default.nodeid);
-    let close = null;
-    for await (let receivedCID of await cidStream) {
-      receivedCID = stringCID(receivedCID);
-      debug12("remoteCID", receivedCID);
+    for await (const receiveidCID of receive(options_default)) {
+      debug12("received CID", receiveidCID);
       if (abortExecute) {
         debug12("aborting previous execution");
         abortExecute();
-        await close();
       }
-      (0, import_fs5.rmSync)(options_default.path, { recursive: true, force: true });
-      (0, import_fs5.mkdirSync)(options_default.path, { recursive: true });
-      (0, import_fs5.mkdirSync)(options_default.path + "/input", { recursive: true });
-      (0, import_fs5.mkdirSync)(options_default.path + "/output", { recursive: true });
-      if (options_default.logout)
-        (0, import_fs5.mkdirSync)((0, import_path5.dirname)(options_default.logout), { recursive: true });
-      await processRemoteCID(receivedCID, options_default.path);
       [executeSignal, abortExecute] = getSignal();
-      const { startSending, close: closeSender } = sender(__spreadProps(__spreadValues({}, options_default), { once: false, publish: publish2 }));
-      close = closeSender;
-      startSending();
       execute(executeCommand, options_default.logout, executeSignal);
+      debug12("done executing", executeCommand, ". Waiting...");
     }
-    await close();
-    await closePublish();
-    await closeFrontendPublisher();
-    await closePollenPublisher();
-    unsubscribe();
   })();
 else {
   if (enableSend)
@@ -45062,7 +45051,7 @@ else {
       }
       debug12("process should exit");
       if (options_default.ipns)
-        await (0, import_await_sleep5.default)(sleepBeforeExit);
+        await (0, import_await_sleep4.default)(sleepBeforeExit);
       import_process.default.exit(0);
     })();
   if (enableReceive) {

@@ -8,7 +8,7 @@ import './index.css'
 
 const darkTheme = createMuiTheme({
   typography: {
-    fontFamily: 'Source Code Pro'
+    fontFamily: 'Open Sans'
   },
   palette: {
     type: 'dark',

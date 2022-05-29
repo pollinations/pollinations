@@ -4,14 +4,14 @@ import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import React, { useCallback, useMemo } from "react";
-
+import FormikForm from '../components/form/Formik';
 import { SEO } from "../components/Helmet";
+import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
+import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
 
-import NotebookImage from '../components/organisms/markdownParsers/NotebookImage';
-import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
-import FormikForm from '../components/form/Formik';
+
 
 const debug = Debug("Create");
 
@@ -29,12 +29,11 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-
   return <Box my={2}>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-      <NotebookTitle name={metadata?.name} />
-      <AlertMessage connected={connected}/>
+      <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
+      <AlertMessage node={node}/>
 
         <TwoColumns>
           {/* FORM INPUTS */}
@@ -55,14 +54,14 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           {/* OUTPUTS */}
           <div>
             <Typography variant="h5" gutterBottom>
-              Output
+              Instructions
             </Typography>
-            <NotebookImage metadata={metadata} style={{width: '50%', padding: '1.5em 0'}}/> 
+            <video class='video_container' src="/help.mp4#t=26" frameborder="0" allowfullscreen="true" controls/>
           </div>  
         </TwoColumns>
 
         {/* NOTEBOOK DESCRIPTION */}
-        <div>
+        <div style={{marginTop: '3em'}}>
           <Typography variant="h5" gutterBottom>
           Details
           </Typography>
@@ -82,12 +81,15 @@ margin-top: 1em;
 `
 
 // Alert Message
-const AlertMessage = ({ connected }) => {
-  if (connected) return <></>
-  return <Alert severity="info" style={{margin: '2em 0'}}>
-    The inputs are <b>disabled</b> because <b>no Colab node is running</b>
-    ! Click on <b>LAUNCH</b> (bottom right) or refer to INSTRUCTIONS for further instructions.
-  </Alert>
+const AlertMessage = ({ node }) => {
+  if (node?.connected) return <></>
+  return <>
+      <Alert severity="info" style={{margin: '2em 0'}}>
+      If the text bar is locked, click on start here to unlock it. Don’t worry about the pop ups, it’s safe (:
+      <br/>
+      <StartHereButton {...node} />
+    </Alert>
+  </>
 }
 
 

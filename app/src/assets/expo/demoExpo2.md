@@ -1,3 +1,10 @@
+---
+title: Another interesting project
+subtitle: An mindblowing experience, expect goose bumps
+date: April 2022
+teaser: Amet elit deserunt commodo sit officia cillum labore ullamco dolore velit amet et anim. Lorem anim eu sint laboris do eiusmod esse quis amet magna sit sunt nisi. Minim eiusmod excepteur magna culpa.
+
+---
 
 &nbsp;
 
@@ -39,7 +46,4 @@ At this time, Tezos and Solana promise a lower carbon footprint per transaction.
 
 
 **Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.
-
-
-[Impressum](/impressum)
 

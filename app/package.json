@@ -25,6 +25,7 @@
     "event-iterator": "^2.0.0",
     "file-watch-iterator": "^0.7.0",
     "formik": "^2.2.9",
+    "front-matter": "^4.0.2",
     "fs-extra": "^10.0.0",
     "i": "^0.3.7",
     "ipfs-http-client": "^56.0.3",

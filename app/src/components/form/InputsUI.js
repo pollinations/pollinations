@@ -50,6 +50,10 @@ export const InputField = (props) => {
             </TextField>    
   
     // Text/Rest...
+
+    if (props.type === 'integer')
+      return <TextField {...props}  type='number'  />
+      
     return <TextField fullWidth {...props}/>
   }
 

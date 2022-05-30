@@ -4,7 +4,7 @@ import {
     Radio, 
     RadioGroup, 
     TextField,
-    Button, Link } from "@material-ui/core"
+    Button, Box } from "@material-ui/core"
 import HelpModal from "../HelpModal";
 import DropZone from "./customInputs/file";
 
@@ -54,14 +54,15 @@ export const InputField = (props) => {
 
   export const FormActions = ({ isDisabled, formik, colabLink }) => {
 
-    return <>
-      <Button 
-        disabled={isDisabled || formik.isSubmitting} 
-        type="submit"
-        variant="outlined"
-      >
-        {formik.isSubmitting ? "Creating" : "Create"}
+    return <Box 
+      display="flex" 
+      justifyContent="center" >
+
+      <Button type="submit" disabled={isDisabled || formik.isSubmitting} variant='outlined'>
+          <p style={{fontSize: '1.1em', margin: 0}}>
+            {formik.isSubmitting ? "Creating..." : "Create"}
+          </p>
       </Button>
-    
-    </>
+      
+    </Box>
   }

@@ -44425,8 +44425,7 @@ var ipfsCp = async (client, ipfsPath, cid) => {
 };
 var ipfsPin = async (client, cid) => {
   debug5("Pinning to remote nft.storage", cid);
-  await client.pin.remote.add(CID.parse(cid), { recursive: true, service: "nft_storage", background: true });
-  debug5("Pinning to pollinations", cid);
+  return await client.pin.remote.add(CID.parse(cid), { recursive: true, service: "nft_storage", background: true });
   return await client.pin.add(CID.parse(cid), { recursive: true });
 };
 var stripSlashIPFS = (cidString) => {
@@ -44795,7 +44794,17 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
-var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, suffix = "/input") {
+async function processRemoteCID(contentID, rootPath2) {
+  debug8("Processing remote CID", contentID);
+  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
+  debug8("got remote state", ipfsState);
+}
+var receive = async function* ({ ipns, nodeid, once, path: rootPath2 }, process3 = processRemoteCID, suffix = "/input") {
+  const [cidStream, unsubscribe] = subscribeGenerator(nodeid, suffix);
+  for await (let receivedCID of await cidStream) {
+    await process3(receivedCID, rootPath2);
+  }
+  unsubscribe();
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -44805,11 +44814,6 @@ var writeFileAndCreateFolder = async (path, content) => {
   (0, import_fs2.writeFileSync)(path, content);
   return path;
 };
-async function processRemoteCID(contentID, rootPath2) {
-  debug8("Processing remote CID", contentID);
-  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath2, reader2), true);
-  debug8("got remote state", ipfsState);
-}
 async function processFile({ path, cid }, rootPath2, { get }) {
   const _debug = debug8.extend(`processFile(${path})`);
   _debug("started");

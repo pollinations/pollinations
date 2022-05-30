@@ -26,8 +26,12 @@ date +%s > $IPFS_ROOT/output/time_start
 
 # Save date for Google Drive folder name
 NOW=$( date '+%F_%H:%M:%S' )
-GDRIVE_SAVE_PATH=/content/drive/My\ Drive/pollinations/$NOW
+GDRIVE_SAVE_PATH=/content/drive/MyDrive/pollinations/$NOW
+mkdir -p "$GDRIVE_SAVE_PATH"
 
+# Copy to Google Drive every 60 seconds
+watch -n 60 "cp -r $IPFS_ROOT/* $GDRIVE_SAVE_PATH" &> /dev/null &
+GDRIVE_COPY_PID=$!
 
 
 # Transfer inputs from IPFS to the notebook parameters file which is read by papermill
@@ -40,15 +44,8 @@ for path in $IPFS_ROOT/input/*; do
         continue
     fi
 
+    value=$(<$path)
 
-    # if it is a directory then save list of absolute file paths to $value in one line
-    if [[ -d $path ]]; then
-        value=$(ls -1 -d $path/* | sed "s/\(.*\).*/'\1'/" | tr '\n' ' ')
-    else
-        value=$(<$path)
-    fi
-    
-    echo "${key} : ${value}"
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done
 
@@ -154,3 +151,9 @@ if [[ "$STATUS" != 1  ]]; then
     echo "🐝: Posting $CID to social media (if posting was enabled by the user)"
     node /usr/local/bin/social_post.js $CID
 fi
+
+
+# Copy last result to Google Drive and kill the copy process
+echo "🐝: Copying results to GDRIVE (if not mounted doesn't do anything)"
+cp -r $IPFS_ROOT/* $GDRIVE_SAVE_PATH
+kill $GDRIVE_COPY_PID

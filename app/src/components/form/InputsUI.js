@@ -58,13 +58,10 @@ export const InputField = (props) => {
       <Button 
         disabled={isDisabled || formik.isSubmitting} 
         type="submit"
+        variant="outlined"
       >
-        [ {formik.isSubmitting ? "Submitting" : "Submit"} ]
+        {formik.isSubmitting ? "Creating" : "Create"}
       </Button>
-  
-      <HelpModal />
-  
-      {colabLink && <Link href={colabLink} target="_blank">[ OPEN IN COLAB ]</Link> }
-  
+    
     </>
   }

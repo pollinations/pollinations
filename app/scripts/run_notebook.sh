@@ -43,8 +43,13 @@ for path in $IPFS_ROOT/input/*; do
     if [[ $key == *.* ]]; then
         continue
     fi
-
-    value=$(<$path)
+    
+    # if it is a directory then save list of absolute file paths to $value in one line
+    if [[ -d $path ]]; then
+        value=$(ls -1 -d $path/* | sed "s/\(.*\).*/'\1'/" | tr '\n' ' ')
+    else
+        value=$(<$path)
+    fi
 
     echo "${key} : ${value}" >> $NOTEBOOK_PARAMS_FILE
 done

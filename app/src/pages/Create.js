@@ -66,6 +66,11 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           Details
           </Typography>
           <NotebookInfo noImg description={metadata?.description}/>
+          {metadata?.colabLink && 
+          <a href={metadata?.colabLink} target="_blank">
+            open in colab
+          </a> 
+          }
         </div>
           
     </Box>

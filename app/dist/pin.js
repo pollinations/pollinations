@@ -531,7 +531,7 @@ var require_supports_color = __commonJS({
         has16m: level >= 3
       };
     }
-    function supportsColor(stream2) {
+    function supportsColor(stream) {
       if (forceColor === false) {
         return 0;
       }
@@ -541,7 +541,7 @@ var require_supports_color = __commonJS({
       if (hasFlag("color=256")) {
         return 2;
       }
-      if (stream2 && !stream2.isTTY && forceColor !== true) {
+      if (stream && !stream.isTTY && forceColor !== true) {
         return 0;
       }
       const min = forceColor ? 1 : 0;
@@ -587,8 +587,8 @@ var require_supports_color = __commonJS({
       }
       return min;
     }
-    function getSupportLevel(stream2) {
-      const level = supportsColor(stream2);
+    function getSupportLevel(stream) {
+      const level = supportsColor(stream);
       return translateLevel(level);
     }
     module2.exports = {
@@ -13015,7 +13015,7 @@ var require_duplex = __commonJS({
         };
       }
       Object.assign(options, readable, writable);
-      const stream2 = new Stream(options);
+      const stream = new Stream(options);
       if (duplex.sink) {
         duplex.sink({
           [Symbol.asyncIterator]() {
@@ -13026,16 +13026,16 @@ var require_duplex = __commonJS({
             return chunk === END_CHUNK ? { done: true } : { value: chunk };
           },
           async throw(err) {
-            stream2.destroy(err);
+            stream.destroy(err);
             return { done: true };
           },
           async return() {
-            stream2.destroy();
+            stream.destroy();
             return { done: true };
           }
         });
       }
-      return stream2;
+      return stream;
     };
   }
 });
@@ -13624,8 +13624,8 @@ var require_multiaddr_to_uri = __commonJS({
 var require_browser_readablestream_to_it = __commonJS({
   "node_modules/browser-readablestream-to-it/index.js"(exports2, module2) {
     "use strict";
-    async function* browserReadableStreamToIt(stream2, options = {}) {
-      const reader2 = stream2.getReader();
+    async function* browserReadableStreamToIt(stream, options = {}) {
+      const reader2 = stream.getReader();
       try {
         while (true) {
           const result = await reader2.read();
@@ -16075,8 +16075,8 @@ var require_curry2 = __commonJS({
               return fn(a, _b);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f2 : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b);
             }) : fn(a, b);
@@ -16270,22 +16270,22 @@ var require_curry3 = __commonJS({
               return fn(a, _b, _c);
             });
           case 2:
-            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) ? f3 : _isPlaceholder(a) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
             }) : _curry1(function(_c) {
               return fn(a, b, _c);
             });
           default:
-            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a, _b) {
-              return fn(_a, _b, c);
-            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a, _c) {
-              return fn(_a, b, _c);
+            return _isPlaceholder(a) && _isPlaceholder(b) && _isPlaceholder(c) ? f3 : _isPlaceholder(a) && _isPlaceholder(b) ? _curry2(function(_a2, _b) {
+              return fn(_a2, _b, c);
+            }) : _isPlaceholder(a) && _isPlaceholder(c) ? _curry2(function(_a2, _c) {
+              return fn(_a2, b, _c);
             }) : _isPlaceholder(b) && _isPlaceholder(c) ? _curry2(function(_b, _c) {
               return fn(a, _b, _c);
-            }) : _isPlaceholder(a) ? _curry1(function(_a) {
-              return fn(_a, b, c);
+            }) : _isPlaceholder(a) ? _curry1(function(_a2) {
+              return fn(_a2, b, c);
             }) : _isPlaceholder(b) ? _curry1(function(_b) {
               return fn(a, _b, c);
             }) : _isPlaceholder(c) ? _curry1(function(_c) {
@@ -17905,8 +17905,8 @@ var require_equals2 = __commonJS({
     function _uniqContentEquals(aIterator, bIterator, stackA, stackB) {
       var a = _arrayFromIterator(aIterator);
       var b = _arrayFromIterator(bIterator);
-      function eq(_a, _b) {
-        return _equals(_a, _b, stackA.slice(), stackB.slice());
+      function eq(_a2, _b) {
+        return _equals(_a2, _b, stackA.slice(), stackB.slice());
       }
       return !_includesWith(function(b2, aItem) {
         return !_includesWith(eq, aItem, b2);
@@ -28687,156 +28687,6 @@ var require_lib6 = __commonJS({
   }
 });
 
-// node_modules/event-iterator/lib/event-iterator.js
-var require_event_iterator = __commonJS({
-  "node_modules/event-iterator/lib/event-iterator.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var EventQueue = class {
-      constructor() {
-        this.pullQueue = [];
-        this.pushQueue = [];
-        this.eventHandlers = {};
-        this.isPaused = false;
-        this.isStopped = false;
-      }
-      push(value) {
-        if (this.isStopped)
-          return;
-        const resolution = { value, done: false };
-        if (this.pullQueue.length) {
-          const placeholder = this.pullQueue.shift();
-          if (placeholder)
-            placeholder.resolve(resolution);
-        } else {
-          this.pushQueue.push(Promise.resolve(resolution));
-          if (this.highWaterMark !== void 0 && this.pushQueue.length >= this.highWaterMark && !this.isPaused) {
-            this.isPaused = true;
-            if (this.eventHandlers.highWater) {
-              this.eventHandlers.highWater();
-            } else if (console) {
-              console.warn(`EventIterator queue reached ${this.pushQueue.length} items`);
-            }
-          }
-        }
-      }
-      stop() {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        for (const placeholder of this.pullQueue) {
-          placeholder.resolve({ value: void 0, done: true });
-        }
-        this.pullQueue.length = 0;
-      }
-      fail(error) {
-        if (this.isStopped)
-          return;
-        this.isStopped = true;
-        this.remove();
-        if (this.pullQueue.length) {
-          for (const placeholder of this.pullQueue) {
-            placeholder.reject(error);
-          }
-          this.pullQueue.length = 0;
-        } else {
-          const rejection = Promise.reject(error);
-          rejection.catch(() => {
-          });
-          this.pushQueue.push(rejection);
-        }
-      }
-      remove() {
-        Promise.resolve().then(() => {
-          if (this.removeCallback)
-            this.removeCallback();
-        });
-      }
-      [Symbol.asyncIterator]() {
-        return {
-          next: (value) => {
-            const result = this.pushQueue.shift();
-            if (result) {
-              if (this.lowWaterMark !== void 0 && this.pushQueue.length <= this.lowWaterMark && this.isPaused) {
-                this.isPaused = false;
-                if (this.eventHandlers.lowWater) {
-                  this.eventHandlers.lowWater();
-                }
-              }
-              return result;
-            } else if (this.isStopped) {
-              return Promise.resolve({ value: void 0, done: true });
-            } else {
-              return new Promise((resolve2, reject) => {
-                this.pullQueue.push({ resolve: resolve2, reject });
-              });
-            }
-          },
-          return: () => {
-            this.isStopped = true;
-            this.pushQueue.length = 0;
-            this.remove();
-            return Promise.resolve({ value: void 0, done: true });
-          }
-        };
-      }
-    };
-    var EventIterator = class {
-      constructor(listen, { highWaterMark = 100, lowWaterMark = 1 } = {}) {
-        const queue = new EventQueue();
-        queue.highWaterMark = highWaterMark;
-        queue.lowWaterMark = lowWaterMark;
-        queue.removeCallback = listen({
-          push: (value) => queue.push(value),
-          stop: () => queue.stop(),
-          fail: (error) => queue.fail(error),
-          on: (event, fn) => {
-            queue.eventHandlers[event] = fn;
-          }
-        }) || (() => {
-        });
-        this[Symbol.asyncIterator] = () => queue[Symbol.asyncIterator]();
-        Object.freeze(this);
-      }
-    };
-    exports2.EventIterator = EventIterator;
-    exports2.default = EventIterator;
-  }
-});
-
-// node_modules/event-iterator/lib/node.js
-var require_node2 = __commonJS({
-  "node_modules/event-iterator/lib/node.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var event_iterator_1 = require_event_iterator();
-    exports2.EventIterator = event_iterator_1.EventIterator;
-    function stream2(evOptions) {
-      return new event_iterator_1.EventIterator((queue) => {
-        this.addListener("data", queue.push);
-        this.addListener("end", queue.stop);
-        this.addListener("error", queue.fail);
-        queue.on("highWater", () => this.pause());
-        queue.on("lowWater", () => this.resume());
-        return () => {
-          this.removeListener("data", queue.push);
-          this.removeListener("end", queue.stop);
-          this.removeListener("error", queue.fail);
-          if (this.destroy) {
-            this.destroy();
-          } else if (typeof this.close == "function") {
-            ;
-            this.close();
-          }
-        };
-      }, evOptions);
-    }
-    exports2.stream = stream2;
-    exports2.default = event_iterator_1.EventIterator;
-  }
-});
-
 // node_modules/json5/lib/unicode.js
 var require_unicode = __commonJS({
   "node_modules/json5/lib/unicode.js"(exports2, module2) {
@@ -34264,8 +34114,8 @@ function parseMtime(input) {
 }
 
 // node_modules/ipfs-http-client/esm/src/lib/to-url-search-params.js
-function toUrlSearchParams(_a = {}) {
-  var _b = _a, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
+function toUrlSearchParams(_a2 = {}) {
+  var _b = _a2, { arg, searchParams, hashAlg, mtime, mode } = _b, options = __objRest(_b, ["arg", "searchParams", "hashAlg", "mtime", "mode"]);
   if (searchParams) {
     options = __spreadValues(__spreadValues({}, options), searchParams);
   }
@@ -35197,9 +35047,9 @@ async function normaliseContent2(input) {
   }
   throw (0, import_err_code5.default)(new Error(`Unexpected input: ${input}`), "ERR_UNEXPECTED_INPUT");
 }
-async function itToBlob(stream2) {
+async function itToBlob(stream) {
   const parts = [];
-  for await (const chunk of stream2) {
+  for await (const chunk of stream) {
     parts.push(chunk);
   }
   return new Blob(parts);
@@ -37051,8 +36901,8 @@ var encodeAddParams = ({ cid, service, background, name: name7, origins }) => {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/add.js
 function createAdd3(client) {
-  async function add(cid, _a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function add(cid, _a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/add", {
       timeout,
       signal,
@@ -37068,8 +36918,8 @@ function createAdd3(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/ls.js
 function createLs4(client) {
-  async function* ls(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function* ls(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     const response = await client.post("pin/remote/ls", {
       timeout,
       signal,
@@ -37085,8 +36935,8 @@ function createLs4(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm.js
 function createRm6(client) {
-  async function rm(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rm(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -37101,8 +36951,8 @@ function createRm6(client) {
 
 // node_modules/ipfs-http-client/esm/src/pin/remote/rm-all.js
 function createRmAll2(client) {
-  async function rmAll(_a) {
-    var _b = _a, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
+  async function rmAll(_a2) {
+    var _b = _a2, { timeout, signal, headers } = _b, query = __objRest(_b, ["timeout", "signal", "headers"]);
     await client.post("pin/remote/rm", {
       timeout,
       signal,
@@ -38182,7 +38032,8 @@ var AUTH = "QmFzaWMgY0c5c2JHbHVZWFJwYjI1ekxXWnliMjUwWlc1a09sWnJSazVIYVdZM1kxUjBV
 
 // src/network/ipfsConnector.js
 var debug5 = (0, import_debug5.default)("ipfsConnector");
-var IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai";
+var _a;
+var IPFS_HOST = ((_a = process == null ? void 0 : process.env) == null ? void 0 : _a.IPFS_API_ENDPOINT) || "https://api.pollinations.ai";
 var _client = null;
 var base64Decode = (s) => Buffer.from(s, "base64").toString("utf8");
 var Authorization = base64Decode(AUTH);
@@ -38272,8 +38123,7 @@ var ipfsCp = async (client, ipfsPath, cid) => {
 };
 var ipfsPin = async (client, cid) => {
   debug5("Pinning to remote nft.storage", cid);
-  await client.pin.remote.add(CID.parse(cid), { recursive: true, service: "nft_storage", background: true });
-  debug5("Pinning to pollinations", cid);
+  return await client.pin.remote.add(CID.parse(cid), { recursive: true, service: "nft_storage", background: true });
   return await client.pin.add(CID.parse(cid), { recursive: true });
 };
 var stripSlashIPFS = (cidString) => {
@@ -38541,7 +38391,7 @@ function subscribeCallback(topic, callback) {
       }
     };
     const doSub = async () => {
-      var _a;
+      var _a2;
       const client = await getClient();
       try {
         abort.abort();
@@ -38554,7 +38404,7 @@ function subscribeCallback(topic, callback) {
           debug6("subscription was aborted. returning");
           return;
         }
-        if ((_a = e.message) == null ? void 0 : _a.startsWith("Already subscribed"))
+        if ((_a2 = e.message) == null ? void 0 : _a2.startsWith("Already subscribed"))
           return;
         await (0, import_await_sleep2.default)(300);
         await doSub();
@@ -38570,20 +38420,19 @@ function subscribeCallback(topic, callback) {
 
 // src/backend/ipfs/receiver.js
 var import_debug8 = __toESM(require_src(), 1);
-var import_event_iterator = __toESM(require_node2(), 1);
 var import_fs2 = require("fs");
 var import_path3 = require("path");
 
 // src/network/ipfsState.js
 var import_debug7 = __toESM(require_src(), 1);
-var import_ramda3 = __toESM(require_src6(), 1);
+var import_json5 = __toESM(require_lib7(), 1);
 var import_path2 = require("path");
+var import_ramda3 = __toESM(require_src6(), 1);
 
 // src/utils/logProgressToConsole.js
 var PromiseAllProgress = (name7, promises) => Promise.all(promises);
 
 // src/network/ipfsState.js
-var import_json5 = __toESM(require_lib7(), 1);
 var debug7 = (0, import_debug7.default)("ipfsState");
 var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => {
   const ipfsReader = await reader();
@@ -38595,8 +38444,8 @@ var getIPFSState = async (contentID, callback = (f) => f, skipCache = false) => 
   }
 };
 var cache = {};
-var cachedIPFSState = (ipfsReader, _a, processFile2, skipCache) => {
-  var _b = _a, { cid } = _b, rest = __objRest(_b, ["cid"]);
+var cachedIPFSState = (ipfsReader, _a2, processFile2, skipCache) => {
+  var _b = _a2, { cid } = _b, rest = __objRest(_b, ["cid"]);
   const key = `${cid} - ${processFile2.toString()}`;
   if (!cache[key] || skipCache) {
     debug7("cache miss", cid);
@@ -38643,21 +38492,17 @@ var dataFetchers = (cid, { get }) => {
 
 // src/backend/ipfs/receiver.js
 var debug8 = (0, import_debug8.default)("ipfs/receiver");
+async function processRemoteCID(contentID, rootPath) {
+  debug8("Processing remote CID", contentID);
+  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
+  debug8("got remote state", ipfsState);
+}
 var receive = async function* ({ ipns, nodeid, once, path: rootPath }, process2 = processRemoteCID, suffix = "/input") {
-  const [cidStream, unsubscribe] = ipns ? subscribeGenerator(nodeid, suffix) : [import_event_iterator.stream.call(process2.stdin), noop];
-  let remoteCID = null;
-  for await (remoteCID of await cidStream) {
-    debug8("received CID", remoteCID);
-    remoteCID = stringCID(remoteCID);
-    debug8("remoteCID", remoteCID);
-    await process2(stringCID(remoteCID), rootPath);
-    yield remoteCID;
-    if (once) {
-      unsubscribe();
-      break;
-    }
+  const [cidStream, unsubscribe] = subscribeGenerator(nodeid, suffix);
+  for await (let receivedCID of await cidStream) {
+    await process2(receivedCID, rootPath);
   }
-  ;
+  unsubscribe();
   return remoteCID;
 };
 var writeFileAndCreateFolder = async (path, content) => {
@@ -38667,11 +38512,6 @@ var writeFileAndCreateFolder = async (path, content) => {
   (0, import_fs2.writeFileSync)(path, content);
   return path;
 };
-async function processRemoteCID(contentID, rootPath) {
-  debug8("Processing remote CID", contentID);
-  const ipfsState = await getIPFSState(contentID, (file, reader2) => processFile(file, rootPath, reader2), true);
-  debug8("got remote state", ipfsState);
-}
 async function processFile({ path, cid }, rootPath, { get }) {
   const _debug = debug8.extend(`processFile(${path})`);
   _debug("started");

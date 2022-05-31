@@ -35,8 +35,8 @@ export default memo(function ResultViewer({ ipfs }) {
   const contentID = ipfs[".cid"]
 
   const primaryInputField = metadata?.primaryInput
-  const primaryInput = ipfs?.input?.[primaryInputField]
-
+  const primaryInputRaw = ipfs?.input?.[primaryInputField]
+  const primaryInput = typeof primaryInputRaw === "string" ? primaryInputRaw : JSON.stringify(primaryInputRaw) 
 
   const success = ipfs?.output?.success !== false
   debug("success", success, ipfs?.output)

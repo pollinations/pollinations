@@ -1,17 +1,21 @@
 import Debug from "debug"
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { getWriter } from "../network/ipfsWebClient"
 
 
 const debug = Debug("useIPFSWrite")
 
-export default (ipfs) => {
+export default (cid) => {
 
-   
     const writer = useMemo(() => {
-        const writer = getWriter(ipfs)
+        const writer = getWriter(cid)
         return writer
-    }, [ipfs])
+    }, [cid])
+
+    // call writer.close() when the component is unmounted
+    useEffect(() => {
+         return () => {   writer.close() }                     
+    }, [writer]) 
 
     return writer
 }

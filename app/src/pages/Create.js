@@ -4,13 +4,15 @@ import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import React, { useCallback, useMemo } from "react";
-import FormView from '../components/Form';
+import FormikForm from '../components/form/Formik';
 import { SEO } from "../components/Helmet";
-import NotebookTitle from "../components/NotebookTitle";
-import { getNotebookMetadata } from "../utils/notebookMetadata";
-import NotebookImage from '../components/organisms/markdownParsers/NotebookImage';
 import { StartHereButton } from '../components/molecules/LaunchColabButton';
-import NotebookInfo from "../components/organisms/markdownParsers/NotebookInfo";
+import NotebookTitle from "../components/NotebookTitle";
+import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
+import { getNotebookMetadata } from "../utils/notebookMetadata";
+
+
+
 const debug = Debug("Create");
 
 export default React.memo(function Create({ ipfs, node, dispatch }) {
@@ -40,12 +42,13 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
               Inputs
             </Typography>
 
-            <FormView
+            <FormikForm
               input={ipfs?.input}
               connected={connected}
               metadata={metadata}
               onSubmit={dispatch}
             />
+            
           </div> 
 
           {/* OUTPUTS */}

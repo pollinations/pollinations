@@ -21,7 +21,7 @@ export default function useLocalPollens( node ) {
 
     debug("pollens", pollens)
     
-    const writer = useIPFSWrite(pollens)
+    const writer = useIPFSWrite(pollensCID)
     
     const pushCID = useCallback(async cid => {
         let isPresent = values(pollens).find( pollen => pollen[".cid"] === cid)

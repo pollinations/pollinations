@@ -26,8 +26,12 @@ date +%s > $IPFS_ROOT/output/time_start
 
 # Save date for Google Drive folder name
 NOW=$( date '+%F_%H:%M:%S' )
-GDRIVE_SAVE_PATH=/content/drive/My\ Drive/pollinations/$NOW
+GDRIVE_SAVE_PATH=/content/drive/MyDrive/pollinations/$NOW
+mkdir -p "$GDRIVE_SAVE_PATH"
 
+# Copy to Google Drive every 60 seconds
+watch -n 60 "cp -r $IPFS_ROOT/* $GDRIVE_SAVE_PATH" &> /dev/null &
+GDRIVE_COPY_PID=$!
 
 
 # Transfer inputs from IPFS to the notebook parameters file which is read by papermill
@@ -86,20 +90,7 @@ while [[ "$STATUS" != 0 &&  "$RUN_COUNT" < 2 ]]; do
     set -o pipefail
 
     # Run notebook
-    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee -a $IPFS_ROOT/output/log &
-    PAPERMILL_PID=$!
-
-    # Copy output to Google Drive while papermill is running
-    while kill -0 $PAPERMILL_PID 2> /dev/null; do
-        sleep 60        
-
-        # Check if google drive is mounted
-        if [ -d /content/drive ]; then
-            echo "🐝: Copying output to Google Drive."
-            mkdir -p "$GDRIVE_SAVE_PATH"
-            cp -r "$IPFS_ROOT"/* "$GDRIVE_SAVE_PATH"
-        fi
-    done
+    papermill "$NOTEBOOK_PATH" "$NOTEBOOK_OUTPUT_PATH" -f $NOTEBOOK_PARAMS_FILE --log-output |& tee -a $IPFS_ROOT/output/log
 
     # Get exit code
     STATUS=$?
@@ -160,3 +151,9 @@ if [[ "$STATUS" != 1  ]]; then
     echo "🐝: Posting $CID to social media (if posting was enabled by the user)"
     node /usr/local/bin/social_post.js $CID
 fi
+
+
+# Copy last result to Google Drive and kill the copy process
+echo "🐝: Copying results to GDRIVE (if not mounted doesn't do anything)"
+cp -r $IPFS_ROOT/* $GDRIVE_SAVE_PATH
+kill $GDRIVE_COPY_PID

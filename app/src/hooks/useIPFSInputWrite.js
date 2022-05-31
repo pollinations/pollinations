@@ -17,14 +17,8 @@ export default (ipfs, node) => {
 
     const dispatch = useCallback(async inputState => {
 
-        const cid = ipfs && ipfs[".cid"]
 
-        debug("inputCID", cid)
-
-        if (!cid)
-            return
-
-        const writer = getWriter(ipfs);
+        const writer = getWriter();
         debug("dispatching", ipfs)
         const newContentID = await updateInput(writer, { ...ipfs.input, ...inputState })
 

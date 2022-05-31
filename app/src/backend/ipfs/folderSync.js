@@ -33,6 +33,8 @@ export default async function* folderSync({ writer, path, debounce, signal }) {
     for (const changed of changedGrouped) {
       await Promise.all(
         changed.map(async ({ event, path: file }) => {
+          if (signal.aborted)
+            return
           // Using sequential loop for now just in case parallel is dangerous with Promise.ALL
           debug("Local:", event, file);
           const localPath = join(path, file);

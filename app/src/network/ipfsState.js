@@ -1,12 +1,12 @@
 
 
-import  { stringCID, reader } from "./ipfsConnector.js";
 import Debug from "debug";
-import { zip } from "ramda";
-
-import { extname, join } from "path";
-import {PromiseAllProgress} from "../utils/logProgressToConsole.js";
 import { parse } from "json5";
+import { join } from "path";
+import { zip } from "ramda";
+import { PromiseAllProgress } from "../utils/logProgressToConsole.js";
+import { reader, stringCID } from "./ipfsConnector.js";
+
 
 const debug = Debug("ipfsState");
 

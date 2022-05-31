@@ -11,7 +11,7 @@ import { AUTH, noop, toPromise } from "./utils.js";
 const debug = Debug("ipfsConnector")
 
 // Get IPFS_API_ENDPOINT from env
-const IPFS_HOST = process.env.IPFS_API_ENDPOINT || "https://api.pollinations.ai"
+const IPFS_HOST = process?.env?.IPFS_API_ENDPOINT || "https://api.pollinations.ai"
 
 
 let _client = null;
@@ -145,8 +145,8 @@ const ipfsCp = async (client, ipfsPath, cid) => {
 
 const ipfsPin = async (client, cid) => {
     debug("Pinning to remote nft.storage", cid)
-    await client.pin.remote.add(CID.parse(cid), {recursive: true, service: "nft_storage", background: true  })
-    debug("Pinning to pollinations", cid)
+    return await client.pin.remote.add(CID.parse(cid), {recursive: true, service: "nft_storage", background: true  })
+    //debug("Pinning to pollinations", cid)
     return await client.pin.add(CID.parse(cid), { recursive: true })
 }
 

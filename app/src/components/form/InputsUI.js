@@ -1,11 +1,10 @@
-import { 
-  FormControlLabel, 
-  MenuItem, 
-  Radio, 
-  RadioGroup, 
-  TextField,
-  Button, Box, Link } from "@material-ui/core"
-import HelpModal from "../HelpModal";
+import {
+  Box, Button, FormControlLabel,
+  MenuItem,
+  Radio,
+  RadioGroup,
+  TextField
+} from "@material-ui/core";
 import DropZone from "./customInputs/file";
 
 export const InputField = (props) => {
@@ -17,7 +16,10 @@ export const InputField = (props) => {
   if (`${props.id}`.includes('file'))
       return <DropZone {...props} />
 
-  // Radio buttons Yes/No
+  if (props.type === 'integer')
+      return <TextField {...props}  type='number'  />
+
+      // Radio buttons Yes/No
   if (props.type === 'boolean') 
     return <div style={props.style}>
     <label> {props.title} </label>

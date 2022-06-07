@@ -15,12 +15,9 @@ import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
-import About from "./pages/About"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
-import Help from "./pages/Help"
 import Home from "./pages/Home"
-import Impressum from "./pages/Impressum"
 import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
 import PageTemplate from "./components/PageTemplate"
@@ -73,7 +70,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
         <Routes>
-          
+
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             MAIN_NAV_ROUTES.map( route => (

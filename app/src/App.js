@@ -29,7 +29,7 @@ const ROUTES = {
   feed: { label: "feed", to: "/feed" },
   help: { label: "help", to: "/help" },
   impressum: { label: "impressum", to: "/impressum" },
-  // integration: { label: "integration", to: "/integration" },
+  // integrate: { label: "integrate", to: "/integrate" },
   // myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
@@ -37,14 +37,14 @@ const MAIN_NAV_ROUTES = [
   ROUTES.about, 
   ROUTES.feed,
   ROUTES.help, 
-  // ROUTES.integration, 
+  // ROUTES.integrate, 
   // ROUTES.myPollens
 ]
 const PAGE_ROUTES = [
   ROUTES.about,
   ROUTES.help,
   ROUTES.impressum,
-  // ROUTES.integration
+  // ROUTES.integrate
 ]
 
 const App = () => (
@@ -56,10 +56,6 @@ const App = () => (
 const Pollinations = () => {
   const { node, overrideContentID, overrideNodeID } = useColabNode()
   debug("got colab node info", node)
-
-
-  console.log(Object.entries(ROUTES))
-
 
   const navigate = useNavigate()
 

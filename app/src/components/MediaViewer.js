@@ -68,7 +68,7 @@ export default ({output, contentID}) => {
       <h3>Output [<Button
           href={getWebURL(`${contentID}/output`)} 
           target="_blank">
-            Open Folder
+            Download
       </Button>]</h3>
       <MediaListView output={output} />
     </Box>

@@ -56,7 +56,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
             <Typography variant="h5" gutterBottom>
               Instructions
             </Typography>
-            <video class='video_container' src="/help.mp4#t=26" frameborder="0" allowfullscreen="true" controls/>
+            <video class='video_container' src="/help.mp4" frameborder="0" allowfullscreen="true" controls/>
           </div>  
         </TwoColumns>
 

@@ -73,6 +73,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
         <Routes>
+          
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             MAIN_NAV_ROUTES.map( route => (

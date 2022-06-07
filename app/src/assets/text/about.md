@@ -1,45 +1,36 @@
 
 &nbsp;
 
-### About
+##### About
+
+Pollinations is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
+
+We offer cutting-edge AI models that are constantly being updated. Every creation is unique and free to use.
+
+&nbsp;
+
+##### Why
+
+The need to design digital worlds is rising fast, but the power and skills to actually build these worlds are concentrated in the hands of a few people.The cost is so high, and the process too time-consuming, making experimentation difficult. We believe the metaverse should be trippy, and we want it to be built by diverse minds, so **we developed an interface that makes AI media creation easy and fast**.
 
 
 &nbsp;
 
+##### Integrate
 
-Generative media algorithms usually impose a barrier to people that are not used to code because they are relatively complicated to use. 
+Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the **Pollinations’ API** and allow your users to create media with personalized looks and vibes that match your unique style.
 
-This, in turn, creates all kinds of problems, making generative art monotonous and elitist.  
-
-Pollinations values inclusivity and diversity, attempting to remove obstacles for creators. We believe that we urgently need **diverse perspectives in the AI ecosystem**. We want to make AI-generated media simple to access and available for everyone. 
-
-Pollinations prioritizes equitable distribution of value for hackers, creators, and all the busy bees who play a part in making art. Pollinations is a community-based, open-source, AI art ecosystem, to join the conversation and talk directly with the coders and creators, come to our [ Discord ](https://discord.com/invite/XXd99CrkCr). 
-
-
-As for now, all the people involved are contributing hours for free to help the platform grow. 
+To learn more please get in touch at hello@pollinations.ai.
 
 &nbsp;
 
+##### Who
+
+We are a  deep-tech company based in Berlin. Our team of machine-learning specialists, artists and futurists is profoundly involved in the AI ecosystem. The AI models we offer are open-source, and are constantly updated by a thriving community. 
+
+&nbsp;
 
 ---
-
-&nbsp;
-
-###### Support Pollinations
-
-Support Pollinations' development through **[Paypal](https://www.paypal.com/donate/?hosted_button_id=DQSRC48ZZND7Y)**, by joining our **[Patreon](https://www.patreon.com/pollinations)** or donating to one of these crypto wallets:
-
-- **Ethereum**: 0x6c5c60EeC96c494D51e054ea415441a73795C612 
-- **Bitcoin**: bc1q670man5rdj44gj3sd79pm4cp4kwed9p7xjkz66
-- **Tezos**: tz1ZGdzKEaa1Gi7GV68qfxEuLVnxY5cUX1Yt
-- **Solana**: FBakTf1bVzqpX5UEa5AkP12e16JwvmGrXdqwDP1fmAFk
-- **Doge**: DRiCRNHNpdNq7Y3WmQUvEshVk1yPdXtD6B
-
-At this time, Tezos and Solana promise a lower carbon footprint per transaction. If you have the option we suggest using one of these.
-
-
-**Feel free to mint your nfts made with Pollinations** but consider donating a percentage of the profits to help our platform sustain itself.
-
 
 [Impressum](/impressum)
 

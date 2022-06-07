@@ -18,7 +18,7 @@ The need to design digital worlds is rising fast, but the power and skills to ac
 
 ##### Integrate
 
-Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the Pollinations’ engine and allow your users to create media with personalized looks and vibes that match your unique style.
+Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the Pollinations’ **API** and allow your users to create media with personalized looks and vibes that match your unique style.
 
 To learn more please get in touch at hello@pollinations.ai.
 

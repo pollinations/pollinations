@@ -23,12 +23,14 @@ import Home from "./pages/Home"
 import Impressum from "./pages/Impressum"
 import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
+import PageTemplate from "./components/PageTemplate"
 
 const debug = Debug("AppContainer")
 
 const ROUTES = {
   about: { label: "about", to: "/about" },
   feed: { label: "feed", to: "/feed" },
+  integration: { label: "integration", to: "/integration" },
   help: { label: "help", to: "/help" },
   impressum: { label: "impressum", to: "/impressum" },
   myPollens: { label: "my pollens", to: "/localpollens" },
@@ -36,7 +38,8 @@ const ROUTES = {
 }
 const MAIN_NAV_ROUTES = [
   ROUTES.about, 
-  ROUTES.feed, 
+  ROUTES.feed,
+  ROUTES.integration, 
   ROUTES.help, 
   // ROUTES.myPollens
 ]
@@ -65,18 +68,24 @@ const Pollinations = () => {
 
   return (
     <>
-      {/* Nav Bar     */}
-      {/* <AppBar /> */}
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
         <Routes>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
-          <Route exact path={ROUTES.help.to} element={<Help />} />
-          <Route exact path={ROUTES.about.to} element={<About />} />
-          <Route exact path={ROUTES.impressum.to} element={<Impressum />} />
-          <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
+          {
+            MAIN_NAV_ROUTES.map( route => (
+              <Route 
+                key={route.label}
+                exact
+                path={route.to}
+                element={<PageTemplate label={route.label} />}
+              />
+            ))
+          }
+
+          {/* <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} /> */}
           {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
           {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}
 

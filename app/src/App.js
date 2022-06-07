@@ -27,18 +27,24 @@ const debug = Debug("AppContainer")
 const ROUTES = {
   about: { label: "about", to: "/about" },
   feed: { label: "feed", to: "/feed" },
-  integration: { label: "integration", to: "/integration" },
   help: { label: "help", to: "/help" },
   impressum: { label: "impressum", to: "/impressum" },
-  myPollens: { label: "my pollens", to: "/localpollens" },
+  // integration: { label: "integration", to: "/integration" },
+  // myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
 const MAIN_NAV_ROUTES = [
   ROUTES.about, 
   ROUTES.feed,
-  ROUTES.integration, 
   ROUTES.help, 
+  // ROUTES.integration, 
   // ROUTES.myPollens
+]
+const PAGE_ROUTES = [
+  ROUTES.about,
+  ROUTES.help,
+  ROUTES.impressum,
+  // ROUTES.integration
 ]
 
 const App = () => (
@@ -50,6 +56,10 @@ const App = () => (
 const Pollinations = () => {
   const { node, overrideContentID, overrideNodeID } = useColabNode()
   debug("got colab node info", node)
+
+
+  console.log(Object.entries(ROUTES))
+
 
   const navigate = useNavigate()
 
@@ -73,7 +83,7 @@ const Pollinations = () => {
 
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
-            MAIN_NAV_ROUTES.map( route => (
+            PAGE_ROUTES.map( route => (
               <Route 
                 key={route.label}
                 exact

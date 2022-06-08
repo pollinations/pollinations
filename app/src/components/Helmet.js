@@ -7,6 +7,8 @@ import Debug from "debug";
 
 const debug = Debug("Helmet");
 
+const DESCRIPTION = 'Pollinations is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.';
+
 export const SEOImage = ({url}) => 
     (<Helmet >
          <meta name="image" content={url} />
@@ -14,10 +16,11 @@ export const SEOImage = ({url}) =>
          <meta property="twitter:image" content={url} />
     </Helmet>);
 
-const SEOMetadata= ({title, description, url}) => {
+export const SEOMetadata= ({title, description, url}) => {
     title = `Pollinations - ${title}`;
-    // title = title.slice(0,60);
-    description = removeMarkdown(description);
+    
+    description = description ? removeMarkdown(description) : DESCRIPTION;
+
     return  <Helmet>
                 <title children={title} />
                 <meta property="og:title" content={title} />

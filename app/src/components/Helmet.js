@@ -22,7 +22,9 @@ export const SEOImage = ({url}) => {
 
 export const SEOMetadata= ({title, description, url}) => {
     title = `Pollinations - ${title}`;
-    
+
+    // não é a coisa mais bonita do mundo mas é o que temos de melhor
+    url = url ? url : window.location.href;
     description = description ? removeMarkdown(description) : DESCRIPTION;
 
     return  <Helmet>

@@ -1,7 +1,7 @@
 import { textContent } from "../assets"
 import MarkDownContent from "../components/molecules/MarkDownContent"
 import { SmallContainer } from "../pages/styles/base"
-import { SEOMetadata } from "./Helmet"
+import { SEOImage, SEOMetadata } from "./Helmet"
 
 const PageTemplate = ({ label }) => {
 
@@ -12,6 +12,7 @@ const PageTemplate = ({ label }) => {
   return (
     <SmallContainer>
       <SEOMetadata title={`${label[0].toUpperCase()}${label.slice(1)}`} />
+      <SEOImage />
       <MarkDownContent url={textContent[label]} />
     </SmallContainer>
   )

@@ -19,6 +19,7 @@ import useIPFS from "../hooks/useIPFS"
 import { CardContainerStyle } from "./styles/card"
 import Logo from '../components/Logo'
 import { Link } from "react-router-dom"
+import { SEOMetadata } from "../components/Helmet"
 
 const debug = Debug("home")
 
@@ -31,6 +32,8 @@ export default function Home() {
   debug("got notebooks", notebooks)
   return (
     <>
+      <SEOMetadata title='Home' />
+      
       <TopAlert options={options} />
       <HeroSection />
 

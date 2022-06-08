@@ -9,12 +9,16 @@ const debug = Debug("Helmet");
 
 const DESCRIPTION = 'Pollinations is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.';
 
-export const SEOImage = ({url}) => 
-    (<Helmet >
-         <meta name="image" content={url} />
-         <meta property="og:image" content={url} />
-         <meta property="twitter:image" content={url} />
-    </Helmet>);
+export const SEOImage = ({url}) => {
+
+    const finalUrl = url ? url : '/pollinations_landscape.jpg';
+
+    return (<Helmet >
+         <meta name="image" content={finalUrl} />
+         <meta property="og:image" content={finalUrl} />
+         <meta property="twitter:image" content={finalUrl} />
+    </Helmet>)
+};
 
 export const SEOMetadata= ({title, description, url}) => {
     title = `Pollinations - ${title}`;

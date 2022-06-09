@@ -18,9 +18,9 @@ import usePollenDone from "./hooks/usePollenDone"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
 import Home from "./pages/Home"
-import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
 import PageTemplate from "./components/PageTemplate"
+import Models from "./pages/Models"
 
 const debug = Debug("AppContainer")
 
@@ -29,11 +29,13 @@ const ROUTES = {
   feed: { label: "feed", to: "/feed" },
   help: { label: "help", to: "/help" },
   impressum: { label: "impressum", to: "/impressum" },
+  models: { label: "create", to: '/c' },
   // integrate: { label: "integrate", to: "/integrate" },
   // myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
 const MAIN_NAV_ROUTES = [
+  ROUTES.models,
   ROUTES.about, 
   ROUTES.feed,
   ROUTES.help, 
@@ -59,9 +61,6 @@ const Pollinations = () => {
 
   const navigate = useNavigate()
 
-  // to save pollens since we are not necessarily on the localpollens page
-  // useLocalPollens(node)
-
   const navigateToNode = useCallback(() => {
     if (node.nodeID) navigate(`/n/${node.nodeID}`)
     else {
@@ -76,7 +75,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
         <Routes>
-
+          <Route exact path='/' element={<Home />} />
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             PAGE_ROUTES.map( route => (
@@ -93,7 +92,7 @@ const Pollinations = () => {
           {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
           {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}
 
-          <Route path="c/:selected" element={<Home />} />
+          <Route path="c/:selected" element={<Models />} />
 
           <Route
             path="n/:nodeID"
@@ -109,7 +108,7 @@ const Pollinations = () => {
               />
             }
           />
-          <Route index element={<Navigate replace to="c/Anything" />} />
+          <Route exact path='c' element={<Navigate replace to="Anything" />} />
         </Routes>
         <Footer />
       </Container>

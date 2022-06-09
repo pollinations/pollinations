@@ -1,4 +1,4 @@
-import { Accordion, AccordionSummary, Box } from '@material-ui/core';
+import { Accordion, AccordionSummary } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Debug from "debug";
 import { useFormik } from 'formik';
@@ -19,6 +19,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
 
   const hasAdvancedFields = Object.values(inputs).some(({ advanced }) => advanced);
   
+  debug("inputs",inputs)
   if (!inputs || !initialValues)
     return null
 

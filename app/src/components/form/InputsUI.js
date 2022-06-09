@@ -14,7 +14,7 @@ export const InputField = (props) => {
 
 
   // Dropzone file input
-  if (props["accepted_files"] || props["accepted_files"])
+  if (props["accepted_files"] || `${props.id}`.includes('file'))
       return <DropZone {...props} />
 
   if (props.type === 'integer')

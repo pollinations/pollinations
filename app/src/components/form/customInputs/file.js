@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
 import Debug from 'debug';
-import React from 'react';
+import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import useIPFSWrite from '../../../hooks/useIPFSWrite';
 import { getWebURL } from '../../../network/ipfsConnector';
@@ -13,13 +13,19 @@ const debug = Debug('formfile');
 export default function Previews(props) {
 
 
+  const [isUploading, setIsUploading] = useState(false)
+  
+  
   const { add, cid, mkDir } = useIPFSWrite()
 
 
   debug('props', props);
   
-  const { value, id,  disabled, description, setFieldValue, inputCID } = props;
+  const { value, id,  disabled: disabledForm, description, setFieldValue, inputCID } = props;
 
+
+  const disabled = disabledForm || isUploading;
+  
   // if it has the new accepted_files property us it otherwise try to infer from the variable name
   const expectedTypes =  props.accepted_files ? props.accepted_files.split(",") : [getType(id)];
 
@@ -31,9 +37,10 @@ export default function Previews(props) {
 
 
   async function onNew(acceptedFiles) {
-    
+  
     debug("dropped files", acceptedFiles);
 
+    setIsUploading(true)
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
 
 
@@ -49,6 +56,8 @@ export default function Previews(props) {
     Object.defineProperty(files, ".cid", {value: rootCID})
 
     setFieldValue(id, files)
+    
+    setIsUploading(false)
   }
 
 
@@ -68,7 +77,7 @@ export default function Previews(props) {
             <Thumbs files={files} />
             : <>
               <p>{description}<br/>
-              Drag 'n' drop here.  </p>
+              { isUploading ? "Uploading..." : "Drag 'n' drop here." }  </p>
             </>
         }
       </Style>

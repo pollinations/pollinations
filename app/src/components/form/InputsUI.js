@@ -12,8 +12,9 @@ export const InputField = (props) => {
   if (!props)
     return null
 
+
   // Dropzone file input
-  if (`${props.id}`.includes('file'))
+  if (props["accepted_files"] || props["accepted_files"])
       return <DropZone {...props} />
 
   if (props.type === 'integer')
@@ -39,14 +40,14 @@ export const InputField = (props) => {
   
   // Select Component
   if (props.enum?.length > 0) 
-  return <TextField select {...props}
-  onChange={e => props.setFieldValue(props.id, e.target.value)}>
-  {
-      props.enum.map(option => <MenuItem key={option} value={option}>
-          {option}
-      </MenuItem>)
-  }
-  </TextField>    
+    return <TextField select {...props}
+        onChange={e => props.setFieldValue(props.id, e.target.value)}>
+          {
+              props.enum.map(option => <MenuItem key={option} value={option}>
+                                            {option}
+                                        </MenuItem>)
+          }
+      </TextField>    
 
   // Text/Rest...
   return <TextField fullWidth {...props}/>

@@ -17,15 +17,15 @@ export default function Previews(props) {
 
 
   debug('props', props);
+  
   const { value, id,  disabled, description, setFieldValue, inputCID } = props;
 
-  const expectedType = getType(id)
+  // if it has the new accepted_files property us it otherwise try to infer from the variable name
+  const expectedTypes =  props.accepted_files ? props.accepted_files.split(",") : [getType(id)];
 
-
-  debug('value', value)
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: expectedType ? `${expectedType}/*` : undefined,
+    accept: expectedTypes ? expectedTypes.map(type => `${type}/*`) : undefined,
     onDrop: onNew
   });
 

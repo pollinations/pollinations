@@ -94,7 +94,7 @@ const extractEnumerableParameters = text => {
   return { name, defaultVal, type: "string", enumOptions: parse(enumString) }
 }
 
-const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions, advanced }) => {
+const mapToJSONFormField = ({ name, defaultVal, type, enumOptions, ...rest}) => {
 
   // If the regex were better we would not need to trim here
   defaultVal = defaultVal.trim()
@@ -107,10 +107,8 @@ const mapToJSONFormField = ({ name, defaultVal, type, description, enumOptions, 
     enum: enumOptions, 
     type, 
     default: parse(defaultVal),
-    // title: description || name, 
     title: name,
-    description,
-    advanced
+    ...rest
   }]
 }
 

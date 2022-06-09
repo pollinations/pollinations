@@ -77,7 +77,7 @@ export default function Previews(props) {
           files.length > 0
           && 
           <Button onClick={() => setFieldValue(id, "")}>
-            [ Remove {expectedType} ]
+            [ Remove {expectedTypes} ]
           </Button>
     }
   </>);

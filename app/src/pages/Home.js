@@ -3,8 +3,14 @@ import Debug from "debug"
 import { textContent } from "../assets"
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import Logo from '../components/Logo'
+import PageTemplate from "../components/PageTemplate"
+import { StartHereButton } from "../components/molecules/LaunchColabButton"
+import { Button } from "@material-ui/core"
+import { useNavigate } from "react-router-dom"
 
 export default function Home() {
+
+  const navigate = useNavigate()
 
   return <>
     <Box 
@@ -16,18 +22,34 @@ export default function Home() {
       <Logo/>
       
       <Box
-        display="grid"
-        gridTemplateColumns="repeat(auto-fill, minmax(300px, 2fr))"
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        // gridTemplateColumns="repeat(auto-fill, minmax(300px, 2fr))"
         gridGap="2em"
-        minHeight="30vh"
-        paddingTop="3em"
+        minHeight="calc(100vh - 350px)"
+        maxHeight="100vh"
+        padding="3em 0"
+        marginBottom='2em'
       >
-        <div style={{ gridColumnStart: 1, gridColumnEnd: 3 }}>
           <MarkdownContent url={textContent.landingLeft} />
+        <div style={{ minWidth: 350, maxWidth:'40%' }}>
+          <MarkdownContent url={textContent.landingRight} />
         </div>
+        <Button 
+            style={{marginTop: '1em'}}
+            variant='outlined'
+            onClick={()=> navigate('/c')}
+            color="primary"  
+            target="colab">
+            Create
+        </Button>
 
-        <MarkdownContent url={textContent.landingRight} />
       </Box>
+
+      <PageTemplate label='landing' />
+
     </Box>
   </>
 }

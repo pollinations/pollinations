@@ -4,6 +4,7 @@ import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import React, { useCallback, useMemo } from "react";
+import CustomFormikForm from '../components/form/CustomFormik';
 import FormikForm from '../components/form/Formik';
 import { SEO } from "../components/Helmet";
 import { StartHereButton } from '../components/molecules/LaunchColabButton';
@@ -17,6 +18,33 @@ const debug = Debug("Envisioning");
 
 export default React.memo(function Create() {
 
+  const inputs = {
+    "Prompt": {
+      type: "string",
+      default: "Enter your prompt here",
+      title: "Prompt",
+      description: "The image you want to be generated",
+    },
+    "Image_Width": {
+      type: "number",
+      default: 1280,
+      title: "Image Width",
+      description: "The width of the final image",
+    },
+    "Image_Height": {
+      type: "number",
+      default: 720,
+      title: "Image Height",
+      description: "The height of the final image",
+    }
+  }
+
+  const initialValues = {
+    "Prompt": "Enter your prompt here",
+    "Image_Width" : 1280,
+    "Image_Height" : 720,
+  }
+
   return <Box my={2}>
 
       <NotebookTitle name='Envisioning "API"' />
@@ -28,7 +56,10 @@ export default React.memo(function Create() {
               Inputs
             </Typography>
 
-            <FormikForm
+            <CustomFormikForm
+              inputs={inputs}
+              initialValues={initialValues}
+              onSubmit={(values) => console.log(values)}
               //input={ipfs?.input}
               //connected={connected}
               //metadata={metadata}

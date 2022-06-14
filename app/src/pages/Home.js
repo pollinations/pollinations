@@ -33,10 +33,7 @@ export default function Home() {
         padding="3em 0"
         marginBottom='2em'
       >
-          <MarkdownContent url={textContent.landingLeft} />
-        <div style={{ minWidth: 350, maxWidth:'40%' }}>
-          <MarkdownContent url={textContent.landingRight} />
-        </div>
+        <MarkdownContent url={textContent.landingLeft} />
         <Button 
             style={{marginTop: '1em'}}
             variant='outlined'

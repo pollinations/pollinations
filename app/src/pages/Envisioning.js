@@ -39,11 +39,6 @@ export default React.memo(function Create() {
     }
   }
 
-  const initialValues = {
-    "Prompt": "Enter your prompt here",
-    "Image_Width" : 1280,
-    "Image_Height" : 720,
-  }
 
   return <Box my={2}>
 

@@ -2,16 +2,20 @@ import { Accordion, AccordionSummary } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Debug from "debug";
 import { useFormik } from 'formik';
+import { zipObj } from 'ramda';
 import { FormActions, InputField } from './InputsUI';
 
 const debug = Debug("Formik")
 
-const CustomFormikForm = ({ inputs, initialValues, onSubmit }) => {
+const CustomFormikForm = ({ inputs, onSubmit }) => {
 
-    if (!inputs || !initialValues)
+    if (!inputs)
     return null;
 
   const isDisabled = true;
+
+  const keys = Object.keys(inputs);
+  const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
 
   const hasAdvancedFields = Object.values(inputs).some(({ advanced }) => advanced);
 

@@ -7,6 +7,7 @@ import landingLeft from "./text/landingLeft.md"
 import landingRight from "./text/landingRight.md"
 import impressum from "./text/impressum.md"
 import expo from "./text/expo.md"
+import landing from "./text/landing.md"
 
 export const textContent = {
   help,
@@ -14,6 +15,7 @@ export const textContent = {
   instructions,
   blank,
   failure,
+  landing,
   landingLeft,
   landingRight,
   impressum,

@@ -1,3 +1,4 @@
+import styled from "@emotion/styled"
 import { Box, Typography } from "@material-ui/core"
 import Debug from "debug"
 import { useMemo } from "react"
@@ -12,7 +13,14 @@ import ToolBarContainer from "./organisms/Toolbar"
 
 const debug= Debug("ToolBar")
 
-const ToolBar = ({ node, showNode }) => <ToolBarContainer node={node} showNode={showNode}>
+const HideOnMobile = styled.div`
+@media (max-width: 600px) {
+    display: none;
+}
+`
+
+const ToolBar = ({ node, showNode }) => <HideOnMobile>
+    <ToolBarContainer node={node} showNode={showNode}>
     {
         node?.connected ?  <>
             <GpuInfo {...node} />
@@ -23,7 +31,8 @@ const ToolBar = ({ node, showNode }) => <ToolBarContainer node={node} showNode={
         </> 
         : <Instructions />
     }
-</ToolBarContainer>
+    </ToolBarContainer>
+</HideOnMobile>
 
 
 const OutputPreview = ({ contentID }) => {

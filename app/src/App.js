@@ -4,11 +4,11 @@ import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
+import Footer from "./components/Footer"
+import PageTemplate from "./components/PageTemplate"
 // Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
-import Footer from "./components/Footer"
-
 // Hooks
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
@@ -16,11 +16,12 @@ import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import Creator from "./pages/Create"
+import Envisioning from "./pages/Envisioning"
 import Feed from "./pages/Feed"
 import Home from "./pages/Home"
-import ResultViewer from "./pages/ResultViewer"
-import PageTemplate from "./components/PageTemplate"
 import Models from "./pages/Models"
+import ResultViewer from "./pages/ResultViewer"
+
 
 const debug = Debug("AppContainer")
 
@@ -97,6 +98,10 @@ const Pollinations = () => {
           <Route
             path="n/:nodeID"
             element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />}
+          />
+          <Route
+            path="envisioning"
+            element={<Envisioning />}
           />
           <Route
             path="p/:contentID/*"

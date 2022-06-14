@@ -53,7 +53,6 @@ export default React.memo(function Create() {
 
             <CustomFormikForm
               inputs={inputs}
-              initialValues={initialValues}
               onSubmit={(values) => console.log(values)}
               //input={ipfs?.input}
               //connected={connected}

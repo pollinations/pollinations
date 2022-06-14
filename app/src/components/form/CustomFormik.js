@@ -7,12 +7,10 @@ import { FormActions, InputField } from './InputsUI';
 
 const debug = Debug("Formik")
 
-const CustomFormikForm = ({ inputs, onSubmit }) => {
+const CustomFormikForm = ({ inputs, onSubmit, isDisabled }) => {
 
     if (!inputs)
     return null;
-
-  const isDisabled = true;
 
   const keys = Object.keys(inputs);
   const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );

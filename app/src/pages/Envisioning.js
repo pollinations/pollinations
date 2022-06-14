@@ -19,24 +19,28 @@ const debug = Debug("Envisioning");
 export default React.memo(function Create() {
 
   const inputs = {
-    "Prompt": {
+    "prompt": {
       type: "string",
       default: "Enter your prompt here",
       title: "Prompt",
       description: "The image you want to be generated",
     },
-    "Image_Width": {
+    "image_width": {
       type: "number",
       default: 1280,
       title: "Image Width",
       description: "The width of the final image",
     },
-    "Image_Height": {
+    "image_height": {
       type: "number",
       default: 720,
       title: "Image Height",
       description: "The height of the final image",
     }
+  }
+
+  function onSubmit(values){
+    console.log(values)
   }
 
 
@@ -51,14 +55,7 @@ export default React.memo(function Create() {
               Inputs
             </Typography>
 
-            <CustomFormikForm
-              inputs={inputs}
-              onSubmit={(values) => console.log(values)}
-              //input={ipfs?.input}
-              //connected={connected}
-              //metadata={metadata}
-              //onSubmit={dispatch}
-            />
+            <CustomFormikForm inputs={inputs} onSubmit={onSubmit}/>
             
           </div> 
 
@@ -89,18 +86,5 @@ grid-gap: 4em;
 
 width: 100%;
 margin-top: 1em;
-`
-
-// Alert Message
-const AlertMessage = ({ node }) => {
-  if (node?.connected) return <></>
-  return <>
-      <Alert severity="info" style={{margin: '2em 0'}}>
-      If the text bar is locked, click on start here to unlock it. Don’t worry about the pop ups, it’s safe (:
-      <br/>
-      <StartHereButton {...node} />
-    </Alert>
-  </>
-}
-
+`;
 

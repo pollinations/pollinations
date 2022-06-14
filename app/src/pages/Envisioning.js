@@ -1,16 +1,10 @@
 import styled from '@emotion/styled';
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
-import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import CustomFormikForm from '../components/form/CustomFormik';
-import FormikForm from '../components/form/Formik';
-import { SEO } from "../components/Helmet";
-import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
-import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
-import { getNotebookMetadata } from "../utils/notebookMetadata";
 
 
 
@@ -39,8 +33,29 @@ export default React.memo(function Create() {
     }
   }
 
-  function onSubmit(values){
-    console.log(values)
+  async function onSubmit(values){
+    let payload = {
+      notebook: "latent-diffusion",
+      ipfs: "QmVArmzi9u4K3LoUcEwFxUyTibZ4a4BNJ3oq7qtJhTQ5dx",
+    };
+    let fetchConfig = { 
+      method: "POST",
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }
+      
+    try {
+      let response = await fetch(
+        "http://eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazonaws.com/pollen/", 
+        fetchConfig
+      );
+      console.log(response)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
 
@@ -56,7 +71,6 @@ export default React.memo(function Create() {
             </Typography>
 
             <CustomFormikForm inputs={inputs} onSubmit={onSubmit}/>
-            
           </div> 
 
           {/* OUTPUTS */}

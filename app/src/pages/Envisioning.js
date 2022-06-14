@@ -15,26 +15,12 @@ import { getNotebookMetadata } from "../utils/notebookMetadata";
 
 const debug = Debug("Envisioning");
 
-export default React.memo(function Create({ ipfs, node, dispatch }) {
-
-  const contentID = ipfs[".cid"]
-
-  const { connected } = node
-
-  const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input])
-
-  debug("Create", { ipfs, node, metadata })
-
-  const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
-
-  debug("ipfs state before rendering model", ipfs)
+export default React.memo(function Create() {
 
   return <Box my={2}>
 
-      <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-      <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
-      <AlertMessage node={node}/>
-
+      <NotebookTitle name='Envisioning "API"' />
+      
         <TwoColumns>
           {/* FORM INPUTS */}
           <div>
@@ -43,10 +29,10 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
             </Typography>
 
             <FormikForm
-              input={ipfs?.input}
-              connected={connected}
-              metadata={metadata}
-              onSubmit={dispatch}
+              //input={ipfs?.input}
+              //connected={connected}
+              //metadata={metadata}
+              //onSubmit={dispatch}
             />
             
           </div> 
@@ -65,12 +51,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           <Typography variant="h5" gutterBottom>
           Details
           </Typography>
-          <NotebookInfo noImg description={metadata?.description}/>
-          {metadata?.colabLink && 
-          <a href={metadata?.colabLink} target="_blank">
-            open in colab
-          </a> 
-          }
+          
         </div>
           
     </Box>

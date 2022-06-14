@@ -14,7 +14,7 @@ export default function Home() {
 
   return <>
     <Box 
-      paddingTop={3} 
+      paddingTop={4} 
       display='flex' 
       flexDirection='column' 
       alignItems='center'>
@@ -24,18 +24,18 @@ export default function Home() {
       <Box
         display="flex"
         flexDirection="column"
-        justifyContent="center"
+        justifyContent="flex-start"
         alignItems="center"
         // gridTemplateColumns="repeat(auto-fill, minmax(300px, 2fr))"
-        gridGap="2em"
+        gridGap="1em"
         minHeight="calc(100vh - 350px)"
         maxHeight="100vh"
-        padding="3em 0"
-        marginBottom='2em'
+        // padding="0em 0"
+        margin='2em'
       >
         <MarkdownContent url={textContent.landingLeft} />
         <Button 
-            style={{marginTop: '1em'}}
+            style={{marginTop: '3em'}}
             variant='outlined'
             onClick={()=> navigate('/c')}
             color="primary"  

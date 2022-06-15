@@ -16,7 +16,7 @@ export default React.memo(function Create({navigateToNode}) {
   const ipfsWriter = useIPFSWrite()
 
   const inputs = {
-    "prompt": {
+    "Prompt": {
       type: "string",
       default: "Enter your prompt here",
       title: "Prompt",
@@ -97,9 +97,9 @@ async function submitToAWS(values, ipfsWriter) {
 async function UploadInputstoIPFS(values, { add, mkDir, cid}){
   debug("adding values to ipfs", values)
   
-  await mkDir("/output")
+  await mkDir("/input")
   for (let key in values) {
-    await add(`/output/${key}`, values[key])
+    await add(`/input/${key}`, values[key])
   }
 
   return await cid()

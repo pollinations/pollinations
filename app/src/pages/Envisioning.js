@@ -5,6 +5,7 @@ import Debug from "debug";
 import React from "react";
 import CustomFormikForm from '../components/form/CustomFormik';
 import NotebookTitle from "../components/NotebookTitle";
+import useIPFSWrite from '../hooks/useIPFSWrite';
 
 const API_URL = "http://eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazonaws.com/pollen/"
 
@@ -36,10 +37,9 @@ export default React.memo(function Create() {
   return <Box my={2}>
 
       
-        <TwoColumns>
-          {/* FORM INPUTS */}
+        <CenterContent>
           <div>
-            
+
             <NotebookTitle name='Envisioning "API"' />
             <Typography variant="h5" gutterBottom>
               Inputs
@@ -47,7 +47,7 @@ export default React.memo(function Create() {
 
             <CustomFormikForm inputs={inputs} onSubmit={onSubmit}/>
           </div> 
-        </TwoColumns>
+        </CenterContent>
 
           
     </Box>
@@ -73,7 +73,7 @@ async function onSubmit(values){
           headers: {
             "Content-Type": "application/json"
           },
-          body: payload
+          body: JSON.stringify(payload)
         }
       );
       console.log(response)
@@ -85,13 +85,20 @@ async function onSubmit(values){
   }
 
 
+async function UploadInputstoIPFS(values){
+  const { add, cid, mkDir } = useIPFSWrite()
+
+  
+
+
+}
 
 
 
 
 
 // STYLES
-const TwoColumns = styled.div`
+const CenterContent = styled.div`
 display: flex;
 justify-content: center;
 align-items: center;

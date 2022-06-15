@@ -32,6 +32,7 @@ const CustomFormikForm = ({ inputs, onSubmit, isDisabled }) => {
       !inputs[key].advanced &&
       <>
         <InputField
+          key={key}
           {...inputs[key]}
           {...formik}
           fullWidth

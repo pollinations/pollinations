@@ -57,7 +57,7 @@ export default React.memo(function Create() {
 // Functions
 
 async function onSubmit(values){
-    console.log(values)
+    debug (values)
 
     // in real life submit parameters do IPFS and return the folder hash
     const ipfs_hash = await UploadInputstoIPFS(values);
@@ -79,10 +79,10 @@ async function onSubmit(values){
           body: JSON.stringify(payload)
         }
       );
-      console.log(response)
+      debug(response)
       return response
     } catch (error) {
-      console.log(error)
+      debug(error)
       return error
     }
   }
@@ -90,7 +90,7 @@ async function onSubmit(values){
 
 async function UploadInputstoIPFS(values){
   const { add, cid, mkDir } = useIPFSWrite()
-  console.log(values)
+  debug(values)
   // const newFiles = await Promise.all(values.map(async file => {
 
   //   await add(file.path, file.stream())

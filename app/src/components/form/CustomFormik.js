@@ -62,7 +62,8 @@ const CustomFormikForm = ({ inputs, onSubmit, isDisabled }) => {
             <>
               <InputField
                 {...inputs[key]}
-                {...formik}
+                setFieldValue={formik.setFieldValue}
+                enum={formik.enum}
                 fullWidth
                 disabled={isDisabled}
                 id={key}

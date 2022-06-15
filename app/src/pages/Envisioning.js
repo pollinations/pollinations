@@ -13,6 +13,8 @@ const debug = Debug("Envisioning");
 
 export default React.memo(function Create({navigateToNode}) {
 
+  const ipfsWriter = useIPFSWrite()
+
   const inputs = {
     "prompt": {
       type: "string",
@@ -45,8 +47,8 @@ export default React.memo(function Create({navigateToNode}) {
               Inputs
             </Typography>
 
-            <CustomFormikForm inputs={inputs} onSubmit={async (...args) => {
-              const nodeID = await onSubmit(...args);
+            <CustomFormikForm inputs={inputs} onSubmit={async (values) => {
+              const nodeID = await submitToAWS(values, ipfsWriter);
               navigateToNode(nodeID);
             }}/>
           </div> 
@@ -59,16 +61,16 @@ export default React.memo(function Create({navigateToNode}) {
 
 // Functions
 
-async function onSubmit(values) {
+async function submitToAWS(values, ipfsWriter) {
     debug ("onSubmit", values)  
 
     // in real life submit parameters do IPFS and return the folder hash
-    //const ipfs_hash = await UploadInputstoIPFS(values);
+    const ipfs_hash = await UploadInputstoIPFS(values, ipfsWriter);
 
     // debug payload
     let payload = {
       "notebook": "latent-diffusion",
-      "ipfs": "QmVD9NwekD1cSxTQ2KS9FBXNCzARvNknZ98pBre8PFxkUy",
+      "ipfs": ipfs_hash
     };
       
     try {
@@ -92,17 +94,15 @@ async function onSubmit(values) {
   }
 
 
-async function UploadInputstoIPFS(values){
-  const { add, cid, mkDir } = useIPFSWrite()
-  debug(values)
-  // const newFiles = await Promise.all(values.map(async file => {
+async function UploadInputstoIPFS(values, { add, mkDir, cid}){
+  debug("adding values to ipfs", values)
+  
+  await mkDir("/output")
+  for (let key in values) {
+    await add(`/output/${key}`, values[key])
+  }
 
-  //   await add(file.path, file.stream())
-
-  //   return file.path
-  // }));
-
-  // const rootCID = await cid()
+  return await cid()
 }
 
 // STYLES

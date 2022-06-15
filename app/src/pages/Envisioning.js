@@ -57,10 +57,10 @@ export default React.memo(function Create() {
 // Functions
 
 async function onSubmit(values){
-    debug (values)
+    debug ("onSubmit", values)  
 
     // in real life submit parameters do IPFS and return the folder hash
-    const ipfs_hash = await UploadInputstoIPFS(values);
+    //const ipfs_hash = await UploadInputstoIPFS(values);
 
     // debug payload
     let payload = {
@@ -79,10 +79,11 @@ async function onSubmit(values){
           body: JSON.stringify(payload)
         }
       );
-      debug(response)
+      const data = await response.json();
+      debug("json response", data)
       return response
     } catch (error) {
-      debug(error)
+      debug("fetch error", error)
       return error
     }
   }

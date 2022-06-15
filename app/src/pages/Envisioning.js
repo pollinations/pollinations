@@ -65,7 +65,7 @@ async function onSubmit(values){
     // debug payload
     let payload = {
       "notebook": "latent-diffusion",
-      "ipfs": "QmVArmzi9u4K3LoUcEwFxUyTibZ4a4BNJ3oq7qtJhTQ5dx",
+      "ipfs": "QmVD9NwekD1cSxTQ2KS9FBXNCzARvNknZ98pBre8PFxkUy",
     };
       
     try {

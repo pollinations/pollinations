@@ -11,7 +11,7 @@ const API_URL = "http://eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazo
 
 const debug = Debug("Envisioning");
 
-export default React.memo(function Create() {
+export default React.memo(function Create({navigateToNode}) {
 
   const inputs = {
     "prompt": {
@@ -45,7 +45,10 @@ export default React.memo(function Create() {
               Inputs
             </Typography>
 
-            <CustomFormikForm inputs={inputs} onSubmit={onSubmit}/>
+            <CustomFormikForm inputs={inputs} onSubmit={async (...args) => {
+              const nodeID = await onSubmit(...args);
+              navigateToNode(nodeID);
+            }}/>
           </div> 
         </CenterContent>
 
@@ -56,7 +59,7 @@ export default React.memo(function Create() {
 
 // Functions
 
-async function onSubmit(values){
+async function onSubmit(values) {
     debug ("onSubmit", values)  
 
     // in real life submit parameters do IPFS and return the folder hash
@@ -81,7 +84,7 @@ async function onSubmit(values){
       );
       const data = await response.json();
       debug("json response", data)
-      return response
+      return data.pollen_id
     } catch (error) {
       debug("fetch error", error)
       return error

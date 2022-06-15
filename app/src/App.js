@@ -62,8 +62,8 @@ const Pollinations = () => {
 
   const navigate = useNavigate()
 
-  const navigateToNode = useCallback(() => {
-    if (node.nodeID) navigate(`/n/${node.nodeID}`)
+  const navigateToNode = useCallback((nodeID = node.nodeID) => {
+    if (nodeID) navigate(`/n/${nodeID}`)
     else {
       console.error("For some reason NodeID is not set...", node)
     }
@@ -101,7 +101,7 @@ const Pollinations = () => {
           />
           <Route
             path="envisioning"
-            element={<Envisioning />}
+            element={<Envisioning navigateToNode={navigateToNode}/>}
           />
           <Route
             path="p/:contentID/*"

@@ -18,7 +18,7 @@ export default React.memo(function Create({navigateToNode}) {
   const inputs = {
     "Prompt": {
       type: "string",
-      default: "Enter your prompt here",
+      default: null,
       title: "Prompt",
       description: "The image you want to be generated",
     },

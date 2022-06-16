@@ -26,7 +26,8 @@ export default React.memo(function Create({navigateToNode}) {
       type: "string",
       default: "cyber",
       title: "Style",
-      description: "One of ['cyber', 'cgsociety', 'pixar']",
+      enum: ['cyber', 'cgsociety', 'pixar'],
+      description: "The style you choose",
     }
   }
 

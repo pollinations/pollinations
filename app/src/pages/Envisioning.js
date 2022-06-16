@@ -7,7 +7,7 @@ import CustomFormikForm from '../components/form/CustomFormik';
 import NotebookTitle from "../components/NotebookTitle";
 import useIPFSWrite from '../hooks/useIPFSWrite';
 
-const API_URL = "http://eleph-beecl-1OHF1H6OP0ANU-1012574990.us-east-1.elb.amazonaws.com/pollen/"
+const API_URL = "http://Eleph-beecl-1X0LYRP1ZKOBL-1049606691.us-east-1.elb.amazonaws.com/pollen/"
 
 const debug = Debug("Envisioning");
 
@@ -22,17 +22,11 @@ export default React.memo(function Create({navigateToNode}) {
       title: "Prompt",
       description: "The image you want to be generated",
     },
-    "image_width": {
-      type: "number",
-      default: 1280,
-      title: "Image Width",
-      description: "The width of the final image",
-    },
-    "image_height": {
-      type: "number",
-      default: 720,
-      title: "Image Height",
-      description: "The height of the final image",
+    "Modifiers": {
+      type: "string",
+      default: "cyber",
+      title: "Style",
+      description: "One of ['cyber', 'cgsociety', 'pixar']",
     }
   }
 
@@ -69,7 +63,7 @@ async function submitToAWS(values, ipfsWriter) {
 
     // debug payload
     let payload = {
-      "notebook": "latent-diffusion",
+      "notebook": "envisioning",
       "ipfs": ipfs_hash
     };
       

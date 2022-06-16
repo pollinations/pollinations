@@ -15,16 +15,9 @@ export function getForm(ipfsInput, metadata) {
   
     if (!inputs)
       return null
-  
-    // Get the initial values for the form
-    const keys = Object.keys(inputs);
-    const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
-
-    if (!initialValues || !keys.length)
-      return null
     
     // Return the form inputs and initial values
-    return { inputs, initialValues }
+    return inputs
   }
 
   const SocialField = {

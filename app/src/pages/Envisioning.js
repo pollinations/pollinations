@@ -7,7 +7,7 @@ import FormikForm from '../components/form/Formik';
 import NotebookTitle from "../components/NotebookTitle";
 import useIPFSWrite from '../hooks/useIPFSWrite';
 
-const API_URL = "http://Eleph-beecl-1X0LYRP1ZKOBL-1049606691.us-east-1.elb.amazonaws.com/pollen/"
+const API_URL = "https://worker-prod.pollinations.ai/pollen/"
 
 const debug = Debug("Envisioning");
 

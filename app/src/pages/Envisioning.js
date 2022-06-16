@@ -42,6 +42,11 @@ export default React.memo(function Create({navigateToNode}) {
             </Typography>
 
             <CustomFormikForm inputs={inputs} onSubmit={async (values) => {
+              
+              // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
+              // can be removed if we replace results viewer with something custom
+              values = {...values, customEndpoint: "/envisioning"}
+
               const nodeID = await submitToAWS(values, ipfsWriter);
               navigateToNode(nodeID);
             }}/>

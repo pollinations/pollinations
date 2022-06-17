@@ -92,6 +92,7 @@ const Previewer = ({ contentID, loading }) => {
     {
       images?.map(([filename, url, type]) => (
         <MediaViewer 
+          key={filename}
           content={url} 
           filename={filename} 
           type={type}

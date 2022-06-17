@@ -39,7 +39,7 @@ export default React.memo(function Create() {
 
   return <PageLayout >
         <InputBarStyle>
-          <Typography variant='h5' children='Envisioning "API"' />
+          <Typography variant='h5' children='Envisioning' />
           <Controls overrideNodeID={overrideNodeID} />
         </InputBarStyle>
 

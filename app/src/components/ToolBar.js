@@ -2,6 +2,7 @@ import styled from "@emotion/styled"
 import { Box, Typography } from "@material-ui/core"
 import Debug from "debug"
 import { useMemo } from "react"
+import { useLocation } from "react-router-dom"
 import { mediaToDisplay } from "../data/media"
 import useIPFS from "../hooks/useIPFS"
 import { MediaViewer } from "./MediaViewer"
@@ -14,12 +15,18 @@ import ToolBarContainer from "./organisms/Toolbar"
 const debug= Debug("ToolBar")
 
 const HideOnMobile = styled.div`
+display: ${props => props.hideAnyway ? 'none' : 'block'};
 @media (max-width: 600px) {
     display: none;
 }
 `
 
-const ToolBar = ({ node, showNode }) => <HideOnMobile>
+const ToolBar = ({ node, showNode }) => {
+
+const location = useLocation();
+console.log(location.pathname)
+
+return <HideOnMobile hideAnyway={location.pathname === '/envisioning'}>
     <ToolBarContainer node={node} showNode={showNode}>
     {
         node?.connected ?  <>
@@ -33,8 +40,7 @@ const ToolBar = ({ node, showNode }) => <HideOnMobile>
     }
     </ToolBarContainer>
 </HideOnMobile>
-
-
+}
 const OutputPreview = ({ contentID }) => {
     
     const ipfs = useIPFS(contentID)

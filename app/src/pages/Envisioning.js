@@ -35,7 +35,6 @@ const inputs = {
 export default React.memo(function Create() {
 
   const { overrideNodeID, node } = useColabNode()
-  
 
   return <PageLayout >
         <InputBarStyle>
@@ -43,7 +42,9 @@ export default React.memo(function Create() {
           <Controls overrideNodeID={overrideNodeID} />
         </InputBarStyle>
 
+        <RowStyle>
         <Previewer contentID={node.contentID}/>   
+        </RowStyle>
     </PageLayout>
 });
 
@@ -68,10 +69,13 @@ const Controls = ({ overrideNodeID }) => {
 const Previewer = ({ contentID }) => {
 
   const ipfs = useIPFS(contentID)
+  console.log(ipfs)
 
   if (!ipfs.output) return null;
   let images = getMedia(ipfs.output);
-  return <PreviewerStyle>
+  return <>
+    <Typography children={`${ipfs.input.Modifiers} preset`}/>
+    <PreviewerStyle>
     {
       images?.map(([filename, url, type]) => (
         <MediaViewer 
@@ -82,6 +86,8 @@ const Previewer = ({ contentID }) => {
       ))
     }
     </PreviewerStyle>
+
+  </>
 }
 
 // STYLES
@@ -99,14 +105,20 @@ flex-direction: column;
 `
 
 const PreviewerStyle = styled.div`
+width: 100%;
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+grid-gap: 0.5em;
+
+`
+
+const RowStyle = styled.div`
+
+
 grid-column: 2 / end;
 @media (max-width: 640px) {
   grid-column: 1 / 1;
 }
-
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-grid-gap: 0.5em;
 
 `
 

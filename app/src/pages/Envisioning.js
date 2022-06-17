@@ -1,8 +1,9 @@
 import styled from '@emotion/styled';
+import { LinearProgress } from '@material-ui/core';
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import Debug from "debug";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FormikForm from '../components/form/Formik';
 import {MediaViewer} from '../components/MediaViewer';
 import NotebookTitle from "../components/NotebookTitle";
@@ -35,24 +36,24 @@ const inputs = {
 export default React.memo(function Create() {
 
   const { overrideNodeID, node } = useColabNode()
+  const loading = useState(false)
 
   return <PageLayout >
         <InputBarStyle>
           <Typography variant='h5' children='Envisioning' />
-          <Controls overrideNodeID={overrideNodeID} />
+          <Controls overrideNodeID={overrideNodeID} loading={loading} />
         </InputBarStyle>
 
         <RowStyle>
-        <Previewer contentID={node.contentID}/>   
+        <Previewer contentID={node.contentID} loading={loading}/>   
         </RowStyle>
     </PageLayout>
 });
 
 
-const Controls = ({ overrideNodeID }) => {
+const Controls = ({ overrideNodeID, loading }) => {
 
   const ipfsWriter = writer()
-
 
   return <FormikForm inputs={inputs} onSubmit={async (values) =>{
       
@@ -60,21 +61,30 @@ const Controls = ({ overrideNodeID }) => {
     // can be removed if we replace results viewer with something custom
     values = {...values, customEndpoint: "/envisioning"}
 
+    loading[1](true)
     const nodeID = await submitToAWS(values, ipfsWriter);
     // navigateToNode(nodeID);
     overrideNodeID(nodeID);
   }}  />
 }
 
-const Previewer = ({ contentID }) => {
+const Previewer = ({ contentID, loading }) => {
 
   const ipfs = useIPFS(contentID)
-  console.log(ipfs)
+
+  const isFinished = ipfs?.output?.done;
+  const [ isLoading, setLoading ] = loading;
+
+  useEffect(() => { if (isFinished) setLoading(false) }, [isFinished])
 
   if (!ipfs.output) return null;
-  let images = getMedia(ipfs.output);
+
+  const images = getMedia(ipfs.output);
+
   return <>
-    <Typography children={`${ipfs.input.Modifiers} preset`}/>
+    {isLoading && 
+    <LinearProgress  />
+    }
     <PreviewerStyle>
     {
       images?.map(([filename, url, type]) => (
@@ -86,7 +96,6 @@ const Previewer = ({ contentID }) => {
       ))
     }
     </PreviewerStyle>
-
   </>
 }
 
@@ -110,15 +119,16 @@ display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 grid-gap: 0.5em;
 
+img {
+  width: 300px;
+}
+
 `
 
 const RowStyle = styled.div`
-
-
 grid-column: 2 / end;
 @media (max-width: 640px) {
   grid-column: 1 / 1;
 }
-
 `
 

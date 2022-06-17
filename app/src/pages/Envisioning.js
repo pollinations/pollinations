@@ -6,8 +6,8 @@ import React from "react";
 import FormikForm from '../components/form/Formik';
 import NotebookTitle from "../components/NotebookTitle";
 import useIPFSWrite from '../hooks/useIPFSWrite';
+import { submitToAWS } from '../network/aws';
 
-const API_URL = "https://worker-prod.pollinations.ai/pollen/"
 
 const debug = Debug("Envisioning");
 
@@ -61,49 +61,7 @@ export default React.memo(function Create({navigateToNode}) {
 
 // Functions
 
-async function submitToAWS(values, ipfsWriter) {
-    debug ("onSubmit", values)  
 
-    // in real life submit parameters do IPFS and return the folder hash
-    const ipfs_hash = await UploadInputstoIPFS(values, ipfsWriter);
-
-    // debug payload
-    let payload = {
-      "notebook": "envisioning",
-      "ipfs": ipfs_hash
-    };
-      
-    try {
-      const response = await fetch(
-          API_URL, { 
-          method: "POST",
-          mode: 'cors',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        }
-      );
-      const data = await response.json();
-      debug("json response", data)
-      return data.pollen_id
-    } catch (error) {
-      debug("fetch error", error)
-      return error
-    }
-  }
-
-
-async function UploadInputstoIPFS(values, { add, mkDir, cid}){
-  debug("adding values to ipfs", values)
-  
-  await mkDir("/input")
-  for (let key in values) {
-    await add(`/input/${key}`, values[key])
-  }
-
-  return await cid()
-}
 
 // STYLES
 const CenterContent = styled.div`

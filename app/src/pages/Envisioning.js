@@ -108,8 +108,9 @@ const PageLayout = styled.div`
 
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-
 grid-gap: 0.4em;
+
+padding: 0.5em 0;
 `;
 
 const InputBarStyle = styled.div`

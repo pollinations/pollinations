@@ -14,19 +14,23 @@ import ToolBarContainer from "./organisms/Toolbar"
 
 const debug= Debug("ToolBar")
 
-const HideOnMobile = styled.div`
+const HideToolBar = styled.div`
 display: ${props => props.hideAnyway ? 'none' : 'block'};
 @media (max-width: 600px) {
     display: none;
 }
 `
+// routes that will hide the toolbar
+const ROUTESOUT = [
+    '/envisioning',
+    '/'
+]
 
 const ToolBar = ({ node, showNode }) => {
 
 const location = useLocation();
-console.log(location.pathname)
 
-return <HideOnMobile hideAnyway={location.pathname === '/envisioning'}>
+return <HideToolBar hideAnyway={ROUTESOUT.some(path => location.pathname === path )}>
     <ToolBarContainer node={node} showNode={showNode}>
     {
         node?.connected ?  <>
@@ -39,7 +43,7 @@ return <HideOnMobile hideAnyway={location.pathname === '/envisioning'}>
         : <Instructions />
     }
     </ToolBarContainer>
-</HideOnMobile>
+</HideToolBar>
 }
 const OutputPreview = ({ contentID }) => {
     

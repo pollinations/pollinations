@@ -7,7 +7,7 @@ We prioritize equitable distribution of value for hackers, creators, and all the
 
 ###### For companies
 
-Imagine you’re a gaming platform in which players can **create 3D objects** inside the game just by typing a few words, or a marketplace in which users can create and mint NFTs on the spot. Not bad, huh?
+Imagine you’re a metaverse or gaming platform in which players can **create 3D objects** just by typing a few words, or a marketplace in which users can create and mint NFTs on the spot. Not bad, huh?
 
 By integrating with **Pollinations’ API**, users can create all of this and much more without switching platforms.
 We are working on becoming the engine for personalized synthetic media - to learn more get in touch at *hello@pollinations.ai*.

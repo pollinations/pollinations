@@ -56,12 +56,12 @@ const Controls = ({ overrideNodeID, loading }) => {
   const ipfsWriter = writer()
 
   return <FormikForm inputs={inputs} onSubmit={async (values) =>{
+    loading[1](true)
       
     // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
     // can be removed if we replace results viewer with something custom
     values = {...values, customEndpoint: "/envisioning"}
 
-    loading[1](true)
     const nodeID = await submitToAWS(values, ipfsWriter);
     // navigateToNode(nodeID);
     overrideNodeID(nodeID);
@@ -75,7 +75,10 @@ const Previewer = ({ contentID, loading }) => {
   const isFinished = ipfs?.output?.done;
   const [ isLoading, setLoading ] = loading;
 
-  useEffect(() => { if (isFinished) setLoading(false) }, [isFinished])
+  useEffect(() => { 
+    console.log(isFinished) 
+    if (isFinished) setLoading(false)  
+  }, [isFinished])
 
   if (!ipfs.output) return null;
 
@@ -120,7 +123,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 grid-gap: 0.5em;
 
 img {
-  width: 300px;
+  width: 100%;
 }
 
 `

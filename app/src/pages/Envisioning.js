@@ -16,61 +16,53 @@ import { writer } from '../network/ipfsConnector';
 
 const debug = Debug("Envisioning");
 
+const inputs = {
+  "Prompt": {
+    type: "string",
+    default: null,
+    title: "Prompt",
+    description: "The image you want to be generated",
+  },
+  "Modifiers": {
+    type: "string",
+    default: "cyber",
+    title: "Style",
+    enum: ['cyber', 'cgsociety', 'pixar'],
+    description: "The style you choose",
+  }
+}
+
 export default React.memo(function Create() {
 
   const { overrideNodeID, node } = useColabNode()
   
-  const inputs = {
-    "Prompt": {
-      type: "string",
-      default: null,
-      title: "Prompt",
-      description: "The image you want to be generated",
-    },
-    "Modifiers": {
-      type: "string",
-      default: "cyber",
-      title: "Style",
-      enum: ['cyber', 'cgsociety', 'pixar'],
-      description: "The style you choose",
-    }
-  }
 
-  return <Box my={2}>
+  return <PageLayout >
+        <InputBarStyle>
+          <Typography variant='h5' children='Envisioning "API"' />
+          <Controls overrideNodeID={overrideNodeID} />
+        </InputBarStyle>
 
-      
-        <CenterContent>
-          <Controls inputs={inputs} overrideNodeID={overrideNodeID} />
-          <Previewer contentID={node.contentID}/>
-        </CenterContent>
-
-          
-    </Box>
+        <Previewer contentID={node.contentID}/>   
+    </PageLayout>
 });
 
 
-const Controls = ({ inputs, overrideNodeID }) => {
+const Controls = ({ overrideNodeID }) => {
 
   const ipfsWriter = writer()
 
-  return <div style={{ maxWidth: 300, gridColumnStart: 1, gridColumnEnd: 2}}>
 
-    <NotebookTitle name='Envisioning "API"' />
-    <Typography variant="h5" gutterBottom>
-      Inputs
-    </Typography>
-
-    <FormikForm inputs={inputs} onSubmit={async (values) => {
+  return <FormikForm inputs={inputs} onSubmit={async (values) =>{
       
-      // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
-      // can be removed if we replace results viewer with something custom
-      values = {...values, customEndpoint: "/envisioning"}
+    // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
+    // can be removed if we replace results viewer with something custom
+    values = {...values, customEndpoint: "/envisioning"}
 
-      const nodeID = await submitToAWS(values, ipfsWriter);
-      // navigateToNode(nodeID);
-      overrideNodeID(nodeID);
-    }}/>
-  </div> 
+    const nodeID = await submitToAWS(values, ipfsWriter);
+    // navigateToNode(nodeID);
+    overrideNodeID(nodeID);
+  }}  />
 }
 
 const Previewer = ({ contentID }) => {
@@ -81,32 +73,36 @@ const Previewer = ({ contentID }) => {
   let images = getMedia(ipfs.output);
   return <PreviewerStyle>
     {
-          images?.map(([filename, url, type]) => (
-            <MediaViewer 
-              content={url} 
-              filename={filename} 
-              type={type}
-            />
-          ))
-      }
+      images?.map(([filename, url, type]) => (
+        <MediaViewer 
+          content={url} 
+          filename={filename} 
+          type={type}
+        />
+      ))
+    }
     </PreviewerStyle>
 }
 
 // STYLES
-const CenterContent = styled.div`
-width: 100%;
+const PageLayout = styled.div`
 
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 
-
-margin-top: 1em;
+grid-gap: 0.4em;
 `;
 
-const PreviewerStyle = styled.div`
+const InputBarStyle = styled.div`
+display: flex;
+flex-direction: column;
+`
 
-grid-column-start: 2;
-grid-column-end: 4;
+const PreviewerStyle = styled.div`
+grid-column: 2 / end;
+@media (max-width: 640px) {
+  grid-column: 1 / 1;
+}
 
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

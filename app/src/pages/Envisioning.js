@@ -41,6 +41,9 @@ export default React.memo(function Create() {
   return <PageLayout >
         <InputBarStyle>
           <Typography variant='h5' children='Envisioning' />
+          {loading[0] && 
+          <LinearProgress style={{margin: '0.5em 0'}} />
+          }
           <Controls overrideNodeID={overrideNodeID} loading={loading} />
         </InputBarStyle>
 
@@ -76,7 +79,6 @@ const Previewer = ({ contentID, loading }) => {
   const [ isLoading, setLoading ] = loading;
 
   useEffect(() => { 
-    console.log(isFinished) 
     if (isFinished) setLoading(false)  
   }, [isFinished])
 
@@ -85,9 +87,7 @@ const Previewer = ({ contentID, loading }) => {
   const images = getMedia(ipfs.output);
 
   return <>
-    {isLoading && 
-    <LinearProgress  />
-    }
+    
     <PreviewerStyle>
     {
       images?.map(([filename, url, type]) => (

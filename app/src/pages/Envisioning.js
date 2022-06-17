@@ -9,7 +9,9 @@ import NotebookTitle from "../components/NotebookTitle";
 import { getMedia } from '../data/media';
 import useColabNode from '../hooks/useColabNode';
 import useIPFS from '../hooks/useIPFS';
+import useIPFSInputWrite from '../hooks/useIPFSInputWrite';
 import { submitToAWS } from '../network/aws';
+import { writer } from '../network/ipfsConnector';
 
 
 const debug = Debug("Envisioning");
@@ -49,6 +51,7 @@ export default React.memo(function Create() {
 
 const Controls = ({ inputs, overrideNodeID }) => {
 
+  const ipfsWriter = writer()
 
   return <div style={{ maxWidth: 300, gridColumnStart: 1, gridColumnEnd: 2}}>
 

@@ -30855,16 +30855,19 @@ var require_src11 = __commonJS({
     var loadStore = (options) => {
       const adapters = {
         redis: "@keyv/redis",
+        rediss: "@keyv/redis",
         mongodb: "@keyv/mongo",
         mongo: "@keyv/mongo",
         sqlite: "@keyv/sqlite",
         postgresql: "@keyv/postgres",
         postgres: "@keyv/postgres",
         mysql: "@keyv/mysql",
-        etcd: "@keyv/etcd"
+        etcd: "@keyv/etcd",
+        offline: "@keyv/offline",
+        tiered: "@keyv/tiered"
       };
       if (options.adapter || options.uri) {
-        const adapter = options.adapter || /^[^:]*/.exec(options.uri)[0];
+        const adapter = options.adapter || /^[^:+]*/.exec(options.uri)[0];
         return new (require(adapters[adapter]))(options);
       }
       return /* @__PURE__ */ new Map();
@@ -30874,10 +30877,12 @@ var require_src11 = __commonJS({
       "postgres",
       "mysql",
       "mongo",
-      "redis"
+      "redis",
+      "tiered"
     ];
     var Keyv = class extends EventEmitter {
-      constructor(uri, options) {
+      constructor(uri, _a2 = {}) {
+        var _b = _a2, { emitErrors = true } = _b, options = __objRest(_b, ["emitErrors"]);
         super();
         this.opts = __spreadValues(__spreadValues({
           namespace: "keyv",
@@ -30896,13 +30901,13 @@ var require_src11 = __commonJS({
             return { value: await brotli.decompress(value), expires };
           };
         }
-        if (typeof this.opts.store.on === "function") {
+        if (typeof this.opts.store.on === "function" && emitErrors) {
           this.opts.store.on("error", (error) => this.emit("error", error));
         }
         this.opts.store.namespace = this.opts.namespace;
         const generateIterator = (iterator) => async function* () {
           for await (const [key, raw] of typeof iterator === "function" ? iterator(this.opts.store.namespace) : iterator) {
-            const data = typeof raw === "string" ? this.opts.deserialize(raw) : raw;
+            const data = this.opts.deserialize(raw);
             if (this.opts.store.namespace && !key.includes(this.opts.store.namespace)) {
               continue;
             }
@@ -30929,7 +30934,7 @@ var require_src11 = __commonJS({
         return keys.map((key) => `${this.opts.namespace}:${key}`);
       }
       _getKeyUnprefix(key) {
-        return this.opts.store.namespace ? key.split(":").splice(1).join(":") : key;
+        return key.split(":").splice(1).join(":");
       }
       get(key, options) {
         const { store } = this.opts;
@@ -31036,6 +31041,12 @@ var require_src11 = __commonJS({
           const value = await store.get(keyPrefixed);
           return value !== void 0;
         });
+      }
+      disconnect() {
+        const { store } = this.opts;
+        if (typeof store.disconnect === "function") {
+          return store.disconnect();
+        }
       }
     };
     module2.exports = Keyv;
@@ -33841,10 +33852,17 @@ var require_core = __commonJS({
             return;
           }
           try {
+            let isUnixSocketURL = function(url2) {
+              return url2.protocol === "unix:" || url2.hostname === "unix";
+            };
             const redirectBuffer = Buffer.from(response.headers.location, "binary").toString();
             const redirectUrl = new url_1.URL(redirectBuffer, url);
             const redirectString = redirectUrl.toString();
             decodeURI(redirectString);
+            if (!isUnixSocketURL(url) && isUnixSocketURL(redirectUrl)) {
+              this._beforeError(new RequestError("Cannot redirect to UNIX socket", {}, this));
+              return;
+            }
             if (redirectUrl.hostname !== url.hostname || redirectUrl.port !== url.port) {
               if ("host" in options.headers) {
                 delete options.headers.host;
@@ -34556,11 +34574,11 @@ var require_as_promise = __commonJS({
               request._beforeError(new types_1.RequestError(error.message, error, request));
               return;
             }
+            globalResponse = response;
             if (!is_response_ok_1.isResponseOk(response)) {
               request._beforeError(new types_1.HTTPError(response));
               return;
             }
-            globalResponse = response;
             resolve2(request.options.resolveBodyOnly ? response.body : response);
           });
           const onError = (error) => {
@@ -44860,6 +44878,8 @@ var import_debug9 = __toESM(require_src(), 1);
 
 // src/data/matureWords.json
 var words = [
+  "hentai",
+  "jew",
   "nude",
   "4r5e",
   "5h1t",
@@ -45394,19 +45414,18 @@ var extractEnumerableParameters = (text) => {
   debug7("Parsing options string", enumString);
   return { name: name7, defaultVal, type: "string", enumOptions: (0, import_json5.parse)(enumString) };
 };
-var mapToJSONFormField = ({ name: name7, defaultVal, type, description, enumOptions, advanced }) => {
+var mapToJSONFormField = (_a2) => {
+  var _b = _a2, { name: name7, defaultVal, type, enumOptions } = _b, rest = __objRest(_b, ["name", "defaultVal", "type", "enumOptions"]);
   defaultVal = defaultVal.trim();
   if (defaultVal == "True" || defaultVal == "False")
     defaultVal = defaultVal.toLowerCase();
   debug7("Parsing JSON:", { defaultVal, enumOptions });
-  return [name7, {
+  return [name7, __spreadValues({
     enum: enumOptions,
     type,
     default: (0, import_json5.parse)(defaultVal),
-    title: name7,
-    description,
-    advanced
-  }];
+    title: name7
+  }, rest)];
 };
 var isParameterCell = (cell) => cell["cell_type"] === "code" && cell["source"].join("\n").includes("#@param");
 var isMarkdownCell = (cell) => cell["cell_type"] === "markdown";

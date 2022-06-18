@@ -28,6 +28,6 @@ export function getForm(ipfsInput, metadata) {
     }
   }
   
-  const overrideDefaultValues = (propertiesWithSocial, ipfsInput) =>
+  export const overrideDefaultValues = (propertiesWithSocial, ipfsInput) =>
       mapObjIndexed((prop, formKey) => formKey in ipfsInput ? { ...prop, "default": ipfsInput[formKey] } : prop, propertiesWithSocial)
   

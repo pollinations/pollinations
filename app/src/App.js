@@ -100,6 +100,10 @@ const Pollinations = () => {
             element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />}
           />
           <Route
+            path="envisioning/:nodeID"
+            element={<Envisioning navigateToNode={navigateToNode}/>}
+          />
+          <Route
             path="envisioning"
             element={<Envisioning navigateToNode={navigateToNode}/>}
           />

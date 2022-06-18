@@ -12,6 +12,8 @@ const FormikForm = ({ inputs, onSubmit, isDisabled }) => {
     if (!inputs)
     return null;
 
+
+
   const keys = Object.keys(inputs);
   const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
 
@@ -21,10 +23,11 @@ const FormikForm = ({ inputs, onSubmit, isDisabled }) => {
   const formik = useFormik({
     initialValues: initialValues,
     // validationSchema: validationSchema,
-    onSubmit
+    onSubmit,
+    enableReinitialize: true,
   });
 
-  debug("formik", formik)
+  debug("formik",initialValues, formik)
 
   return <form onSubmit={formik.handleSubmit}>
     { // Basic Inputs

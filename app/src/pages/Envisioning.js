@@ -1,26 +1,25 @@
 import styled from '@emotion/styled';
 import { LinearProgress } from '@material-ui/core';
-import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import Debug from "debug";
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useNavigate } from 'react-router';
+import { useParams } from 'react-router-dom';
 import FormikForm from '../components/form/Formik';
-import {MediaViewer} from '../components/MediaViewer';
-import NotebookTitle from "../components/NotebookTitle";
+import { overrideDefaultValues } from "../components/form/helpers";
+import { MediaViewer } from '../components/MediaViewer';
 import { getMedia } from '../data/media';
 import useColabNode from '../hooks/useColabNode';
 import useIPFS from '../hooks/useIPFS';
-import useIPFSInputWrite from '../hooks/useIPFSInputWrite';
 import { submitToAWS } from '../network/aws';
 import { writer } from '../network/ipfsConnector';
 
-
 const debug = Debug("Envisioning");
 
-const inputs = {
+const form = {
   "Prompt": {
     type: "string",
-    default: null,
+    default: "bla",
     title: "Prompt",
     description: "The image you want to be generated",
   },
@@ -36,51 +35,63 @@ const inputs = {
 export default React.memo(function Create() {
 
   const { overrideNodeID, node } = useColabNode()
-  const loading = useState(false)
+  // const loading = useState(false)
+  
+  const { nodeID } = useParams()
+  
+  const navigateTo = useNavigate()
+  
+  
+  const ipfs = useIPFS(node.contentID)
 
+  debug("nodeID", nodeID)
+
+  if (nodeID && node.nodeID !== nodeID) 
+    overrideNodeID(nodeID)
+
+  
+  const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
+  
+  debug("run overrideDefaultValues on",form,ipfs?.input,"result",inputs)
+  const loading = nodeID && !ipfs?.output?.done
+
+
+  
   return <PageLayout >
         <InputBarStyle>
           <Typography variant='h5' children='Envisioning' />
-          {loading[0] && 
+          {loading && 
           <LinearProgress style={{margin: '0.5em 0'}} />
           }
-          <Controls overrideNodeID={overrideNodeID} loading={loading} />
+          <Controls showNode={nodeID => navigateTo(`/envisioning/${nodeID}`)} loading={loading} inputs={inputs} />
         </InputBarStyle>
 
         <RowStyle>
-        <Previewer contentID={node.contentID} loading={loading}/>   
+        <Previewer ipfs={ipfs} />   
         </RowStyle>
     </PageLayout>
 });
 
 
-const Controls = ({ overrideNodeID, loading }) => {
+const Controls = ({ showNode, loading, inputs }) => {
 
   const ipfsWriter = writer()
 
   return <FormikForm inputs={inputs} onSubmit={async (values) =>{
-    loading[1](true)
       
     // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
     // can be removed if we replace results viewer with something custom
     values = {...values, customEndpoint: "/envisioning"}
 
     const nodeID = await submitToAWS(values, ipfsWriter);
-    // navigateToNode(nodeID);
-    overrideNodeID(nodeID);
+
+    showNode(nodeID);
   }}  />
 }
 
-const Previewer = ({ contentID, loading }) => {
-
-  const ipfs = useIPFS(contentID)
+const Previewer = ({ ipfs }) => {
 
   const isFinished = ipfs?.output?.done;
-  const [ isLoading, setLoading ] = loading;
-
-  useEffect(() => { 
-    if (isFinished) setLoading(false)  
-  }, [isFinished])
 
   if (!ipfs.output) return null;
 

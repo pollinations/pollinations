@@ -19,7 +19,7 @@ const debug = Debug("Envisioning");
 const form = {
   "Prompt": {
     type: "string",
-    default: null,
+    default: "",
     title: "Prompt",
     description: "The image you want to be generated",
   },

@@ -1,5 +1,4 @@
 import Debug from "debug";
-import React from "react";
 
 const debug = Debug("Aws.js");
 const API_URL = "https://worker-prod.pollinations.ai/pollen/"
@@ -9,12 +8,12 @@ export async function submitToAWS(values, ipfsWriter) {
     debug ("onSubmit", values)  
 
     // in real life submit parameters do IPFS and return the folder hash
-    const ipfs_hash = await UploadInputstoIPFS(values, ipfsWriter);
+    const contentID = await UploadInputstoIPFS(values, ipfsWriter);
 
     // debug payload
     let payload = {
       "notebook": "envisioning",
-      "ipfs": ipfs_hash
+      "ipfs": contentID
     };
       
     try {
@@ -30,7 +29,7 @@ export async function submitToAWS(values, ipfsWriter) {
       );
       const data = await response.json();
       debug("json response", data)
-      return data.pollen_id
+      return {nodeID: data.pollen_id, contentID}
     } catch (error) {
       debug("fetch error", error)
       return error

@@ -4,15 +4,14 @@ import Typography from "@material-ui/core/Typography";
 import Debug from "debug";
 import React from "react";
 import { useNavigate } from 'react-router';
-import { useParams } from 'react-router-dom';
 import FormikForm from '../components/form/Formik';
 import { overrideDefaultValues } from "../components/form/helpers";
 import { MediaViewer } from '../components/MediaViewer';
 import { getMedia } from '../data/media';
-import useColabNode from '../hooks/useColabNode';
+import useAWSNode from '../hooks/useAWSNode';
 import useIPFS from '../hooks/useIPFS';
-import { submitToAWS } from '../network/aws';
-import { writer } from '../network/ipfsConnector';
+import useIPFSWrite from '../hooks/useIPFSWrite';
+import { submitToAWS } from "../network/aws.js";
 
 const debug = Debug("Envisioning");
 
@@ -34,20 +33,15 @@ const form = {
 
 export default React.memo(function Create() {
 
-  const { overrideNodeID, node } = useColabNode()
+  const { setContentID, nodeID, contentID } = useAWSNode();
   // const loading = useState(false)
   
-  const { nodeID } = useParams()
+  const navigateTo = useNavigate();
   
-  const navigateTo = useNavigate()
-  
-  
-  const ipfs = useIPFS(node.contentID)
+  const ipfs = useIPFS(contentID);
+  const ipfsWriter = useIPFSWrite()
 
-  debug("nodeID", nodeID)
-
-  if (nodeID && node.nodeID !== nodeID) 
-    overrideNodeID(nodeID)
+  debug("nodeID", nodeID);
 
   
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
@@ -55,7 +49,12 @@ export default React.memo(function Create() {
   debug("run overrideDefaultValues on",form,ipfs?.input,"result",inputs)
   const loading = nodeID && !ipfs?.output?.done
 
-
+  const dispatch = async (values) => {
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter);
+    debug("submitted",contentID, "to AWS. Got nodeID", nodeID)
+    setContentID(contentID)
+    navigateTo(`/envisioning/${nodeID}`)
+  }
   
   return <PageLayout >
         <InputBarStyle>
@@ -63,7 +62,7 @@ export default React.memo(function Create() {
           {loading && 
           <LinearProgress style={{margin: '0.5em 0'}} />
           }
-          <Controls showNode={nodeID => navigateTo(`/envisioning/${nodeID}`)} loading={loading} inputs={inputs} />
+          <Controls dispatch={dispatch} loading={loading} inputs={inputs} />
         </InputBarStyle>
 
         <RowStyle>
@@ -73,25 +72,16 @@ export default React.memo(function Create() {
 });
 
 
-const Controls = ({ showNode, loading, inputs }) => {
+const Controls = ({dispatch , loading, inputs }) => {
 
-  const ipfsWriter = writer()
-
-  return <FormikForm inputs={inputs} onSubmit={async (values) =>{
-      
-    // adding customEndpoint is just a way to be able to redirect back to this page from the results viewer
-    // can be removed if we replace results viewer with something custom
-    values = {...values, customEndpoint: "/envisioning"}
-
-    const nodeID = await submitToAWS(values, ipfsWriter);
-
-    showNode(nodeID);
+  return <FormikForm inputs={inputs} isDisabled={loading} onSubmit={async (values) =>{
+      dispatch(values)
   }}  />
 }
 
 const Previewer = ({ ipfs }) => {
 
-  const isFinished = ipfs?.output?.done;
+  // const isFinished = ipfs?.output?.done;
 
   if (!ipfs.output) return null;
 

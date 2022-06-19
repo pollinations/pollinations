@@ -18,7 +18,7 @@ export default function Models() {
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
 
   const { notebookList, options, option } = useFilter(notebooks)
-  console.log(notebookList)
+
   debug("got notebooks", notebooks)
   return (
     <>

@@ -7,7 +7,7 @@ import Typography from "@material-ui/core/Typography"
 import Debug from "debug"
 import { useMemo } from "react"
 import RouterLink from "../components/molecules/RouterLink"
-import NotebookImage from "../components/organisms/markdownParsers/NotebookImage"
+import NotebookImage, { NotebookImgUrl } from "../components/organisms/markdownParsers/NotebookImage"
 import NotebookInfo from "../components/organisms/markdownParsers/NotebookInfo"
 import TopAlert from "../components/organisms/TopAlert"
 import { getNotebooks } from "../data/notebooks"
@@ -15,7 +15,8 @@ import useFilter from "../hooks/useFilter"
 import useIPFS from "../hooks/useIPFS"
 import { CardContainerStyle } from "./styles/card"
 import { Link } from "react-router-dom"
-
+import Slider, { Slide } from "../components/Slider"
+import styled from '@emotion/styled'
 const debug = Debug("home")
 
 export default function Models() {
@@ -29,7 +30,7 @@ export default function Models() {
     <>
       <TopAlert options={options} />
 
-      <Box margin="calc(1.5em + 50px) 0 1.5em 0">
+      <Box margin="3em 0">
         {options.length ? (
           <>
             <Typography
@@ -42,7 +43,7 @@ export default function Models() {
               What do you want to create?
             </Typography>
 
-            <Box display="flex" justifyContent="center" marginBottom="8em">
+            <Box display="flex" justifyContent="center">
               {options?.map((opt) => (
                 <Button
                   key={opt}
@@ -61,55 +62,12 @@ export default function Models() {
         )}
       </Box>
 
-      <Box display="grid" gridGap="2em" gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))">
-        {notebookList.map((notebook) => (
-          <NotebookCard key={notebook.name} notebook={notebook} />
-        ))}
-      </Box>
+        <Slider>
+          {notebookList.map((notebook) => (
+            <Slide key={notebook.name} {...notebook} />
+          ))}
+        </Slider>
+
     </>
   )
 }
-
-// Cards
-// Component
-
-const NotebookCard = ({ notebook }) => {
-  let { category, name, path, description } = notebook
-
-  // remove credits etc (they are separated by a horizontal rule)
-  description = description.split("---")[0]
-
-  // parse category
-  const parsedCategory = category?.slice(2)
-    .replace('-', ' ')
-    .replace('-', ' ')
-    .toLowerCase();
-
-  return (
-    <Box>
-      <Card style={CardContainerStyle}>
-          <Link to={path} style={{textDecoration: 'none'}}>
-            <CardHeader
-              subheader={<CardTitle children={name?.slice(2)} to={path} variant="h4" />}
-              title={<CardTitle children={parsedCategory} to={path} variant="h6" />}
-            />
-
-            <NotebookImage metadata={notebook} style={{ width: "100%" }} />
-
-            <CardContent>
-              <NotebookInfo description={description} noImg />
-            </CardContent>
-          </Link>
-      </Card>
-    </Box>
-  )
-}
-
-
-const CardTitle = ({ to, children, variant }) => (
-  <>
-    <Typography className="Lato noMargin" variant={variant} gutterBottom>
-      <RouterLink to={to}>{children}</RouterLink>
-    </Typography>
-  </>
-)

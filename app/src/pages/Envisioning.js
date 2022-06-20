@@ -21,13 +21,6 @@ const form = {
     default: "",
     title: "Prompt",
     description: "The image you want to be generated",
-  },
-  "Modifiers": {
-    type: "string",
-    default: "cyber",
-    title: "Style",
-    enum: ['cyber', 'cgsociety', 'pixar'],
-    description: "The style you choose",
   }
 }
 

@@ -50,6 +50,7 @@ export default React.memo(function Create() {
   const loading = nodeID && !ipfs?.output?.done
 
   const dispatch = async (values) => {
+    navigateTo("/envisioning/submit")
     const {nodeID, contentID} = await submitToAWS(values, ipfsWriter);
     debug("submitted",contentID, "to AWS. Got nodeID", nodeID)
     setContentID(contentID)

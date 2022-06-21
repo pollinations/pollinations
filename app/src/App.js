@@ -128,6 +128,8 @@ let noise_b = 'https://media.discordapp.net/attachments/915601448635605082/98873
 let carol_link = 'https://media.discordapp.net/attachments/987072685131567135/987854962530848829/holographic-gradient-of-pastel-colors_0.png?width=973&height=973'
 let danae_link = 'https://media.discordapp.net/attachments/987072685131567135/987080808659562606/unknown.png'
 let danae_linkB = 'https://media.discordapp.net/attachments/986173620512510023/988743677524467712/splash-07.png?width=1459&height=973'
+let video = 'https://ipfs.pollinations.ai/ipfs/QmTT5TVHpns3E4yr1XBispoAErpWKzbXkVwCSj8FYRZKUb/output/video.mp4'
+
 const ImgContainer = styled.div`
 
   background-image: url(${danae_linkB});
@@ -141,9 +143,6 @@ const ImgContainer = styled.div`
 
   // create a :before layer just like the :after layer
   // but with a background-color: rgba(0,0,0,0.5)
-
-
-
 
   &:after {
     content: "";

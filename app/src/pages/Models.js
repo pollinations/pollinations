@@ -8,6 +8,8 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import useIPFS from "../hooks/useIPFS"
 import Slider, { Slide } from "../components/Slider"
+import { GlobalSidePadding } from "../styles/global"
+import styled from '@emotion/styled'
 
 const debug = Debug("home")
 
@@ -21,16 +23,24 @@ export default function Models() {
 
   debug("got notebooks", notebooks)
   return (
-    <>
+    <ModelsStyle>
       <TopAlert options={options} />
 
 
+      <Typography
+      className="Lato"
+      align="center"
+      variant="h3"
+      gutterBottom
+      style={{ marginBottom: "0.8em" }}>
+      {!options.length || 'What do you want to create?'}
+    </Typography>
 
       {
         options
         .filter( opt => opt !== 'Anything')
         .map( opt => <>
-        <h3 children={`outputs ${opt}`}/>
+        <h3 children={opt}/>
         <Slider>
             {notebookList
             // only show certain catregory
@@ -42,7 +52,7 @@ export default function Models() {
         </>
         )
       }
-{/* 
+      {/* 
 
       <Box margin="3em 0">
         <Filter options={options} option={option} />
@@ -52,41 +62,44 @@ export default function Models() {
         {notebookList.map((notebook) => (
           <Slide key={notebook.name} {...notebook} />
         ))}
-      </Slider> */}
+      </Slider> 
 
-    </>
+      */}
+
+    </ModelsStyle>
   )
 }
 
-const Filter = ({options, option}) => {
-  
-  // if (!options.length) return <></>;
-  
-  return (
-  <>
-    <Typography
-      className="Lato"
-      align="center"
-      variant="h3"
-      gutterBottom
-      style={{ marginBottom: "0.8em" }}
-    >
-      {!options.length ? 'loading...' : 'What do you want to create?'}
-    </Typography>
+const ModelsStyle = styled.div`
+width: 100%;
+padding: ${GlobalSidePadding};
+display: flex;
+flex-direction: column;
+justify-content: flex-start;
+min-height: 80vh;
+`
 
-    <Box display="flex" justifyContent="center">
-      {!options.length || options?.map((opt) => (
-        <Button
-          key={opt}
-          style={{ margin: "0 0.5em" }}
-          variant={opt === option.selected ? "contained" : "outlined"}
-          color={opt === option.selected ? "secondary" : "primary"}
-          onClick={() => option.setSelected(opt)}
-        >
-          {opt}
-        </Button>
-      ))}
-    </Box>
-  </>
-) 
-}
+// const Filter = ({options, option}) => {
+  
+//   // if (!options.length) return <></>;
+  
+//   return (
+//   <>
+    
+
+//     <Box display="flex" justifyContent="center">
+//       {!options.length || options?.map((opt) => (
+//         <Button
+//           key={opt}
+//           style={{ margin: "0 0.5em" }}
+//           variant={opt === option.selected ? "contained" : "outlined"}
+//           color={opt === option.selected ? "secondary" : "primary"}
+//           onClick={() => option.setSelected(opt)}
+//         >
+//           {opt}
+//         </Button>
+//       ))}
+//     </Box>
+//   </>
+// ) 
+// }

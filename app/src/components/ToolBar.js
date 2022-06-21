@@ -17,6 +17,7 @@ const HideOnMobile = styled.div`
 @media (max-width: 600px) {
     display: none;
 }
+display: none;
 `
 
 const ToolBar = ({ node, showNode }) => <HideOnMobile>

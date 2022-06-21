@@ -101,3 +101,15 @@ error {
   border-radius: 5px !important;
   margin-bottom: 2em !important;
 }
+
+
+
+
+
+
+.MuiBackdrop-root{
+  background-color: rgba(0,0,0,0.1) !important;
+}
+.MuiPaper-root{
+  background-color: rgba(0,0,0,0.7) !important;
+}

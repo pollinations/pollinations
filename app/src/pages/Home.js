@@ -5,6 +5,9 @@ import { textContent } from "../assets"
 import Logo from '../components/Logo'
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import PageTemplate from "../components/PageTemplate"
+import styled from "@emotion/styled"
+
+
 
 export default function Home() {
 
@@ -33,10 +36,17 @@ export default function Home() {
         margin='2em'
         marginBottom="8em"
       >
-        <MarkdownContent url={textContent.landingLeft} />
+        <TextColor>
+          <MarkdownContent 
+            style={{color: '#F9F7F0'}}
+            url={textContent.landingLeft} />
+        </TextColor>
         <Button 
-            style={{marginTop: '3em'}}
-            variant='outlined'
+            style={{
+              marginTop: '3em', 
+              backgroundColor: 'CEE480',
+            }}
+            variant='contained'
             onClick={()=> navigate('/c')}
             color="primary"  
             target="colab">
@@ -50,3 +60,11 @@ export default function Home() {
     </Box>
   </>
 }
+
+const TextColor = styled.div`
+h5 {
+  
+  color: #F9F7F0 !important;
+}
+  `
+

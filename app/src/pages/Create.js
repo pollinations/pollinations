@@ -89,7 +89,7 @@ margin-top: 1em;
 const AlertMessage = ({ node }) => {
   if (node?.connected) return <></>
   return <>
-      <Alert severity="info" style={{margin: '2em 0'}}>
+      <Alert severity="info" style={{margin: '2em 0', backgroundColor: 'transparent !important'}}>
       If the text bar is locked, click on start here to unlock it. Don’t worry about the pop ups, it’s safe (:
       <br/>
       <StartHereButton {...node} />

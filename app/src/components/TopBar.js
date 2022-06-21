@@ -5,33 +5,44 @@ import RouterLink from "./molecules/RouterLink"
 import { SocialLinks } from "./Social"
 import Logo from './Logo'
 import { NavLink } from "react-router-dom"
+import { IconButton } from "@material-ui/core"
+import HamburgerIcon from '@material-ui/icons/Menu'
+import TemporaryDrawer from "./Drawer"
+import React from "react"
 
 const TopBar = ({ navRoutes }) => {
 
+  const drawerState = React.useState(false);
+
+
+  const NavList = Object.keys(navRoutes).map((key) => (
+    <li key={key}>
+        <RouterLink to={navRoutes[key].to}>
+            {navRoutes[key].label}
+        </RouterLink>
+    </li>
+  ));
+
   return (
-    <Container maxWidth="lg">
-
-        <TopContainer>
-            <NavLink to='/' style={{ padding: 0 }}>
-                <Logo size='180px' small='150px' margin='0' />  
-            </NavLink>
-            <SocialLinks style={{ alignSelf: "end" }} />
-            {/* <Button onClick={() => setOpen((state) => !state)}>[ Menu ]</Button> */}
-        </TopContainer>
-
-        <HorizontalBorder margin='0' />
-
+<>
+      <TopContainer>
+        <NavLink to='/' style={{ padding: 0 }}>
+            <Logo size='180px' small='150px' margin='0' />  
+        </NavLink>
         <MenuItems>
-            {Object.keys(navRoutes).map((key) => (
-                <li key={key}>
-                    <RouterLink to={navRoutes[key].to}>
-                        {navRoutes[key].label}
-                    </RouterLink>
-                </li>
-            ))}
+            {NavList}
         </MenuItems>
+        <MenuButton>
+          <IconButton>
+            <HamburgerIcon onClick={()=>drawerState[1](true)} />
+          </IconButton>
+        </MenuButton>
+      </TopContainer>
+      <TemporaryDrawer drawerState={drawerState}>
+        {NavList}
+      </TemporaryDrawer>
 
-    </Container>    
+</>
   )
 }
 
@@ -41,21 +52,29 @@ const TopContainer = styled.div`
   align-items: center;
 `
 
-const MenuItems = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  width: 100%;
-  list-style: none;
-  gap: 2em;
-  padding: 0.5em 1em;
-  overflow-y: hidden;
-  background-color: transparent;
-  text-transform: uppercase;
+const MOBILE_BREAKPOINT = '768px'
 
-  @media only screen and (max-width: 300px){
-    justify-content: space-between;
-  }
+
+const MenuItems = styled.div`
+display: flex;
+justify-content: flex-end;
+align-items: center;
+width: 100%;
+list-style: none;
+gap: 2em;
+padding: 0.5em 0em;
+overflow-y: hidden;
+background-color: transparent;
+text-transform: uppercase;
+
+@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
+display: none;
+}
+`
+const MenuButton = styled.div`
+@media only screen and (min-width: ${MOBILE_BREAKPOINT}){
+  display: none;
+}
 `
 
 export default TopBar

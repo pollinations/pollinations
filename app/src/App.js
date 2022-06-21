@@ -24,32 +24,14 @@ import PageTemplate from "./components/PageTemplate"
 import Models from "./pages/Models"
 import ImageContainer from "./components/BackgroundImage"
 
+import { 
+  ROUTES, 
+  MARKDOWN_ROUTES, 
+  MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+
 const debug = Debug("AppContainer")
 
-const ROUTES = {
-  about: { label: "about", to: "/about" },
-  feed: { label: "feed", to: "/feed" },
-  help: { label: "help", to: "/help" },
-  impressum: { label: "impressum", to: "/impressum" },
-  models: { label: "create", to: '/c' },
-  // integrate: { label: "integrate", to: "/integrate" },
-  // myPollens: { label: "my pollens", to: "/localpollens" },
-  // expo: { children: "made with pollinations", to: "/expo" },
-}
-const MAIN_NAV_ROUTES = [
-  ROUTES.models,
-  ROUTES.about, 
-  ROUTES.feed,
-  ROUTES.help, 
-  // ROUTES.integrate, 
-  // ROUTES.myPollens
-]
-const PAGE_ROUTES = [
-  ROUTES.about,
-  ROUTES.help,
-  ROUTES.impressum,
-  // ROUTES.integrate
-]
+
 
 const App = () => (
   <BrowserRouter>
@@ -79,7 +61,7 @@ const Pollinations = () => {
           <Route exact path='/' element={<Home />} />
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
-            PAGE_ROUTES.map( route => (
+            MARKDOWN_ROUTES.map( route => (
               <Route 
                 key={route.label}
                 exact
@@ -89,14 +71,9 @@ const Pollinations = () => {
             ))
           }
 
-          {/* <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} /> */}
-          {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
-          {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}
-
           <Route path="c/:selected" element={<Models />} />
 
-          <Route
-            path="n/:nodeID"
+          <Route path="n/:nodeID"
             element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />}
           />
           <Route

@@ -14,7 +14,7 @@ export default function Home() {
 
   return <HomeStyle>
       
-      <Logo/>
+      <Logo size='65%' margin='2em 0'/>
       
       <HeroContainer>
         <MarkdownContent url={textContent.landingLeft} />
@@ -22,8 +22,9 @@ export default function Home() {
             Create
         </Button>
       </HeroContainer>
-
-      <PageTemplate label='landing' />
+      <DescriptionStyle>
+        <PageTemplate label='landing' />
+      </DescriptionStyle>
 
     </HomeStyle>
 }
@@ -45,15 +46,32 @@ align-items: center;
 gap: 1em;
 margin: 2em;
 margin-bottom: 8em;
-
 h5 {
   color: #F9F7F0 !important;
 }
 button {
-  background-color: #CEE480;
+  background-color: #CEE480 !important;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 10px 20px;
   :hover {
     background-color: #D5E08F;
   }
   margin-top: 3em;
 }
 `;
+
+const DescriptionStyle = styled.div`
+h6 {
+  font-size: 1.1rem;
+line-height: 1.43;
+color: #fdfdfd;
+}
+p{
+  font-size: 1.1rem;
+line-height: 1.43;
+color: #fdfdfd;
+}
+
+
+`

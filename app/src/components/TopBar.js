@@ -44,6 +44,10 @@ const TopContainer = styled.div`
   justify-content: space-between;
   align-items: center;
 
+  font-size: 1rem;
+  .MuiTypography-colorPrimary{
+  color: #fdfdfd !important;  
+  }
   padding: ${GlobalSidePadding}
 `
 

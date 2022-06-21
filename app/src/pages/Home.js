@@ -66,6 +66,7 @@ h6 {
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.6;
+  color: #fdfdfd;
 }
 p{
   font-size: 1.1rem;

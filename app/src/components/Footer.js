@@ -1,7 +1,7 @@
 import Link from '@material-ui/core/Link'
 import styled from '@emotion/styled'
-import { GlobalSidePadding } from '../assets/styles'
 import { SocialLinks } from './Social'
+import { GlobalSidePadding } from '../styles/global'
 
 const Footer = () => <FooterStyle>
     <div>
@@ -22,6 +22,6 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 
-
-padding: 1em 0;
+padding: ${GlobalSidePadding};
+margin: 1em 0;
 `

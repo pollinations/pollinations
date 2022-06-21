@@ -1,1 +1,0 @@
-export const GlobalSidePadding = '0 2.5%';

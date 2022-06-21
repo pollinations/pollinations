@@ -1,6 +1,5 @@
 import React from "react"
 import { NavLink } from "react-router-dom"
-import RouterLink from "./molecules/RouterLink"
 import IconButton from "@material-ui/core/IconButton"
 import TemporaryDrawer from "./Drawer"
 
@@ -9,8 +8,7 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
 
 import Logo from './Logo'
 import HamburgerIcon from '@material-ui/icons/Menu'
-import HorizontalNav from "./organisms/HorizontalNav"
-import VerticalNav from "./organisms/VerticalNav"
+import NavigationItems from "./organisms/NavigationItems"
 
 
 const TopBar = ({ navRoutes }) => {
@@ -24,7 +22,8 @@ const TopBar = ({ navRoutes }) => {
         <Logo size='180px' small='150px' margin='0' />  
       </NavLink>
 
-      <HorizontalNav navRoutes={navRoutes} />
+      <NavigationItems navRoutes={navRoutes}/>
+      
 
       <MenuButton>
         <IconButton onClick={()=>drawerState[1](true)} >
@@ -35,7 +34,7 @@ const TopBar = ({ navRoutes }) => {
     </TopContainer>
 
     <TemporaryDrawer drawerState={drawerState}>
-      <VerticalNav navRoutes={navRoutes} />
+      <NavigationItems column navRoutes={navRoutes}/>
     </TemporaryDrawer>
   </>
 };

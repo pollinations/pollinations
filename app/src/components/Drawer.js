@@ -13,9 +13,7 @@ export default function TemporaryDrawer({ drawerState, children }) {
   };
 
   return <Drawer anchor='top' open={state} onClose={toggleDrawer(false)}>
-      <DrawerContainer
-      onClick={toggleDrawer(false)}
-      onKeyDown={toggleDrawer(false)}>
+      <DrawerContainer onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
         {children}
       </DrawerContainer>
   </Drawer>

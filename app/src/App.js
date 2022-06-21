@@ -22,8 +22,6 @@ import Home from "./pages/Home"
 import ResultViewer from "./pages/ResultViewer"
 import PageTemplate from "./components/PageTemplate"
 import Models from "./pages/Models"
-import { GlobalSidePadding } from "./assets/styles"
-import TemporaryDrawer from "./components/Drawer"
 
 const debug = Debug("AppContainer")
 
@@ -76,7 +74,6 @@ const Pollinations = () => {
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
-      {/* <Container maxWidth="lg"> */}
         <Routes>
           <Route exact path='/' element={<Home />} />
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
@@ -116,7 +113,7 @@ const Pollinations = () => {
       
       <Footer />
       </ImgContainer>
-
+      
       <ToolBar node={node} showNode={navigateToNode} />
     </>
   )
@@ -155,7 +152,8 @@ const ImgContainer = styled.div`
     left: 0;
     width: 100%;
     min-height: 100%;
-    background: linear-gradient(180deg, rgba(77, 120, 169, 0.2) 0%, rgba(211, 230, 146, 0.49) 39.06%, rgba(107, 128, 182, 0.63) 78.12%, #6B96B6 100%);
+    background: rgba(0, 0, 0, 0.25);
+    //background: linear-gradient(180deg, rgba(77, 120, 169, 0.2) 0%, rgba(211, 230, 146, 0.49) 39.06%, rgba(107, 128, 182, 0.63) 78.12%, #6B96B6 100%);
     z-index:1;
   }
   // select everything and set z-index: 5

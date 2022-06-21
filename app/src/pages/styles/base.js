@@ -1,7 +1,8 @@
 import styled from '@emotion/styled'
+import { GlobalSidePadding } from '../../styles/global'
 
 export const SmallContainer = ({ children }) => 
-    <div style={{ minWidth: '20%', maxWidth: 600, margin: 'auto', marginBottom: '7em' }}>
+    <div style={{ minWidth: '20%', maxWidth: 600, margin: 'auto', marginBottom: '7em', padding: GlobalSidePadding }}>
         {children}
     </div>
 

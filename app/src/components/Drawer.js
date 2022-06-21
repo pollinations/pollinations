@@ -1,5 +1,6 @@
-import { Box, Button, Divider, Drawer, List, ListItem, ListItemIcon, ListItemText } from '@material-ui/core';
 import * as React from 'react';
+import styled from '@emotion/styled';
+import Drawer from '@material-ui/core/Drawer';
 
 export default function TemporaryDrawer({ drawerState, children }) {
   const [state, setState] = drawerState;
@@ -8,27 +9,20 @@ export default function TemporaryDrawer({ drawerState, children }) {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
       return;
     }
-
     setState(open);
   };
 
-  return (
-    <div>
-        
-        <Drawer anchor='top' open={state} onClose={toggleDrawer('top', false)}>
-            <Box
-            zIndex={5}
-            sx={{ width: 'auto' }}
-            role="presentation"
-            onClick={toggleDrawer(false)}
-            onKeyDown={toggleDrawer(false)}
-            >
-                {children}
-            </Box>
-        </Drawer>
-          
-    </div>
-  );
-}
+  return <Drawer anchor='top' open={state} onClose={toggleDrawer(false)}>
+      <DrawerContainer
+      onClick={toggleDrawer(false)}
+      onKeyDown={toggleDrawer(false)}>
+        {children}
+      </DrawerContainer>
+  </Drawer>
+};
 
+const DrawerContainer = styled.div`
+width: 100%;
+z-index: 5;
+`;
 

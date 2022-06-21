@@ -1,76 +1,56 @@
-import styled from "@emotion/styled"
-import Container from "@material-ui/core/Container"
-import { HorizontalBorder } from "./atoms/Borders"
-import RouterLink from "./molecules/RouterLink"
-import { SocialLinks } from "./Social"
-import Logo from './Logo'
-import { NavLink } from "react-router-dom"
-import { IconButton } from "@material-ui/core"
-import HamburgerIcon from '@material-ui/icons/Menu'
-import TemporaryDrawer from "./Drawer"
 import React from "react"
+import { NavLink } from "react-router-dom"
+import RouterLink from "./molecules/RouterLink"
+import IconButton from "@material-ui/core/IconButton"
+import TemporaryDrawer from "./Drawer"
+
+import styled from "@emotion/styled"
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
+
+import Logo from './Logo'
+import HamburgerIcon from '@material-ui/icons/Menu'
+import HorizontalNav from "./organisms/HorizontalNav"
+import VerticalNav from "./organisms/VerticalNav"
+
 
 const TopBar = ({ navRoutes }) => {
 
   const drawerState = React.useState(false);
 
+  return <>
+    <TopContainer>
 
-  const NavList = Object.keys(navRoutes).map((key) => (
-    <li key={key}>
-        <RouterLink to={navRoutes[key].to}>
-            {navRoutes[key].label}
-        </RouterLink>
-    </li>
-  ));
+      <NavLink to='/' style={{ padding: 0 }}>
+        <Logo size='180px' small='150px' margin='0' />  
+      </NavLink>
 
-  return (
-<>
-      <TopContainer>
-        <NavLink to='/' style={{ padding: 0 }}>
-            <Logo size='180px' small='150px' margin='0' />  
-        </NavLink>
-        <MenuItems>
-            {NavList}
-        </MenuItems>
-        <MenuButton>
-          <IconButton>
-            <HamburgerIcon onClick={()=>drawerState[1](true)} />
-          </IconButton>
-        </MenuButton>
-      </TopContainer>
-      <TemporaryDrawer drawerState={drawerState}>
-        {NavList}
-      </TemporaryDrawer>
+      <HorizontalNav navRoutes={navRoutes} />
 
-</>
-  )
-}
+      <MenuButton>
+        <IconButton onClick={()=>drawerState[1](true)} >
+          <HamburgerIcon />
+        </IconButton>
+      </MenuButton>
+
+    </TopContainer>
+
+    <TemporaryDrawer drawerState={drawerState}>
+      <VerticalNav navRoutes={navRoutes} />
+    </TemporaryDrawer>
+  </>
+};
 
 const TopContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+
+  padding: ${GlobalSidePadding}
 `
 
-const MOBILE_BREAKPOINT = '768px'
 
 
-const MenuItems = styled.div`
-display: flex;
-justify-content: flex-end;
-align-items: center;
-width: 100%;
-list-style: none;
-gap: 2em;
-padding: 0.5em 0em;
-overflow-y: hidden;
-background-color: transparent;
-text-transform: uppercase;
 
-@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-display: none;
-}
-`
 const MenuButton = styled.div`
 @media only screen and (min-width: ${MOBILE_BREAKPOINT}){
   display: none;

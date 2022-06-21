@@ -136,7 +136,6 @@ const ImgContainer = styled.div`
   background-image: url(${danae_linkB});
   background-size: cover;
   background-position: center;
-  padding: ${GlobalSidePadding};
 
   min-height: 100vh;
   display: flex;

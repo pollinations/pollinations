@@ -1,4 +1,3 @@
-import styled from '@emotion/styled';
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
@@ -10,7 +9,8 @@ import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-
+import styled from '@emotion/styled'
+import { GlobalSidePadding } from '../styles/global';
 
 
 const debug = Debug("Create");
@@ -29,7 +29,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-  return <Box my={2}>
+  return <CreateStyle>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
@@ -73,7 +73,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           }
         </div>
           
-    </Box>
+    </CreateStyle>
 });
 
 const TwoColumns = styled.div`
@@ -83,6 +83,12 @@ grid-gap: 4em;
 
 width: 100%;
 margin-top: 1em;
+`
+
+const CreateStyle = styled.div`
+width: 100%;
+padding: ${GlobalSidePadding};
+
 `
 
 // Alert Message

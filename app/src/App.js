@@ -16,6 +16,7 @@ import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import Creator from "./pages/Create"
+import Dalle from "./pages/Dalle"
 import Envisioning from "./pages/Envisioning"
 import Feed from "./pages/Feed"
 import Home from "./pages/Home"
@@ -106,6 +107,14 @@ const Pollinations = () => {
           <Route
             path="envisioning"
             element={<Envisioning navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="dalle/:nodeID"
+            element={<Envisioning navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="dalle"
+            element={<Dalle navigateToNode={navigateToNode}/>}
           />
           <Route
             path="p/:contentID/*"

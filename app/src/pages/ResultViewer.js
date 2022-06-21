@@ -78,7 +78,7 @@ export default memo(function ResultViewer({ ipfs }) {
 
 const ViewerStyle = styled.div`
 width: 100%;
-padding: ${GlobalSidePadding}
+padding: ${GlobalSidePadding};
 `
 
 function Preview({ first, primaryInput, ipfs }) {

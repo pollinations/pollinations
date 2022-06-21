@@ -4,7 +4,7 @@ const debug = Debug("Aws.js");
 const API_URL = "https://worker-prod.pollinations.ai/pollen/"
 
 
-export async function submitToAWS(values, ipfsWriter, notebook="pollination/preset-envisioning") {
+export async function submitToAWS(values, ipfsWriter, notebook="pollinations/preset-envisioning") {
     debug ("onSubmit", values)  
 
     // in real life submit parameters do IPFS and return the folder hash

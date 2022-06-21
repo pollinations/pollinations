@@ -110,7 +110,7 @@ const Pollinations = () => {
           />
           <Route
             path="dalle/:nodeID"
-            element={<Envisioning navigateToNode={navigateToNode}/>}
+            element={<Dalle navigateToNode={navigateToNode}/>}
           />
           <Route
             path="dalle"

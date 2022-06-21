@@ -14,7 +14,7 @@ export default function Home() {
 
   return <HomeStyle>
       
-      <Logo size='65%' margin='2em 0'/>
+      <Logo size='65%' margin='7em 0 0 0'/>
       
       <HeroContainer>
         <MarkdownContent url={textContent.landingLeft} />

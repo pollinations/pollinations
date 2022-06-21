@@ -75,8 +75,13 @@ const Row = styled.div`
   overflow-x: scroll;
 
   ::-webkit-scrollbar {
-    display: none;
+    display: none ;
+    
   }
+
+  // implement fallback
+  scrollbar-width: none;
+  
 `
 
 const SliderContainer = styled.div`

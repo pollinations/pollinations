@@ -5,7 +5,7 @@ import Logo from '../components/Logo'
 import MarkdownContent from "../components/molecules/MarkDownContent"
 import PageTemplate from "../components/PageTemplate"
 import styled from "@emotion/styled"
-import { GlobalSidePadding } from "../styles/global"
+import { GlobalSidePadding, MarkDownStyle } from "../styles/global"
 
 
 export default function Home() {
@@ -22,9 +22,9 @@ export default function Home() {
             Create
         </Button>
       </HeroContainer>
-      <DescriptionStyle>
+      <MarkDownStyle>
         <PageTemplate label='landing' />
-      </DescriptionStyle>
+      </MarkDownStyle>
 
     </HomeStyle>
 }
@@ -61,18 +61,3 @@ button {
 }
 `;
 
-const DescriptionStyle = styled.div`
-h6 {
-  font-size: 1.3rem;
-  font-weight: 700;
-  line-height: 1.6;
-  color: #fdfdfd;
-}
-p{
-  font-size: 1.1rem;
-  line-height: 1.43;
-  color: #fdfdfd;
-}
-
-
-`

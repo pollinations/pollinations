@@ -16,3 +16,15 @@ p{
   color: #fdfdfd;
 }
 `
+export const SmallContainer = styled.div`
+min-width: 20%;
+max-width: 600px;
+margin: auto;
+margin-bottom: 7em;
+padding: ${GlobalSidePadding};
+`
+export const GridStyle = styled.div`
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+grid-gap: 1em;
+`

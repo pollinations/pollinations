@@ -1,7 +1,6 @@
 import { textContent } from "../assets"
 import MarkDownContent from "../components/molecules/MarkDownContent"
-import { SmallContainer } from "../pages/styles/base"
-import { MarkDownStyle } from "../styles/global"
+import { MarkDownStyle, SmallContainer } from "../styles/global"
 import { SEOImage, SEOMetadata } from "./Helmet"
 
 const PageTemplate = ({ label }) => {

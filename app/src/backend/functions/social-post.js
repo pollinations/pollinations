@@ -57,6 +57,11 @@ export async function socialPost(platform, cid) {
 
 async function doPost({ post, title, videoURL, coverImage, url }, platform) {
 
+  if (platform === "youtube" && !videoURL) {
+    console.log("No video URL for youtube. Aborting...");
+    return null;
+  }
+
   post = (await autoHashtag(post)) + fixedHashTags;
 
   // Ayrshare API Key

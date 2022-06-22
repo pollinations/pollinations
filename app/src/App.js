@@ -15,14 +15,12 @@ import useIPFS from "./hooks/useIPFS"
 import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
-import About from "./pages/About"
 import Creator from "./pages/Create"
 import Feed from "./pages/Feed"
-import Help from "./pages/Help"
 import Home from "./pages/Home"
-import Impressum from "./pages/Impressum"
-import LocalPollens from "./pages/LocalPollens"
 import ResultViewer from "./pages/ResultViewer"
+import PageTemplate from "./components/PageTemplate"
+import Models from "./pages/Models"
 
 const debug = Debug("AppContainer")
 
@@ -31,14 +29,24 @@ const ROUTES = {
   feed: { label: "feed", to: "/feed" },
   help: { label: "help", to: "/help" },
   impressum: { label: "impressum", to: "/impressum" },
-  myPollens: { label: "my pollens", to: "/localpollens" },
+  models: { label: "create", to: '/c' },
+  // integrate: { label: "integrate", to: "/integrate" },
+  // myPollens: { label: "my pollens", to: "/localpollens" },
   // expo: { children: "made with pollinations", to: "/expo" },
 }
 const MAIN_NAV_ROUTES = [
+  ROUTES.models,
   ROUTES.about, 
-  ROUTES.feed, 
+  ROUTES.feed,
   ROUTES.help, 
+  // ROUTES.integrate, 
   // ROUTES.myPollens
+]
+const PAGE_ROUTES = [
+  ROUTES.about,
+  ROUTES.help,
+  ROUTES.impressum,
+  // ROUTES.integrate
 ]
 
 const App = () => (
@@ -53,9 +61,6 @@ const Pollinations = () => {
 
   const navigate = useNavigate()
 
-  // to save pollens since we are not necessarily on the localpollens page
-  // useLocalPollens(node)
-
   const navigateToNode = useCallback(() => {
     if (node.nodeID) navigate(`/n/${node.nodeID}`)
     else {
@@ -65,22 +70,29 @@ const Pollinations = () => {
 
   return (
     <>
-      {/* Nav Bar     */}
-      {/* <AppBar /> */}
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
       <Container maxWidth="lg">
         <Routes>
+          <Route exact path='/' element={<Home />} />
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
-          <Route exact path={ROUTES.help.to} element={<Help />} />
-          <Route exact path={ROUTES.about.to} element={<About />} />
-          <Route exact path={ROUTES.impressum.to} element={<Impressum />} />
-          <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} />
+          {
+            PAGE_ROUTES.map( route => (
+              <Route 
+                key={route.label}
+                exact
+                path={route.to}
+                element={<PageTemplate label={route.label} />}
+              />
+            ))
+          }
+
+          {/* <Route exact path={ROUTES.myPollens.to} element={<LocalPollens node={node} />} /> */}
           {/* <Route exact path={ROUTES.expo.to} element={<ExpoPage />} /> */}
           {/* <Route exact path={ROUTES.expo.to + "/:expoId"} element={<ExpoItemPage />} /> */}
 
-          <Route path="c/:selected" element={<Home />} />
+          <Route path="c/:selected" element={<Models />} />
 
           <Route
             path="n/:nodeID"
@@ -96,7 +108,7 @@ const Pollinations = () => {
               />
             }
           />
-          <Route index element={<Navigate replace to="c/Anything" />} />
+          <Route exact path='c' element={<Navigate replace to="Anything" />} />
         </Routes>
         <Footer />
       </Container>

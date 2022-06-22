@@ -25,7 +25,7 @@ export default memo(function ResultViewer({ ipfs }) {
 
 
   const { first } = useMemo(() => {
-    return mediaToDisplay(ipfs.output)
+    return mediaToDisplay(ipfs?.output)
   }, [ipfs?.output])
 
   if (!ipfs?.output)

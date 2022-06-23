@@ -9,6 +9,7 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
 import Logo from './Logo'
 import HamburgerIcon from '@material-ui/icons/Menu'
 import NavigationItems from "./organisms/NavigationItems"
+import { FlexBetween } from "../styles/classes"
 
 
 const TopBar = ({ navRoutes }) => {
@@ -40,9 +41,7 @@ const TopBar = ({ navRoutes }) => {
 };
 
 const TopContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  ${FlexBetween}
 
   font-size: 1rem;
   .MuiTypography-colorPrimary{

@@ -6,6 +6,7 @@ import MarkdownContent from "../components/molecules/MarkDownContent"
 import PageTemplate from "../components/PageTemplate"
 import styled from "@emotion/styled"
 import { GlobalSidePadding, MarkDownStyle } from "../styles/global"
+import { BaseContainer } from "../styles/classes"
 
 
 export default function Home() {
@@ -30,8 +31,7 @@ export default function Home() {
 }
 
 const HomeStyle = styled.div`
-width: 100%;
-padding: ${GlobalSidePadding};
+${BaseContainer}
 padding-top: 4em;
 display: flex;
 flex-direction: column;

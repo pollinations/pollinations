@@ -15,6 +15,7 @@ import { mediaToDisplay } from "../data/media";
 import { GlobalSidePadding } from '../styles/global';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
 import styled from '@emotion/styled'
+import { BaseContainer } from '../styles/classes';
 
 
 // STREAM VIEWER (/n)
@@ -77,8 +78,7 @@ export default memo(function ResultViewer({ ipfs }) {
 })
 
 const ViewerStyle = styled.div`
-width: 100%;
-padding: ${GlobalSidePadding};
+${BaseContainer}
 `
 
 function Preview({ first, primaryInput, ipfs }) {

@@ -11,6 +11,7 @@ import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
 import styled from '@emotion/styled'
 import { GlobalSidePadding } from '../styles/global';
+import { BaseContainer } from "../styles/classes";
 
 
 const debug = Debug("Create");
@@ -85,11 +86,7 @@ width: 100%;
 margin-top: 1em;
 `
 
-const CreateStyle = styled.div`
-width: 100%;
-padding: ${GlobalSidePadding};
-
-`
+const CreateStyle = styled.div`${BaseContainer}`
 
 // Alert Message
 const AlertMessage = ({ node }) => {

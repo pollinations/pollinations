@@ -10,6 +10,7 @@ import useIPFS from "../hooks/useIPFS"
 import Slider, { Slide } from "../components/Slider"
 import { GlobalSidePadding } from "../styles/global"
 import styled from '@emotion/styled'
+import { BaseContainer } from "../styles/classes"
 
 const debug = Debug("home")
 
@@ -32,7 +33,7 @@ export default function Models() {
       align="center"
       variant="h3"
       gutterBottom
-      style={{ marginBottom: "0.8em" }}>
+      style={{ margin: "0.5em 0" }}>
       {!options.length || 'What do you want to create?'}
     </Typography>
 
@@ -40,7 +41,7 @@ export default function Models() {
         options
         .filter( opt => opt !== 'Anything')
         .map( opt => <>
-        <h3 children={opt}/>
+        <h2 children={opt}/>
         <Slider>
             {notebookList
             // only show certain catregory
@@ -71,8 +72,7 @@ export default function Models() {
 }
 
 const ModelsStyle = styled.div`
-width: 100%;
-padding: ${GlobalSidePadding};
+${BaseContainer}
 display: flex;
 flex-direction: column;
 justify-content: flex-start;

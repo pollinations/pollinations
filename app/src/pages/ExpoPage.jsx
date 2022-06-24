@@ -4,7 +4,6 @@ import ExpoTeaser from "../components/ExpoTeaser"
 import MarkDownContent from "../components/molecules/MarkDownContent"
 import { SmallContainer } from "../styles/global"
 import { COLORS } from "../_globalConfig/colors"
-import { content } from "./styles/content"
 
 const ExpoPage = (props) => {
   return (

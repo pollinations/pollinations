@@ -11,7 +11,7 @@ import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
 import styled from '@emotion/styled'
 import { GlobalSidePadding } from '../styles/global';
-import { BaseContainer } from "../styles/classes";
+import { BaseContainer } from "../styles/global";
 
 
 const debug = Debug("Create");
@@ -30,7 +30,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-  return <CreateStyle>
+  return <BaseContainer>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
@@ -74,7 +74,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           }
         </div>
           
-    </CreateStyle>
+    </BaseContainer>
 });
 
 const TwoColumns = styled.div`
@@ -85,8 +85,6 @@ grid-gap: 4em;
 width: 100%;
 margin-top: 1em;
 `
-
-const CreateStyle = styled.div`${BaseContainer}`
 
 // Alert Message
 const AlertMessage = ({ node }) => {

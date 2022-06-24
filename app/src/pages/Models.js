@@ -4,10 +4,9 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 import useIPFS from "../hooks/useIPFS"
 import styled from '@emotion/styled'
-import { BaseContainer } from "../styles/classes"
 import NotebookCard from "../components/temp/NotebookCard"
 import FilterUi from "../components/temp/FilterUi"
-import { GridStyle } from '../styles/global'
+import { GridStyle, BaseContainer } from '../styles/global'
 
 
 export default function Models() {
@@ -36,15 +35,9 @@ export default function Models() {
 
     </ModelsStyle>
   )
-}
+};
 
-const ModelsStyle = styled.div`
-${BaseContainer}
-display: flex;
-flex-direction: column;
-justify-content: flex-start;
-min-height: 80vh;
-
+const ModelsStyle = styled(BaseContainer)`
 h3 {
   text-align: center;
   margin: 1em 0 0 0;
@@ -54,6 +47,6 @@ h3 {
   line-height: 1.167;
   font-family: Lato;
 }
-`
+`;
 
 

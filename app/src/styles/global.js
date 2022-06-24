@@ -3,6 +3,10 @@ import styled from '@emotion/styled'
 export const GlobalSidePadding = '0 2.5%';
 export const MOBILE_BREAKPOINT = '768px'
 
+export const BaseContainer = styled.div`
+  width: 100%;
+  padding: ${GlobalSidePadding};
+`;
 
 export const MarkDownStyle = styled.div`
 h6 {

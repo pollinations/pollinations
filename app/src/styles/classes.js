@@ -6,11 +6,6 @@ display: flex;
 justify-content: space-between;
 align-items: center;
 `
-export const BaseContainer = `
-width: 100%;
-padding: ${GlobalSidePadding};
-`
-
 export const BaseButtonStyle = `
 background-color: #CEE480 !important;
   font-size: 1rem;

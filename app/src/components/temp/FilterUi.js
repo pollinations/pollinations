@@ -12,7 +12,6 @@ const FilterUi = ({options, option}) => {
             key={opt} 
             style={{ opacity: option.selected === opt ? '1' : '0.8' }}
             onClick={() => option.setSelected(opt)}>
-            {console.log(opt)}
             {opt}
           </Button>
         ))}

@@ -12,8 +12,10 @@ import BigPreview from "../components/molecules/BigPreview";
 import { NotebookProgress } from "../components/NotebookProgress";
 import NotebookTitle from "../components/NotebookTitle";
 import { mediaToDisplay } from "../data/media";
+import { GlobalSidePadding } from '../styles/global';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-
+import styled from '@emotion/styled'
+import { BaseContainer } from '../styles/global';
 
 
 // STREAM VIEWER (/n)
@@ -29,8 +31,10 @@ export default memo(function ResultViewer({ ipfs }) {
   }, [ipfs?.output])
 
   if (!ipfs?.output)
-    return <h2>Warming up... Results should start appearing soon.</h2>
-
+    return <LoadingStyle>
+      <h2 style={{textAlign: 'center'}}>Warming up... Results should start appearing soon.</h2>
+    </LoadingStyle>
+  
   const metadata = getNotebookMetadata(ipfs)
   const contentID = ipfs[".cid"]
 
@@ -46,7 +50,7 @@ export default memo(function ResultViewer({ ipfs }) {
 
 
 
-  return <Box my={2}>
+  return <BaseContainer >
 
     <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
 
@@ -72,8 +76,15 @@ export default memo(function ResultViewer({ ipfs }) {
       <IpfsLog ipfs={ipfs} contentID={contentID} />
     </div>
 
-  </Box>
+  </BaseContainer>
 })
+
+const LoadingStyle = styled(BaseContainer)`
+min-height: 80vh;
+display: flex;
+align-items: center;
+justify-content: center;
+`
 
 function Preview({ first, primaryInput, ipfs }) {
   return <>

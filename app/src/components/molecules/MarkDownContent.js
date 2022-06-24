@@ -24,7 +24,7 @@ const MarkDownContent = ({ url, ...replacements }) => {
 
   const contentWithReplacements = applyReplacements(replacements, body)
 
-  return <Markdown options={{ overrides }}>{contentWithReplacements}</Markdown>
+  return <Markdown options={{ overrides }} >{contentWithReplacements}</Markdown>
 }
 
 export default MarkDownContent

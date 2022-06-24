@@ -23,6 +23,7 @@ const FilterUi = ({options, option}) => {
 const FilterUiStyle = styled.div`
 display: flex;
 justify-content: center;
+flex-wrap: wrap;
 gap: 1em;
 margin: 4em 0;
 `

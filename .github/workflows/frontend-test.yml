@@ -13,7 +13,7 @@ jobs:
         working-directory: ./app
     strategy:
       matrix:
-        node-version: [ 16.x ]
+        node-version: [16.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -21,8 +21,8 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: app/package-lock.json
-      - run: npm ci
-      - run: npm test
+      # - run: npm ci
+      # - run: npm test
 #      - run: npm run build --if-present

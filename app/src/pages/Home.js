@@ -1,4 +1,4 @@
-import { Button } from "@material-ui/core"
+import Button from '../components/atoms/StyledButton'
 import { useNavigate } from "react-router-dom"
 import { textContent } from "../assets"
 import Logo from '../components/Logo'
@@ -19,7 +19,7 @@ export default function Home() {
       
       <HeroContainer>
         <MarkdownContent url={textContent.landingLeft} />
-        <Button variant='contained' onClick={()=> navigate('/c')}>
+        <Button onClick={()=> navigate('/c')}>
             Create
         </Button>
       </HeroContainer>
@@ -49,14 +49,7 @@ margin-bottom: 8em;
 h5 {
   color: #F9F7F0 !important;
 }
-button {
-  background-color: #CEE480 !important;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 10px 20px;
-  :hover {
-    background-color: #D5E08F;
-  }
+button{
   margin-top: 3em;
 }
 `;

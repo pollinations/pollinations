@@ -10,15 +10,18 @@ let danae_linkB = 'https://media.discordapp.net/attachments/986173620512510023/9
 let video = 'https://ipfs.pollinations.ai/ipfs/QmTT5TVHpns3E4yr1XBispoAErpWKzbXkVwCSj8FYRZKUb/output/video.mp4'
 
 const ImageContainer = styled.div`
-
+  position: fixed;
+  top: 0;
+  left: 0;
   background-image: url(${danae_linkB});
   background-size: cover;
   background-position: center;
-
+  width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  z-index: -2;
 
   // create a :before layer just like the :after layer
   // but with a background-color: rgba(0,0,0,0.5)
@@ -31,12 +34,11 @@ const ImageContainer = styled.div`
     width: 100%;
     min-height: 100%;
     background: rgba(0, 0, 0, 0.25);
-    //background: linear-gradient(180deg, rgba(77, 120, 169, 0.2) 0%, rgba(211, 230, 146, 0.49) 39.06%, rgba(107, 128, 182, 0.63) 78.12%, #6B96B6 100%);
-    z-index:1;
+    z-index: -1;
   }
   // select everything and set z-index: 5
   & * {
-    z-index: 5;
+    // z-index: 5;
   }
 `
 

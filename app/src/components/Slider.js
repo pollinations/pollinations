@@ -14,7 +14,6 @@ useEffect(() => {
   if (!element) return;
   
   const updatePosition = () => {
-    console.log(element)
     setPosition((element.scrollLeft / element.scrollLeftMax)*100)
   }
   element.addEventListener("scroll", updatePosition);

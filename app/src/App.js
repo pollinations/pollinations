@@ -53,7 +53,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-    <ImageContainer>
+
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
@@ -90,7 +90,7 @@ const Pollinations = () => {
         </Routes>
       
       <Footer />
-      </ImageContainer>
+      <ImageContainer/>
       
       <ToolBar node={node} showNode={navigateToNode} />
     </>

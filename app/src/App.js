@@ -28,6 +28,7 @@ import {
   ROUTES, 
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+import ExpoPage from "./pages/ExpoPage"
 
 const debug = Debug("AppContainer")
 
@@ -59,6 +60,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
         <Routes>
           <Route exact path='/' element={<Home />} />
+
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             MARKDOWN_ROUTES.map( route => (

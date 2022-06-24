@@ -16,14 +16,6 @@ body {
   background-color: rgb(26, 26, 26) !important;
 }
 
-footer {
-  position: fixed;
-  min-width: 30%;
-  border-radius: 10px 10px 0 0;
-  right: 50;
-  bottom: 0;
-  background-color: #424242 !important;
-}
 
 h1,
 h2,
@@ -34,9 +26,7 @@ h6,
 p {
   color: rgb(255, 236, 249);
 }
-.MuiPaper-root {
-  background-color: rgb(26, 26, 26) !important;
-}
+
 .MuiAccordionSummary-root {
   padding: 0 !important;
 }
@@ -87,15 +77,6 @@ error {
   width: 100%;
 }
 
-
-
-
-.MuiAccordionSummary-root{
-  border: 1px solid rgba(127,127,127) !important;
-  padding: 0.1rem 1rem !important;
-  border-radius: 5px !important;
-  margin-bottom: 2em !important;
-}
 
 
 

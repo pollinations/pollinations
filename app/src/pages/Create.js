@@ -3,7 +3,7 @@ import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
 import React, { useCallback, useMemo } from "react";
-import FormikForm from '../components/form/Formik';
+import NotebookForm from '../components/form/NotebookForm';
 import { SEO } from "../components/Helmet";
 import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
@@ -43,7 +43,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
               Inputs
             </Typography>
 
-            <FormikForm
+            <NotebookForm
               input={ipfs?.input}
               connected={connected}
               metadata={metadata}

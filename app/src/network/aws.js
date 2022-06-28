@@ -9,6 +9,7 @@ export async function submitToAWS(values, ipfsWriter, notebook, dev=true) {
 
     const API_URL = dev ? API_URL_DEV : API_URL_PROD
     // in real life submit parameters do IPFS and return the folder hash
+    debug("uploading inputs to ipfs")
     const contentID = await UploadInputstoIPFS(values, ipfsWriter);
 
     // debug payload
@@ -16,7 +17,9 @@ export async function submitToAWS(values, ipfsWriter, notebook, dev=true) {
      notebook,
       "ipfs": contentID
     };
-      
+    
+    debug("Uploaded input to IPFS, sending payload to AWS", payload)
+    
     try {
       const response = await fetch(
           API_URL, { 

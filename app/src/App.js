@@ -4,12 +4,11 @@ import Debug from "debug"
 import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
-import styled from '@emotion/styled'
+import Footer from "./components/Footer"
+import PageTemplate from "./components/PageTemplate"
 // Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
-import Footer from "./components/Footer"
-
 // Hooks
 import useColabNode from "./hooks/useColabNode"
 import useIPFS from "./hooks/useIPFS"
@@ -17,18 +16,20 @@ import useIPFSWrite from "./hooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import Creator from "./pages/Create"
+import Dalle from "./pages/Dalle"
+import Envisioning from "./pages/Envisioning"
 import Feed from "./pages/Feed"
 import Home from "./pages/Home"
-import ResultViewer from "./pages/ResultViewer"
-import PageTemplate from "./components/PageTemplate"
 import Models from "./pages/Models"
+import ResultViewer from "./pages/ResultViewer"
+
 import ImageContainer from "./components/BackgroundImage"
 
 import { 
   ROUTES, 
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
-import ExpoPage from "./pages/ExpoPage"
+
 
 const debug = Debug("AppContainer")
 
@@ -46,8 +47,8 @@ const Pollinations = () => {
 
   const navigate = useNavigate()
 
-  const navigateToNode = useCallback(() => {
-    if (node.nodeID) navigate(`/n/${node.nodeID}`)
+  const navigateToNode = useCallback((nodeID = node.nodeID) => {
+    if (nodeID) navigate(`/n/${nodeID}`)
     else {
       console.error("For some reason NodeID is not set...", node)
     }
@@ -77,6 +78,22 @@ const Pollinations = () => {
 
           <Route path="n/:nodeID"
             element={<NodeWithData node={node} overrideNodeID={overrideNodeID} />}
+          />
+          <Route
+            path="envisioning/:nodeID"
+            element={<Envisioning navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="envisioning"
+            element={<Envisioning navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="dalle/:nodeID"
+            element={<Dalle navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="dalle"
+            element={<Dalle navigateToNode={navigateToNode}/>}
           />
           <Route
             path="p/:contentID/*"

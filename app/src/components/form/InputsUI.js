@@ -55,22 +55,17 @@ export const InputField = (props) => {
 
 
 
-export const FormActions = ({ isDisabled, formik, colabLink }) => {
+export const FormActions = ({ isDisabled, formik, extraAction }) => {
 
   return <>
-  <Box 
-    display="flex" 
-    justifyContent="center" >
-
+  <Box display="flex" justifyContent={!extraAction ? "center" : "space-between"} >
+    { extraAction }
     <Button type="submit" disabled={isDisabled || formik.isSubmitting} variant='outlined'>
-        <p style={{fontSize: '1.1em', margin: 0}}>
-          {formik.isSubmitting ? "Creating..." : "Create"}
-        </p>
+      <p style={{fontSize: '1.1em', margin: 0}}>
+        {formik.isSubmitting ? "Creating..." : "Create"}
+      </p>
     </Button>
 
-
-    
-  </Box>
-      
+  </Box>      
   </>
 }

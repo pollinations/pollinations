@@ -1,5 +1,5 @@
 export const ROUTES = {
-    about: { label: "about", to: "/about" },
+    // about: { label: "about", to: "/about" },
     feed: { label: "feed", to: "/feed" },
     help: { label: "help", to: "/help" },
     impressum: { label: "impressum", to: "/impressum" },
@@ -10,14 +10,14 @@ export const ROUTES = {
   }
 export const MAIN_NAV_ROUTES = [
     ROUTES.models,
-    ROUTES.about, 
+    // ROUTES.about, 
     ROUTES.feed,
     ROUTES.help, 
     // ROUTES.integrate, 
     // ROUTES.myPollens
 ]
 export const MARKDOWN_ROUTES = [
-    ROUTES.about,
+    // ROUTES.about,
     ROUTES.help,
     ROUTES.impressum,
     // ROUTES.integrate

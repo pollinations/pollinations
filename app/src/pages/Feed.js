@@ -39,30 +39,30 @@ const Feed = () => {
 
             <SEO metadata={metadata} ipfs={ipfs} cid={contentID}/>
 
-            <Box marginTop='2em' minWidth='100%' display='flex'
-                 justifyContent={!contentID ? 'center' : 'space-around'} alignItems='center' flexWrap='wrap'>
+        <Box marginTop='2em' minWidth='100%' display='flex'
+                justifyContent={!contentID ? 'center' : 'space-around'} alignItems='center' flexWrap='wrap'>
 
-                {   // Waiting Screen goes here
-                    !contentID ?
-                        <Box minHeight='70vh' alignItems='center' display='flex'>
-                            <Typography>
-                                Connecting to Feed...
+            {   // Waiting Screen goes here
+                !contentID ?
+                    <Box minHeight='70vh' alignItems='center' display='flex'>
+                        <Typography>
+                            Connecting to Feed...
+                        </Typography>
+                    </Box> : <>
+
+                        <BigPreview {...throttledResult}/>
+
+                        <Box minWidth='200px' maxWidth='20%'>
+                            <Typography variant="h5" gutterBottom>
+                                {throttledPrimaryInput}
                             </Typography>
-                        </Box> : <>
+                        </Box>
 
-                            <BigPreview {...throttledResult}/>
-
-                            <Box minWidth='200px' maxWidth='20%'>
-                                <Typography variant="h5" gutterBottom>
-                                    {throttledPrimaryInput}
-                                </Typography>
-                            </Box>
-
-                        </>
-                }
+                    </>
+            }
 
 
-            </Box>
+        </Box>
 
         </Box>
 

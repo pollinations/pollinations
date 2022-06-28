@@ -1,53 +1,55 @@
-import Box from "@material-ui/core/Box"
-import Debug from "debug"
-import { textContent } from "../assets"
-import MarkdownContent from "../components/molecules/MarkDownContent"
-import Logo from '../components/Logo'
-import PageTemplate from "../components/PageTemplate"
-import { StartHereButton } from "../components/molecules/LaunchColabButton"
-import { Button } from "@material-ui/core"
+import Button from '../components/atoms/StyledButton'
 import { useNavigate } from "react-router-dom"
+import { textContent } from "../assets"
+import Logo from '../components/Logo'
+import MarkdownContent from "../components/molecules/MarkDownContent"
+import PageTemplate from "../components/PageTemplate"
+import styled from "@emotion/styled"
+import { GlobalSidePadding, MarkDownStyle } from "../styles/global"
+import { BaseContainer } from "../styles/global"
+
 
 export default function Home() {
 
-
   const navigate = useNavigate()
 
-  return <>
-    <Box 
-      paddingTop={4} 
-      display='flex' 
-      flexDirection='column' 
-      alignItems='center'>
+  return <HomeStyle>
       
-      <Logo/>
+      <Logo size='65%' margin='7em 0 0 0'/>
       
-      <Box
-        display="flex"
-        flexDirection="column"
-        justifyContent="flex-start"
-        alignItems="center"
-        // gridTemplateColumns="repeat(auto-fill, minmax(300px, 2fr))"
-        gridGap="1em"
-        minHeight="calc(100vh - 350px)"
-        maxHeight="100vh"
-        // padding="0em 0"
-        margin='2em'
-      >
+      <HeroContainer>
         <MarkdownContent url={textContent.landingLeft} />
-        <Button 
-            style={{marginTop: '3em'}}
-            variant='outlined'
-            onClick={()=> navigate('/c')}
-            color="primary"  
-            target="colab">
+        <Button onClick={()=> navigate('/c')}>
             Create
         </Button>
+      </HeroContainer>
+      <MarkDownStyle>
+        <PageTemplate label='landing' />
+      </MarkDownStyle>
 
-      </Box>
-
-      <PageTemplate label='landing' />
-
-    </Box>
-  </>
+    </HomeStyle>
 }
+
+const HomeStyle = styled(BaseContainer)`
+padding-top: 4em;
+display: flex;
+flex-direction: column;
+align-items: center;
+`;
+
+const HeroContainer = styled.div`
+display: flex;
+flex-direction: column;
+justify-content: flex-start;
+align-items: center;
+gap: 1em;
+margin: 2em;
+margin-bottom: 8em;
+h5 {
+  color: #F9F7F0 !important;
+}
+button{
+  margin-top: 3em;
+}
+`;
+

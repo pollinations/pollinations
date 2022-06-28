@@ -1,4 +1,3 @@
-import styled from '@emotion/styled';
 import Box from "@material-ui/core/Box";
 import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
@@ -10,7 +9,9 @@ import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
-
+import styled from '@emotion/styled'
+import { GlobalSidePadding } from '../styles/global';
+import { BaseContainer } from "../styles/global";
 
 
 const debug = Debug("Create");
@@ -29,7 +30,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-  return <Box my={2}>
+  return <BaseContainer>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
@@ -73,7 +74,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           }
         </div>
           
-    </Box>
+    </BaseContainer>
 });
 
 const TwoColumns = styled.div`
@@ -89,7 +90,7 @@ margin-top: 1em;
 const AlertMessage = ({ node }) => {
   if (node?.connected) return <></>
   return <>
-      <Alert severity="info" style={{margin: '2em 0'}}>
+      <Alert severity="info" style={{margin: '2em 0', backgroundColor: 'transparent !important'}}>
       If the text bar is locked, click on start here to unlock it. Don’t worry about the pop ups, it’s safe (:
       <br/>
       <StartHereButton {...node} />

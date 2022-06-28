@@ -2,34 +2,31 @@ import { Accordion, AccordionSummary } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Debug from "debug";
 import { useFormik } from 'formik';
-import { getForm } from './helpers';
+import { zipObj } from 'ramda';
 import { FormActions, InputField } from './InputsUI';
 
 const debug = Debug("Formik")
 
-const FormikForm = ({ input, connected, metadata, onSubmit }) => {
-    
-  if (!input)
+const FormikForm = ({ inputs, onSubmit, isDisabled, extraAction }) => {
+
+    if (!inputs)
     return null;
 
-  const { inputs, initialValues } = getForm(input, metadata);
 
-  const colabLink = metadata?.colabLink;
-  const isDisabled = !connected;
+  const keys = Object.keys(inputs);
+  const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
 
   const hasAdvancedFields = Object.values(inputs).some(({ advanced }) => advanced);
-  
-  debug("inputs",inputs)
-  if (!inputs || !initialValues)
-    return null
 
   // Formik hook holds the form state and methods 
   const formik = useFormik({
     initialValues: initialValues,
     // validationSchema: validationSchema,
-    onSubmit
+    onSubmit,
+    enableReinitialize: true,
   });
-  debug("formik", formik)
+
+  debug("formik",initialValues, formik)
 
   return <form onSubmit={formik.handleSubmit}>
     { // Basic Inputs
@@ -37,8 +34,10 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
       !inputs[key].advanced &&
       <>
         <InputField
+          key={key}
           {...inputs[key]}
-          {...formik}
+          enum={formik.enum}
+          setFieldValue={formik.setFieldValue}
           fullWidth
           disabled={isDisabled}
           id={key}
@@ -46,7 +45,7 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
           type={inputs[key].type}
           helperText={inputs[key].description}
           value={formik.values[key]}
-          inputCID={input[".cid"]}
+          // inputCID={input[".cid"]}
           onChange={formik.handleChange}
           style={{ margin: '1rem 0' }}
         />
@@ -66,7 +65,8 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
             <>
               <InputField
                 {...inputs[key]}
-                {...formik}
+                setFieldValue={formik.setFieldValue}
+                enum={formik.enum}
                 fullWidth
                 disabled={isDisabled}
                 id={key}
@@ -83,9 +83,9 @@ const FormikForm = ({ input, connected, metadata, onSubmit }) => {
       </Accordion> }
        
     <FormActions 
+      extraAction={extraAction}
       isDisabled={isDisabled} 
-      formik={formik} 
-      colabLink={colabLink} />
+      formik={formik}  />
 
   </form>
 };

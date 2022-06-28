@@ -7,8 +7,9 @@ const API_URL_PROD = "https://worker-prod.pollinations.ai/pollen/"
 export async function submitToAWS(values, ipfsWriter, notebook, dev=true) {
     debug ("onSubmit", values)  
 
+    const API_URL = dev ? API_URL_DEV : API_URL_PROD
     // in real life submit parameters do IPFS and return the folder hash
-    const contentID = await UploadInputstoIPFS(values, ipfsWriter, dev ? API_URL_DEV : API_URL_PROD);
+    const contentID = await UploadInputstoIPFS(values, ipfsWriter);
 
     // debug payload
     let payload = {

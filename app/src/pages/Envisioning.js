@@ -12,6 +12,7 @@ import useAWSNode from '../hooks/useAWSNode';
 import useIPFS from '../hooks/useIPFS';
 import useIPFSWrite from '../hooks/useIPFSWrite';
 import { submitToAWS } from "../network/aws.js";
+import { GlobalSidePadding } from '../styles/global';
 
 const debug = Debug("Envisioning");
 
@@ -100,12 +101,12 @@ const Previewer = ({ ipfs }) => {
 
 // STYLES
 const PageLayout = styled.div`
-
+padding: ${GlobalSidePadding};
+margin-top: 1em;
 display: grid;
 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 grid-gap: 0.4em;
 
-padding: 0.5em 0;
 `;
 
 const InputBarStyle = styled.div`

@@ -47,8 +47,9 @@ export default memo(function ResultViewer({ ipfs }) {
   debug("ModelViewer CID", contentID)
   debug("ModelViewer IPFS", ipfs)
 
-
-
+  const customEndpoint = ipfs?.input?.customEndpoint
+  const createURL = customEndpoint ? customEndpoint : `/p/${contentID}/create`
+  const modelName = metadata?.name || customEndpoint 
 
   return <BaseContainer >
 
@@ -61,8 +62,8 @@ export default memo(function ResultViewer({ ipfs }) {
       </Typography>
     }
 
-    <NotebookTitle name={metadata?.name}>
-      <Button color="default" to={`/p/${contentID}/create`} component={Link}>
+    <NotebookTitle name={modelName}>
+      <Button color="default" to={createURL} component={Link}>
         [ Clone ]
       </Button>
     </NotebookTitle>

@@ -50,7 +50,7 @@ export default React.memo(function Create() {
 
   const dispatch = async (values) => {
     navigateTo("/dalle/submit")
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "voodoohop/dalle-playground");
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "voodoohop/dalle-playground", false);
     debug("submitted",contentID, "to AWS. Got nodeID", nodeID)
     setContentID(contentID)
     navigateTo(`/dalle/${nodeID}`)

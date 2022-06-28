@@ -33,7 +33,7 @@ export default React.memo(function Create() {
   const navigateTo = useNavigate();
   
   const ipfs = useIPFS(contentID);
-  const ipfsWriter = useIPFSWrite()
+  const ipfsWriter = useIPFSWrite();
 
   debug("nodeID", nodeID);
 
@@ -45,7 +45,7 @@ export default React.memo(function Create() {
 
   const dispatch = async (values) => {
     navigateTo("/envisioning/submit")
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter);
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter.add, "pollinations/preset-envisioning");
     debug("submitted",contentID, "to AWS. Got nodeID", nodeID)
     setContentID(contentID)
     navigateTo(`/envisioning/${nodeID}`)

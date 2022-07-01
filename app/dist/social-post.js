@@ -44791,8 +44791,11 @@ async function getInitialStateFromIPNS(keyName, callback) {
   if (ipnsKey) {
     const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
     debug6("got initial CID through IPNS. Calling callback with", cidString);
-    const cid = (0, import_ramda2.last)(cidString.split("/"));
-    callback(cid);
+    if (cidString) {
+      const cid = (0, import_ramda2.last)(cidString.split("/"));
+      callback(cid);
+    } else
+      debug6("Strange or not strange? There was no initial CID found through IPNS.");
   }
 }
 function heartbeatChecker(heartbeatStateCallback) {
@@ -45644,6 +45647,10 @@ async function socialPost(platform, cid) {
   return res;
 }
 async function doPost({ post, title, videoURL, coverImage, url }, platform) {
+  if (platform === "youtube" && !videoURL) {
+    console.log("No video URL for youtube. Aborting...");
+    return null;
+  }
   post = await autoHashtag(post) + fixedHashTags;
   console.log("starting social post api with key", process.env["AYRSHARE_KEY"]);
   const social = new import_social_post_api.default(process.env["AYRSHARE_KEY"]);

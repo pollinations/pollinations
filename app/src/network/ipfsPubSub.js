@@ -207,8 +207,12 @@ async function getInitialStateFromIPNS(keyName, callback) {
     if (ipnsKey) {
         const cidString = await toPromise1(client.name.resolve(`/ipns/${ipnsKey.id}`));
         debug("got initial CID through IPNS. Calling callback with", cidString);
-        const cid = last(cidString.split("/"))
-        callback(cid);
+        if (cidString) { 
+            const cid = last(cidString.split("/"))
+            callback(cid);
+        }
+        else
+            debug("Strange or not strange? There was no initial CID found through IPNS.")
     }
 }
 

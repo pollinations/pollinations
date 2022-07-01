@@ -14,6 +14,7 @@ import useIPFSWrite from '../hooks/useIPFSWrite';
 import { submitToAWS } from "../network/aws.js";
 import { GlobalSidePadding } from '../styles/global';
 import ReplayIcon from '@material-ui/icons/Replay';
+import { SEOMetadata } from '../components/Helmet';
 
 const debug = Debug("Envisioning");
 
@@ -53,6 +54,7 @@ export default React.memo(function Create() {
   }
   
   return <PageLayout >
+        <SEOMetadata title='Envisioning' />
         <InputBarStyle>
           <Typography variant='h5' children='Envisioning' />
           {loading && 

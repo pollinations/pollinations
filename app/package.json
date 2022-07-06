@@ -37,7 +37,7 @@
     "it-last": "^1.0.6",
     "it-reduce": "^1.0.6",
     "iter-tools": "^7.3.1",
-    "json5": "^2.2.0",
+    "json5": "^2.2.1",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
     "markdown-to-jsx": "^7.1.7",

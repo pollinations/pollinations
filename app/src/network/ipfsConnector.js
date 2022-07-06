@@ -3,9 +3,10 @@ import Debug from "debug";
 import { create } from "ipfs-http-client";
 import all from "it-all";
 import { CID } from "multiformats/cid";
-import { basename, dirname, join } from "path-browserify";
+import { join } from "path-browserify";
 import { last } from "ramda";
-import { AUTH, noop, toPromise } from "./utils.js";
+import { noop, toPromise } from "./utils.js";
+import { Buffer } from "buffer";
 
 const debug = Debug("ipfsConnector")
 

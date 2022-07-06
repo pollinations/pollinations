@@ -1,12 +1,19 @@
 import Debug from "debug";
-import { existsSync } from "fs";
+import { existsSync, createReadStream } from "fs";
 import { dirname, join } from "path";
 import { groupWith } from "ramda";
 import chunkedFilewatcher from "../fileWatcher";
 const debug = Debug("folderSync");
 
 export default async function* folderSync({ writer, path, debounce, signal }) {
-  const { addFile, mkDir, rm, cid } = writer;
+  const { add, mkDir, rm, cid } = writer;
+
+  const addFile =  async (ipfsPath, localPath) => {
+    debug("Adding file", localPath, "to ipfs",ipfsPath);
+    // get filename from path
+    await add(ipfsPath, createReadStream(localPath))
+  }
+
 
   debug("start consuming watched files");
 

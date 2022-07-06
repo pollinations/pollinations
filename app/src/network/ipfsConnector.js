@@ -1,24 +1,19 @@
 
 import Debug from "debug";
-import { createReadStream } from "fs";
 import { create } from "ipfs-http-client";
 import all from "it-all";
 import { CID } from "multiformats/cid";
-import { basename, dirname, join } from "path";
+import { basename, dirname, join } from "path-browserify";
 import { last } from "ramda";
 import { AUTH, noop, toPromise } from "./utils.js";
 
 const debug = Debug("ipfsConnector")
 
 // Get IPFS_API_ENDPOINT from env
-const IPFS_HOST = process?.env?.IPFS_API_ENDPOINT || "https://api.pollinations.ai"
+const IPFS_HOST = "https://api.pollinations.ai"
 
 
 let _client = null;
-
-const base64Decode = s => Buffer.from(s, "base64").toString("utf8");
-
-const Authorization = base64Decode(AUTH);
 
 // create a new IPFS session
 export function getClient() {
@@ -74,7 +69,6 @@ export function writer(initialRootCID = null) {
 
     const methods = {
         add: returnRootCID(ipfsAdd),
-        addFile: returnRootCID(ipfsAddFile),
         rm: returnRootCID(ipfsRm),
         mkDir: returnRootCID(ipfsMkdir),
         cid: returnRootCID(noop),
@@ -242,14 +236,6 @@ const ipfsGet = async (client, cid, { onlyLink = false }) => {
     // debug("Content type",contentArray)
     return contentArray;
 };
-
-const ipfsAddFile = async (client, ipfsPath, localPath) => {
-    debug("Adding file", localPath, "to", ipfsPath);
-    // get filename from path
-    const filename = basename(localPath);
-    const folder = dirname(localPath);
-    await ipfsAdd(client, ipfsPath, createReadStream(localPath))
-}
 
 async function optionallyResolveIPNS(client, cid) {
     debug("Trying to resolve CID", cid)

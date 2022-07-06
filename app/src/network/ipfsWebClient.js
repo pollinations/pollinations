@@ -1,7 +1,7 @@
 
 import Debug from "debug";
 import { parse } from "json5";
-import { extname } from "path";
+import { extname } from "path-browserify";
 import { getWebURL, writer } from "./ipfsConnector.js";
 import { getIPFSState } from "./ipfsState.js";
 

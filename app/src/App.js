@@ -31,10 +31,7 @@ import {
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
 
 
-// import ipfsConnector from "@pollinations/ipfs"
-
 const debug = Debug("AppContainer")
-// debug("P",ipfsConnector)
 
 
 const App = () => (

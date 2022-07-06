@@ -29,6 +29,7 @@
     "fs-extra": "^10.0.0",
     "i": "^0.3.7",
     "ipfs-http-client": "^56.0.3",
+    "ipfs-utils": "^9.0.6",
     "is-ipfs": "^6.0.2",
     "is-port-reachable": "^3.0.0",
     "it-all": "^1.0.6",
@@ -75,12 +76,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=node",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "build_backend": "mkdir -p dist && esbuild src/backend/pollinate-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pollinate.js  && esbuild src/backend/social-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/social-post.js && esbuild src/backend/pinning-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/pin.js&& esbuild src/backend/discord-post-cli.js --platform=node --target=node14 --bundle --external:fsevents --external:electron > dist/discord-post.js && chmod ugoa+x dist/*.js",
-    "install_backend": "cp -v dist/pollinate.js /usr/local/bin/pollinate && cp -v dist/social-post.js /usr/local/bin/social_post.js && cp -v dist/pin.js /usr/local/bin/pin.js && cp -v dist/discord-post.js /usr/local/bin/discord-post.js && cp -v scripts/*.sh /usr/local/bin"
-  },
-  "bin": {
-    "pollinate": "./src/backend/pollinate-cli.js"
+    "predeploy": "npm run build"
   },
   "browserslist": {
     "production": [

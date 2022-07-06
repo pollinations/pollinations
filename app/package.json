@@ -10,6 +10,7 @@
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "^4.11.2",
     "@material-ui/lab": "^4.0.0-alpha.60",
+    "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
     "@supabase/supabase-js": "^1.31.1",
     "abort-controller": "^3.0.0",
     "ansi-to-react": "^6.1.6",

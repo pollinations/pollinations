@@ -41,6 +41,7 @@ const TopBar = ({ navRoutes }) => {
 };
 
 const TopContainer = styled.div`
+  position: absolute;
   ${FlexBetween}
 
   font-size: 1rem;
@@ -48,6 +49,7 @@ const TopContainer = styled.div`
   color: #fdfdfd !important;  
   }
   padding: ${GlobalSidePadding}
+
 `
 
 

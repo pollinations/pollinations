@@ -19,7 +19,7 @@ import Creator from "./pages/Create"
 import Dalle from "./pages/Dalle"
 import Envisioning from "./pages/Envisioning"
 import Feed from "./pages/Feed"
-import Home from "./pages/Home"
+import Home from "./pages/Home/"
 import Models from "./pages/Models"
 import ResultViewer from "./pages/ResultViewer"
 
@@ -109,7 +109,7 @@ const Pollinations = () => {
         </Routes>
       
       <Footer />
-      <ImageContainer/>
+      {/* <ImageContainer/> */}
       
       <ToolBar node={node} showNode={navigateToNode} />
     </>

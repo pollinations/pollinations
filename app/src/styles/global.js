@@ -33,3 +33,26 @@ display: grid;
 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 grid-gap: 1em;
 `
+
+export const BackGroundImage = styled.img`
+position: absolute;
+width: 100%;
+min-height: 100vh;
+top: ${props => props.top || 0};
+left: 0;
+opacity: ${props => props.opacity || 1};
+z-index: ${props => props.zIndex || 0};
+mix-blend-mode: ${props => props.blend || 'normal'};
+transform: ${props => props.transform || ''};
+object-fit: cover;
+`
+export const Headline = styled.p`
+font-family: 'Mattone';
+font-style: normal;
+font-weight: 500;
+font-size: 36px;
+line-height: 43px;
+text-align: center;
+
+color: #FFFFFF;
+`

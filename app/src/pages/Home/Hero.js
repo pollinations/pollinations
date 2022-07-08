@@ -1,0 +1,79 @@
+import styled from '@emotion/styled'
+import { BackGroundImage } from '../../styles/global';
+import heroBG from '../../assets/imgs/bghero.png'
+import heroBGOverlay from '../../assets/imgs/bgherooverlay.png'
+// Hero Section
+
+const Hero = props => {
+
+    return <HeroGradient>
+  
+      <HeroHeadline>
+        Create all kinds of <br/> media with AI power
+      </HeroHeadline>
+      <HeroSubHeadLine>
+        Explain your vision with words and watch it come to life!
+      </HeroSubHeadLine>
+  
+      <BackGroundImage 
+        src={heroBGOverlay} 
+        zIndex='-1' 
+        opacity='68%' 
+        blend='screen' 
+        transform='rotate(-180deg)' 
+        alt="hero_bg_overlay" />
+      
+      <BackGroundImage 
+        src={heroBG} 
+        zIndex='-2' 
+        alt="hero_bg" />
+  
+    </HeroGradient>
+  }
+
+  export default Hero
+  
+  const HeroStyle = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  
+  width: 100%;
+  min-height: 100vh;
+  `;
+  
+  const HeroGradient = styled(HeroStyle)`
+  background: radial-gradient(50% 74.25% at 50% 53.59%, 
+    rgba(22, 50, 122, 0.58) 0%, 
+    rgba(34, 128, 134, 0.54) 47.4%, 
+    rgba(151, 190, 67, 0.01) 100%);
+  `
+  
+  
+  
+  const HeroHeadline = styled.p`
+  margin: 0;
+  font-family: 'Leiko';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 64px;
+  line-height: 82px;
+  text-align: center;
+  text-transform: uppercase;
+  
+  color: #FFFFFF;
+  `
+  
+  const HeroSubHeadLine = styled.p`
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 34px;
+  /* identical to box height */
+  
+  text-align: center;
+  
+  color: #D8E449;
+  `

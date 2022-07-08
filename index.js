@@ -23,11 +23,14 @@ const requestListener = async function (req, res) {
     return
   }
 
-  const promptRaw = pathname.split("/prompt/")[1];
+  const promptAndSeed = pathname.split("/prompt/")[1];
   
+  const [promptRaw, seed] = promptAndSeed.split("/");
+
+
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const url = await getImage(prompt)
+  const url = await getImage(prompt, seed)
 
   // fetch the image from the url and return it as the response
   const imageResponse = await fetch(url);
@@ -41,7 +44,7 @@ const requestListener = async function (req, res) {
 
 }
 
-const getImage = memoize(async prompt => {
+const getImage = memoize(async (prompt,seed) => {
     
   console.log("!!!!submitted prompt", prompt)
   const inputWriter = writer();
@@ -73,7 +76,7 @@ const getImage = memoize(async prompt => {
     }
   }
 
-})
+}, (prompt, seed) => prompt + seed)
 
 
 const server = http.createServer(requestListener);

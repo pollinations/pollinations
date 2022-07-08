@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import TopAlert from "../components/organisms/TopAlert"
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
-import useIPFS from "../hooks/useIPFS"
+import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
 import styled from '@emotion/styled'
 import NotebookCard from "../components/temp/NotebookCard"
 import FilterUi from "../components/temp/FilterUi"

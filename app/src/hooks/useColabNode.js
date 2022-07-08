@@ -1,6 +1,6 @@
 import Debug from "debug";
 import { useCallback, useEffect, useState } from "react";
-import { publisher, subscribeCID } from "../network/ipfsPubSub";
+import { publisher, subscribeCID }  from  "@pollinations/ipfs/ipfsPubSub";
 import colabConnectionManager from "../network/localColabConnection";
 import useLocalStorage from "./useLocalStorage";
 

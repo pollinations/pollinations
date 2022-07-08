@@ -11,17 +11,17 @@ import urldecode from 'urldecode';
 const requestListener = async function (req, res) {
 
 
-  const { path } = parse(req.url, true);
+  const { pathname } = parse(req.url, true);
 
-  console.log("path: ", path);
+  console.log("path: ", pathname);
 
-  if (!path.startsWith("/prompt")) {
+  if (!pathname.startsWith("/prompt")) {
     res.writeHead(404);
     res.end('404: Not Found');
     return
   }
 
-  const promptRaw = path.split("/prompt/")[1];
+  const promptRaw = pathname.split("/prompt/")[1];
   
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 

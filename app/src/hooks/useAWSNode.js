@@ -1,7 +1,7 @@
 import Debug from "debug";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { subscribeCID } from "../network/ipfsPubSub";
+import { subscribeCID }  from  "@pollinations/ipfs/ipfsPubSub"
 
 const debug = Debug("useAWSNode");
 

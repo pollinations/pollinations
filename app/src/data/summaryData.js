@@ -1,11 +1,9 @@
 import Debug from "debug";
-import mature from "../backend/mature.js";
 import readMetadata from "../utils/notebookMetadata.js";
 import { getCoverImage, getCoverVideo } from "./media.js";
 const debug = Debug("summaryData");
 
 // Get summary data that will be used for SEO, crawlers and social posts
-// Replaces mature words with ***'s
 // shortenPost is useful for twitter, title and open graph tags
 export function getPostData(ipfs, cid, shortenPost = true) {
   const { name, primaryInput } = readMetadata(ipfs.input["notebook.ipynb"]);
@@ -23,8 +21,8 @@ export function getPostData(ipfs, cid, shortenPost = true) {
   const possibleText = false; // getMedia(ipfs.output, "text")[0];
   const text = possibleText ? formatText(shortenPost, possibleText) : `"${ipfs.input[primaryInput]}"`;
 
-  // Replace mature words with ***'s
-  const maturityFilteredText = mature(text);
+  
+  const maturityFilteredText = text
 
   const { post, title } = formatPostAndTitle(name, maturityFilteredText, url, shortenPost);
 

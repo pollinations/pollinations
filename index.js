@@ -5,6 +5,7 @@ import { subscribeGenerator } from '@pollinations/ipfs/ipfsPubSub.js';
 import { IPFSWebState } from '@pollinations/ipfs/ipfsWebClient.js';
 import { parse }  from 'url';
 import urldecode from 'urldecode';
+import memoize from 'lodash.memoize';
 
 
 
@@ -25,7 +26,16 @@ const requestListener = async function (req, res) {
   
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  
+  const url = await getImage(prompt)
+
+  res.writeHead(301, {
+    Location: url
+  }).end();
+
+}
+
+const getImage = memoize(async prompt => {
+    
   console.log("!!!!submitted prompt", prompt)
   const inputWriter = writer();
   const response = await submitToAWS({prompt,num: 1}, inputWriter, "voodoohop/dalle-playground", true)
@@ -50,16 +60,14 @@ const requestListener = async function (req, res) {
         // find the first entry whose key ends with .png
         const [_filename, url] = outputEntries.find(([key]) => key.endsWith(".png"))
         
-        res.writeHead(301, {
-          Location: url
-        }).end();
+        return url
+
         break
     }
   }
 
+})
 
-
-}
 
 const server = http.createServer(requestListener);
 server.listen(8080);

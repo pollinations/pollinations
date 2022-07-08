@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
+    "lodash.memoize": "^4.1.2",
     "urldecode": "^1.0.1"
   }
 }

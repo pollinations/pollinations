@@ -1,11 +1,7 @@
 
 import Debug from "debug";
 import { useEffect, useState } from "react";
-import { IPFSWebState } from "../network/ipfsWebClient";
-
-
-
-
+import { IPFSWebState } from  "@pollinations/ipfs/ipfsWebClient";
 
 const debug = Debug("useIPFS");
 

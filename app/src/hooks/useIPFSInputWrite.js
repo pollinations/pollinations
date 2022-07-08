@@ -2,7 +2,7 @@
 
 import Debug from "debug";
 import { useCallback } from "react";
-import { getWriter, updateInput } from "../network/ipfsWebClient";
+import { getWriter, updateInput } from "@pollinations/ipfs/ipfsWebClient"
 
 
 const debug = Debug("useIPFSWrite");

@@ -34,7 +34,6 @@ import {
 const debug = Debug("AppContainer")
 
 
-
 const App = () => (
   <BrowserRouter>
     <Pollinations />

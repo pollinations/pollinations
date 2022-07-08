@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { subscribeCID } from "../network/ipfsPubSub"
+import { subscribeCID }  from  "@pollinations/ipfs/ipfsPubSub"
 
 
 export default (topic, suffix="") => {

@@ -8,10 +8,9 @@ import FormikForm from '../components/form/Formik';
 import { overrideDefaultValues } from "../components/form/helpers";
 import { MediaViewer } from '../components/MediaViewer';
 import { getMedia } from '../data/media';
-import useAWSNode from '../hooks/useAWSNode';
-import useIPFS from '../hooks/useIPFS';
-import useIPFSWrite from '../hooks/useIPFSWrite';
-import { submitToAWS } from "../network/aws.js";
+import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
+import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
+import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { GlobalSidePadding } from '../styles/global';
 import ReplayIcon from '@material-ui/icons/Replay';
 import { SEOMetadata } from '../components/Helmet';
@@ -35,7 +34,8 @@ const form = {
 
 export default React.memo(function Create() {
 
-  const { setContentID, nodeID, contentID } = useAWSNode();
+  const params = useParams()
+  const { setContentID, nodeID, contentID, submitToAWS } = useAWSNode(params);
   // const loading = useState(false)
   
   const navigateTo = useNavigate();

@@ -1,8 +1,8 @@
 import Debug from "debug"
 import { values } from "ramda"
 import { useCallback } from "react"
-import useIPFS from "./useIPFS"
-import useIPFSWrite from "./useIPFSWrite"
+import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
+import useIPFSWrite from "@pollinations/ipfs/reactHooks/useIPFSWrite"
 import useLocalStorage from "./useLocalStorage"
 import usePollenDone from "./usePollenDone"
 

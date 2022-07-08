@@ -4,6 +4,7 @@ import { writer } from '@pollinations/ipfs/ipfsConnector.js';
 import { subscribeGenerator } from '@pollinations/ipfs/ipfsPubSub.js';
 import { IPFSWebState } from '@pollinations/ipfs/ipfsWebClient.js';
 import { parse }  from 'url';
+import fetch from 'node-fetch';
 import urldecode from 'urldecode';
 import memoize from 'lodash.memoize';
 
@@ -28,9 +29,15 @@ const requestListener = async function (req, res) {
 
   const url = await getImage(prompt)
 
-  res.writeHead(301, {
-    Location: url
-  }).end();
+  // fetch the image from the url and return it as the response
+  const imageResponse = await fetch(url);
+  const buffer = await imageResponse.buffer();
+  res.writeHead(200, { 'Content-Type': 'image/png' });
+  res.end(buffer);
+
+  // res.writeHead(301, {
+  //   Location: url
+  // }).end();
 
 }
 

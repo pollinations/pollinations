@@ -35,7 +35,7 @@ const requestListener = async function (req, res) {
   // fetch the image from the url and return it as the response
   const imageResponse = await fetch(url);
   const buffer = await imageResponse.buffer();
-  res.writeHead(200, { 'Content-Type': 'image/png' });
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000' });
   res.end(buffer);
 
   // res.writeHead(301, {
@@ -48,7 +48,7 @@ const getImage = memoize(async (prompt,seed) => {
     
   console.log("!!!!submitted prompt", prompt)
   const inputWriter = writer();
-  const response = await submitToAWS({prompt,num: 1}, inputWriter, "voodoohop/dalle-playground", true)
+  const response = await submitToAWS({prompt,num: 1}, inputWriter, "voodoohop/dalle-playground", false)
 
   console.log("submitted to aws", response)
   const { nodeID } = response

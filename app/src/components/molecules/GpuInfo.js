@@ -3,7 +3,7 @@ import { Typography } from "@material-ui/core"
 
 const GpuInfo = ({ ...node }) => {
     if (!node.connected) return <div/>
-    return <Typography>GPU: { gpu2string(node?.gpu) }</Typography>
+    return <Typography align="center">GPU: { gpu2string(node?.gpu) }</Typography>
 }
 
 let gpu2string = gpu => {

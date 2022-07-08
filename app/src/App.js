@@ -11,8 +11,8 @@ import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
 // Hooks
 import useColabNode from "./hooks/useColabNode"
-import useIPFS from "./hooks/useIPFS"
-import useIPFSWrite from "./hooks/useIPFSInputWrite"
+import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
+import useIPFSWrite from "@pollinations/ipfs/reactHooks/useIPFSInputWrite"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import Creator from "./pages/Create"

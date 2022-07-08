@@ -12,8 +12,3 @@
 
   # Default build command.
   command = "npm install && npm run build"
-
-[functions]
-  node_bundler = "esbuild"
-  directory = "src/backend/functions"
-  external_node_modules = ["electron"]

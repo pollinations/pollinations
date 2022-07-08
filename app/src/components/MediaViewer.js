@@ -4,7 +4,7 @@ import Markdown from 'markdown-to-jsx';
 import React from "react";
 import { getMedia } from "../data/media";
 // Icons
-import { getWebURL } from "../network/ipfsConnector";
+import { getWebURL }  from  "@pollinations/ipfs/ipfsConnector";
 import { GridStyle } from '../styles/global';
 
 export const MediaViewer =  ({ filename, content, type, style }) => {

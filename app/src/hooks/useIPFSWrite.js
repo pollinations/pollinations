@@ -1,6 +1,6 @@
 import Debug from "debug"
 import { useEffect, useMemo } from "react"
-import { getWriter } from "../network/ipfsWebClient"
+import { getWriter } from  "@pollinations/ipfs/ipfsWebClient"
 
 
 const debug = Debug("useIPFSWrite")

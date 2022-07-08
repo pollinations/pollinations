@@ -3,7 +3,7 @@ import { Button, CardContent, Link, Typography } from "@material-ui/core"
 // import ReactJson from 'react-json-view'
 import Ansi from "ansi-to-react";
 
-import { getWebURL } from '../network/ipfsConnector';
+import { getWebURL }  from  "@pollinations/ipfs/ipfsConnector";
 // import JupyterViewer from "react-jupyter-notebook";
 
 export const IpfsLog = ({ipfs,contentID}) => {

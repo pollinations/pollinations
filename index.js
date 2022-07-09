@@ -23,6 +23,8 @@ const requestListener = async function (req, res) {
     return
   }
 
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000' });
+  
   const promptAndSeed = pathname.split("/prompt/")[1];
   
   const [promptRaw, seed] = promptAndSeed.split("/");
@@ -35,7 +37,7 @@ const requestListener = async function (req, res) {
   // fetch the image from the url and return it as the response
   const imageResponse = await fetch(url);
   const buffer = await imageResponse.buffer();
-  res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000' });
+
   res.end(buffer);
 
   // res.writeHead(301, {
@@ -50,18 +52,18 @@ const getImage = memoize(async (prompt,seed) => {
   const inputWriter = writer();
   const response = await submitToAWS({prompt,num: 1}, inputWriter, "voodoohop/dalle-playground", false)
 
-  console.log("submitted to aws", response)
+  console.log("got pollen id from aws", response)
   const { nodeID } = response
 
   const [cids, unsubscribe] = subscribeGenerator(nodeID, "/output");
 
   for await (const cid of cids) {
+  
     console.log("!!!!received response",cid)
     const data = await IPFSWebState(cid);
-    const done = JSON.parse(data?.output?.done)
-    console.log("!!!!received response",done, data)
-    //res.write(cid);
-    if (done) {
+    console.log("!!!!received response", data)
+  
+    if (data?.output?.done) {
         unsubscribe()
         console.log("unsubscribed")
         
@@ -71,8 +73,6 @@ const getImage = memoize(async (prompt,seed) => {
         const [_filename, url] = outputEntries.find(([key]) => key.endsWith(".png"))
         
         return url
-
-        break
     }
   }
 

@@ -6,12 +6,19 @@ import { IPFSWebState } from '@pollinations/ipfs/ipfsWebClient.js';
 import { parse }  from 'url';
 import fetch from 'node-fetch';
 import urldecode from 'urldecode';
+import jimp from "jimp"
+
+import { createWriteStream } from 'fs';
+
+import awaitSleep from 'await-sleep';
+
 import memoize from 'lodash.memoize';
+import { cache } from './cache';
+import { gifCreator } from './gifCreator';
 
-
+export const CACHE_FILE="/tmp/cache.json"
 
 const requestListener = async function (req, res) {
-
 
   const { pathname } = parse(req.url, true);
 
@@ -23,8 +30,10 @@ const requestListener = async function (req, res) {
     return
   }
 
-  res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000' });
-  
+  const { showImage, finish } = gifCreator(res);
+
+  await showImage("https://i.imgur.com/lTAeMmN.jpg");
+
   const promptAndSeed = pathname.split("/prompt/")[1];
   
   const [promptRaw, seed] = promptAndSeed.split("/");
@@ -32,13 +41,18 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const url = await getImage(prompt, seed)
+  const url = await getImage(prompt, seed || 0)
 
-  // fetch the image from the url and return it as the response
-  const imageResponse = await fetch(url);
-  const buffer = await imageResponse.buffer();
+  console.log("Showing image: ", url);
+  await showImage(url);
 
-  res.end(buffer);
+  finish()
+  console.log("finishing")
+  res.end();
+
+  // res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000' });
+  // res.end(jpeg);
+
 
   // res.writeHead(301, {
   //   Location: url
@@ -46,7 +60,7 @@ const requestListener = async function (req, res) {
 
 }
 
-const getImage = memoize(async (prompt,seed) => {
+const getImage = memoize(cache(async (prompt,seed) => {
     
   console.log("!!!!submitted prompt", prompt)
   const inputWriter = writer();
@@ -76,8 +90,11 @@ const getImage = memoize(async (prompt,seed) => {
     }
   }
 
-}, (prompt, seed) => prompt + seed)
+}), (prompt, seed) => prompt + seed)
+
 
 
 const server = http.createServer(requestListener);
 server.listen(8080);
+
+

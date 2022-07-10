@@ -41,7 +41,7 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const url = await getImage(prompt, seed || 0)
+  const url = await runModel({prompt,num: 1, seed: seed || 0})
 
   console.log("Showing image: ", url);
   await showImage(url);
@@ -50,21 +50,13 @@ const requestListener = async function (req, res) {
   console.log("finishing")
   res.end();
 
-  // res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000' });
-  // res.end(jpeg);
-
-
-  // res.writeHead(301, {
-  //   Location: url
-  // }).end();
-
 }
 
-const getImage = memoize(cache(async (prompt,seed) => {
+const runModel = memoize(cache(async (inputs, model="voodoohop/dalle-playground") => {
     
   console.log("!!!!submitted prompt", prompt)
   const inputWriter = writer();
-  const response = await submitToAWS({prompt,num: 1}, inputWriter, "voodoohop/dalle-playground", false)
+  const response = await submitToAWS(inputs, inputWriter, model, false)
 
   console.log("got pollen id from aws", response)
   const { nodeID } = response

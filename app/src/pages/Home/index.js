@@ -6,10 +6,12 @@ import About from "./About"
 import WhyWeDoIt from "./WhyWeDoIt"
 import MultiplePlatforms from "./MultiplePlatforms"
 import EndlessPossibilites from "./EndlessPossibilites"
+import TryOut from "./TryOut"
 
 export default function Home() {
   return <HomeStyle>
       <Hero />
+      <TryOut/>
       <About />
       <MultiplePlatforms/>
       <EndlessPossibilites/>

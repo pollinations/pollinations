@@ -15,30 +15,37 @@ const POSSIBILITIES = {
   },
   DreamVisualizer: {
     label: 'visualize a dream',
+    src: '/possibilities/sarkis.gif'
   },
   ArtworkDance: {
-    label: 'Make your artwork dance'
+    label: 'Make your artwork dance',
+    src: '/possibilities/sarkis.gif'
   },
   CreateNfts: {
-    label: 'Create NFTs'
+    label: 'Create NFTs',
+    src: '/possibilities/sarkis.gif'
   },
   IllustrateArticles: {
-    label: 'Illustrate articles'
+    label: 'Illustrate articles',
+    src: '/possibilities/sarkis.gif'
   },
   PsychedelicVisuals: {
-    label: 'Create psychedelic visuals'
+    label: 'Create psychedelic visuals',
+    src: '/possibilities/sarkis.gif'
   },
   GenerateMemes: {
-    label: 'Generate memes'
+    label: 'Generate memes',
+    src: '/possibilities/sarkis.gif'
   },
   ChristmasCard: {
-    label: 'Create an amazing christmas card'
+    label: 'Create an amazing christmas card',
+    src: '/possibilities/sarkis.gif'
   }
 }
 
 const EndlessPossibilites = props => {
 
-    const [ currentItem, setCurrentItem ] = useState('')
+    const [ currentItem, setCurrentItem ] = useState('CreateNfts')
   
     return <HeroStyle>
   

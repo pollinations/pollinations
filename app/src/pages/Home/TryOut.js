@@ -34,7 +34,7 @@ const form = {
 
 export default React.memo(function TryOut() {
 
-const [ currentID, setCurrentID ] = useState('')
+const [ currentID, setCurrentID ] = useState('bcb6b8d4cf9544c1ae60ab8e12c04523')
 
 const { setContentID, nodeID, contentID, submitToAWS, setNodeID } = useAWSNode({NodeID: currentID});
 
@@ -125,7 +125,7 @@ align-items: center;
 const CreateInput = styled.input`
 width: 53vw;
 @media (max-width: 768px) {
-width: 98vw;
+    width: 90vw;    
 }
 height: 65px;
 background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);

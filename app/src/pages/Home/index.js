@@ -5,13 +5,14 @@ import Hero from "./Hero"
 import About from "./About"
 import WhyWeDoIt from "./WhyWeDoIt"
 import MultiplePlatforms from "./MultiplePlatforms"
+import EndlessPossibilites from "./EndlessPossibilites"
 
 export default function Home() {
   return <HomeStyle>
       <Hero />
       <About />
       <MultiplePlatforms/>
-      <EmptyPlaceHolder/>
+      <EndlessPossibilites/>
       <WhyWeDoIt/>
     </HomeStyle>
 }
@@ -23,8 +24,3 @@ flex-direction: column;
 align-items: center;
 `;
 
-const EmptyPlaceHolder = styled.div`
-background-color: black;
-width: 100%;
-min-height: 100vh;
-`

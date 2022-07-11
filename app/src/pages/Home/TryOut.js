@@ -124,6 +124,9 @@ align-items: center;
 
 const CreateInput = styled.input`
 width: 53vw;
+@media (max-width: 768px) {
+width: 98vw;
+}
 height: 65px;
 background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
 border-radius: 60px;

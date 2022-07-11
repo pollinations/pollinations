@@ -38,6 +38,7 @@ export const BackGroundImage = styled.img`
 position: absolute;
 width: 100%;
 min-height: 100vh;
+height: auto;
 top: ${props => props.top || 0};
 left: 0;
 opacity: ${props => props.opacity || 1};

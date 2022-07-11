@@ -32,11 +32,21 @@ gap: 2em;
 padding: 0.5em 0em;
 overflow-y: hidden;
 background-color: transparent;
-text-transform: uppercase;
 
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
 display: none;
 }
+
+font-family: 'DM Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 18px;
+line-height: 23px;
+text-align: center;
+
+color: #FFFFFF;
+
+
 `
 const VerticalStyle = styled.div`
 list-style: none;

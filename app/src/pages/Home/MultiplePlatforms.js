@@ -1,9 +1,12 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, Headline } from '../../styles/global'
 import heroBGOverlay from '../../assets/imgs/bgherooverlay.png'
+import { useNavigate } from 'react-router-dom'
 // Multiple platforms Section
 
 const MultiplePlatforms = props => {
+
+    const navigate = useNavigate()
 
     return <MultiplePlatformsStyle>
   
@@ -17,7 +20,7 @@ const MultiplePlatforms = props => {
         of magic to their business by integrating with Pollinations’ API.
       </MultiplePlatformsSubHeadline>
   
-      <CTA variant='contained'>
+      <CTA variant='contained' onClick={() => navigate('/about')}>
         How it works
       </CTA>
       <BackGroundImage 
@@ -48,6 +51,8 @@ const MultiplePlatforms = props => {
   padding: 0.8em 1.2em;
   border: none;
   margin-top: 5em;
+
+  cursor: pointer;
   
   font-family: 'DM Sans';
   font-style: normal;

@@ -65,10 +65,10 @@ const Pollinations = () => {
           {
             MARKDOWN_ROUTES.map( route => (
               <Route 
-                key={route.label}
+                key={route.id}
                 exact
                 path={route.to}
-                element={<PageTemplate label={route.label} />}
+                element={<PageTemplate label={route.id} />}
               />
             ))
           }

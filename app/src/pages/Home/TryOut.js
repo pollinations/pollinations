@@ -32,26 +32,17 @@ const form = {
 }
 
 export default React.memo(function TryOut() {
-// universe in a jar : 45e65c87df8c441384a75916d15ba21b
-// universe in a glass cube : bcb6b8d4cf9544c1ae60ab8e12c04523
-//const [ currentID, setCurrentID ] = useState('45e65c87df8c441384a75916d15ba21b')
 
-const { nodeID, contentID, submitToAWS } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
-
-const [ isLoading, setLoading ] = useState(false)
+  const { nodeID, contentID, submitToAWS, isSubmitting } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
 
   const ipfs = useIPFS(contentID);
   const ipfsWriter = useIPFSWrite()
 
-  const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
-  
-  useEffect(()=>{
-    if ( nodeID && ipfs?.output?.done) setLoading(false)
+  const isLoading = isSubmitting || (nodeID && !ipfs?.output?.done);
 
-  },[ nodeID, ipfs?.output?.done ])
+  const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    setLoading(true)
     await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", Math.random() < 0.5);
   }
   

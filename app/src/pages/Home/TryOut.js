@@ -36,7 +36,7 @@ export default React.memo(function TryOut() {
 // universe in a glass cube : bcb6b8d4cf9544c1ae60ab8e12c04523
 //const [ currentID, setCurrentID ] = useState('45e65c87df8c441384a75916d15ba21b')
 
-const { setContentID, nodeID, contentID, submitToAWS } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
+const { nodeID, contentID, submitToAWS } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
 
 const [ isLoading, setLoading ] = useState(false)
 
@@ -52,10 +52,7 @@ const [ isLoading, setLoading ] = useState(false)
 
   const dispatch = async (values) => {
     setLoading(true)
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", false);
-
-    setContentID(contentID)
-    setNodeID(nodeID)
+    await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", false);
   }
   
   return <PageLayout >

@@ -19,7 +19,7 @@ import Creator from "./pages/Create"
 import Dalle from "./pages/Dalle"
 import Envisioning from "./pages/Envisioning"
 import Feed from "./pages/Feed"
-import Home from "./pages/Home"
+import Home from "./pages/Home/"
 import Models from "./pages/Models"
 import ResultViewer from "./pages/ResultViewer"
 
@@ -29,6 +29,8 @@ import {
   ROUTES, 
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+import AboutPage from "./pages/About"
+import Integrate from "./pages/Integrate"
 
 
 const debug = Debug("AppContainer")
@@ -60,15 +62,15 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
         <Routes>
           <Route exact path='/' element={<Home />} />
-
+          <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             MARKDOWN_ROUTES.map( route => (
               <Route 
-                key={route.label}
+                key={route.id}
                 exact
                 path={route.to}
-                element={<PageTemplate label={route.label} />}
+                element={<PageTemplate label={route.id} />}
               />
             ))
           }
@@ -108,7 +110,7 @@ const Pollinations = () => {
         </Routes>
       
       <Footer />
-      <ImageContainer/>
+      {/* <ImageContainer/> */}
       
       <ToolBar node={node} showNode={navigateToNode} />
     </>

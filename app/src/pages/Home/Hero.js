@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { BackGroundImage } from '../../styles/global';
-import heroBG from '../../assets/imgs/bghero.png'
+import heroBG from '../../assets/imgs/bg_animated.gif'
 import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 // Hero Section
 

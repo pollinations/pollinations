@@ -1,6 +1,7 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, Headline } from '../../styles/global'
 import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
+
 import { useNavigate } from 'react-router-dom'
 // Multiple platforms Section
 
@@ -10,9 +11,9 @@ const MultiplePlatforms = props => {
 
     return <MultiplePlatformsStyle>
   
-      <Headline>
+      <HeadlineOnTop>
         Multiple platforms
-      </Headline>
+      </HeadlineOnTop>
   
       <MultiplePlatformsSubHeadline>
         Platforms for music, NFTs, media outlets, 
@@ -23,6 +24,8 @@ const MultiplePlatforms = props => {
       <CTA variant='contained' onClick={() => navigate('/about')}>
         How it works
       </CTA>
+      <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen.gif'/>
+      <Flying3d src='/3dobjects/An-Alien-with-a-Planet-for-a-H-unscreen.gif'/>
       <BackGroundImage 
         src={heroBGOverlay} 
         top='auto'
@@ -34,6 +37,21 @@ const MultiplePlatforms = props => {
   }
 
   export default MultiplePlatforms
+
+  const Flying3d = styled.img`
+  position: absolute;
+  ${props => props.left ? `
+  bottom: -50px;
+  left: 0;` : `
+  top: -50px;
+  right: -50px;`
+  };
+  z-index: 0;
+  `
+
+  const HeadlineOnTop = styled(Headline)`
+  z-index: 1;
+  `
   
   const MultiplePlatformsSubHeadline = styled.p`
   width: 85%;
@@ -46,6 +64,7 @@ const MultiplePlatforms = props => {
   color: #FFFFFF;
   `
   const CTA = styled.button`
+  z-index: 1;
   background: #D8E449;
   border-radius: 40px;
   padding: 0.8em 1.2em;
@@ -76,4 +95,6 @@ const MultiplePlatforms = props => {
   
   width: 100%;
   min-height: 100vh;
+  position: relative;
+
   `;

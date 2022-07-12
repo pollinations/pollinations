@@ -10,19 +10,19 @@ const POSSIBILITIES = {
   //   label: 'Illustrate a song',
   // },
   CreateNfts: {
-    label: 'Create NFTs',
+    label: 'create nfts',
     src: '/possibilities/nft-min.gif'
   },
   DreamVisualizer: {
     label: 'visualize a dream',
     src: '/possibilities/dreams-min.gif'
   },
-  ArtworkDance: {
-    label: 'Make your artwork dance',
-    src: '/possibilities/sarkis-min.gif'
-  },
+  // ArtworkDance: {
+  //   label: 'make your artwork dance',
+  //   src: '/possibilities/sarkis-min.gif'
+  // },
   IllustrateArticles: {
-    label: 'Illustrate articles',
+    label: 'illustrate articles',
     src: '/possibilities/article.jpg'
   },
   CreateAlbumArt: {
@@ -30,11 +30,11 @@ const POSSIBILITIES = {
     src: '/possibilities/sarkis-min.gif'
   },
   PsychedelicVisuals: {
-    label: 'Create psychedelic visuals',
+    label: 'create psychedelic visuals',
     src: '/possibilities/psychedelic.jpg'
   },
   GenerateMemes: {
-    label: 'Generate memes',
+    label: 'generate memes',
     src: '/possibilities/meme.png'
   },
   // ChristmasCard: {

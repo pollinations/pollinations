@@ -15,7 +15,7 @@ const POSSIBILITIES = {
   },
   DreamVisualizer: {
     label: 'visualize a dream',
-    src: '/possibilities/sarkis.gif'
+    src: '/possibilities/dreams.gif'
   },
   ArtworkDance: {
     label: 'Make your artwork dance',
@@ -98,7 +98,7 @@ object-fit: contain;
 img {
   max-width: 100%;
   height: 400px;
-  aspect-ratio: 1;
+  // aspect-ratio: 1;
 }
 `
 

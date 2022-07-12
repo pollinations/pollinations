@@ -182,7 +182,7 @@ const Previewer = ({ ipfs }) => {
 
     return <PreviewerStyle
         children={
-        images
+        images?.slice(0,3)
         .map(([filename, url, type]) => (
             <MediaViewer 
             key={filename}

@@ -52,7 +52,7 @@ const [ isLoading, setLoading ] = useState(false)
 
   const dispatch = async (values) => {
     setLoading(true)
-    await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", false);
+    await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", true);
   }
   
   return <PageLayout >

@@ -1,7 +1,7 @@
 import styled from '@emotion/styled'
 import { BackGroundImage } from '../../styles/global';
 import heroBG from '../../assets/imgs/bghero.png'
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.png'
+import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 // Hero Section
 
 const Hero = props => {

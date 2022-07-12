@@ -21,14 +21,16 @@ const WhyWeDoIt = props => {
         </div>
         <div>
           <ExplanationText>
-          We integrate with companies to offer users 
-          one of the best AI-powered creative experiences out there.
+          We <b>integrate with companies</b> to offer one of the best AI-based creative experiences out there, 
+          empowering your users to generate fresh media without the need to switch platforms. 
+
           <br/><br/>
-          This way we can keep Pollinations free for 
-          visitors and reward developers and artists for their work.
+          We also <b>develop presets</b> and combine different models to ensure that all media created within your platform fits the brand’s aesthetics, keeping the looks consistent. 
+
           <br/><br/>
-          Pollinations also helps to build 
-          the metaverse the way we want it: trippy! It’s truly a win-win-win-win
+          And by facilitating the creation of images, objects and immersive environments, 
+          we help to <b>build the metaverse</b> the way we want it: trippy! It’s truly a win-win-win  ✨
+
           </ExplanationText>
         </div>
       </GridTwoColumns>

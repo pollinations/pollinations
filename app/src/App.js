@@ -29,6 +29,7 @@ import {
   ROUTES, 
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+import AboutPage from "./pages/About"
 
 
 const debug = Debug("AppContainer")

@@ -20,6 +20,7 @@ const About = props => {
   const AboutStyle = styled.div`
   
   width: 100%;
+  max-width: 1280px;
   min-height: 50vh;
   display: flex;
   justify-content: center;

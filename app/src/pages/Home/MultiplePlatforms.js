@@ -44,7 +44,7 @@ const MultiplePlatforms = props => {
   bottom: -50px;
   left: 0;` : `
   top: -50px;
-  right: -50px;`
+  right: 0px;`
   };
   z-index: 0;
   `
@@ -94,7 +94,9 @@ const MultiplePlatforms = props => {
   align-items: center;
   
   width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   position: relative;
+
 
   `;

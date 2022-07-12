@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/bg2.png'
+import whyBG from '../../assets/imgs/bg1.jpg'
 
 // why we do it
 

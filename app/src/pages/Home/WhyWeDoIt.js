@@ -34,14 +34,7 @@ const WhyWeDoIt = props => {
           </ExplanationText>
         </div>
       </GridTwoColumns>
-  
-  
-  
-      <BackGroundImage 
-          src={whyBG} 
-          top='auto'
-          zIndex='-1' 
-          alt="hero_bg_overlay" />
+
     
     </HeroStyle>
   }

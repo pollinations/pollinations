@@ -30,6 +30,7 @@ import {
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
 import AboutPage from "./pages/About"
+import Integrate from "./pages/Integrate"
 
 
 const debug = Debug("AppContainer")
@@ -61,7 +62,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
         <Routes>
           <Route exact path='/' element={<Home />} />
-
+          <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {
             MARKDOWN_ROUTES.map( route => (

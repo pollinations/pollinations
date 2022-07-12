@@ -18,7 +18,7 @@ import { zipObj } from 'ramda';
 const debug = Debug("Envisioning");
 
 const form = {
-  "prompt": {
+  "Prompt": {
     type: "string",
     default: "",
     title: "Prompt",
@@ -52,7 +52,7 @@ const [ isLoading, setLoading ] = useState(false)
 
   const dispatch = async (values) => {
     setLoading(true)
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "voodoohop/dalle-playground", false);
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", true);
 
     setContentID(contentID)
     setCurrentID(nodeID)

@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, Headline } from '../../styles/global'
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.png'
+import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 import { useNavigate } from 'react-router-dom'
 // Multiple platforms Section
 

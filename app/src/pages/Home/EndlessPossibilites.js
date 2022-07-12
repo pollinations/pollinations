@@ -9,9 +9,9 @@ const POSSIBILITIES = {
   // IllustrateSong: {
   //   label: 'Illustrate a song',
   // },
-  CreateAlbumArt: {
-    label: 'create album art',
-    src: '/possibilities/sarkis.gif'
+  CreateNfts: {
+    label: 'Create NFTs',
+    src: '/possibilities/nft.gif'
   },
   DreamVisualizer: {
     label: 'visualize a dream',
@@ -21,17 +21,17 @@ const POSSIBILITIES = {
     label: 'Make your artwork dance',
     src: '/possibilities/sarkis.gif'
   },
-  CreateNfts: {
-    label: 'Create NFTs',
-    src: '/possibilities/sarkis.gif'
-  },
   IllustrateArticles: {
     label: 'Illustrate articles',
+    src: '/possibilities/article.jpg'
+  },
+  CreateAlbumArt: {
+    label: 'create album art',
     src: '/possibilities/sarkis.gif'
   },
   PsychedelicVisuals: {
     label: 'Create psychedelic visuals',
-    src: '/possibilities/sarkis.gif'
+    src: '/possibilities/psychedelic.jpg'
   },
   GenerateMemes: {
     label: 'Generate memes',
@@ -45,7 +45,7 @@ const POSSIBILITIES = {
 
 const EndlessPossibilites = props => {
 
-    const [ currentItem, setCurrentItem ] = useState('CreateNfts')
+    const [ currentItem, setCurrentItem ] = useState('CreateAlbumArt')
   
     return <HeroStyle>
   
@@ -65,7 +65,9 @@ const EndlessPossibilites = props => {
               })
             }
           </CarouselStyle>
-            <img src={POSSIBILITIES[currentItem]?.src}/>
+          <PossibilitieItemImg >
+            <img src={POSSIBILITIES[currentItem]?.src} />
+          </PossibilitieItemImg>
           </GridTwoColumns>
         <RotatingThing src={CircularElement} />
     
@@ -80,16 +82,30 @@ justify-content: center;
 `
 
 const PossibilitieItemParagraph = styled.p`
-  writing-mode: vertical-lr;
-  transform: rotate(180deg);
-  text-align: center;
-  cursor: pointer;
-  min-height: 200px;
-  ${ props => props.isActive && 'border: 2px solid red; border-radius: 50%; padding: 0.5em;'}
+writing-mode: vertical-lr;
+transform: rotate(180deg);
+text-align: center;
+cursor: pointer;
+min-height: 200px;
+${ props => props.isActive && 'border: 2px solid red; border-radius: 50%; padding: 0.5em;'}
+`
+const PossibilitieItemImg = styled.div`
+width: 100%;
+
+display: flex;
+justify-content: center;
+object-fit: contain;
+img {
+  max-width: 100%;
+  height: 400px;
+  aspect-ratio: 1;
+}
 `
 
 const TitleImg = styled.img`
-width: 40%;
+width: 80%;
+max-width: 500px;
+
 margin-top: 5em;
 margin-bottom: 2em;
 `
@@ -121,6 +137,7 @@ display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: center;
 margin-top: 2em;
+
 
 `
 const HeroStyle = styled.div`

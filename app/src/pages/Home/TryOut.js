@@ -33,8 +33,9 @@ const form = {
 }
 
 export default React.memo(function TryOut() {
-
-const [ currentID, setCurrentID ] = useState('bcb6b8d4cf9544c1ae60ab8e12c04523')
+// universe in a jar : 45e65c87df8c441384a75916d15ba21b
+// universe in a glass cube : bcb6b8d4cf9544c1ae60ab8e12c04523
+const [ currentID, setCurrentID ] = useState('45e65c87df8c441384a75916d15ba21b')
 
 const { setContentID, nodeID, contentID, submitToAWS, setNodeID } = useAWSNode({NodeID: currentID});
 

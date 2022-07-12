@@ -8,6 +8,7 @@ import landingRight from "./text/landingRight.md"
 import impressum from "./text/impressum.md"
 import expo from "./text/expo.md"
 import landing from "./text/landing.md"
+import integrate from './text/integrate.md'
 
 export const textContent = {
   help,
@@ -20,6 +21,7 @@ export const textContent = {
   landingRight,
   impressum,
   expo,
+  integrate
 }
 
 const expoCtx = require.context("./expo", false, /\.md$/)

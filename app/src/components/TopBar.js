@@ -16,8 +16,8 @@ const TopBar = ({ navRoutes }) => {
 
   const drawerState = React.useState(false);
   const location = useLocation();
-  console.log(location.pathname === '/')
 
+  
   return <>
     <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
 

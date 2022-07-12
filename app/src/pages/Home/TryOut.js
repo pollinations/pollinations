@@ -53,7 +53,7 @@ const [ isLoading, setLoading ] = useState(false)
 
   const dispatch = async (values) => {
     setLoading(true)
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", true);
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", false);
 
     setContentID(contentID)
     setCurrentID(nodeID)

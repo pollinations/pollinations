@@ -171,7 +171,7 @@ background-color: grey;
 
 const Previewer = ({ ipfs }) => {
 
-    if (!ipfs.output) return null;
+    if (!ipfs?.output) return null;
 
     const images = getMedia(ipfs.output);
 

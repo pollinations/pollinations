@@ -57,16 +57,9 @@ const [ isLoading, setLoading ] = useState(false)
   
   return <PageLayout >
 
-        <InputBarStyle>
-          {isLoading && 
-          <LinearProgress style={{margin: '0.5em 0'}} />
-          }
-          <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-        </InputBarStyle>
+        <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
 
-        <RowStyle>
-            <Previewer ipfs={ipfs} />   
-        </RowStyle>
+        <Previewer ipfs={ipfs} />   
 
     </PageLayout>
 });
@@ -191,24 +184,21 @@ const Previewer = ({ ipfs }) => {
 
 // STYLES
 const PageLayout = styled.div`
+width: 100%;
 padding: ${GlobalSidePadding};
 margin-top: 5em;
 display: flex;
 flex-direction: column;
+align-items: center;
+justify-content: center;
 grid-gap: 0.4em;
 
 `;
 
-const InputBarStyle = styled.div`
-display: flex;
-flex-direction: column;
-align-items: center;
-`
-
 const PreviewerStyle = styled.div`
-width: 100%;
+width: 80%;
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 grid-gap: 0.5em;
 
 img {
@@ -217,10 +207,4 @@ img {
 
 `
 
-const RowStyle = styled.div`
-grid-column: 1 / 1;
-@media (max-width: 640px) {
-  grid-column: 1 / 1;
-}
-`
 

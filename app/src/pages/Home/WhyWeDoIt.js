@@ -34,7 +34,15 @@ const WhyWeDoIt = props => {
           </ExplanationText>
         </div>
       </GridTwoColumns>
-
+  
+  
+  
+      <BackGroundImage 
+          src={whyBG} 
+          top='auto'
+          position='absolute'
+          zIndex='-1' 
+          alt="hero_bg_overlay" />
     
     </HeroStyle>
   }
@@ -74,14 +82,17 @@ margin-top: 7em;
   
 const GridTwoColumns = styled.div`
 width: 100%;
-padding: 10em 4em;
+padding: 1em 1em;
+margin-top:5em;
+margin-bottom: 2em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: flex-start;
 
+
 `
 const HeroStyle = styled.div`
-min-height: 100vh;
+
 display: flex;
 flex-direction: column;
 align-items: center;
@@ -89,9 +100,5 @@ align-items: center;
 width: 100%;
 max-width: 1280px;
 padding: ${GlobalSidePadding};
-
-background: url(${whyBG});
-background-size: cover;
-background-position: center;
 
 `;

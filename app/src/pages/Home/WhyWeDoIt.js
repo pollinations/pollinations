@@ -94,6 +94,7 @@ flex-direction: column;
 align-items: center;
 
 width: 100%;
+max-width: 1280px;
 padding: ${GlobalSidePadding};
 
 background: url(${whyBG});

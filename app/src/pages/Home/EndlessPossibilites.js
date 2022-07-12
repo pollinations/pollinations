@@ -35,12 +35,12 @@ const POSSIBILITIES = {
   },
   GenerateMemes: {
     label: 'Generate memes',
-    src: '/possibilities/sarkis.gif'
+    src: '/possibilities/meme.png'
   },
-  ChristmasCard: {
-    label: 'Create an amazing christmas card',
-    src: '/possibilities/sarkis.gif'
-  }
+  // ChristmasCard: {
+  //   label: 'Create an amazing christmas card',
+  //   src: '/possibilities/sarkis.gif'
+  // }
 }
 
 const EndlessPossibilites = props => {
@@ -70,6 +70,7 @@ const EndlessPossibilites = props => {
           </PossibilitieItemImg>
           </GridTwoColumns>
         <RotatingThing src={CircularElement} />
+          
     
     </HeroStyle>
   }
@@ -77,6 +78,13 @@ const EndlessPossibilites = props => {
 export default EndlessPossibilites
 
 const CarouselStyle = styled.div`
+align-self: flex-start;
+justify-self: self-end;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  justify-self: center;
+}
+margin-top: 5em;
+
 display: flex;
 justify-content: center;
 `
@@ -91,14 +99,13 @@ ${ props => props.isActive && 'border: 2px solid red; border-radius: 50%; paddin
 `
 const PossibilitieItemImg = styled.div`
 width: 100%;
-
+margin-bottom: -2em;
 display: flex;
 justify-content: center;
-object-fit: contain;
 img {
+  object-fit: contain;
   max-width: 100%;
   height: 400px;
-  // aspect-ratio: 1;
 }
 `
 
@@ -111,14 +118,11 @@ margin-bottom: 2em;
 `
 
 const RotatingThing = styled.img`
+
+
 width: 200px;
-
-position: absolute;
-top: auto;
-left: 20;
-
-margin-top: 80vh;
-
+margin-bottom: 2em;
+align-self: flex-start;
 
 animation: rotation 20s infinite linear;
 @keyframes rotation {
@@ -141,12 +145,13 @@ margin-top: 2em;
 
 `
 const HeroStyle = styled.div`
-min-height: 100vh;
+
 display: flex;
 flex-direction: column;
 align-items: center;
 
 width: 100%;
+max-width: 1200px;
 padding: ${GlobalSidePadding};
 
 background-size: cover;

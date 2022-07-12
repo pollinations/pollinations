@@ -5,11 +5,10 @@ import React, { useEffect, useState } from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import useAWSNode from '../../hooks/useAWS';
+import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
 import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { GlobalSidePadding } from '../../styles/global';
-
 
 // take it away
 import { useFormik } from 'formik';
@@ -35,9 +34,9 @@ const form = {
 export default React.memo(function TryOut() {
 // universe in a jar : 45e65c87df8c441384a75916d15ba21b
 // universe in a glass cube : bcb6b8d4cf9544c1ae60ab8e12c04523
-const [ currentID, setCurrentID ] = useState('45e65c87df8c441384a75916d15ba21b')
+//const [ currentID, setCurrentID ] = useState('45e65c87df8c441384a75916d15ba21b')
 
-const { setContentID, nodeID, contentID, submitToAWS, setNodeID } = useAWSNode({NodeID: currentID});
+const { setContentID, nodeID, contentID, submitToAWS } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
 
 const [ isLoading, setLoading ] = useState(false)
 
@@ -53,10 +52,9 @@ const [ isLoading, setLoading ] = useState(false)
 
   const dispatch = async (values) => {
     setLoading(true)
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", true);
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", false);
 
     setContentID(contentID)
-    setCurrentID(nodeID)
     setNodeID(nodeID)
   }
   
@@ -72,7 +70,7 @@ const [ isLoading, setLoading ] = useState(false)
         <RowStyle>
             <Previewer ipfs={ipfs} />   
         </RowStyle>
-          { currentID }
+
     </PageLayout>
 });
 
@@ -182,7 +180,7 @@ const Previewer = ({ ipfs }) => {
 
     return <PreviewerStyle
         children={
-        images
+        images?.slice(0,3)
         .map(([filename, url, type]) => (
             <MediaViewer 
             key={filename}

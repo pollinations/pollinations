@@ -18,7 +18,7 @@ import { SEOMetadata } from '../components/Helmet';
 const debug = Debug("Envisioning");
 
 const form = {
-  "prompt": {
+  "Prompt": {
     type: "string",
     default: "",
     title: "Prompt",
@@ -53,7 +53,7 @@ export default React.memo(function Create() {
 
   const dispatch = async (values) => {
     navigateTo("/dalle/submit")
-    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "voodoohop/dalle-playground", false);
+    const {nodeID, contentID} = await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", true);
     debug("submitted",contentID, "to AWS. Got nodeID", nodeID)
     setContentID(contentID)
     navigateTo(`/dalle/${nodeID}`)

@@ -11,15 +11,15 @@ const POSSIBILITIES = {
   // },
   CreateNfts: {
     label: 'Create NFTs',
-    src: '/possibilities/nft.gif'
+    src: '/possibilities/nft-min.gif'
   },
   DreamVisualizer: {
     label: 'visualize a dream',
-    src: '/possibilities/dreams.gif'
+    src: '/possibilities/dreams-min.gif'
   },
   ArtworkDance: {
     label: 'Make your artwork dance',
-    src: '/possibilities/sarkis.gif'
+    src: '/possibilities/sarkis-min.gif'
   },
   IllustrateArticles: {
     label: 'Illustrate articles',
@@ -27,7 +27,7 @@ const POSSIBILITIES = {
   },
   CreateAlbumArt: {
     label: 'create album art',
-    src: '/possibilities/sarkis.gif'
+    src: '/possibilities/sarkis-min.gif'
   },
   PsychedelicVisuals: {
     label: 'Create psychedelic visuals',

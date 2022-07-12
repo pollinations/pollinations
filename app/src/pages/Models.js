@@ -6,7 +6,8 @@ import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
 import styled from '@emotion/styled'
 import NotebookCard from "../components/temp/NotebookCard"
 import FilterUi from "../components/temp/FilterUi"
-import { GridStyle, BaseContainer } from '../styles/global'
+import { GridStyle, BaseContainer, BackGroundImage } from '../styles/global'
+import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
 
 
 export default function Models() {
@@ -32,12 +33,24 @@ export default function Models() {
       }
       </GridStyle>
       
+      <BackGroundImage 
+        src={heroBGOverlay} 
+        top='0'
+        zIndex='-1' 
+        position='fixed'
+        transform='rotate(-180deg)' 
+        alt="hero_bg_overlay" />
 
     </ModelsStyle>
   )
 };
 
 const ModelsStyle = styled(BaseContainer)`
+display: flex;
+flex-direction: column;
+
+width: 100%;
+min-height: 100vh;
 h3 {
   text-align: center;
   margin: 1em 0 0 0;

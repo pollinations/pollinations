@@ -16,20 +16,20 @@ const WhyWeDoIt = props => {
               why we do it <br/>
             </span>
             With Pollinations, 
-            creativity becomes scalable
+            creativity is scalable
           </Headline>
         </div>
         <div>
           <ExplanationText>
           We <b>integrate with companies</b> to offer one of the best AI-based creative experiences out there, 
-          empowering your users to generate fresh media without the need to switch platforms. 
+          empowering people to generate fresh media without the need to switch platforms. 
 
           <br/><br/>
-          We also <b>develop presets</b> and combine different models to ensure that all media created within your platform fits the brand’s aesthetics, keeping the looks consistent. 
+          We also <b>develop presets</b> and combine different models to ensure that all media created within the platforms fits the brand’s aesthetics, keeping the looks consistent. 
 
           <br/><br/>
           And by facilitating the creation of images, objects and immersive environments, 
-          we help to <b>build the metaverse</b> the way we want it: trippy! It’s truly a win-win-win  ✨
+          we help to <b>build the metaverse</b> the way we want it: trippy!
 
           </ExplanationText>
         </div>
@@ -40,6 +40,7 @@ const WhyWeDoIt = props => {
       <BackGroundImage 
           src={whyBG} 
           top='auto'
+          position='absolute'
           zIndex='-1' 
           alt="hero_bg_overlay" />
     
@@ -81,14 +82,17 @@ margin-top: 7em;
   
 const GridTwoColumns = styled.div`
 width: 100%;
-padding: 10em 4em;
+padding: 1em 1em;
+margin-top:5em;
+margin-bottom: 2em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: flex-start;
 
+
 `
 const HeroStyle = styled.div`
-min-height: 100vh;
+
 display: flex;
 flex-direction: column;
 align-items: center;
@@ -96,9 +100,5 @@ align-items: center;
 width: 100%;
 max-width: 1280px;
 padding: ${GlobalSidePadding};
-
-background: url(${whyBG});
-background-size: cover;
-background-position: center;
 
 `;

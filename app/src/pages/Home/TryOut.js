@@ -7,7 +7,6 @@ import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
-import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { GlobalSidePadding } from '../../styles/global';
 
 // take it away
@@ -33,17 +32,12 @@ const form = {
 
 export default React.memo(function TryOut() {
 
-  const { nodeID, contentID, submitToAWS, isSubmitting } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
-
-  const ipfs = useIPFS(contentID);
-  const ipfsWriter = useIPFSWrite()
-
-  const isLoading = isSubmitting || (nodeID && !ipfs?.output?.done);
+  const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
 
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, ipfsWriter, "pollinations/preset-frontpage", Math.random() < 0.5);
+    await submitToAWS(values, "pollinations/preset-frontpage", Math.random() < 0.5);
   }
   
   return <PageLayout >

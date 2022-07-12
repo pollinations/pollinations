@@ -24,8 +24,8 @@ const MultiplePlatforms = props => {
       <CTA variant='contained' onClick={() => navigate('/about')}>
         How it works
       </CTA>
-      <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen.gif'/>
-      <Flying3d src='/3dobjects/An-Alien-with-a-Planet-for-a-H-unscreen.gif'/>
+      <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen-min.gif'/>
+      <Flying3d src='/3dobjects/An-Alien-with-a-Planet-for-a-H-unscreen-min.gif'/>
       <BackGroundImage 
         src={heroBGOverlay} 
         top='auto'

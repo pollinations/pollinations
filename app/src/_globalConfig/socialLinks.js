@@ -1,11 +1,28 @@
 import { ICONS } from '../assets/icons'
 export const SOCIAL_LINKS = {
-  twitter: { icon: ICONS.twitter, url: 'https://twitter.com/pollinations_ai' },
-  facebook: { icon: ICONS.facebook, url: 'https://facebook.com/pollinations' },
+  twitter: { 
+    label: 'Twitter',
+    icon: ICONS.twitter, 
+    url: 'https://twitter.com/pollinations_ai' 
+  },
+  facebook: { 
+    label: 'Facebook',
+    icon: ICONS.facebook, 
+    url: 'https://facebook.com/pollinations' 
+  },
   // "linkedin": { icon: <LinkedInIcon fontSize='small'/>, url: "https://linkedin.com/company/pollinations-ai"},
-  instagram: { icon: ICONS.instagram, url: 'https://instagram.com/pollinations_ai' },
-  youtube: { icon: ICONS.youtube, url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug' },
+  instagram: { 
+    label: 'Instagram',
+    icon: ICONS.instagram, 
+    url: 'https://instagram.com/pollinations_ai' 
+  },
+  youtube: { 
+    label: 'YouTube',
+    icon: ICONS.youtube, 
+    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug' 
+  },
   telegram: {
+    label: 'Telegram',
     icon: ICONS.telegram,
     url: 'https://t.me/joinchat/Ft4jOGXbIyViM2My',
   },

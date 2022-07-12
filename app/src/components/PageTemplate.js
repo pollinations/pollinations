@@ -1,7 +1,8 @@
 import { textContent } from "../assets"
 import MarkDownContent from "../components/molecules/MarkDownContent"
-import { MarkDownStyle, SmallContainer } from "../styles/global"
+import { BackGroundImage, MarkDownStyle, SmallContainer } from "../styles/global"
 import { SEOImage, SEOMetadata } from "./Helmet"
+import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
 
 const PageTemplate = ({ label }) => {
 
@@ -16,6 +17,14 @@ const PageTemplate = ({ label }) => {
         <SEOImage />
         <MarkDownContent url={textContent[label]} />
       </MarkDownStyle>
+      <BackGroundImage 
+        src={heroBGOverlay} 
+        top='0'
+        position='fixed'
+        zIndex='-1' 
+        opacity='50%'
+        transform='rotate(-180deg)' 
+        alt="hero_bg_overlay" />
     </SmallContainer>
   )
 }

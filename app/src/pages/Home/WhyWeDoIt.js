@@ -16,20 +16,20 @@ const WhyWeDoIt = props => {
               why we do it <br/>
             </span>
             With Pollinations, 
-            creativity becomes scalable
+            creativity is scalable
           </Headline>
         </div>
         <div>
           <ExplanationText>
           We <b>integrate with companies</b> to offer one of the best AI-based creative experiences out there, 
-          empowering your users to generate fresh media without the need to switch platforms. 
+          empowering people to generate fresh media without the need to switch platforms. 
 
           <br/><br/>
-          We also <b>develop presets</b> and combine different models to ensure that all media created within your platform fits the brand’s aesthetics, keeping the looks consistent. 
+          We also <b>develop presets</b> and combine different models to ensure that all media created within the platforms fits the brand’s aesthetics, keeping the looks consistent. 
 
           <br/><br/>
           And by facilitating the creation of images, objects and immersive environments, 
-          we help to <b>build the metaverse</b> the way we want it: trippy! It’s truly a win-win-win  ✨
+          we help to <b>build the metaverse</b> the way we want it: trippy!
 
           </ExplanationText>
         </div>

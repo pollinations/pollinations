@@ -1,5 +1,5 @@
 import React from "react"
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 import IconButton from "@material-ui/core/IconButton"
 import TemporaryDrawer from "./Drawer"
 
@@ -15,9 +15,11 @@ import { FlexBetween } from "../styles/classes"
 const TopBar = ({ navRoutes }) => {
 
   const drawerState = React.useState(false);
+  const location = useLocation();
 
+  
   return <>
-    <TopContainer>
+    <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
 
       <NavLink to='/' style={{ padding: 0 }}>
         <Logo size='180px' small='150px' margin='0' />  
@@ -41,6 +43,7 @@ const TopBar = ({ navRoutes }) => {
 };
 
 const TopContainer = styled.div`
+  position: ${props => props.position};
   ${FlexBetween}
 
   font-size: 1rem;
@@ -48,6 +51,7 @@ const TopContainer = styled.div`
   color: #fdfdfd !important;  
   }
   padding: ${GlobalSidePadding}
+
 `
 
 

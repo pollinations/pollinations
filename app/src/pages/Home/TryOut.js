@@ -30,7 +30,7 @@ const form = {
   // }
 }
 
-const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK","QmcwfbMHVrJAqXgcZGaLM7Cm3u3kMnAhueZ8wcL8iNTUc7","QmZJahXjotRUSuuNEKvGAbiGANpsJ3Ppqam8vTAdqMP9Rk","QmSBRvNpNgVGz6UDd4QLFPC48Qwp4Vpdvn3fFf8dcMNvSA", "QmanjonRJ1KCRF57kXEPoj82aXigjxaFbLaUVFj5ztf469", "QmXdrijXCVKcsGkfBuiepZtQNTD2XqN8ZgJHTeQ46im8Vi","QmQxk7iw5XPzoMsSGRChEoaGUzw5CXBgiF4iqHdN5PpKBB","QmXbquLqdGkBJvFJwx6SVySw5Ju8ZrJV9K9nM3xnaGyn32","QmNLjhir9skGmu743kJRPXUtEmsSsmJDDKg5u1GFbZAGF8","Qmebo4fsXYknwzu3AxXtX8TZJyMfGnuraqnzKmV9fTEciV"]
+const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK","QmcwfbMHVrJAqXgcZGaLM7Cm3u3kMnAhueZ8wcL8iNTUc7","QmZJahXjotRUSuuNEKvGAbiGANpsJ3Ppqam8vTAdqMP9Rk","QmSBRvNpNgVGz6UDd4QLFPC48Qwp4Vpdvn3fFf8dcMNvSA", "QmanjonRJ1KCRF57kXEPoj82aXigjxaFbLaUVFj5ztf469", "QmXdrijXCVKcsGkfBuiepZtQNTD2XqN8ZgJHTeQ46im8Vi","QmQxk7iw5XPzoMsSGRChEoaGUzw5CXBgiF4iqHdN5PpKBB","QmXbquLqdGkBJvFJwx6SVySw5Ju8ZrJV9K9nM3xnaGyn32","QmNLjhir9skGmu743kJRPXUtEmsSsmJDDKg5u1GFbZAGF8","Qmebo4fsXYknwzu3AxXtX8TZJyMfGnuraqnzKmV9fTEciV","QmcrV9syVLPo4TWyT1mE2LoUzK72fd23QDE7CxYnKoVK37"]
 
 export default React.memo(function TryOut() {
 

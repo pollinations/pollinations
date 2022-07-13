@@ -30,9 +30,7 @@ const form = {
   // }
 }
 
-
-const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK","QmcwfbMHVrJAqXgcZGaLM7Cm3u3kMnAhueZ8wcL8iNTUc7","QmZJahXjotRUSuuNEKvGAbiGANpsJ3Ppqam8vTAdqMP9Rk","QmSBRvNpNgVGz6UDd4QLFPC48Qwp4Vpdvn3fFf8dcMNvSA"]
-
+const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK","QmcwfbMHVrJAqXgcZGaLM7Cm3u3kMnAhueZ8wcL8iNTUc7","QmZJahXjotRUSuuNEKvGAbiGANpsJ3Ppqam8vTAdqMP9Rk","QmSBRvNpNgVGz6UDd4QLFPC48Qwp4Vpdvn3fFf8dcMNvSA", "QmanjonRJ1KCRF57kXEPoj82aXigjxaFbLaUVFj5ztf469", "QmXdrijXCVKcsGkfBuiepZtQNTD2XqN8ZgJHTeQ46im8Vi","QmQxk7iw5XPzoMsSGRChEoaGUzw5CXBgiF4iqHdN5PpKBB","QmXbquLqdGkBJvFJwx6SVySw5Ju8ZrJV9K9nM3xnaGyn32"]
 
 export default React.memo(function TryOut() {
 

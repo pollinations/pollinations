@@ -23,8 +23,6 @@ import Home from "./pages/Home/"
 import Models from "./pages/Models"
 import ResultViewer from "./pages/ResultViewer"
 
-import ImageContainer from "./components/BackgroundImage"
-
 import { 
   ROUTES, 
   MARKDOWN_ROUTES, 

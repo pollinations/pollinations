@@ -29,7 +29,6 @@ import {
   ROUTES, 
   MARKDOWN_ROUTES, 
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
-import AboutPage from "./pages/About"
 import Integrate from "./pages/Integrate"
 import About from "./pages/About"
 

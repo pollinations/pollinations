@@ -30,9 +30,14 @@ const form = {
   // }
 }
 
+const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK"]
+
 export default React.memo(function TryOut() {
 
-  const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: "Qmc9mNX25ywAf61QzGenwkhSGiQkLoVktvbmUxKruPNq6L"});
+  // select random initial CID
+  const initialCID = initialCIDs[Math.floor(Math.random() * initialCIDS.length)];
+
+  const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: initialCID});
 
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 

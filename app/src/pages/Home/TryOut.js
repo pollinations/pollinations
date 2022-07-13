@@ -35,7 +35,7 @@ const initialCIDs = ["Qmcfqj336Uyv7oQxB6QATTFChUXJCCxW1iPRH2wGHKh3AK"]
 export default React.memo(function TryOut() {
 
   // select random initial CID
-  const initialCID = initialCIDs[Math.floor(Math.random() * initialCIDS.length)];
+  const initialCID = initialCIDs[Math.floor(Math.random() * initialCIDs.length)];
 
   const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: initialCID});
 

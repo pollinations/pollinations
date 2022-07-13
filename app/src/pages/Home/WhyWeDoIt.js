@@ -81,6 +81,8 @@ margin-top: 7em;
   
 const GridTwoColumns = styled.div`
 width: 100%;
+max-width: 1280px;
+
 padding: 10em 4em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -88,17 +90,10 @@ align-items: flex-start;
 
 `
 const HeroStyle = styled.div`
-min-height: 100vh;
 display: flex;
 flex-direction: column;
 align-items: center;
 
 width: 100%;
-max-width: 1280px;
-padding: ${GlobalSidePadding};
-
-background: url(${whyBG});
-background-size: cover;
-background-position: center;
-
+position: relative;
 `;

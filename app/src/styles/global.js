@@ -37,8 +37,7 @@ grid-gap: 1em;
 export const BackGroundImage = styled.img`
 position: ${props => props.position ? props.position : 'absolute'};
 width: 100%;
-min-height: 100vh;
-height: auto;
+height: 100%;
 top: ${props => props.top || 0};
 left: 0;
 opacity: ${props => props.opacity || 1};

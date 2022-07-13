@@ -10,13 +10,13 @@ import TryOut from "./TryOut"
 
 export default function Home() {
   return <HomeStyle>
-      <Hero />
-      <TryOut/>
-      <About />
-      <MultiplePlatforms/>
-      <EndlessPossibilites/>
-      <WhyWeDoIt/>
-    </HomeStyle>
+    <Hero />
+    <TryOut />
+    <About />
+    <MultiplePlatforms />
+    <EndlessPossibilites />
+    <WhyWeDoIt />
+  </HomeStyle>
 }
 
 const HomeStyle = styled(BaseContainer)`

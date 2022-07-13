@@ -1,74 +1,35 @@
-import styled from '@emotion/styled'
-import { BackGroundImage, GlobalSidePadding, Headline, MOBILE_BREAKPOINT } from '../styles/global'
-import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+import TempLayout from '../components/layouts/Temp'
 
-// why we do it
+const About = props => 
+  <TempLayout Content={Content}/>;
 
+export default About
 
-const AboutPage = props => {
-  
-    return <HeroStyle>
-  
-      <GridTwoColumns>
-        <div >
-          <Headline>
-              about
-          </Headline>
-        </div>
-        <div>
-          <ExplanationText>
-            Pollinations is a platform to generate media with the help of AI. 
-            Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
-            <br/><br/>
-            We offer cutting-edge AI models that are constantly being updated. Every creation is unique and free to use.
-          </ExplanationText>
-        </div>
-      </GridTwoColumns>
-  
-  
-      <BackGroundImage 
-        src={heroBGOverlay} 
-        top='auto'
-        zIndex='-1' 
-        transform='rotate(-180deg)' 
-        alt="hero_bg_overlay" />
-      
-    
-    </HeroStyle>
+const Content = [
+  {
+    headline: 'About',
+    content: <> 
+      Pollinations is a platform to generate media with the help of AI. 
+      Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
+      We offer cutting-edge AI models that are constantly being updated. Every creation is unique and free to use.
+    </>,
+  },
+  {
+    headline: 'Why',
+    content: <>
+      The need to design digital worlds is rising fast, 
+      but the power and skills to actually build these worlds are concentrated in the hands of a few people. 
+      The cost is so high, and the process too time-consuming, making experimentation difficult. 
+      We believe the metaverse should be trippy, and we want it to be built by diverse minds, 
+      so <b>we developed an interface that makes AI media creation easy and fast.</b>
+      </>,
+  },
+  {
+    headline: 'Who',
+    content: <>
+      We are a deep-tech company based in Berlin. Our team of machine-learning specialists, 
+      artists and futurists is profoundly involved in the AI ecosystem. 
+      The AI models we offer are open-source, and are constantly updated by a thriving community.
+    </>
   }
-
-export default AboutPage
-
-
-
-const ExplanationText = styled.p`
-font-family: 'DM Sans';
-font-style: normal;
-font-weight: 400;
-font-size: 24px;
-line-height: 31px;
-color: #FFFFFF;
-
-margin-top: 7em;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  margin-top: 1em;
-}
-`
-  
-const GridTwoColumns = styled.div`
-width: 100%;
-padding: 10em 4em;
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-align-items: flex-start;
-
-`
-const HeroStyle = styled.div`
-min-height: 100vh;
-display: flex;
-flex-direction: column;
-align-items: center;
-
-width: 100%;
-padding: ${GlobalSidePadding};
-`;
+];

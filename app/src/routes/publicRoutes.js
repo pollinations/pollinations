@@ -17,7 +17,7 @@ export const MAIN_NAV_ROUTES = [
     ROUTES.help
 ]
 export const MARKDOWN_ROUTES = [
-    ROUTES.about,
+    // ROUTES.about,
     // ROUTES.integrate,
     ROUTES.help,
     ROUTES.impressum

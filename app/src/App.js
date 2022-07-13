@@ -31,6 +31,7 @@ import {
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
 import AboutPage from "./pages/About"
 import Integrate from "./pages/Integrate"
+import About from "./pages/About"
 
 
 const debug = Debug("AppContainer")
@@ -62,6 +63,7 @@ const Pollinations = () => {
       {/* Children that get IPFS state */}
         <Routes>
           <Route exact path='/' element={<Home />} />
+          <Route exact path='about' element={<About/>}/>
           <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
           {

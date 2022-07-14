@@ -1,17 +1,19 @@
 import styled from '@emotion/styled';
 import { Button, IconButton, LinearProgress, TextField } from '@material-ui/core';
 import Debug from "debug";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
 import { GlobalSidePadding } from '../../styles/global';
+import useTypewriter from "react-typewriter-hook"
 
 // take it away
 import { useFormik } from 'formik';
 import { zipObj } from 'ramda';
+import useOnScreen from '../../hooks/useOnScreen';
 
 const debug = Debug("Envisioning");
 
@@ -46,25 +48,41 @@ export default React.memo(function TryOut() {
   const dispatch = async (values) => {
     await submitToAWS(values, "pollinations/preset-frontpage", Math.random() < 0.5);
   }
-  
+
+  const [ onScreen, ref ] = useOnScreen();
+
   return <PageLayout >
 
-        <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
+    <div ref={ref}>
+    {
+    onScreen &&
+      <Controls 
+        dispatch={dispatch} 
+        loading={isLoading} 
+        inputs={inputs} />
+    }
+    </div>
 
-        <Previewer ipfs={ipfs} />   
+    <Previewer ipfs={ipfs} />   
 
-    </PageLayout>
+  </PageLayout>
 });
 
 
 const Controls = ({dispatch , loading, inputs, currentID }) => {
 
-    if (!inputs)
-    return null;
 
+  if (!inputs)
+  return null;
+  
+  function MagicWriter(word) {
+    const typing = useTypewriter(word)
+    return typing
+  }
 
   const keys = Object.keys(inputs);
-  const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
+  const initialValues = zipObj( keys, keys?.map(key => MagicWriter(inputs[key].default)) );
+  console.log(initialValues)
 
   // Formik hook holds the form state and methods 
   const formik = useFormik({
@@ -76,11 +94,12 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     enableReinitialize: true,
   });
 
-  return <CreateForm onSubmit={formik.handleSubmit}>
+  return <CreateForm onSubmit={formik.handleSubmit} >
 
   { // Basic Inputs
     Object.keys(formik.values).map(key => 
     !inputs[key].advanced && <CreateInput
+        autoFocus
         key={key}
         disabled={loading}
         id={key}
@@ -124,6 +143,10 @@ align-items: center;
 color: #FFFFFF;
 padding-left: 1rem;
 margin: 1em 0;
+
+:focus{
+  outline: none;
+}
 `
 
 const CreateButton = styled.button`

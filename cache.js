@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { CACHE_FILE } from './index';
+
+export const CACHE_FILE="/tmp/cache.json"
 
 export function cache(func) {
   return async function (...args) {

@@ -6,7 +6,7 @@ export function gifCreator(destination) {
   const algorithm = 'neuquant';
 
   // find the width and height of the image
-  const width = 1024, height = 1024;
+  const width = 256, height = 256;
 
   // create a write stream for GIF data
   const writeStream = destination;

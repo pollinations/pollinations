@@ -1,26 +1,25 @@
-import http from 'http';
 import awsModelRunner from '@pollinations/ipfs/awsModelRunner.js';
-import { parse }  from 'url';
 import urldecode from 'urldecode';
-import jimp from "jimp"
 
 import memoize from 'lodash.memoize';
 import { cache } from './cache.js';
-import { gifCreator } from './gifCreator.js';
 import fetch from 'node-fetch';
 
-const requestListener = async function (req, res) {
+'use strict';
 
-  const { pathname } = parse(req.url, true);
+// Serverless function
 
+export const hello = async (pathname) => {
+  
   console.log("path: ", pathname);
 
   if (!pathname.startsWith("/prompt")) {
-    res.writeHead(404);
-    res.end('404: Not Found');
-    return
+    return {
+      statusCode: 404,
+      body: '404: Not Found'
+    }
   }
-  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+
   // const { showImage, finish } = gifCreator(res);
 
   // await showImage("https://i.imgur.com/lTAeMmN.jpg");
@@ -35,7 +34,7 @@ const requestListener = async function (req, res) {
     text:prompt, 
     grid_size: 1,  
     intermediate_outputs: false,
-    // seed: seed || 0
+    seed: seed || 0
   }, "pollinations/min-dalle", true)
 
   console.log("Showing image: ", url);
@@ -47,17 +46,23 @@ const requestListener = async function (req, res) {
   // fetch the image and return it to the response
   const image = await fetch(url);
   const buffer = await image.buffer();
-  res.write(buffer);
+
 
   console.log("finishing")
-  res.end();
 
-}
+  return {
+    statusCode: 200,
+    body: buffer,
+    headers: {
+      "Content-Type": "image/jpeg"
+    }
+  };
 
-const runModel = memoize(cache(awsModelRunner), params => JSON.stringify(params))
+  // Use this code if you don't use the http event with the LAMBDA-PROXY integration
+  // return { message: 'Go Serverless v1.0! Your function executed successfully!', event };
+};
 
 
-const server = http.createServer(requestListener);
-server.listen(8080);
 
+const runModel = memoize(awsModelRunner, params => JSON.stringify(params))
 

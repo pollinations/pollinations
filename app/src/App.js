@@ -29,6 +29,7 @@ import {
   MAIN_NAV_ROUTES } from "./routes/publicRoutes"
 import Integrate from "./pages/Integrate"
 import About from "./pages/About"
+import ScrollToTop from './utils/ScrollToTop'
 
 
 const debug = Debug("AppContainer")
@@ -36,7 +37,9 @@ const debug = Debug("AppContainer")
 
 const App = () => (
   <BrowserRouter>
-    <Pollinations />
+    <ScrollToTop>
+      <Pollinations />
+    </ScrollToTop>
   </BrowserRouter>
 )
 

@@ -21,10 +21,15 @@ export const SOCIAL_LINKS = {
     icon: ICONS.youtube, 
     url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug' 
   },
-  telegram: {
-    label: 'Telegram',
-    icon: ICONS.telegram,
-    url: 'https://t.me/joinchat/Ft4jOGXbIyViM2My',
+  // telegram: {
+  //   label: 'Telegram',
+  //   icon: ICONS.telegram,
+  //   url: 'https://t.me/joinchat/Ft4jOGXbIyViM2My',
+  // },
+  discord: {
+    label: 'Discord',
+    icon: ICONS.discord,
+    url: 'https://discord.gg/XXd99CrkCr',
   },
   // "pinterest":  { icon: <PinterestIcon fontSize='small'/>, url: "https://pinterest.com/pollinations_ai/"},
   // "gmb":  { icon: <GoogleIcon />, url: "https://facebook.com/pollinations"},

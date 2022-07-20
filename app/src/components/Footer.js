@@ -20,6 +20,8 @@ return <FooterStyle>
 
         <Items items={SOCIAL_LINKS} 
             renderComponent={PlatformLink} columns={2} />
+        
+        <RouterLink to="/privacy-policy">Privacy Policy</RouterLink>
     </div>
 
     <NavLink to='/' style={{ padding: 0 }}>
@@ -53,12 +55,13 @@ function split(array, cols) {
 
 
 const PlatformLink = (platform) => {
-    const { url, label } = SOCIAL_LINKS[platform]
+    const { url, label, bold } = SOCIAL_LINKS[platform]
     return (
       <Link
         key={`plt_link_${platform}`}
         href={url}
         target="_blank"
+        style={bold ? { fontWeight: 'bold' } : {}}
       >
         {label}
       </Link>
@@ -80,7 +83,7 @@ const RouteLink = (route) => {
 const FooterStyle = styled.div`
 
 width: 100%;
-min-height: 415px;
+min-height: 250px;
 display: flex;
 justify-content: space-between;
 

@@ -5,6 +5,7 @@ export const ROUTES = {
     help: { label: "Help", to: "/help", id: 'help' },
     impressum: { label: "impressum", to: "/impressum", id: 'impressum' },
     models: { label: "Create", to: '/c', id: 'create' },
+    privacyPolicy: { label: "Privacy Policy", to: "/privacy-policy", id: 'privacyPolicy' },
     // integrate: { label: "integrate", to: "/integrate" },
     // myPollens: { label: "my pollens", to: "/localpollens" },
     // expo: { children: "made with pollinations", to: "/expo" },
@@ -20,5 +21,6 @@ export const MARKDOWN_ROUTES = [
     // ROUTES.about,
     // ROUTES.integrate,
     ROUTES.help,
-    ROUTES.impressum
+    ROUTES.impressum,
+    ROUTES.privacyPolicy
 ]

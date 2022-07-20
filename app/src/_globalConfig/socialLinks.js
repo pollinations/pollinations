@@ -30,6 +30,7 @@ export const SOCIAL_LINKS = {
     label: 'Discord',
     icon: ICONS.discord,
     url: 'https://discord.gg/XXd99CrkCr',
+    bold: true
   },
   // "pinterest":  { icon: <PinterestIcon fontSize='small'/>, url: "https://pinterest.com/pollinations_ai/"},
   // "gmb":  { icon: <GoogleIcon />, url: "https://facebook.com/pollinations"},

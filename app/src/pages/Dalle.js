@@ -19,7 +19,7 @@ const form = {
   "Prompt": {
     type: "string",
     default: "",
-    title: "Prompt",
+    title: "prompt",
     description: "The image you want to be generated",
   },
   // "num": {

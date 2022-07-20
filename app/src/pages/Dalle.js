@@ -16,10 +16,10 @@ import { SEOMetadata } from '../components/Helmet';
 const debug = Debug("Envisioning");
 
 const form = {
-  "Prompt": {
+  "prompt": {
     type: "string",
     default: "",
-    title: "prompt",
+    title: "Prompt",
     description: "The image you want to be generated",
   },
   // "num": {

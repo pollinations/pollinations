@@ -36,10 +36,14 @@ const Form = ({
     useEffect(()=>{
       // add other fields to the form when user selects the desired model.
       formik.setValues(state => ({ 
-        // Prompt: state.Prompt, 
-        ...getInitialValues(inputs, primary_input) 
+        ...getInitialValues(inputs, primary_input),
+        [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
       }))
     },[selectedModel])
+
+    useEffect(()=>{
+      console.log(formik.values)
+    },[formik.values])
     
 
   return <StyledForm onSubmit={formik.handleSubmit} >
@@ -101,5 +105,12 @@ width: 100%;
 function getInitialValues(inputs, primary_input) {
   if(!inputs) return null
   const keys = Object.keys(inputs);
-  return zipObj( keys, keys?.map(key => inputs[key]?.default ));
+
+  return zipObj( keys, keys?.sort((a,b)=>{
+    console.log(a,b)
+    return inputs[a]['x-order'] > inputs[b]['x-order']
+  }
+    )
+    .map(key => inputs[key]?.default )
+    );
 }

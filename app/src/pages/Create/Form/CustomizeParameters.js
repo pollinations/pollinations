@@ -1,5 +1,4 @@
 import { Accordion, AccordionSummary } from "@material-ui/core";
-import { InputField } from "./InputsUI/";
 import Add from '@material-ui/icons/Add';
 import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';

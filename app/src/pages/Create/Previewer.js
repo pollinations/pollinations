@@ -1,15 +1,12 @@
 import { getMedia } from "../../data/media";
 import styled from '@emotion/styled';
-import { MediaViewer } from "../../components/MediaViewer";
-import { useEffect, useState } from "react";
+import MediaViewer from "./MediaViewer/";
 
 const Previewer = ({ ipfs }) => {
 
-    const [ images, setImages ] = useState([]);
-    useEffect(()=>{
-        setImages(getMedia(ipfs.output))
-    },[ipfs.output])
+    const images = getMedia(ipfs.output);
 
+    if (!images.length) return null;
 
     return <Style>
       {

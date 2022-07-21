@@ -1,7 +1,9 @@
 import { Accordion, AccordionSummary } from "@material-ui/core";
-import { InputField } from "../../../components/form/InputsUI";
+import { InputField } from "./InputsUI/";
 import Add from '@material-ui/icons/Add';
 import styled from '@emotion/styled';
+import ParameterViewer from './InputsUI/';
+
 const PROMPT_KEY = 'Prompt';
 
 const CustomizeParameters = ({ formik, isDisabled, inputs }) => { 
@@ -19,18 +21,16 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                 .filter(key => key !== PROMPT_KEY)
                 .sort((a,b) => a['x-order'] > b['x-order'])
                 .map(key => 
-                    <InputField
+                    <ParameterViewer
                     key={key}
-                    enum={inputs[key]?.enum}
-                    setFieldValue={formik.setFieldValue}
-                    fullWidth
-                    disabled={isDisabled}
                     id={key}
+                    {...inputs[key]}
+                    disabled={isDisabled}
                     label={inputs[key]?.title}
-                    type={inputs[key]?.type}
                     helperText={inputs[key]?.description}
                     value={formik.values[key]}
                     onChange={formik.handleChange}
+                    setFieldValue={formik.setFieldValue}
                     />
                 )
             } />

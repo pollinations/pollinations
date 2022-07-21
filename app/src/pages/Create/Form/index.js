@@ -51,7 +51,7 @@ const Form = ({
 
     <CustomizeParameters
       isDisabled={isDisabled}
-      inputs={inputs}
+      inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
       formik={formik}
     />
 

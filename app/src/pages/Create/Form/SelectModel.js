@@ -7,7 +7,9 @@ const SelectModel = ({ models, selectedModel, onSelectModel, isDisabled }) => <>
         <Select value={selectedModel.key || ''} onChange={onSelectModel} disabled={isDisabled}>
 
             {Object.keys(models).map(model => 
-                <MenuItem key={model} value={model} disabled={!models[model].components.schemas.Input.properties.Prompt} >
+                <MenuItem key={model} value={model} 
+                    //disabled={!models[model].components.schemas.Input.properties.Prompt} 
+                >
                     {model.split('/').pop()}
                 </MenuItem>
             )}

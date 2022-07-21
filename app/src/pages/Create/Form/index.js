@@ -6,6 +6,7 @@ import { zipObj } from 'ramda';
 import { useEffect } from 'react';
 import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
+import String from './InputsUI/String';
 
 const PROMPT_KEY = 'Prompt';
 
@@ -33,11 +34,11 @@ const Form = ({
 
   return <StyledForm onSubmit={formik.handleSubmit} >
 
-    <TextField 
+    <String 
       value={formik.values[`${PROMPT_KEY}`]} 
       onChange={formik.handleChange} 
       name={PROMPT_KEY} 
-      label="Prompt" 
+      title="Prompt" 
       disabled={isDisabled}
       fullWidth
     />
@@ -68,7 +69,7 @@ const StyledForm = styled.form`
 display: flex;
 flex-direction: column;
 align-items: center;
-gap: 1em;
+gap: 2em;
 width: 100%;
 
 `

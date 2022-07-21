@@ -4,13 +4,13 @@ import MediaViewer from "./MediaViewer/";
 
 const Previewer = ({ ipfs }) => {
 
-    const images = getMedia(ipfs.output);
+    const medias = getMedia(ipfs.output);
 
-    if (!images.length) return null;
+    if (!medias.length) return null;
 
     return <Style>
       {
-        images.map(([filename, url, type]) => <>
+        medias.map(([filename, url, type]) => <>
           <MediaViewer 
             key={filename}
             content={url} 
@@ -26,8 +26,8 @@ const Previewer = ({ ipfs }) => {
 export default Previewer
 
 const Style = styled.div`
-width: 100%;
-
+width: 90%;
+margin: auto;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 grid-gap: 0.5em;

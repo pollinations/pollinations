@@ -2,10 +2,11 @@ import TextField from "@material-ui/core/TextField";
 import DropZone from "../../../../components/form/customInputs/file";
 import Boolean from "./Boolean";
 import DropDown from "./DropDown";
+import String from "./String";
   
 
   const TypeMaps = {
-    'string': props => <TextField {...props}/>,
+    'string': props => <String {...props}/>,
     'integer': props => <TextField {...props}  type='number'  />,
     'boolean': props =>  <Boolean {...props} />,
     'dropdown': props => <DropDown {...props} />,
@@ -20,5 +21,5 @@ import DropDown from "./DropDown";
 
     return <Viewer fullWidth {...props}/>;
   }
-  
+
   export default ParameterViewer

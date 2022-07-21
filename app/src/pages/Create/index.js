@@ -37,7 +37,7 @@ export default React.memo(function Create() {
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
             
-            { isLoading && <LinearProgress style={{margin: '0.5em 0'}} /> }
+            { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> }
 
             <Form 
                 models={models}

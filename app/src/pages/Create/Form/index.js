@@ -25,12 +25,19 @@ const Form = ({
     });
     
     const inputs = models[selectedModel?.key]?.components.schemas.Input.properties;
-  
+    const primary_input =  inputs ? Object.values(inputs)
+      .map( (values, idx, array) => {
+        const keys = Object.keys(inputs);
+        return {...values, key: keys[idx]}
+      })
+      .sort((a,b) => a['x-order'] > b['x-order'])
+      .shift() : {};
+
     useEffect(()=>{
       // add other fields to the form when user selects the desired model.
       formik.setValues(state => ({ 
         // Prompt: state.Prompt, 
-        ...getInitialValues(inputs) 
+        ...getInitialValues(inputs, primary_input) 
       }))
     },[selectedModel])
     
@@ -40,7 +47,7 @@ const Form = ({
     <PrimaryInput
       isDisabled={isDisabled}
       formik={formik}
-      inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
+      primary_input={primary_input}
     />
 
     <SelectModel 
@@ -67,20 +74,13 @@ export default Form;
 
 const PrimaryInput = props => {
 
-  if (!props.inputs) return null;
-
-  const { isDisabled, formik } = props;
-
-
-  const primary_input =  Object.values(props?.inputs)
-    .sort((a,b) => a['x-order'] > b['x-order'])
-    .shift();
+  const { isDisabled, formik, primary_input } = props;
 
   return <>
   <String 
-      value={formik.values[`${PROMPT_KEY}`]} 
+      value={formik.values[primary_input?.key]} 
       onChange={formik.handleChange} 
-      name={PROMPT_KEY} 
+      name={primary_input.key} 
       title={primary_input.title} 
       disabled={isDisabled}
       fullWidth
@@ -98,8 +98,8 @@ width: 100%;
 
 `
 
-function getInitialValues(inputs) {
+function getInitialValues(inputs, primary_input) {
   if(!inputs) return null
-  const keys = Object.keys(inputs).filter(key => key !== PROMPT_KEY);
+  const keys = Object.keys(inputs);
   return zipObj( keys, keys?.map(key => inputs[key]?.default ));
 }

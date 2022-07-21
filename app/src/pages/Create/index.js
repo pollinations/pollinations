@@ -29,6 +29,7 @@ export default React.memo(function Create() {
     const { submitToAWS, ipfs, isLoading } = useAWSNode('');
 
     const dispatch = async (values) => {
+        console.log(values)
         await submitToAWS(values, selectedModel.url, false);
     }
 

@@ -21,7 +21,7 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                     if (!inputs[key]) return array;
                     return inputs[key]['x-order'] !== 0
                 })
-                .sort((a,b) => a['x-order'] > b['x-order'])
+                // .sort((a,b) => inputs[a]['x-order'] > inputs[b]['x-order'])
                 .map(key => <>
                     <ParameterViewer
                     key={key}

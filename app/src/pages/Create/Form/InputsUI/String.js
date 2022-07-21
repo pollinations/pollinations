@@ -22,9 +22,12 @@ label{
 
 `
 
-const Input = styled.input`
-
-// font-family: 'Space Grotesk';
+const Input = styled.textarea`
+resize: none;
+min-height: 50px;
+    max-height: 100px;
+    
+    font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 24px;
@@ -41,7 +44,7 @@ const String = props => <Style>
     <label>
         {props.title}
     </label>
-    <Input type='text' {...props}/>
+    <Input type='text' {...props} wrap='soft' maxLength='60'/>
 </Style>
 
 export default String

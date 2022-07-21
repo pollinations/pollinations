@@ -18,7 +18,7 @@ const Form = ({
     const formik = useFormik({
         // Initialize the form only with prompt value
         initialValues: {
-            Prompt: 'Bauhaus spaceship',
+            // Prompt: 'Bauhaus spaceship',
         },
         onSubmit,
         enableReinitialize: true,
@@ -28,19 +28,19 @@ const Form = ({
   
     useEffect(()=>{
       // add other fields to the form when user selects the desired model.
-      formik.setValues(state => ({ Prompt: state.Prompt, ...getInitialValues(inputs) }))
+      formik.setValues(state => ({ 
+        // Prompt: state.Prompt, 
+        ...getInitialValues(inputs) 
+      }))
     },[selectedModel])
     
 
   return <StyledForm onSubmit={formik.handleSubmit} >
 
-    <String 
-      value={formik.values[`${PROMPT_KEY}`]} 
-      onChange={formik.handleChange} 
-      name={PROMPT_KEY} 
-      title="Prompt" 
-      disabled={isDisabled}
-      fullWidth
+    <PrimaryInput
+      isDisabled={isDisabled}
+      formik={formik}
+      inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
     />
 
     <SelectModel 
@@ -64,6 +64,30 @@ const Form = ({
   </StyledForm>
 };
 export default Form;
+
+const PrimaryInput = props => {
+
+  if (!props.inputs) return null;
+
+  const { isDisabled, formik } = props;
+
+
+  const primary_input =  Object.values(props?.inputs)
+    .sort((a,b) => a['x-order'] > b['x-order'])
+    .shift();
+
+  return <>
+  <String 
+      value={formik.values[`${PROMPT_KEY}`]} 
+      onChange={formik.handleChange} 
+      name={PROMPT_KEY} 
+      title={primary_input.title} 
+      disabled={isDisabled}
+      fullWidth
+    />
+  
+  </>
+}
 
 const StyledForm = styled.form`
 display: flex;

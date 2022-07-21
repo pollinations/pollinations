@@ -17,9 +17,12 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
 
             <ParametersStyle children={ // Customize Inputs
                 Object.keys(formik.values)
-                .filter(key => key !== PROMPT_KEY)
+                .filter((key, idx, array) => {
+                    if (!inputs[key]) return array;
+                    return inputs[key]['x-order'] !== 0
+                })
                 .sort((a,b) => a['x-order'] > b['x-order'])
-                .map(key => 
+                .map(key => <>
                     <ParameterViewer
                     key={key}
                     id={key}
@@ -31,6 +34,7 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                     onChange={formik.handleChange}
                     setFieldValue={formik.setFieldValue}
                     />
+                    </>
                 )
             } />
         </Accordion>

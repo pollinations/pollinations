@@ -7,7 +7,7 @@ import String from "./String";
   
 
   const TypeMaps = {
-    'string': props => <String {...props}/>,
+    'string': props => props.enum ? <DropDown {...props}/> : <String {...props}/>,
     'integer': props => props.maximum ? <Slider {...props} /> : <TextField {...props} type='number' />,
     'boolean': props =>  <Boolean {...props} />,
     'dropdown': props => <DropDown {...props} />,
@@ -17,7 +17,7 @@ import String from "./String";
   const ParameterViewer = (props) => {
 
     const Viewer = TypeMaps[props.type];
-
+    console.log(props)
     if (!Viewer) return <TextField fullWidth {...props}/>;
 
     return <Viewer fullWidth {...props}/>;

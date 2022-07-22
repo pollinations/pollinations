@@ -5,8 +5,6 @@ const Slider = props => {
 
     const { setFieldValue, id, minimum, maximum } = props;
 
-    console.log(props);
-
     function handleChange(event, newValue) {
         setFieldValue(id, newValue);
     }

@@ -2,12 +2,13 @@ import TextField from "@material-ui/core/TextField";
 import DropZone from "../../../../components/form/customInputs/file";
 import Boolean from "./Boolean";
 import DropDown from "./DropDown";
+import Slider from "./Slider";
 import String from "./String";
   
 
   const TypeMaps = {
     'string': props => <String {...props}/>,
-    'integer': props => <TextField {...props}  type='number'  />,
+    'integer': props => <IntegerView {...props}/>,
     'boolean': props =>  <Boolean {...props} />,
     'dropdown': props => <DropDown {...props} />,
     'file': props => <DropZone {...props} />,
@@ -21,5 +22,11 @@ import String from "./String";
 
     return <Viewer fullWidth {...props}/>;
   }
+
+
+  const IntegerView = props =>
+    props.maximum ?
+    <Slider {...props} /> :
+    <TextField {...props} type='number' />;
 
   export default ParameterViewer

@@ -3,14 +3,18 @@ import SliderBase from '@material-ui/core/Slider';
 
 const Slider = props => {
 
-    const { setFieldValue, id, minimum, maximum } = props;
+    const { setFieldValue, id, minimum, maximum, title } = props;
 
     function handleChange(event, newValue) {
         setFieldValue(id, newValue);
     }
 
 
-    return <SliderBase 
+    return <>
+    <label>
+        {title}
+    </label>
+    <SliderBase 
         {...props} 
         onChange={handleChange} 
         min={minimum} 
@@ -21,6 +25,7 @@ const Slider = props => {
             { value: maximum, label: maximum },
         ]}
         />
+    </>
 }
 
 export default Slider

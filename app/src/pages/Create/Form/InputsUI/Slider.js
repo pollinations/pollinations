@@ -5,6 +5,7 @@ const Slider = props => {
 
     const { setFieldValue, id, minimum, maximum } = props;
 
+    console.log(props);
 
     function handleChange(event, newValue) {
         setFieldValue(id, newValue);
@@ -17,7 +18,6 @@ const Slider = props => {
         min={minimum} 
         max={maximum} 
         step={1} 
-        valueLabelDisplay="auto"
         marks={[
             { value: minimum, label: minimum },
             { value: maximum, label: maximum },

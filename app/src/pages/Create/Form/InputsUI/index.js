@@ -8,7 +8,7 @@ import String from "./String";
 
   const TypeMaps = {
     'string': props => <String {...props}/>,
-    'integer': props => <IntegerView {...props}/>,
+    'integer': props => props.maximum ? <Slider {...props} /> : <TextField {...props} type='number' />,
     'boolean': props =>  <Boolean {...props} />,
     'dropdown': props => <DropDown {...props} />,
     'file': props => <DropZone {...props} />,
@@ -22,11 +22,5 @@ import String from "./String";
 
     return <Viewer fullWidth {...props}/>;
   }
-
-
-  const IntegerView = props =>
-    props.maximum ?
-    <Slider {...props} /> :
-    <TextField {...props} type='number' />;
 
   export default ParameterViewer

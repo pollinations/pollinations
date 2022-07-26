@@ -17,7 +17,7 @@ import String from "./String";
   const ParameterViewer = (props) => {
 
     const Viewer = TypeMaps[props.type];
-    console.log(props)
+
     if (!Viewer) return <TextField fullWidth {...props}/>;
 
     return <Viewer fullWidth {...props}/>;

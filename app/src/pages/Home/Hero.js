@@ -24,8 +24,8 @@ const Hero = props => {
         alt="hero_bg_overlay" />
       
       <BackgroundVideo 
-      autoPlay
-      muted
+        autoPlay
+        muted
         src={heroBG} 
         zIndex='-2' 
         alt="hero_bg" />

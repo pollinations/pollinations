@@ -31,6 +31,7 @@ import Integrate from "./pages/Integrate"
 import About from "./pages/About"
 import ScrollToTop from './utils/ScrollToTop'
 
+import CreateWithOwnGPU from './pages/Create/'
 
 const debug = Debug("AppContainer")
 
@@ -66,6 +67,7 @@ const Pollinations = () => {
           <Route exact path='about' element={<About/>}/>
           <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
+
           {
             MARKDOWN_ROUTES.map( route => (
               <Route 
@@ -90,6 +92,7 @@ const Pollinations = () => {
             path="envisioning"
             element={<Envisioning navigateToNode={navigateToNode}/>}
           />
+
           <Route
             path="dalle/:nodeID"
             element={<Dalle navigateToNode={navigateToNode}/>}
@@ -98,6 +101,11 @@ const Pollinations = () => {
             path="dalle"
             element={<Dalle navigateToNode={navigateToNode}/>}
           />
+          
+          <Route path='owngpu/:nodeID' element={<CreateWithOwnGPU />} />
+          <Route path='/owngpu' element={<CreateWithOwnGPU />} />
+
+
           <Route
             path="p/:contentID/*"
             element={

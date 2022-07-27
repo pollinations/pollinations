@@ -11,9 +11,7 @@ const Hero = props => {
       <HeroHeadline>
         Create all kinds of <br/> media with AI power
       </HeroHeadline>
-      <HeroSubHeadLine>
-        Explain your vision with words and watch it come to life!
-      </HeroSubHeadLine>
+      
   
       <BackGroundImage 
         src={heroBGOverlay} 
@@ -65,15 +63,4 @@ const Hero = props => {
   color: #FFFFFF;
   `
   
-  const HeroSubHeadLine = styled.p`
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 26px;
-  line-height: 34px;
-  /* identical to box height */
-  
-  text-align: center;
-  
-  color: #D8E449;
-  `
+ 

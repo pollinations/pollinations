@@ -15,10 +15,10 @@
 }
 
 ::selection {
-  background: blue; /* WebKit/Blink Browsers */
+  background: #485ea4; /* WebKit/Blink Browsers */
 }
 ::-moz-selection {
-  background: blue; /* Gecko Browsers */
+  background: #485ea4; /* Gecko Browsers */
 }
 
 body {
@@ -29,15 +29,7 @@ body {
 }
 
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p {
-  color: rgb(255, 236, 249);
-}
+
 
 .MuiAccordionSummary-root {
   padding: 0 !important;

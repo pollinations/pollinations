@@ -1,17 +1,18 @@
 import styled from '@emotion/styled';
 import { Button, IconButton, LinearProgress, TextField } from '@material-ui/core';
 import Debug from "debug";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
-import { GlobalSidePadding } from '../../styles/global';
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { useFormik } from 'formik';
 import { zipObj } from 'ramda';
+import { Skeleton } from '@material-ui/lab';
 
 const debug = Debug("Envisioning");
 
@@ -49,13 +50,35 @@ export default React.memo(function TryOut() {
   
   return <PageLayout >
 
+<HeroSubHeadLine>
+        Explain your vision with words and watch it come to life!
+      </HeroSubHeadLine>
+
         <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
 
         <Previewer ipfs={ipfs} />   
 
     </PageLayout>
 });
+const HeroSubHeadLine = styled.p`
+font-family: 'DM Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 46px;
+line-height: 60px;
+text-align: center;
 
+max-width: 55%;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  max-width: 90%;
+}
+
+color: #FFFFFF;
+/* identical to box height */
+
+text-align: center;
+
+`
 
 const Controls = ({dispatch , loading, inputs, currentID }) => {
 
@@ -90,7 +113,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     )
   }   
     <CreateButton disabled={loading} formik={formik} >
-        CREATE
+        { loading ? 'CREATING' : 'CREATE' }
     </CreateButton>
      
 
@@ -101,12 +124,13 @@ const CreateForm = styled.form`
 
 display: flex;
 align-items: center;
+margin-bottom: 4em;
 `
 
 const CreateInput = styled.input`
 width: 53vw;
 @media (max-width: 768px) {
-    width: 90vw;    
+    width: 90vw;
 }
 height: 65px;
 background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
@@ -146,22 +170,28 @@ text-align: center;
 text-transform: uppercase;
 
 color: #040405;
+
 cursor: pointer;
+-moz-osx-font-smoothing: grayscale;
+-webkit-font-smoothing: antialiased;
 
 :disabled {
-background-color: grey;
+background-color: #464a18;
 }
 
 `
 
 const Previewer = ({ ipfs }) => {
+    
+   
 
-    if (!ipfs?.output) return null;
+    const images = getMedia(ipfs?.output);
 
-    const images = getMedia(ipfs.output);
-
-    return <PreviewerStyle
-        children={
+    return <PreviewerStyle>
+      {
+        !ipfs?.output ?
+        new Array(3).fill({}).map( empty => <RecLoader/> )
+        :
         images?.slice(0,3)
         .map(([filename, url, type]) => (
             <MediaViewer 
@@ -171,7 +201,36 @@ const Previewer = ({ ipfs }) => {
             type={type}
             />
         ))
-    }/>
+      }
+
+
+    </PreviewerStyle>
+}
+
+const LoadingContainer = styled.div`
+height: 0;
+overflow: hidden;
+padding-top: 100%;
+position: relative;
+
+#skeletonRec {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+`
+const RecLoader = props => {
+
+  return <LoadingContainer>
+    <Skeleton 
+      variant="rectangular" 
+      width={512} 
+      height={512}
+      id="skeletonRec" 
+    />
+  </LoadingContainer>
 }
 
 // STYLES
@@ -189,6 +248,7 @@ grid-gap: 0.4em;
 
 const PreviewerStyle = styled.div`
 width: 80%;
+min-height: 40vh;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 grid-gap: 0.5em;

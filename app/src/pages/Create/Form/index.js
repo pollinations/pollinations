@@ -28,7 +28,7 @@ const Form = ({
       ...getInitialValues(inputs, primary_input),
       
       // override the primary_input value with the old one.
-      [primary_input.key]: state[Object.keys(state)[0]]
+      [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
     }))
   },[selectedModel])
     

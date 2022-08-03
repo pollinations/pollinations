@@ -3,11 +3,29 @@ import Add from '@material-ui/icons/Add';
 import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';
 
-const PROMPT_KEY = 'Prompt';
-
 const CustomizeParameters = ({ formik, isDisabled, inputs }) => { 
 
     if (Object.keys(formik.values).length === 1) return null;
+
+    const Parameters = Object.keys(formik.values)
+    .filter((key, idx, array) => {
+        if (!inputs[key]) return array;
+        return inputs[key]['x-order'] !== 0
+    })
+    .map(key => <>
+        <ParameterViewer
+        key={key}
+        id={key}
+        {...inputs[key]}
+        disabled={isDisabled}
+        label={inputs[key]?.title}
+        helperText={inputs[key]?.description}
+        value={formik.values[key]}
+        onChange={formik.handleChange}
+        setFieldValue={formik.setFieldValue}
+        />
+        </>
+    )
 
     return <Styles>
         <Accordion elevation={0} fullWidth>
@@ -15,28 +33,7 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                 Customize
             </AccordionSummary>
 
-            <ParametersStyle children={ // Customize Inputs
-                Object.keys(formik.values)
-                .filter((key, idx, array) => {
-                    if (!inputs[key]) return array;
-                    return inputs[key]['x-order'] !== 0
-                })
-                // .sort((a,b) => inputs[a]['x-order'] > inputs[b]['x-order'])
-                .map(key => <>
-                    <ParameterViewer
-                    key={key}
-                    id={key}
-                    {...inputs[key]}
-                    disabled={isDisabled}
-                    label={inputs[key]?.title}
-                    helperText={inputs[key]?.description}
-                    value={formik.values[key]}
-                    onChange={formik.handleChange}
-                    setFieldValue={formik.setFieldValue}
-                    />
-                    </>
-                )
-            } />
+            <ParametersStyle children={Parameters} />
         </Accordion>
     </Styles>
 }
@@ -73,8 +70,8 @@ width: 100%;
 const ParametersStyle = styled.div`
 display: flex;
 flex-direction: column;
-gap: 2em;
 width: 100%;
+gap: 2em;
 `
 
 export default CustomizeParameters;

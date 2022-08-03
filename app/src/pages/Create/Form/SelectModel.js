@@ -1,21 +1,27 @@
 import styled from "@emotion/styled";
-import { FormControl, InputLabel, MenuItem, Select } from "@material-ui/core";
+import { FormControl, InputLabel, MenuItem } from "@material-ui/core";
+import Select from "@material-ui/core/Select";
+import TextField from "@material-ui/core/TextField";
 
 const SelectModel = ({ models, selectedModel, onSelectModel, isDisabled }) => <>
-    <FormControl fullWidth>
+    <FormControl style={{width: '100%'}}>
         {/* <InputLabel id="model-select-label"> Model </InputLabel> */}
         
-        <SelectStyle value={selectedModel.key || ''} onChange={onSelectModel} disabled={isDisabled}>
+        <Select 
+            select 
+            variant="filled"
+            placeholder="Select a model"
+            value={selectedModel.key || null} 
+            onChange={onSelectModel} 
+            disabled={isDisabled}>
 
             {Object.keys(models).map(model => 
-                <option key={model} value={model} 
-                    //disabled={!models[model].components.schemas.Input.properties.Prompt} 
-                >
+                <MenuItem key={model} value={model} style={{maxWidth: '100%'}}>
                     {model.split('/').pop()}
-                </option>
+                </MenuItem>
             )}
 
-        </SelectStyle>
+        </Select>
     </FormControl>
 </>
 

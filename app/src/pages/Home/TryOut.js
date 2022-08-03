@@ -126,7 +126,7 @@ padding-left: 1rem;
 margin: 1em 0;
 `
 
-const CreateButton = styled.button`
+export const CreateButton = styled.button`
 
 width: 129px;
 height: 52;

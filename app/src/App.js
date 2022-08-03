@@ -102,8 +102,8 @@ const Pollinations = () => {
             element={<Dalle navigateToNode={navigateToNode}/>}
           />
           
-          <Route path='owngpu/:nodeID' element={<CreateWithOwnGPU />} />
-          <Route path='/owngpu' element={<CreateWithOwnGPU />} />
+          <Route path='create/:nodeID' element={<CreateWithOwnGPU />} />
+          <Route path='/create' element={<CreateWithOwnGPU />} />
 
 
           <Route

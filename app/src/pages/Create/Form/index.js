@@ -23,22 +23,16 @@ const Form = ({
 
   useEffect(()=>{
     // add other fields to the form when user selects the desired model.
-    formik.setValues(state => ({ 
+    formik.setValues({ 
       // all parameters for the form
       ...getInitialValues(inputs, primary_input),
       
       // override the primary_input value with the old one.
       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
-    }))
+    })
   },[selectedModel])
     
   return <StyledForm onSubmit={formik.handleSubmit} >
-
-    <PrimaryInput
-      isDisabled={isDisabled}
-      formik={formik}
-      primary_input={primary_input}
-    />
 
     <SelectModel 
       models={models} 
@@ -46,16 +40,26 @@ const Form = ({
       selectedModel={selectedModel} 
       onSelectModel={onSelectModel}
     />
+    {
+      !(selectedModel.key === '') && 
+      <>
+        <PrimaryInput
+          isDisabled={isDisabled || !selectedModel.key}
+          formik={formik}
+          primary_input={primary_input}
+        />
 
-    <CustomizeParameters
-      isDisabled={isDisabled}
-      inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
-      formik={formik}
-    />
+        <CustomizeParameters
+          isDisabled={isDisabled}
+          inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
+          formik={formik}
+        />
 
-    <PrimaryButton type='submit' disabled={isDisabled} marginLeft>
-      { formik.isSubmitting ? 'Creating...' : 'Create' }
-    </PrimaryButton>
+        <PrimaryButton type='submit' disabled={isDisabled} marginLeft>
+          { formik.isSubmitting ? 'Creating...' : 'Create' }
+        </PrimaryButton>  
+      </>
+    }
 
 
   </StyledForm>

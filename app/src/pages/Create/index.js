@@ -29,7 +29,7 @@ export default React.memo(function Create() {
     const { submitToAWS, ipfs, isLoading } = useAWSNode('');
 
     const dispatch = async (values) => {
-        console.log(values)
+        console.log(selectedModel.url, values)
         await submitToAWS(values, selectedModel.url, false);
     }
 
@@ -61,8 +61,10 @@ export default React.memo(function Create() {
 // STYLES
 const PageLayout = styled.div`
 padding: ${GlobalSidePadding};
+width: 100%;
 margin-top: 1em;
 display: grid;
+
 grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 grid-gap: 0.8em;
 min-height: 80vh;

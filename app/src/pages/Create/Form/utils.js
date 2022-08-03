@@ -10,7 +10,6 @@ export function getInputs(models, selectedModel){
         .sort((a,b) => a['x-order'] > b['x-order'])
         .shift() : {};
 
-
     return { inputs, primary_input };
 }
   

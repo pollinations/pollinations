@@ -13,14 +13,14 @@ import { GlobalSidePadding } from '../styles/global';
 import ReplayIcon from '@material-ui/icons/Replay';
 import { SEOMetadata } from '../components/Helmet';
  
-const debug = Debug("Envisioning");
+const debug = Debug("Avatar");
 
 const form = {
-  "prompt": {
+  "text": {
     type: "string",
     default: "",
-    title: "prompt",
-    description: "The image you want to be generated",
+    title: "Prompt",
+    description: "The text prompt for the coarse avatar to be generated",
   },
   // "num": {
   //   type: "number",
@@ -43,15 +43,15 @@ export default React.memo(function Create() {
   debug("run overrideDefaultValues on",form,ipfs?.input,"result",inputs)
 
   const dispatch = async (values) => {
-    navigateTo("/dalle/submit")
-    const { nodeID } = await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/voodoohop/dalle-playground", false);
-    navigateTo(`/dalle/${nodeID}`)
+    navigateTo("/avatar/submit")
+    const { nodeID } = await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip", false);
+    navigateTo(`/avatar/${nodeID}`)
   }
   
   return <PageLayout >
-        <SEOMetadata title='DALL E' />
+        <SEOMetadata title='Coarse Avatar' />
         <InputBarStyle>
-          <Typography variant='h5' children='DALLE Mega' />
+          <Typography variant='h5' children='Coarse Avatar' />
           {isLoading && 
           <LinearProgress style={{margin: '0.5em 0'}} />
           }

@@ -40,7 +40,7 @@ export default React.memo(function Create() {
 
   const dispatch = async (values) => {
     navigateTo("/envisioning/submit")
-    const { nodeID } = await submitToAWS(values, "pollinations/preset-envisioning");
+    const { nodeID } = await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-envisioning");
     debug("submitted to AWS. Got nodeID", nodeID)
 
     navigateTo(`/envisioning/${nodeID}`)

@@ -30,6 +30,7 @@ import {
 import Integrate from "./pages/Integrate"
 import About from "./pages/About"
 import ScrollToTop from './utils/ScrollToTop'
+import Avatar from "./pages/Avatar"
 
 
 const debug = Debug("AppContainer")
@@ -97,6 +98,15 @@ const Pollinations = () => {
           <Route
             path="dalle"
             element={<Dalle navigateToNode={navigateToNode}/>}
+          />
+
+          <Route
+            path="avatar/:nodeID"
+            element={<Avatar navigateToNode={navigateToNode}/>}
+          />
+          <Route
+            path="avatar"
+            element={<Avatar navigateToNode={navigateToNode}/>}
           />
           <Route
             path="p/:contentID/*"

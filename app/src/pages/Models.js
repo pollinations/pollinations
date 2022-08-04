@@ -29,7 +29,7 @@ export default function Models() {
       <TopAlert options={options} />
 
       
-      <ShowReelHeadline>
+      {/* <ShowReelHeadline>
         {!options.length || 'What do you want to create?'}
       </ShowReelHeadline>
 
@@ -38,21 +38,20 @@ export default function Models() {
         test
         .filter(notebook => notebook.featured)
         .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
-      }/>
+      }/> */}
 
-      {console.log(test)}
 
       <ShowReelHeadline>
         {!options.length || 'What do you want to create?'}
       </ShowReelHeadline>
-      
+
       <FilterUi options={options} option={option} />
 
       <GridStyle>
       {
         test
         .sort((a,b) => b.featured )
-        .filter(notebook => !notebook.featured)
+        // .filter(notebook => !notebook.featured)
         .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
       }
       </GridStyle>

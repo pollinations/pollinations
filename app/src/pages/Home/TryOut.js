@@ -44,7 +44,7 @@ export default React.memo(function TryOut() {
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, "pollinations/preset-frontpage", false);
+    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage", false);
   }
   
   return <PageLayout >

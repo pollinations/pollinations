@@ -19,8 +19,6 @@ export default React.memo(function Create() {
     // :id from url
     const { Model, MediaId } = useParams();
 
-    console.log(MediaId)
-
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
@@ -28,7 +26,7 @@ export default React.memo(function Create() {
 
     // set selected model with DropDown
     const onSelectModel = e => setSelectedModel({
-        url: `${parseURL(e.target.value)}`,
+        url:  e.target.value,
         key: e.target.value
     })
 
@@ -36,9 +34,8 @@ export default React.memo(function Create() {
     useEffect(()=>{
         if (!MODELS_MAP[Model]) return;
         setSelectedModel({
-            url: `${parseURL(MODELS_MAP[Model]?.key)}`,
-            key: MODELS_MAP[Model]?.key,
-            name: MODELS_MAP[Model]?.name,
+            ...MODELS_MAP[Model],
+            url: MODELS_MAP[Model]?.key,
         });
     },[Model]);
 
@@ -46,7 +43,7 @@ export default React.memo(function Create() {
 
     // dispatch to AWS
     const dispatch = async (values) => {
-        // console.log(values, selectedModel.url)
+        console.log(values, selectedModel.url)
         await submitToAWS(values, selectedModel.url, false);
     }
 

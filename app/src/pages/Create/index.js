@@ -8,27 +8,9 @@ import { SEOMetadata } from '../../components/Helmet';
  
 import Previewer from './Previewer';
 import { useParams } from 'react-router-dom';
+import { MODELS_MAP } from '../../assets/GPUModels';
 
-const MODELS_MAP = {
-    'discodiffusion':{
-        url: "replicate/disco-diffusion",
-        key: "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920" ,
-        title: "Disco Diffusion",
-        img: ''
-    },
-    'majestydiffusion': {
-        url:  "pollinations/majesty-diffusion-cog",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
-        title: 'Majesty Diffusion',
-        img: ''
-    },
-    'dalle': {
-        url: "pollinations/min-dalle",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/min-dalle",
-        title: 'DallE',
-        img: ''
-    }
-}
+
 
 export default React.memo(function Create() {
 
@@ -56,7 +38,7 @@ export default React.memo(function Create() {
         setSelectedModel({
             url: `${parseURL(MODELS_MAP[Model]?.key)}`,
             key: MODELS_MAP[Model]?.key,
-            title: MODELS_MAP[Model]?.title,
+            name: MODELS_MAP[Model]?.name,
         });
     },[Model]);
 
@@ -74,7 +56,7 @@ export default React.memo(function Create() {
         <ParametersArea>
 
             <h2>
-                {selectedModel.title}
+                {selectedModel.name}
             </h2>
             
             { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> }

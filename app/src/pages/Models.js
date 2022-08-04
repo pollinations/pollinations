@@ -8,14 +8,22 @@ import NotebookCard from "../components/temp/NotebookCard"
 import FilterUi from "../components/temp/FilterUi"
 import { GridStyle, BaseContainer, BackGroundImage } from '../styles/global'
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+import { MODELS_MAP } from "../assets/GPUModels"
 
 
 export default function Models() {
 
   const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
+  
   const { notebookList, options, option } = useFilter(notebooks)
 
+  const test = useMemo(()=> notebookList.map( notebook => 
+    Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
+    ),[notebookList])
+  
+  
+    console.log(test)
   return (
     <ModelsStyle>
       <TopAlert options={options} />
@@ -28,7 +36,7 @@ export default function Models() {
 
       <GridStyle>
       {
-        notebookList
+        test
         .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
       }
       </GridStyle>

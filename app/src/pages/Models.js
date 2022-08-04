@@ -37,6 +37,7 @@ export default function Models() {
       <GridStyle>
       {
         test
+        .sort((a,b) => b.featured )
         .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
       }
       </GridStyle>

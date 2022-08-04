@@ -10,6 +10,7 @@ const _mediaTypeMapWithoutAll = {
     "image": [".jpg", ".jpeg", ".png"],
     "text": [".md", ".txt"],
     "audio": [".mp3", ".wav", ".ogg",".flac"],
+    "3dmodel": [".bin", ".obj"],
   }
 
 const _mediaTypeMap = {

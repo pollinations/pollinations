@@ -6,22 +6,23 @@ import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
+import { useGPUModels } from '../../../hooks/useGPUModels';
 
 
 const Form = ({ 
-    onSubmit, isDisabled, models, 
-    selectedModel, onSelectModel }) => {
+    onSubmit, isDisabled, 
+    selectedModel, onSelectModel, hasSelect }) => {
 
   const formik = useFormik({
       initialValues: {},
       onSubmit,
       enableReinitialize: true,
   });
-    
-  const { inputs, primary_input } = getInputs(models, selectedModel);
-
+  const { models } = useGPUModels();
 
   useEffect(()=>{
+    const { inputs, primary_input } = getInputs(models, selectedModel);
+
     // add other fields to the form when user selects the desired model.
     formik.setValues({ 
       // all parameters for the form
@@ -30,23 +31,28 @@ const Form = ({
       // override the primary_input value with the old one.
       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
     })
-  },[selectedModel])
+  },[selectedModel, models])
     
   return <StyledForm onSubmit={formik.handleSubmit} >
 
-    <SelectModel 
-      models={models} 
-      isDisabled={isDisabled}
-      selectedModel={selectedModel} 
-      onSelectModel={onSelectModel}
-    />
+    { hasSelect &&
+      <SelectModel 
+        models={models} 
+        isDisabled={isDisabled}
+        selectedModel={selectedModel} 
+        onSelectModel={onSelectModel}
+      />
+    }
+
     {
-      !(selectedModel.key === '') && 
+      !(selectedModel.title === '') && 
       <>
+
         <PrimaryInput
           isDisabled={isDisabled || !selectedModel.key}
           formik={formik}
-          primary_input={primary_input}
+          models={models}
+          selectedModel={selectedModel}
         />
 
         <CustomizeParameters

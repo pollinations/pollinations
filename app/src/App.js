@@ -26,12 +26,13 @@ import ResultViewer from "./pages/ResultViewer"
 import { 
   ROUTES, 
   MARKDOWN_ROUTES, 
-  MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+  MAIN_NAV_ROUTES, 
+  OWNGPU_ROUTES} from "./routes/publicRoutes"
 import Integrate from "./pages/Integrate"
 import About from "./pages/About"
 import ScrollToTop from './utils/ScrollToTop'
 
-import CreateWithOwnGPU from './pages/Create/'
+import CreateModel from './pages/Create/'
 
 const debug = Debug("AppContainer")
 
@@ -102,9 +103,14 @@ const Pollinations = () => {
             element={<Dalle navigateToNode={navigateToNode}/>}
           />
           
-          <Route path='create/:nodeID' element={<CreateWithOwnGPU />} />
-          <Route path='/create' element={<CreateWithOwnGPU />} />
-
+          {/* Create with our GPU */}
+          <Route path="create" element={<CreateModel />} >
+            {/* Disco, majesty, etc... */}
+            <Route path=':Model'>
+              {/* Hash associated with the content created */}
+              <Route path=':MediaId' />
+            </Route>
+          </Route>
 
           <Route
             path="p/:contentID/*"

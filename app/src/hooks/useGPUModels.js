@@ -1,13 +1,15 @@
-import React from "react";
+import * as React from 'react'
 import { zipObj } from 'ramda';
 
-function useModels(modelsToUse){
+const GPUModelsContext = React.createContext()
+
+function GPUModelsProvider({ children }) {
 
     const [ models, setModels ] = React.useState({});
     const [ areModelsLoading, setLoading ] = React.useState(false);
     const [ error, setError ] = React.useState({});
 
-    const wantedModels = modelsToUse || MODELS ;
+    const wantedModels = MODELS;
 
     React.useEffect(()=>{
         
@@ -39,10 +41,42 @@ function useModels(modelsToUse){
 
     },[])
 
-    return { models, error, areModelsLoading }
+
+    const FilterModels = Model => {
+        if (Model === 'discodiffusion')
+        return ({
+            key: "replicate/disco-diffusion",
+            url:"r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920"
+        });
+
+
+
+
+        return zipObj(
+            Object.values(wantedModels), 
+            Object.values(wantedModels)
+            // return only the models we want
+            .map(model => models[model] )
+            // 
+        )
+    };
+
+    return <GPUModelsContext.Provider 
+        value={{ models, error, areModelsLoading, FilterModels }}
+    >
+        {children}
+    </GPUModelsContext.Provider>
 }
 
-export default useModels
+function useGPUModels() {
+  const context = React.useContext(GPUModelsContext)
+  if (context === undefined) {
+    throw new Error('useGPUModels must be used within a GPUModelsProvider')
+  }
+  return context
+}
+
+export { GPUModelsProvider, useGPUModels }
 
 const MODELS = {
     // "latent-diffusion": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m",

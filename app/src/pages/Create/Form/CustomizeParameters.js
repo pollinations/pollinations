@@ -5,27 +5,8 @@ import ParameterViewer from './InputsUI/';
 
 const CustomizeParameters = ({ formik, isDisabled, inputs }) => { 
 
-    if (Object.keys(formik.values).length === 1) return null;
-
-    const Parameters = Object.keys(formik.values)
-    .filter((key, idx, array) => {
-        if (!inputs[key]) return array;
-        return inputs[key]['x-order'] !== 0
-    })
-    .map(key => <>
-        <ParameterViewer
-        key={key}
-        id={key}
-        {...inputs[key]}
-        disabled={isDisabled}
-        label={inputs[key]?.title}
-        helperText={inputs[key]?.description}
-        value={formik.values[key]}
-        onChange={formik.handleChange}
-        setFieldValue={formik.setFieldValue}
-        />
-        </>
-    )
+    if (!inputs) return null;
+    if (!Object.keys(inputs).length) return null;
 
     return <Styles>
         <Accordion elevation={0} fullWidth>
@@ -33,7 +14,25 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                 Customize
             </AccordionSummary>
 
-            <ParametersStyle children={Parameters} />
+            <ParametersStyle children={Object.keys(formik.values)
+            .filter((key, idx, array) => {
+                if (!inputs[key]) return array;
+                return inputs[key]['x-order'] !== 0
+            })
+            .map(key => <>
+                <ParameterViewer
+                key={key}
+                id={key}
+                {...inputs[key]}
+                disabled={isDisabled}
+                label={inputs[key]?.title}
+                helperText={inputs[key]?.description}
+                value={formik.values[key]}
+                onChange={formik.handleChange}
+                setFieldValue={formik.setFieldValue}
+                />
+                </>
+            )} />
         </Accordion>
     </Styles>
 }

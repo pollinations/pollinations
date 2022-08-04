@@ -3,6 +3,7 @@ import DropZone from './InputsUI/File';
 import String from './InputsUI/String';
 import styled from '@emotion/styled'
 import { TextField } from '@material-ui/core';
+import { getInputs } from './utils';
 
 const PrimaryInputMap = {
     string: props => <String {...props} />,
@@ -11,7 +12,9 @@ const PrimaryInputMap = {
   
 const PrimaryInput = props => {
 
-const { isDisabled, formik, primary_input } = props;
+const { isDisabled, formik, models, selectedModel } = props;
+
+const { primary_input } = getInputs(models, selectedModel);
 
 const type = primary_input.type;
 

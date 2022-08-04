@@ -1,86 +1,47 @@
 import styled from '@emotion/styled';
 import LinearProgress from '@material-ui/core/LinearProgress';
-import React, { useEffect } from "react";
+import React from "react";
 import Form from './Form';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import { GlobalSidePadding } from '../../styles/global';
 import { SEOMetadata } from '../../components/Helmet';
  
 import Previewer from './Previewer';
-import { useParams } from 'react-router-dom';
+import { useGPUModels } from '../../hooks/useGPUModels';
 
-const MODELS_MAP = {
-    'discodiffusion':{
-        url: "replicate/disco-diffusion",
-        key: "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920" ,
-        title: "Disco Diffusion",
-        img: ''
-    },
-    'majestydiffusion': {
-        url:  "pollinations/majesty-diffusion-cog",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
-        title: 'Majesty Diffusion',
-        img: ''
-    },
-    'dalle': {
-        url: "pollinations/min-dalle",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/min-dalle",
-        title: 'DallE',
-        img: ''
-    }
-}
 
 export default React.memo(function Create() {
 
-    // aws stuff
-    const { submitToAWS, ipfs, isLoading } = useAWSNode('');
-    // :id from url
-    const { Model, MediaId } = useParams();
-
-    console.log(MediaId)
+    // fetch json list of models from github
+    const { models, error, areModelsLoading, FilterModels } = useGPUModels()
 
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
-
-
-    // set selected model with DropDown
     const onSelectModel = e => setSelectedModel({
         url: `${parseURL(e.target.value)}`,
         key: e.target.value
     })
 
-    // set selected model with URL :id
-    useEffect(()=>{
-        if (!MODELS_MAP[Model]) return;
-        setSelectedModel({
-            url: `${parseURL(MODELS_MAP[Model]?.key)}`,
-            key: MODELS_MAP[Model]?.key,
-            title: MODELS_MAP[Model]?.title,
-        });
-    },[Model]);
 
+    // aws stuff
+    const { submitToAWS, ipfs, isLoading } = useAWSNode('');
 
-
-    // dispatch to AWS
     const dispatch = async (values) => {
-        // console.log(values, selectedModel.url)
         await submitToAWS(values, selectedModel.url, false);
     }
 
     
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
-        <ParametersArea>
 
-            <h2>
-                {selectedModel.title}
-            </h2>
+        <ParametersArea>
             
             { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> }
             
             <Form 
-                hasSelect={!Model}
+                hasSelect
+                models={models}
                 isDisabled={isLoading} 
                 selectedModel={selectedModel}
                 onSelectModel={onSelectModel}
@@ -90,7 +51,7 @@ export default React.memo(function Create() {
         </ParametersArea>
 
         <ResultsArea>
-            <Previewer ipfs={ipfs}  /> 
+            <Previewer ipfs={ipfs}  />   
         </ResultsArea>
 
     </PageLayout>

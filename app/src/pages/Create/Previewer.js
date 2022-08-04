@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 import MediaViewer from "./MediaViewer/";
 
 const Previewer = ({ ipfs }) => {
+    if (!ipfs) return null;
 
     const medias = getMedia(ipfs.output);
 

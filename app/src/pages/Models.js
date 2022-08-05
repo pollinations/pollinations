@@ -21,11 +21,12 @@ export default function Models() {
   const { notebookList, options, option } = useFilter(notebooks)
 
   const test = useMemo(()=> [
+    // Check if the model that runs on our gpu is also on the old notebook list and replace.
     ...notebookList.map( notebook => 
     Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
     ),
+    // Add models that were not on the old notebook list.
     ...Object.values(MODELS_MAP).filter( model => !model.id2pop)
-    
   ],[notebookList])
 
   
@@ -52,9 +53,11 @@ export default function Models() {
       </ShowReelHeadline>
 
       <FilterUi options={options} option={option} />
-      {console.log(test)}
+
       <GridStyle>
       {
+        // hack to hide the ones that are not fetched
+        (test.length > 1) &&
         test
         .sort((a,b) => b.featured )
         // .filter(notebook => !notebook.featured)

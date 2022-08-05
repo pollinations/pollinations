@@ -29,5 +29,27 @@ export const MODELS_MAP = {
         path: '/create/dalle',
         category: '0 Featured',
         description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n*Sunset over a lake*\n\n\n\nThe new model everyone is excited about. **Unfortunately requires Google Colab Pro for now**. To use select \"Change Runtime Type** in the Pollinator, then select **High RAM** and restart the runtime."
+    },
+    'avatarclip': {
+        featured: true,
+        url: "pollinations/avatar-clip",
+        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
+        img: 'https://i.imgur.com/a9hByt4.png',
+        name: 'Avatar Clip',
+        id2pop: '',
+        path: '/create/avatarclip',
+        category: '0 Featured',
+        description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n*Avatar Clip*\n\n\n\nThis is a model that clips the avatar of a user to a specific part of the image. It is useful for creating avatars for other users.\n\n\n\n---\n\n\n\nAccess our Avatar Clip Guide(https://multimodal.art/avatar-clip) (_under construction_), our [GitHub](",
+    },
+    'swinir': {
+        featured: true,
+        url: "jingyunliang/swinir",
+        key: "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
+        name: 'Swinir',
+        img: 'https://i.imgur.com/a9hByt4.png',
+        id2pop: "2 SwinIR Super-Resolution",
+        path: '/create/swinir',
+        category: '0 Featured',
+        description: "<img src=\"https://i.imgur.com/BKvDhnf.png\" width=\"300\" height=\"300\" />\n\n\n\nUses [SwinIR](https://github.com/JingyunLiang/SwinIR) to perform 4x neural super-resolution (creates HD images from low resolution)\n\n\n\n---\n\nCredits: [Jingyun Liang]((https://github.com/JingyunLiang)\n\nLicense: MIT",
     }
 }

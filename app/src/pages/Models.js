@@ -46,7 +46,7 @@ export default function Models() {
       </ShowReelHeadline>
 
       <FilterUi options={options} option={option} />
-
+      {console.log(test)}
       <GridStyle>
       {
         test

@@ -42,28 +42,13 @@ function GPUModelsProvider({ children }) {
     },[])
 
 
-    const FilterModels = Model => {
-        if (Model === 'discodiffusion')
-        return ({
-            key: "replicate/disco-diffusion",
-            url:"r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920"
-        });
+    
 
-
-
-
-        return zipObj(
-            Object.values(wantedModels), 
-            Object.values(wantedModels)
-            // return only the models we want
-            .map(model => models[model] )
-            // 
-        )
-    };
-
-    return <GPUModelsContext.Provider 
-        value={{ models, error, areModelsLoading, FilterModels }}
-    >
+    return <GPUModelsContext.Provider value={{ 
+            models, 
+            error, 
+            areModelsLoading, 
+        }}>
         {children}
     </GPUModelsContext.Provider>
 }
@@ -87,8 +72,9 @@ const MODELS = {
     // "pollinations/latent-diffusion-400m": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m",
     "pollinations/min-dalle": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/min-dalle",
     // "kuprel/min-dalle": "r8.im/kuprel/min-dalle",
+    "pollinations/avatarclip": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
     "pollinations/preset-frontpage": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage",
     "pollinations/majesty-diffusion-cog": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
-    // "jingyunliang/swinir": "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
+    "jingyunliang/swinir": "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
     "replicate/disco-diffusion": "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920"
 }

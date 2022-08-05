@@ -44,8 +44,6 @@ const Form = ({
       />
     }
 
-    {
-      !(selectedModel.title === '') && 
       <>
 
         <PrimaryInput
@@ -65,7 +63,6 @@ const Form = ({
           { formik.isSubmitting ? 'Creating...' : 'Create' }
         </PrimaryButton>  
       </>
-    }
 
 
   </StyledForm>

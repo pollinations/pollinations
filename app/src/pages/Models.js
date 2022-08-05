@@ -20,9 +20,15 @@ export default function Models() {
   
   const { notebookList, options, option } = useFilter(notebooks)
 
-  const test = useMemo(()=> notebookList.map( notebook => 
+  const test = useMemo(()=> [
+    ...notebookList.map( notebook => 
     Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
-    ),[notebookList])
+    ),
+    ...Object.values(MODELS_MAP).filter( model => !model.id2pop)
+    
+  ],[notebookList])
+
+  
   
     return (
     <ModelsStyle>

@@ -42,7 +42,7 @@ const Hero = props => {
   `;
   
   const HeroGradient = styled(HeroStyle)`
-  background: radial-gradient(50% 74.25% at 50% 53.59%, 
+    background: radial-gradient(50% 74.25% at 50% 53.59%, 
     rgba(22, 50, 122, 0.58) 0%, 
     rgba(34, 128, 134, 0.54) 47.4%, 
     rgba(151, 190, 67, 0.01) 100%);

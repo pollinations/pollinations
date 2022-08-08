@@ -6,6 +6,8 @@ import { getMedia } from "../data/media";
 // Icons
 import { getWebURL }  from  "@pollinations/ipfs/ipfsConnector";
 import { GridStyle } from '../styles/global';
+import {OBJModel} from 'react-3d-viewer'
+
 
 export const MediaViewer =  ({ filename, content, type, style }) => {
   const Viewer = TypeMaps[type]
@@ -59,6 +61,11 @@ function MarkdownViewer({content, filename, style}) {
   
 }
 
+function ObjViewer({ content, style, filename }) {
+  debug("ObjViewer", content)
+  return <OBJModel src={content} style={{...style, height: null, }} background="rgba(0,0,0,0)" />
+}
+
 export default ({output, contentID}) => { 
   const media = getMedia(output)
 
@@ -81,5 +88,6 @@ const TypeMaps = {
   "image": ImageDisplay,
   "video": VideoDisplay,
   "audio": AudioViewer,
-  "text": MarkdownViewer
+  "text": MarkdownViewer,
+  "3dmodel": ObjViewer
 }

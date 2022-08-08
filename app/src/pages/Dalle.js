@@ -16,10 +16,10 @@ import { SEOMetadata } from '../components/Helmet';
 const debug = Debug("Envisioning");
 
 const form = {
-  "Prompt": {
+  "prompt": {
     type: "string",
     default: "",
-    title: "Prompt",
+    title: "prompt",
     description: "The image you want to be generated",
   },
   // "num": {
@@ -45,7 +45,7 @@ export default React.memo(function Create() {
 
   const dispatch = async (values) => {
     navigateTo("/dalle/submit")
-    const { nodeID } = await submitToAWS(values, "voodoohop/dalle-playground", false);
+    const { nodeID } = await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/voodoohop/dalle-playground", false);
     navigateTo(`/dalle/${nodeID}`)
   }
   

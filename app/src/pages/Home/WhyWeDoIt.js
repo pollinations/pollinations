@@ -4,6 +4,7 @@ import whyBG from '../../assets/imgs/doubleBg.png'
 import DiscordIMG from '../../assets/imgs/discord_section.png'
 import { CreateButton } from './TryOut'
 import { useNavigate } from 'react-router-dom'
+import StarIMG from '../../assets/imgs/star.png'
 // why we do it
 
 
@@ -54,6 +55,8 @@ const WhyWeDoIt = props => {
 
         </Headline>
         </div>
+        <StarImage src={StarIMG} top='-50' left='-50' />
+        <StarImage src={StarIMG} bottom='-50' right='-50' />
       </GridTwoColumns>
   
   
@@ -103,6 +106,7 @@ margin-top: 7em;
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1280px;
+position: relative;
 
 padding: 10em 4em;
 display: grid;
@@ -139,4 +143,15 @@ img {
     width: 100%;
   }
 }
+`
+
+const StarImage = styled.img`
+
+width: 77px;
+
+position: absolute;
+left: ${props => props.left || ''};
+right: ${props => props.right || ''};
+top: ${props => props.top || ''};
+bottom: ${props => props.bottom || ''};
 `

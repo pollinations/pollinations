@@ -55,8 +55,8 @@ const WhyWeDoIt = props => {
 
         </Headline>
         </div>
-        <StarImage src={StarIMG} top='-50' left='-50' />
-        <StarImage src={StarIMG} bottom='-50' right='-50' />
+        <StarImage src={StarIMG} top='-50' left='0' />
+        <StarImage src={StarIMG} bottom='-50' right='0' />
       </GridTwoColumns>
   
   

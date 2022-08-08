@@ -34,9 +34,9 @@ const Hero = props => {
   const HeroStyle = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  
+  justify-content: flex-end;
+  align-items: flex-start;
+
   width: 100%;
   min-height: 100vh;
   `;
@@ -51,13 +51,13 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  margin: 0;
+  margin: 1.7em 0.5em;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;
   font-size: 64px;
   line-height: 82px;
-  text-align: center;
+  text-align: left;
   text-transform: uppercase;
   
   color: #FFFFFF;

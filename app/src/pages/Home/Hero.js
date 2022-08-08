@@ -11,9 +11,7 @@ const Hero = props => {
       <HeroHeadline>
         Create all kinds of <br/> media with AI power
       </HeroHeadline>
-      <HeroSubHeadLine>
-        Explain your vision with words and watch it come to life!
-      </HeroSubHeadLine>
+      
   
       <BackGroundImage 
         src={heroBGOverlay} 
@@ -36,15 +34,15 @@ const Hero = props => {
   const HeroStyle = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  
+  justify-content: flex-end;
+  align-items: flex-start;
+
   width: 100%;
   min-height: 100vh;
   `;
   
   const HeroGradient = styled(HeroStyle)`
-  background: radial-gradient(50% 74.25% at 50% 53.59%, 
+    background: radial-gradient(50% 74.25% at 50% 53.59%, 
     rgba(22, 50, 122, 0.58) 0%, 
     rgba(34, 128, 134, 0.54) 47.4%, 
     rgba(151, 190, 67, 0.01) 100%);
@@ -53,13 +51,13 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  margin: 0;
+  margin: 1.7em 0.5em;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;
   font-size: 64px;
   line-height: 82px;
-  text-align: center;
+  text-align: left;
   text-transform: uppercase;
   
   color: #FFFFFF;

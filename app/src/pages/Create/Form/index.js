@@ -9,7 +9,7 @@ import { getInitialValues, getInputs } from './utils';
 import { useGPUModels } from '../../../hooks/useGPUModels';
 
 
-const Form = ({ 
+const Form = ({ ipfs,
     onSubmit, isDisabled, 
     selectedModel, onSelectModel, hasSelect }) => {
 
@@ -32,6 +32,12 @@ const Form = ({
       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
     })
   },[selectedModel, models])
+
+  useEffect(()=>{
+    if (!ipfs.input) return;
+    console.log(ipfs.input)
+    formik.setValues({ ...formik.values, ...ipfs.input });
+  },[ipfs?.input])
     
   return <StyledForm onSubmit={formik.handleSubmit} >
 

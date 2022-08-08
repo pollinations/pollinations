@@ -66,6 +66,7 @@ export default React.memo(function Create() {
             { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> }
             
             <Form 
+                ipfs={ipfs}
                 hasSelect={!Model}
                 isDisabled={isLoading} 
                 selectedModel={selectedModel}

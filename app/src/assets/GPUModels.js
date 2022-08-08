@@ -51,5 +51,17 @@ export const MODELS_MAP = {
         path: 'swinir',
         category: '0 Featured',
         description: "<img src=\"https://i.imgur.com/BKvDhnf.png\" width=\"300\" height=\"300\" />\n\n\n\nUses [SwinIR](https://github.com/JingyunLiang/SwinIR) to perform 4x neural super-resolution (creates HD images from low resolution)\n\n\n\n---\n\nCredits: [Jingyun Liang]((https://github.com/JingyunLiang)\n\nLicense: MIT",
+    },
+    'adampi': {
+        featured: true,
+        url: "pollinations/adampi",
+        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
+        name: 'AdaMPI',
+        img: 'https://i.imgur.com/a9hByt4.png',
+        id2pop: "1 Photo3D",
+        path: 'adampi',
+        category: '0 Featured',
+        description: "<img src=\"https://i.imgur.com/BKvDhnf.png\" width=\"300\" height=\"300\" />\n\n\n\nUses [SwinIR](https://github.com/JingyunLiang/SwinIR) to perform 4x neural super-resolution (creates HD images from low resolution)\n\n\n\n---\n\nCredits: [Jingyun Liang]((https://github.com/JingyunLiang)\n\nLicense: MIT",
     }
+
 }

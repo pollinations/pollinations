@@ -76,5 +76,6 @@ const MODELS = {
     "pollinations/preset-frontpage": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage",
     "pollinations/majesty-diffusion-cog": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
     "jingyunliang/swinir": "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
-    "replicate/disco-diffusion": "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920"
+    "replicate/disco-diffusion": "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920",
+    "pollinations/adampi" : "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
 }

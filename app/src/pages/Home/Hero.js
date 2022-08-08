@@ -11,9 +11,7 @@ const Hero = props => {
       <HeroHeadline>
         Create all kinds of <br/> media with AI power
       </HeroHeadline>
-      <HeroSubHeadLine>
-        Explain your vision with words and watch it come to life!
-      </HeroSubHeadLine>
+      
   
       <BackGroundImage 
         src={heroBGOverlay} 

@@ -7,7 +7,7 @@ import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
-import { GlobalSidePadding } from '../../styles/global';
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { useFormik } from 'formik';
@@ -48,14 +48,37 @@ export default React.memo(function TryOut() {
   }
   
   return <PageLayout >
+        <HeroSubHeadLine>
+        Explain your vision with words and watch it come to life!
+      </HeroSubHeadLine>
 
-        <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
 
-        <Previewer ipfs={ipfs} />   
+      <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
 
-    </PageLayout>
+      <Previewer ipfs={ipfs} />   
+
+</PageLayout>
 });
 
+const HeroSubHeadLine = styled.p`
+font-family: 'DM Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 46px;
+line-height: 60px;
+text-align: center;
+
+max-width: 55%;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  max-width: 90%;
+}
+
+color: #FFFFFF;
+/* identical to box height */
+
+text-align: center;
+
+`
 
 const Controls = ({dispatch , loading, inputs, currentID }) => {
 

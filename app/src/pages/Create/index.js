@@ -3,25 +3,27 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import React, { useEffect } from "react";
 import Form from './Form';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
-import { GlobalSidePadding } from '../../styles/global';
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 import { SEOMetadata } from '../../components/Helmet';
  
 import Previewer from './Previewer';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { MODELS_MAP } from '../../assets/GPUModels';
 
 
 
 export default React.memo(function Create() {
+    // :id and :model from url
+    const params = useParams();
+    const { Model } = params;
 
     // aws stuff
-    const { submitToAWS, ipfs, isLoading } = useAWSNode('');
-    // :id from url
-    const { Model, MediaId } = useParams();
+    const { submitToAWS, ipfs, isLoading } = useAWSNode(params);
 
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
+    const navigateTo = useNavigate();
 
 
     // set selected model with DropDown
@@ -44,7 +46,12 @@ export default React.memo(function Create() {
     // dispatch to AWS
     const dispatch = async (values) => {
         console.log(values, selectedModel.url)
-        await submitToAWS(values, selectedModel.url, false);
+        const { nodeID } = await submitToAWS(values, selectedModel.url, false);
+        if (!Model) {
+            navigateTo(`/create/${nodeID}`);
+        } else {
+            navigateTo(`/create/${Model}/${nodeID}`);
+        }
     }
 
     
@@ -94,9 +101,11 @@ const ParametersArea = styled.div`
 
 `
 const ResultsArea = styled.div`
-grid-column: 2 / end;
-@media (max-width: 640px) {
+grid-column: 2 / 5;
+max-width: 70%;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
   grid-column: 1 / 1;
+  max-width: 100%;
 }
 `
 

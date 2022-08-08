@@ -108,7 +108,7 @@ const Pollinations = () => {
             {/* Disco, majesty, etc... */}
             <Route path=':Model'>
               {/* Hash associated with the content created */}
-              <Route path=':MediaId' />
+              <Route path=':nodeID' />
             </Route>
           </Route>
 

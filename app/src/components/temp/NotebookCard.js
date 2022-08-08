@@ -5,7 +5,7 @@ import NotebookImage from "../organisms/markdownParsers/NotebookImage";
 import NotebookInfo from "../organisms/markdownParsers/NotebookInfo";
 
 const NotebookCard = ({ notebook }) => {
-    let { category, name, path, description, featured } = notebook
+    let { category, name, path, description, featured, url } = notebook
   
     if (!description) return null;
   
@@ -18,13 +18,15 @@ const NotebookCard = ({ notebook }) => {
       .replace('-', ' ')
       .toLowerCase();
   
+    const ownGpuPath = `/create/${path}`;
+
     return (
       <Box>
         <div style={{ borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)'}}>
-            <Link to={path} style={{textDecoration: 'none'}}>
+            <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
             <CardHeader
-                subheader={<CardTitle children={featured ? name : name?.slice(2)} to={path} variant="h4" />}
-                title={<CardTitle children={parsedCategory} to={path} variant="h6" />}
+                subheader={<CardTitle children={featured ? name : name?.slice(2)} to={featured ? ownGpuPath : path} variant="h4" />}
+                title={<CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />}
               />
               
   

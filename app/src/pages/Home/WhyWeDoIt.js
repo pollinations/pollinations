@@ -1,11 +1,14 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/bg1.jpg'
-
+import whyBG from '../../assets/imgs/doubleBg.png'
+import DiscordIMG from '../../assets/imgs/discord_section.png'
+import { CreateButton } from './TryOut'
+import { useNavigate } from 'react-router-dom'
 // why we do it
 
 
 const WhyWeDoIt = props => {
+  const navigate = useNavigate()
   
     return <HeroStyle>
   
@@ -34,6 +37,24 @@ const WhyWeDoIt = props => {
           </ExplanationText>
         </div>
       </GridTwoColumns>
+
+      <GridTwoColumns alignItems='center'>
+        <FlexColumn >
+          <img src={DiscordIMG} alt="discord"  />
+          <a href='https://discord.gg/XXd99CrkCr'>
+          <CreateButton marginLeft='0'>
+            Start
+          </CreateButton>
+          </a>
+        </FlexColumn>
+        <div>
+        <Headline fontSize='44px' color='#F6F6F6' lineHeight='57.29px' fontWeight='500' margin='0'>
+          Discuss, get help and <br/>
+          contribute on Discord.
+
+        </Headline>
+        </div>
+      </GridTwoColumns>
   
   
   
@@ -51,12 +72,12 @@ const WhyWeDoIt = props => {
 const Headline = styled.p`
 font-family: 'DM Sans';
 font-style: normal;
-font-weight: 400;
-font-size: 56px;
-line-height: 73px;
-color: #000000;
+font-weight: ${props => props.fontWeight || '400'};
+font-size: ${props => props.fontSize || '56px'};
+line-height: ${props => props.lineHeight || '73px'};
+color: ${props => props.color || '#000000'};
 margin-top: 0;
-
+margin: ${props => props.margin || ''};
 span {
   font-weight: 700;
   font-size: 24px;
@@ -86,7 +107,7 @@ max-width: 1280px;
 padding: 10em 4em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-align-items: flex-start;
+align-items: ${props => props.alignItems || 'flex-start'};
 
 `
 const HeroStyle = styled.div`
@@ -96,4 +117,26 @@ align-items: center;
 
 width: 100%;
 position: relative;
+padding: 0em 0 10em 0;
+
 `;
+
+const FlexColumn = styled.div`
+display: flex;
+flex-direction: column;
+gap: 2em;
+align-items: center;
+margin-right: 10em;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  margin-right: 0;
+  margin-bottom: 4em;
+}
+
+img {
+  width: 20vw;
+  max-width: 300px;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    width: 100%;
+  }
+}
+`

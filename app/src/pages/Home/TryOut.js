@@ -126,14 +126,14 @@ padding-left: 1rem;
 margin: 1em 0;
 `
 
-const CreateButton = styled.button`
+export const CreateButton = styled.button`
 
 width: 129px;
 height: 52;
 background: #D8E449;
 border-radius: 40px;
 
-margin-left: calc(-129px - 0.5em);
+margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};
 
 border: none;
 

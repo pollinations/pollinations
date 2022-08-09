@@ -1,8 +1,8 @@
 export const MODELS_MAP = {
     'discodiffusion':{
         featured: true,
-        url: "replicate/disco-diffusion",
-        key: "r8.im/nightmareai/disco-diffusion@sha256:cc730cf65f83d7ffed2aa6d47bc9a538b628617be5a4c2db27e7aee6a6391920" ,
+        url: "pollinations/disco-diffusion",
+        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion" ,
         name: "Disco Diffusion",
         id2pop: "1 Disco Diffusion",
         path: 'discodiffusion',

@@ -14,25 +14,27 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
                 Customize
             </AccordionSummary>
 
-            <ParametersStyle children={Object.keys(formik.values)
-            .filter((key, idx, array) => {
-                if (!inputs[key]) return array;
-                return inputs[key]['x-order'] !== 0
-            })
-            .map(key => <>
-                <ParameterViewer
-                key={key}
-                id={key}
-                {...inputs[key]}
-                disabled={isDisabled}
-                label={inputs[key]?.title}
-                helperText={inputs[key]?.description}
-                value={formik.values[key]}
-                onChange={formik.handleChange}
-                setFieldValue={formik.setFieldValue}
-                />
-                </>
-            )} />
+            <ParametersStyle>
+                {
+                Object.keys(formik.values)
+                .filter((key, idx, array) => {
+                    if (!inputs[key]) return array;
+                    return inputs[key]['x-order'] !== 0
+                })
+                .map(key => 
+                    <ParameterViewer
+                        key={key}
+                        id={key}
+                        {...inputs[key]}
+                        disabled={isDisabled}
+                        label={inputs[key]?.title}
+                        helperText={inputs[key]?.description}
+                        value={formik.values[key]}
+                        onChange={formik.handleChange}
+                        setFieldValue={formik.setFieldValue}
+                    />
+                )} 
+            </ParametersStyle>
         </Accordion>
     </Styles>
 }

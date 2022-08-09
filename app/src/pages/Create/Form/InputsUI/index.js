@@ -7,7 +7,7 @@ import String from "./String";
   
 
   const TypeMaps = {
-    'string': props => props.enum ? <DropDown {...props}/> : <String {...props}/>,
+    'string': props => props.enum ? <DropDown {...props}/> : (props.format === 'uri') ? <DropZone {...props}/> : <String {...props}/>,
     'integer': props => props.maximum ? <Slider {...props} /> : <TextField {...props}  />,
     'boolean': props =>  <Boolean {...props} />,
     'dropdown': props => <DropDown {...props} />,

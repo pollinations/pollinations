@@ -22,17 +22,23 @@ const Form = ({ ipfs, Results,
   const { models } = useGPUModels();
 
   useEffect(()=>{
-    const { inputs, primary_input } = getInputs(models, selectedModel);
 
+    const { inputs, primary_input } = getInputs(models, selectedModel);
+    const values = getInitialValues(inputs, primary_input)
+    console.log(primary_input)
     // add other fields to the form when user selects the desired model.
     formik.setValues({ 
       // all parameters for the form
-      ...getInitialValues(inputs, primary_input),
+      ...values,
       
       // override the primary_input value with the old one.
       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
     })
   },[selectedModel, models])
+
+  useEffect(()=>{
+    console.log(formik.values)
+  },[formik.values])
 
   useEffect(()=>{
     if (!ipfs.input) return;

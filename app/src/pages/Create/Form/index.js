@@ -7,6 +7,7 @@ import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
 import { useGPUModels } from '../../../hooks/useGPUModels';
+import { CreateButton } from '../../Home/TryOut';
 
 
 const Form = ({ ipfs,
@@ -58,6 +59,7 @@ const Form = ({ ipfs,
           models={models}
           selectedModel={selectedModel}
         />
+        
 
         <div style={{display:'flex', width: '100%', justifyContent: 'space-between', gap: '2em'}}>
 
@@ -67,9 +69,6 @@ const Form = ({ ipfs,
           formik={formik}
         />
 
-        <PrimaryButton type='submit' disabled={isDisabled} marginLeft>
-          { formik.isSubmitting ? 'Creating...' : 'Create' }
-        </PrimaryButton> 
 
         </div> 
       </>

@@ -126,7 +126,7 @@ display: flex;
 align-items: center;
 `
 
-const CreateInput = styled.input`
+export const CreateInput = styled.input`
 width: 53vw;
 @media (max-width: 768px) {
     width: 90vw;    

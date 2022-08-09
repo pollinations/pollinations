@@ -4,6 +4,7 @@ import String from './InputsUI/String';
 import styled from '@emotion/styled'
 import { TextField } from '@material-ui/core';
 import { getInputs } from './utils';
+import { CreateButton, CreateInput } from '../../Home/TryOut';
 
 const PrimaryInputMap = {
     string: props => <String {...props} />,
@@ -29,9 +30,9 @@ if (isFile) return <DropZone
     fullWidth
 />;
 
-return <>
+return <FlexCenter>
 
-    <TextField
+    <CreateInputFullWidth
         variant='filled' 
         value={formik.values[primary_input?.key]} 
         onChange={formik.handleChange} 
@@ -41,30 +42,21 @@ return <>
         placeholder='Type your prompt'
         fullWidth
     />
-</>
+    <CreateButton type='submit' disabled={isDisabled}>
+        { formik.isSubmitting ? 'Creating...' : 'Create' }
+    </CreateButton>
+</FlexCenter>
 }
 
 export default PrimaryInput;
 
-const CreateInput = styled.input`
-width: 53vw;
-@media (max-width: 768px) {
-    width: 90vw;    
-}
-height: 65px;
-background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
-border-radius: 60px;
-border: none;
-
-font-family: 'DM Sans';
-font-style: normal;
-font-weight: 400;
-font-size: 18px;
-line-height: 23px;
+const FlexCenter = styled.div`
+width: 100%;
 display: flex;
 align-items: center;
+justify-content: center;
+`
 
-color: #FFFFFF;
-padding-left: 1rem;
-margin: 1em 0;
+const CreateInputFullWidth = styled(CreateInput)`
+width: 100%;
 `

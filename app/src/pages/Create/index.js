@@ -9,6 +9,7 @@ import { SEOMetadata } from '../../components/Helmet';
 import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MODELS_MAP } from '../../assets/GPUModels';
+import { CircularProgress } from '@material-ui/core';
 
 const IS_FORM_FULLWIDTH = true;
 
@@ -58,12 +59,14 @@ export default React.memo(function Create() {
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
-
+            <FlexBetween>
             <h2>
                 {selectedModel.name}
             </h2>
+            { isLoading && <CircularProgress thickness={2} size={20} /> }
+            </FlexBetween>
             
-            { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> }
+            {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
             
             <Form 
                 ipfs={ipfs}
@@ -115,3 +118,11 @@ function parseURL(url){
     const [ , ...parts ] = url.split('/');
     return parts.join('/');
 }
+
+const FlexBetween = styled.div`
+display: flex;
+flex-direction: row;
+// justify-content: space-between;
+align-items: center;
+gap: 1em;
+`

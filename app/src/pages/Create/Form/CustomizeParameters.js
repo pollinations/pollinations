@@ -42,7 +42,7 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
 const Styles = styled.div`
 
 width: 100%;
-
+padding: 0 1em;
 // MUI overrides 
 .MuiPaper-root{
     background-color: transparent !important;

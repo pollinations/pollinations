@@ -119,6 +119,7 @@ background-color: ${props => props.isEmpty ? 'transparent' : '#151515'};
 img {
   height: 100%;
   max-height: 50vh;
+  max-width: 100%;
 
 }
 `

@@ -2,6 +2,7 @@ import { Accordion, AccordionSummary } from "@material-ui/core";
 import Add from '@material-ui/icons/Add';
 import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';
+import { MOBILE_BREAKPOINT } from "../../../styles/global";
 
 const CustomizeParameters = ({ formik, isDisabled, inputs }) => { 
 
@@ -41,7 +42,10 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
 }
 
 const Styles = styled.div`
-grid-column: 1 / 2;
+width: 30%;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+    width: 100%;
+}
 padding: 0 1em;
 margin-bottom: 2em;
 

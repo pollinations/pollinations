@@ -104,11 +104,10 @@ width: 100%;
 
 `
 const ResultsArea = styled.div`
-grid-column: 2/5;
-// width: 100%;
+width: 70%;
 // max-width: 100%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  grid-column: 1 / -1;
+  width: 100%;
   max-width: 100%;
 }
 `

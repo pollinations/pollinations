@@ -68,12 +68,12 @@ const Form = ({ ipfs, Results,
         
         <ParametersAndResultsStyled>
 
+        {Results}
           <CustomizeParameters
             isDisabled={isDisabled}
             inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
             formik={formik}
             />
-          {Results}
         </ParametersAndResultsStyled>
 
       </>
@@ -93,9 +93,8 @@ width: 100%;
 `
 
 const ParametersAndResultsStyled = styled.div`
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-gap: 1em;
 width: 100%;
+display: flex;
+flex-wrap: wrap;
 `
 

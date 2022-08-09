@@ -115,4 +115,10 @@ justify-content: center;
 align-items: center;
 border: 0.9px solid rgba(255, 236, 249, 0.5);
 background-color: ${props => props.isEmpty ? 'transparent' : '#151515'};
+
+img {
+  height: 100%;
+  max-height: 50vh;
+
+}
 `

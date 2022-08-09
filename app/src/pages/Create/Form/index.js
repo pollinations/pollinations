@@ -10,7 +10,7 @@ import { useGPUModels } from '../../../hooks/useGPUModels';
 import { CreateButton } from '../../Home/TryOut';
 
 
-const Form = ({ ipfs,
+const Form = ({ ipfs, Results,
     onSubmit, isDisabled, 
     selectedModel, onSelectModel, hasSelect }) => {
 
@@ -60,17 +60,16 @@ const Form = ({ ipfs,
           selectedModel={selectedModel}
         />
         
+        <ParametersAndResultsStyled>
 
-        <div style={{display:'flex', width: '100%', justifyContent: 'space-between', gap: '2em'}}>
+          <CustomizeParameters
+            isDisabled={isDisabled}
+            inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
+            formik={formik}
+            />
+          {Results}
+        </ParametersAndResultsStyled>
 
-        <CustomizeParameters
-          isDisabled={isDisabled}
-          inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
-          formik={formik}
-        />
-
-
-        </div> 
       </>
 
 
@@ -84,6 +83,13 @@ display: flex;
 flex-direction: column;
 align-items: center;
 gap: 2em;
+width: 100%;
+`
+
+const ParametersAndResultsStyled = styled.div`
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+gap: 1em;
 width: 100%;
 `
 

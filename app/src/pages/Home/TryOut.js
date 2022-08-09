@@ -125,10 +125,10 @@ const CreateForm = styled.form`
 display: flex;
 align-items: center;
 `
-
+// move to own component
 export const CreateInput = styled.input`
 width: 53vw;
-@media (max-width: 768px) {
+@media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 90vw;    
 }
 height: 65px;
@@ -145,10 +145,13 @@ display: flex;
 align-items: center;
 
 color: #FFFFFF;
+:disabled {
+  color: grey;
+}
 padding-left: 1rem;
 margin: 1em 0;
 `
-
+// move to own component
 export const CreateButton = styled.button`
 
 width: 129px;

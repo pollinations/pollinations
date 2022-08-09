@@ -40,9 +40,10 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
 }
 
 const Styles = styled.div`
-
-width: 100%;
+grid-column: 1 / 2;
 padding: 0 1em;
+margin-bottom: 2em;
+
 // MUI overrides 
 .MuiPaper-root{
     background-color: transparent !important;
@@ -52,6 +53,10 @@ padding: 0 1em;
     transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
     background-color: #0F0F13 !important;
     padding: 1em;
+
+    max-height: 60vh;
+    overflow-y: scroll;
+    overflow-x: hidden;
 
 }
 .MuiAccordion-root{
@@ -67,12 +72,29 @@ padding: 0 1em;
     
     color: #B1B1B1;
 }
+
+// .styled-scrollbars {
+    /* Foreground, Background */
+    scrollbar-color: #D8E449 #383838;
+//   }
+  ::-webkit-scrollbar {
+    width: 10px; /* Mostly for vertical scrollbars */
+    height: 10px; /* Mostly for horizontal scrollbars */
+  }
+  ::-webkit-scrollbar-thumb { /* Foreground */
+    background: #D8E449;
+  }
+  ::-webkit-scrollbar-track { /* Background */
+    background: #383838;
+    // box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.37);
+    // border-radius: 3px;
+  }
 `
 const ParametersStyle = styled.div`
-display: flex;
-flex-direction: column;
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 width: 100%;
-gap: 2em;
+gap: 5em;
 `
 
 export default CustomizeParameters;

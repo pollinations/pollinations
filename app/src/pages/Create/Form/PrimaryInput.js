@@ -2,7 +2,7 @@
 import DropZone from './InputsUI/File';
 import String from './InputsUI/String';
 import styled from '@emotion/styled'
-import { TextField } from '@material-ui/core';
+import { CircularProgress, TextField } from '@material-ui/core';
 import { getInputs } from './utils';
 import { CreateButton, CreateInput } from '../../Home/TryOut';
 
@@ -34,14 +34,14 @@ return <FlexCenter>
 
     <CreateInputFullWidth
         variant='filled' 
-        value={formik.values[primary_input?.key]} 
+        value={formik.values[primary_input?.key]}
         onChange={formik.handleChange} 
         name={primary_input.key} 
         title={primary_input.title} 
         disabled={isDisabled}
         placeholder='Type your prompt'
         fullWidth
-    />
+        />
     <CreateButton type='submit' disabled={isDisabled}>
         { formik.isSubmitting ? 'Creating...' : 'Create' }
     </CreateButton>

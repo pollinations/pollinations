@@ -43,7 +43,6 @@ export default React.memo(function Create() {
     },[Model]);
 
 
-
     // dispatch to AWS
     const dispatch = async (values) => {
         console.log(values, selectedModel.url)
@@ -75,13 +74,16 @@ export default React.memo(function Create() {
                 selectedModel={selectedModel}
                 onSelectModel={onSelectModel}
                 onSubmit={async (values) => dispatch(values) } 
+                Results={
+                <ResultsArea>
+                    <Previewer ipfs={ipfs}  /> 
+                </ResultsArea>
+                }
             />
             
         </ParametersArea>
 
-        <ResultsArea>
-            <Previewer ipfs={ipfs}  /> 
-        </ResultsArea>
+        
 
     </PageLayout>
 });
@@ -92,22 +94,19 @@ const PageLayout = styled.div`
 padding: ${GlobalSidePadding};
 width: 100%;
 margin-top: 1em;
-display: grid;
-
-grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-grid-gap: 0.8em;
 min-height: 80vh;
 
 background: radial-gradient(43.05% 43.05% at 50% 56.95%, #2F3039 0%, #000000 100%);
 `;
 
 const ParametersArea = styled.div`
-grid-column: ${IS_FORM_FULLWIDTH ? '1 / -1' : ''};
+width: 100%;
 
 `
 const ResultsArea = styled.div`
-grid-column: ${IS_FORM_FULLWIDTH ? '1 / -1' : '2 / 5' };
-max-width: 100%;
+grid-column: 2/5;
+// width: 100%;
+// max-width: 100%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   grid-column: 1 / -1;
   max-width: 100%;

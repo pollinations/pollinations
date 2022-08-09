@@ -9,7 +9,6 @@ const CustomizeParameters = ({ formik, isDisabled, inputs }) => {
     if (!inputs) return null;
     if (!Object.keys(inputs).length) return null;
 
-    console.log(inputs)
     return <Styles>
         <Accordion elevation={0} fullWidth>
             <AccordionSummary expandIcon={<Add />} fullWidth>

@@ -29,8 +29,6 @@ export default function Models() {
     ...Object.values(MODELS_MAP).filter( model => !model.id2pop)
   ],[notebookList])
 
-  console.log(test)
-
   
   
     return (

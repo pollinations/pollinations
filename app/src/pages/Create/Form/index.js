@@ -25,7 +25,7 @@ const Form = ({ ipfs, Results,
 
     const { inputs, primary_input } = getInputs(models, selectedModel);
     const values = getInitialValues(inputs, primary_input)
-    console.log(primary_input)
+
     // add other fields to the form when user selects the desired model.
     formik.setValues({ 
       // all parameters for the form
@@ -36,13 +36,10 @@ const Form = ({ ipfs, Results,
     })
   },[selectedModel, models])
 
-  useEffect(()=>{
-    console.log(formik.values)
-  },[formik.values])
+  
 
   useEffect(()=>{
     if (!ipfs.input) return;
-    console.log(ipfs.input)
     formik.setValues({ ...formik.values, ...ipfs.input });
   },[ipfs?.input])
     

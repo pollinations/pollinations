@@ -10,7 +10,7 @@ import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MODELS_MAP } from '../../assets/GPUModels';
 
-
+const IS_FORM_FULLWIDTH = true;
 
 export default React.memo(function Create() {
     // :id and :model from url
@@ -99,14 +99,14 @@ background: radial-gradient(43.05% 43.05% at 50% 56.95%, #2F3039 0%, #000000 100
 `;
 
 const ParametersArea = styled.div`
-grid-column: 1 / 5;
+grid-column: ${IS_FORM_FULLWIDTH ? '1 / -1' : ''};
 
 `
 const ResultsArea = styled.div`
-grid-column: 2 / 5;
-max-width: 70%;
+grid-column: ${IS_FORM_FULLWIDTH ? '1 / -1' : '2 / 5' };
+max-width: 100%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  grid-column: 1 / 1;
+  grid-column: 1 / -1;
   max-width: 100%;
 }
 `

@@ -10,6 +10,13 @@ import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MODELS_MAP } from '../../assets/GPUModels';
 import { CircularProgress } from '@material-ui/core';
+import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS";
+import MediaViewer from '../../components/MediaViewer';
+
+import Debug from 'debug';
+
+const debug = Debug("pages/Create/index");
 
 const IS_FORM_FULLWIDTH = true;
 
@@ -24,6 +31,8 @@ export default React.memo(function Create() {
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
+    debug("selected model", selectedModel);
+    
     const navigateTo = useNavigate();
 
 
@@ -83,11 +92,37 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        
-
+    
+        <Examples {...selectedModel} />
     </PageLayout>
 });
 
+function Examples({url}) {
+
+    const [ examples, setExamples ] = React.useState([]);
+
+    useEffect(()=> {
+        (async () => {
+            const pollens = await getPollens({image:url, success:true});
+            debug("pollens", pollens)
+            setExamples(pollens);
+        })()    
+    },[url])
+
+    // shuffle examples
+    const shuffledExamples = examples.sort(()=>Math.random()-0.5);
+    // select 20 random examples
+    const selectedExamples = shuffledExamples.slice(0,20);
+
+    return <>{ selectedExamples.map(({output}) => (<Example  output={output} />)) }</>;
+}
+
+function Example({output}) {
+    const ipfs = useIPFS(output);
+    // const [ipfs, setIPFS] = React.useState(null);
+    debug("ipfs",ipfs)
+    return <><MediaViewer output={ipfs?.output} contentID={ipfs[".cid"]} /></>
+}
 
 // STYLES
 const PageLayout = styled.div`

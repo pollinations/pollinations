@@ -59,6 +59,8 @@ const Form = ({ ipfs,
           selectedModel={selectedModel}
         />
 
+        <div style={{display:'flex', width: '100%', justifyContent: 'space-between', gap: '2em'}}>
+
         <CustomizeParameters
           isDisabled={isDisabled}
           inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
@@ -67,7 +69,9 @@ const Form = ({ ipfs,
 
         <PrimaryButton type='submit' disabled={isDisabled} marginLeft>
           { formik.isSubmitting ? 'Creating...' : 'Create' }
-        </PrimaryButton>  
+        </PrimaryButton> 
+
+        </div> 
       </>
 
 

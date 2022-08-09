@@ -1,6 +1,6 @@
 import { getMedia } from "../../data/media";
 import styled from '@emotion/styled';
-import MediaViewer from "../../components/MediaViewer";
+import MediaViewer from "../../components/MediaViewer/";
 
 const Previewer = ({ ipfs }) => {
     if (!ipfs) return null;

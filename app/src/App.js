@@ -26,12 +26,13 @@ import ResultViewer from "./pages/ResultViewer"
 import { 
   ROUTES, 
   MARKDOWN_ROUTES, 
-  MAIN_NAV_ROUTES } from "./routes/publicRoutes"
+  MAIN_NAV_ROUTES, 
+  OWNGPU_ROUTES} from "./routes/publicRoutes"
 import Integrate from "./pages/Integrate"
 import About from "./pages/About"
 import ScrollToTop from './utils/ScrollToTop'
-import Avatar from "./pages/Avatar"
 
+import CreateModel from './pages/Create/'
 
 const debug = Debug("AppContainer")
 
@@ -67,6 +68,7 @@ const Pollinations = () => {
           <Route exact path='about' element={<About/>}/>
           <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
+
           {
             MARKDOWN_ROUTES.map( route => (
               <Route 
@@ -91,6 +93,7 @@ const Pollinations = () => {
             path="envisioning"
             element={<Envisioning navigateToNode={navigateToNode}/>}
           />
+
           <Route
             path="dalle/:nodeID"
             element={<Dalle navigateToNode={navigateToNode}/>}
@@ -99,15 +102,16 @@ const Pollinations = () => {
             path="dalle"
             element={<Dalle navigateToNode={navigateToNode}/>}
           />
+          
+          {/* Create with our GPU */}
+          <Route path="create" element={<CreateModel />} >
+            {/* Disco, majesty, etc... */}
+            <Route path=':Model'>
+              {/* Hash associated with the content created */}
+              <Route path=':nodeID' />
+            </Route>
+          </Route>
 
-          <Route
-            path="avatar/:nodeID"
-            element={<Avatar navigateToNode={navigateToNode}/>}
-          />
-          <Route
-            path="avatar"
-            element={<Avatar navigateToNode={navigateToNode}/>}
-          />
           <Route
             path="p/:contentID/*"
             element={

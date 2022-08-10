@@ -5,8 +5,6 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { getWebURL } from  "@pollinations/ipfs/ipfsConnector";
-import Thumbs, { Thumb } from '../../../../components/atoms/Thumb';
-import { Clear } from '@material-ui/icons';
 
 const debug = Debug('formfile');
 

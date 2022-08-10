@@ -108,6 +108,7 @@ function getType(id){
 
 
 const Disable = styled.div`
+width: 100%;
 opacity: ${props => props.disabled ? '50%' : '100%'};
 `
 const Style = styled.div`

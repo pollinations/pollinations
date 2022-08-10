@@ -78,4 +78,6 @@ const MODELS = {
     "jingyunliang/swinir": "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
     "pollinations/disco-diffusion": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion",
     "pollinations/adampi" : "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
+    "pollinations/dreamfields-torch": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch"
+
 }

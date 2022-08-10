@@ -1,4 +1,13 @@
 export const MODELS_MAP = {
+    'dreamfields': {
+        featured: true,
+        url: 'pollinations/dreamfields-torch',
+        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch",
+        path: 'dreamfields',
+        name: "Dreamfields",
+        description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n Dreamfields is a deep neural network that can be used to predict the growth of your baby's weight. It is a powerful tool for predicting the future of your baby's weight.",
+        category: "0 Featured",
+    },
     'discodiffusion':{
         featured: true,
         url: "pollinations/disco-diffusion",

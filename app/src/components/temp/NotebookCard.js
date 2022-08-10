@@ -1,8 +1,10 @@
-import { Box, Card, CardContent, CardHeader, Typography } from "@material-ui/core";
+import { Box, Card, CardContent, CardHeader, IconButton, Tooltip, Typography } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import RouterLink from "../molecules/RouterLink";
 import NotebookImage from "../organisms/markdownParsers/NotebookImage";
 import NotebookInfo from "../organisms/markdownParsers/NotebookInfo";
+import styled from '@emotion/styled';
+
 
 const NotebookCard = ({ notebook }) => {
     let { category, name, path, description, featured, url } = notebook
@@ -24,10 +26,15 @@ const NotebookCard = ({ notebook }) => {
       <Box>
         <div style={{ borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)'}}>
             <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
-            <CardHeader
-                subheader={<CardTitle children={featured ? name : name?.slice(2)} to={featured ? ownGpuPath : path} variant="h4" />}
-                title={<CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />}
-              />
+            <CardHeaderStyle>
+              <div>
+                <CardTitle children={featured ? name : name?.slice(2)} to={featured ?  ownGpuPath : path}  variant="h4" />
+                <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />
+              </div>
+              <Tooltip title="This model runs on our own GPU.">
+                  <h2 children={featured ? '🐝' : ''}/> 
+              </Tooltip>
+            </CardHeaderStyle>
               
   
               <NotebookImage metadata={notebook} style={{ width: "100%" }} />
@@ -49,5 +56,15 @@ const NotebookCard = ({ notebook }) => {
       </Typography>
     </>
   )
+
+
+    const CardHeaderStyle = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em;
+    `
+
 
   export default NotebookCard

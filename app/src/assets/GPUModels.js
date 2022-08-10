@@ -53,7 +53,7 @@ export const MODELS_MAP = {
         id2pop: "2 SwinIR Super-Resolution",
         path: 'swinir',
         category: '0 Featured',
-        credits: '',
+        credits: '[Jingyun Liang](https://github.com/JingyunLiang)',
         description: "<img src=\"https://i.imgur.com/BKvDhnf.png\" width=\"300\" height=\"300\" />\n\n\n\nUses [SwinIR](https://github.com/JingyunLiang/SwinIR) to perform 4x neural super-resolution (creates HD images from low resolution)\n\n\n\n---\n\nCredits: [Jingyun Liang]((https://github.com/JingyunLiang)\n\nLicense: MIT",
     },
     'adampi': {

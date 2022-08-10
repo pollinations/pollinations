@@ -21,14 +21,20 @@ const type = primary_input.type;
 
 const isFile = (type === 'string') && (primary_input.format === 'uri');
 
-if (isFile) return <DropZone 
+if (isFile) return <>
+<DropZone 
     value={formik.values[primary_input?.key]} 
     setFieldValue={formik.setFieldValue} 
     id={primary_input.key} 
     title={primary_input.title} 
     disabled={isDisabled}
     fullWidth
-/>;
+/>
+<CreateButton type='submit' disabled={isDisabled} marginLeft style={{alignSelf: 'flex-end'}}>
+    { formik.isSubmitting ? 'Creating...' : 'Create' }
+</CreateButton>
+</>;
+
 
 return <FlexCenter>
 

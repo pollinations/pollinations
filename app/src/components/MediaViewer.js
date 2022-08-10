@@ -63,7 +63,12 @@ function MarkdownViewer({content, filename, style}) {
 
 function ObjViewer({ content, style, filename }) {
   debug("ObjViewer", content)
-  return <OBJModel src={content} style={{...style, height: null, }} background="rgba(0,0,0,0)" />
+  return <OBJModel 
+              src={content} 
+              style={{...style, height: null, }} 
+              background="rgba(0,0,0,0)"
+              scale= {{x:0.2, y:0.2, z: 0.2}}
+            />
 }
 
 export default ({output, contentID}) => { 

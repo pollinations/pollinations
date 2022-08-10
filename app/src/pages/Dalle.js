@@ -33,6 +33,7 @@ const form = {
 export default React.memo(function Create() {
 
   const params = useParams()
+
   const { submitToAWS, ipfs, isLoading } = useAWSNode(params);
   // const loading = useState(false)
   

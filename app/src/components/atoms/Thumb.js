@@ -25,6 +25,8 @@ div {
 }`
 const Container = styled.aside`
     display: flex;
+    justify-content: center;
+    align-items: center;
     flex-direction: row;
     flex-wrap: wrap;
 `

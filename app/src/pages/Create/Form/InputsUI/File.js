@@ -59,15 +59,15 @@ export default function Previews(props) {
   }
 
 
-  const files = value ? Object.values(value) : []
 
-  debug("files", files)
+  
+
   
   return (<>
     
     <Disable disabled={disabled} className="container">
       <label>{id}</label>
-      <Style {...getRootProps({className: 'dropzone'})} isEmpty={files.length === 0}>
+      <Style {...getRootProps({className: 'dropzone'})} isEmpty={!value}>
         
         <input {...getInputProps()} disabled={disabled} />
         {
@@ -80,7 +80,7 @@ export default function Previews(props) {
         }
       </Style>
     {
-          files
+          value
           && 
           <Button 
           fullWidth

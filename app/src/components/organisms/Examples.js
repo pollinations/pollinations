@@ -8,7 +8,7 @@ import { useGPUModels } from "../../hooks/useGPUModels";
 import { getInputs } from "../../pages/Create/Form/utils";
 
 function Examples(props) {
-    const { url,  } = props;
+    const { url  } = props;
     const { models } = useGPUModels();
     // const { primary_input } = getInputs(models, selectedModel);
 
@@ -25,9 +25,9 @@ function Examples(props) {
         InitialFetch()    
     },[ url ])
 
-    useEffect(()=>{
-        console.log(examples)
-    } ,[examples])
+    // useEffect(()=>{
+    //     console.log(examples)
+    // } ,[examples])
 
     // shuffle examples
     const shuffledExamples = examples.sort(()=>Math.random()-0.5);

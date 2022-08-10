@@ -40,7 +40,12 @@ const Form = ({ ipfs, Results,
 
   useEffect(()=>{
     if (!ipfs.input) return;
-    formik.setValues({ ...formik.values, ...ipfs.input });
+
+    // refactor this
+    const _temp = ipfs.input;
+    delete _temp.model_image;
+
+    formik.setValues({ ...formik.values, ..._temp });
   },[ipfs?.input])
     
   return <StyledForm onSubmit={formik.handleSubmit} >

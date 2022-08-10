@@ -30,17 +30,17 @@ export const MODELS_MAP = {
         category: '0 Featured',
         description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n*Sunset over a lake*\n\n\n\nThe new model everyone is excited about.\n"
     },
-    'avatarclip': {
-        featured: true,
-        url: "pollinations/avatar-clip",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
-        img: 'https://i.imgur.com/a9hByt4.png',
-        name: 'Avatar Clip',
-        id2pop: '',
-        path: 'avatarclip',
-        category: '0 Featured',
-        description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\"> \n\n\n\nThis is a model that clips the avatar of a user to a specific part of the image. It is useful for creating avatars for other users.\n\n\n\n---\n\n\n\nAccess our Avatar Clip Guide(https://multimodal.art/avatar-clip) (_under construction_), our [GitHub](",
-    },
+    // 'avatarclip': {
+    //     featured: true,
+    //     url: "pollinations/avatar-clip",
+    //     key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
+    //     img: 'https://i.imgur.com/a9hByt4.png',
+    //     name: 'Avatar Clip',
+    //     id2pop: '',
+    //     path: 'avatarclip',
+    //     category: '0 Featured',
+    //     description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\"> \n\n\n\nThis is a model that clips the avatar of a user to a specific part of the image. It is useful for creating avatars for other users.\n\n\n\n---\n\n\n\nAccess our Avatar Clip Guide(https://multimodal.art/avatar-clip) (_under construction_), our [GitHub](",
+    // },
     'swinir': {
         featured: true,
         url: "jingyunliang/swinir",

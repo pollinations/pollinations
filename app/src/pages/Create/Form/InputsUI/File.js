@@ -6,12 +6,13 @@ import { useDropzone } from 'react-dropzone';
 import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { getWebURL } from  "@pollinations/ipfs/ipfsConnector";
 import Thumbs from '../../../../components/atoms/Thumb';
+import { Clear } from '@material-ui/icons';
 
-// const debug = (name, value) => console.log(name, value)
-//Debug('formfile');
+const debug = Debug('formfile');
 
 
-export default function DropZone(props) {
+export default function Previews(props) {
+
 
   const [isUploading, setIsUploading] = useState(false)
   
@@ -19,9 +20,10 @@ export default function DropZone(props) {
   const { add, cid, mkDir } = useIPFSWrite()
 
 
-  // debug('props', props);
+  debug('props', props);
   
   const { value, id,  disabled: disabledForm, description, setFieldValue, inputCID } = props;
+
 
   const disabled = disabledForm || isUploading;
   
@@ -37,7 +39,7 @@ export default function DropZone(props) {
 
   async function onNew(acceptedFiles) {
   
-    // debug("dropped files", acceptedFiles);
+    debug("dropped files", acceptedFiles);
 
     setIsUploading(true)
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
@@ -49,21 +51,20 @@ export default function DropZone(props) {
     }));
 
     const rootCID = await cid()
-    // debug("rootCID", rootCID)
+    debug("rootCID", rootCID)
     const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
     
     Object.defineProperty(files, ".cid", {value: rootCID})
 
-    setFieldValue(id, Object.values(files)[0])
+    setFieldValue(id, files)
     
     setIsUploading(false)
   }
 
 
-  // const files = value ? Object.values(value) : []
-  const files = value ? value : '';
+  const files = value ? Object.values(value) : []
 
-  // debug("files", files)
+  debug("files", files)
   
   return (<>
     
@@ -73,23 +74,26 @@ export default function DropZone(props) {
         
         <input {...getInputProps()} disabled={disabled} />
         {
-            files ? 
-            <img src={files}/>
-            // <Thumbs files={files} />
+            files.length > 0 ? 
+            <Thumbs files={files} />
             : <>
               <p>{description}<br/>
               { isUploading ? "Uploading..." : "Drag 'n' drop here." }  </p>
             </>
         }
       </Style>
-    </Disable>
     {
           files.length > 0
           && 
-          <Button onClick={() => setFieldValue(id, "")}>
-            [ Remove ]
-          </Button>
+          <Button 
+          fullWidth
+            disabled={disabled} 
+            onClick={() => setFieldValue(id, "")} 
+            // endIcon={<Clear />} 
+            children='Remove'
+            style={{margin: 0}}/>
     }
+    </Disable>
   </>);
 }
 
@@ -104,11 +108,11 @@ function getType(id){
 
 
 const Disable = styled.div`
-width: 100%;
 opacity: ${props => props.disabled ? '50%' : '100%'};
 `
 const Style = styled.div`
 min-height: 200px;
+width: 100%;
 border-radius: 5px;
 display: flex;
 justify-content: center;
@@ -116,10 +120,7 @@ align-items: center;
 border: 0.9px solid rgba(255, 236, 249, 0.5);
 background-color: ${props => props.isEmpty ? 'transparent' : '#151515'};
 
-img {
-  height: 100%;
-  max-height: 50vh;
-  max-width: 100%;
-
+p {
+  max-width: 90%;
 }
 `

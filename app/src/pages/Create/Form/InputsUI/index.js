@@ -1,5 +1,5 @@
 import TextField from "@material-ui/core/TextField";
-import DropZone from "../../../../components/form/customInputs/file";
+import DropZone from "./File";
 import Boolean from "./Boolean";
 import DropDown from "./DropDown";
 import Slider from "./Slider";

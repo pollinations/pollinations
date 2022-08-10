@@ -38,7 +38,7 @@ const Thumbs = ({ files }) => <Container>
 </Container>;
 
 
-const Thumb = (url) => {
+export const Thumb = (url) => {
     
     const name =  last(url.split("/"))
     const mimeType = mime.lookup(name);

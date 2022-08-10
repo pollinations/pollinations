@@ -72,6 +72,7 @@ const Form = ({ ipfs, Results,
             isDisabled={isDisabled}
             inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
             formik={formik}
+            credits={selectedModel?.credits}
             />
         </ParametersAndResultsStyled>
 

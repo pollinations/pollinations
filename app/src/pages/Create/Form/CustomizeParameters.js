@@ -100,7 +100,7 @@ const ParametersStyle = styled.div`
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 width: 100%;
-gap: 5em;
+gap: 2em;
 `
 
 export default CustomizeParameters;

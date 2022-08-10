@@ -5,30 +5,62 @@ import useFilter from "../hooks/useFilter"
 import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
 import styled from '@emotion/styled'
 import NotebookCard from "../components/temp/NotebookCard"
+import FeaturedNotebookCard from "../components/temp/FeaturedNotebookCard"
+
 import FilterUi from "../components/temp/FilterUi"
-import { GridStyle, BaseContainer, BackGroundImage } from '../styles/global'
+import { GridStyle, BaseContainer, BackGroundImage, Headline } from '../styles/global'
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+import { MODELS_MAP } from "../assets/GPUModels"
 
 
 export default function Models() {
 
   const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
+  
   const { notebookList, options, option } = useFilter(notebooks)
 
-  return (
+  const test = useMemo(()=> [
+    // Check if the model that runs on our gpu is also on the old notebook list and replace.
+    ...notebookList.map( notebook => 
+    Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
+    ),
+    // Add models that were not on the old notebook list.
+    ...Object.values(MODELS_MAP).filter( model => !model.id2pop)
+  ],[notebookList])
+
+  
+  
+    return (
     <ModelsStyle>
       <TopAlert options={options} />
 
-      <h3>
+      
+      {/* <ShowReelHeadline>
         {!options.length || 'What do you want to create?'}
-      </h3>
+      </ShowReelHeadline>
+
+
+      <ShowReelStyle children={ 
+        test
+        .filter(notebook => notebook.featured)
+        .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
+      }/> */}
+
+
+      <ShowReelHeadline>
+        {!options.length || 'What do you want to create?'}
+      </ShowReelHeadline>
 
       <FilterUi options={options} option={option} />
 
       <GridStyle>
       {
-        notebookList
+        // hack to hide the ones that are not fetched
+        (test.length > 1) &&
+        test
+        .sort((a,b) => b.featured )
+        // .filter(notebook => !notebook.featured)
         .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
       }
       </GridStyle>
@@ -44,6 +76,25 @@ export default function Models() {
     </ModelsStyle>
   )
 };
+
+
+const ShowReelStyle = styled.div`
+
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+
+gap: 2em;
+padding: 8em;
+padding-top: 0;
+`
+
+const ShowReelHeadline = styled(Headline)`
+margin: 2em 0;
+
+`
+
+
+
 
 const ModelsStyle = styled(BaseContainer)`
 display: flex;

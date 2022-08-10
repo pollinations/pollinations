@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
 import { getWebURL } from  "@pollinations/ipfs/ipfsConnector";
-import Thumbs from '../../../../components/atoms/Thumb';
+import Thumbs, { Thumb } from '../../../../components/atoms/Thumb';
 import { Clear } from '@material-ui/icons';
 
 const debug = Debug('formfile');
@@ -55,9 +55,8 @@ export default function Previews(props) {
     const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
     
     Object.defineProperty(files, ".cid", {value: rootCID})
+    setFieldValue(id, Object.values(files)[0])
 
-    setFieldValue(id, files)
-    
     setIsUploading(false)
   }
 
@@ -74,8 +73,8 @@ export default function Previews(props) {
         
         <input {...getInputProps()} disabled={disabled} />
         {
-            files.length > 0 ? 
-            <Thumbs files={files} />
+            value ? 
+            <img src={value} />
             : <>
               <p>{description}<br/>
               { isUploading ? "Uploading..." : "Drag 'n' drop here." }  </p>
@@ -83,7 +82,7 @@ export default function Previews(props) {
         }
       </Style>
     {
-          files.length > 0
+          files
           && 
           <Button 
           fullWidth
@@ -120,7 +119,9 @@ justify-content: center;
 align-items: center;
 border: 0.9px solid rgba(255, 236, 249, 0.5);
 background-color: ${props => props.isEmpty ? 'transparent' : '#151515'};
-
+img {
+  max-height: 50vh;
+}
 p {
   max-width: 90%;
 }

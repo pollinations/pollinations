@@ -65,4 +65,5 @@ justify-content: center;
 
 const CreateInputFullWidth = styled(CreateInput)`
 width: 100%;
+padding-right: calc(153px - 0.5em);
 `

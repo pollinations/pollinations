@@ -26,7 +26,7 @@ export default function Models() {
     Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
     ),
     // Add models that were not on the old notebook list.
-    ...Object.values(MODELS_MAP).filter( model => !model.id2pop)
+    ...Object.values(MODELS_MAP).filter( model => !model.id2pop && model.isVisible)
   ],[notebookList])
 
   

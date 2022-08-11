@@ -86,7 +86,7 @@ export default React.memo(function Create() {
                 onSubmit={async (values) => dispatch(values) } 
                 Results={
                 <ResultsArea>
-                    { ipfs.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
+                    { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
                     <Previewer ipfs={ipfs}  /> 
                 </ResultsArea>
                 }

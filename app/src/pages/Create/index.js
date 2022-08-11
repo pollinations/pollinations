@@ -13,6 +13,8 @@ import { CircularProgress } from '@material-ui/core';
 
 import Debug from 'debug';
 import Examples from '../../components/organisms/Examples';
+import { IpfsLog } from '../../components/Logs';
+import { NotebookProgress } from '../../components/NotebookProgress';
 
 const debug = Debug("pages/Create/index");
 
@@ -71,7 +73,7 @@ export default React.memo(function Create() {
             </h2>
             { isLoading && <CircularProgress thickness={2} size={20} /> }
             </FlexBetween>
-            
+            { isLoading && <NotebookProgress output={ipfs?.output} /> }
             {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
             
             <Form 
@@ -90,7 +92,7 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-    
+        <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
         
     </PageLayout>
 });

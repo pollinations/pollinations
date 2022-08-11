@@ -6,10 +6,12 @@ import React from "react";
 const debug = Debug("NotebookProgress");
 
 export const NotebookProgress = ({output, metadata}) => {
-    if (!output?.log?.split || !metadata)
+    if (!output?.log?.split)
         return null;
-    const progress = getProgress(output.log, metadata.numCells)*100;
-    const fineProgress = getFinegrainedProgress(output.log)*100;
+
+    const fineProgressTemp = getFinegrainedProgress(output.log)*100;
+    const progress = metadata ? getProgress(output.log, metadata.numCells)*100 : fineProgressTemp;
+    const fineProgress = metadata ? fineProgressTemp : 0;
     
     const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
     debug("progress", progress, inProgress, fineProgress);
@@ -18,7 +20,7 @@ export const NotebookProgress = ({output, metadata}) => {
 
     return  <><Box display="flex" alignItems="center" m={1}>
       <Box width="100%" mr={1}>
-         Overall Progress:
+         { metadata && "Overall Progress:" }
           <LinearProgress value={progress} variant="determinate" color="secondary" />
       </Box>
       <Box minWidth={35}>
@@ -41,7 +43,7 @@ export const NotebookProgress = ({output, metadata}) => {
         </Box> : null
         }
  
-       <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography>
+       {metadata && <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography> }
     </>
 }
 

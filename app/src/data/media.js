@@ -5,12 +5,11 @@ const debug = Debug("media");
 
 // recognized media types
 const _mediaTypeMapWithoutAll = {
-
     "video": [".mp4",".webm"],
     "image": [".jpg", ".jpeg", ".png"],
     "text": [".md", ".txt"],
     "audio": [".mp3", ".wav", ".ogg",".flac"],
-    "3dmodel": [".bin", ".obj"],
+    "3dmodel": [".bin", ".obj",".glb"],
   }
 
 const _mediaTypeMap = {

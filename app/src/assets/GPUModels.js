@@ -1,6 +1,7 @@
 export const MODELS_MAP = {
     'dreamfields': {
         featured: true,
+        isVisible: false,
         url: 'pollinations/dreamfields-torch',
         key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch",
         path: 'dreamfields',
@@ -10,6 +11,7 @@ export const MODELS_MAP = {
     },
     'discodiffusion':{
         featured: true,
+        isVisible: true,
         url: "pollinations/disco-diffusion",
         key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion" ,
         name: "Disco Diffusion",
@@ -21,6 +23,7 @@ export const MODELS_MAP = {
     },
     'majestydiffusion': {
         featured: true,
+        isVisible: true,
         url:  "pollinations/majesty-diffusion-cog",
         key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
         name: 'Majesty Diffusion',
@@ -32,6 +35,7 @@ export const MODELS_MAP = {
     },
     'dalle': {
         featured: true,
+        isVisible: true,
         url: "pollinations/min-dalle",
         key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/min-dalle",
         name: 'DallE Mini',
@@ -42,19 +46,21 @@ export const MODELS_MAP = {
         credits: 'Boris Dayma, Suraj Patil, Pedro Cuenca, Khalid Saifullah, Tanishq Abraham, Phúc Lê, Luke, Luke Melas, Ritobrata Ghosh.',
         description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n*Sunset over a lake*\n\n\n\nThe new model everyone is excited about.\n"
     },
-    // 'avatarclip': {
-    //     featured: true,
-    //     url: "pollinations/avatar-clip",
-    //     key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
-    //     img: 'https://i.imgur.com/a9hByt4.png',
-    //     name: 'Avatar Clip',
-    //     id2pop: '',
-    //     path: 'avatarclip',
-    //     category: '0 Featured',
-    //     description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\"> \n\n\n\nThis is a model that clips the avatar of a user to a specific part of the image. It is useful for creating avatars for other users.\n\n\n\n---\n\n\n\nAccess our Avatar Clip Guide(https://multimodal.art/avatar-clip) (_under construction_), our [GitHub](",
-    // },
+    'avatarclip': {
+        featured: true,
+        isVisible: false,
+        url: "pollinations/avatar-clip",
+        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
+        img: 'https://i.imgur.com/a9hByt4.png',
+        name: 'Avatar Clip',
+        id2pop: '',
+        path: 'avatarclip',
+        category: '0 Featured',
+        description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\"> \n\n\n\nThis is a model that clips the avatar of a user to a specific part of the image. It is useful for creating avatars for other users.\n\n\n\n---\n\n\n\nAccess our Avatar Clip Guide(https://multimodal.art/avatar-clip) (_under construction_), our [GitHub](",
+    },
     'swinir': {
         featured: true,
+        isVisible: true,
         url: "jingyunliang/swinir",
         key: "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
         name: 'Swinir',
@@ -67,6 +73,7 @@ export const MODELS_MAP = {
     },
     'adampi': {
         featured: true,
+        isVisible: true,
         url: "pollinations/adampi",
         key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
         name: 'AdaMPI',

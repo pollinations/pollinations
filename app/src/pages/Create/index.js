@@ -15,6 +15,7 @@ import Debug from 'debug';
 import Examples from '../../components/organisms/Examples';
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
+import { FailureViewer } from '../../components/FailureViewer';
 
 const debug = Debug("pages/Create/index");
 
@@ -85,6 +86,7 @@ export default React.memo(function Create() {
                 onSubmit={async (values) => dispatch(values) } 
                 Results={
                 <ResultsArea>
+                    { ipfs.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
                     <Previewer ipfs={ipfs}  /> 
                 </ResultsArea>
                 }

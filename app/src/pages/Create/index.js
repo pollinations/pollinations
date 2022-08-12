@@ -17,6 +17,8 @@ import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
 import { FailureViewer } from '../../components/FailureViewer';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+
 
 const debug = Debug("pages/Create/index");
 
@@ -27,8 +29,9 @@ export default React.memo(function Create() {
     const params = useParams();
     const { Model } = params;
 
+
     // aws stuff
-    const { submitToAWS, ipfs, isLoading } = useAWSNode(params);
+    const { submitToAWS, ipfs, isLoading, setNodeID } = useAWSNode(params);
 
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
@@ -39,6 +42,18 @@ export default React.memo(function Create() {
     
     const navigateTo = useNavigate();
 
+
+    useEffect(() => {
+        if (!params.nodeID && selectedModel.key) {
+            (async () => {
+                debug("getting pollens for model", selectedModel.key);
+                const pollens = await getPollens({image:selectedModel.key, success:true});
+                // select random pollen
+                const {input} = pollens[Math.floor(Math.random()*pollens.length)];
+                setNodeID(input);
+            })();
+        }
+    }, [params.nodeID, selectedModel]);
 
     // set selected model with DropDown
     const onSelectModel = e => setSelectedModel({

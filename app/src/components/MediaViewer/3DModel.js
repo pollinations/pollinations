@@ -1,15 +1,23 @@
 import {OBJModel} from 'react-3d-viewer';
 import Debug from "debug";
+import { Link } from '@material-ui/core';
 
 const debug = Debug("3DModelViewer");
 export default function ObjViewer({ content, style, filename }) {
   debug("ObjViewer", content)
 
   if (filename.toLowerCase().endsWith(".glb")) 
-    return <model-viewer 
-      src={content} 
-      style={{...style, width: "70vh", height: "70vh"}} 
-      camera-controls />
+    return <div>
+      <div>
+        <model-viewer 
+                src={content} 
+                style={{...style, width: "70vh", height: "70vh"}} 
+                camera-controls />
+        </div>
+        <div>
+          <Link href={content}>Download</Link>
+        </div>
+      </div>
   else
     return <OBJModel 
       src={content} 

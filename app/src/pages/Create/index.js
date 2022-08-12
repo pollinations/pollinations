@@ -16,6 +16,7 @@ import Examples from '../../components/organisms/Examples';
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
 import { FailureViewer } from '../../components/FailureViewer';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const debug = Debug("pages/Create/index");
 
@@ -31,6 +32,8 @@ export default React.memo(function Create() {
 
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
+
+    const [showLogs, _] = useLocalStorage('showLogs', false);
 
     debug("selected model", selectedModel);
     
@@ -94,7 +97,7 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
+        { showLogs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
         
     </PageLayout>
 });

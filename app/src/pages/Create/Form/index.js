@@ -42,7 +42,7 @@ const Form = ({ ipfs, Results,
 
   useEffect(()=>{
     if (!ipfs.input) return;
-    const { model_image, seed, ...values} = ipfs.input;
+    const { model_image, caching_seed, ...values} = ipfs.input;
 
     formik.setValues({ ...formik.values, ...values });
   },[ipfs?.input])

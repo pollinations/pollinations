@@ -59,6 +59,7 @@ export default React.memo(function Create() {
     // dispatch to AWS
     const dispatch = async (values) => {
         console.log(values, selectedModel.url)
+        values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
         const { nodeID } = await submitToAWS(values, selectedModel.url, false);
         if (!Model) {
             navigateTo(`/create/${nodeID}`);

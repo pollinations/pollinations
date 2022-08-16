@@ -6,6 +6,8 @@ const debug = Debug("3DModelViewer");
 export default function ObjViewer({ content, style, filename }) {
   debug("ObjViewer", content)
 
+  content = content?.replaceAll(".bin", ".obj");
+
   if (filename.toLowerCase().endsWith(".glb")) 
     return <div>
       <div>

@@ -1,17 +1,22 @@
-import { getMedia } from "../../data/media";
+import { getMedia, mediaToDisplay } from "../../data/media";
 import styled from '@emotion/styled';
 import MediaViewer from "../../components/MediaViewer/";
+import { useMemo } from "react";
 
 const Previewer = ({ ipfs }) => {
     if (!ipfs) return null;
 
     const medias = getMedia(ipfs.output);
+    const first = medias[0];
 
     if (!medias.length) return null;
 
     return <Style>
-      {
-        medias.map(([filename, url, type]) => <>
+      <MediaViewer filename={first[0]} content={first[1]} type={first[2]} />
+      <StepGallery children={
+        medias
+        .slice(1,-1)
+        .map(([filename, url, type]) => <>
           <MediaViewer 
             key={filename}
             content={url} 
@@ -20,7 +25,7 @@ const Previewer = ({ ipfs }) => {
           />
           </>
         )
-      }
+      }/>
     </Style>
 }   
 
@@ -28,14 +33,21 @@ export default Previewer
 
 const Style = styled.div`
 width: 100%;
-padding: 0 1em;
-margin: auto;
+display: flex;
+flex-direction: column;
+align-items: center;
+img{
+  width: auto;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+`
+const StepGallery = styled.div`
+width: 100%;
+margin-top: 2em;
+
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 grid-gap: 0.5em;
-img {
-  width: 100%;
-  max-width: 70vh;
-  margin: 0 auto;
-}
 `

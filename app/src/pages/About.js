@@ -9,10 +9,18 @@ const Content = [
   {
     headline: 'About',
     content: <> 
-      Pollinations is a platform to generate media with the help of AI. 
-      Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
-      We offer cutting-edge AI models that are constantly being updated. Every creation is unique and free to use.
-    </>,
+      Pollinations wants to diversify creativity and spread it through digital ecosystems. 
+      Whether in image, video, audio or 3d objects, the idea is to invite people to imagine new worlds 
+      with the help of AI. Besides offering cutting-edge AI models that are constantly being updated, 
+      we write code on top of these models allowing for customized outcomes and specific aesthetics.
+      <br/> <br/>
+      With our API, personalized AI models can be integrated directly within games, metaverses and social 
+      media, making AI media generation easy, fast, and fun. Alternatively, our AI could be deployed as a 
+      tool into 3d modelers workflow.
+      <br/> <br/>
+      Get in touch with us if you’d like to offer this kind of experience. 
+      See here how it works or send us a hello at hello@pollinations.ai.
+      </>,
   },
   {
     headline: 'Why',

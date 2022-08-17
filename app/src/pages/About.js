@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import TempLayout from '../components/layouts/Temp'
 
 const About = props => 
@@ -19,7 +20,7 @@ const Content = [
       tool into 3d modelers workflow.
       <br/> <br/>
       Get in touch with us if you’d like to offer this kind of experience. 
-      See here how it works or send us a hello at hello@pollinations.ai.
+      See <Link to='/integrate' children='here' style={{color: 'black'}}/> how it works or send us a hello at hello@pollinations.ai.
       </>,
   },
   {

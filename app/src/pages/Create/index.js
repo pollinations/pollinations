@@ -20,6 +20,7 @@ import useLocalStorage from '../../hooks/useLocalStorage';
 import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
 
 
+
 const debug = Debug("pages/Create/index");
 
 const IS_FORM_FULLWIDTH = true;
@@ -74,6 +75,7 @@ export default React.memo(function Create() {
     // dispatch to AWS
     const dispatch = async (values) => {
         console.log(values, selectedModel.url)
+        values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
         const { nodeID } = await submitToAWS(values, selectedModel.url, false);
         if (!Model) {
             navigateTo(`/create/${nodeID}`);
@@ -112,7 +114,7 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        { showLogs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
+        { showLogs && ipfs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
         
     </PageLayout>
 });

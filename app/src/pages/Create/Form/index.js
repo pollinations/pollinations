@@ -21,9 +21,11 @@ const Form = ({ ipfs, Results,
   });
   const { models } = useGPUModels();
 
+  const { inputs, primary_input } = getInputs(models, selectedModel);
+
   useEffect(()=>{
 
-    const { inputs, primary_input } = getInputs(models, selectedModel);
+    
     const values = getInitialValues(inputs, primary_input)
 
     // add other fields to the form when user selects the desired model.
@@ -40,7 +42,7 @@ const Form = ({ ipfs, Results,
 
   useEffect(()=>{
     if (!ipfs.input) return;
-    const { model_image, ...values} = ipfs.input;
+    const { model_image, caching_seed, ...values} = ipfs.input;
 
     formik.setValues({ ...formik.values, ...values });
   },[ipfs?.input])
@@ -70,7 +72,7 @@ const Form = ({ ipfs, Results,
         {Results}
           <CustomizeParameters
             isDisabled={isDisabled}
-            inputs={models[selectedModel?.key]?.components.schemas.Input.properties}
+            inputs={inputs}
             formik={formik}
             credits={selectedModel?.credits}
             />

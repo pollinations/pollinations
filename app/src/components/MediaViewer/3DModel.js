@@ -6,6 +6,8 @@ const debug = Debug("3DModelViewer");
 export default function ObjViewer({ content, style, filename }) {
   debug("ObjViewer", content)
 
+  content = content?.replaceAll(".bin", ".obj");
+
   if (filename.toLowerCase().endsWith(".glb")) 
     return <div>
       <div>
@@ -19,10 +21,14 @@ export default function ObjViewer({ content, style, filename }) {
         </div>
       </div>
   else
-    return <OBJModel 
+    return <div><OBJModel 
       src={content} 
-      style={{...style, height: null, }} 
+      style={style} 
+      width={'328'}
+      height={'328'}
       background="rgba(0,0,0,0)" 
       scale= {{x:0.2, y:0.2, z: 0.2}} />
+      <Link href={content}>Download</Link>
+      </div>
 }
 

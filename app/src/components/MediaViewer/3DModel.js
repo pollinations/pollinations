@@ -17,7 +17,7 @@ export default function ObjViewer({ content, style, filename }) {
                 camera-controls />
         </div>
         <div>
-          <Link href={content}>Download</Link>
+          <Link href={content} download>Download</Link>
         </div>
       </div>
   else
@@ -28,7 +28,7 @@ export default function ObjViewer({ content, style, filename }) {
       height={'328'}
       background="rgba(0,0,0,0)" 
       scale= {{x:0.2, y:0.2, z: 0.2}} />
-      <Link href={content}>Download</Link>
+      <Link href={content} download>Download</Link>
       </div>
 }
 

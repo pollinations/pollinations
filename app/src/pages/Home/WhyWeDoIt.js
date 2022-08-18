@@ -88,6 +88,10 @@ span {
   margin: 0;
   color: #ffffff;
 }
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 48px;
+  line-height: 60px;
+}
 `
 const ExplanationText = styled.p`
 font-family: 'DM Sans';
@@ -132,15 +136,16 @@ gap: 2em;
 align-items: center;
 margin-right: 10em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  margin-right: 0;
+  margin-right: 2em;
   margin-bottom: 4em;
 }
 
 img {
   width: 20vw;
-  max-width: 300px;
+  max-width: 100%;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100%;
+    max-width: 200px;
   }
 }
 `

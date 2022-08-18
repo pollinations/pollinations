@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { BackGroundImage } from '../../styles/global';
+import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global';
 import heroBG from '../../assets/imgs/bghero.jpg'
 import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 // Hero Section
@@ -46,6 +46,7 @@ const Hero = props => {
     rgba(22, 50, 122, 0.58) 0%, 
     rgba(34, 128, 134, 0.54) 47.4%, 
     rgba(151, 190, 67, 0.01) 100%);
+    max-height: 100vh;
   `
   
   
@@ -61,6 +62,12 @@ const Hero = props => {
   text-transform: uppercase;
   
   color: #FFFFFF;
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 58px;
+    line-height: 60px;
+  }
+  
   `
   
   const HeroSubHeadLine = styled.p`

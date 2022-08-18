@@ -142,6 +142,7 @@ margin-right: 10em;
 
 img {
   width: 20vw;
+  max-width: 100%;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100%;
     max-width: 200px;

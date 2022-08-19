@@ -97,9 +97,10 @@ export default React.memo(function Create() {
                 Results={
                 <ResultsArea>
                     { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
-                    <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                    { ipfs?.output?.success === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
                         Add to Examples
                     </Button>
+                    }
                     <Previewer ipfs={ipfs}  /> 
                 </ResultsArea>
                 }
@@ -144,8 +145,12 @@ function useRandomPollen(nodeID, selectedModel, setNodeID) {
         if (!nodeID && selectedModel.key) {
             (async () => {
                 debug("getting pollens for model", selectedModel.key);
-                const pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true});
+                let pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true});
                 
+                if (pollens.length === 0) {
+                    pollens = await getPollens({ image: selectedModel.key, success: true});
+                }
+
                 if (pollens.length > 0) {
                     // select random pollen
                     const { input } = pollens[Math.floor(Math.random() * pollens.length)];

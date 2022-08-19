@@ -146,9 +146,9 @@ function useRandomPollen(nodeID, selectedModel, setNodeID) {
                 debug("getting pollens for model", selectedModel.key);
                 let pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true});
                 
-                if (pollens.length === 0) {
-                    pollens = await getPollens({ image: selectedModel.key, success: true});
-                }
+                // if (pollens.length === 0) {
+                //     pollens = await getPollens({ image: selectedModel.key, success: true});
+                // }
 
                 if (pollens.length > 0) {
                     // select random pollen

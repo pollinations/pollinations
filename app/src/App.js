@@ -33,6 +33,7 @@ import About from "./pages/About"
 import ScrollToTop from './utils/ScrollToTop'
 
 import CreateModel from './pages/Create/'
+import DreamFieldsScreen from "./pages/Dreamfields/"
 
 const debug = Debug("AppContainer")
 
@@ -67,6 +68,7 @@ const Pollinations = () => {
           <Route exact path='/' element={<Home />} />
           <Route exact path='about' element={<About/>}/>
           <Route exact path='integrate' element={<Integrate/>}/>
+          <Route exact path='dreamfieldscustom' element={<DreamFieldsScreen/>}/>
           <Route exact path={ROUTES.feed.to} element={<Feed />} />
 
           {

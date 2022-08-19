@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { zipObj } from 'ramda';
+import { keys, mapObjIndexed, zipObj } from 'ramda';
 
 const GPUModelsContext = React.createContext()
 
@@ -18,8 +18,11 @@ function GPUModelsProvider({ children }) {
             
             setLoading(true)
             try {
-                const response = await fetch('https://raw.githubusercontent.com/pollinations/model-index/main/images_openapi.json');
-                const data = await response.json();
+                const response = await fetch('https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json');
+                const dataMetadaFormat = await response.json();
+                
+                // transform the new metadata format to the old one (extract each entrie's "openapi" prop)
+                const data = mapObjIndexed(({openapi}) => openapi, dataMetadaFormat);
 
                 const filtered_data = zipObj(
                     Object.values(wantedModels), 

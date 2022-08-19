@@ -26,12 +26,14 @@ const WhyWeDoIt = props => {
         <div>
         <ExplanationText textAlign='left'>
          
-            Welcome to Pollination's 3D avatar model! Beta Version. 
+            The need to design digital worlds is rising fast, but the power is still too concentrated, and the process too costly and time-consuming, making experimentation difficult.  
             <br/><br/>
-            Here you can generate customized AI humanoid avatars with color and texture from a text prompt. Every result is unique and is made completely by Artificial Intelligence.
+            But if we want the metaverse to be as complex and trippy as it is in our dreams, we urgently need to update our tools. 
             <br/><br/>
-            For a texturized avatar we suggest at least 20.000 interactions, the generation will take about one to two hours. 
-            The creation of untexturized avatars takes only a few minutes.  Have fun and let us know what you think.
+            We invite you to try out  our -beta version- interface to create Avatars and 3D Object with AI!
+            <br/><br/>
+            These models could be integrated in the workflow of 3D modellers and designers, or they could be offered to players inside games and immersive experiences. 
+            <br/> Every result is unique and is made completely by Artificial Intelligence.
 
           {/* <br/><br/>
           And by facilitating the creation of images, objects and immersive environments, 
@@ -45,16 +47,21 @@ const WhyWeDoIt = props => {
         <FlexColumn >
             <div>
             <Headline color='white'>
-                blabla
+              Avatar Clip
             </Headline>
             <ExplanationText color='white' marginTop='0'>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. 
+            Here you can generate customized AI humanoid avatars with color and texture from a text prompt. 
+            <br/><br/>
+            For a texturized avatar we suggest at least 20.000 interactions, the generation will take about one to two hours. The creation of untexturized avatars takes only a few minutes. Have fun and let us know what you think.
+            <br/>
+            Try descriptions such as "gender neutral magic elf" or "pregnant spiderwoman"
             </ExplanationText>
+            <Button onClick={()=>navigate('/create/avatarclip')}>
+            Try it out
+            </Button>
             </div>
 
-          <Button >
-            Try it out
-          </Button>
+          
 
         </FlexColumn>
         <StarImage src={StarIMG} top='-50' left='0' />
@@ -90,6 +97,7 @@ color: ${props => props.color || '#000000'};
 margin-top: 0;
 text-align: ${props => props.textAlign || 'left'};
 margin: ${props => props.margin || ''};
+
 span {
   font-weight: 700;
   font-size: 24px;
@@ -103,6 +111,8 @@ span {
 }
 `
 const ExplanationText = styled.p`
+align-self: flex-start;
+
 font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
@@ -112,8 +122,12 @@ text-align: ${props => props.textAlign || 'left'};
 color: ${props => props.color || '#191919'};
 
 margin-top: ${props => props.marginTop || '7em'};
+width: 80%;
+max-width: 600px;
+margin-bottom: 2em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin-top: 1em;
+  width: 100%;
 }
 `
   

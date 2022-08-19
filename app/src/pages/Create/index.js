@@ -31,7 +31,6 @@ export default React.memo(function Create() {
     const params = useParams();
     const { Model } = params;
 
-
     // aws stuff
     const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen } = useAWSNode(params);
 
@@ -97,7 +96,7 @@ export default React.memo(function Create() {
                 Results={
                 <ResultsArea>
                     { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
-                    { ipfs?.output?.done === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                    { isAdmin && ipfs?.output?.done === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
                         Add to Examples
                     </Button>
                     }

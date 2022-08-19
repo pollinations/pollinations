@@ -9,7 +9,7 @@ import { SEOMetadata } from '../../components/Helmet';
 import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MODELS_MAP } from '../../assets/GPUModels';
-import { CircularProgress } from '@material-ui/core';
+import { Button, CircularProgress } from '@material-ui/core';
 
 import Debug from 'debug';
 import Examples from '../../components/organisms/Examples';
@@ -18,6 +18,7 @@ import { NotebookProgress } from '../../components/NotebookProgress';
 import { FailureViewer } from '../../components/FailureViewer';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 
 
@@ -32,29 +33,18 @@ export default React.memo(function Create() {
 
 
     // aws stuff
-    const { submitToAWS, ipfs, isLoading, setNodeID } = useAWSNode(params);
+    const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen } = useAWSNode(params);
 
     // current model, should move to url
     const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
-    const [showLogs, _] = useLocalStorage('showLogs', false);
+    const [isAdmin, _] = useLocalStorage('isAdmin', false);
 
     debug("selected model", selectedModel);
     
     const navigateTo = useNavigate();
 
-
-    useEffect(() => {
-        if (!params.nodeID && selectedModel.key) {
-            (async () => {
-                debug("getting pollens for model", selectedModel.key);
-                const pollens = await getPollens({image:selectedModel.key, success:true});
-                // select random pollen
-                const {input} = pollens[Math.floor(Math.random()*pollens.length)];
-                setNodeID(input);
-            })();
-        }
-    }, [params.nodeID, selectedModel]);
+    useRandomPollen(params.nodeID, selectedModel, setNodeID);
 
     // set selected model with DropDown
     const onSelectModel = e => setSelectedModel({
@@ -107,6 +97,9 @@ export default React.memo(function Create() {
                 Results={
                 <ResultsArea>
                     { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
+                    <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                        Add to Examples
+                    </Button>
                     <Previewer ipfs={ipfs}  /> 
                 </ResultsArea>
                 }
@@ -114,8 +107,8 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        { showLogs && ipfs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
-        
+        { isAdmin && ipfs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
+    
     </PageLayout>
 });
 
@@ -143,6 +136,27 @@ width: 70%;
   max-width: 100%;
 }
 `
+
+function useRandomPollen(nodeID, selectedModel, setNodeID) {
+    const [isAdmin,_] = useIsAdmin();
+    debug("isAdmin", isAdmin);
+    useEffect(() => {
+        if (!nodeID && selectedModel.key) {
+            (async () => {
+                debug("getting pollens for model", selectedModel.key);
+                const pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true});
+                
+                if (pollens.length > 0) {
+                    // select random pollen
+                    const { input } = pollens[Math.floor(Math.random() * pollens.length)];
+                    setNodeID(input);
+                }
+            })();
+        }
+    }, [nodeID, selectedModel]);
+
+
+}
 
 function parseURL(url){
     const [ , ...parts ] = url.split('/');

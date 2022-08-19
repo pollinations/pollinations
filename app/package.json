@@ -52,6 +52,7 @@
     "node-abort-controller": "^3.0.1",
     "node-fetch": "^2.6.1",
     "p-queue": "^7.1.0",
+    "package.json": "^2.0.1",
     "path-browserify": "^1.0.1",
     "progress-stream": "^2.0.0",
     "queueable": "^4.1.4",

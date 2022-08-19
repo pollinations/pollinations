@@ -97,7 +97,7 @@ export default React.memo(function Create() {
                 Results={
                 <ResultsArea>
                     { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
-                    { ipfs?.output?.success === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                    { ipfs?.output?.done === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
                         Add to Examples
                     </Button>
                     }

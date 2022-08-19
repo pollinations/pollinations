@@ -14,7 +14,9 @@ export default function ObjViewer({ content, style, filename }) {
         <model-viewer 
                 src={content} 
                 style={{...style, width: "70vh", height: "70vh"}} 
-                camera-controls />
+                camera-controls 
+                exposure={0.3}
+          />
         </div>
         <div>
           <Link href={content} download>Download</Link>

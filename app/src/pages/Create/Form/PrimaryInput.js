@@ -5,6 +5,9 @@ import styled from '@emotion/styled'
 import { CircularProgress, TextField } from '@material-ui/core';
 import { getInputs } from './utils';
 import { CreateButton, CreateInput } from '../../Home/TryOut';
+import Debug from "debug";
+
+const debug = Debug("Create/Form/PrimaryInput")
 
 const PrimaryInputMap = {
     string: props => <String {...props} />,
@@ -19,6 +22,7 @@ const { primary_input } = getInputs(models, selectedModel);
 
 const type = primary_input.type;
 
+debug("primaryInput", primary_input, selectedModel, models)
 const isFile = (type === 'string') && (primary_input.format === 'uri');
 
 if (isFile) return <>

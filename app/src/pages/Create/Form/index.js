@@ -6,7 +6,7 @@ import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
-import { useGPUModels } from '../../../hooks/useGPUModels';
+import useGPUModels from '../../../hooks/useGPUModels';
 import { CreateButton } from '../../Home/TryOut';
 
 

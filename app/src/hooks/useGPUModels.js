@@ -1,9 +1,7 @@
 import * as React from 'react'
-import { keys, mapObjIndexed, zipObj } from 'ramda';
+import { mapObjIndexed, zipObj } from 'ramda';
 
-const GPUModelsContext = React.createContext()
-
-function GPUModelsProvider({ children }) {
+function useGPUModels() {
 
     const [ models, setModels ] = React.useState({});
     const [ areModelsLoading, setLoading ] = React.useState(false);
@@ -12,7 +10,6 @@ function GPUModelsProvider({ children }) {
     const wantedModels = MODELS;
 
     React.useEffect(()=>{
-        
         
         async function fetchInitialModels(){
             
@@ -32,6 +29,7 @@ function GPUModelsProvider({ children }) {
                     // 
                 );
 
+
                 setModels(filtered_data);
                 setLoading(false);
             } catch (error) {
@@ -44,27 +42,16 @@ function GPUModelsProvider({ children }) {
 
     },[])
 
-
-    
-
-    return <GPUModelsContext.Provider value={{ 
-            models, 
-            error, 
-            areModelsLoading, 
-        }}>
-        {children}
-    </GPUModelsContext.Provider>
+    return {
+        models, 
+        error, 
+        areModelsLoading, 
+    }
 }
 
-function useGPUModels() {
-  const context = React.useContext(GPUModelsContext)
-  if (context === undefined) {
-    throw new Error('useGPUModels must be used within a GPUModelsProvider')
-  }
-  return context
-}
 
-export { GPUModelsProvider, useGPUModels }
+
+export default useGPUModels;
 
 const MODELS = {
     "latent-diffusion": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m",
@@ -78,9 +65,8 @@ const MODELS = {
     "pollinations/avatarclip": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
     "pollinations/preset-frontpage": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage",
     "pollinations/majesty-diffusion-cog": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
-    "jingyunliang/swinir": "r8.im/jingyunliang/swinir@sha256:9d91795e944f3a585fa83f749617fc75821bea8b323348f39cf84f8fd0cbc2f7",
+    "jingyunliang/swinir": "r8.im/jingyunliang/swinir",
     "pollinations/disco-diffusion": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion",
     "pollinations/adampi" : "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
-    "pollinations/dreamfields-torch": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch"
-
+    "pollinations/dreamfields-torch": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch",
 }

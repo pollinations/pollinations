@@ -83,6 +83,8 @@ export const MODELS_MAP = {
         category: '0 Featured',
         credits: '',
         description: "<img src=\"https://i.imgur.com/BKvDhnf.png\" width=\"300\" height=\"300\" />\n\n\n\nUses [SwinIR](https://github.com/JingyunLiang/SwinIR) to perform 4x neural super-resolution (creates HD images from low resolution)\n\n\n\n---\n\nCredits: [Jingyun Liang]((https://github.com/JingyunLiang)\n\nLicense: MIT",
-    }
+    },
+    // 'retrievaldiffusion': {
 
+    // }
 }

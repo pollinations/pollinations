@@ -4,7 +4,8 @@ import whyBG from '../../assets/imgs/doubleBg.png'
 import { useNavigate } from 'react-router-dom'
 import StarIMG from '../../assets/imgs/star.png'
 // why we do it
-
+import AvatarClipIMG from '../../assets/imgs/avatar_clip_example.png'
+import DreamfieldsIMG from '../../assets/imgs/dreamfields_example.png'
 
 const DreamFieldsScreen = props => {
   
@@ -14,22 +15,20 @@ const DreamFieldsScreen = props => {
         <div >
           <Headline >
             <span>
-              It's time to populate the metaverse <br/>
+              With Pollinations, creativity is scalable <br/>
             </span>
-            With Pollinations, 
-            creativity is scalable
+              It's time to populate the metaverse
           </Headline>
         </div>
           <ExplanationText textAlign='left'>
           
-              the need to design digital worlds is rising fast, but the power is still too concentrated, and the process too costly and time-consuming, making experimentation difficult. 
+              The need to design digital worlds is rising fast, but doing it is still too costly and time-consuming, making experimentation difficult.
               <br/><br/>
-              But if we want  metaverses that are ascomplex and trippy as they are is in our dreams, we urgently need to update our tools. 
+              If we want metaverses that are as complex and trippy as they are in our dreams, we urgently need to update our tools. 
               <br/><br/>
-              We invite you to try out  our -beta version- interface to create Avatars and 3D Object with AI!
+              We invite you to try our beta version interface to create avatars and 3D objects with AI!
               <br/><br/>
-              These models could be integrated in the workflow of 3D modellers and designers, or they could be offered to players inside games and immersive experiences. 
-              <br/> Every result is unique and is made completely by Artificial Intelligence.
+              These models could be incorporated into the workflow of 3D modelers and designers, or they could be integrated into games and immersive experiences, allowing players to create 3D media. Every result is unique, royalties-free, and is made completely by Artificial Intelligence.
 
           </ExplanationText>
       </GridTwoColumns>
@@ -37,23 +36,24 @@ const DreamFieldsScreen = props => {
       <GridTwoColumns>
 
         <Example title='Avatar Clip' url='/create/avatarclip'>
-          Here you can generate customized AI humanoid avatars with color and texture from a text prompt.  
+          With this AI model you can generate customized humanoid avatars, with color and texture, from a text prompt.  
           <br/><br/>
-          For a texturized avatar we suggest at least 20.000 interactions, the generation will take about one to two hours. The creation of untexturized avatars takes only a few minutes. 
-          <br/>Have fun and let us know what you think. We are working on implementing rigged skeletons to make the results completely metaverse-ready.
-          <br/>
-          Try descriptions such as "gender neutral magic elf" or "pregnant spiderwoman"
-        </Example><div/><div/>
+          A fine avatar creates texturized and colorful results, the generation will take about one to two hours. Increase the number of iterations for a more detailed result. 
+          You can create shape-only avatars by choosing the option “no” at the “fine” box , the generation will then take only a few minutes.
+          <br/><br/>
+          Try descriptions such as "gender neutral magic elf", or  "pregnant spiderwoman".
+          We are working on implementing rigged skeletons to make the results completely metaverse-ready.
+        </Example>
+        <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' />
 
         
-        <Example title='Dreamfields' url='/create/dreamfields' right>
-        Our dear generalist model can create any 3d object from scratch. Don't be shy to play around with different parameters, the results are definitely bit glitchy so far.   
+        <Example title='Dreamfields' url='/create/dreamfields' marginTop='5em'>
+          Our dear generalist model can create 3D objects from scratch. The results are definitely a bit glitchy so far, and it will take around 30 minutes to generate one object.  
           <br/><br/>
-          For a texturized avatar we suggest at least 20.000 interactions, the generation will take about one to two hours.  
-          <br/>The creation of untexturized avatars takes only a few minutes.
-          <br/>
-          Remember- this is only the first version of Dreamfields. We are working on fine tuning results!
+          Remember- this is only the first version of Dreamfields. We are working on fine-tuning the model and clarifying the meaning of each parameter, but until then, have fun with the absurdity.
         </Example>
+        <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />
+
         <StarImage src={StarIMG} top='-100' left='0' />
         <StarImage src={StarIMG} bottom='-50' right='0' />
         </GridTwoColumns>
@@ -76,10 +76,10 @@ const DreamFieldsScreen = props => {
 const Example = (props) => {
   const navigate = useNavigate()
 
-  const { title, url, children, right } = props;
+  const { title, url, children, right, marginTop } = props;
 
 
-  return <FlexColumn right={right}>
+  return <FlexColumn right={right} marginTop={marginTop}>
     <div >
       <Headline color='white'>
         {title}
@@ -185,6 +185,13 @@ grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
 align-items: ${props => props.alignItems || 'flex-start'};
 
 `
+const ExampleIMG = styled.img`
+max-width: 100%;
+max-height: 500px;
+margin: auto 0;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+margin-left: auto;
+}`
 const HeroStyle = styled.div`
 display: flex;
 flex-direction: column;
@@ -201,7 +208,7 @@ display: flex;
 flex-direction: column;
 gap: 2em;
 align-items: center;
-
+margin-top: ${props => props.marginTop || '0'};
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin-right: 2em;
   margin-bottom: 4em;

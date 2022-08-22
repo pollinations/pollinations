@@ -43,7 +43,9 @@ const DreamFieldsScreen = props => {
         </Example>
         <IMGContainer>
         <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' prompt='test' />
-        <p children='Prompt: “queer neon warrior”'/>
+        <p>
+          <i>“queer neon warrior”</i>
+        </p>
         </IMGContainer>
       </GridTwoColumns>
       <GridTwoColumns>
@@ -54,7 +56,9 @@ const DreamFieldsScreen = props => {
         </Example>
         <IMGContainer>
           <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />
-          <p children='Prompt: “purple robot”'/>
+          <p>
+            <i>“purple robot”</i>
+          </p>
         </IMGContainer>
         <StarImage src={StarIMG} top='-100' left='0' />
         <StarImage src={StarIMG} bottom='-50' right='0' />

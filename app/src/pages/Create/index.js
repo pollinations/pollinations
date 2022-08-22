@@ -44,8 +44,6 @@ export default React.memo(function Create() {
 
     useRandomPollen(params.nodeID, selectedModel, setNodeID);
 
-    debug("selected model", selectedModel);
-
     // dispatch to AWS
     const dispatch = async (values) => {
         console.log(values, selectedModel.url)
@@ -58,7 +56,8 @@ export default React.memo(function Create() {
         }
     }
 
-    
+    debug("selectedModel", selectedModel, Model, Object.keys(models));
+
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
@@ -72,6 +71,7 @@ export default React.memo(function Create() {
             {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
             
             <Form 
+                models={models}
                 ipfs={ipfs}
                 hasSelect={!Model}
                 isDisabled={isLoading} 

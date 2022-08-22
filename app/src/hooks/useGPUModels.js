@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useMemo }  from 'react'
 import { mapObjIndexed, zipObj } from 'ramda';
 import useModelsMetadata from './useFetchModelsMetadata';
 import Debug from "debug";
@@ -6,18 +6,20 @@ import Debug from "debug";
 const debug = Debug("useGPUModels")
 
 function useGPUModels() {
-
     const modelsMetadata = useModelsMetadata();
 
-    const models = filterModels(modelsMetadata);
+    const result = useMemo(() => {
 
-    debug("filtmodels", models);
+        const models = filterModels(modelsMetadata);
 
-    return {
-        models, 
-        error: {}, 
-        areModelsLoading: modelsMetadata === null, 
-    }
+        return {
+            models, 
+            error: {}, 
+            areModelsLoading: modelsMetadata === null, 
+        }
+    }, [modelsMetadata]);
+
+    return result;
 }
 
 const filterModels = modelsMetadata => {

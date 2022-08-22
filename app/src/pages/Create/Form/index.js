@@ -1,41 +1,45 @@
 import styled from '@emotion/styled';
 import PrimaryButton from '../../../components/atoms/PrimaryButton';
 import { useFormik } from 'formik';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
-import useGPUModels from '../../../hooks/useGPUModels';
-import { CreateButton } from '../../Home/TryOut';
 
 
-const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect }) => {
+
+const Form = React.memo(({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
 
   const formik = useFormik({
       initialValues: {},
       onSubmit,
       enableReinitialize: true,
   });
-  const { models } = useGPUModels();
 
   const { inputs, primary_input } = getInputs(models, selectedModel);
 
-  useEffect(()=>{
+
+
+
+  // useEffect(()=>{
     
-    const values = getInitialValues(inputs, primary_input)
+  //   if (!selectedModel)
+  //     return;
+    
+  //   const values = getInitialValues(inputs, primary_input)
 
-    // add other fields to the form when user selects the desired model.
-    formik.setValues({ 
-      // all parameters for the form
-      ...values,
-      
-      // override the primary_input value with the old one.
-      [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
-    })
-  },[selectedModel, models])
-
-  
+  //   setTimeout(() => {
+  //     // add other fields to the form when user selects the desired model.
+  //     formik.setValues({ 
+  //       // all parameters for the form
+  //       ...values,
+        
+  //       // override the primary_input value with the old one.
+  //       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
+  //     })
+  //   }, 10000);
+  // },[selectedModel, models, inputs, primary_input])
 
   useEffect(()=>{
     if (!ipfs.input) return;
@@ -44,6 +48,9 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
     formik.setValues({ ...formik.values, ...values });
   },[ipfs?.input])
     
+
+
+
   return <StyledForm onSubmit={formik.handleSubmit} >
 
     { hasSelect &&
@@ -67,19 +74,20 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
         <ParametersAndResultsStyled>
 
         {Results}
-          <CustomizeParameters
-            isDisabled={isDisabled}
-            inputs={inputs}
-            formik={formik}
-            credits={selectedModel?.credits}
-            />
+        <CustomizeParameters
+          isDisabled={isDisabled}
+          inputs={inputs}
+          formik={formik}
+          credits={selectedModel?.credits}
+          />
         </ParametersAndResultsStyled>
 
       </>
 
 
   </StyledForm>
-};
+});
+
 export default Form;
 
 

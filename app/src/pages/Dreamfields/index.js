@@ -47,7 +47,7 @@ const DreamFieldsScreen = props => {
         <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' />
 
         
-        <Example title='Dreamfields' url='/create/dreamfields' marginTop='5em'>
+        <Example title='Dreamfields' url='/create/dreamfields' marginTop='15em'>
           Our dear generalist model can create 3D objects from scratch. The results are definitely a bit glitchy so far, and it will take around 30 minutes to generate one object.  
           <br/><br/>
           Remember- this is only the first version of Dreamfields. We are working on fine-tuning the model and clarifying the meaning of each parameter, but until then, have fun with the absurdity.
@@ -170,7 +170,7 @@ max-width: 600px;
 margin-bottom: 2em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin-top: 1em;
-  width: 100%;
+  max-width: 100%;
 }
 `
   
@@ -186,7 +186,7 @@ align-items: ${props => props.alignItems || 'flex-start'};
 
 `
 const ExampleIMG = styled.img`
-max-width: 100%;
+max-width: 80%;
 max-height: 500px;
 margin: auto;
 `

@@ -41,7 +41,10 @@ const DreamFieldsScreen = props => {
           Try descriptions such as "gender neutral magic elf", or  "pregnant spiderwoman".
           We are working on implementing rigged skeletons to make the results completely metaverse-ready.
         </Example>
-        <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' />
+        <IMGContainer>
+        <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' prompt='test' />
+        <p children='Prompt: “queer neon warrior”'/>
+        </IMGContainer>
       </GridTwoColumns>
       <GridTwoColumns>
         <Example title='Dreamfields' url='/create/dreamfields' marginTop='15em'>
@@ -49,8 +52,10 @@ const DreamFieldsScreen = props => {
           <br/><br/>
           Remember- this is only the first version of Dreamfields. We are working on fine-tuning the model and clarifying the meaning of each parameter, but until then, have fun with the absurdity.
         </Example>
-        <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />
-
+        <IMGContainer>
+          <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />
+          <p children='Prompt: “purple robot”'/>
+        </IMGContainer>
         <StarImage src={StarIMG} top='-100' left='0' />
         <StarImage src={StarIMG} bottom='-50' right='0' />
         </GridTwoColumns>
@@ -90,7 +95,12 @@ const Example = (props) => {
   </div>
 }
 
-
+const IMGContainer = styled.div`
+margin: auto;
+p {
+  text-align: center;
+}
+`
 
 const CreateButton = styled.button`
 
@@ -182,9 +192,6 @@ const ExampleIMG = styled.img`
 width: 100%;
 max-width: 300px;
 max-height: 500px;
-margin: 0 auto;
-margin-bottom: 10em;
-
 `
 const HeroStyle = styled.div`
 display: flex;

@@ -35,7 +35,10 @@ export default React.memo(function Create() {
     // // current model, should move to url
     // const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
-    const { models } = useGPUModels();
+    const { models: modelsMeta } = useGPUModels();
+
+    const models = Object.fromEntries(Object.entries(modelsMeta).map(([_key, model]) => [model.path, model] ));
+
     const selectedModel = models[Model] || {url: '', key: ''};
 
     const [isAdmin, _] = useLocalStorage('isAdmin', false);
@@ -46,7 +49,6 @@ export default React.memo(function Create() {
 
     // dispatch to AWS
     const dispatch = async (values) => {
-        console.log(values, selectedModel.url)
         values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
         const { nodeID } = await submitToAWS(values, selectedModel.url, false);
         if (!Model) {
@@ -73,7 +75,6 @@ export default React.memo(function Create() {
             <Form 
                 models={models}
                 ipfs={ipfs}
-                hasSelect={!Model}
                 isDisabled={isLoading} 
                 selectedModel={selectedModel}
                 onSubmit={async (values) => dispatch(values) } 

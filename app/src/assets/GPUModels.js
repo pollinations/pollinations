@@ -9,17 +9,20 @@ export const MODELS_MAP = {
         description: "<img src=\"https://i.imgur.com/a9hByt4.png\" width=\"300\">\n\n\n\n Dreamfields is a deep neural network that can be used to predict the growth of your baby's weight. It is a powerful tool for predicting the future of your baby's weight.",
         category: "0 Featured",
     },
-    'discodiffusion':{
-        featured: true,
-        isVisible: true,
-        url: "pollinations/disco-diffusion",
-        key: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion" ,
-        name: "Disco Diffusion",
-        id2pop: "1 Disco Diffusion",
-        path: 'discodiffusion',
-        category: '0 Featured',
-        credits: 'Credits: [@gandamu](https://twitter.com/gandamu_ml)x, [@somnai_dreams](https://twitter.com/somnai_dreams), [Katherine Crowson](https://twitter.com/RiversHaveWings), [Adam Letts](https://twitter.com/gandamu_ml)',
-        description: "![A Wonderful landscape of pollinations in a beautiful flower fields, in a mystical flower field Ultra detailed, hyper realistic 4k by Albert Bierstadt and Greg rutkowski](https://i.imgur.com/H1F0gTN.png)\n\n\n\n*A Wonderful landscape of pollinations in a beautiful flower fields, in a mystical flower field Ultra detailed, hyper realistic 4k by Albert Bierstadt and Greg rutkowski*\n\n\n\nThis is the  current go-to model for turning text into images. It might take a few minutes, but it is very artistic\n\n\n\n---\n\nTutorial Video *by Greg Bechtel* :\n\n\n\n<iframe \n\n    src=\"https://www.youtube.com/embed/-aUNQO5pXe0\"     \n\n    frameborder=\"0\"\n\n    allow=\"accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture\"\n\n    allowfullscreen> </iframe>\n\n\n\nCredits: [@gandamu](https://twitter.com/gandamu_ml)x, [@somnai_dreams](https://twitter.com/somnai_dreams), [Katherine Crowson](https://twitter.com/RiversHaveWings), [Adam Letts](https://twitter.com/gandamu_ml)"
+    'stablediffusion':{
+        "featured": true,
+        "url": "pollinations/stable-diffusion",
+        "key": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion",
+        "name": "Stable Diffusion - Animation",
+        "img": "https://s4.gifyu.com/images/ezgif.com-gif-maker4faa2b37cd286f60.gif",
+        "id2pop": "1 Disco Diffusion",
+        "path": "stablediffusion",
+        "category": "0 Featured",
+        "credits": "[Stability.AI](https://stability.ai/)",
+        "description": "<img src=\"https://s4.gifyu.com/images/ezgif.com-gif-maker4faa2b37cd286f60.gif\" width=\"300\" height=\"300\" />\n\n\n\nThe new kid in town. Stable Diffusion Animation. Moves from one prompt to the next over time.",
+        "pollinator_group": [
+            "T4"
+        ]    
     },
     'majestydiffusion': {
         featured: true,

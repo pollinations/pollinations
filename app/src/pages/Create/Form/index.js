@@ -10,9 +10,7 @@ import useGPUModels from '../../../hooks/useGPUModels';
 import { CreateButton } from '../../Home/TryOut';
 
 
-const Form = ({ ipfs, Results,
-    onSubmit, isDisabled, 
-    selectedModel, onSelectModel, hasSelect }) => {
+const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect }) => {
 
   const formik = useFormik({
       initialValues: {},
@@ -24,7 +22,6 @@ const Form = ({ ipfs, Results,
   const { inputs, primary_input } = getInputs(models, selectedModel);
 
   useEffect(()=>{
-
     
     const values = getInitialValues(inputs, primary_input)
 

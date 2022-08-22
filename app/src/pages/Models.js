@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import TopAlert from "../components/organisms/TopAlert"
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
@@ -11,10 +11,27 @@ import FilterUi from "../components/temp/FilterUi"
 import { GridStyle, BaseContainer, BackGroundImage, Headline } from '../styles/global'
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
 import { MODELS_MAP } from "../assets/GPUModels"
+import fetch from "node-fetch";
+import Debug from "debug";
 
+const debug = Debug("Models");
 
 export default function Models() {
 
+  const [MODELS_MAP, setModelsMap] = useState({});
+
+    useEffect(() => {
+      (async () => {
+        const response = await fetch('https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json');
+        const metadataFromServer = await response.json();
+
+        const modelsMetadata = Object.fromEntries(Object.entries(metadataFromServer).map(([_key, {meta}]) => [meta.path, meta]));
+        setModelsMap(modelsMetadata);
+        debug("setModelsMap", modelsMetadata);
+      })();
+
+    },[]);
+    
   const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
   

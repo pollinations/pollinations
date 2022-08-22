@@ -9,20 +9,14 @@ import Debug from "debug";
 
 const debug = Debug("Create/Form/PrimaryInput")
 
-const PrimaryInputMap = {
-    string: props => <String {...props} />,
-}
-  
-  
-const PrimaryInput = props => {
 
-const { isDisabled, formik, models, selectedModel } = props;
+const PrimaryInput = ({ isDisabled, formik, models, selectedModel }) => {
 
 const { primary_input } = getInputs(models, selectedModel);
 
 const type = primary_input.type;
 
-debug("primaryInput", primary_input, selectedModel, models)
+debug("primaryInput", primary_input, selectedModel.key, models)
 const isFile = (type === 'string') && (primary_input.format === 'uri');
 
 if (isFile) return <>

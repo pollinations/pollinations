@@ -1,54 +1,37 @@
 import * as React from 'react'
 import { mapObjIndexed, zipObj } from 'ramda';
+import useModelsMetadata from './useModelsMetadata';
+import Debug from "debug";
 
 function useGPUModels() {
 
-    const [ models, setModels ] = React.useState({});
-    const [ areModelsLoading, setLoading ] = React.useState(false);
-    const [ error, setError ] = React.useState({});
+    const modelsMetadata = useModelsMetadata();
 
-    const wantedModels = MODELS;
-
-    React.useEffect(()=>{
-        
-        async function fetchInitialModels(){
-            
-            setLoading(true)
-            try {
-                const response = await fetch('https://raw.githubusercontent.com/pollinations/model-index/main/metadata.json');
-                const dataMetadaFormat = await response.json();
-                
-                // transform the new metadata format to the old one (extract each entrie's "openapi" prop)
-                const data = mapObjIndexed(({openapi}) => openapi, dataMetadaFormat);
-
-                const filtered_data = zipObj(
-                    Object.values(wantedModels), 
-                    Object.values(wantedModels)
-                    // return only the models we want
-                    .map(model => data[model] )
-                    // 
-                );
-
-
-                setModels(filtered_data);
-                setLoading(false);
-            } catch (error) {
-                setError(error);
-                setLoading(false);
-            }
-        }
-
-        fetchInitialModels()
-
-    },[])
+    const models = filterModels(modelsMetadata);
 
     return {
         models, 
-        error, 
-        areModelsLoading, 
+        error: {}, 
+        areModelsLoading: modelsMetadata === null, 
     }
 }
 
+const filterModels = modelsMetadata => {
+    if (!modelsMetadata)
+        return
+
+    // transform the new metadata format to the old one (extract each entrie's "openapi" prop)
+
+    const filtered_data = zipObj(
+        Object.values(MODELS), 
+        Object.values(MODELS)
+        // return only the models we want
+        .map(model => modelsMetadata[model] )
+    );
+
+    console.log("filtered_data" , filtered_data);
+    return filtered_data;
+}
 
 
 export default useGPUModels;

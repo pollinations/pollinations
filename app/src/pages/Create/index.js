@@ -8,7 +8,6 @@ import { SEOMetadata } from '../../components/Helmet';
  
 import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MODELS_MAP } from '../../assets/GPUModels';
 import { Button, CircularProgress } from '@material-ui/core';
 
 import Debug from 'debug';

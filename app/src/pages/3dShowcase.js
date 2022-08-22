@@ -52,11 +52,9 @@ const Showcase3d = props => {
       
 
         <Example title='Dreamfields - v1.0 - DreamyGhosts' url='/create/dreamfields' marginTop='15em'>
-        Our dear generalist model can now create cute 3D ghosts from scratch. Yes, this model is fine-tuned to create only ghosts! The results are definitely a bit glitchy so far, and it will take around 30 minutes to generate one model.
+        Our dear generalist model can now create cute 3D ghosts from scratch. The results are definitely a bit glitchy so far, and it will take around 30 minutes to generate one model.
           <br/><br/>
         Have fun creating your own 3D ghost :).
-          <br/><br/>
-          Remember- this is only the first version of Dreamfields. We are working on fine-tuning the model and clarifying the meaning of each parameter, but until then, have fun with the absurdity.
         </Example>
         <IMGContainer>
           <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />

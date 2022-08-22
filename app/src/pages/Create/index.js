@@ -35,11 +35,11 @@ export default React.memo(function Create() {
     // // current model, should move to url
     // const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
 
-    const { models: modelsMeta } = useGPUModels();
+    const { models } = useGPUModels();
 
-    const models = Object.fromEntries(Object.entries(modelsMeta).map(([_key, model]) => [model.path, model] ));
+    const modelsIndexedByPath = Object.fromEntries(Object.entries(models).map(([_key, model]) => [model.path, model] ));
 
-    const selectedModel = models[Model] || {url: '', key: ''};
+    const selectedModel = modelsIndexedByPath[Model] || {url: '', key: ''};
 
     const [isAdmin, _] = useLocalStorage('isAdmin', false);
     

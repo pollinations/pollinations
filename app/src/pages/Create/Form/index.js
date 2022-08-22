@@ -9,7 +9,7 @@ import { getInitialValues, getInputs } from './utils';
 
 
 
-const Form = React.memo(({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
+const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
 
   const formik = useFormik({
       initialValues: {},
@@ -86,7 +86,7 @@ const Form = React.memo(({ ipfs, Results, onSubmit, isDisabled, selectedModel, o
 
 
   </StyledForm>
-});
+}
 
 export default Form;
 

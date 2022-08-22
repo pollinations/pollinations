@@ -1,13 +1,17 @@
 import * as React from 'react'
 import { mapObjIndexed, zipObj } from 'ramda';
-import useModelsMetadata from './useModelsMetadata';
+import useModelsMetadata from './useFetchModelsMetadata';
 import Debug from "debug";
+
+const debug = Debug("useGPUModels")
 
 function useGPUModels() {
 
     const modelsMetadata = useModelsMetadata();
 
     const models = filterModels(modelsMetadata);
+
+    debug("filtmodels", models);
 
     return {
         models, 
@@ -18,7 +22,7 @@ function useGPUModels() {
 
 const filterModels = modelsMetadata => {
     if (!modelsMetadata)
-        return
+        return {};
 
     // transform the new metadata format to the old one (extract each entrie's "openapi" prop)
 
@@ -44,7 +48,6 @@ const MODELS = {
     "voodoohop/dalle-playground": "614871946825.dkr.ecr.us-east-1.amazonaws.com/voodoohop/dalle-playground",
     "pollinations/latent-diffusion-400m": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/latent-diffusion-400m",
     "pollinations/min-dalle": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/min-dalle",
-    "kuprel/min-dalle": "r8.im/kuprel/min-dalle",
     "pollinations/avatarclip": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/avatarclip",
     "pollinations/preset-frontpage": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage",
     "pollinations/majesty-diffusion-cog": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",

@@ -21,14 +21,16 @@ export default function Models() {
   
   const { notebookList, options, option } = useFilter(notebooks)
 
-  const test = useMemo(()=> [
+  const test = useMemo(()=> { 
+    console.error("modelsnlist", models, notebookList)
+    return [
     // Check if the model that runs on our gpu is also on the old notebook list and replace.
     ...notebookList.map( notebook => 
     Object.values(models).find(model => notebook.name === model.id2pop) || notebook 
     ),
     // Add models that were not on the old notebook list.
     ...Object.values(models).filter( model => !model.id2pop && model.isVisible)
-  ],[notebookList])
+  ]},[notebookList])
 
     return (
       <ModelsStyle>

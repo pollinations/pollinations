@@ -188,10 +188,8 @@ align-items: ${props => props.alignItems || 'flex-start'};
 const ExampleIMG = styled.img`
 max-width: 100%;
 max-height: 500px;
-margin: auto 0;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-margin-left: auto;
-}`
+margin: auto;
+`
 const HeroStyle = styled.div`
 display: flex;
 flex-direction: column;

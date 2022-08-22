@@ -12,15 +12,13 @@ const DreamFieldsScreen = props => {
     return <HeroStyle>
   
       <GridTwoColumns>
-        <div >
           <Headline >
             <span>
               With Pollinations, creativity is scalable <br/>
             </span>
               It's time to populate the metaverse
           </Headline>
-        </div>
-          <ExplanationText textAlign='left'>
+          <ExplanationText>
           
               The need to design digital worlds is rising fast, but doing it is still too costly and time-consuming, making experimentation difficult.
               <br/><br/>
@@ -34,7 +32,6 @@ const DreamFieldsScreen = props => {
       </GridTwoColumns>
 
       <GridTwoColumns>
-
         <Example title='Avatar Clip' url='/create/avatarclip'>
           With this AI model you can generate customized humanoid avatars, with color and texture, from a text prompt.  
           <br/><br/>
@@ -45,8 +42,8 @@ const DreamFieldsScreen = props => {
           We are working on implementing rigged skeletons to make the results completely metaverse-ready.
         </Example>
         <ExampleIMG src={AvatarClipIMG} alt='Avatar Clip Example' />
-
-        
+      </GridTwoColumns>
+      <GridTwoColumns>
         <Example title='Dreamfields' url='/create/dreamfields' marginTop='15em'>
           Our dear generalist model can create 3D objects from scratch. The results are definitely a bit glitchy so far, and it will take around 30 minutes to generate one object.  
           <br/><br/>
@@ -79,8 +76,7 @@ const Example = (props) => {
   const { title, url, children, right, marginTop } = props;
 
 
-  return <FlexColumn right={right} marginTop={marginTop}>
-    <div >
+  return <div>
       <Headline color='white'>
         {title}
       </Headline>
@@ -91,16 +87,12 @@ const Example = (props) => {
       <CreateButton onClick={()=>navigate(url)}>
       Try it out
       </CreateButton>
-    </div>
-
-
-
-  </FlexColumn>
+  </div>
 }
 
 
 
- const CreateButton = styled.button`
+const CreateButton = styled.button`
 
 width: 129px;
 height: 52;
@@ -151,6 +143,7 @@ span {
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 48px;
   line-height: 60px;
+  max-width: 325px;
 }
 `
 const ExplanationText = styled.p`
@@ -165,12 +158,11 @@ text-align: ${props => props.textAlign || 'left'};
 color: ${props => props.color || '#191919'};
 
 margin-top: ${props => props.marginTop || '7em'};
-width: 80%;
-max-width: 600px;
 margin-bottom: 2em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin-top: 1em;
-  max-width: 100%;
+  max-width: 325px;
+
 }
 `
   
@@ -180,47 +172,31 @@ max-width: 1280px;
 position: relative;
 
 padding: 10em 4em;
+gap: 2em;
 display: grid;
-grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+grid-template-columns: repeat(auto-fit, minmax(325px, 1fr));
 align-items: ${props => props.alignItems || 'flex-start'};
 
 `
 const ExampleIMG = styled.img`
-max-width: 80%;
+width: 100%;
+max-width: 300px;
 max-height: 500px;
-margin: auto;
+margin: 0 auto;
+margin-bottom: 10em;
+
 `
 const HeroStyle = styled.div`
 display: flex;
 flex-direction: column;
 align-items: center;
 
-width: 100%;
+max-width: 100%;
 position: relative;
 padding: 0em 0 10em 0;
 
 `;
 
-const FlexColumn = styled.div`
-display: flex;
-flex-direction: column;
-gap: 2em;
-align-items: center;
-margin-top: ${props => props.marginTop || '0'};
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  margin-right: 2em;
-  margin-bottom: 4em;
-}
-
-img {
-  width: 20vw;
-  max-width: 100%;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    width: 100%;
-    max-width: 200px;
-  }
-}
-`
 
 const StarImage = styled.img`
 

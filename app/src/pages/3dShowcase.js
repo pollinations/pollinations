@@ -59,7 +59,7 @@ const Showcase3d = props => {
         <IMGContainer>
           <ExampleIMG src={DreamfieldsIMG} alt='Avatar Clip Example' />
           <p>
-            <i>“purple robot”</i>
+            <i>“purple robot ghost”</i>
           </p>
         </IMGContainer>
         <StarImage src={StarIMG} top='-100' left='0' />

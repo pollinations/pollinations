@@ -7,7 +7,9 @@ import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
 
+import Debug from "debug";
 
+const debug = Debug("Create/Form/index");
 
 const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
 
@@ -22,24 +24,25 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
 
 
 
-  // useEffect(()=>{
+  useEffect(()=> {
+    if (!selectedModel)
+      return;
     
-  //   if (!selectedModel)
-  //     return;
-    
-  //   const values = getInitialValues(inputs, primary_input)
+    const values = getInitialValues(inputs, primary_input)
 
-  //   setTimeout(() => {
-  //     // add other fields to the form when user selects the desired model.
-  //     formik.setValues({ 
-  //       // all parameters for the form
-  //       ...values,
+    debug("initalValues", values);
+
+    // setTimeout(() => {
+    //   // add other fields to the form when user selects the desired model.
+    //   formik.setValues({ 
+    //     // all parameters for the form
+    //     ...values,
         
-  //       // override the primary_input value with the old one.
-  //       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
-  //     })
-  //   }, 10000);
-  // },[selectedModel, models, inputs, primary_input])
+    //     // override the primary_input value with the old one.
+    //     [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
+    //   })
+    // }, 10000);
+  },[selectedModel, models, inputs, primary_input])
 
   useEffect(()=>{
     if (!ipfs.input) return;

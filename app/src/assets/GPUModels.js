@@ -11,8 +11,8 @@ export const MODELS_MAP = {
     },
     'stablediffusion':{
         "featured": true,
-        "url": "pollinations/stable-diffusion",
-        "key": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion",
+        "url": "pollinations/stable-diffusion-private",
+        "key": "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",
         "name": "Stable Diffusion - Animation",
         "img": "https://s4.gifyu.com/images/ezgif.com-gif-maker4faa2b37cd286f60.gif",
         "id2pop": "1 Disco Diffusion",

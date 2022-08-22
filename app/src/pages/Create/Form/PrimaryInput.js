@@ -12,17 +12,17 @@ const PrimaryInputMap = {
   
   
 const PrimaryInput = props => {
-console.log(props)
+
 const { isDisabled, formik, models, selectedModel } = props;
 
 const { primary_input } = getInputs(models, selectedModel);
-
+console.log(selectedModel)
 const type = primary_input.type;
 
 const isFile = (type === 'string') && (primary_input.format === 'uri');
 
 
-if (selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion') return <>
+if (selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private') return <>
 <CreateTextArea
     maxlength={10}
     rows={4}

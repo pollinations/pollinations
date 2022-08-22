@@ -1,13 +1,13 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/doubleBg.png'
+import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../styles/global'
+import whyBG from '../assets/imgs/doubleBg.png'
 import { useNavigate } from 'react-router-dom'
-import StarIMG from '../../assets/imgs/star.png'
+import StarIMG from '../assets/imgs/star.png'
 // why we do it
-import AvatarClipIMG from '../../assets/imgs/avatar_clip_example.png'
-import DreamfieldsIMG from '../../assets/imgs/dreamfields_example.png'
+import AvatarClipIMG from '../assets/imgs/avatar_clip_example.png'
+import DreamfieldsIMG from '../assets/imgs/dreamfields_example.png'
 
-const DreamFieldsScreen = props => {
+const Showcase3d = props => {
   
     return <HeroStyle>
   
@@ -75,7 +75,7 @@ const DreamFieldsScreen = props => {
     </HeroStyle>
   }
 
-  export default DreamFieldsScreen
+export default Showcase3d
 
 
 

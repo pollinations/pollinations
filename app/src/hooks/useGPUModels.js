@@ -56,4 +56,5 @@ const MODELS = [
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch",
+    "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",
 ]

@@ -8,23 +8,21 @@ import { SEOMetadata } from '../../components/Helmet';
  
 import Previewer from './Previewer';
 import { useNavigate, useParams } from 'react-router-dom';
-import { MODELS_MAP } from '../../assets/GPUModels';
 import { Button, CircularProgress } from '@material-ui/core';
 
 import Debug from 'debug';
-import Examples from '../../components/organisms/Examples';
+
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
 import { FailureViewer } from '../../components/FailureViewer';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
+import useGPUModels from '../../hooks/useGPUModels';
 
 
 
 const debug = Debug("pages/Create/index");
-
-const IS_FORM_FULLWIDTH = true;
 
 export default React.memo(function Create() {
     // :id and :model from url
@@ -34,38 +32,23 @@ export default React.memo(function Create() {
     // aws stuff
     const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen } = useAWSNode(params);
 
-    // current model, should move to url
-    const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
+    const { models } = useGPUModels();
+
+    const modelsIndexedByPath = Object.fromEntries(Object.entries(models).map(([_key, model]) => [model.path, model] ));
+
+    const selectedModel = modelsIndexedByPath[Model] || {url: '', key: ''};
 
     const [isAdmin, _] = useLocalStorage('isAdmin', false);
-
-    debug("selected model", selectedModel);
     
     const navigateTo = useNavigate();
 
     useRandomPollen(params.nodeID, selectedModel, setNodeID);
 
-    // set selected model with DropDown
-    const onSelectModel = e => setSelectedModel({
-        url:  e.target.value,
-        key: e.target.value
-    })
-
-    // set selected model with URL :id
-    useEffect(()=>{
-        if (!MODELS_MAP[Model]) return;
-        setSelectedModel({
-            ...MODELS_MAP[Model],
-            url: MODELS_MAP[Model]?.key,
-        });
-    },[Model]);
-
-
     // dispatch to AWS
     const dispatch = async (values) => {
-        console.log(values, selectedModel.url)
         values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
-        const { nodeID } = await submitToAWS(values, selectedModel.url, false);
+        debug("submitting to aws", selectedModel.key, values)
+        const { nodeID } = await submitToAWS(values, selectedModel.key, false);
         if (!Model) {
             navigateTo(`/create/${nodeID}`);
         } else {
@@ -73,7 +56,8 @@ export default React.memo(function Create() {
         }
     }
 
-    
+    debug("selectedModel", selectedModel, Model, Object.keys(models));
+
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
@@ -87,11 +71,10 @@ export default React.memo(function Create() {
             {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
             
             <Form 
+                models={models}
                 ipfs={ipfs}
-                hasSelect={!Model}
                 isDisabled={isLoading} 
                 selectedModel={selectedModel}
-                onSelectModel={onSelectModel}
                 onSubmit={async (values) => dispatch(values) } 
                 Results={
                 <ResultsArea>

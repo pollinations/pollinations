@@ -4,7 +4,7 @@ import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
 import MediaViewer from "../MediaViewer/";
 import { mediaToDisplay } from "../../data/media";
 import styled from "@emotion/styled";
-import { useGPUModels } from "../../hooks/useGPUModels";
+import useGPUModels from "../../hooks/useGPUModels";
 import { getInputs } from "../../pages/Create/Form/utils";
 
 function Examples(props) {

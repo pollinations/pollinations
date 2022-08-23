@@ -6,7 +6,8 @@ import { useMemo } from "react";
 const Previewer = ({ ipfs }) => {
     if (!ipfs) return null;
 
-    const medias = getMedia(ipfs.output);
+    // only show first 4 media
+    const medias = getMedia(ipfs.output).slice(0,4);
     const first = medias[0];
 
     if (!medias.length) return null;
@@ -15,7 +16,7 @@ const Previewer = ({ ipfs }) => {
       <MediaViewer filename={first[0]} content={first[1]} type={first[2]} />
       <StepGallery children={
         medias
-        .slice(1,-1)
+        .slice(1)
         .map(([filename, url, type]) => <>
           <MediaViewer 
             key={filename}

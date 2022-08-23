@@ -10,70 +10,71 @@ import FeaturedNotebookCard from "../components/temp/FeaturedNotebookCard"
 import FilterUi from "../components/temp/FilterUi"
 import { GridStyle, BaseContainer, BackGroundImage, Headline } from '../styles/global'
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
-import { MODELS_MAP } from "../assets/GPUModels"
-
+import useGPUModels from "../hooks/useGPUModels"
 
 export default function Models() {
+
+  const { models } = useGPUModels();
 
   const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
   
   const { notebookList, options, option } = useFilter(notebooks)
 
-  const test = useMemo(()=> [
+  const test = useMemo(()=> { 
+    console.error("modelsnlist", models, notebookList)
+    return [
     // Check if the model that runs on our gpu is also on the old notebook list and replace.
     ...notebookList.map( notebook => 
-    Object.values(MODELS_MAP).find(model => notebook.name === model.id2pop) || notebook 
+    Object.values(models).find(model => notebook.name === model.id2pop) || notebook 
     ),
     // Add models that were not on the old notebook list.
-    ...Object.values(MODELS_MAP).filter( model => !model.id2pop && model.isVisible)
-  ],[notebookList])
+    ...Object.values(models).filter( model => !model.id2pop && model.isVisible)
+  ]},[notebookList])
 
-  
-  
     return (
-    <ModelsStyle>
-      <TopAlert options={options} />
+      <ModelsStyle>
+        <TopAlert options={options} />
 
-      
-      {/* <ShowReelHeadline>
-        {!options.length || 'What do you want to create?'}
-      </ShowReelHeadline>
-
-
-      <ShowReelStyle children={ 
-        test
-        .filter(notebook => notebook.featured)
-        .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
-      }/> */}
+        
+        {/* <ShowReelHeadline>
+          {!options.length || 'What do you want to create?'}
+        </ShowReelHeadline>
 
 
-      <ShowReelHeadline>
-        {!options.length || 'What do you want to create?'}
-      </ShowReelHeadline>
+        <ShowReelStyle children={ 
+          test
+          .filter(notebook => notebook.featured)
+          .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
+        }/> */}
 
-      <FilterUi options={options} option={option} />
 
-      <GridStyle>
-      {
-        // hack to hide the ones that are not fetched
-        (test.length > 1) &&
-        test
-        .sort((a,b) => b.featured )
-        // .filter(notebook => !notebook.featured)
-        .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
-      }
-      </GridStyle>
-      
-      <BackGroundImage 
-        src={heroBGOverlay} 
-        top='0'
-        zIndex='-1' 
-        position='fixed'
-        transform='rotate(-180deg)' 
-        alt="hero_bg_overlay" />
+        <ShowReelHeadline>
+          {!options.length || 'What do you want to create?'}
+        </ShowReelHeadline>
 
-    </ModelsStyle>
+        <FilterUi options={options} option={option} />
+
+        <GridStyle>
+        {
+          // hack to hide the ones that are not fetched
+          (test.length > 1) &&
+          test
+          .sort((a,b) => b.featured )
+          // .filter(notebook => !notebook.featured)
+          .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
+        }
+        </GridStyle>
+        
+        <BackGroundImage 
+          src={heroBGOverlay} 
+          top='0'
+          zIndex='-1' 
+          position='fixed'
+          transform='rotate(-180deg)' 
+          alt="hero_bg_overlay" />
+
+      </ModelsStyle>
   )
 };
 

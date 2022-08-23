@@ -1,32 +1,39 @@
 import styled from '@emotion/styled';
 import PrimaryButton from '../../../components/atoms/PrimaryButton';
 import { useFormik } from 'formik';
-import { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
-import { useGPUModels } from '../../../hooks/useGPUModels';
-import { CreateButton } from '../../Home/TryOut';
 
+import Debug from "debug";
 
-const Form = ({ ipfs, Results,
-    onSubmit, isDisabled, 
-    selectedModel, onSelectModel, hasSelect }) => {
+const debug = Debug("Create/Form/index");
+
+const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
+
+  debug("rerender");
 
   const formik = useFormik({
       initialValues: {},
       onSubmit,
       enableReinitialize: true,
   });
-  const { models } = useGPUModels();
 
-  const { inputs, primary_input } = getInputs(models, selectedModel);
+  const { inputs, primary_input } = useMemo(
+    () => getInputs(models, selectedModel), 
+    [models, selectedModel]
+  );
 
-  useEffect(()=>{
 
+  useEffect(()=> {
+    if (!selectedModel)
+      return;
     
     const values = getInitialValues(inputs, primary_input)
+
+    debug("initalValues", values);
 
     // add other fields to the form when user selects the desired model.
     formik.setValues({ 
@@ -36,9 +43,7 @@ const Form = ({ ipfs, Results,
       // override the primary_input value with the old one.
       [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
     })
-  },[selectedModel, models])
-
-  
+},[selectedModel, inputs, primary_input])
 
   useEffect(()=>{
     if (!ipfs.input) return;
@@ -47,6 +52,9 @@ const Form = ({ ipfs, Results,
     formik.setValues({ ...formik.values, ...values });
   },[ipfs?.input])
     
+
+
+
   return <StyledForm onSubmit={formik.handleSubmit} >
 
     { hasSelect &&
@@ -63,26 +71,27 @@ const Form = ({ ipfs, Results,
         <PrimaryInput
           isDisabled={isDisabled || !selectedModel.key}
           formik={formik}
-          models={models}
           selectedModel={selectedModel}
+          primary_input={primary_input}
         />
         
         <ParametersAndResultsStyled>
 
         {Results}
-          <CustomizeParameters
-            isDisabled={isDisabled}
-            inputs={inputs}
-            formik={formik}
-            credits={selectedModel?.credits}
-            />
+        <CustomizeParameters
+          isDisabled={isDisabled}
+          inputs={inputs}
+          formik={formik}
+          credits={selectedModel?.credits}
+          />
         </ParametersAndResultsStyled>
 
       </>
 
 
   </StyledForm>
-};
+}
+
 export default Form;
 
 

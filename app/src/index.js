@@ -4,7 +4,6 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
 import { AuthProvider } from './hooks/useAuth'
-import { GPUModelsProvider } from './hooks/useGPUModels'
 
 import './index.css'
 
@@ -26,10 +25,8 @@ const darkTheme = createMuiTheme({
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
       <AuthProvider>
-        <GPUModelsProvider>
           <CssBaseline />
           <App />
-        </GPUModelsProvider>
       </AuthProvider>
     </ThemeProvider>,
   document.getElementById('root')

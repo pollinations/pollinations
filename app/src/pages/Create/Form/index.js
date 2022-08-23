@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import PrimaryButton from '../../../components/atoms/PrimaryButton';
 import { useFormik } from 'formik';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import CustomizeParameters from './CustomizeParameters';
 import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
@@ -13,15 +13,18 @@ const debug = Debug("Create/Form/index");
 
 const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectModel, hasSelect, models }) => {
 
+  debug("rerender");
+
   const formik = useFormik({
       initialValues: {},
       onSubmit,
       enableReinitialize: true,
   });
 
-  const { inputs, primary_input } = getInputs(models, selectedModel);
-
-
+  const { inputs, primary_input } = useMemo(
+    () => getInputs(models, selectedModel), 
+    [models, selectedModel]
+  );
 
 
   useEffect(()=> {
@@ -32,17 +35,15 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
 
     debug("initalValues", values);
 
-    // setTimeout(() => {
-    //   // add other fields to the form when user selects the desired model.
-    //   formik.setValues({ 
-    //     // all parameters for the form
-    //     ...values,
-        
-    //     // override the primary_input value with the old one.
-    //     [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
-    //   })
-    // }, 10000);
-  },[selectedModel, models, inputs, primary_input])
+    // add other fields to the form when user selects the desired model.
+    formik.setValues({ 
+      // all parameters for the form
+      ...values,
+      
+      // override the primary_input value with the old one.
+      [primary_input.key]: formik.values[Object.keys(formik.values)[0]]
+    })
+},[selectedModel, inputs, primary_input])
 
   useEffect(()=>{
     if (!ipfs.input) return;
@@ -70,8 +71,8 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
         <PrimaryInput
           isDisabled={isDisabled || !selectedModel.key}
           formik={formik}
-          models={models}
           selectedModel={selectedModel}
+          primary_input={primary_input}
         />
         
         <ParametersAndResultsStyled>

@@ -32,9 +32,6 @@ export default React.memo(function Create() {
     // aws stuff
     const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen } = useAWSNode(params);
 
-    // // current model, should move to url
-    // const [ selectedModel, setSelectedModel ] = React.useState({ key: '', url: '' });
-
     const { models } = useGPUModels();
 
     const modelsIndexedByPath = Object.fromEntries(Object.entries(models).map(([_key, model]) => [model.path, model] ));
@@ -50,7 +47,8 @@ export default React.memo(function Create() {
     // dispatch to AWS
     const dispatch = async (values) => {
         values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
-        const { nodeID } = await submitToAWS(values, selectedModel.url, false);
+        debug("submitting to aws", selectedModel.key, values)
+        const { nodeID } = await submitToAWS(values, selectedModel.key, false);
         if (!Model) {
             navigateTo(`/create/${nodeID}`);
         } else {

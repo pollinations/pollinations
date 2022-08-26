@@ -1,13 +1,12 @@
-import { getMedia, mediaToDisplay } from "../../data/media";
 import styled from '@emotion/styled';
 import MediaViewer from "../../components/MediaViewer/";
-import { useMemo } from "react";
+import { getMedia } from "../../data/media";
 
 const Previewer = ({ ipfs }) => {
     if (!ipfs) return null;
 
     // only show first 4 media
-    const medias = getMedia(ipfs.output).slice(0,4);
+    const medias = getMedia(ipfs.output);//.slice(0,4);
     const first = medias[0];
 
     if (!medias.length) return null;

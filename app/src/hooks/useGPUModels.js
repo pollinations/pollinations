@@ -1,7 +1,7 @@
-import { useMemo }  from 'react'
-import { mapObjIndexed, zipObj } from 'ramda';
-import useModelsMetadata from './useFetchModelsMetadata';
 import Debug from "debug";
+import { zipObj } from 'ramda';
+import { useMemo } from 'react';
+import useModelsMetadata from './useFetchModelsMetadata';
 
 const debug = Debug("useGPUModels")
 
@@ -53,8 +53,8 @@ const MODELS = [
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/majesty-diffusion-cog",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/swinir",
-  //  "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion",
+   "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/disco-diffusion",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi",
     "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch",
-    "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",
+    // "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",
 ]

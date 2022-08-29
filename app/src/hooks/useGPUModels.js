@@ -1,13 +1,14 @@
-import { useMemo }  from 'react'
-import { mapObjIndexed, zipObj } from 'ramda';
-import useModelsMetadata from './useFetchModelsMetadata';
 import Debug from "debug";
+import { zipObj } from 'ramda';
+import { useMemo } from 'react';
+import useModelsMetadata from './useFetchModelsMetadata';
 
 const debug = Debug("useGPUModels")
 
 function useGPUModels() {
     const modelsMetadata = useModelsMetadata();
-    debug("modelsMetadata", modelsMetadata);
+    
+    debug("models loaded models metadata", modelsMetadata);
 
     const result = useMemo(() => {
 

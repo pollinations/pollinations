@@ -7,7 +7,8 @@ const debug = Debug("useGPUModels")
 
 function useGPUModels() {
     const modelsMetadata = useModelsMetadata();
-    debug("modelsMetadata", modelsMetadata);
+    
+    debug("models loaded models metadata", modelsMetadata);
 
     const result = useMemo(() => {
 

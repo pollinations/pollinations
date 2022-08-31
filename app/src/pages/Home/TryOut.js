@@ -63,7 +63,7 @@ export default React.memo(function TryOut() {
 const HeroSubHeadLine = styled.p`
 font-family: 'DM Sans';
 font-style: normal;
-font-weight: 500;
+font-weight: 600;
 font-size: 46px;
 line-height: 60px;
 text-align: center;
@@ -148,7 +148,7 @@ color: #FFFFFF;
 :disabled {
   color: grey;
 }
-padding-left: 1rem;
+padding-left: 1.4rem;
 margin: 1em 0;
 `
 // move to own component
@@ -156,7 +156,7 @@ export const CreateButton = styled.button`
 
 width: 129px;
 height: 52;
-background: #D8E449;
+background: rgb(233, 250, 41);
 border-radius: 40px;
 
 margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};
@@ -166,7 +166,7 @@ border: none;
 font-family: 'DM Sans';
 font-style: normal;
 font-weight: 700;
-font-size: 17px;
+font-size: 16px;
 line-height: 22px;
 text-align: center;
 text-transform: uppercase;
@@ -204,12 +204,12 @@ const Previewer = ({ ipfs }) => {
 const PageLayout = styled.div`
 width: 100%;
 padding: ${GlobalSidePadding};
-margin-top: 5em;
+margin-top: 7em;
 display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-grid-gap: 0.4em;
+grid-gap: 0em;
 
 `;
 
@@ -217,8 +217,8 @@ const PreviewerStyle = styled.div`
 width: 80%;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-grid-gap: 0.5em;
-
+grid-gap: 3em;
+padding-top: 1.5em;
 img {
   width: 100%;
 }

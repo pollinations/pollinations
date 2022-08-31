@@ -41,36 +41,39 @@ const MultiplePlatforms = props => {
   const Flying3d = styled.img`
   position: absolute;
   ${props => props.left ? `
-  bottom: -50px;
+  bottom: -40px;
   left: 0;` : `
-  top: -50px;
+  top: 10px;
   right: 0px;`
   };
   z-index: 0;
   `
 
   const HeadlineOnTop = styled(Headline)`
+  font-family: 'DM Sans';
+  font-size: 60px;
   z-index: 1;
   `
   
   const MultiplePlatformsSubHeadline = styled.p`
-  width: 85%;
+  width: 46%;
   max-width: 640px;
   font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: 23px;
+  line-height: 35px;
   color: #FFFFFF;
+  text-align: center;
   `
   const CTA = styled.button`
   z-index: 1;
-  background: #D8E449;
+  background: rgb(233, 250, 41);
   border-radius: 40px;
-  padding: 0.8em 1.2em;
+  padding: 1em 2em;
   border: none;
   margin-top: 5em;
-
+  margin-bottom: 5em;
   cursor: pointer;
   
   font-family: 'DM Sans';

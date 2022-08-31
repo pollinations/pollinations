@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 
-export const GlobalSidePadding = '0 2.5%';
+export const GlobalSidePadding = '0 3%';
 export const MOBILE_BREAKPOINT = '768px'
 
 export const BaseContainer = styled.div`

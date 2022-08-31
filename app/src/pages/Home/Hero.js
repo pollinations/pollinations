@@ -52,7 +52,7 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  margin: 1.7em 0.5em;
+  margin: 1.7em 0.5em 1.7em 1.2em;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;

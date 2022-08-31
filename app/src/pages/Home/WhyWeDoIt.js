@@ -55,8 +55,8 @@ const WhyWeDoIt = props => {
 
         </Headline>
         </div>
-        <StarImage src={StarIMG} top='-50' left='0' />
-        <StarImage src={StarIMG} bottom='-50' right='0' />
+        <StarImage src={StarIMG} top='10' left='50' />
+        <StarImage src={StarIMG} bottom='20' right='50' />
       </GridTwoColumns>
   
   
@@ -77,7 +77,7 @@ font-family: 'DM Sans';
 font-style: normal;
 font-weight: ${props => props.fontWeight || '400'};
 font-size: ${props => props.fontSize || '56px'};
-line-height: ${props => props.lineHeight || '73px'};
+line-height: ${props => props.lineHeight || '70px'};
 color: ${props => props.color || '#000000'};
 margin-top: 0;
 margin: ${props => props.margin || ''};
@@ -97,11 +97,11 @@ const ExplanationText = styled.p`
 font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
-font-size: 24px;
-line-height: 31px;
+font-size: 22px;
+line-height: 30px;
 color: #191919;
 
-margin-top: 7em;
+margin-top: 9em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin-top: 1em;
 }
@@ -112,7 +112,7 @@ width: 100%;
 max-width: 1280px;
 position: relative;
 
-padding: 10em 4em;
+padding: 10em 7em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: ${props => props.alignItems || 'flex-start'};

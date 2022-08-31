@@ -22,7 +22,7 @@ const TopBar = ({ navRoutes }) => {
     <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
 
       <NavLink to='/' style={{ padding: 0 }}>
-        <Logo size='180px' small='150px' margin='0' />  
+        <Logo size='150px' small='150px' margin='0' />  
       </NavLink>
 
       <NavigationItems navRoutes={navRoutes}/>

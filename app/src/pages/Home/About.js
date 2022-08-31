@@ -26,7 +26,7 @@ const About = props => {
   justify-content: center;
   align-items: center;
   
-  padding: 2em 0;
+  padding: 4.5em 0px;
   background-color: black;
   
   font-family: 'DM Sans';
@@ -43,7 +43,7 @@ const About = props => {
   }
   
   i {
-    color: #D8E449;
+    color: rgb(233, 250, 41);
     font-weight: 400;
   }
   

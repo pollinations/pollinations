@@ -87,7 +87,7 @@ const MODELS = [{
         image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/adampi"
     },
     {
-        listed: true,
+        listed: false,
         image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dreamfields-torch"
     },
     // "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-envisioning",

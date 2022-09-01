@@ -1,16 +1,15 @@
+import styled from '@emotion/styled'
+import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
 import { useMemo } from "react"
 import TopAlert from "../components/organisms/TopAlert"
+import NotebookCard from "../components/temp/NotebookCard"
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
-import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
-import styled from '@emotion/styled'
-import NotebookCard from "../components/temp/NotebookCard"
-import FeaturedNotebookCard from "../components/temp/FeaturedNotebookCard"
 
-import FilterUi from "../components/temp/FilterUi"
-import { GridStyle, BaseContainer, BackGroundImage, Headline } from '../styles/global'
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
+import { BackGroundImage, BaseContainer, GridStyle, Headline } from '../styles/global'
 
 export default function Models() {
 
@@ -23,13 +22,10 @@ export default function Models() {
 
   const test = useMemo(()=> { 
     console.error("modelsnlist", models, notebookList)
-    return [
-    // Check if the model that runs on our gpu is also on the old notebook list and replace.
-    ...notebookList.map( notebook => 
-    Object.values(models).find(model => notebook.name === model.id2pop) || notebook 
-    ),
+    return [,
     // Add models that were not on the old notebook list.
-    ...Object.values(models).filter( model => !model.id2pop && model.isVisible)
+    ...Object.values(models).filter( model => model.listed),
+    ...notebookList
   ]},[notebookList])
 
     return (

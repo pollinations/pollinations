@@ -1,14 +1,17 @@
-import { Box, Card, CardContent, CardHeader, IconButton, Tooltip, Typography } from "@material-ui/core";
+import styled from '@emotion/styled';
+import { Box, CardContent, Tooltip, Typography } from "@material-ui/core";
 import { Link } from "react-router-dom";
 import RouterLink from "../molecules/RouterLink";
 import NotebookImage from "../organisms/markdownParsers/NotebookImage";
 import NotebookInfo from "../organisms/markdownParsers/NotebookInfo";
-import styled from '@emotion/styled';
 
 
 const NotebookCard = ({ notebook }) => {
     let { category, name, path, description, featured, url } = notebook
   
+    // use a regular expression to remove leading number and whitespace from name
+    name = name?.replace(/^\d+\s*/, '')
+    
     if (!description) return null;
   
     // remove credits etc (they are separated by a horizontal rule)
@@ -28,7 +31,7 @@ const NotebookCard = ({ notebook }) => {
             <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
             <CardHeaderStyle>
               <div>
-                <CardTitle children={featured ? name : name?.slice(2)} to={featured ?  ownGpuPath : path}  variant="h4" />
+                <CardTitle children={name} to={featured ?  ownGpuPath : path}  variant="h4" />
                 <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />
               </div>
               <Tooltip title="This model runs on our own GPU.">

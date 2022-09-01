@@ -23,7 +23,7 @@ return <FooterStyle>
     </div>
 
     <NavLink to='/' style={{ padding: 0 }}>
-        <Logo size='220px' small='150px' margin='0' />  
+        <Logo size='250px' small='150px' margin='0' />  
     </NavLink>
 </FooterStyle>
 }
@@ -84,7 +84,7 @@ min-height: 415px;
 display: flex;
 justify-content: space-between;
 
-padding: ${GlobalSidePadding};
+padding: 4em 3% 140px;
 padding-top: 4em;
 background-color: black;
 
@@ -102,5 +102,7 @@ div {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     align-items: flex-start;
 }
-
+a {
+    padding: 16px 0;
+}
 `

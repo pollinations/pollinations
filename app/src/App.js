@@ -1,4 +1,3 @@
-import Container from "@material-ui/core/Container"
 import awaitSleep from "await-sleep"
 import Debug from "debug"
 import { useCallback, useEffect } from "react"
@@ -10,9 +9,9 @@ import PageTemplate from "./components/PageTemplate"
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
 // Hooks
-import useColabNode from "./hooks/useColabNode"
 import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
 import useIPFSWrite from "@pollinations/ipfs/reactHooks/useIPFSInputWrite"
+import useColabNode from "./hooks/useColabNode"
 import usePollenDone from "./hooks/usePollenDone"
 // Pages
 import Creator from "./pages/Create"
@@ -23,17 +22,17 @@ import Home from "./pages/Home/"
 import Models from "./pages/Models"
 import ResultViewer from "./pages/ResultViewer"
 
-import { 
-  ROUTES, 
-  MARKDOWN_ROUTES, 
-  MAIN_NAV_ROUTES, 
-  OWNGPU_ROUTES} from "./routes/publicRoutes"
-import Integrate from "./pages/Integrate"
 import About from "./pages/About"
+import Integrate from "./pages/Integrate"
+import {
+  MAIN_NAV_ROUTES, MARKDOWN_ROUTES, ROUTES
+} from "./routes/publicRoutes"
 import ScrollToTop from './utils/ScrollToTop'
 
-import CreateModel from './pages/Create/'
 import Showcase3d from "./pages/3dShowcase"
+import CreateModel from './pages/Create/'
+
+import { Alert } from "@material-ui/lab"
 
 const debug = Debug("AppContainer")
 
@@ -60,7 +59,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-
+      <Alert severity="warning">Sorry! We are experiencing an unusually high load of users at the moment and need a little while to scale up our backend GPUs... If possible please try again later.</Alert>
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}

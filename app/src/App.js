@@ -58,7 +58,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-      <Alert severity="warning"> Sorry! The bees are crazy today.  We are experiencing an unusually high amount of pollinating at the moment and need a little while to scale up our backend... If possible please try again later.</Alert>
+      <Alert severity="warning"> The bees are crazy today.  We are experiencing an unusually high amount of pollinating at the moment. Please bear with us while we scale up our backend soon...</Alert>
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}

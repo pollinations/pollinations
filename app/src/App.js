@@ -17,7 +17,6 @@ import usePollenDone from "./hooks/usePollenDone"
 import Creator from "./pages/Create"
 import Dalle from "./pages/Dalle"
 import Envisioning from "./pages/Envisioning"
-import Feed from "./pages/Feed"
 import Home from "./pages/Home/"
 import Models from "./pages/Models"
 import ResultViewer from "./pages/ResultViewer"
@@ -25,10 +24,11 @@ import ResultViewer from "./pages/ResultViewer"
 import About from "./pages/About"
 import Integrate from "./pages/Integrate"
 import {
-  MAIN_NAV_ROUTES, MARKDOWN_ROUTES, ROUTES
+  MAIN_NAV_ROUTES, MARKDOWN_ROUTES
 } from "./routes/publicRoutes"
 import ScrollToTop from './utils/ScrollToTop'
 
+import Alert from "@material-ui/lab/Alert"
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
 
@@ -58,6 +58,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
+      <Alert severity="warning"> The bees are crazy today.  We are experiencing an unusually high amount of pollinating at the moment. Please bear with us while we scale up our backend soon...</Alert>
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}
@@ -66,7 +67,7 @@ const Pollinations = () => {
           <Route exact path='about' element={<About/>}/>
           <Route exact path='integrate' element={<Integrate/>}/>
           <Route exact path='3d' element={<Showcase3d/>}/>
-          <Route exact path={ROUTES.feed.to} element={<Feed />} />
+          {/* <Route exact path={ROUTES.feed.to} element={<Feed />} /> */}
 
           {
             MARKDOWN_ROUTES.map( route => (

@@ -4,8 +4,9 @@ import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';
 import { MOBILE_BREAKPOINT } from "../../../styles/global";
 import CreditsView from "./Credits";
+import { CreateButton } from "../../Home/TryOut";
 
-const CustomizeParameters = ({ formik, isDisabled, inputs, credits }) => { 
+const CustomizeParameters = ({ formik, isDisabled, inputs, credits, hasSubmit }) => { 
 
     if (!inputs) return null;
     if (!Object.keys(inputs).length) return null;
@@ -39,15 +40,24 @@ const CustomizeParameters = ({ formik, isDisabled, inputs, credits }) => {
             </ParametersStyle>
         </Accordion>
         <CreditsView credits={credits}/>
+        {
+            hasSubmit && <CreateButtonStyle>
+                <CreateButton type='submit' disabled={isDisabled} marginLeft style={{marginLeft: 'auto'}}>
+                    { formik.isSubmitting ? 'Creating...' : 'Create' }
+                </CreateButton>
+            </CreateButtonStyle>
+        }
     </Styles>
 }
 
 const Styles = styled.div`
-width: 30%;
+grid-area: info;
+
+// width: 30%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100%;
 }
-padding: 0 1em;
+// padding: 0 1em;
 margin-bottom: 2em;
 
 // MUI overrides 
@@ -102,5 +112,12 @@ grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 width: 100%;
 gap: 2em;
 `
+const CreateButtonStyle = styled.div`
+width: 100%;
+display: flex;
+justify-content: flex-end;
+
+`
+
 
 export default CustomizeParameters;

@@ -1,57 +1,41 @@
 
 import DropZone from './InputsUI/File';
-import String from './InputsUI/String';
 import styled from '@emotion/styled'
-import { CircularProgress, TextField } from '@material-ui/core';
-import { getInputs } from './utils';
 import { CreateButton, CreateInput } from '../../Home/TryOut';
-import Debug from "debug";
-
-const debug = Debug("Create/Form/PrimaryInput")
-
 
 const PrimaryInput = ({ isDisabled, formik, primary_input, selectedModel }) => {
 
+// if file or stablediffusion then render the button under credits/customize.
+const isStable = selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private'
+const isFile = (primary_input?.type === 'string') && (primary_input?.format === 'uri');
 
-const type = primary_input.type;
 
-const isFile = (type === 'string') && (primary_input.format === 'uri');
-
-
-if (selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private') return <>
-<CreateTextArea
-    maxlength={10}
-    rows={4}
-    value={formik.values[primary_input?.key]}
-    onChange={formik.handleChange} 
-    name={primary_input.key} 
-    title={primary_input.title} 
-    disabled={isDisabled}
-    placeholder='Type your prompt'
-/>
-<CreateButton type='submit' disabled={isDisabled} marginLeft style={{alignSelf: 'flex-end'}}>
-    { formik.isSubmitting ? 'Creating...' : 'Create' }
-</CreateButton>
-</>
+if (isStable) return <>
+    <CreateTextArea
+        maxlength={10}
+        rows={4}
+        value={formik.values[primary_input?.key]}
+        onChange={formik.handleChange} 
+        name={primary_input.key} 
+        title={primary_input.title} 
+        disabled={isDisabled}
+        placeholder='Type your prompt'
+    />
+</>;
 
 if (isFile) return <>
-<DropZone 
-    value={formik.values[primary_input?.key]} 
-    setFieldValue={formik.setFieldValue} 
-    id={primary_input.key} 
-    title={primary_input.title} 
-    disabled={isDisabled}
-    fullWidth
-/>
-<CreateButton type='submit' disabled={isDisabled} marginLeft style={{alignSelf: 'flex-end'}}>
-    { formik.isSubmitting ? 'Creating...' : 'Create' }
-</CreateButton>
+    <DropZone 
+        value={formik.values[primary_input?.key]} 
+        setFieldValue={formik.setFieldValue} 
+        id={primary_input.key} 
+        title={primary_input.title} 
+        disabled={isDisabled}
+        fullWidth
+    />
 </>;
 
 
-return <FlexCenter>
-
-    <CreateInputFullWidth
+return <CreateInputFullWidth
         variant='filled' 
         value={formik.values[primary_input?.key]}
         onChange={formik.handleChange} 
@@ -61,24 +45,14 @@ return <FlexCenter>
         placeholder='Type your prompt'
         fullWidth
         />
-    <CreateButton type='submit' disabled={isDisabled}>
-        { formik.isSubmitting ? 'Creating...' : 'Create' }
-    </CreateButton>
-</FlexCenter>
 }
 
 export default PrimaryInput;
 
-const FlexCenter = styled.div`
-width: 100%;
-display: flex;
-align-items: center;
-justify-content: center;
-`
-
 const CreateInputFullWidth = styled(CreateInput)`
 width: 100%;
-padding-right: calc(153px - 0.5em);
+padding: 0 0.75em;
+// padding-right: calc(153px - 0.5em);
 `
 
 const CreateTextArea = styled.textarea`

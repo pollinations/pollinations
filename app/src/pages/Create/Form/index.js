@@ -53,10 +53,7 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
     
 
 
-  // if file or stablediffusion then render the button under credits/customize.
-  const isStable = selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private'
-  const isFile = (primary_input?.type === 'string') && (primary_input?.format === 'uri');
-
+  
 
   return <>
     <StyledForm onSubmit={formik.handleSubmit} >
@@ -66,8 +63,6 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
           formik={formik}
           selectedModel={selectedModel}
           primary_input={primary_input}
-          isFile={isFile}
-          isStable={isStable}
       />
           
       <ParametersAndResultsStyled>
@@ -77,7 +72,7 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
           inputs={inputs}
           formik={formik}
           credits={selectedModel?.credits}
-          hasSubmit={isFile || isStable}
+          hasSubmit
           />
       </ParametersAndResultsStyled>
 

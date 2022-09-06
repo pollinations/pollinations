@@ -3,7 +3,11 @@ import DropZone from './InputsUI/File';
 import styled from '@emotion/styled'
 import { CreateButton, CreateInput } from '../../Home/TryOut';
 
-const PrimaryInput = ({ isDisabled, formik, primary_input, isStable, isFile }) => {
+const PrimaryInput = ({ isDisabled, formik, primary_input, selectedModel }) => {
+
+// if file or stablediffusion then render the button under credits/customize.
+const isStable = selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private'
+const isFile = (primary_input?.type === 'string') && (primary_input?.format === 'uri');
 
 
 if (isStable) return <>
@@ -31,9 +35,7 @@ if (isFile) return <>
 </>;
 
 
-return <FlexCenter>
-
-    <CreateInputFullWidth
+return <CreateInputFullWidth
         variant='filled' 
         value={formik.values[primary_input?.key]}
         onChange={formik.handleChange} 
@@ -43,24 +45,14 @@ return <FlexCenter>
         placeholder='Type your prompt'
         fullWidth
         />
-    <CreateButton type='submit' disabled={isDisabled}>
-        { formik.isSubmitting ? 'Creating...' : 'Create' }
-    </CreateButton>
-</FlexCenter>
 }
 
 export default PrimaryInput;
 
-const FlexCenter = styled.div`
-width: 100%;
-display: flex;
-align-items: center;
-justify-content: center;
-`
-
 const CreateInputFullWidth = styled(CreateInput)`
 width: 100%;
-padding-right: calc(153px - 0.5em);
+padding: 0 0.75em;
+// padding-right: calc(153px - 0.5em);
 `
 
 const CreateTextArea = styled.textarea`

@@ -62,10 +62,10 @@ export default React.memo(function Create() {
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
             <FlexBetween>
-            <h2>
-                {selectedModel.name}
-            </h2>
-            { isLoading && <CircularProgress thickness={2} size={20} /> }
+                <h2>
+                    {selectedModel.name}
+                </h2>
+                { isLoading && <CircularProgress thickness={2} size={20} /> }
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }
             {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
@@ -78,12 +78,16 @@ export default React.memo(function Create() {
                 onSubmit={async (values) => dispatch(values) } 
                 Results={
                 <ResultsArea>
-                    { ipfs?.output?.success === false && <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/>}
-                    { isAdmin && ipfs?.output?.done === true &&<Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                    { isAdmin && ipfs?.output?.done === true && <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
                         Add to Examples
                     </Button>
                     }
-                    <Previewer ipfs={ipfs}  /> 
+                    { 
+                        ipfs?.output?.success === false ?
+                        <FailureViewer ipfs={ipfs} contentID={ipfs[".cid"]}/> 
+                        :
+                        <Previewer ipfs={ipfs}  /> 
+                    }
                 </ResultsArea>
                 }
             />
@@ -112,12 +116,7 @@ width: 100%;
 
 `
 const ResultsArea = styled.div`
-width: 70%;
-// max-width: 100%;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: 100%;
-  max-width: 100%;
-}
+grid-area: results;
 `
 
 function useRandomPollen(nodeID, selectedModel, setNodeID) {

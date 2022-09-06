@@ -1,13 +1,12 @@
 import styled from '@emotion/styled';
-import PrimaryButton from '../../../components/atoms/PrimaryButton';
 import { useFormik } from 'formik';
 import React, { useEffect, useMemo } from 'react';
 import CustomizeParameters from './CustomizeParameters';
-import SelectModel from './SelectModel';
 import PrimaryInput from './PrimaryInput';
 import { getInitialValues, getInputs } from './utils';
 
 import Debug from "debug";
+import { MOBILE_BREAKPOINT } from '../../../styles/global';
 
 const debug = Debug("Create/Form/index");
 
@@ -54,42 +53,37 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
     
 
 
+  // if file or stablediffusion then render the button under credits/customize.
+  const isStable = selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private'
+  const isFile = (primary_input?.type === 'string') && (primary_input?.format === 'uri');
 
-  return <StyledForm onSubmit={formik.handleSubmit} >
 
-    { hasSelect &&
-      <SelectModel 
-        models={models} 
-        isDisabled={isDisabled}
-        selectedModel={selectedModel} 
-        onSelectModel={onSelectModel}
-      />
-    }
+  return <>
+    <StyledForm onSubmit={formik.handleSubmit} >
 
-      <>
-
-        <PrimaryInput
+      <PrimaryInput
           isDisabled={isDisabled || !selectedModel.key}
           formik={formik}
           selectedModel={selectedModel}
           primary_input={primary_input}
-        />
-        
-        <ParametersAndResultsStyled>
-
+          isFile={isFile}
+          isStable={isStable}
+      />
+          
+      <ParametersAndResultsStyled>
         {Results}
         <CustomizeParameters
           isDisabled={isDisabled}
           inputs={inputs}
           formik={formik}
           credits={selectedModel?.credits}
+          hasSubmit={isFile || isStable}
           />
-        </ParametersAndResultsStyled>
-
-      </>
+      </ParametersAndResultsStyled>
 
 
-  </StyledForm>
+    </StyledForm>
+  </>
 }
 
 export default Form;
@@ -105,7 +99,15 @@ width: 100%;
 
 const ParametersAndResultsStyled = styled.div`
 width: 100%;
-display: flex;
-flex-wrap: wrap;
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;
+grid-template-rows: auto;
+grid-template-areas: "results results info";
+
+@media(max-width: ${MOBILE_BREAKPOINT}){
+  grid-template-areas: 
+    "info info info"
+    "results results results";
+}
 `
 

@@ -8,7 +8,7 @@ export const FailureViewer = ({ contentID, ipfs }) => {
 
   const failureMessage = values(failureHelpers).reduce(
     (failureString, getMessage) =>
-      getMessage(log) ? failureString + "\n" + getMessage(log) : failureString,
+      log && getMessage(log) ? failureString + "\n" + getMessage(log) : failureString,
     ""
   )
 
@@ -25,7 +25,7 @@ export const FailureViewer = ({ contentID, ipfs }) => {
 
 const failureHelpers = {
   outOfGPUMemory: (log) =>
-    log.includes("RuntimeError: CUDA out of memory.") ? outOfGPUMemoryText : null,
+    log?.includes("RuntimeError: CUDA out of memory.") ? outOfGPUMemoryText : null,
   noGPU: (log) => (log.includes("RuntimeError: No CUDA GPUs are available") ? noGPUText : null),
   generalException: (log) => {
     const lastLine = last(log.split("\n").filter((line) => line.trim() !== ""))

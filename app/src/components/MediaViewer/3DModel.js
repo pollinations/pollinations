@@ -13,7 +13,7 @@ export default function ObjViewer({ content, style, filename }) {
       <div>
         <model-viewer 
                 src={content} 
-                style={{...style, width: "70vh", height: "70vh"}} 
+                style={{...style, width: "70vh", height: "50vh"}} 
                 camera-controls 
                 exposure={0.3}
           />

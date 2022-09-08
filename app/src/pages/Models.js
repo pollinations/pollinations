@@ -46,7 +46,7 @@ export default function Models() {
 
 
         <ShowReelHeadline>
-          {!options.length || 'What do you want to create?'}
+          {!options.length || 'What will you create?'}
         </ShowReelHeadline>
 
         <FilterUi options={options} option={option} />

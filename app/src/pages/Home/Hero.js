@@ -1,7 +1,7 @@
-import styled from '@emotion/styled'
+import styled from '@emotion/styled';
+import heroBG from '../../assets/imgs/bghero.jpg';
+import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg';
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global';
-import heroBG from '../../assets/imgs/bghero.jpg'
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 // Hero Section
 
 const Hero = props => {
@@ -9,7 +9,7 @@ const Hero = props => {
     return <HeroGradient>
   
       <HeroHeadline>
-        Create all kinds of <br/> media with AI power
+        Create with AI
       </HeroHeadline>
       
   

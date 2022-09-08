@@ -108,6 +108,7 @@ h3 {
   line-height: 1.167;
   font-family: Lato;
 }
+margin-bottom: 2em;
 `;
 
 

@@ -21,7 +21,7 @@ const MultiplePlatforms = props => {
         of magic to their business by integrating with Pollinations’ API.
       </MultiplePlatformsSubHeadline>
   
-      <CTA variant='contained' onClick={() => navigate('/about')}>
+      <CTA variant='contained' onClick={() => navigate('/integrate')}>
         How it works
       </CTA>
       <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen-min.gif'/>

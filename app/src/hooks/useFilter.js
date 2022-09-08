@@ -33,7 +33,7 @@ const useFilter = (notebooks) => {
         )
 
         setNotebookList(result)
-        setOptions([emptyCell, ...new Set(result.map( notebook => notebook.controls.output ))])
+        setOptions([...new Set(result.map( notebook => notebook.controls.output )), emptyCell])
     },[notebooks])
 
     const filtered = notebookList.filter( 

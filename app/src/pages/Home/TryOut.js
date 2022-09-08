@@ -8,6 +8,7 @@ import { getMedia } from '../../data/media';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 // take it away
 import { useFormik } from 'formik';
@@ -113,7 +114,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     )
   }   
     <CreateButton disabled={loading} formik={formik} >
-        CREATE
+        {loading ? <CircularProgress thickness={2} size={20} /> : 'CREATE'}
     </CreateButton>
      
 

@@ -58,7 +58,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-      <Alert severity="warning">So much pollinating going on, we need to upgrade our database backend. It may be unstable for a little while.</Alert> 
+      <Alert severity="warning">So much pollinating going on, we need to upgrade our database backend. Diffusion may be unstable for a little while.</Alert> 
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}

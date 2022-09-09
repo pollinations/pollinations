@@ -1,24 +1,23 @@
 import styled from '@emotion/styled';
-import LinearProgress from '@material-ui/core/LinearProgress';
-import React, { useEffect } from "react";
-import Form from './Form';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
-import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import React, { useEffect } from "react";
 import { SEOMetadata } from '../../components/Helmet';
+import { GlobalSidePadding } from '../../styles/global';
+import Form from './Form';
  
-import Previewer from './Previewer';
-import { useNavigate, useParams } from 'react-router-dom';
 import { Button, CircularProgress } from '@material-ui/core';
+import { useNavigate, useParams } from 'react-router-dom';
+import Previewer from './Previewer';
 
 import Debug from 'debug';
 
+import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+import { FailureViewer } from '../../components/FailureViewer';
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
-import { FailureViewer } from '../../components/FailureViewer';
-import useLocalStorage from '../../hooks/useLocalStorage';
-import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
-import { useIsAdmin } from '../../hooks/useIsAdmin';
 import useGPUModels from '../../hooks/useGPUModels';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 
 
@@ -30,7 +29,7 @@ export default React.memo(function Create() {
     const { Model } = params;
 
     // aws stuff
-    const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen } = useAWSNode(params);
+    const { submitToAWS, ipfs, isLoading, setNodeID, updatePollen, queuePosition } = useAWSNode(params);
 
     const { models } = useGPUModels();
 
@@ -57,7 +56,7 @@ export default React.memo(function Create() {
     }
 
     debug("selectedModel", selectedModel, Model, Object.keys(models));
-
+    
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
         <ParametersArea>
@@ -66,6 +65,7 @@ export default React.memo(function Create() {
                     {selectedModel.name}
                 </h2>
                 { isLoading && <CircularProgress thickness={2} size={20} /> }
+                { queuePosition > 0 ?<>{queuePosition}</> : "" }
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }
             {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}

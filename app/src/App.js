@@ -28,6 +28,7 @@ import {
 } from "./routes/publicRoutes"
 import ScrollToTop from './utils/ScrollToTop'
 
+import Alert from "@material-ui/lab/Alert"
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
 
@@ -57,7 +58,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-      {/* <Alert severity="warning">We are currently upgrading our storage backend. Pollinations will be back working shortly.</Alert>  */}
+      <Alert severity="warning">So much pollinating going on, we need to upgrade our database backend. It may be unstable for a little while.</Alert> 
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}

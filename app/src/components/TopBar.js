@@ -10,6 +10,7 @@ import Logo from './Logo'
 import HamburgerIcon from '@material-ui/icons/Menu'
 import NavigationItems from "./organisms/NavigationItems"
 import { FlexBetween } from "../styles/classes"
+import Alert from "@material-ui/lab/Alert"
 
 
 const TopBar = ({ navRoutes }) => {
@@ -20,7 +21,9 @@ const TopBar = ({ navRoutes }) => {
   
   return <>
     <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
-
+    <Alert severity="info">So much pollinating going on that diffusion may be unstable for a little while. Join our <a href='https://discord.gg/XXd99CrkCr'>discord</a> for a chat, help or updates.</Alert> 
+    
+      <NavBarStyle>
       <NavLink to='/' style={{ padding: 0 }}>
         <Logo size='150px' small='150px' margin='0' />  
       </NavLink>
@@ -34,6 +37,7 @@ const TopBar = ({ navRoutes }) => {
         </IconButton>
       </MenuButton>
 
+    </NavBarStyle>
     </TopContainer>
 
     <TemporaryDrawer drawerState={drawerState}>
@@ -44,14 +48,15 @@ const TopBar = ({ navRoutes }) => {
 
 const TopContainer = styled.div`
   position: ${props => props.position};
+  width: 100%;
+  `
+  const NavBarStyle = styled.div`
   ${FlexBetween}
-
   font-size: 1rem;
   .MuiTypography-colorPrimary{
   color: #fdfdfd !important;  
   }
   padding: ${GlobalSidePadding}
-
 `
 
 

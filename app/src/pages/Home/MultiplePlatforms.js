@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, Headline } from '../../styles/global'
+import { BackGroundImage, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
 
 import { useNavigate } from 'react-router-dom'
@@ -47,6 +47,14 @@ const MultiplePlatforms = props => {
   right: 0px;`
   };
   z-index: 0;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    ${props => props.left ? `
+    bottom: -40px;
+    left: 0px;` : `
+    top: 10px;
+    right: 0px;`
+    };
+  }
   `
 
   const HeadlineOnTop = styled(Headline)`
@@ -65,6 +73,7 @@ const MultiplePlatforms = props => {
   line-height: 35px;
   color: #FFFFFF;
   text-align: center;
+  z-index:3;
   `
   const CTA = styled.button`
   z-index: 1;

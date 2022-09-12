@@ -117,6 +117,10 @@ display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: ${props => props.alignItems || 'flex-start'};
 
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  padding: 10em 1.5em;
+}
+
 `
 const HeroStyle = styled.div`
 display: flex;
@@ -124,6 +128,7 @@ flex-direction: column;
 align-items: center;
 
 width: 100%;
+max-width: 100vw;
 position: relative;
 padding: 0em 0 10em 0;
 

@@ -13,7 +13,7 @@ const Hero = props => {
       </HeroHeadline>
       
   
-      <BackGroundImage 
+      <HeroImage 
         src={heroBGOverlay} 
         zIndex='-1' 
         opacity='68%' 
@@ -21,7 +21,7 @@ const Hero = props => {
         transform='rotate(-180deg)' 
         alt="hero_bg_overlay" />
       
-      <BackGroundImage 
+      <HeroImage 
         src={heroBG} 
         zIndex='-2' 
         alt="hero_bg" />
@@ -48,7 +48,11 @@ const Hero = props => {
     rgba(151, 190, 67, 0.01) 100%);
     max-height: 100vh;
   `
-  
+  const HeroImage = styled(BackGroundImage)`
+  height: auto;
+  min-height: 100vh;
+
+  `
   
   
   const HeroHeadline = styled.p`

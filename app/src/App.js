@@ -28,7 +28,6 @@ import {
 } from "./routes/publicRoutes"
 import ScrollToTop from './utils/ScrollToTop'
 
-import Alert from "@material-ui/lab/Alert"
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
 
@@ -58,7 +57,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
-      <Alert severity="info">So much pollinating going on that diffusion may be unstable for a little while. Join our <a href='https://discord.gg/XXd99CrkCr'>discord</a> for a chat, help or updates.</Alert> 
+      
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 
       {/* Children that get IPFS state */}

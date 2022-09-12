@@ -43,17 +43,15 @@ const MultiplePlatforms = props => {
   ${props => props.left ? `
   bottom: -40px;
   left: 0;` : `
-  top: 10px;
+  top: -200px;
   right: 0px;`
   };
-  z-index: 0;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     ${props => props.left ? `
-    bottom: -40px;
-    left: 0px;` : `
-    top: 10px;
-    right: 0px;`
-    };
+`: `
+  display: none;
+  `}
+  z-index: 0;
   }
   `
 
@@ -74,6 +72,9 @@ const MultiplePlatforms = props => {
   color: #FFFFFF;
   text-align: center;
   z-index:3;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    width: 90%;
+  }
   `
   const CTA = styled.button`
   z-index: 1;

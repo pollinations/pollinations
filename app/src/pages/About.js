@@ -20,7 +20,7 @@ const Content = [
       tool into 3d modelers workflow.
       <br/> <br/>
       Get in touch with us if you’d like to offer this kind of experience. 
-      See <Link to='/integrate' children='here' style={{color: 'black'}}/> how it works or send us a hello at hello@pollinations.ai.
+      See <Link to='/solutions' children='here' style={{color: 'black'}}/> how it works or send us a hello at hello@pollinations.ai.
       </>,
   },
   {

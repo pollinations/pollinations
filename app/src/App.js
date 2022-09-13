@@ -64,7 +64,7 @@ const Pollinations = () => {
         <Routes>
           <Route exact path='/' element={<Home />} />
           <Route exact path='about' element={<About/>}/>
-          <Route exact path='integrate' element={<Integrate/>}/>
+          <Route exact path='solutions' element={<Integrate/>}/>
           <Route exact path='3d' element={<Showcase3d/>}/>
           {/* <Route exact path={ROUTES.feed.to} element={<Feed />} /> */}
 

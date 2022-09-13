@@ -1,10 +1,10 @@
 export const ROUTES = {
     about: { label: "About", to: "/about", id: 'about' },
-    integrate: { label: "Integrate", to: "/integrate", id: 'integrate' },
+    solutions: { label: "Solutions", to: "/solutions", id: 'solutions' },
     // feed: { label: "Feed", to: "/feed", id: 'feed' },
     help: { label: "Help", to: "/help", id: 'help' },
     impressum: { label: "impressum", to: "/impressum", id: 'impressum' },
-    models: { label: "Create", to: '/c', id: 'create' },
+    models: { label: "Try", to: '/c', id: 'create' },
     // integrate: { label: "integrate", to: "/integrate" },
     // myPollens: { label: "my pollens", to: "/localpollens" },
     // expo: { children: "made with pollinations", to: "/expo" },
@@ -12,7 +12,7 @@ export const ROUTES = {
 export const MAIN_NAV_ROUTES = [
     ROUTES.models,
     ROUTES.about, 
-    ROUTES.integrate,
+    ROUTES.solutions,
     // ROUTES.feed,
     // ROUTES.help
 ]

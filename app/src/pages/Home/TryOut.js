@@ -150,6 +150,7 @@ color: #FFFFFF;
   color: grey;
 }
 padding-left: 1.4rem;
+padding-right: 9rem;
 margin: 1em 0;
 `
 // move to own component

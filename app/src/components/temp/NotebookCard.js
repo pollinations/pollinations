@@ -30,7 +30,7 @@ const NotebookCard = ({ notebook }) => {
         <div style={{ borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)'}}>
             <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
             <CardHeaderStyle>
-              <div>
+              <div style={{maxWidth: '95%'}}>
                 <CardTitle children={name} to={featured ?  ownGpuPath : path}  variant="h4" />
                 <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />
               </div>
@@ -67,6 +67,12 @@ const NotebookCard = ({ notebook }) => {
     justify-content: space-between;
     align-items: center;
     padding: 1em;
+
+    .MuiTypography-h4{
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     `
 
 

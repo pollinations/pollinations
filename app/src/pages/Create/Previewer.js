@@ -40,7 +40,7 @@ export default Previewer
 const OutputStage = styled.div`
 width: 100%;
 height: 50vh;
-padding: 1em;
+padding: 1.3em;
 display: flex;
 justify-content: center;
 align-items: center;
@@ -62,6 +62,7 @@ img{
 const StepGallery = styled.div`
 width: 100%;
 margin-top: 2em;
+padding: 1.3em;
 
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

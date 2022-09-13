@@ -49,9 +49,11 @@ const Hero = props => {
     max-height: 100vh;
   `
   const HeroImage = styled(BackGroundImage)`
+  height: 100%;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
   height: auto;
   min-height: 100vh;
-
+  }
   `
   
   

@@ -7,7 +7,7 @@ justify-content: space-between;
 align-items: center;
 `
 export const BaseButtonStyle = `
-  background-color: #CEE480 !important;
+  background-color: rgb(233, 250, 41) !important;
   color: black !important;
   font-size: 1rem;
   font-weight: 600;

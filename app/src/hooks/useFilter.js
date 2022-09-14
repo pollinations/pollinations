@@ -8,7 +8,7 @@ const category2controls = category_string => {
     let controls = category_string.substring(2).split('-')
     return {
         input: controls[0],
-        output: controls[2] || 'Featured'
+        output: controls[2] || 'Image'
     }
 }
 const emptyCell = 'Anything'

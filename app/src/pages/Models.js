@@ -17,32 +17,23 @@ export default function Models() {
 
   const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
   const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
-  
-  const { notebookList, options, option } = useFilter(notebooks)
 
-  const test = useMemo(()=> { 
-    console.error("modelsnlist", models, notebookList)
-    return [,
-    // Add models that were not on the old notebook list.
-    ...Object.values(models).filter( model => model.listed),
-    ...notebookList
-  ]},[notebookList])
+  const test = useMemo(()=>{
+    if (!notebooks) return [];
+    return [
+      ...Object.values(models).filter( model => model.listed),
+      ...notebooks ]
+  },[notebooks, models])
+
+
+
+  const { notebookList, options, option } = useFilter(test)
+
+
 
     return (
       <ModelsStyle>
         <TopAlert options={options} />
-
-        
-        {/* <ShowReelHeadline>
-          {!options.length || 'What do you want to create?'}
-        </ShowReelHeadline>
-
-
-        <ShowReelStyle children={ 
-          test
-          .filter(notebook => notebook.featured)
-          .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)
-        }/> */}
 
 
         <ShowReelHeadline>
@@ -54,8 +45,8 @@ export default function Models() {
         <GridStyle>
         {
           // hack to hide the ones that are not fetched
-          (test.length > 1) &&
-          test
+          (notebookList.length > 0) &&
+          notebookList
           .sort((a,b) => b.featured )
           // .filter(notebook => !notebook.featured)
           .map( notebook => <NotebookCard notebook={notebook} key={notebook.name} />)

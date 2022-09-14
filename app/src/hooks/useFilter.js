@@ -8,7 +8,7 @@ const category2controls = category_string => {
     let controls = category_string.substring(2).split('-')
     return {
         input: controls[0],
-        output: controls[2]
+        output: controls[2] || 'Image'
     }
 }
 const emptyCell = 'Anything'
@@ -26,7 +26,9 @@ const useFilter = (notebooks) => {
         if (!notebooks.length) return
         if (notebooks === undefined) return
         
-        let result = notebooks.map( notebook => ({
+        let result = notebooks
+        .filter(notebook => notebook.category)
+        .map( notebook => ({
             ...notebook, 
             controls: category2controls(notebook.category)
             })

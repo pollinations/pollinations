@@ -14,7 +14,7 @@ export default function Home() {
     <TryOut />
     <About />
     <MultiplePlatforms />
-    <EndlessPossibilites />
+    {/* <EndlessPossibilites /> */}
     <WhyWeDoIt />
   </HomeStyle>
 }

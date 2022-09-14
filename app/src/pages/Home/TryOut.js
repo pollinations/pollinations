@@ -31,9 +31,13 @@ const form = {
   // }
 }
 
-const initialCIDs = ["QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44","QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
-"QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
-"QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6"]
+const initialCIDs = [
+  "QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44",
+  "QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
+  // octopus phone
+  "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
+  // "QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6",
+]
 
 export default React.memo(function TryOut() {
 

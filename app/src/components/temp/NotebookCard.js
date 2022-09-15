@@ -97,6 +97,7 @@ const NotebookCard = ({ notebook }) => {
     h2 {
       margin: 0.2em 0 0 0;
       align-self: flex-start;
+      filter: saturate(0.5);
     }
     `
 

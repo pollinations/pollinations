@@ -19,8 +19,9 @@ const NotebookCard = ({ notebook }) => {
   
     // parse category
     const parsedCategory = category?.slice(2)
+      .replace('-', ' > ')
       .replace('-', ' ')
-      .replace('-', ' ')
+      .replace('To', '')
       .toLowerCase();
   
     const ownGpuPath = `/create/${path}`;
@@ -85,11 +86,12 @@ const NotebookCard = ({ notebook }) => {
       margin: 0;
     }
     a {
-      text-decoration: none;
+      text-decoration: none !important;
     }
     .categoryText {
       a {
-        color: rgb(233, 250, 41) !important;
+        color: rgba(233, 250, 41, 0.8) !important;
+        text-decoration: none;
       }
     }
     `

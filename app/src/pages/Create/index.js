@@ -94,7 +94,7 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        { ipfs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
+        { ipfs && isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
     
     </PageLayout>
 });

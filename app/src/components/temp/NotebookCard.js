@@ -90,7 +90,7 @@ const NotebookCard = ({ notebook }) => {
     }
     .categoryText {
       a {
-        color: rgba(233, 250, 41, 0.8) !important;
+        color: rgba(233, 250, 41, 0.7) !important;
         text-decoration: none;
       }
     }

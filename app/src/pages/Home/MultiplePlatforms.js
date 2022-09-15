@@ -30,7 +30,8 @@ const MultiplePlatforms = props => {
         src={heroBGOverlay} 
         top='auto'
         zIndex='-1' 
-        transform='rotate(-180deg)' 
+        transform='rotate(180deg)'
+        flip 
         alt="hero_bg_overlay" />
   
     </MultiplePlatformsStyle>

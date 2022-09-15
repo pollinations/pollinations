@@ -9,8 +9,12 @@ const Hero = props => {
     return <HeroGradient>
   
       <HeroHeadline>
-        Create with AI
+        YOUR ENGINE FOR PERSONALIZED AI
       </HeroHeadline>
+
+      <HeroSubHeadLine>
+        Pollinations curates and customizes AI models to match your vision.
+      </HeroSubHeadLine> 
       
   
       <HeroImage 
@@ -34,8 +38,8 @@ const Hero = props => {
   const HeroStyle = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
 
   width: 100%;
   min-height: 100vh;
@@ -58,25 +62,26 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  margin: 1.7em 0.5em 1.7em 1.2em;
+  max-width: 600px;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;
   font-size: 64px;
   line-height: 82px;
-  text-align: left;
+  text-align: center;
   text-transform: uppercase;
-  
+  margin: 0;
   color: #FFFFFF;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    font-size: 58px;
-    line-height: 60px;
+    font-size: 38px;
+    line-height: 30px;
   }
   
   `
   
   const HeroSubHeadLine = styled.p`
+  max-width: 500px;
   font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400;
@@ -87,4 +92,10 @@ const Hero = props => {
   text-align: center;
   
   color: #D8E449;
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 18px;
+    max-width: 50%;
+    line-height: 25px;
+  }
   `

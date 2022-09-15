@@ -19,7 +19,7 @@ const NotebookCard = ({ notebook }) => {
   
     // parse category
     const parsedCategory = category?.slice(2)
-      .replace('-', ' > ')
+      .replace('-', ' → ')
       .replace('-', ' ')
       .replace('To', '')
       .toLowerCase();
@@ -93,6 +93,10 @@ const NotebookCard = ({ notebook }) => {
         color: rgba(233, 250, 41, 0.8) !important;
         text-decoration: none;
       }
+    }
+    h2 {
+      margin: 0.2em 0 0 0;
+      align-self: flex-start;
     }
     `
 

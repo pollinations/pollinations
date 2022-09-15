@@ -32,7 +32,7 @@ const NotebookCard = ({ notebook }) => {
             <CardHeaderStyle>
               <div style={{maxWidth: '95%'}}>
                 <CardTitle children={name} to={featured ?  ownGpuPath : path}  variant="h4" />
-                <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />
+                <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" isCategory />
               </div>
               <Tooltip title="This model runs on our own GPU.">
                   <h2 children={featured ? '🐝' : ''}/> 
@@ -52,9 +52,9 @@ const NotebookCard = ({ notebook }) => {
   }
   
   
-  const CardTitle = ({ to, children, variant }) => (
-      <Typography className="Lato noMargin" variant={variant} gutterBottom>
-        <RouterLink to={to} style={{textDecoration: 'none'}}>
+  const CardTitle = ({ to, children, variant, isCategory }) => (
+      <Typography className={`Lato noMargin ${isCategory && 'categoryText'}`} variant={variant} gutterBottom>
+        <RouterLink to={to}>
           {children}
         </RouterLink>
       </Typography>
@@ -75,15 +75,22 @@ const NotebookCard = ({ notebook }) => {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 1em;
+    padding: 0.5em 1em;
 
     .MuiTypography-h4{
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 1.7rem;
+      margin: 0;
     }
     a {
       text-decoration: none;
+    }
+    .categoryText {
+      a {
+        color: rgb(233, 250, 41) !important;
+      }
     }
     `
 

@@ -27,7 +27,7 @@ const NotebookCard = ({ notebook }) => {
 
     return (
       <Box>
-        <div style={{ borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)'}}>
+        <CardContainer>
             <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
             <CardHeaderStyle>
               <div style={{maxWidth: '95%'}}>
@@ -46,21 +46,30 @@ const NotebookCard = ({ notebook }) => {
                 <NotebookInfo description={description} noImg />
               </CardContent>
             </Link>
-          </div>
+          </CardContainer>
       </Box>
     )
   }
   
   
   const CardTitle = ({ to, children, variant }) => (
-    <>
       <Typography className="Lato noMargin" variant={variant} gutterBottom>
-        <RouterLink to={to}>{children}</RouterLink>
+        <RouterLink to={to} style={{textDecoration: 'none'}}>
+          {children}
+        </RouterLink>
       </Typography>
-    </>
   )
 
+    const CardContainer = styled.div`
+      border-radius: 20px;
+      background-color: rgba(0,0,0,0.3);
 
+      transition: background-color 0.05s ease;
+      &:hover {
+        background-color: rgba(0,0,0,0.5);
+      }
+  
+    `
     const CardHeaderStyle = styled.div`
     display: flex;
     flex-direction: row;
@@ -72,6 +81,9 @@ const NotebookCard = ({ notebook }) => {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    a {
+      text-decoration: none;
     }
     `
 

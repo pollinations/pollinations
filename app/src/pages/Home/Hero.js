@@ -74,8 +74,8 @@ const Hero = props => {
   color: #FFFFFF;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    font-size: 58px;
-    line-height: 60px;
+    font-size: 38px;
+    line-height: 30px;
   }
   
   `
@@ -92,4 +92,10 @@ const Hero = props => {
   text-align: center;
   
   color: #D8E449;
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 18px;
+    max-width: 80%;
+    line-height: 25px;
+  }
   `

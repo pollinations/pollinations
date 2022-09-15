@@ -19,20 +19,21 @@ const NotebookCard = ({ notebook }) => {
   
     // parse category
     const parsedCategory = category?.slice(2)
+      .replace('-', ' → ')
       .replace('-', ' ')
-      .replace('-', ' ')
+      .replace('To', '')
       .toLowerCase();
   
     const ownGpuPath = `/create/${path}`;
 
     return (
       <Box>
-        <div style={{ borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)'}}>
+        <CardContainer>
             <Link to={featured ? ownGpuPath : path} style={{textDecoration: 'none'}}>
             <CardHeaderStyle>
               <div style={{maxWidth: '95%'}}>
                 <CardTitle children={name} to={featured ?  ownGpuPath : path}  variant="h4" />
-                <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" />
+                <CardTitle children={parsedCategory} to={featured ?  ownGpuPath : path} variant="h6" isCategory />
               </div>
               <Tooltip title="This model runs on our own GPU.">
                   <h2 children={featured ? '🐝' : ''}/> 
@@ -46,32 +47,57 @@ const NotebookCard = ({ notebook }) => {
                 <NotebookInfo description={description} noImg />
               </CardContent>
             </Link>
-          </div>
+          </CardContainer>
       </Box>
     )
   }
   
   
-  const CardTitle = ({ to, children, variant }) => (
-    <>
-      <Typography className="Lato noMargin" variant={variant} gutterBottom>
-        <RouterLink to={to}>{children}</RouterLink>
+  const CardTitle = ({ to, children, variant, isCategory }) => (
+      <Typography className={`Lato noMargin ${isCategory && 'categoryText'}`} variant={variant} gutterBottom>
+        <RouterLink to={to}>
+          {children}
+        </RouterLink>
       </Typography>
-    </>
   )
 
+    const CardContainer = styled.div`
+      border-radius: 20px;
+      background-color: rgba(0,0,0,0.3);
 
+      transition: background-color 0.05s ease;
+      &:hover {
+        background-color: rgba(0,0,0,0.5);
+      }
+  
+    `
     const CardHeaderStyle = styled.div`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 1em;
+    padding: 0.5em 1em;
 
     .MuiTypography-h4{
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 1.7rem;
+      margin: 0;
+    }
+    a {
+      text-decoration: none !important;
+    }
+    .categoryText {
+      a {
+        color: rgba(233, 250, 41, 0.7) !important;
+        text-decoration: none;
+      }
+    }
+    h2 {
+      margin: 0.2em 0 0 0;
+      align-self: flex-start;
+      filter: saturate(0.5);
     }
     `
 

@@ -61,11 +61,11 @@ const WhyWeDoIt = props => {
   
   
   
-      <BackGroundImage 
+      {/* <BackGroundImage 
           src={whyBG} 
           top='auto'
           zIndex='-1' 
-          alt="hero_bg_overlay" />
+          alt="hero_bg_overlay" /> */}
     
     </HeroStyle>
   }

@@ -1,16 +1,15 @@
+import IconButton from "@material-ui/core/IconButton"
 import React from "react"
 import { NavLink, useLocation } from "react-router-dom"
-import IconButton from "@material-ui/core/IconButton"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
 
-import Logo from './Logo'
 import HamburgerIcon from '@material-ui/icons/Menu'
-import NavigationItems from "./organisms/NavigationItems"
 import { FlexBetween } from "../styles/classes"
-import Alert from "@material-ui/lab/Alert"
+import Logo from './Logo'
+import NavigationItems from "./organisms/NavigationItems"
 
 
 const TopBar = ({ navRoutes }) => {
@@ -21,8 +20,8 @@ const TopBar = ({ navRoutes }) => {
   
   return <>
     <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
-    <Alert severity="info">So much pollinating going on that diffusion may be unstable for a little while. Join our <a href='https://discord.gg/XXd99CrkCr'>discord</a> for a chat, help or updates.</Alert> 
-    
+    {/* <Alert severity="info">So much pollinating going on that diffusion may be unstable for a little while. Join our <a href='https://discord.gg/XXd99CrkCr'>discord</a> for a chat, help or updates.</Alert> 
+     */}
       <NavBarStyle>
       <NavLink to='/' style={{ padding: 0 }}>
         <Logo size='150px' small='150px' margin='0' />  

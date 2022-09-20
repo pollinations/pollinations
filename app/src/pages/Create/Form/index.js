@@ -45,7 +45,7 @@ const Form = ({ ipfs, Results, onSubmit, isDisabled, selectedModel, onSelectMode
 },[selectedModel, inputs, primary_input])
 
   useEffect(()=>{
-    if (!ipfs.input) return;
+    if (!ipfs?.input) return;
     const { model_image, caching_seed, ...values} = ipfs.input;
 
     formik.setValues({ ...formik.values, ...values });

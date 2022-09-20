@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/bg1.jpg'
+import whyBG from '../../assets/imgs/new_bg_sections.png'
 
 const TempLayout = ({ Content }) => {
   

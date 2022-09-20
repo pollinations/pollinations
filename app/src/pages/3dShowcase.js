@@ -48,7 +48,7 @@ const Showcase3d = props => {
       </GridTwoColumns>
 {/* 
       <GridTwoColumns>
-        <Example title='Clip Mesh' url='/create/clipmesh'>
+       <Example title='Clip Mesh' url='/create/clipmesh'>
           With this AI model you can generate customized 3D objects, with color and texture, from a text prompt.  
           <br/><br/>
           This method deforms the control shape of a limit subdivided surface along with its texture map and normal map to obtain a 3D asset that corresponds to the input text prompt and can be easily deployed into games or modeling applications

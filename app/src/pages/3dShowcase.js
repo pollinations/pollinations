@@ -33,11 +33,9 @@ const Showcase3d = props => {
 
       <GridTwoColumns>
         <Example title='Avatar Clip' url='/create/avatarclip'>
-          With this AI model you can generate customized humanoid avatars, with color and texture, from a text prompt.  
+         With this AI model, you can generate customized humanoid avatars, with colour and texture, from a text prompt.
           <br/><br/>
-          A fine avatar creates texturized and colorful results, the generation will take about one to two hours. Increase the number of iterations for a more detailed result. 
-          You can create shape-only avatars by choosing the option “no” at the “fine” box , the generation will then take only a few minutes.
-          <br/><br/>
+          A fine avatar creates texturized and colorful results, the generation will take about one to two hours. Increase the number of iterations for a more detailed result. You can create shape-only avatars by choosing the option “no” at the “fine” box, the generation will then take only a few minutes.          <br/><br/>
           Try descriptions such as "gender neutral magic elf", or  "pregnant spiderwoman".
           We are working on implementing rigged skeletons to make the results completely metaverse-ready.
         </Example>
@@ -48,7 +46,7 @@ const Showcase3d = props => {
         </p>
         </IMGContainer>
       </GridTwoColumns>
-
+{/* 
       <GridTwoColumns>
         <Example title='Clip Mesh' url='/create/clipmesh'>
           With this AI model you can generate customized 3D objects, with color and texture, from a text prompt.  
@@ -61,7 +59,7 @@ const Showcase3d = props => {
           <i>“A vase made of colorful crochet”</i>
         </p>
         </IMGContainer>
-      </GridTwoColumns>
+      </GridTwoColumns> */}
 
       <GridTwoColumns>
       

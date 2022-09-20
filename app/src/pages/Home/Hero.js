@@ -9,11 +9,11 @@ const Hero = props => {
     return <HeroGradient>
   
       <HeroHeadline>
-        YOUR ENGINE FOR PERSONALIZED AI
+        YOUR ENGINE FOR PERSONALIZED MEDIA
       </HeroHeadline>
 
       <HeroSubHeadLine>
-        Pollinations curates and customizes AI models to match your vision.
+        Pollinations curates and combines AI models to match your vision.
       </HeroSubHeadLine> 
       
   
@@ -62,7 +62,7 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  max-width: 600px;
+  max-width: 750px;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;
@@ -74,8 +74,9 @@ const Hero = props => {
   color: #FFFFFF;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
+    max-width: 600px;
     font-size: 38px;
-    line-height: 30px;
+    line-height: 35px;
   }
   
   `

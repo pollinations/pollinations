@@ -8,14 +8,18 @@ import MultiplePlatforms from "./MultiplePlatforms"
 import EndlessPossibilites from "./EndlessPossibilites"
 import TryOut from "./TryOut"
 
+import BG from '../../assets/imgs/new_bg_sections.png'
+
 export default function Home() {
   return <HomeStyle>
     <Hero />
-    <TryOut />
-    <About />
-    <MultiplePlatforms />
-    <EndlessPossibilites />
-    <WhyWeDoIt />
+    <ExtraBg>
+      <TryOut />
+      <About />
+      <MultiplePlatforms />
+      {/* <EndlessPossibilites /> */}
+      <WhyWeDoIt />
+    </ExtraBg>
   </HomeStyle>
 }
 
@@ -25,4 +29,14 @@ display: flex;
 flex-direction: column;
 align-items: center;
 `;
+
+const ExtraBg = styled.div`
+background-image: url(${BG});
+width: 100%;
+height: 100%;
+background-size: cover;
+display: flex;
+flex-direction: column;
+align-items: center;
+`
 

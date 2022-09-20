@@ -62,7 +62,7 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  max-width: 600px;
+  max-width: 750px;
   font-family: 'Leiko';
   font-style: normal;
   font-weight: 400;

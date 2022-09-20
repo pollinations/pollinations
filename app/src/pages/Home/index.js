@@ -13,9 +13,9 @@ import BG from '../../assets/imgs/new_bg_sections.png'
 export default function Home() {
   return <HomeStyle>
     <Hero />
+    <TryOut />
+    <About />
     <ExtraBg>
-      <TryOut />
-      <About />
       <MultiplePlatforms />
       {/* <EndlessPossibilites /> */}
       <WhyWeDoIt />

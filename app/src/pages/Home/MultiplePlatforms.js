@@ -48,11 +48,7 @@ const MultiplePlatforms = props => {
   right: 0px;`
   };
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    ${props => props.left ? `
-`: `
-  display: none;
-  `}
-  z-index: 0;
+    display: none;
   }
   `
 

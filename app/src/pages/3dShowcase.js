@@ -1,8 +1,8 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../styles/global'
-import whyBG from '../assets/imgs/doubleBg.png'
 import { useNavigate } from 'react-router-dom'
+import whyBG from '../assets/imgs/doubleBg.png'
 import StarIMG from '../assets/imgs/star.png'
+import { BackGroundImage, MOBILE_BREAKPOINT } from '../styles/global'
 // why we do it
 import AvatarClipIMG from '../assets/imgs/avatar_clip_example.png'
 import DreamfieldsIMG from '../assets/imgs/dreamfields_example.png'
@@ -48,7 +48,23 @@ const Showcase3d = props => {
         </p>
         </IMGContainer>
       </GridTwoColumns>
+
       <GridTwoColumns>
+        <Example title='Clip Mesh' url='/create/clipmnesh'>
+          With this AI model you can generate customized 3D objects, with color and texture, from a text prompt.  
+          <br/><br/>
+          This method deforms the control shape of a limit subdivided surface along with its texture map and normal map to obtain a 3D asset that corresponds to the input text prompt and can be easily deployed into games or modeling applications
+        </Example>
+        <IMGContainer>
+        <ExampleIMG src={"https://www.nasir.lol/_next/image?url=%2Fmodels%2Fvase-poster.webp&w=2048&q=75"} alt='Avatar Clip Example' prompt='test' />
+        <p>
+          <i>“A vase made of colorful crochet”</i>
+        </p>
+        </IMGContainer>
+      </GridTwoColumns>
+
+      <GridTwoColumns>
+      
       
 
         <Example title='Dreamfields - v1.0 - DreamyGhosts' url='/create/dreamfields' marginTop='15em'>

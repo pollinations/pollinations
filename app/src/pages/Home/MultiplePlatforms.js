@@ -26,13 +26,13 @@ const MultiplePlatforms = props => {
       </CTA>
       <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen-min.gif'/>
       <Flying3d src='/3dobjects/An-Alien-with-a-Planet-for-a-H-unscreen-min.gif'/>
-      <BackGroundImage 
+      {/* <BackGroundImage 
         src={heroBGOverlay} 
         top='auto'
         zIndex='-1' 
         transform='rotate(180deg)'
         flip 
-        alt="hero_bg_overlay" />
+        alt="hero_bg_overlay" /> */}
   
     </MultiplePlatformsStyle>
   }

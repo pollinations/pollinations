@@ -27,7 +27,7 @@ const About = props => {
   align-items: center;
   
   padding: 4.5em 0px;
-  background-color: black;
+  // background-color: black;
   
   font-family: 'DM Sans';
   font-style: normal;

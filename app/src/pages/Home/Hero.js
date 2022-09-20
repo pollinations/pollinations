@@ -9,11 +9,11 @@ const Hero = props => {
     return <HeroGradient>
   
       <HeroHeadline>
-        YOUR ENGINE FOR PERSONALIZED AI
+        YOUR ENGINE FOR PERSONALIZED MEDIA
       </HeroHeadline>
 
       <HeroSubHeadLine>
-        Pollinations curates and customizes AI models to match your vision.
+        Pollinations curates and combines AI models to match your vision.
       </HeroSubHeadLine> 
       
   

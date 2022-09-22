@@ -73,7 +73,9 @@ export default function Models() {
 
 const ShowReelHeadline = styled(Headline)`
 margin: 2em 0 0 0;
-
+font-family: "DM Sans";
+font-weight: 600;
+font-size: 48px;
 `
 
 

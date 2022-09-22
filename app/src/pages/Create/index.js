@@ -64,11 +64,11 @@ export default React.memo(function Create() {
                 <h2>
                     {selectedModel.name}
                 </h2>
-                { isLoading && <CircularProgress thickness={2} size={20} /> }
-                { queuePosition > 0 ?<>{queuePosition}</> : "" }
+                <p>
+                    { isLoading && (queuePosition > 0) && `Queue position: ${queuePosition}` }
+                </p>
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }
-            {/* { isLoading && <LinearProgress style={{margin: '1.5em 0'}} /> } */}
             
             <Form 
                 models={models}
@@ -151,8 +151,12 @@ function parseURL(url){
 
 const FlexBetween = styled.div`
 display: flex;
-flex-direction: row;
+flex-direction: column;
 // justify-content: space-between;
-align-items: center;
-gap: 1em;
+align-items: flex-start;
+gap: 0em;
+h2,p {
+    margin: 0;
+}
+margin: 1em 0;
 `

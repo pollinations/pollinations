@@ -46,7 +46,7 @@ align-items: center;
     }
 }
 
-background: linear-gradient(90.41deg, rgba(0, 0, 0, 0.3) 1.53%, rgba(255, 255, 255, 0.1) 98.72%);
+background: linear-gradient(90.41deg, rgba(255, 255, 255, 0.17) 1.53%, rgba(255, 255, 255, 0.1) 98.72%);
 box-shadow: 0px 4px 24px -1px rgba(0, 0, 0, 0.17);
 backdrop-filter: blur(15px);
 /* Note: backdrop-filter has minimal browser support */

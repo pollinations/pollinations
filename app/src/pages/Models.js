@@ -7,7 +7,7 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
-import whyBG from '../assets/imgs/new_bg_sections.jpg'
+import whyBG from '../assets/imgs/new_bg_sections.png'
 
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
@@ -61,7 +61,8 @@ export default function Models() {
           top='0'
           position='fixed'
           zIndex='-1' 
-          transform='scale(-1,-1)' 
+          transform='scale(1,1)' 
+          objectPosition='0% 0%'
           alt="hero_bg_overlay" />
 
 

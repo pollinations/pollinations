@@ -8,9 +8,8 @@ const About = props => {
 
     return <AboutStyle>
       <p>
-        Pollinations is a lively, <i> collaborative ecosystem for AI art. </i> <br/>
-        We curate the latest<span> AI models </span>and make them accessible through an easy interface. 
-        Pollinations empowers the creation and translation of <i> multiple forms of human expression. </i>
+        Pollinations is a lively, <i> collaborative ecosystem for AI-generated media. </i> <br/>
+        We empower the creation of multiple <span> solutions </span> for the Web3 and the entertainment industry.
       </p>
     </AboutStyle>
   }

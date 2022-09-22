@@ -25,6 +25,7 @@ const TempLayout = ({ Content }) => {
       <BackGroundImage 
           src={whyBG} 
           top='auto'
+          transform='scaleX(-1)'
           zIndex='-1' 
           alt="hero_bg_overlay" />
     

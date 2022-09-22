@@ -14,13 +14,13 @@ const Content = [
     By integrating with Pollinations’ API users can create all of this and much more <b> without switching platforms.</b> We offer <b>presets and looks</b> so that all media created can have the visual identity of your brand.
     <br/><br/>
 
-    Music platforms, NFTs, articles about emerging technology, luxury hotels, 3D object stores and many more are getting a touch of magic with Pollinations’ AI-power. Let us hear about your goals at hello@pollinations.ai.
+    Music platforms, NFTs, articles about emerging technology, luxury hotels, 3D object stores and many more are getting a touch of magic with Pollinations’ AI-power. Let us hear about your goals at <span style={{color: 'rgb(233, 250, 41)'}}> hello@pollinations.ai </span>
     </>,
   },
   {
     headline: 'Build community through AI art!',
     content: <>
-    Imagine that within Discord or Slack people can write a prompt to a bot and get the exact media they want. They can create challenges, NFTs, games and much more, making for a fun, interactive, artistic experience. To see what this looks like, send us a hello at hello@pollinations.ai.
+    Imagine that within Discord or Slack people can write a prompt to a bot and get the exact media they want. They can create challenges, NFTs, games and much more, making for a fun, interactive, artistic experience. To see what this looks like, send us a hello at <span style={{color: 'rgb(233, 250, 41)'}}> hello@pollinations.ai </span>
     </>,
   }
 ];

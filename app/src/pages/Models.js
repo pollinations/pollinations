@@ -8,7 +8,7 @@ import useFilter from "../hooks/useFilter"
 
 // import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
 // import whyBG from '../assets/imgs/new_bg_sections.png'
-import whyBG from '../assets/imgs/BG5.png'
+import whyBG from '../assets/imgs/BG6.png'
 
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"

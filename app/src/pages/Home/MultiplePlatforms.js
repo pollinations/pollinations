@@ -1,8 +1,7 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg'
-
+import { Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
+
 // Multiple platforms Section
 
 const MultiplePlatforms = props => {
@@ -16,41 +15,21 @@ const MultiplePlatforms = props => {
       </HeadlineOnTop>
   
       <MultiplePlatformsSubHeadline>
-        Platforms for music, NFTs, media outlets, 
-        visual design and more are adding a touch 
-        of magic to their business by integrating with Pollinations’ API.
+        The digital asset market is growing every year. <br/>
+        Companies in music, games, NFTs and design are 
+        adding value to their businesses by integrating 
+        AI creation into their plan.
       </MultiplePlatformsSubHeadline>
   
       <CTA variant='contained' onClick={() => navigate('/integrate')}>
         How it works
       </CTA>
-      <Flying3d left src='/3dobjects/a-castle-made-of-cheesecake-1--unscreen-min.gif'/>
-      <Flying3d src='/3dobjects/An-Alien-with-a-Planet-for-a-H-unscreen-min.gif'/>
-      {/* <BackGroundImage 
-        src={heroBGOverlay} 
-        top='auto'
-        zIndex='-1' 
-        transform='rotate(180deg)'
-        flip 
-        alt="hero_bg_overlay" /> */}
   
     </MultiplePlatformsStyle>
   }
 
   export default MultiplePlatforms
 
-  const Flying3d = styled.img`
-  position: absolute;
-  ${props => props.left ? `
-  bottom: -40px;
-  left: 0;` : `
-  top: -200px;
-  right: 0px;`
-  };
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    display: none;
-  }
-  `
 
   const HeadlineOnTop = styled(Headline)`
   font-family: 'DM Sans';
@@ -107,6 +86,4 @@ const MultiplePlatforms = props => {
   max-width: 100%;
   min-height: 100vh;
   position: relative;
-
-
   `;

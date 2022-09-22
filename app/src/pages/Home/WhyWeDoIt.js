@@ -24,17 +24,18 @@ const WhyWeDoIt = props => {
           </Headline>
         </div>
         <div>
-        <ExplanationText>
-          We <b>integrate with companies</b> to offer one of the best AI-based creative experiences out there, 
-          empowering people to generate fresh media without the need to switch platforms. 
+          <ExplanationText>
+            We <b> integrate with companies </b> to scale AI creativity and empower people to generate fresh, copyright-free media in different platforms.
 
-          <br/><br/>
-          We also <b>develop presets</b> and combine different models to ensure that all media created within the platforms fits the brand’s aesthetics, keeping the looks consistent. 
+            <br/><br/>
 
-          <br/><br/>
-          And by facilitating the creation of images, objects and immersive environments, 
-          we help to <b>build the metaverse</b> the way we want it: trippy!
+            We also <b> develop presets </b> and combine different AI models to ensure that all media created fits the brand’s aesthetics, keeping the looks consistent.
 
+            <br/><br/>
+
+            And by facilitating the creation of images, 3D objects and immersive environments, 
+            we help to <b> build the metaverse </b> the way it should be: diverse and original!
+            
           </ExplanationText>
         </div>
       </GridTwoColumns>
@@ -58,14 +59,6 @@ const WhyWeDoIt = props => {
         <StarImage src={StarIMG} top='10' left='50' />
         <StarImage src={StarIMG} bottom='20' right='50' />
       </GridTwoColumns>
-  
-  
-  
-      {/* <BackGroundImage 
-          src={whyBG} 
-          top='auto'
-          zIndex='-1' 
-          alt="hero_bg_overlay" /> */}
     
     </HeroStyle>
   }

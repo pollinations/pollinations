@@ -35,7 +35,7 @@ const initialCIDs = [
   "QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44",
   "QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
   // octopus phone
-  "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
+  // "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
   // "QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6",
 ]
 

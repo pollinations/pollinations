@@ -11,34 +11,31 @@ const Content = [
     headline: 'About',
     content: <> 
       Pollinations wants to diversify creativity and spread it through digital ecosystems. 
-      Whether in image, video, audio or 3d objects, the idea is to invite people to imagine new worlds 
-      with the help of AI. Besides offering cutting-edge AI models that are constantly being updated, 
-      we write code on top of these models allowing for customized outcomes and specific aesthetics.
+      Whether in image, video or audio, we invite people to <b> imagine new worlds with the help of AI. </b>
       <br/> <br/>
-      With our API, personalized AI models can be integrated directly within games, metaverses and social 
-      media, making AI media generation easy, fast, and fun. Alternatively, our AI could be deployed as a 
-      tool into 3d modelers workflow.
+      For companies, our developers write code on top of the latest AI models, 
+      providing <b> customized outcomes and specific aesthetics.</b> 
+      <br/> With the <b> API </b>, AI creation can be integrated directly within websites and social media platforms. 
+      <br/> <b> Creating gets easy, fast, and fun. </b>
       <br/> <br/>
-      Get in touch with us if you’d like to offer this kind of experience. 
-      See <Link to='/integrate' children='here' style={{color: 'black'}}/> how it works or send us a hello at hello@pollinations.ai.
+      And on-site, Pollinations offers <b> AI-powered experiences </b> like festival installations for the creative industry.
       </>,
   },
   {
-    headline: 'Why',
+    headline: 'Next steps',
     content: <>
-      The need to design digital worlds is rising fast, 
-      but the power and skills to actually build these worlds are concentrated in the hands of a few people. 
-      The cost is so high, and the process too time-consuming, making experimentation difficult. 
-      We believe the metaverse should be trippy, and we want it to be built by diverse minds, 
-      so <b>we developed an interface that makes AI media creation easy and fast.</b>
+      With the increased investments in VR technology, the popularization of the metaverse is a matter of time. 
+      On a research level, our team is developing technology to make it possible for people to <b> generate 3D objects and avatars just with text prompts. </b> 
+      This process is still costly and time-consuming, but a crucial part of building the next chapter of the world wide web.
       </>,
   },
   {
     headline: 'Who',
     content: <>
-      We are a deep-tech company based in Berlin. Our team of machine-learning specialists, 
-      artists and futurists is profoundly involved in the AI ecosystem. 
-      The AI models we offer are open-source, and are constantly updated by a thriving community.
+      Deep tech based in Berlin. 
+      Our team of data scientists, machine-learning specialists, artists and futurists is profoundly 
+      involved in the AI ecosystem. The AI models are open-source and constantly updated by a thriving community. 
+      To talk to us, reach out on Discord or at <b> hello@pollinations.ai. </b>
     </>
   }
 ];

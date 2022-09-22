@@ -1,7 +1,7 @@
 
 import DropZone from './InputsUI/File';
 import styled from '@emotion/styled'
-import { CreateButton, CreateInput } from '../../Home/TryOut';
+import { CreateInput } from '../../Home/TryOut';
 
 const PrimaryInput = ({ isDisabled, formik, primary_input, selectedModel }) => {
 

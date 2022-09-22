@@ -1,14 +1,12 @@
 import styled from '@emotion/styled';
-import { Button, IconButton, LinearProgress, TextField } from '@material-ui/core';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import Debug from "debug";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
-import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 // take it away
 import { useFormik } from 'formik';
@@ -49,7 +47,7 @@ export default React.memo(function TryOut() {
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage", false);
+    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage", false, {priority: 1});
   }
   
   return <PageLayout >

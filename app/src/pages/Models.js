@@ -7,6 +7,8 @@ import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+import whyBG from '../assets/imgs/new_bg_sections.jpg'
+
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
 import { BackGroundImage, BaseContainer, GridStyle, Headline } from '../styles/global'
@@ -54,30 +56,21 @@ export default function Models() {
         </GridStyle>
         
         <BackGroundImage 
-          src={heroBGOverlay} 
+          src={whyBG} 
           top='0'
-          zIndex='-1' 
           position='fixed'
-          transform='rotate(-180deg)' 
+          zIndex='-1' 
+          transform='scale(-1,-1)' 
           alt="hero_bg_overlay" />
+
 
       </ModelsStyle>
   )
 };
 
 
-const ShowReelStyle = styled.div`
-
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-
-gap: 2em;
-padding: 8em;
-padding-top: 0;
-`
-
 const ShowReelHeadline = styled(Headline)`
-margin: 2em 0;
+margin: 2em 0 0 0;
 
 `
 

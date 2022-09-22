@@ -18,7 +18,7 @@ const MultiplePlatforms = props => {
         The digital asset market is growing every year. <br/>
         Companies in music, games, NFTs and design are 
         adding value to their businesses by integrating 
-        AI creation into their plan
+        AI creation into their plan.
       </MultiplePlatformsSubHeadline>
   
       <CTA variant='contained' onClick={() => navigate('/integrate')}>

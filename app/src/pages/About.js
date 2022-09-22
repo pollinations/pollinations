@@ -35,7 +35,7 @@ const Content = [
       Deep tech based in Berlin. 
       Our team of data scientists, machine-learning specialists, artists and futurists is profoundly 
       involved in the AI ecosystem. The AI models are open-source and constantly updated by a thriving community. 
-      To talk to us, reach out on Discord or at <b> hello@pollinations.ai. </b>
+      To talk to us, reach out on <a href='https://discord.gg/XXd99CrkCr' children='Discord' style={{color: 'rgb(233, 250, 41)'}}/>  or at <span style={{color: 'rgb(233, 250, 41)'}}> hello@pollinations.ai </span>
     </>
   }
 ];

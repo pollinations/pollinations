@@ -59,10 +59,11 @@ export default function Models() {
         
         <BackGroundImage 
           src={whyBG} 
-          top='0'
+          top='-10'
+          left='10'
           position='fixed'
           zIndex='-1' 
-          transform='scale(1,1)' 
+          // transform='scale(1,1)' 
           objectPosition='0% 0%'
           alt="hero_bg_overlay" />
 

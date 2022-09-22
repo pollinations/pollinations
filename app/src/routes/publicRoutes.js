@@ -11,8 +11,8 @@ export const ROUTES = {
   }
 export const MAIN_NAV_ROUTES = [
     ROUTES.models,
-    ROUTES.about, 
     ROUTES.integrate,
+    ROUTES.about, 
     // ROUTES.feed,
     // ROUTES.help
 ]

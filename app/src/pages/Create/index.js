@@ -65,7 +65,7 @@ export default React.memo(function Create() {
                     {selectedModel.name}
                 </h2>
                 <p>
-                    { isLoading && queuePosition > 0 && `Queue position: ${queuePosition}` }
+                    { isLoading && (queuePosition > 0) && `Queue position: ${queuePosition}` }
                 </p>
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }

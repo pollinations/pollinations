@@ -10,24 +10,22 @@ export default function Banner(){
 
     return <Style>
         <img src={BannerIcon} alt="banner icon"/>
-        {/* <Grid> */}
-            <Item>
-                <Headline>
-                    Did you know you can integrate AI creation directly within your site or social media?
-                </Headline>
-                <SubHeadLine>
-                    we can make customised AI models with specific aesthetics!
-                </SubHeadLine>
-            </Item>
-            <Item>
-                <LabelStyle>
-                    Get in touch at:
-                </LabelStyle>
-                <PillStyle>
-                        <span> hello@pollinations.ai </span>
-                </PillStyle>
-            </Item>
-        {/* </Grid> */}
+        <Item>
+            <Headline>
+                Integrate AI creation directly within your site or social media!
+            </Headline>
+            <SubHeadLine>
+                We can tailor AI models for specific aesthetics.
+            </SubHeadLine>
+        </Item>
+        <Item flex >
+            <LabelStyle>
+                Get in touch at:
+            </LabelStyle>
+            <PillStyle>
+                    <span> hello@pollinations.ai </span>
+            </PillStyle>
+        </Item>
 </Style>
 };
 
@@ -39,6 +37,7 @@ min-height: 220px;
 padding: 1em;
 display: flex;
 align-items: center;
+justify-content: space-between;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     flex-wrap: wrap;
     img {
@@ -63,14 +62,14 @@ img {
     padding-right: 2em;
 }
 `
-const Grid = styled.div`
-display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-`
 
 const Item = styled.div`
-margin-left: 2em;
 width: ${props => props.width || '100%'};
+${props => props.flex ? 'display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 1em;' : ''}
+
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+    width: 100%;
+}
 `
 
 const Headline = styled.h2`

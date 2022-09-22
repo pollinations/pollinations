@@ -12,6 +12,7 @@ import whyBG from '../assets/imgs/new_bg_sections.jpg'
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
 import { BackGroundImage, BaseContainer, GridStyle, Headline } from '../styles/global'
+import Banner from '../components/Banner'
 
 export default function Models() {
 
@@ -36,7 +37,7 @@ export default function Models() {
     return (
       <ModelsStyle>
         <TopAlert options={options} />
-
+        <Banner/>
 
         <ShowReelHeadline>
           {!options.length || 'What will you create?'}

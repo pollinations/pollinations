@@ -18,6 +18,7 @@ import { NotebookProgress } from '../../components/NotebookProgress';
 import useGPUModels from '../../hooks/useGPUModels';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import Banner from '../../components/Banner';
 
 
 
@@ -59,6 +60,7 @@ export default React.memo(function Create() {
     
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
+        <Banner/>
         <ParametersArea>
             <FlexBetween>
                 <h2>

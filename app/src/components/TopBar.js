@@ -19,7 +19,7 @@ const TopBar = ({ navRoutes }) => {
 
   
   return <>
-    <TopContainer position={location.pathname === '/' ? 'absolute' : 'relative'}>
+    <TopContainer css={StyleUrl(location.pathname)}>
     {/* <Alert severity="info">So much pollinating going on that diffusion may be unstable for a little while. Join our <a href='https://discord.gg/XXd99CrkCr'>discord</a> for a chat, help or updates.</Alert> 
      */}
       <NavBarStyle>
@@ -46,7 +46,7 @@ const TopBar = ({ navRoutes }) => {
 };
 
 const TopContainer = styled.div`
-  position: ${props => props.position};
+  ${props => props.css};
   width: 100%;
   `
   const NavBarStyle = styled.div`
@@ -57,14 +57,17 @@ const TopContainer = styled.div`
   }
   padding: ${GlobalSidePadding}
 `
-
-
-
-
 const MenuButton = styled.div`
 @media only screen and (min-width: ${MOBILE_BREAKPOINT}){
   display: none;
 }
 `
+
+const StyleUrl = (url) => (url?.slice(0,2) === '/c') ?
+  `position: relative;`
+  :
+  ` position: absolute;
+    z-index: 1;`
+;
 
 export default TopBar

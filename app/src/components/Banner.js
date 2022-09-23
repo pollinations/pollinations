@@ -12,19 +12,21 @@ export default function Banner(){
         <img src={BannerIcon} alt="banner icon"/>
         <Item area='text'>
             <Headline>
-                Integrate AI creation directly within your site or social media!
+                Integrate AI creation directly within your site or social media
             </Headline>
             <SubHeadLine>
                 We can tailor AI models for specific aesthetics.
             </SubHeadLine>
         </Item>
         <Item flex area='cta' >
+            <div style={{paddingRight: '2em'}}>
             <LabelStyle>
                 Get in touch at:
             </LabelStyle>
             <PillStyle>
                     <span> hello@pollinations.ai </span>
             </PillStyle>
+            </div>
         </Item>
 </Style>
 };
@@ -33,12 +35,13 @@ export default function Banner(){
 const Style = styled.div`
 margin-top: 1em;
 width: 100%;
-// min-height: 220px;
-padding: 2em;
+
 display: grid;
 grid-template-columns: 1fr 5fr 2fr;
 grid-template-rows: auto;
 grid-template-areas: "icon text cta";
+
+padding: 0px 0px;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     display: flex;
@@ -64,6 +67,7 @@ h2, h3, p {
 img {
     height: 125px;
     margin: auto 2em;
+    padding: 1em 0 1em 2em;
 }
 `
 
@@ -71,7 +75,8 @@ const Item = styled.div`
 grid-area: ${props => props.area || 'item'};
 align-self: center;
 width: 100%;
-${props => props.flex ? 'display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 1em;' : ''}
+padding: 1em;
+${props => props.flex ? 'display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center;' : ''}
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100%;
@@ -84,22 +89,23 @@ font-weight: 500;
 font-size: 24px;
 line-height: 40px;
 color: #FFFFFF;
-margin-bottom: 0.5em;
+margin-bottom: 0.2em;
 `
 
 const SubHeadLine = styled.h2`
-font-size: 20px;
-line-height: 26px;
+font-size: 18px;
+line-height: 23px;
 /* lime-bright */
 color: #E9FA29;
 margin-top: 0;
 `
 
 const LabelStyle = styled.p`
-font-weight: 500;
-font-size: 20px;
-line-height: 26px;
-color: #FFFFFF;
+font-weight: 400;
+font-size: 18px;
+line-height: 23px;
+color: #E9FA29;
+margin: 0;
 `
 const PillStyle = styled.p`
 font-size: 22px;
@@ -111,4 +117,5 @@ border: 1px solid #E9FA29;
 border-radius: 30px;
 padding: 0.5em 1em;
 }
+margin: 1em 0;
 `

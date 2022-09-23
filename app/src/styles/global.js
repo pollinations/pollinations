@@ -45,6 +45,7 @@ z-index: ${props => props.zIndex || 0};
 mix-blend-mode: ${props => props.blend || 'normal'};
 transform: ${props => props.transform || ''};
 object-fit: cover;
+object-position: ${props => props.objectPosition || ''};
 `
 export const Headline = styled.p`
 font-family: 'Mattone';

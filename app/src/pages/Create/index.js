@@ -18,6 +18,7 @@ import { NotebookProgress } from '../../components/NotebookProgress';
 import useGPUModels from '../../hooks/useGPUModels';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import Banner from '../../components/Banner';
 
 
 
@@ -59,6 +60,7 @@ export default React.memo(function Create() {
     
     return <PageLayout >
         <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
+        <Banner/>
         <ParametersArea>
             <FlexBetween>
                 <h2>
@@ -113,7 +115,7 @@ background: radial-gradient(43.05% 43.05% at 50% 56.95%, #2F3039 0%, #000000 100
 
 const ParametersArea = styled.div`
 width: 100%;
-
+margin-top: 3em;
 `
 const ResultsArea = styled.div`
 grid-area: results;

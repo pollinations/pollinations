@@ -115,7 +115,7 @@ background: radial-gradient(43.05% 43.05% at 50% 56.95%, #2F3039 0%, #000000 100
 
 const ParametersArea = styled.div`
 width: 100%;
-
+margin-top: 3em;
 `
 const ResultsArea = styled.div`
 grid-area: results;

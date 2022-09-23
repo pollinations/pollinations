@@ -33,8 +33,8 @@ export default function Banner(){
 const Style = styled.div`
 margin-top: 1em;
 width: 100%;
-min-height: 220px;
-padding: 1em;
+// min-height: 220px;
+padding: 2em;
 display: grid;
 grid-template-columns: 1fr 5fr 2fr;
 grid-template-rows: auto;
@@ -62,7 +62,7 @@ h2, h3, p {
     font-weight: 400;
 }
 img {
-    height: 156px;
+    height: 125px;
     margin: auto 2em;
 }
 `

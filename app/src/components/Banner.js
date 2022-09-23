@@ -10,7 +10,7 @@ export default function Banner(){
 
     return <Style>
         <img src={BannerIcon} alt="banner icon"/>
-        <Item>
+        <Item area='text'>
             <Headline>
                 Integrate AI creation directly within your site or social media!
             </Headline>
@@ -18,7 +18,7 @@ export default function Banner(){
                 We can tailor AI models for specific aesthetics.
             </SubHeadLine>
         </Item>
-        <Item flex >
+        <Item area='cta' >
             <LabelStyle>
                 Get in touch at:
             </LabelStyle>
@@ -35,11 +35,16 @@ margin-top: 1em;
 width: 100%;
 min-height: 220px;
 padding: 1em;
-display: flex;
-align-items: center;
-justify-content: space-between;
+display: grid;
+grid-template-columns: 1fr 5fr 2fr;
+grid-template-rows: auto;
+grid-template-areas: "icon text cta";
+
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
     img {
         display: none;
     }
@@ -58,13 +63,14 @@ h2, h3, p {
 }
 img {
     height: 156px;
-    margin: auto 4em;
-    padding-right: 2em;
+    margin: auto 2em;
 }
 `
 
 const Item = styled.div`
-width: ${props => props.width || '100%'};
+grid-area: ${props => props.area || 'item'};
+align-self: center;
+width: 100%;
 ${props => props.flex ? 'display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 1em;' : ''}
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -73,7 +79,9 @@ ${props => props.flex ? 'display: flex; flex-wrap: wrap; justify-content: flex-e
 `
 
 const Headline = styled.h2`
-font-size: 28px;
+font-style: normal;
+font-weight: 500;
+font-size: 24px;
 line-height: 40px;
 color: #FFFFFF;
 margin-bottom: 0.5em;

@@ -18,7 +18,7 @@ export default function Banner(){
                 We can tailor AI models for specific aesthetics.
             </SubHeadLine>
         </Item>
-        <Item area='cta' >
+        <Item flex area='cta' >
             <LabelStyle>
                 Get in touch at:
             </LabelStyle>

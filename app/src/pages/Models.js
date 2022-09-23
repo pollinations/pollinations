@@ -6,12 +6,14 @@ import NotebookCard from "../components/temp/NotebookCard"
 import { getNotebooks } from "../data/notebooks"
 import useFilter from "../hooks/useFilter"
 
-import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
-import whyBG from '../assets/imgs/new_bg_sections.jpg'
+// import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'
+// import whyBG from '../assets/imgs/new_bg_sections.png'
+import whyBG from '../assets/imgs/BG7.png'
 
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
 import { BackGroundImage, BaseContainer, GridStyle, Headline } from '../styles/global'
+import Banner from '../components/Banner'
 
 export default function Models() {
 
@@ -36,7 +38,7 @@ export default function Models() {
     return (
       <ModelsStyle>
         <TopAlert options={options} />
-
+        <Banner/>
 
         <ShowReelHeadline>
           {!options.length || 'What will you create?'}
@@ -57,10 +59,12 @@ export default function Models() {
         
         <BackGroundImage 
           src={whyBG} 
-          top='0'
+          top='-10'
+          left='10'
           position='fixed'
           zIndex='-1' 
-          transform='scale(-1,-1)' 
+          // transform='scale(1,1)' 
+          objectPosition='0% 0%'
           alt="hero_bg_overlay" />
 
 
@@ -71,7 +75,9 @@ export default function Models() {
 
 const ShowReelHeadline = styled(Headline)`
 margin: 2em 0 0 0;
-
+font-family: "DM Sans";
+font-weight: 600;
+font-size: 48px;
 `
 
 

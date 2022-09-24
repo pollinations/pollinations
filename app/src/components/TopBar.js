@@ -63,11 +63,12 @@ const MenuButton = styled.div`
 }
 `
 
-const StyleUrl = (url) => (url?.slice(0,2) === '/c') ?
-  `position: relative;`
-  :
-  ` position: absolute;
+const StyleUrl = (url) => {
+  if (url?.slice(0,2) === '/c') return `position: relative;`;
+  if (url?.slice(0,2) === '/p') return `position: relative;`;
+  return ` 
+    position: absolute;
     z-index: 1;`
-;
+};
 
 export default TopBar

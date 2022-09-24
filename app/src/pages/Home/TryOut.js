@@ -15,7 +15,7 @@ import { zipObj } from 'ramda';
 const debug = Debug("Envisioning");
 
 const form = {
-  "Prompt": {
+  "prompt": {
     type: "string",
     default: "",
     title: "Prompt",
@@ -29,25 +29,25 @@ const form = {
   // }
 }
 
-const initialCIDs = [
-  "QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44",
-  "QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
-  // octopus phone
-  // "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
-  // "QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6",
-]
+// const initialCIDs = [
+//   "QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44",
+//   "QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
+//   // octopus phone
+//   // "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
+//   // "QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6",
+// ]
 
 export default React.memo(function TryOut() {
 
   // select random initial CID
-  const initialCID = initialCIDs[Math.floor(Math.random() * initialCIDs.length)];
+  const initialCID = null; // initialCIDs[Math.floor(Math.random() * initialCIDs.length)];
 
   const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: initialCID});
 
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-frontpage", false, {priority: 1});
+    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion", false, {priority: 1});
   }
   
   return <PageLayout >

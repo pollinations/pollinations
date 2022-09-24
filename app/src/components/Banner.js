@@ -21,7 +21,7 @@ export default function Banner(){
         <Item flex area='cta' >
             <div style={{paddingRight: '2em'}}>
             <LabelStyle>
-                Get in touch at:
+                Get in touch:
             </LabelStyle>
             <PillStyle>
                 <span> 

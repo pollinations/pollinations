@@ -4,13 +4,13 @@ export const ROUTES = {
     // feed: { label: "Feed", to: "/feed", id: 'feed' },
     help: { label: "Help", to: "/help", id: 'help' },
     impressum: { label: "impressum", to: "/impressum", id: 'impressum' },
-    models: { label: "Create", to: '/c', id: 'create' },
+    explore: { label: "Explore", to: '/c', id: 'explore' },
     // integrate: { label: "integrate", to: "/integrate" },
     // myPollens: { label: "my pollens", to: "/localpollens" },
     // expo: { children: "made with pollinations", to: "/expo" },
   }
 export const MAIN_NAV_ROUTES = [
-    ROUTES.models,
+    ROUTES.explore,
     ROUTES.integrate,
     ROUTES.about, 
     // ROUTES.feed,

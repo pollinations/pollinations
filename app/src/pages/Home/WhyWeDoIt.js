@@ -16,9 +16,6 @@ const WhyWeDoIt = props => {
       <GridTwoColumns>
         <div >
           <Headline>
-            <span>
-              why we do it <br/>
-            </span>
             With Pollinations, 
             creativity is scalable
           </Headline>
@@ -107,6 +104,7 @@ position: relative;
 
 padding: 10em 7em;
 display: grid;
+gap: 1em;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: ${props => props.alignItems || 'flex-start'};
 

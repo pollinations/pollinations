@@ -12,7 +12,7 @@ import { getNotebookMetadata } from "../utils/notebookMetadata";
 import styled from '@emotion/styled'
 import { GlobalSidePadding } from '../styles/global';
 import { BaseContainer } from "../styles/global";
-
+import Banner from '../components/Banner';
 
 
 const debug = Debug("Create");
@@ -34,7 +34,8 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
   return <BaseContainer>
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-      <NotebookTitle name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
+      <Banner/>
+      <NotebookTitle style={{marginTop: '1em'}}name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
       <AlertMessage node={node}/>
 
         <TwoColumns>

@@ -16,7 +16,7 @@ return <FooterStyle>
         <CTAStyle>
             Let's talk 
             <br/>
-            hello@pollinations.ai
+            <span> hello@pollinations.ai </span>
         </CTAStyle>
         <SocialLinks/>
     </FlexColumn>
@@ -40,6 +40,10 @@ line-height: 36px;
 
 color: #FFFFFF;
 padding-bottom: 0.75em;
+
+span {
+    color: #E9FA29;
+}
 `
 
 const FlexColumn = styled.div`

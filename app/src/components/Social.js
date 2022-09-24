@@ -22,12 +22,21 @@ const PlatformLink = (platform) => {
     <Link
       key={`plt_link_${platform}`}
       href={url}
-      style={{ margin: '0 0.2em' }}
+      style={{ 
+        margin: '0 0.75em 0 0',
+        backgroundColor: '#4F4F4F',
+        width: '50px',
+        height: '50px',
+        borderRadius: '50%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
       target="_blank"
       title={platform}
     >
       {typeof icon === 'string' ? (
-        <Icon path={SOCIAL_LINKS[platform].icon} color={COLORS.font.default} size={20} />
+        <Icon path={SOCIAL_LINKS[platform].icon} color={COLORS.font.default} size={35} />
       ) : (
         SOCIAL_LINKS[platform].icon
       )}

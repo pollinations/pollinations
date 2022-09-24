@@ -16,9 +16,6 @@ const WhyWeDoIt = props => {
       <GridTwoColumns>
         <div >
           <Headline>
-            <span>
-              why we do it <br/>
-            </span>
             With Pollinations, 
             creativity is scalable
           </Headline>

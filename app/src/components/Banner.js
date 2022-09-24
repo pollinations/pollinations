@@ -12,7 +12,7 @@ export default function Banner(){
         <img src={BannerIcon} alt="banner icon"/>
         <Item area='text'>
             <Headline>
-                Integrate AI creation directly within your site or social media.
+                Integrate AI creation within your site or community.
             </Headline>
             <SubHeadLine>
                 We can tailor AI models for specific aesthetics.

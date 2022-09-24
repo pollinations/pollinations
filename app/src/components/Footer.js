@@ -1,5 +1,4 @@
 import styled from '@emotion/styled'
-import { GlobalSidePadding } from '../styles/global'
 
 import Logo from './Logo'
 
@@ -10,16 +9,21 @@ import Link from '@material-ui/core/Link'
 import { SOCIAL_LINKS } from '../_globalConfig/socialLinks'
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
+import { SocialLinks } from './Social'
 
 const Footer = () => {
 
 return <FooterStyle>
-    <div>
+    <div style={{display:'flex', flexDirection:'column'}}>
         <Items items={MAIN_NAV_ROUTES} 
             renderComponent={RouteLink} columns={1} />
 
-        <Items items={SOCIAL_LINKS} 
-            renderComponent={PlatformLink} columns={2} />
+        {/* <Items items={SOCIAL_LINKS} 
+            renderComponent={PlatformLink} columns={2} /> */}
+
+        <SocialLinks>
+
+        </SocialLinks>
     </div>
 
     <NavLink to='/' style={{ padding: 0 }}>

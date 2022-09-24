@@ -1,42 +1,78 @@
 import styled from '@emotion/styled'
-import { GlobalSidePadding } from '../styles/global'
-
 import Logo from './Logo'
 
 import { NavLink } from "react-router-dom"
 import RouterLink from './molecules/RouterLink'
-import Link from '@material-ui/core/Link'
 
-import { SOCIAL_LINKS } from '../_globalConfig/socialLinks'
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
+import { SocialLinks } from './Social'
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../styles/global'
 
 const Footer = () => {
 
 return <FooterStyle>
-    <div>
+    <FlexColumn>
+        <CTAStyle>
+            Let's talk 
+            <br/>
+            <span> hello@pollinations.ai </span>
+        </CTAStyle>
+        <SocialLinks/>
+    </FlexColumn>
+    <NavItems>
+        <NavLink to='/' style={{ padding: 0 }}>
+            <Logo size='250px' small='225px' margin='0' />  
+        </NavLink>
         <Items items={MAIN_NAV_ROUTES} 
             renderComponent={RouteLink} columns={1} />
-
-        <Items items={SOCIAL_LINKS} 
-            renderComponent={PlatformLink} columns={2} />
-    </div>
-
-    <NavLink to='/' style={{ padding: 0 }}>
-        <Logo size='250px' small='150px' margin='0' />  
-    </NavLink>
+    </NavItems>
 </FooterStyle>
 }
 export default Footer
 
+const CTAStyle = styled.p`
+font-family: 'DM Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 28px;
+line-height: 36px;
+
+color: #FFFFFF;
+padding-bottom: 0.75em;
+
+span {
+    color: #E9FA29;
+}
+`
+
+const FlexColumn = styled.div`
+display: flex;
+flex-direction: column;
+`
+
+const NavItems = styled(FlexColumn)`
+padding-top: 3em;
+align-items: flex-end;
+gap: 1em;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+    align-items: flex-start;
+    padding-top: 0em;
+}
+`
 
 const Items = ({ items, renderComponent, columns }) => 
     split(Object.keys(items), columns).map( col =>
-        <div key={`col_${col}`}>
+        <ItemsStyle>
             { col.map(renderComponent) }
-        </div>
+        </ItemsStyle>
     )
 ;
+const ItemsStyle = styled.div`
+display: flex;
+gap: 3em;
+width: 100%;
+`
         
 
 function split(array, cols) {
@@ -51,19 +87,6 @@ function split(array, cols) {
         );
 }
 
-
-const PlatformLink = (platform) => {
-    const { url, label } = SOCIAL_LINKS[platform]
-    return (
-      <Link
-        key={`plt_link_${platform}`}
-        href={url}
-        target="_blank"
-      >
-        {label}
-      </Link>
-    )
-}
 const RouteLink = (route) => {
     const { to, label } = MAIN_NAV_ROUTES[route];
     return (
@@ -78,14 +101,21 @@ const RouteLink = (route) => {
             
 
 const FooterStyle = styled.div`
+padding: ${GlobalSidePadding};
+padding-top: 3em;
 
 width: 100%;
-min-height: 415px;
+min-height: 418px;
+
 display: flex;
 justify-content: space-between;
+flex-wrap: wrap;
 
-padding: 4em 3% 140px;
-padding-top: 4em;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 2em;
+}
 background-color: black;
 
 font-family: 'DM Sans';
@@ -96,12 +126,6 @@ line-height: 23px;
 
 color: #FFFFFF;
 
-div {
-    min-width: 50%;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    align-items: flex-start;
-}
 a {
     padding: 16px 0;
 }

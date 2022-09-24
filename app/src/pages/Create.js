@@ -35,7 +35,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
       <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
       <Banner/>
-      <NotebookTitle style={{marginTop: '1em'}}name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
+      <NotebookTitle style={{marginTop: '2em'}}name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
       <AlertMessage node={node}/>
 
         <TwoColumns>

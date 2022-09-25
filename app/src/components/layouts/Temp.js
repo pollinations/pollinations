@@ -7,6 +7,7 @@ const TempLayout = ({ Content }) => {
     return <Style>
       {
         Content.map( item =>
+          item.headline ?
           <GridTwoColumns>
             <div >
               <Headline>
@@ -19,6 +20,8 @@ const TempLayout = ({ Content }) => {
               </ExplanationText>
             </div>
           </GridTwoColumns>
+          :
+          item.content
         )
       }
   

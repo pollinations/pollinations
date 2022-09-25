@@ -18,6 +18,9 @@ import useGPUModels from '../../hooks/useGPUModels';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
 
+import Debug from "debug";
+
+const debug = Debug("pages/Create");
 
 export default React.memo(function Create() {
     // :id and :model from url

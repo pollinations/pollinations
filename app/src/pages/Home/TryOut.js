@@ -62,9 +62,9 @@ export default React.memo(function TryOut() {
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
       { pollenStatus && <><b>{ pollenStatus.title }</b> {pollenStatus.payload} </> }
-      <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
       <Previewer ipfs={ipfs} />   
-
+      <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
+      
 </PageLayout>
 });
 

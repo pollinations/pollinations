@@ -31,6 +31,7 @@ const PlatformLink = (platform) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        transform: 'scale(0.5,0.5)'
       }}
       target="_blank"
       title={platform}

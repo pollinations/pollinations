@@ -5,7 +5,6 @@ import Hero from "./Hero"
 import About from "./About"
 import WhyWeDoIt from "./WhyWeDoIt"
 import MultiplePlatforms from "./MultiplePlatforms"
-import EndlessPossibilites from "./EndlessPossibilites"
 import TryOut from "./TryOut"
 
 import BG from '../../assets/imgs/new_bg_sections.png'
@@ -17,7 +16,6 @@ export default function Home() {
     <About />
     <ExtraBg>
       <MultiplePlatforms />
-      {/* <EndlessPossibilites /> */}
       <WhyWeDoIt />
     </ExtraBg>
   </HomeStyle>

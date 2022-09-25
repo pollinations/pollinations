@@ -74,6 +74,8 @@ text-align: center;
 max-width: 55%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 90%;
+  font-size: 32px;
+  line-height: 40px;
 }
 
 color: #FFFFFF;

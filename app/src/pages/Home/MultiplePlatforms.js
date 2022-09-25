@@ -52,7 +52,7 @@ const MultiplePlatforms = props => {
   text-align: center;
   z-index:3;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    width: 95%;
+    width: 70%;
     font-size: 18px;
     line-height: 25px;
   }

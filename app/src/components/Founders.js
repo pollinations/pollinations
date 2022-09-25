@@ -12,17 +12,17 @@ const FoundersArray = [
         pic: ThomasPic,
     },
     {
-        name: 'Caroline Barrueco',
+        name: <>Caroline <br/> Barrueco <br/> </>,
         title: 'CPO',
         pic: CarolPic,
     },
     {
-        name: 'Niels Warncke',
+        name: <>Niels <br/> Warncke <br/> </>,
         title: 'CTO',
         pic: NielsPic,
     },
     {
-        name: 'Alexandre Silveira',
+        name: <>Alexandre <br/> Silveira <br/> </>,
         title: 'CCM',
         pic: AlePic,
     },
@@ -56,7 +56,6 @@ grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
 gap: 1em;
 img {
     max-width: 100%;
-    // margin-bottom: 1em;
     border-radius: 20px;
     margin: 0;
 }
@@ -71,7 +70,10 @@ p {
     margin-bottom: 0;
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-    p {font-size: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+
+    p {
+    font-size: 14px;
     line-height: 14px;
     margin: 0;
 }

@@ -1,12 +1,13 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/new_bg_sections.jpg'
+import whyBG from '../../assets/imgs/BG7.png'
 
 const TempLayout = ({ Content }) => {
   
     return <Style>
       {
         Content.map( item =>
+          item.headline ?
           <GridTwoColumns>
             <div >
               <Headline>
@@ -19,13 +20,14 @@ const TempLayout = ({ Content }) => {
               </ExplanationText>
             </div>
           </GridTwoColumns>
+          :
+          item.content
         )
       }
   
       <BackGroundImage 
           src={whyBG} 
           top='auto'
-          transform='scaleX(-1)'
           zIndex='-1' 
           alt="hero_bg_overlay" />
     
@@ -40,7 +42,7 @@ font-style: normal;
 font-weight: 400;
 font-size: 56px;
 line-height: 73px;
-color: #000000;
+color: #fff;
 margin-top: 0;
 
 span {
@@ -50,6 +52,12 @@ span {
   margin: 0;
   color: #ffffff;
 }
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 40px;
+  line-height: 50px;
+  margin: 0;
+
+}
 `
 const ExplanationText = styled.p`
 font-family: 'DM Sans';
@@ -57,10 +65,12 @@ font-style: normal;
 font-weight: 400;
 font-size: 24px;
 line-height: 31px;
-color: #191919;
+color: #fff;
 
 margin-top: 5em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 18px;
+  line-height: 25px;
   margin-top: 1em;
 }
 `
@@ -68,7 +78,8 @@ margin-top: 5em;
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1280px;
-padding: 10em 4em;
+padding: 3em 3em;
+margin-top: 5em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: flex-start;

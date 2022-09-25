@@ -39,7 +39,7 @@ font-size: 28px;
 line-height: 36px;
 
 color: #FFFFFF;
-padding-bottom: 0.75em;
+padding-bottom: 0em;
 
 span {
     color: #E9FA29;

@@ -68,7 +68,8 @@ margin-top: 5em;
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1280px;
-padding: 10em 4em;
+padding: 3em 4em;
+margin-top: 5em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 align-items: flex-start;

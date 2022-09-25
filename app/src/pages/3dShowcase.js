@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import whyBG from '../assets/imgs/doubleBg.png'
+import whyBG from '../assets/imgs/new_bg_sections.png'
 import StarIMG from '../assets/imgs/star.png'
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../styles/global'
 // why we do it
@@ -158,7 +158,7 @@ font-style: normal;
 font-weight: ${props => props.fontWeight || '400'};
 font-size: ${props => props.fontSize || '56px'};
 line-height: ${props => props.lineHeight || '73px'};
-color: ${props => props.color || '#000000'};
+color: ${props => props.color || '#fff'};
 margin-top: 0;
 text-align: ${props => props.textAlign || 'left'};
 margin: ${props => props.margin || ''};
@@ -171,9 +171,13 @@ span {
   color: #ffffff;
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  font-size: 48px;
-  line-height: 60px;
-  max-width: 325px;
+  font-size: 40px;
+  line-height: 45px;
+  span {
+    font-size: 22px;
+    line-height: 24px;
+    max-width: 100%;
+  }
 }
 `
 const ExplanationText = styled.p`
@@ -185,7 +189,7 @@ font-weight: 400;
 font-size: 24px;
 line-height: 31px;
 text-align: ${props => props.textAlign || 'left'};
-color: ${props => props.color || '#191919'};
+color: ${props => props.color || '#fff'};
 
 margin-top: ${props => props.marginTop || '7em'};
 margin-bottom: 2em;

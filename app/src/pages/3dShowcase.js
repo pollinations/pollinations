@@ -173,8 +173,10 @@ span {
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 40px;
   line-height: 45px;
+  margin: 0;
   span {
-    font-size: 22px;
+    display: none;
+    font-size: 20px;
     line-height: 24px;
     max-width: 100%;
   }
@@ -194,6 +196,8 @@ color: ${props => props.color || '#fff'};
 margin-top: ${props => props.marginTop || '7em'};
 margin-bottom: 2em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 18px;
+  line-height: 24px;
   margin-top: 1em;
   max-width: 325px;
 

@@ -48,12 +48,11 @@ const Founders = () => {
 export default Founders
 
 const Style = styled.div`
-margin-top: 1em;
-padding: 0 5%;
+margin-top: 3em;
 width: 100%;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-gap: 1em;
+gap: 4em;
 img {
     max-width: 100%;
     margin-bottom: 1em;

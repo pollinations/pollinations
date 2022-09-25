@@ -10,7 +10,8 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { useFormik } from 'formik';
-import { zipObj } from 'ramda';
+import { reverse, zipObj } from 'ramda';
+import { IpfsLog } from '../../components/Logs';
 
 const debug = Debug("Envisioning");
 
@@ -49,6 +50,9 @@ export default React.memo(function TryOut() {
   const dispatch = async (values) => {
     await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion", false, {priority: 1});
   }
+
+
+  const pollenStatus = getPollenStatus(ipfs?.output?.log)
   
   return <PageLayout >
         <HeroSubHeadLine>
@@ -57,11 +61,25 @@ export default React.memo(function TryOut() {
 
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-
+      { pollenStatus && <><b>{ pollenStatus.title }</b> {pollenStatus.payload} </> }
+      <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
       <Previewer ipfs={ipfs} />   
 
 </PageLayout>
 });
+
+
+const getPollenStatus = (log) => {
+  if (!log) return null;
+
+  const statusWithPrefix = reverse(log.split("\n")).find(line => line?.startsWith("pollen_status:"));
+  
+  if (!statusWithPrefix) return null;
+
+  const status = JSON.parse(statusWithPrefix.replace("pollen_status: ", ""));
+
+  return status;
+}
 
 const HeroSubHeadLine = styled.p`
 font-family: 'DM Sans';
@@ -118,7 +136,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     <CreateButton disabled={loading} formik={formik} >
         {loading ? <CircularProgress thickness={2} size={20} /> : 'CREATE'}
     </CreateButton>
-     
+    
 
 </CreateForm>
 }

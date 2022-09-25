@@ -15,10 +15,10 @@ const Content = [
     headline: 'About',
     content: <Style> 
       Pollinations wants to diversify creativity and spread it through digital ecosystems. 
-      Whether in image, video or audio, we invite people to <span> imagine new worlds with the help of AI. </span>
+      Whether in image, video or audio, we invite people to <b> imagine new worlds with the help of AI. </b>
       <br/> <br/>
       For companies, our developers write code on top of the latest AI models, 
-      providing <span> customized outcomes and specific aesthetics.</span> 
+      providing <b> customized outcomes and specific aesthetics.</b> 
       <br/> With the <b> API </b>, AI creation can be integrated directly within websites and social media platforms. 
       <br/> <span> Creating gets easy, fast, and fun. </span>
       <br/> <br/>

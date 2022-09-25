@@ -49,6 +49,12 @@ span {
   margin: 0;
   color: #ffffff;
 }
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 40px;
+  line-height: 50px;
+  margin: 0;
+
+}
 `
 const ExplanationText = styled.p`
 font-family: 'DM Sans';
@@ -60,6 +66,8 @@ color: #fff;
 
 margin-top: 5em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 18px;
+  line-height: 25px;
   margin-top: 1em;
 }
 `
@@ -67,7 +75,7 @@ margin-top: 5em;
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1280px;
-padding: 3em 4em;
+padding: 3em 3em;
 margin-top: 5em;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

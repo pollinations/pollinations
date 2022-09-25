@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/new_bg_sections.jpg'
+import whyBG from '../../assets/imgs/BG7.png'
 
 const TempLayout = ({ Content }) => {
   
@@ -25,7 +25,6 @@ const TempLayout = ({ Content }) => {
       <BackGroundImage 
           src={whyBG} 
           top='auto'
-          transform='scaleX(-1)'
           zIndex='-1' 
           alt="hero_bg_overlay" />
     
@@ -40,7 +39,7 @@ font-style: normal;
 font-weight: 400;
 font-size: 56px;
 line-height: 73px;
-color: #000000;
+color: #fff;
 margin-top: 0;
 
 span {
@@ -57,7 +56,7 @@ font-style: normal;
 font-weight: 400;
 font-size: 24px;
 line-height: 31px;
-color: #191919;
+color: #fff;
 
 margin-top: 5em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {

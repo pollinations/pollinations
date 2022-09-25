@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import whyBG from '../assets/imgs/new_bg_sections.png'
+import whyBG from '../assets/imgs/BG7.png'
 import StarIMG from '../assets/imgs/star.png'
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../styles/global'
 // why we do it

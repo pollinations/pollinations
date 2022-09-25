@@ -168,7 +168,7 @@ span {
   font-size: 24px;
   line-height: 31px;
   margin: 0;
-  color: #ffffff;
+  color: rgb(233, 250, 41);
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 40px;

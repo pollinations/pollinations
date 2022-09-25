@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
-import CarolPic from '../assets/imgs/founders/carol.jpeg';
-import NielsPic from '../assets/imgs/founders/niels.png';
-import ThomasPic from '../assets/imgs/founders/thomash.png';
+import CarolPic from '../assets/imgs/founders/carol.jpg';
+import NielsPic from '../assets/imgs/founders/niels.jpg';
+import ThomasPic from '../assets/imgs/founders/thomash.jpg';
 import AlePic from '../assets/imgs/founders/ale.jpg';
 import { MOBILE_BREAKPOINT } from '../styles/global';
 

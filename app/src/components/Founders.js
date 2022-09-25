@@ -7,7 +7,7 @@ import { MOBILE_BREAKPOINT } from '../styles/global';
 
 const FoundersArray = [
     {
-        name: 'Thomas Haferlach',
+        name: <>Thomas <br/> Haferlach <br/> </>,
         title: 'CEO',
         pic: ThomasPic,
     },
@@ -38,7 +38,7 @@ const Founders = () => {
             founder => <div>
                 <img src={founder.pic} />
                 <p>{founder.name}</p>
-                <p>{founder.title}</p>
+                <p><b>{founder.title}</b></p>
             </div>
         )
     }
@@ -56,8 +56,9 @@ grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
 gap: 1em;
 img {
     max-width: 100%;
-    margin-bottom: 1em;
+    // margin-bottom: 1em;
     border-radius: 20px;
+    margin: 0;
 }
 p {
     font-family: 'DM Sans';
@@ -65,10 +66,9 @@ p {
   font-weight: 400;
   font-size: 18px;
     line-height: 18px;
-    // margin: 0.3em 0;
-
   color: #FFFFFF;
-    margin: 0;
+  margin-top: 0.5em;
+    margin-bottom: 0;
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     p {font-size: 14px;

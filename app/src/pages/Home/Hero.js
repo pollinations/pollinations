@@ -96,7 +96,7 @@ const Hero = props => {
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     font-size: 18px;
-    max-width: 50%;
+    max-width: 70%;
     line-height: 25px;
   }
   `

@@ -79,8 +79,8 @@ span {
   color: #ffffff;
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  font-size: 48px;
-  line-height: 60px;
+  font-size: 40px;
+  line-height: 40px;
 }
 `
 const ExplanationText = styled.p`
@@ -93,6 +93,8 @@ color: #191919;
 
 margin-top: 9em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 18px;
+  line-height: 24px;
   margin-top: 1em;
 }
 `

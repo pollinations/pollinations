@@ -15,7 +15,7 @@ export default function Banner(){
                 Integrate AI creation within your site or community.
             </Headline>
             <SubHeadLine>
-                We can tailor AI models for specific aesthetics.
+                We tailor AI models to your needs.
             </SubHeadLine>
         </Item>
         <Item flex area='cta' >

@@ -245,7 +245,7 @@ img {
 function PollenStatus({ipfs}) {
   const pollenStatuses = getPollenStatus(ipfs?.output?.log)
   return <><Stepper activeStep={pollenStatuses.length}>
-    <Step key="start"><StepLabel>Initializing</StepLabel></Step>
+    <Step key="start"><StepLabel>Uploading to the InterPlanetary FileSystem</StepLabel></Step>
     { pollenStatuses?.map((pollenStatus,index) => <Step key={`step_${index}`} completed={index < pollenStatuses.length-1}>
     <StepLabel>{pollenStatus.title}</StepLabel> 
       </Step>) }

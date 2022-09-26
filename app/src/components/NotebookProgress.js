@@ -1,7 +1,10 @@
+import styled from "@emotion/styled";
 import { Box, LinearProgress, Typography } from "@material-ui/core";
 import Debug from "debug";
 import { last } from "ramda";
 import React from "react";
+import { Colors } from "../styles/global";
+import LoaderComponent from "./LoaderComponent";
 
 const debug = Debug("NotebookProgress");
 
@@ -18,34 +21,31 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!inProgress)
       return null;
 
-    return  <><Box display="flex" alignItems="center" m={1}>
-      <Box width="100%" mr={1}>
-         { metadata && "Overall Progress:" }
-          <LinearProgress value={progress} variant="determinate" color="secondary" />
-      </Box>
-      <Box minWidth={35}>
-        <Typography variant="body2" color="textSecondary">{`${Math.floor(
-          progress
-        )}%`}</Typography>
-      </Box>
-      </Box>
-      
-      { fineProgress ? <Box display="flex" alignItems="center" m={1}>
-        <Box width="100%" mr={1}>
-          Current Step:
-          <LinearProgress value={fineProgress} variant="determinate" color="primary" /> 
-        </Box> 
-        <Box minWidth={35}>
-        <Typography variant="body2" color="textSecondary">{`${Math.floor(
-          fineProgress
-        )}%`}</Typography>    
-        </Box>   
-        </Box> : null
-        }
+    return <>
+      <LoaderComponent
+        info_text={metadata && 'Overall Progress'}
+        progress={progress}
+      />
+
+      { 
+        fineProgress && 
+        <LoaderComponent
+          info_text='Current Step:'
+          progress={fineProgress}
+        />
+      }
  
-       {metadata && <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography> }
-    </>
+       {  
+        metadata && 
+        <Typography variant="body2" color="textSecondary" align="center">
+          Please wait... Results should start appearing within a minute or two.
+        </Typography> 
+      }
+      </>
 }
+
+
+
 
 
 export const getProgress = (log, numCells) => {

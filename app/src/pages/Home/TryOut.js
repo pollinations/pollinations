@@ -9,7 +9,7 @@ import { getMedia } from '../../data/media';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
-import { Button, Divider, List, ListItem, ListItemText, Step, StepLabel, Stepper } from '@material-ui/core';
+import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
 import { useFormik } from 'formik';
 import { last, zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';

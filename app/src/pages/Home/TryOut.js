@@ -9,13 +9,16 @@ import { getMedia } from '../../data/media';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
-import { Divider, List, ListItem, ListItemText, Step, StepLabel, Stepper } from '@material-ui/core';
+import { Button, Divider, List, ListItem, ListItemText, Step, StepLabel, Stepper } from '@material-ui/core';
 import { useFormik } from 'formik';
 import { last, zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
+import { useRandomPollen } from '../../hooks/useRandomPollen';
 
 const debug = Debug("Envisioning");
+
+const MODEL = "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion";
 
 const form = {
   "prompt": {
@@ -45,20 +48,23 @@ export default React.memo(function TryOut() {
   // select random initial CID
   const initialCID = null; // initialCIDs[Math.floor(Math.random() * initialCIDs.length)];
 
-  const { submitToAWS, isLoading, ipfs } = useAWSNode({contentID: initialCID});
+  const { submitToAWS, isLoading, ipfs, updatePollen, nodeID, setNodeID } = useAWSNode({});
+
+  useRandomPollen(nodeID, MODEL, setNodeID);
 
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion", false, {priority: 1});
+    await submitToAWS(values, MODEL, false, {priority: 1});
   }
 
 
   
   const [isAdmin, _] = useIsAdmin();
 
-  const stableDiffOutput = ipfs?.output && ipfs?.output["stable-diffusion"];
-
+  const hasImageInRoot = ipfs?.output && Object.keys(ipfs.output).find(key => key.endsWith(".jpg") || key.endsWith(".png"));
+  const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
+  
 
   return <PageLayout >
         <HeroSubHeadLine>
@@ -67,7 +73,12 @@ export default React.memo(function TryOut() {
 
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
+      { isAdmin && ipfs?.output?.done === true && <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+                        Add to Examples
+                    </Button>
+                    }
       { isLoading && <PollenStatus ipfs={ipfs} /> }
+      
       <Previewer output={stableDiffOutput} />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       

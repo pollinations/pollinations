@@ -11,10 +11,10 @@ export function useRandomPollen(nodeID, selectedModel, setNodeID) {
     const [isAdmin, _] = useIsAdmin();
     debug("isAdmin", isAdmin);
     useEffect(() => {
-        if (!nodeID && selectedModel.key) {
+        if (!nodeID && selectedModel) {
             (async () => {
-                debug("getting pollens for model", selectedModel.key);
-                let pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true });
+                debug("getting pollens for model", selectedModel);
+                let pollens = await getPollens({ image: selectedModel, success: true, example: isAdmin ? false : true });
 
                 // if (pollens.length === 0) {
                 //     pollens = await getPollens({ image: selectedModel.key, success: true});
@@ -23,6 +23,7 @@ export function useRandomPollen(nodeID, selectedModel, setNodeID) {
                     // select random pollen
                     const { input } = pollens[Math.floor(Math.random() * pollens.length)];
                     setNodeID(input);
+                    debug("setting nodeID", input);
                 }
             })();
         }

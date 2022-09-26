@@ -40,7 +40,7 @@ export default React.memo(function Create() {
     
     const navigateTo = useNavigate();
 
-    useRandomPollen(params.nodeID, selectedModel, setNodeID);
+    useRandomPollen(params.nodeID, selectedModel.key, setNodeID);
 
     // dispatch to AWS
     const dispatch = async (values) => {

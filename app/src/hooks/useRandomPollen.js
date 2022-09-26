@@ -14,7 +14,7 @@ export function useRandomPollen(nodeID, selectedModel, setNodeID) {
         if (!nodeID && selectedModel) {
             (async () => {
                 debug("getting pollens for model", selectedModel);
-                let pollens = await getPollens({ image: selectedModel, success: true, example: isAdmin ? false : true });
+                let pollens = await getPollens({ image: selectedModel, success: true, example: isAdmin && false ? false : true });
 
                 // if (pollens.length === 0) {
                 //     pollens = await getPollens({ image: selectedModel.key, success: true});

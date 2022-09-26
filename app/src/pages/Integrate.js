@@ -1,5 +1,6 @@
 import TempLayout from '../components/layouts/Temp'
 import styled from '@emotion/styled';
+import { Colors } from '../styles/global';
 
 const Integrate = props => 
   <TempLayout Content={Content}/>;
@@ -7,7 +8,7 @@ const Integrate = props =>
 export default Integrate
 const Style = styled.div`
 span {
-  color: rgb(233, 250, 41);
+  color: ${Colors.accent};
 }
 `
 const Content = [

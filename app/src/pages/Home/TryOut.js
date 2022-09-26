@@ -6,7 +6,7 @@ import React from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { useFormik } from 'formik';
@@ -162,7 +162,7 @@ export const CreateButton = styled.button`
 
 width: 129px;
 height: 52;
-background: rgb(233, 250, 41);
+background: ${Colors.accent};
 border-radius: 40px;
 
 margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};

@@ -1,4 +1,4 @@
-import { GlobalSidePadding } from "./global"
+import { Colors, GlobalSidePadding } from "./global"
 
 export const FlexBetween = `
 width: 100%;
@@ -7,7 +7,7 @@ justify-content: space-between;
 align-items: center;
 `
 export const BaseButtonStyle = `
-  background-color: rgb(233, 250, 41) !important;
+  background-color: ${Colors.accent} !important;
   color: black !important;
   font-size: 1rem;
   font-weight: 600;

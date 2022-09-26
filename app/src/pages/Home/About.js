@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { MOBILE_BREAKPOINT } from '../../styles/global'
+import { Colors, MOBILE_BREAKPOINT } from '../../styles/global'
 
 
 // About Pollinations Section
@@ -43,7 +43,7 @@ const About = props => {
   }
   
   i {
-    color: rgb(233, 250, 41);
+    color: ${Colors.accent};
     font-weight: 400;
   }
   

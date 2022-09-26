@@ -8,7 +8,7 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!output?.log?.split)
         return null;
 
-    const { progress, fineProgress, inProgress } = ParseProgress(output, metadata);
+    const { progress, inProgress } = ParseProgress(output, metadata);
     
     if (!inProgress)
       return null;

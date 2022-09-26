@@ -19,14 +19,6 @@ export const NotebookProgress = ({output, metadata}) => {
         progress={progress}
       />
 
-      { 
-        (fineProgress !== 0) ??
-        <LoaderComponent
-          info_text='Current Step:'
-          progress={fineProgress}
-        />
-      }
- 
       {  
         metadata && 
         <Typography variant="body2" color="textSecondary" align="center">

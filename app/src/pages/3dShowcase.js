@@ -2,7 +2,7 @@ import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
 import whyBG from '../assets/imgs/BG7.png'
 import StarIMG from '../assets/imgs/star.png'
-import { BackGroundImage, MOBILE_BREAKPOINT } from '../styles/global'
+import { BackGroundImage, Colors, MOBILE_BREAKPOINT } from '../styles/global'
 // why we do it
 import AvatarClipIMG from '../assets/imgs/avatar_clip_example.png'
 import DreamfieldsIMG from '../assets/imgs/dreamfields_example.png'
@@ -161,7 +161,7 @@ span {
   font-size: 24px;
   line-height: 31px;
   margin: 0;
-  color: rgb(233, 250, 41);
+  color: ${Colors.accent};
 }
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 40px;

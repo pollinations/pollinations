@@ -9,8 +9,9 @@ import { getMedia } from '../../data/media';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
+import { Divider, List, ListItem, ListItemText, Step, StepLabel, Stepper } from '@material-ui/core';
 import { useFormik } from 'formik';
-import { reverse, zipObj } from 'ramda';
+import { last, zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 
@@ -53,7 +54,6 @@ export default React.memo(function TryOut() {
   }
 
 
-  const pollenStatus = getPollenStatus(ipfs?.output?.log)
   
   const [isAdmin, _] = useIsAdmin();
 
@@ -67,25 +67,13 @@ export default React.memo(function TryOut() {
 
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-      { pollenStatus && <><b>{ pollenStatus.title }</b> {pollenStatus?.payload?.split("\n").map(line => <div>{line}</div>)}</>  }
+      <PollenStatus ipfs={ipfs} />
       <Previewer output={stableDiffOutput} />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
 </PageLayout>
 });
 
-
-const getPollenStatus = (log) => {
-  if (!log) return null;
-
-  const statusWithPrefix = reverse(log.split("\n")).find(line => line?.startsWith("pollen_status:"));
-  
-  if (!statusWithPrefix) return null;
-
-  const status = JSON.parse(statusWithPrefix.replace("pollen_status: ", ""));
-
-  return status;
-}
 
 const HeroSubHeadLine = styled.p`
 font-family: 'DM Sans';
@@ -253,4 +241,34 @@ img {
 
 `
 
+
+function PollenStatus({ipfs}) {
+  const pollenStatuses = getPollenStatus(ipfs?.output?.log)
+  return <><Stepper activeStep={pollenStatuses.length}>
+    <Step key="start"><StepLabel>Initializing</StepLabel></Step>
+    { pollenStatuses?.map((pollenStatus,index) => <Step key={`step_${index}`} completed={index < pollenStatuses.length-1}>
+    <StepLabel>{pollenStatus.title}</StepLabel> 
+      </Step>) }
+    </Stepper>
+      <List style={{ maxWidth: "800px" }}>
+        {last(pollenStatuses)?.payload?.split("\n").map(line => <><ListItem><ListItemText>{line}</ListItemText></ListItem><Divider variant="inset" component="li" /></>)}
+       
+      </List>
+    </>;
+}
+
+
+
+const getPollenStatus = (log) => {
+  if (!log) return [];
+
+  const statuses = log.split("\n")
+                    .filter(line => line?.startsWith("pollen_status:"))
+                    .map(removePrefix);;
+  
+
+  return statuses;
+}
+
+const removePrefix = statusWithPrefix => JSON.parse(statusWithPrefix.replace("pollen_status: ", ""));
 

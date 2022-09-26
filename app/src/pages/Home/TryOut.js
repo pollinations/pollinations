@@ -12,6 +12,7 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 import { useFormik } from 'formik';
 import { reverse, zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 const debug = Debug("Envisioning");
 
@@ -54,6 +55,11 @@ export default React.memo(function TryOut() {
 
   const pollenStatus = getPollenStatus(ipfs?.output?.log)
   
+  const [isAdmin, _] = useIsAdmin();
+
+  const stableDiffOutput = ipfs?.output && ipfs?.output["stable-diffusion"];
+
+
   return <PageLayout >
         <HeroSubHeadLine>
         Explain your vision with words and watch it come to life!
@@ -61,9 +67,9 @@ export default React.memo(function TryOut() {
 
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-      { pollenStatus && <><b>{ pollenStatus.title }</b> {pollenStatus.payload} </> }
-      <Previewer ipfs={ipfs} />   
-      <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} />
+      { pollenStatus && <><b>{ pollenStatus.title }</b> {pollenStatus?.payload?.split("\n").map(line => <div>{line}</div>)}</>  }
+      <Previewer output={stableDiffOutput} />   
+      {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
 </PageLayout>
 });
@@ -202,11 +208,11 @@ background-color: grey;
 
 `
 
-const Previewer = ({ ipfs }) => {
+const Previewer = ({ output }) => {
 
-    if (!ipfs?.output) return null;
+    if (!output) return null;
 
-    const images = getMedia(ipfs.output);
+    const images = getMedia(output);
 
     return <PreviewerStyle
         children={

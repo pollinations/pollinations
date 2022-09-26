@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Headline, MOBILE_BREAKPOINT } from '../../styles/global'
+import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
 
 // Multiple platforms Section
@@ -59,7 +59,7 @@ const MultiplePlatforms = props => {
   `
   const CTA = styled.button`
   z-index: 1;
-  background: rgb(233, 250, 41);
+  background: ${Colors.accent};
   border-radius: 40px;
   padding: 1em 2em;
   border: none;

@@ -11,7 +11,7 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 // take it away
 import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
 import { useFormik } from 'formik';
-import { last, zipObj } from 'ramda';
+import { last, reverse, zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
@@ -305,7 +305,7 @@ const getPollenStatus = (log) => {
   if (!pollenStatuses) return null;
   return ({ 
     pollenStatuses, 
-    prompts: last(pollenStatuses)?.payload?.split("\n")});
+    prompts: reverse(last(pollenStatuses)?.payload?.split("\n"))});
 }
 
 const removePrefix = statusWithPrefix => JSON.parse(statusWithPrefix.replace("pollen_status: ", ""));

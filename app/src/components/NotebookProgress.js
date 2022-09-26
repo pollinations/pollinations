@@ -37,7 +37,7 @@ function ParseProgress(output, metadata) {
   const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
   debug("progress", progress, inProgress, fineProgress);
 
-  return {progress, fineProgress, inProgress};
+  return { progress, fineProgress, inProgress };
 }
 
 

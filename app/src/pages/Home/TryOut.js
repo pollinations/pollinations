@@ -67,7 +67,7 @@ export default React.memo(function TryOut() {
 
 
       <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-      <PollenStatus ipfs={ipfs} />
+      { isLoading && <PollenStatus ipfs={ipfs} /> }
       <Previewer output={stableDiffOutput} />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       

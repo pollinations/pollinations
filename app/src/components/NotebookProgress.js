@@ -1,7 +1,6 @@
-import { Box, LinearProgress, Typography } from "@material-ui/core";
 import Debug from "debug";
 import { last } from "ramda";
-import React from "react";
+import LoaderComponent from "./LoaderComponent";
 
 const debug = Debug("NotebookProgress");
 
@@ -9,43 +8,38 @@ export const NotebookProgress = ({output, metadata}) => {
     if (!output?.log?.split)
         return null;
 
-    const fineProgressTemp = getFinegrainedProgress(output.log)*100;
-    const progress = metadata ? getProgress(output.log, metadata.numCells)*100 : fineProgressTemp;
-    const fineProgress = metadata ? fineProgressTemp : 0;
+    const { progress, inProgress } = ParseProgress(output, metadata);
     
-    const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
-    debug("progress", progress, inProgress, fineProgress);
     if (!inProgress)
       return null;
 
-    return  <><Box display="flex" alignItems="center" m={1}>
-      <Box width="100%" mr={1}>
-         { metadata && "Overall Progress:" }
-          <LinearProgress value={progress} variant="determinate" color="secondary" />
-      </Box>
-      <Box minWidth={35}>
-        <Typography variant="body2" color="textSecondary">{`${Math.floor(
-          progress
-        )}%`}</Typography>
-      </Box>
-      </Box>
-      
-      { fineProgress ? <Box display="flex" alignItems="center" m={1}>
-        <Box width="100%" mr={1}>
-          Current Step:
-          <LinearProgress value={fineProgress} variant="determinate" color="primary" /> 
-        </Box> 
-        <Box minWidth={35}>
-        <Typography variant="body2" color="textSecondary">{`${Math.floor(
-          fineProgress
-        )}%`}</Typography>    
-        </Box>   
-        </Box> : null
-        }
- 
-       {metadata && <Typography variant="body2" color="textSecondary" align="center">Please wait... Results should start appearing within a minute or two.</Typography> }
-    </>
+    return <>
+      <LoaderComponent
+        info_text={metadata && 'Overall Progress'}
+        progress={progress}
+      />
+
+      {  
+        metadata && 
+        <Typography variant="body2" color="textSecondary" align="center">
+          Please wait... Results should start appearing within a minute or two.
+        </Typography> 
+      }
+      </>
 }
+
+
+function ParseProgress(output, metadata) {
+  const fineProgressTemp = getFinegrainedProgress(output.log)*100;
+  const progress = metadata ? getProgress(output.log, metadata.numCells)*100 : fineProgressTemp;
+  const fineProgress = metadata ? fineProgressTemp : 0;
+  
+  const inProgress =  progress >= 0 && !output?.done && !(progress >= 100);
+  debug("progress", progress, inProgress, fineProgress);
+
+  return { progress, fineProgress, inProgress };
+}
+
 
 
 export const getProgress = (log, numCells) => {

@@ -55,7 +55,7 @@ export default React.memo(function TryOut() {
   const inputs = ipfs?.input ? overrideDefaultValues(form, ipfs?.input) : form;
 
   const dispatch = async (values) => {
-    await submitToAWS(values, MODEL, false, {priority: 1});
+    await submitToAWS({...values, seed: Math.floor(Math.random() * 100)}, MODEL, false, {priority: 1});
   }
 
 

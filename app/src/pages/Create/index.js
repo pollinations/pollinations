@@ -1,28 +1,26 @@
 import styled from '@emotion/styled';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
-import React, { useEffect } from "react";
+import React from "react";
 import { SEOMetadata } from '../../components/Helmet';
 import { GlobalSidePadding } from '../../styles/global';
 import Form from './Form';
  
-import { Button, CircularProgress } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import { useNavigate, useParams } from 'react-router-dom';
 import Previewer from './Previewer';
 
-import Debug from 'debug';
 
-import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+import Banner from '../../components/Banner';
 import { FailureViewer } from '../../components/FailureViewer';
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
 import useGPUModels from '../../hooks/useGPUModels';
-import { useIsAdmin } from '../../hooks/useIsAdmin';
 import useLocalStorage from '../../hooks/useLocalStorage';
-import Banner from '../../components/Banner';
+import { useRandomPollen } from '../../hooks/useRandomPollen';
 
+import Debug from "debug";
 
-
-const debug = Debug("pages/Create/index");
+const debug = Debug("pages/Create");
 
 export default React.memo(function Create() {
     // :id and :model from url
@@ -42,7 +40,7 @@ export default React.memo(function Create() {
     
     const navigateTo = useNavigate();
 
-    useRandomPollen(params.nodeID, selectedModel, setNodeID);
+    useRandomPollen(params.nodeID, selectedModel.key, setNodeID);
 
     // dispatch to AWS
     const dispatch = async (values) => {
@@ -120,31 +118,6 @@ margin-top: 3em;
 const ResultsArea = styled.div`
 grid-area: results;
 `
-
-function useRandomPollen(nodeID, selectedModel, setNodeID) {
-    const [isAdmin,_] = useIsAdmin();
-    debug("isAdmin", isAdmin);
-    useEffect(() => {
-        if (!nodeID && selectedModel.key) {
-            (async () => {
-                debug("getting pollens for model", selectedModel.key);
-                let pollens = await getPollens({ image: selectedModel.key, success: true, example: isAdmin ? false : true});
-                
-                // if (pollens.length === 0) {
-                //     pollens = await getPollens({ image: selectedModel.key, success: true});
-                // }
-
-                if (pollens.length > 0) {
-                    // select random pollen
-                    const { input } = pollens[Math.floor(Math.random() * pollens.length)];
-                    setNodeID(input);
-                }
-            })();
-        }
-    }, [nodeID, selectedModel]);
-
-
-}
 
 function parseURL(url){
     const [ , ...parts ] = url.split('/');

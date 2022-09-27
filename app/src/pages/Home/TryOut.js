@@ -258,7 +258,7 @@ grid-gap: 3em;
 padding-top: 1.5em;
 img {
   width: 100%;
-  max-width: 512x;
+  max-width: 512px;
   margin: 0 auto;
 }
 p {
@@ -268,6 +268,15 @@ p {
   font-size: 16px;
   line-height: 22px;
   max-width: 300px;
+  text-overlow: ellipsis;
+  @supports (-webkit-line-clamp: 4) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: initial;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+  }
 }
 `
 

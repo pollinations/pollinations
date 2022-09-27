@@ -7,7 +7,7 @@ const debug = Debug("media");
 const _mediaTypeMapWithoutAll = {
     "video": [".mp4",".webm"],
     "image": [".jpg", ".jpeg", ".png"],
-    "text": [".md", ".txt"],
+    "text": [".md"],
     "audio": [".mp3", ".wav", ".ogg",".flac"],
     "3dmodel": [".glb"],
   }

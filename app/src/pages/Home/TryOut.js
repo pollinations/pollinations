@@ -258,7 +258,7 @@ grid-gap: 3em;
 padding-top: 1.5em;
 img {
   width: 100%;
-  max-width: 300px;
+  max-width: 512x;
   margin: 0 auto;
 }
 p {

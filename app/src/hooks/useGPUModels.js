@@ -45,7 +45,12 @@ const getModelsWithMetadata = modelsMetadata => {
 
 export default useGPUModels;
 
-const MODELS = [{
+const MODELS = [
+    {
+        listed: true,
+        image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion"
+    },
+    {
         listed: true,
         image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private"
     },
@@ -90,10 +95,6 @@ const MODELS = [{
         listed: false,
         image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/clipmesh"
     },
-    {
-        listed: true,
-        image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion"
-    }
     // "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/preset-envisioning",
     // "614871946825.dkr.ecr.us-east-1.amazonaws.com/voodoohop/dalle-playground",
 ]

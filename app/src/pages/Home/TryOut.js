@@ -99,6 +99,8 @@ text-align: center;
 max-width: 55%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 90%;
+
+  
 }
 
 color: #FFFFFF;
@@ -247,6 +249,13 @@ grid-gap: 0em;
 
 .MuiStepIcon-root.MuiStepIcon-completed, .MuiStepIcon-root.MuiStepIcon-active{
   color: rgb(233, 250, 41) !important;
+}
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  .MuiStepper-horizontal {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.3em !important;
+  }
 }
 `;
 

@@ -1,4 +1,5 @@
 import styled from '@emotion/styled'
+import { Colors, MOBILE_BREAKPOINT } from '../../styles/global'
 
 
 // About Pollinations Section
@@ -8,7 +9,7 @@ const About = props => {
 
     return <AboutStyle>
       <p>
-        Pollinations is a lively, <i> collaborative ecosystem for <br/> AI-generated media</i>. 
+        Pollinations is a lively, collaborative <i>  ecosystem for <br/> AI-generated media</i>. 
         We empower the creation of multiple solutions for the Web3 and the entertainment industry.
       </p>
     </AboutStyle>
@@ -42,7 +43,7 @@ const About = props => {
   }
   
   i {
-    color: rgb(233, 250, 41);
+    color: ${Colors.accent};
     font-weight: 400;
   }
   
@@ -53,5 +54,12 @@ const About = props => {
     padding: 0 0.3em;
     margin: 0 0.2em;
     display: inline-block;  
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    p{
+      font-size: 40px;
+      line-height: 40px;
+    }
   }
   `

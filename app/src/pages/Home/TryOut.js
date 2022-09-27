@@ -6,7 +6,7 @@ import React from "react";
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
@@ -99,8 +99,8 @@ text-align: center;
 max-width: 55%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 90%;
-
-  
+  font-size: 24px;
+  line-height: 30px;
 }
 
 color: #FFFFFF;
@@ -187,7 +187,7 @@ export const CreateButton = styled.button`
 
 width: 129px;
 height: 52;
-background: rgb(233, 250, 41);
+background: ${Colors.accent};
 border-radius: 40px;
 
 margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};

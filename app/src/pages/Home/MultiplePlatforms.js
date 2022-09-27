@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Headline, MOBILE_BREAKPOINT } from '../../styles/global'
+import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
 
 // Multiple platforms Section
@@ -16,8 +16,8 @@ const MultiplePlatforms = props => {
   
       <MultiplePlatformsSubHeadline>
         The digital asset market is growing every year. <br/>
-        Companies in music, games, NFTs and design are 
-        adding value to their businesses by integrating 
+        Companies in music, games, NFTs and design  are <br/>
+        adding value to their businesses by integrating <br/> 
         AI creation into their plan.
       </MultiplePlatformsSubHeadline>
   
@@ -35,6 +35,9 @@ const MultiplePlatforms = props => {
   font-family: 'DM Sans';
   font-size: 60px;
   z-index: 1;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 40px;
+  }
   `
   
   const MultiplePlatformsSubHeadline = styled.p`
@@ -49,12 +52,14 @@ const MultiplePlatforms = props => {
   text-align: center;
   z-index:3;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    width: 90%;
+    width: 70%;
+    font-size: 18px;
+    line-height: 25px;
   }
   `
   const CTA = styled.button`
   z-index: 1;
-  background: rgb(233, 250, 41);
+  background: ${Colors.accent};
   border-radius: 40px;
   padding: 1em 2em;
   border: none;

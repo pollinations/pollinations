@@ -24,7 +24,6 @@ const PlatformLink = (platform) => {
       href={url}
       style={{ 
         margin: '0 0.75em 0 0',
-        backgroundColor: '#4F4F4F',
         width: '50px',
         height: '50px',
         borderRadius: '50%',

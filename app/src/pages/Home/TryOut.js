@@ -160,6 +160,7 @@ export const CreateInput = styled.input`
 width: 53vw;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 90vw;    
+    padding-right: 7rem;
 }
 height: 65px;
 background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
@@ -208,8 +209,11 @@ cursor: pointer;
 :disabled {
 background-color: grey;
 }
-
-`
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  width: 100px;
+  margin-left: ${props => props.marginLeft || 'calc(-100px - 0.5em)'};
+}
+  `
 
 const Previewer = ({ output, prompts }) => {
 

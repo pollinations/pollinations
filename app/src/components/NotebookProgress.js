@@ -1,3 +1,4 @@
+import { Typography } from "@material-ui/core";
 import Debug from "debug";
 import { last } from "ramda";
 import LoaderComponent from "./LoaderComponent";

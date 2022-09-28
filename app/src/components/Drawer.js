@@ -12,7 +12,7 @@ export default function TemporaryDrawer({ drawerState, children }) {
     setState(open);
   };
 
-  return <Drawer anchor='top' open={state} onClose={toggleDrawer(false)}>
+  return <Drawer anchor='right' open={state} onClose={toggleDrawer(false)}>
       <DrawerContainer onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
         {children}
       </DrawerContainer>
@@ -21,6 +21,9 @@ export default function TemporaryDrawer({ drawerState, children }) {
 
 const DrawerContainer = styled.div`
 width: 100%;
+height: 100%;
+min-width: 77vw;
+background-color: black;
 z-index: 5;
 `;
 

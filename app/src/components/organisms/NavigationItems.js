@@ -2,7 +2,7 @@ import RouterLink from '../molecules/RouterLink'
 import styled from '@emotion/styled'
 import { MOBILE_BREAKPOINT } from '../../styles/global'
 
-const NavigationItems = ({ navRoutes, column }) => {
+const NavigationItems = ({ navRoutes, column, margin, gap }) => {
 
     const nav_items = Object.keys(navRoutes).map((key) => (
         <RouterLink key={key} to={navRoutes[key].to}>
@@ -10,7 +10,7 @@ const NavigationItems = ({ navRoutes, column }) => {
         </RouterLink>
     ));
 
-    if (column) return <VerticalStyle>
+    if (column) return <VerticalStyle margin={margin} gap={gap}>
         {nav_items}
     </VerticalStyle>
 
@@ -60,6 +60,20 @@ text-align: center;
 
 display: flex;
 flex-direction: column;
+gap: ${props => props.gap || ''};
+margin: ${props => props.margin || ''};
+a {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 24px;
+    line-height: 31px;
+    text-align: center;
+
+    text-transform: capitalize;
+
+    color: #FFFFFF;
+}
 
 li {
     padding: 1em 0em;

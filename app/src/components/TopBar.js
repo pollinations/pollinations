@@ -11,6 +11,9 @@ import { FlexBetween } from "../styles/classes"
 import Logo from './Logo'
 import NavigationItems from "./organisms/NavigationItems"
 import { SocialLinks } from './Social'
+import { CloseOutlined } from "@material-ui/icons"
+import MobileMenuIcon from '../assets/menuIcon.svg'
+
 
 const TopBar = ({ navRoutes }) => {
 
@@ -30,11 +33,11 @@ const TopBar = ({ navRoutes }) => {
       <NavigationItems navRoutes={navRoutes}/>
       
 
-      <SocialLinks small/>
+      <SocialLinks small hideOnMobile/>
 
       <MenuButton>
         <IconButton onClick={()=>drawerState[1](true)} >
-          <HamburgerIcon />
+          <img src={MobileMenuIcon}/>
         </IconButton>
       </MenuButton>
 
@@ -42,11 +45,59 @@ const TopBar = ({ navRoutes }) => {
     </TopContainer>
 
     <TemporaryDrawer drawerState={drawerState}>
-      <NavigationItems column navRoutes={navRoutes}/>
+      <MobileMenuStyle>
+        <MobileCloseIconStyle>
+          <IconButton onClick={()=>drawerState[1](false)}>
+            <CloseOutlined />
+          </IconButton>
+        </MobileCloseIconStyle>
+
+        <NavigationItems column navRoutes={navRoutes} margin='5em 0 0 0' gap='2em'/>
+        <div >
+          <CTAStyle>
+              Let's talk 
+              <br/>
+              <span> hello@pollinations.ai </span>
+          </CTAStyle>
+          <SocialLinks small />
+        </div>
+      </MobileMenuStyle>
     </TemporaryDrawer>
   </>
 };
+const MobileMenuStyle = styled.div`
+position: relative;
+width: 100%;
+height: 100%;
 
+display: flex;
+flex-direction: column;
+justify-content: space-evenly;
+align-items: center;
+
+padding: 20px 10px 60px;
+`;
+const MobileCloseIconStyle = styled.div`
+position: absolute;
+top: 20;
+right: 20;
+`;
+const CTAStyle = styled.p`
+
+font-family: 'DM Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 18px;
+line-height: 23px;
+text-align: center;
+
+color: #FFFFFF;
+padding-bottom: 0em;
+
+span {
+    color: #E9FA29;
+}
+`
 const TopContainer = styled.div`
   ${props => props.css};
   width: 100%;

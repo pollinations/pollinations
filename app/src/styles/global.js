@@ -1,7 +1,7 @@
 import styled from '@emotion/styled'
 
 export const GlobalSidePadding = '0 3%';
-export const MOBILE_BREAKPOINT = '768px';
+export const MOBILE_BREAKPOINT = '769px';
 
 export const Colors = {
   accent: 'rgb(233, 250, 41)'

@@ -49,6 +49,7 @@ span {
 const FlexColumn = styled.div`
 display: flex;
 flex-direction: column;
+align-items: center;
 `
 
 const NavItems = styled(FlexColumn)`
@@ -56,7 +57,7 @@ padding-top: 3em;
 align-items: flex-end;
 gap: 1em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-    align-items: flex-start;
+    align-items: center;
     padding-top: 0em;
 }
 `
@@ -70,6 +71,7 @@ const Items = ({ items, renderComponent, columns }) =>
 ;
 const ItemsStyle = styled.div`
 display: flex;
+justify-content: center;
 gap: 3em;
 width: 100%;
 `

@@ -3,18 +3,33 @@ import { Link } from '@material-ui/core'
 import Icon from './atoms/Icon'
 import { COLORS } from '../_globalConfig/colors'
 import { SOCIAL_LINKS } from '../_globalConfig/socialLinks'
+import styled from '@emotion/styled'
+import { MOBILE_BREAKPOINT } from '../styles/global'
 
 export const SocialPostStatus = ({ results }) =>
   Object.keys(results).map(
     (platform) => results[platform] && PostResultLink(results[platform], platform)
   )
 
-export const SocialLinks = () => (
-  <div
-    style={{ display: 'flex', alignItems: 'center' }}
-    children={Object.keys(SOCIAL_LINKS).map(PlatformLink)}
-  />
+export const SocialLinks = ({ small }) => (
+  <SocialStyle small={small}>
+    {Object.keys(SOCIAL_LINKS).map(PlatformLink)}
+  </SocialStyle>
 )
+const SocialStyle = styled.div`
+grid-area: social;
+align-self: center;
+display: flex;
+justify-content: flex-end;
+align-items: center;
+a {
+  width: ${props => props.small ? '30px' : '50px'} !important;
+  height: ${props => props.small ? '30px' : '50px'} !important;
+}
+@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
+  display: none;
+}
+`
 
 const PlatformLink = (platform) => {
   const { icon, url } = SOCIAL_LINKS[platform]

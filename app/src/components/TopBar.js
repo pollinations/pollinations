@@ -68,21 +68,17 @@ const NavBarStyle = styled.div`
   padding: ${GlobalSidePadding};
   padding: 1% 3%;
   @media (max-width: ${MOBILE_BREAKPOINT}){
-    grid-template-areas: "logo  nav mobilebutton social";
+    grid-template-areas: "logo nav mobilebutton social";
   }
 `
 const MenuButton = styled.div`
 grid-area: mobilebutton;
 justify-self: flex-end;
-@media only screen and (min-width: ${MOBILE_BREAKPOINT}){
+@media (min-width: ${MOBILE_BREAKPOINT}){
   display: none;
 }
 `
-const LogoStyle = styled.div`
-@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-  display: none;
-}
-`
+
 const StyleUrl = (url) => {
   if (url?.slice(0,2) === '/c') return `position: relative;`;
   if (url?.slice(0,2) === '/p') return `position: relative;`;

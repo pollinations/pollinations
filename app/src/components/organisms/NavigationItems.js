@@ -22,14 +22,16 @@ const NavigationItems = ({ navRoutes, column }) => {
 export default NavigationItems
 
 const HorizonalStyle = styled.div`
+grid-area: nav;
+align-self: center;
 list-style: none;
 
 display: flex;
-justify-content: flex-end;
+justify-content: center;
 align-items: center;
 width: 100%;
 gap: 2.7em;
-padding: 23px 0em;
+
 overflow-y: hidden;
 background-color: transparent;
 
@@ -49,6 +51,7 @@ color: #FFFFFF;
 
 `
 const VerticalStyle = styled.div`
+grid-area: nav;
 list-style: none;
 text-transform: uppercase;
 

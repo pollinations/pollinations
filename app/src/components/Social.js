@@ -11,8 +11,8 @@ export const SocialPostStatus = ({ results }) =>
     (platform) => results[platform] && PostResultLink(results[platform], platform)
   )
 
-export const SocialLinks = ({ small }) => (
-  <SocialStyle small={small}>
+export const SocialLinks = ({ small, hideOnMobile }) => (
+  <SocialStyle small={small} hideOnMobile={hideOnMobile}>
     {Object.keys(SOCIAL_LINKS).map(PlatformLink)}
   </SocialStyle>
 )
@@ -27,7 +27,7 @@ a {
   height: ${props => props.small ? '30px' : '50px'} !important;
 }
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-  display: none;
+  display: ${props => props.hideOnMobile ? 'none' : ''};
 }
 `
 

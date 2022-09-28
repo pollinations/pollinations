@@ -37,7 +37,6 @@ const TopBar = ({ navRoutes }) => {
 
       <MenuButton>
         <IconButton onClick={()=>drawerState[1](true)} >
-          {/* <HamburgerIcon /> */}
           <img src={MobileMenuIcon}/>
         </IconButton>
       </MenuButton>
@@ -47,12 +46,14 @@ const TopBar = ({ navRoutes }) => {
 
     <TemporaryDrawer drawerState={drawerState}>
       <MobileMenuStyle>
-        <IconButton onClick={()=>drawerState[1](false)} style={{alignSelf: 'flex-end'}}>
-          <CloseOutlined />
-        </IconButton>
+        <MobileCloseIconStyle>
+          <IconButton onClick={()=>drawerState[1](false)}>
+            <CloseOutlined />
+          </IconButton>
+        </MobileCloseIconStyle>
 
         <NavigationItems column navRoutes={navRoutes} margin='5em 0 0 0' gap='2em'/>
-        <div style={{marginTop: '10em'}}>
+        <div >
           <CTAStyle>
               Let's talk 
               <br/>
@@ -65,16 +66,22 @@ const TopBar = ({ navRoutes }) => {
   </>
 };
 const MobileMenuStyle = styled.div`
+position: relative;
 width: 100%;
 height: 100%;
 
 display: flex;
 flex-direction: column;
-justify-content: flex-start;
+justify-content: space-evenly;
 align-items: center;
 
-padding: 1em;
-`
+padding: 20px 10px 60px;
+`;
+const MobileCloseIconStyle = styled.div`
+position: absolute;
+top: 20;
+right: 20;
+`;
 const CTAStyle = styled.p`
 
 font-family: 'DM Sans';

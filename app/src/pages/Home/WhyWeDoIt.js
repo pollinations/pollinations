@@ -2,7 +2,7 @@ import styled from '@emotion/styled'
 import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global'
 import whyBG from '../../assets/imgs/doubleBg.png'
 import DiscordIMG from '../../assets/imgs/discord_section.png'
-import { CreateButton } from './TryOut'
+import CreateButton from '../../components/atoms/CreateButton'
 import { useNavigate } from 'react-router-dom'
 import StarIMG from '../../assets/imgs/star.png'
 // why we do it

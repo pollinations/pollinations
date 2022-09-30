@@ -20,8 +20,8 @@ export const SEOImage = ({url}) => {
     </Helmet>)
 };
 
-export const SEOMetadata= ({title, description, url}) => {
-    title = `Pollinations - ${title}`;
+export const SEOMetadata= ({ title, description, url }) => {
+    title = title ? `Pollinations - ${title}` : 'Pollinations';
 
     // não é a coisa mais bonita do mundo mas é o que temos de melhor
     url = url ? url : window.location.href;

@@ -5,6 +5,8 @@ import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
 import Footer from "./components/Footer"
 import PageTemplate from "./components/PageTemplate"
+import { SEOMetadata } from "./components/Helmet"
+
 // Components
 import ToolBar from "./components/ToolBar"
 import TopBar from "./components/TopBar"
@@ -57,6 +59,7 @@ const Pollinations = () => {
   }, [node.nodeID])
 
   return ( <>
+      <SEOMetadata/>
       
       <TopBar node={node} showNode={navigateToNode} navRoutes={MAIN_NAV_ROUTES} />
 

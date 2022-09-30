@@ -5,6 +5,11 @@ export const SOCIAL_LINKS = {
     icon: ICONS.discord,
     url: 'https://discord.gg/XXd99CrkCr',
   },
+  github: {
+    label: 'GitHub',
+    icon: ICONS.github,
+    url: 'https://www.github.com/pollinations'
+  },
   youtube: { 
     label: 'YouTube',
     icon: ICONS.youtube, 

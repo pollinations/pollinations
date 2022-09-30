@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';
 import { MOBILE_BREAKPOINT } from "../../../styles/global";
 import CreditsView from "./Credits";
-import { CreateButton } from "../../Home/TryOut";
+import CreateButton from "../../../components/atoms/CreateButton";
 
 const CustomizeParameters = ({ formik, isDisabled, inputs, credits, hasSubmit }) => { 
 

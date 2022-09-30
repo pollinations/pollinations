@@ -6,6 +6,7 @@ import { BackGroundImage, Colors, MOBILE_BREAKPOINT } from '../styles/global'
 // why we do it
 import AvatarClipIMG from '../assets/imgs/avatar_clip_example.png'
 import DreamfieldsIMG from '../assets/imgs/dreamfields_example.png'
+import CreateButton from '../components/atoms/CreateButton'
 
 const Showcase3d = props => {
   
@@ -102,9 +103,9 @@ const Example = (props) => {
       <ExplanationText color='white' marginTop='0'>
         {children} 
       </ExplanationText>
-      <CreateButton onClick={()=>navigate(url)}>
-      Try it out
-      </CreateButton>
+      <CreateButtonStyled onClick={()=>navigate(url)}>
+        Try it out
+      </CreateButtonStyled>
   </div>
 }
 
@@ -115,34 +116,11 @@ p {
 }
 `
 
-const CreateButton = styled.button`
-
-width: 129px;
-height: 52;
-background: #D8E449;
-border-radius: 40px;
-
-margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};
-
-border: none;
-
-font-family: 'DM Sans';
-font-style: normal;
-font-weight: 700;
-font-size: 17px;
-line-height: 22px;
-text-align: center;
-text-transform: uppercase;
-
-color: #040405;
-cursor: pointer;
-
-align-self: flex-start;
+const CreateButtonStyled = styled(CreateButton)`
 margin-left: 0;
-:disabled {
-background-color: grey;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  margin-left: 0;
 }
-
 `
 
 const Headline = styled.p`

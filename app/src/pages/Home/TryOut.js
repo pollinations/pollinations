@@ -7,6 +7,7 @@ import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import CreateButton from '../../components/atoms/CreateButton';
 
 // take it away
 import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
@@ -183,37 +184,7 @@ padding-left: 1.4rem;
 padding-right: 9rem;
 margin: 1em 0;
 `
-// move to own component
-export const CreateButton = styled.button`
 
-width: 129px;
-height: 52;
-background: ${Colors.accent};
-border-radius: 40px;
-
-margin-left: ${props => props.marginLeft || 'calc(-129px - 0.5em)'};
-
-border: none;
-
-font-family: 'DM Sans';
-font-style: normal;
-font-weight: 700;
-font-size: 16px;
-line-height: 22px;
-text-align: center;
-text-transform: uppercase;
-
-color: #040405;
-cursor: pointer;
-
-:disabled {
-background-color: grey;
-}
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: 100px;
-  margin-left: ${props => props.marginLeft || 'calc(-100px - 0.5em)'};
-}
-  `
 
 const Previewer = ({ output, prompts }) => {
 

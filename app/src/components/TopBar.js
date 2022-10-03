@@ -133,6 +133,7 @@ justify-self: flex-end;
 const StyleUrl = (url) => {
   if (url?.slice(0,2) === '/c') return `position: relative;`;
   if (url?.slice(0,2) === '/p') return `position: relative;`;
+  if (url?.slice(0,2) === '/n') return `position: relative;`;
   return ` 
     position: absolute;
     z-index: 1;`

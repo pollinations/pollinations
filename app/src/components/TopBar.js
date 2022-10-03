@@ -33,7 +33,7 @@ const TopBar = ({ navRoutes }) => {
       <NavigationItems navRoutes={navRoutes}/>
       
 
-      <SocialLinks small hideOnMobile/>
+      <SocialLinks small hideOnMobile gap='1em'/>
 
       <MenuButton>
         <IconButton onClick={()=>drawerState[1](true)} >
@@ -59,7 +59,7 @@ const TopBar = ({ navRoutes }) => {
               <br/>
               <span> hello@pollinations.ai </span>
           </CTAStyle>
-          <SocialLinks small />
+          <SocialLinks small gap='1em' />
         </div>
       </MobileMenuStyle>
     </TemporaryDrawer>

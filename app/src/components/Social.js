@@ -11,8 +11,8 @@ export const SocialPostStatus = ({ results }) =>
     (platform) => results[platform] && PostResultLink(results[platform], platform)
   )
 
-export const SocialLinks = ({ small, hideOnMobile }) => (
-  <SocialStyle small={small} hideOnMobile={hideOnMobile}>
+export const SocialLinks = ({ small, hideOnMobile, gap }) => (
+  <SocialStyle small={small} hideOnMobile={hideOnMobile} gap={gap}>
     {Object.keys(SOCIAL_LINKS).map(PlatformLink)}
   </SocialStyle>
 )
@@ -22,6 +22,7 @@ align-self: center;
 display: flex;
 justify-content: flex-end;
 align-items: center;
+gap: ${props => props.gap || '0em'};
 a {
   width: ${props => props.small ? '30px' : '50px'} !important;
   height: ${props => props.small ? '30px' : '50px'} !important;
@@ -38,7 +39,6 @@ const PlatformLink = (platform) => {
       key={`plt_link_${platform}`}
       href={url}
       style={{ 
-        margin: '0 0.75em 0 0',
         width: '50px',
         height: '50px',
         borderRadius: '50%',

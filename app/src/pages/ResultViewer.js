@@ -6,17 +6,17 @@ import { memo, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FailureViewer } from '../components/FailureViewer';
 import { SEO } from "../components/Helmet";
-import { IpfsLog } from "../components/Logs";
+// import { IpfsLog } from "../components/Logs";
 import MediaViewer from "../components/MediaViewer";
 import BigPreview from "../components/molecules/BigPreview";
 import { NotebookProgress } from "../components/NotebookProgress";
 import NotebookTitle from "../components/NotebookTitle";
-import { mediaToDisplay } from "../data/media";
+import { getMedia, mediaToDisplay } from "../data/media";
 import { GlobalSidePadding } from '../styles/global';
 import { getNotebookMetadata } from "../utils/notebookMetadata";
 import styled from '@emotion/styled'
 import { BaseContainer } from '../styles/global';
-
+import Banner from '../components/Banner';
 
 // STREAM VIEWER (/n)
 
@@ -54,7 +54,8 @@ export default memo(function ResultViewer({ ipfs }) {
   return <BaseContainer >
 
     <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
-
+    <Banner/>
+    <Space/>
     {   // Waiting Screen goes here
       !contentID &&
       <Typography>
@@ -73,12 +74,16 @@ export default memo(function ResultViewer({ ipfs }) {
 
     {success ? <Preview {...{ first, primaryInput, ipfs }} /> : <FailureViewer contentID={contentID} ipfs={ipfs} />}
 
-    <div style={{ width: '100%' }}>
+    {/* <div style={{ width: '100%' }}>
       <IpfsLog ipfs={ipfs} contentID={contentID} />
-    </div>
+    </div> */}
 
   </BaseContainer>
 })
+const Space = styled.div`
+width: 100%;
+height: 2em;
+`
 
 const LoadingStyle = styled(BaseContainer)`
 min-height: 80vh;
@@ -88,17 +93,25 @@ justify-content: center;
 `
 
 function Preview({ first, primaryInput, ipfs }) {
+
   return <>
-    <Box marginTop='2em' minWidth='100%' display='flex'
-      justifyContent='space-around' alignItems='flex-end' flexWrap='wrap'>
+    <Box marginTop='2em' minWidth='100%' display='flex' minHeight='50vh'
+      justifyContent='space-around' alignItems='flex-start' flexWrap='wrap'>
 
-      <BigPreview {...first} />
+      {
+        getMedia(ipfs.output)?.length ? <>
+        <BigPreview {...first} />
+        <Box minWidth='200px' maxWidth='20%'>
+          <Typography variant="h5" gutterBottom>
+            {primaryInput}
+          </Typography>
+        </Box> </>
+        :
+        <Typography variant="body2" color="textSecondary" align="flex-start" style={{marginRight: 'auto !important'}} >
+          Results should start appearing within a minute or two.
+        </Typography> 
+      }
 
-      <Box minWidth='200px' maxWidth='20%'>
-        <Typography variant="h5" gutterBottom>
-          {primaryInput}
-        </Typography>
-      </Box>
     </Box>
 
     {/* previews */}

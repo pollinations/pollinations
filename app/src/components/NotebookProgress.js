@@ -6,27 +6,19 @@ import LoaderComponent from "./LoaderComponent";
 const debug = Debug("NotebookProgress");
 
 export const NotebookProgress = ({output, metadata}) => {
-    if (!output?.log?.split)
+
+  if (!output?.log?.split)
         return null;
 
     const { progress, inProgress } = ParseProgress(output, metadata);
-    
+
     if (!inProgress)
       return null;
 
-    return <>
-      <LoaderComponent
-        info_text={metadata && 'Overall Progress'}
-        progress={progress}
-      />
-
-      {  
-        metadata && 
-        <Typography variant="body2" color="textSecondary" align="center">
-          Please wait... Results should start appearing within a minute or two.
-        </Typography> 
-      }
-      </>
+    return <LoaderComponent
+      info_text={metadata && 'Progress'}
+      progress={progress}
+    />
 }
 
 

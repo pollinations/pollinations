@@ -55,9 +55,9 @@ export default React.memo(function Create() {
     }
 
     debug("selectedModel", selectedModel, Model, Object.keys(models));
-    
+
     return <PageLayout >
-        <SEOMetadata title={selectedModel.url ?? 'OwnGpuPage'} />
+        <SEOMetadata title={selectedModel.name ?? 'Polllinations'} />
         <Banner/>
         <ParametersArea>
             <FlexBetween>

@@ -1,14 +1,15 @@
 
-import DropZone from './InputsUI/File';
-import styled from '@emotion/styled'
+import styled from '@emotion/styled';
 import { CreateInput } from '../../Home/TryOut';
+import DropDown from './InputsUI/DropDown';
+import DropZone from './InputsUI/File';
 
 const PrimaryInput = ({ isDisabled, formik, primary_input, selectedModel }) => {
 
 // if file or stablediffusion then render the button under credits/customize.
 const isStable = selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private'
 const isFile = (primary_input?.type === 'string') && (primary_input?.format === 'uri');
-
+const isDance =  selectedModel.key === '614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/dance-diffusion'
 
 if (isStable) return <>
     <CreateTextArea
@@ -34,7 +35,9 @@ if (isFile) return <>
     />
 </>;
 
-
+if (isDance) return <>
+    <DropDown></DropDown>
+    </>;
 return <CreateInputFullWidth
         variant='filled' 
         value={formik.values[primary_input?.key]}

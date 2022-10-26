@@ -22,7 +22,7 @@ const TopBar = ({ navRoutes }) => {
   
   return <>
     <TopContainer css={StyleUrl(location.pathname)}>
-    <Alert severity="info">We are upgrading our backend database. Things may be a little unstable until tomorrow.</Alert> 
+    <Alert severity="warning">We are upgrading our backend database. Things may be a little unstable until tomorrow.</Alert> 
     <NavBarStyle>
       <NavLink to='/' style={{ padding: 0, gridArea: 'logo', display: 'flex', alignItems: 'center', marginLeft: '1em' }}>
         <Logo size='150px' small='150px' margin='0' />  

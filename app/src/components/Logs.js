@@ -1,9 +1,9 @@
-import React from 'react'
-import { Button, CardContent, Link, Typography } from "@material-ui/core"
+import { Button, CardContent, Typography } from "@material-ui/core";
+import React from 'react';
 // import ReactJson from 'react-json-view'
 import Ansi from "ansi-to-react";
 
-import { getWebURL }  from  "@pollinations/ipfs/ipfsConnector";
+import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
 // import JupyterViewer from "react-jupyter-notebook";
 
 export const IpfsLog = ({ipfs,contentID}) => {

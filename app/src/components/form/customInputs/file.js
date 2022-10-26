@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
-import { getWebURL } from "@pollinations/ipfs/ipfsConnector";
+import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
 import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSInputWrite';
 import Debug from 'debug';
 import React, { useState } from 'react';

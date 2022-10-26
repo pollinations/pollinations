@@ -13,7 +13,7 @@ const Hero = props => {
       </HeroHeadline>
 
       <HeroSubHeadLine>
-        Pollinations curates and combines AI models to match your vision.
+        We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
       </HeroSubHeadLine> 
       
   
@@ -86,8 +86,8 @@ const Hero = props => {
   font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400;
-  font-size: 26px;
-  line-height: 34px;
+  font-size: 24px;
+  line-height: 26px;
   /* identical to box height */
   
   text-align: center;

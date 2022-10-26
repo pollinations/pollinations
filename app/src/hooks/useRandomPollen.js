@@ -1,4 +1,4 @@
-import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
+import { getPollens } from '@pollinations/ipfs/ipfsWebClient';
 import { useEffect } from "react";
 
 import { useIsAdmin } from './useIsAdmin';
@@ -19,7 +19,7 @@ export function useRandomPollen(nodeID, selectedModel, setNodeID) {
                 // if (pollens.length === 0) {
                 //     pollens = await getPollens({ image: selectedModel.key, success: true});
                 // }
-                if (pollens.length > 0) {
+                if (pollens && pollens.length > 0) {
                     // select random pollen
                     const { input } = pollens[Math.floor(Math.random() * pollens.length)];
                     setNodeID(input);

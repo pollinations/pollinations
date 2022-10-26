@@ -1,12 +1,12 @@
-import { Box, Button, GridList, GridListTile, Paper } from "@material-ui/core";
+import { Box, Button, Paper } from "@material-ui/core";
 import Debug from "debug";
 import Markdown from 'markdown-to-jsx';
 import React from "react";
 import { getMedia } from "../data/media";
 // Icons
-import { getWebURL }  from  "@pollinations/ipfs/ipfsConnector";
+import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
+import { OBJModel } from 'react-3d-viewer';
 import { GridStyle } from '../styles/global';
-import {OBJModel} from 'react-3d-viewer'
 
 
 export const MediaViewer =  ({ filename, content, type, style }) => {

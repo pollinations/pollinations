@@ -1,10 +1,9 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
+import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
 import Debug from 'debug';
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSWrite';
-import { getWebURL } from  "@pollinations/ipfs/ipfsConnector";
 
 const debug = Debug('formfile');
 
@@ -15,8 +14,9 @@ export default function Previews(props) {
   const [isUploading, setIsUploading] = useState(false)
   
   
-  const { add, cid, mkDir } = useIPFSWrite()
-
+  // const { add, cid, mkDir } = useIPFSWrite()
+  const add=null, cid=null, mkDir=null;
+  
 
   debug('props', props);
   

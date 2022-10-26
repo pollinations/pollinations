@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
-import { getPollens } from '@pollinations/ipfs/awsPollenRunner';
-import MediaViewer from "../MediaViewer/";
-import { mediaToDisplay } from "../../data/media";
 import styled from "@emotion/styled";
+import { getPollens } from '@pollinations/ipfs/ipfsWebClient';
+import useIPFS from '@pollinations/ipfs/reactHooks/useIPFS';
+import { useEffect, useMemo, useState } from "react";
+import { mediaToDisplay } from "../../data/media";
 import useGPUModels from "../../hooks/useGPUModels";
 import { getInputs } from "../../pages/Create/Form/utils";
+import MediaViewer from "../MediaViewer/";
 
 function Examples(props) {
     const { url  } = props;

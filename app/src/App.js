@@ -4,8 +4,8 @@ import { useCallback, useEffect } from "react"
 import { Navigate, Route, Routes, useNavigate, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
 import Footer from "./components/Footer"
-import PageTemplate from "./components/PageTemplate"
 import { SEOMetadata } from "./components/Helmet"
+import PageTemplate from "./components/PageTemplate"
 
 // Components
 import ToolBar from "./components/ToolBar"

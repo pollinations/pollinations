@@ -17,14 +17,19 @@ export const getNotebooks = (ipfs) => {
   
   const notebookCategories = Object.keys(ipfsState);
 
-  const allNotebooks = notebookCategories.map(category => {
+  const allNotebooks = notebookCategories.filter(c => c !== ".cid").map(category => {
     const notebooks = Object.entries(ipfsState[category]);
     debug('getNotebooks', category, notebooks);
   
-    return notebooks.map(([name, notebookFolder]) => {
+    return notebooks.filter(([name,]) => name !== ".cid").map(async ([name, notebookFolder]) => {
       const cid = notebookFolder[".cid"];
       debug("got cid for",name,notebookFolder,":", cid);
-      const notebookJSON = notebookFolder["input"]["notebook.ipynb"]
+      const notebookURL = notebookFolder["input"]["notebook.ipynb"]
+
+      // get notebookJSON from url
+      const response = await fetch(notebookURL);
+      const notebookJSON = await response.json();
+
       debug("getting metadata for", notebookJSON)
       const metadata = readMetadata(notebookJSON)
      
@@ -40,11 +45,13 @@ export const getNotebooks = (ipfs) => {
         description,
         Icon: WallpaperIcon
       };
-    }).filter(n => n !== null);
-  }).flat();
+    });
+  }).flat()
+  
+  ;
   
   debug('getNotebooks parsed', allNotebooks);
   
-  return allNotebooks;
+  return Promise.all(allNotebooks);
 }
 

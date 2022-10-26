@@ -1,12 +1,11 @@
+import { publisher, subscribeCID } from "@pollinations/ipfs/ipfsPubSub";
 import Debug from "debug";
 import { useCallback, useEffect, useState } from "react";
-import { publisher, subscribeCID }  from  "@pollinations/ipfs/ipfsPubSub";
 import colabConnectionManager from "../network/localColabConnection";
 import useLocalStorage from "./useLocalStorage";
 
 
 const debug = Debug("useColabNode");
-
 
 // receive colab nodeID via broadcastchannel
 // subscribe to updates and return publisher to send new inputs

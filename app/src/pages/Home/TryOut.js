@@ -3,11 +3,11 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import Debug from "debug";
 import React from "react";
+import CreateButton from '../../components/atoms/CreateButton';
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
-import CreateButton from '../../components/atoms/CreateButton';
+import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
@@ -290,6 +290,7 @@ function PollenStatus({pollenStatuses}) {
 
 
 const getPollenStatus = (log) => {
+  debug("getting pollen statuses from log", log);
   if (!log) return {
     pollenStatuses: [],
     prompts: []

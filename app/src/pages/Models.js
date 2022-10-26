@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import TopAlert from "../components/organisms/TopAlert"
 import NotebookCard from "../components/temp/NotebookCard"
 import { getNotebooks } from "../data/notebooks"
@@ -10,18 +10,23 @@ import useFilter from "../hooks/useFilter"
 // import whyBG from '../assets/imgs/new_bg_sections.png'
 import whyBG from '../assets/imgs/BG7.png'
 
+import Debug from "debug"
+import Banner from '../components/Banner'
 import FilterUi from "../components/temp/FilterUi"
 import useGPUModels from "../hooks/useGPUModels"
 import { BackGroundImage, BaseContainer, GridStyle, Headline } from '../styles/global'
-import Banner from '../components/Banner'
+
+const debug = Debug("ModelsPage")
 
 export default function Models() {
 
   const { models } = useGPUModels();
 
-  const ipfs = useIPFS("/ipns/k51qzi5uqu5dhl19ih5j7ghhgte01hoyvraq86gy0zab98iv5sd1dr3i9huvb1")
-  const notebooks = useMemo(() => getNotebooks(ipfs), [ipfs])
+  const ipfs = useIPFS("/pollen/ipns")
+  const [notebooks, setNotebooks] = useState([])
+  useEffect(() => getNotebooks(ipfs).then(setNotebooks), [ipfs])
 
+  debug("got notebooks", notebooks)
   const test = useMemo(()=>{
     if (!notebooks) return [];
     return [

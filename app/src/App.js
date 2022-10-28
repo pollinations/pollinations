@@ -161,6 +161,8 @@ const ModelRoutes = ({ node, navigateToNode, overrideContentID }) => {
   const { contentID } = useParams()
 
   const ipfs = useIPFS(contentID)
+  
+  debug("model routes node", node)
 
   const dispatchInput = useIPFSWrite(ipfs, node)
 

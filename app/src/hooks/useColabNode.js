@@ -35,7 +35,7 @@ const useColabNode = () => {
                 debug("setting new nodeID", nodeID)
 
                 // Setting connected to null means we are not sure if there is a connection yet
-                updateNode({ nodeID, gpu, connected: null })
+                updateNode({ nodeID, gpu, connected: true })
             }
         });
     }, []);
@@ -53,11 +53,7 @@ const useColabNode = () => {
 
         // Update
         debug("nodeID changed to", nodeID, ". (Re)subscribing")
-        const closeSub = subscribeCID(nodeID, "/output", contentID => updateNode({ contentID }), heartbeat => {
-            debug("hearbeat state", heartbeat)
-            const connected = heartbeat && heartbeat.alive
-            updateNode({ connected })
-        })
+        const closeSub = subscribeCID(nodeID, contentID => updateNode({ contentID }))
 
         return () => {
             closeSub()

@@ -6,7 +6,7 @@ const debug = Debug("NotebookForm")
 
 const NotebookForm = ({ input, connected, metadata, onSubmit }) => {
     
-  if (!input)
+  if (!input || !metadata)
     return null;
 
   const inputs = getForm(input, metadata);

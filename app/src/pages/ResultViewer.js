@@ -5,18 +5,17 @@ import Debug from "debug";
 import { memo, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FailureViewer } from '../components/FailureViewer';
-import { SEO } from "../components/Helmet";
 // import { IpfsLog } from "../components/Logs";
+import styled from '@emotion/styled';
+import Banner from '../components/Banner';
+import { IpfsLog } from '../components/Logs';
 import MediaViewer from "../components/MediaViewer";
 import BigPreview from "../components/molecules/BigPreview";
 import { NotebookProgress } from "../components/NotebookProgress";
 import NotebookTitle from "../components/NotebookTitle";
 import { getMedia, mediaToDisplay } from "../data/media";
-import { GlobalSidePadding } from '../styles/global';
-import { getNotebookMetadata } from "../utils/notebookMetadata";
-import styled from '@emotion/styled'
+import useNotebookMetadata from '../hooks/useNotebookMetadata';
 import { BaseContainer } from '../styles/global';
-import Banner from '../components/Banner';
 
 // STREAM VIEWER (/n)
 
@@ -30,12 +29,14 @@ export default memo(function ResultViewer({ ipfs }) {
     return mediaToDisplay(ipfs?.output)
   }, [ipfs?.output])
 
+  const metadata = useNotebookMetadata(ipfs)
+
   if (!ipfs?.output)
     return <LoadingStyle>
       <h2 style={{textAlign: 'center'}}>Warming up... Results should start appearing soon.</h2>
     </LoadingStyle>
   
-  const metadata = getNotebookMetadata(ipfs)
+
   const contentID = ipfs[".cid"]
 
   const primaryInputField = metadata?.primaryInput
@@ -53,7 +54,7 @@ export default memo(function ResultViewer({ ipfs }) {
 
   return <BaseContainer >
 
-    <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
+      {/* <SEO metadata={metadata} ipfs={ipfs} cid={contentID} /> */}
     <Banner/>
     <Space/>
     {   // Waiting Screen goes here
@@ -74,9 +75,9 @@ export default memo(function ResultViewer({ ipfs }) {
 
     {success ? <Preview {...{ first, primaryInput, ipfs }} /> : <FailureViewer contentID={contentID} ipfs={ipfs} />}
 
-    {/* <div style={{ width: '100%' }}>
+    { <div style={{ width: '100%' }}>
       <IpfsLog ipfs={ipfs} contentID={contentID} />
-    </div> */}
+    </div> }
 
   </BaseContainer>
 })

@@ -1,18 +1,15 @@
-import Box from "@material-ui/core/Box";
+import styled from '@emotion/styled';
 import Typography from "@material-ui/core/Typography";
 import Alert from '@material-ui/lab/Alert';
 import Debug from "debug";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
+import Banner from '../components/Banner';
 import NotebookForm from '../components/form/NotebookForm';
-import { SEO } from "../components/Helmet";
 import { StartHereButton } from '../components/molecules/LaunchColabButton';
 import NotebookTitle from "../components/NotebookTitle";
 import NotebookInfo from '../components/organisms/markdownParsers/NotebookInfo';
-import { getNotebookMetadata } from "../utils/notebookMetadata";
-import styled from '@emotion/styled'
-import { GlobalSidePadding } from '../styles/global';
+import useNotebookMetadata from "../hooks/useNotebookMetadata";
 import { BaseContainer } from "../styles/global";
-import Banner from '../components/Banner';
 
 
 const debug = Debug("Create");
@@ -23,8 +20,8 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   const { connected } = node
 
-  const metadata = useMemo(() => getNotebookMetadata(ipfs), [ipfs?.input])
-
+  const metadata = useNotebookMetadata(ipfs)
+  
   debug("Create", { ipfs, node, metadata })
 
   const cancelForm = useCallback(() => dispatchInput({ ...ipfs.input, formAction: "cancel" }), [ipfs?.input]);
@@ -33,7 +30,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   return <BaseContainer>
 
-      <SEO metadata={metadata} ipfs={ipfs} cid={contentID} />
+      {/* <SEO metadata={metadata} ipfs={ipfs} cid={contentID} /> */}
       <Banner/>
       <NotebookTitle style={{marginTop: '2em'}}name={metadata?.name.replace('-', ' ').replace('-', ' ').toLowerCase()} />
       <AlertMessage node={node}/>

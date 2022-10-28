@@ -13,13 +13,14 @@ export function useRandomPollen(nodeID, selectedModel, setNodeID) {
     useEffect(() => {
         if (!nodeID && selectedModel) {
             (async () => {
-                debug("getting pollens for model", selectedModel);
-                let pollens = await getPollens({ image: selectedModel, success: true, example: isAdmin && false ? false : true });
-
+                const params = { image: selectedModel, success: true, example: isAdmin && false ? false : true }
+                debug("getting pollens for params", params);
+                let pollens = await getPollens(params);
+                debug("pollens", pollens);
                 // if (pollens.length === 0) {
                 //     pollens = await getPollens({ image: selectedModel.key, success: true});
                 // }
-                if (false && pollens && pollens.length > 0) {
+                if (pollens && pollens.length > 0) {
                     // select random pollen
                     const { input } = pollens[Math.floor(Math.random() * pollens.length)];
                     setNodeID(input);

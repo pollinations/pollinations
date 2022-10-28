@@ -297,7 +297,7 @@ const getPollenStatus = (log) => {
   };
   const pollenStatuses = log.split("\n").filter(line => line?.startsWith("pollen_status:")).map(removePrefix);
   if (!pollenStatuses || pollenStatuses.length ===0) 
-    return null;
+    return {};
   return ({ 
     pollenStatuses, 
     prompts: reverse(last(pollenStatuses)?.payload?.split("\n"))});

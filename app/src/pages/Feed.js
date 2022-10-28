@@ -1,13 +1,13 @@
-import {Box} from "@material-ui/core"
+import { Box } from "@material-ui/core"
 import Typography from "@material-ui/core/Typography"
-import {useMemo, useState} from "react"
-import {SEO} from "../components/Helmet"
-import BigPreview from "../components/molecules/BigPreview"
-import {mediaToDisplay} from "../data/media"
 import useIPFS from "@pollinations/ipfs/reactHooks/useIPFS"
+import { useMemo } from "react"
+import { useThrottle } from "react-use"
+import { SEO } from "../components/Helmet"
+import BigPreview from "../components/molecules/BigPreview"
+import { mediaToDisplay } from "../data/media"
+import useNotebookMetadata from "../hooks/useNotebookMetadata"
 import useSubscribe from "../hooks/useSubscribe"
-import {getNotebookMetadata} from "../utils/notebookMetadata"
-import {useThrottle} from "react-use"
 
 const Feed = () => {
 
@@ -26,7 +26,7 @@ const Feed = () => {
         return null
 
     const contentID = ipfs[".cid"]
-    const metadata = getNotebookMetadata(ipfs)
+    const metadata = useNotebookMetadata(ipfs)
 
     const primaryInputField = metadata?.primaryInput
     const primaryInput = ipfs?.input?.[primaryInputField]

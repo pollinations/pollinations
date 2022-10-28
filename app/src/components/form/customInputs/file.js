@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
 import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
-import useIPFSWrite from '@pollinations/ipfs/reactHooks/useIPFSInputWrite';
 import Debug from 'debug';
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -16,7 +15,7 @@ export default function Previews(props) {
   const [isUploading, setIsUploading] = useState(false)
   
   
-  const { add, cid, mkDir } = useIPFSWrite()
+  // const { add, cid, mkDir } = useIPFSWrite()
 
 
   debug('props', props);
@@ -44,11 +43,12 @@ export default function Previews(props) {
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
 
 
-      await add(file.path, file.stream())
+      // await add(file.path, file.stream())
 
       return file.path
     }));
-
+    setIsUploading(false)
+    return;
     const rootCID = await cid()
     debug("rootCID", rootCID)
     const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))

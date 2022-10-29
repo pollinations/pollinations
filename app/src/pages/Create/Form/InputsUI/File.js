@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
-import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
 import Debug from 'debug';
+import { last } from 'ramda';
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -14,23 +14,21 @@ export default function Previews(props) {
   const [isUploading, setIsUploading] = useState(false)
   
   
-  // const { add, cid, mkDir } = useIPFSWrite()
-  const add=null, cid=null, mkDir=null;
-  
 
   debug('props', props);
   
-  const { value, id,  disabled: disabledForm, description, setFieldValue, inputCID } = props;
+  const { value: values, id, disabled: disabledForm, description, setFieldValue } = props;
 
+  const value = values ? last(Object.values(values)) : undefined
 
   const disabled = disabledForm || isUploading;
   
   // if it has the new accepted_files property us it otherwise try to infer from the variable name
-  const expectedTypes =  props.accepted_files ? props.accepted_files.split(",") : [getType(id)];
+  // const expectedTypes =  props.accepted_files ? props.accepted_files.split(",") : [getType(id)];
 
 
   const { getRootProps, getInputProps } = useDropzone({
-    accept: expectedTypes ? expectedTypes.map(type => `${type}/*`) : undefined,
+    // accept: expectedTypes ? expectedTypes.map(type => `${type}/*`) : undefined,
     onDrop: onNew
   });
 
@@ -38,24 +36,13 @@ export default function Previews(props) {
   async function onNew(acceptedFiles) {
   
     debug("dropped files", acceptedFiles);
-
-    setIsUploading(true)
-    const newFiles = await Promise.all(acceptedFiles.map(async file => {
-
-
-      await add(file.path, file.stream())
-
-      return file.path
-    }));
-
-    const rootCID = await cid()
-    debug("rootCID", rootCID)
-    const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
-    
-    Object.defineProperty(files, ".cid", {value: rootCID})
-    setFieldValue(id, Object.values(files)[0])
-
-    setIsUploading(false)
+    const file = acceptedFiles[0]
+    debug("got file", file)
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setFieldValue(id, {[file.path]: reader.result})
+    };
   }
 
 

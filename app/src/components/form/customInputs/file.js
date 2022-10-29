@@ -41,15 +41,14 @@ export default function Previews(props) {
     // setIsUploading(true)
 
     // base64 encode the file
-    const newFiles = await Promise.all(acceptedFiles.map(async file => {
-      debug("got file", file)
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        // console.log(reader.result);
-        setFieldValue(id, {[file.path]:reader.result})
-      };
-    }));
+    const file = acceptedFiles[0]
+    debug("got file", file)
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setFieldValue(id, {[file.path]: reader.result})
+    };
+  
     // const newFiles = acceptedFiles.map(async file => {
 
 

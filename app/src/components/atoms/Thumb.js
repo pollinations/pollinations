@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 import Debug from 'debug';
 import mime from 'mime-types';
-import { last } from 'ramda';
 
 const debug = Debug("Thumb")
 
@@ -38,15 +37,21 @@ const Thumbs = ({ files }) => <Container>
 </Container>;
 
 
-export const Thumb = (url) => {
+export const Thumb = (url, i) => {
     
-    const name =  last(url.split("/"))
-    const mimeType = mime.lookup(name);
+    // debug("thumb url", url)
+
+    let mimeType = null;
+    if (isDataURL(url)) {
+        mimeType = url.split(";")[0].split(":")[1];
+    } else {
+        mimeType = mime.lookup(name);
+    }
     const type = mimeType.split('/')[0];
     
-    debug("type", type, "name", name, "url", url)
+    debug("type", mimeType)
 
-    return <ThumbContainer key={name}>
+    return <ThumbContainer key={`thumb_${i}`}>
         <div>
             {
                 (type === 'video' && <video src={url} autoPlay controls/>)
@@ -57,6 +62,10 @@ export const Thumb = (url) => {
             }
         </div>
     </ThumbContainer>
+}
+
+function isDataURL(str) {
+    return str.startsWith("data:");
 }
 
 export default Thumbs

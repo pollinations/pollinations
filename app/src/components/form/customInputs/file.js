@@ -1,6 +1,5 @@
 import styled from '@emotion/styled';
 import { Button } from '@material-ui/core';
-import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
 import Debug from 'debug';
 import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -39,25 +38,34 @@ export default function Previews(props) {
   
     debug("dropped files", acceptedFiles);
 
-    setIsUploading(true)
+    // setIsUploading(true)
+
+    // base64 encode the file
     const newFiles = await Promise.all(acceptedFiles.map(async file => {
-
-
-      // await add(file.path, file.stream())
-
-      return file.path
+      debug("got file", file)
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        // console.log(reader.result);
+        setFieldValue(id, {[file.path]:reader.result})
+      };
     }));
-    setIsUploading(false)
-    return;
-    const rootCID = await cid()
-    debug("rootCID", rootCID)
-    const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
-    
-    Object.defineProperty(files, ".cid", {value: rootCID})
+    // const newFiles = acceptedFiles.map(async file => {
 
-    setFieldValue(id, files)
+
+
+  
+    //   return file.path
+    // });
+    // const rootCID = await cid()
+    // debug("rootCID", rootCID)
+    // const files = Object.fromEntries(newFiles.map(path => ([path, getWebURL(`${rootCID}/${path}`)])))
     
-    setIsUploading(false)
+    // Object.defineProperty(files, ".cid", {value: rootCID})
+
+    // setFieldValue(id, files)
+    
+
   }
 
 
@@ -77,7 +85,8 @@ export default function Previews(props) {
             <Thumbs files={files} />
             : <>
               <p>{description}<br/>
-              { isUploading ? "Uploading..." : "Drag 'n' drop here." }  </p>
+               Drag 'n' drop here."
+              </p>
             </>
         }
       </Style>

@@ -45,6 +45,7 @@ export const Thumb = (url, i) => {
     if (isDataURL(url)) {
         mimeType = url.split(";")[0].split(":")[1];
     } else {
+        const name =  last(url.split("/"))
         mimeType = mime.lookup(name);
     }
     const type = mimeType.split('/')[0];

@@ -7,7 +7,6 @@ import styled from "@emotion/styled"
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
 
 import { CloseOutlined } from "@material-ui/icons"
-import Alert from "@material-ui/lab/Alert"
 import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
 import NavigationItems from "./organisms/NavigationItems"
@@ -22,7 +21,7 @@ const TopBar = ({ navRoutes }) => {
   
   return <>
     <TopContainer css={StyleUrl(location.pathname)}>
-    <Alert severity="warning">We are upgrading our backend database. Things may be a little unstable until tomorrow.</Alert> 
+    {/* <Alert severity="warning">We are upgrading our backend database. Things may be a little unstable until tomorrow.</Alert>  */}
     <NavBarStyle>
       <NavLink to='/' style={{ padding: 0, gridArea: 'logo', display: 'flex', alignItems: 'center', marginLeft: '1em' }}>
         <Logo size='150px' small='150px' margin='0' />  

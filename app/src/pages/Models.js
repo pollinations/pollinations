@@ -10,6 +10,7 @@ import useFilter from "../hooks/useFilter"
 // import whyBG from '../assets/imgs/new_bg_sections.png'
 import whyBG from '../assets/imgs/BG7.png'
 
+import Alert from "@material-ui/lab/Alert"
 import Debug from "debug"
 import Banner from '../components/Banner'
 import FilterUi from "../components/temp/FilterUi"
@@ -43,6 +44,7 @@ export default function Models() {
     return (
       <ModelsStyle>
         <TopAlert options={options} />
+        <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>   
         <Banner/>
 
         <ShowReelHeadline>

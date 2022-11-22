@@ -68,7 +68,6 @@ export default React.memo(function TryOut() {
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
 
-  console.log(stableDiffOutput)
 
   return <PageLayout >
         <HeroSubHeadLine>

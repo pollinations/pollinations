@@ -46,7 +46,7 @@ export default React.memo(function Create() {
     const dispatch = async (values) => {
         values = {...values, caching_seed: Math.floor(Math.random() * 1000)};
         debug("submitting to aws", selectedModel.key, values)
-        const { nodeID } = await submitToAWS(values, selectedModel.key, false);
+        const { nodeID } = await submitToAWS(values, selectedModel.key, false, {priority: isAdmin ? 10 : 0});
         if (!Model) {
             navigateTo(`/create/${nodeID}`);
         } else {
@@ -94,7 +94,7 @@ export default React.memo(function Create() {
             
         </ParametersArea>
 
-        { ipfs && isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
+        { ipfs && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
     
     </PageLayout>
 });

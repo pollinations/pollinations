@@ -69,7 +69,6 @@ export default React.memo(function TryOut() {
   
 
 
-
   return <PageLayout >
         <HeroSubHeadLine>
         Explain your vision with words and watch it come to life!
@@ -83,7 +82,7 @@ export default React.memo(function TryOut() {
                     }
       { <PollenStatus log={ipfs?.output?.log} /> }
       
-      <Previewer output={stableDiffOutput} prompts={prompts}/>   
+      <Previewer output={stableDiffOutput} />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
 </PageLayout>
@@ -194,7 +193,7 @@ const Previewer = ({ output, prompts }) => {
     const images = getMedia(output);
 
     
-    if(!prompts) return null;
+    // if(!prompts) return null;
     return <PreviewerStyle
         children={
         images?.slice(0,3)
@@ -205,9 +204,9 @@ const Previewer = ({ output, prompts }) => {
             filename={filename} 
             type={type}
             />
-            <p>
+            {/* <p>
               {prompts[idx]}
-            </p>
+            </p> */}
        </div>))
     }/>
 }

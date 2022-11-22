@@ -70,7 +70,7 @@ export default React.memo(function Create() {
                 </p>
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }
-            { isAdmin && <PollenStatus log={ipfs?.output?.log}/> }  
+            <PollenStatus log={ipfs?.output?.log}/> 
             <Form 
                 models={models}
                 ipfs={ipfs}

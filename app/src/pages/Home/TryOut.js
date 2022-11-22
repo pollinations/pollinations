@@ -192,7 +192,6 @@ const Previewer = ({ output, prompts }) => {
 
     const images = getMedia(output);
 
-    console.log(prompts)
     if(!prompts) return null;
     return <PreviewerStyle
         children={

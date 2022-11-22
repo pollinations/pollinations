@@ -10,10 +10,11 @@ import { getMedia } from '../../data/media';
 import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
-import { Button, Step, StepLabel, Stepper } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import { useFormik } from 'formik';
-import { last, reverse, zipObj } from 'ramda';
+import { zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
+import { PollenStatus } from '../../components/PollenStatus';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
 
@@ -66,7 +67,7 @@ export default React.memo(function TryOut() {
   const hasImageInRoot = ipfs?.output && Object.keys(ipfs.output).find(key => key.endsWith(".jpg") || key.endsWith(".png"));
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
-  const { pollenStatuses, prompts } = getPollenStatus(ipfs?.output?.log)
+
 
 
   return <PageLayout >
@@ -80,7 +81,7 @@ export default React.memo(function TryOut() {
                         Add to Examples
                     </Button>
                     }
-      { <PollenStatus pollenStatuses={pollenStatuses} /> }
+      { <PollenStatus log={ipfs?.output?.log} /> }
       
       <Previewer output={stableDiffOutput} prompts={prompts}/>   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
@@ -263,45 +264,3 @@ p {
   }
 }
 `
-
-
-function PollenStatus({pollenStatuses}) {
-  if (!pollenStatuses) return null;
-
-  return <Stepper activeStep={pollenStatuses?.length}>
-    <Step key="start">
-      <StepLabel>
-        Connecting to the InterPlanetary FileSystem
-      </StepLabel>
-    </Step>
-    { 
-      pollenStatuses?.map(
-      (pollenStatus,index) => 
-        <Step key={`step_${index}`} completed={index < pollenStatuses.length-1}>
-          <StepLabel>
-            {pollenStatus.title}
-          </StepLabel> 
-        </Step>) 
-    }
-    </Stepper>
-  ;
-}
-
-
-
-const getPollenStatus = (log) => {
-  debug("getting pollen statuses from log", log);
-  if (!log) return {
-    pollenStatuses: [],
-    prompts: []
-  };
-  const pollenStatuses = log.split("\n").filter(line => line?.startsWith("pollen_status:")).map(removePrefix);
-  if (!pollenStatuses || pollenStatuses.length ===0) 
-    return {};
-  return ({ 
-    pollenStatuses, 
-    prompts: reverse(last(pollenStatuses)?.payload?.split("\n"))});
-}
-
-const removePrefix = statusWithPrefix => JSON.parse(statusWithPrefix.replace("pollen_status: ", ""));
-

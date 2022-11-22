@@ -68,7 +68,7 @@ export default React.memo(function TryOut() {
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
 
-
+  console.log(stableDiffOutput)
 
   return <PageLayout >
         <HeroSubHeadLine>
@@ -83,7 +83,7 @@ export default React.memo(function TryOut() {
                     }
       { <PollenStatus log={ipfs?.output?.log} /> }
       
-      <Previewer output={stableDiffOutput} prompts={prompts}/>   
+      <Previewer output={stableDiffOutput} />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
 </PageLayout>
@@ -194,7 +194,7 @@ const Previewer = ({ output, prompts }) => {
     const images = getMedia(output);
 
     
-    if(!prompts) return null;
+    // if(!prompts) return null;
     return <PreviewerStyle
         children={
         images?.slice(0,3)
@@ -205,9 +205,9 @@ const Previewer = ({ output, prompts }) => {
             filename={filename} 
             type={type}
             />
-            <p>
+            {/* <p>
               {prompts[idx]}
-            </p>
+            </p> */}
        </div>))
     }/>
 }

@@ -14,7 +14,7 @@ import { Button } from '@material-ui/core';
 import { useFormik } from 'formik';
 import { zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
-import { PollenStatus } from '../../components/PollenStatus';
+import { PollenStatus, getPollenStatus } from '../../components/PollenStatus';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
 
@@ -67,7 +67,7 @@ export default React.memo(function TryOut() {
   const hasImageInRoot = ipfs?.output && Object.keys(ipfs.output).find(key => key.endsWith(".jpg") || key.endsWith(".png"));
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
-
+  const { prompts } = getPollenStatus(ipfs?.output?.log)
 
   return <PageLayout >
         <HeroSubHeadLine>
@@ -82,7 +82,7 @@ export default React.memo(function TryOut() {
                     }
       { <PollenStatus log={ipfs?.output?.log} /> }
       
-      <Previewer output={stableDiffOutput} />   
+      <Previewer output={stableDiffOutput} prompts={prompts}  />   
       {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
 </PageLayout>
@@ -192,8 +192,8 @@ const Previewer = ({ output, prompts }) => {
 
     const images = getMedia(output);
 
-    
-    // if(!prompts) return null;
+    console.log(prompts)
+    if(!prompts) return null;
     return <PreviewerStyle
         children={
         images?.slice(0,3)
@@ -204,9 +204,9 @@ const Previewer = ({ output, prompts }) => {
             filename={filename} 
             type={type}
             />
-            {/* <p>
+            <p>
               {prompts[idx]}
-            </p> */}
+            </p>
        </div>))
     }/>
 }

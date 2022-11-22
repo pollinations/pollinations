@@ -10,15 +10,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Previewer from './Previewer';
 
 
+import { getWebURL } from "@pollinations/ipfs/ipfsWebClient";
+import Debug from "debug";
 import Banner from '../../components/Banner';
 import { FailureViewer } from '../../components/FailureViewer';
 import { IpfsLog } from '../../components/Logs';
 import { NotebookProgress } from '../../components/NotebookProgress';
+import { PollenStatus } from '../../components/PollenStatus';
 import useGPUModels from '../../hooks/useGPUModels';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
-
-import Debug from "debug";
 
 const debug = Debug("pages/Create");
 
@@ -69,7 +70,7 @@ export default React.memo(function Create() {
                 </p>
             </FlexBetween>
             { isLoading && <NotebookProgress output={ipfs?.output} /> }
-            
+            { isAdmin && <PollenStatus log={ipfs?.output?.log}/> }  
             <Form 
                 models={models}
                 ipfs={ipfs}
@@ -81,6 +82,14 @@ export default React.memo(function Create() {
                     { isAdmin && ipfs?.output?.done === true && <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
                         Add to Examples
                     </Button>
+                    }
+                    {
+                    isAdmin && ipfs?.output && <><br />Output [<Button 
+                        href={getWebURL(ipfs?.output[".cid"])} 
+                        target="_blank"
+                    >
+                        Open
+                        </Button>]</>
                     }
                     { 
                         ipfs?.output?.success === false ?

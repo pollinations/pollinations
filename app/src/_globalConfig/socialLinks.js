@@ -3,7 +3,7 @@ export const SOCIAL_LINKS = {
   discord: {
     label: 'Discord',
     icon: ICONS.discord,
-    url: 'https://discord.gg/XXd99CrkCr',
+    url: 'https://discord.gg/8HqSRhJVxn',
   },
   github: {
     label: 'GitHub',

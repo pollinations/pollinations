@@ -1,10 +1,9 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global'
-import whyBG from '../../assets/imgs/doubleBg.png'
-import DiscordIMG from '../../assets/imgs/discord_section.png'
-import CreateButton from '../../components/atoms/CreateButton'
 import { useNavigate } from 'react-router-dom'
+import DiscordIMG from '../../assets/imgs/discord_section.png'
 import StarIMG from '../../assets/imgs/star.png'
+import CreateButton from '../../components/atoms/CreateButton'
+import { MOBILE_BREAKPOINT } from '../../styles/global'
 // why we do it
 
 
@@ -40,7 +39,7 @@ const WhyWeDoIt = props => {
       <GridTwoColumns alignItems='center'>
         <FlexColumn >
           <img src={DiscordIMG} alt="discord"  />
-          <a href='https://discord.gg/XXd99CrkCr'>
+          <a href='https://discord.gg/8HqSRhJVxn'>
           <CreateButton marginLeft='0'>
             Start
           </CreateButton>

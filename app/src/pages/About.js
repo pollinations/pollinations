@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
-import TempLayout from '../components/layouts/Temp'
 import styled from '@emotion/styled';
 import Founders from '../components/Founders';
+import TempLayout from '../components/layouts/Temp';
 import { Colors } from '../styles/global';
 const About = props => 
   <TempLayout Content={Content}/>;
@@ -41,7 +40,7 @@ const Content = [
       Deep tech based in Berlin. 
       Our team of data scientists, machine-learning specialists, artists and futurists is profoundly 
       involved in the AI ecosystem. The AI models are open-source and constantly updated by a thriving community. 
-      To talk to us, reach out on <a href='https://discord.gg/XXd99CrkCr' children='Discord' style={{color: Colors.accent}}/>  or at <span > hello@pollinations.ai </span>
+      To talk to us, reach out on <a href='https://discord.gg/8HqSRhJVxn' children='Discord' style={{color: Colors.accent}}/>  or at <span > hello@pollinations.ai </span>
       <Founders/>
     </Style>
   },

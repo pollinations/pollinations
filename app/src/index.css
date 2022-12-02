@@ -13,6 +13,14 @@
   font-family: Mattone;
   src: url(./assets/fonts/Mattone/Mattone-Regular.otf)
 }
+@font-face {
+  font-family: SERAFIN;
+  src: url(./assets/fonts/SERAFIN.otf)
+}
+@font-face {
+  font-family: Uncut-Sans-Variable;
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+}
 
 ::selection {
   background: #485ea4; /* WebKit/Blink Browsers */

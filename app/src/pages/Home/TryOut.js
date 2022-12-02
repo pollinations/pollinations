@@ -7,7 +7,7 @@ import CreateButton from '../../components/atoms/CreateButton';
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { Button } from '@material-ui/core';
@@ -70,52 +70,77 @@ export default React.memo(function TryOut() {
   const { prompts } = getPollenStatus(ipfs?.output?.log)
 
   return <PageLayout >
-        <HeroSubHeadLine>
-        Explain your vision with words and watch it come to life!
-      </HeroSubHeadLine>
 
+    <Headline>
+      CREATE YOUR <i> AI AVATAR </i>
+    </Headline>
+    <SubHeadline>
+      This artificial intelligence is fine-tuned to create portraits. 
+    </SubHeadline>
 
-      <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
-      { isAdmin && ipfs?.output?.done === true && <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
-                        Add to Examples
-                    </Button>
-                    }
-      { <PollenStatus log={ipfs?.output?.log} /> }
+    <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />
+
+    { isAdmin && (ipfs?.output?.done === true) && 
+      <Button variant="contained" color="primary" onClick={() => updatePollen({example: true})}>
+        Add to Examples
+      </Button>
+    }
+
+    { !ipfs?.output?.done ? <PollenStatus log={ipfs?.output?.log} />  : <></>}
+    
+    <Previewer output={stableDiffOutput} prompts={prompts}  />   
+
+    {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
-      <Previewer output={stableDiffOutput} prompts={prompts}  />   
-      {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
-      
-</PageLayout>
+  </PageLayout>
 });
 
 
-const HeroSubHeadLine = styled.p`
-font-family: 'DM Sans';
+const Headline = styled.p`
+font-family: 'Uncut-Sans-Variable';
 font-style: normal;
-font-weight: 600;
-font-size: 46px;
-line-height: 60px;
+font-weight: 500;
+font-size: 56px;
+line-height: 50px;
 text-align: center;
+text-transform: uppercase;
+color: ${Colors.offblack};
+margin: 0;
 
-max-width: 55%;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 90%;
   font-size: 24px;
   line-height: 30px;
 }
-
-color: #FFFFFF;
-/* identical to box height */
-
-text-align: center;
-
 `
+const SubHeadline = styled.p`
+font-family: 'Uncut-Sans-Variable';
+font-style: normal;
+font-weight: 400;
+font-size: 22px;
+line-height: 28px;
+text-align: center;
+color: ${Colors.gray2};
+margin: 0;
+margin-top: 16px;
+margin-bottom: 36px;
+`
+
+
+
+
+
+
+
+
+
+
+
 
 const Controls = ({dispatch , loading, inputs, currentID }) => {
 
     if (!inputs)
     return null;
-
 
   const keys = Object.keys(inputs);
   const initialValues = zipObj( keys, keys?.map(key => inputs[key].default) );
@@ -164,19 +189,18 @@ width: 53vw;
     padding-right: 7rem;
 }
 height: 65px;
-background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+background: #FAFAFA;
+box-shadow: 0px 4px 24px -1px rgba(185, 185, 185, 0.24);
 border-radius: 60px;
 border: none;
 
-font-family: 'DM Sans';
+font-family: 'Uncut-Sans-Variable';
 font-style: normal;
 font-weight: 400;
 font-size: 18px;
-line-height: 23px;
-display: flex;
-align-items: center;
+line-height: 22px;
 
-color: #FFFFFF;
+color: ${Colors.offblack};
 :disabled {
   color: grey;
 }
@@ -186,39 +210,35 @@ margin: 1em 0;
 `
 
 
-const Previewer = ({ output, prompts }) => {
+const Previewer = ({ output }) => {
 
     if (!output) return null;
 
     const images = getMedia(output);
 
-    if(!prompts) return null;
     return <PreviewerStyle
         children={
         images?.slice(0,3)
-        .map(([filename, url, type], idx) => (<div>
+        .map(([filename, url, type]) => 
             <MediaViewer 
             key={filename}
             content={url} 
             filename={filename} 
             type={type}
-            />
-            <p>
-              {prompts[idx]}
-            </p>
-       </div>))
+        />)
     }/>
 }
 
 // STYLES
 const PageLayout = styled.div`
 width: 100%;
+min-height:80vh;
 padding: ${GlobalSidePadding};
 margin-top: 7em;
 display: flex;
 flex-direction: column;
 align-items: center;
-justify-content: center;
+// justify-content: center;
 grid-gap: 0em;
 
 .MuiStepIcon-root.MuiStepIcon-completed, .MuiStepIcon-root.MuiStepIcon-active{
@@ -238,7 +258,8 @@ width: 80%;
 display: grid;
 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 grid-gap: 3em;
-padding-top: 1.5em;
+padding-top: 89px;
+padding-bottom: 138px;
 img {
   width: 100%;
   // max-width: 512px;

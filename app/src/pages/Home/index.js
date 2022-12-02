@@ -8,12 +8,13 @@ import MultiplePlatforms from "./MultiplePlatforms"
 import TryOut from "./TryOut"
 
 import BG from '../../assets/imgs/new_bg_sections.png'
+import CTAs from "./CTAs"
 
 export default function Home() {
   return <HomeStyle>
     <Hero />
     <TryOut />
-    <About />
+    <CTAs />
     <ExtraBg>
       <MultiplePlatforms />
       <WhyWeDoIt />

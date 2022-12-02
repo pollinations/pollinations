@@ -1,57 +1,55 @@
 import styled from '@emotion/styled';
-import heroBG from '../../assets/imgs/bghero.jpg';
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg';
+import heroBG from '../../assets/imgs/bg_hero_landing.png';
+import scrolldown from '../../assets/imgs/scrolldown_hero_landing.png';
 import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global';
 // Hero Section
 
 const Hero = props => {
 
-    return <HeroGradient>
+    return <HeroStyle>
   
       <HeroHeadline>
-        YOUR ENGINE FOR PERSONALIZED MEDIA
+        YOUR ENGINE FOR
+        <br/>
+        <span> PERSONALIZED MEDIA </span>
       </HeroHeadline>
 
       <HeroSubHeadLine>
         We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
       </HeroSubHeadLine> 
-      
-  
-      <HeroImage 
-        src={heroBGOverlay} 
-        zIndex='-1' 
-        opacity='68%' 
-        blend='screen' 
-        transform='rotate(-180deg)' 
-        alt="hero_bg_overlay" />
-      
+          
+
+      <ScrollDown src={scrolldown}/>
       <HeroImage 
         src={heroBG} 
         zIndex='-2' 
         alt="hero_bg" />
   
-    </HeroGradient>
+    </HeroStyle>
   }
 
   export default Hero
+
+  const ScrollDown = styled.img`
+  position: absolute;
+  width: 90px;
+  height: 46px;
+  right: 30px;
+  bottom: 36px;
+  `
   
   const HeroStyle = styled.div`
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-end;
+  align-items: flex-start;
 
   width: 100%;
   min-height: 100vh;
+
+  padding: 4.7% 5%;
   `;
   
-  const HeroGradient = styled(HeroStyle)`
-    background: radial-gradient(50% 74.25% at 50% 53.59%, 
-    rgba(22, 50, 122, 0.58) 0%, 
-    rgba(34, 128, 134, 0.54) 47.4%, 
-    rgba(151, 190, 67, 0.01) 100%);
-    max-height: 100vh;
-  `
   const HeroImage = styled(BackGroundImage)`
   height: 100%;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -62,16 +60,18 @@ const Hero = props => {
   
   
   const HeroHeadline = styled.p`
-  max-width: 750px;
-  font-family: 'Leiko';
+  font-family: 'SERAFIN';
   font-style: normal;
   font-weight: 400;
-  font-size: 64px;
-  line-height: 82px;
-  text-align: center;
-  text-transform: uppercase;
+  font-size: 92px;
+  line-height: 94px;
+  text-transform: capitalize;
   margin: 0;
-  color: #FFFFFF;
+  color: #FAFAFA;
+
+  span {
+    color: #E0F142;
+  }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     max-width: 600px;
@@ -83,16 +83,13 @@ const Hero = props => {
   
   const HeroSubHeadLine = styled.p`
   max-width: 500px;
-  font-family: 'DM Sans';
+  font-family: 'Uncut-Sans-Variable';
   font-style: normal;
   font-weight: 400;
   font-size: 24px;
-  line-height: 26px;
-  /* identical to box height */
+  line-height: 34px;
+  color: #FAFAFA;  
   
-  text-align: center;
-  
-  color: #D8E449;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     font-size: 18px;

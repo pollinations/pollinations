@@ -4,7 +4,12 @@ export const GlobalSidePadding = '0 3%';
 export const MOBILE_BREAKPOINT = '769px';
 
 export const Colors = {
-  accent: 'rgb(233, 250, 41)'
+  accent: 'rgb(233, 250, 41)',
+  lime: '#E0F142',
+  offwhite: '#FAFAFA',
+  offblack: '#2A2C1C',
+  gray1: '#B3B3B3',
+  gray2: '#8A8A8A',
 };
 
 export const BaseContainer = styled.div`

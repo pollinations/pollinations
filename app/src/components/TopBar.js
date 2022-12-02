@@ -23,12 +23,20 @@ const TopBar = ({ navRoutes }) => {
     <TopContainer css={StyleUrl(location.pathname)}>
     <NavBarStyle>
       {/* <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>  */}
-      <NavLink to='/' style={{ padding: 0, gridArea: 'logo', display: 'flex', alignItems: 'center', marginLeft: '1em' }}>
-        <Logo size='150px' small='150px' margin='0' />  
-      </NavLink>
-
-      <NavigationItems navRoutes={navRoutes}/>
       
+      <div style={{display: 'flex'}}>
+        <NavLink to='/' style={{ 
+            padding: 0, 
+            paddingRight: 80,
+            gridArea: 'logo', 
+            display: 'flex',
+             alignItems: 'center',
+              marginLeft: '1em' }}>
+          <Logo size='150px' small='150px' margin='0' />  
+        </NavLink>
+
+        <NavigationItems navRoutes={navRoutes}/>
+      </div>
 
       <SocialLinks small hideOnMobile gap='1em'/>
 
@@ -103,7 +111,7 @@ const TopContainer = styled.div`
 const NavBarStyle = styled.div`
 
   display: grid;
-  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-columns: 1fr 1fr;
   grid-template-rows: auto;
   grid-template-areas: "logo nav social";
   align-content: center;

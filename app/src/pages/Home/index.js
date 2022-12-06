@@ -5,13 +5,18 @@ import Hero from "./Hero"
 import TryOut from "./TryOut"
 import CTAs from "./CTAs"
 import FeaturedApps from "./FeaturedApp"
+import PopulateMetaverses from "./Metaverses"
+import DiscordSection from './Discord'
 
 export default function Home() {
   return <HomeStyle>
     <Hero />
     <TryOut />
-    <CTAs />
+    <CTAs content='mission' />
     <FeaturedApps />
+    <PopulateMetaverses />
+    <CTAs content='about'/>
+    <DiscordSection />
   </HomeStyle>
 }
 

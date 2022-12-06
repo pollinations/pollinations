@@ -21,6 +21,10 @@
   font-family: Uncut-Sans-Variable;
   src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
 }
+@font-face {
+  font-family: Uncut Sans;
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+}
 
 ::selection {
   background: #485ea4; /* WebKit/Blink Browsers */

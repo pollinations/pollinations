@@ -2,7 +2,10 @@ import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
 import { BackGroundImage, MOBILE_BREAKPOINT, Colors } from '../../styles/global';
 import BgImg from '../../assets/imgs/gradient-background.png'
-import Temp from '../../assets/imgs/temp.png'
+import DataNationImg from '../../assets/imgs/datanation_img.png'
+import DreaMachineImg from '../../assets/imgs/dreamachine.png'
+import AvatarImg from '../../assets/imgs/avatar_img.png'
+
 // why we do it
 
 
@@ -65,17 +68,19 @@ const Content = [
         title: 'NFT series generator',
         subtitle: 'Build a strong hive',
         description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
+        img: DataNationImg
     },
     {
         title: 'Busy Bee',
         subtitle: 'Create. Bond. Have fun!',
         description: <> Add our bot to Twitter, Discord or any social media platform. Your members can then post a text and receive back an image created on the spot! Increase engagement, turn your community into the place to be. </>,
-
+        img: AvatarImg
     },
     {
         title: 'Pollinations Studio',
         subtitle: 'Immerse yourself into a flow of dreams',
         description: <>We offer commissioned works such as music videos, immersive installations, interactive experiences and more.</>,
+        img: DreaMachineImg
     },
 ]
 
@@ -84,7 +89,7 @@ const FeaturedApp = props => {
     const { title, subtitle, description, img, right } = props;
 
     return <GridTwoColumns>
-        { !right ? <FeatureAppImg src={Temp}/> : <></> }
+        { !right ? <FeatureAppImg src={img}/> : <></> }
 
         <FeaturedAppStyle>
             <h1>
@@ -98,7 +103,7 @@ const FeaturedApp = props => {
             </p>
         </FeaturedAppStyle>
 
-        { right ? <FeatureAppImg src={Temp}/> : <></> }
+        { right ? <FeatureAppImg src={img}/> : <></> }
 
     </GridTwoColumns>
 }
@@ -156,7 +161,7 @@ p {
 `
 const FeatureAppImg = styled.img`
 width: 520px;
-height: 520px;
+height: auto;
 `
 
 const GridTwoColumns = styled.div`

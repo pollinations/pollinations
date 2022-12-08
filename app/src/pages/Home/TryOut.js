@@ -232,8 +232,9 @@ const Previewer = ({ output }) => {
 // STYLES
 const PageLayout = styled.div`
 width: 100%;
+max-width: 1440px;
 min-height:80vh;
-padding: ${GlobalSidePadding};
+
 margin-top: 7em;
 display: flex;
 flex-direction: column;

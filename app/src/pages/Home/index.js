@@ -1,5 +1,4 @@
 import styled from "@emotion/styled"
-import { BaseContainer } from "../../styles/global"
 
 import Hero from "./Hero"
 import TryOut from "./TryOut"

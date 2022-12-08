@@ -19,12 +19,12 @@ const TopBar = ({ navRoutes }) => {
   const location = useLocation();
 
   
-  return <>
+  return <OuterContainer>
     <TopContainer css={StyleUrl(location.pathname)}>
     <NavBarStyle>
       {/* <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>  */}
       
-      <div style={{display: 'flex'}}>
+      <div style={{display: 'flex', }}>
         <NavLink to='/' style={{ 
             padding: 0, 
             paddingRight: 80,
@@ -68,8 +68,16 @@ const TopBar = ({ navRoutes }) => {
         </div>
       </MobileMenuStyle>
     </TemporaryDrawer>
-  </>
+  </OuterContainer>
 };
+const OuterContainer = styled.div`
+width: 100%;
+display: flex;
+justify-content: center;
+`
+
+
+
 const MobileMenuStyle = styled.div`
 position: relative;
 width: 100%;
@@ -106,9 +114,14 @@ span {
 const TopContainer = styled.div`
   ${props => props.css};
   width: 100%;
+padding: 0 30px;
+  display: flex;
+  justify-content: center;
 `
 
 const NavBarStyle = styled.div`
+  width: 100%;
+  max-width: 1440px;
 
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -121,8 +134,7 @@ const NavBarStyle = styled.div`
   .MuiTypography-colorPrimary{
     color: #fdfdfd !important;  
   }
-  padding: ${GlobalSidePadding};
-  padding: 1% 3%;
+  padding: 1% 0;
   @media (max-width: ${MOBILE_BREAKPOINT}){
     grid-template-areas: "logo nav mobilebutton social";
   }

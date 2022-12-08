@@ -75,3 +75,9 @@ width: 100%;
 max-width: 1440px;
 min-height: 100vh;
 `
+
+export const OuterContainer = styled.div`
+width: 100%;
+display: flex;
+justify-content: center;
+`

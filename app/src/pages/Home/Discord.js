@@ -98,18 +98,4 @@ color: ${Colors.offblack};
   margin: 0;
   margin-top: 60px;
 }
-`
-  
-const GridTwoColumns = styled(Container)`
-
-min-height: 551px;
-display: flex;
-flex-direction: row;
-flex-wrap: wrap;
-gap: 5em;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  padding: 10em 1.5em;
-}
-`
+`;

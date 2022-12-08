@@ -11,7 +11,9 @@ import { GlobalSidePadding, MOBILE_BREAKPOINT } from '../styles/global'
 
 const Footer = () => {
 
-return <FooterStyle>
+return <OuterContainer>
+
+<FooterStyle>
     <FlexColumn>
         <CTAStyle>
             Let's talk 
@@ -28,9 +30,16 @@ return <FooterStyle>
             renderComponent={RouteLink} columns={1} />
     </NavItems>
 </FooterStyle>
+</OuterContainer> 
 }
 export default Footer
 
+const OuterContainer = styled.div`
+width: 100%;
+display: flex;
+justify-content: center;
+background-color: #000000;
+`
 const CTAStyle = styled.p`
 font-family: 'DM Sans';
 font-style: normal;
@@ -103,10 +112,10 @@ const RouteLink = (route) => {
             
 
 const FooterStyle = styled.div`
-padding: ${GlobalSidePadding};
-padding-top: 3em;
+padding: 3em 30px 0 30px;
 
 width: 100%;
+max-width: 1440px;
 min-height: 418px;
 
 display: flex;

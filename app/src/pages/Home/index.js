@@ -9,21 +9,22 @@ import PopulateMetaverses from "./Metaverses"
 import DiscordSection from './Discord'
 
 export default function Home() {
-  return <HomeStyle>
+  return <Style>
     <Hero />
     <TryOut />
-    <CTAs content='mission' />
+    <CTAs content='mission' center />
     <FeaturedApps />
     <PopulateMetaverses />
     <CTAs content='about'/>
     <DiscordSection />
-  </HomeStyle>
+  </Style>
 }
 
-const HomeStyle = styled(BaseContainer)`
-padding: 0em;
-display: flex;
+const Style = styled.div`
 width: 100%;
+padding: 0em;
+margin: 0;
+display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;

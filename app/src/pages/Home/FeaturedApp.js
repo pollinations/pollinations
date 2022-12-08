@@ -1,45 +1,55 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import { BackGroundImage, MOBILE_BREAKPOINT, Colors } from '../../styles/global';
+import {  MOBILE_BREAKPOINT, Colors } from '../../styles/global';
 import BgImg from '../../assets/imgs/gradient-background.png'
-import DataNationImg from '../../assets/imgs/datanation_img.png'
-import DreaMachineImg from '../../assets/imgs/dreamachine.png'
-import AvatarImg from '../../assets/imgs/avatar_img.png'
 
+import { BackgroundImage, Container as ContainerBase } from './components';
+import { FeaturedApplicationsContent } from './content'
 // why we do it
 
 
 const FeaturedApps = props => {
   const navigate = useNavigate()
   
-    return <HeroStyle>
+    return <Style>
+    <Container>
 
-        <HeroHeadline>
-            <span>
-                FEATURED
-            </span>
-            <br/>
-            APPLICATIONS
-        </HeroHeadline>
+    <Headline>
+        <span>
+            FEATURED
+        </span>
+        <br/>
+        APPLICATIONS
+    </Headline>
 
         {
-            Content.map( (item, idx) => <FeaturedApp {...item} right={idx%2} />)
+            FeaturedApplicationsContent.map( (item, idx) => <FeaturedApp {...item} right={idx%2} />)
         }
 
-      <BGimage src={BgImg} zIndex='-2' />
     
-    </HeroStyle>
+    </Container>
+    <BackgroundImage src={BgImg} zIndex='-2' />
+    </Style>
   }
 
   export default FeaturedApps
-  const BGimage = styled(BackGroundImage)`
-  height: 100%;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-  height: auto;
-  min-height: 100vh;
-  }
+
+  const Container = styled(ContainerBase)`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   `
-  const HeroHeadline = styled.p`
+
+  const Style = styled.div`
+  width: 100%;
+  height: 100%;
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  `
+
+  const Headline = styled.p`
   font-family: 'SERAFIN';
   font-style: normal;
   font-weight: 400;
@@ -61,28 +71,11 @@ const FeaturedApps = props => {
     max-width: 600px;
     font-size: 38px;
     line-height: 35px;
+    margin: 0;
+    margin-top: 50px;
+    margin-left: 87px;
 }`
 
-const Content = [
-    {
-        title: 'NFT series generator',
-        subtitle: 'Build a strong hive',
-        description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
-        img: DataNationImg
-    },
-    {
-        title: 'Busy Bee',
-        subtitle: 'Create. Bond. Have fun!',
-        description: <> Add our bot to Twitter, Discord or any social media platform. Your members can then post a text and receive back an image created on the spot! Increase engagement, turn your community into the place to be. </>,
-        img: AvatarImg
-    },
-    {
-        title: 'Pollinations Studio',
-        subtitle: 'Immerse yourself into a flow of dreams',
-        description: <>We offer commissioned works such as music videos, immersive installations, interactive experiences and more.</>,
-        img: DreaMachineImg
-    },
-]
 
 const FeaturedApp = props => {
 
@@ -160,6 +153,7 @@ p {
 }
 `
 const FeatureAppImg = styled.img`
+max-width: 100%;
 width: 520px;
 height: auto;
 `
@@ -173,21 +167,14 @@ align-self: center;
 display: flex;
 flex-direction: row;
 align-items: flex-start;
-padding: 0px;
+padding: 0em 1.5em;
 gap: 70px;
-margin: 250px 0;
+margin: 150px 0;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  padding: 10em 1.5em;
+  padding: 0em 1.5em;
+  margin: 100px 0;
+  flex-wrap: wrap;
+
 }
-
-`
-const HeroStyle = styled.div`
-display: flex;
-flex-direction: column;
-
-width: 100%;
-position: relative;
-padding: 0em 0 10em 0;
-
 `;

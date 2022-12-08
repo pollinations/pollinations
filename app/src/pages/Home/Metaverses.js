@@ -1,8 +1,7 @@
 import styled from '@emotion/styled'
 import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
-import { CTA } from './components'
-// Multiple platforms Section
+import CTA from '../../components/CTA'
 
 const PopulateMetaverses = props => {
 

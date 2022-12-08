@@ -5,14 +5,14 @@ import Star6Img from '../../assets/imgs/star_6.png'
 import DiscordBG from '../../assets/imgs/discord_bg.png'
 
 import { Colors, MOBILE_BREAKPOINT, BackGroundImage } from '../../styles/global'
-import { Star, LinkStyle, Container } from './components'
+import { Star as StarBase, LinkStyle, Container as ContainerBase } from './components'
 
 const DiscordSection = props => {
 
     return <Style>
-    <GridTwoColumns alignItems='center'>
-        <DiscordLogo src={DiscordIMG} alt="discord"  />
-        <Body>
+    <Container>
+      <DiscordLogo src={DiscordIMG} alt="discord"  />
+      <Body>
         Discuss, get help and <br/>
         contribute on Discord.
         <br/>
@@ -20,9 +20,10 @@ const DiscordSection = props => {
         <LinkStyle href='https://discord.gg/8HqSRhJVxn'>
             join our discord
         </LinkStyle>
-        </Body>
-        <StarCenter src={Star6Img}/>
-    </GridTwoColumns>
+      </Body>
+      <Star src={Star6Img}/>
+    </Container>
+
     <BackGroundImage 
     zIndex='-1'
     src={DiscordBG} 
@@ -31,27 +32,58 @@ const DiscordSection = props => {
 }
 
 export default DiscordSection
+
+
 const Style = styled.div`
+width: 100%;
+height: 100%;
+position: relative;
+
 display: flex;
 justify-content: center;
-width: 100%;
+align-items: center;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  min-height: 674px;
+}
+`
+const Container = styled(ContainerBase)`
 position: relative;
+min-height: 551px;
+width: 100%;
+height: 100%;
+
+display: flex;
+flex-wrap: wrap;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+gap: 100px;
+
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  flex-direction: column;
+  gap: 10px;
+}
 `
 
 const DiscordLogo = styled.img`
+width: 100%;
 max-width: 291px;
-margin: 0 auto;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  max-width: 260px;
+  margin-top: 10em;
+}
 `
 
-const StarCenter = styled(Star)`
+const Star = styled(StarBase)`
 width: 60px;
 height: 60px;
-top: 10%;
+top: 88px;
 left: 50%;
 transform: translateX(-50%);
 `
 
 const Body = styled.p`
+margin-top: 3em;
 font-family: 'Uncut Sans';
 font-style: normal;
 font-weight: 500;
@@ -61,16 +93,19 @@ line-height: 50px;
 color: ${Colors.offblack};
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-  font-size: 40px;
-  line-height: 40px;
+  font-size: 36px;
+  line-height: 45px;
+  margin: 0;
+  margin-top: 60px;
 }
 `
   
 const GridTwoColumns = styled(Container)`
 
-
 min-height: 551px;
-display: grid;
+display: flex;
+flex-direction: row;
+flex-wrap: wrap;
 gap: 5em;
 grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 

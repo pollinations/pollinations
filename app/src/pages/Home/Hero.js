@@ -1,99 +1,92 @@
 import styled from '@emotion/styled';
 import heroBG from '../../assets/imgs/bg_hero_landing.png';
 import scrolldown from '../../assets/imgs/scrolldown_hero_landing.png';
-import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global';
-// Hero Section
+import { MOBILE_BREAKPOINT, Colors } from '../../styles/global';
+import { BackgroundImage, Container as ContainerBase } from './components';
 
-const Hero = props => {
 
-    return <HeroStyle>
+const Hero = props => <Style>
+  <Container>
+    <Headline>
+      YOUR ENGINE FOR
+      <br/>
+      <span> PERSONALIZED MEDIA </span>
+    </Headline>
+
+    <SubHeadline>
+      We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
+    </SubHeadline> 
+      
+    <ScrollDown src={scrolldown}/>
+
+  </Container>
+
+  <BackgroundImage 
+    src={heroBG} 
+    zIndex='-2' 
+    alt="hero_bg" />
+
+</Style>;
   
-      <HeroHeadline>
-        YOUR ENGINE FOR
-        <br/>
-        <span> PERSONALIZED MEDIA </span>
-      </HeroHeadline>
+export default Hero
+const Style = styled.div`
+width: 100%;
+height: 100%;
+position: relative;
 
-      <HeroSubHeadLine>
-        We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
-      </HeroSubHeadLine> 
-          
+display: flex;
+justify-content: center;
+`
 
-      <ScrollDown src={scrolldown}/>
-      <HeroImage 
-        src={heroBG} 
-        zIndex='-2' 
-        alt="hero_bg" />
-  
-    </HeroStyle>
-  }
+const Container = styled(ContainerBase)`
+position: relative;
+display: flex;
+flex-direction: column;
+justify-content: flex-end;
+align-items: flex-start;
 
-  export default Hero
+padding: 3.19% 4.72% ;
+`;
 
-  const ScrollDown = styled.img`
-  position: absolute;
-  width: 90px;
-  height: 46px;
-  right: 30px;
-  bottom: 36px;
-  `
-  
-  const HeroStyle = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-start;
+const ScrollDown = styled.img`
+position: absolute;
+width: 90px;
+height: 46px;
+right: 2.8%;
+bottom: 36px;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  display: none;
+}`;
 
-  width: 100%;
-  min-height: 100vh;
+const Headline = styled.p`
+font-family: 'SERAFIN';
+font-style: normal;
+font-weight: 400;
+font-size: 92px;
+line-height: 94px;
+text-transform: capitalize;
+margin: 0;
+color: ${Colors.offWhite};
 
-  padding: 4.7% 5%;
-  `;
-  
-  const HeroImage = styled(BackGroundImage)`
-  height: 100%;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-  height: auto;
-  min-height: 100vh;
-  }
-  `
-  
-  
-  const HeroHeadline = styled.p`
-  font-family: 'SERAFIN';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 92px;
-  line-height: 94px;
-  text-transform: capitalize;
-  margin: 0;
-  color: #FAFAFA;
+span {
+  color: ${Colors.lime};
+}
 
-  span {
-    color: #E0F142;
-  }
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 56px;
+  line-height: 62px;
+}`;
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    max-width: 600px;
-    font-size: 38px;
-    line-height: 35px;
-  }
-  
-  `
-  
-  const HeroSubHeadLine = styled.p`
-  max-width: 500px;
-  font-family: 'Uncut-Sans-Variable';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 24px;
-  line-height: 34px;
-  color: #FAFAFA;  
-  
+const SubHeadline = styled.p`
+max-width: 500px;
+font-family: 'Uncut-Sans-Variable';
+font-style: normal;
+font-weight: 400;
+font-size: 24px;
+line-height: 34px;
+color: ${Colors.offWhite};
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    font-size: 18px;
-    max-width: 70%;
-    line-height: 25px;
-  }
-  `
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 20px;
+  line-height: 27px;
+}`;

@@ -3,56 +3,22 @@ import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import styled from '@emotion/styled'
 
 
-export const CTA = props => {
-const { outlined, light } = props;
+export const BackgroundImage = styled.img`
+position: ${props => props.position ? props.position : 'absolute'};
+width: 100%;
+height: 100%;
+top: ${props => props.top || 0};
+left: 0;
+opacity: ${props => props.opacity || 1};
+z-index: ${props => props.zIndex || 0};
+mix-blend-mode: ${props => props.blend || 'normal'};
+transform: ${props => props.transform || ''};
+object-fit: cover;
+object-position: ${props => props.objectPosition || ''};
+`
 
-if (outlined) return <CtaStyle {...props} ColorScheme={light ? ColorScheme.outlinedLight : ColorScheme.outlined}  />;
-
-return <CtaStyle  {...props} ColorScheme={ColorScheme.contained}/>;
-}
 
 
-
-const CtaStyle = styled.button`
-    background: transparent;
-    cursor: pointer;
-    /* button */
-
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    padding: 15px 30px;
-    gap: 10px;
-
-    border-radius: 40px;
-    
-    font-family: 'Uncut-Sans-Variable';
-    font-style: normal;
-    font-weight: 700;
-    font-size: 16px;
-    line-height: 20px;  
-    text-transform: uppercase;
-    
-    ${props => props.ColorScheme}
-  `
-
-  const ColorScheme = {
-    contained: `
-    border: 0;
-    color: ${Colors.offblack};
-    `,
-    outlined: `
-    border: 1px solid ${Colors.gray2}; 
-    color: ${Colors.offblack};
-    `,
-    outlinedLight: `
-    border: 1px solid ${Colors.lime};
-    color: ${Colors.offwhite};
-    `
-  }
 
 
 // Decorations
@@ -61,21 +27,24 @@ export const Star = styled.img`
 position: absolute;
 width: 77px;
 height: 77px;
-${ props => props.Top ? `
-  top: 71px;
-  right: 85px;
-  ` : `
-  left: 87px;
-  bottom: 69px;`
-}
 `
 export const LetsTalk = styled.img`
 position: absolute;
 width: 105px;
 height: 105px;
-top: 71px;
-right: 85px;
 `;
+
+export const DecorationIMG = styled.img`
+position: absolute;
+
+width: ${ props => props.size || 50};
+height: ${ props => props.size || 50};
+
+${props => props.top && ('top:' + props.top + ';') };
+${props => props.bottom && ('bottom:' + props.bottom + 'px;') };
+${props => props.left && ('left:' + props.left + 'px;') };
+${props => props.right && ('right:' + props.right + ';') };
+`
 
 
 
@@ -102,11 +71,7 @@ color: ${Colors.offblack};
 
 
 export const Container = styled.div`
+width: 100%;
 max-width: 1440px;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-${props => props.content === 'about' && 'padding: 9%; align-items: flex-start;'}
-
+min-height: 100vh;
 `

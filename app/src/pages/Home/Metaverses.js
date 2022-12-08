@@ -2,12 +2,16 @@ import styled from '@emotion/styled'
 import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
 import CTA from '../../components/CTA'
+import { Container as ContainerBase } from './components'
+
 
 const PopulateMetaverses = props => {
 
     const navigate = useNavigate()
 
-    return <Container>
+    return <Style>
+    
+    <Container>
         
         <TopTitle children='POPULATE'/>
         <Title>
@@ -28,10 +32,17 @@ const PopulateMetaverses = props => {
         </CTA>
   
     </Container>
+    </Style>
   }
 
   export default PopulateMetaverses
 
+const Style = styled.div`
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+`
   
   const TopTitle = styled.p `
   font-family: 'Uncut Sans';
@@ -70,6 +81,15 @@ const PopulateMetaverses = props => {
 
         text-align: center;
     }
+
+    @media (max-width: ${MOBILE_BREAKPOINT}) {
+        font-size: 70px;
+        line-height: 77px;
+        span {
+            font-size: 21px;
+            line-height: 26px;
+        }
+    }
   
 `
 const Body = styled.p`
@@ -85,17 +105,19 @@ color: ${Colors.gray1};
 margin: 0;
 margin-top: 44px;
 margin-bottom: 50px;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 18px;
+    line-height: 26px;
+    padding: 0 24px;
+}
 `
 
-const Container = styled.div`
+const Container = styled(ContainerBase)`
 background-color: black;
 display: flex;
 flex-direction: column;
 justify-content: center;
 align-items: center;
 
-width: 100%;
-max-width: 100%;
-min-height: 100vh;
-position: relative;
+min-height: 798px;
 `

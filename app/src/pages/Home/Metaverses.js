@@ -119,5 +119,7 @@ flex-direction: column;
 justify-content: center;
 align-items: center;
 
+width: 100%;
+max-width: 100%;
 min-height: 798px;
 `

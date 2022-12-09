@@ -40,14 +40,14 @@ const NotebookCard = ({ notebook }) => {
     return (
       <Box>
         <CardContainer>
-            <Link to={{pathname: linkUrl}} style={{textDecoration: 'none'}}>
+            <Link to={linkUrl} style={{textDecoration: 'none'}}>
             <CardHeaderStyle>
               <div style={{maxWidth: '95%'}}>
                 <CardTitle children={name} to={linkUrl}  variant="h4" />
                 <CardTitle children={parsedCategory} to={linkUrl} variant="h6" isCategory />
               </div>
-              <Tooltip title="This model runs on our own GPU.">
-                  <h2 children={featured ? '🐝' : ''}/> 
+              <Tooltip title={featured ? "This model runs on our own GPU." : "This model runs on Google Colab."}>
+                  {featured ? <h2>🐝</h2> : <img src="/colabIcon.png" style={{width: '1.5em'}}/>}  
               </Tooltip>
             </CardHeaderStyle>
               

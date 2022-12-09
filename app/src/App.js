@@ -115,7 +115,8 @@ const Pollinations = () => {
               <Route path=':nodeID' />
             </Route>
           </Route>
-
+          {/* Register a path that redirects to a url which is passed just after */}
+          <Route path="redirect/*" element={<Redirect />} />
           <Route
             path="p/:contentID/*"
             element={
@@ -186,6 +187,18 @@ const ModelRoutes = ({ node, navigateToNode, overrideContentID }) => {
       <Route path="create" element={<Creator ipfs={ipfs} node={node} dispatch={dispatch} />} />
     </Routes>
   )
+}
+
+
+const Redirect = () => {
+
+  const { '*': url} = useParams()
+
+  useEffect(() => {
+    window.location.href = url
+  }, [url])
+
+  return <> </>
 }
 
 export default App

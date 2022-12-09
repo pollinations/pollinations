@@ -1,5 +1,5 @@
-import Button from "@material-ui/core/Button"
-import styled from '@emotion/styled'
+import styled from '@emotion/styled';
+import Button from "@material-ui/core/Button";
 import GpuInfo from "./molecules/GpuInfo";
 
 const ToolBar = ({ node, showNode }) => {
@@ -8,7 +8,7 @@ const ToolBar = ({ node, showNode }) => {
 
     return <ToolBarStyle>
         <GpuInfo {...node} />
-        <Button onClick={showNode} children='[ Current Pollen ]' /> 
+        <Button onClick={() => showNode()} children='[ Current Pollen ]' /> 
     </ToolBarStyle>
 }
 

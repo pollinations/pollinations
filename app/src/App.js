@@ -52,6 +52,8 @@ const Pollinations = () => {
   const navigate = useNavigate()
 
   const navigateToNode = useCallback((nodeID = node.nodeID) => {
+    debug("navigateToNode", nodeID)
+    
     if (nodeID) navigate(`/n/${nodeID}`)
     else {
       console.error("For some reason NodeID is not set...", node)

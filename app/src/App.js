@@ -198,7 +198,7 @@ const Redirect = () => {
     window.location.href = url
   }, [url])
 
-  return <> </>
+  return <div style={{padding:"40px"}}> <br /> <br /> <br /> <br /> <br /> <h2>Redirecting to Google Colab...</h2></div>
 }
 
 export default App

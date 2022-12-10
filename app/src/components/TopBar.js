@@ -22,7 +22,7 @@ const TopBar = ({ navRoutes }) => {
   return <>
     <TopContainer css={StyleUrl(location.pathname)}>
     <NavBarStyle>
-      {/* <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>  */}
+      {/* <Alert severity="warning">We have decided to </Alert> */}
       <NavLink to='/' style={{ padding: 0, gridArea: 'logo', display: 'flex', alignItems: 'center', marginLeft: '1em' }}>
         <Logo size='150px' small='150px' margin='0' />  
       </NavLink>

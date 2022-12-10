@@ -43,7 +43,8 @@ export const getNotebooks = (ipfs) => {
         name, 
         path:`/p/${cid}/create`, 
         description,
-        Icon: WallpaperIcon
+        Icon: WallpaperIcon,
+        metadata
       };
     });
   }).flat()

@@ -4,7 +4,8 @@ import Icon from './atoms/Icon'
 import { COLORS } from '../_globalConfig/colors'
 import { SOCIAL_LINKS } from '../_globalConfig/socialLinks'
 import styled from '@emotion/styled'
-import { MOBILE_BREAKPOINT } from '../styles/global'
+import { Colors, MOBILE_BREAKPOINT } from '../styles/global'
+
 
 export const SocialPostStatus = ({ results }) =>
   Object.keys(results).map(
@@ -16,6 +17,12 @@ export const SocialLinks = ({ small, hideOnMobile, gap }) => (
     {Object.keys(SOCIAL_LINKS).map(PlatformLink)}
   </SocialStyle>
 )
+
+const IconImg = styled.img`
+width: 15px;
+height: auto;
+`
+
 const SocialStyle = styled.div`
 grid-area: social;
 align-self: center;
@@ -33,7 +40,7 @@ a {
 `
 
 const PlatformLink = (platform) => {
-  const { icon, url } = SOCIAL_LINKS[platform]
+  const { icon_img, url } = SOCIAL_LINKS[platform]
   return (
     <Link
       key={`plt_link_${platform}`}
@@ -42,6 +49,7 @@ const PlatformLink = (platform) => {
         width: '50px',
         height: '50px',
         borderRadius: '50%',
+        border: `1px solid ${Colors.lime}`,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -49,11 +57,7 @@ const PlatformLink = (platform) => {
       target="_blank"
       title={platform}
     >
-      {typeof icon === 'string' ? (
-        <Icon path={SOCIAL_LINKS[platform].icon} color={COLORS.font.default} size={35} />
-      ) : (
-        SOCIAL_LINKS[platform].icon
-      )}
+      <IconImg src={icon_img} />
     </Link>
   )
 }

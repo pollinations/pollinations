@@ -97,7 +97,6 @@ right: 20;
 `;
 const CTAStyle = styled.p`
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 500;
 font-size: 18px;

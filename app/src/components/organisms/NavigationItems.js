@@ -39,7 +39,6 @@ background-color: transparent;
 display: none;
 }
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 500;
 font-size: 17px;
@@ -63,7 +62,6 @@ flex-direction: column;
 gap: ${props => props.gap || ''};
 margin: ${props => props.margin || ''};
 a {
-    font-family: 'DM Sans';
     font-style: normal;
     font-weight: 500;
     font-size: 24px;

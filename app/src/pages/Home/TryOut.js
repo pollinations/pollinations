@@ -69,7 +69,8 @@ export default React.memo(function TryOut() {
   
   const { prompts } = getPollenStatus(ipfs?.output?.log)
 
-  return <PageLayout >
+  return <Style>
+    <PageLayout >
 
     <Headline>
       CREATE YOUR <i> AI AVATAR </i>
@@ -92,7 +93,8 @@ export default React.memo(function TryOut() {
 
     {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
-  </PageLayout>
+    </PageLayout>
+  </Style>
 });
 
 
@@ -234,6 +236,7 @@ const PageLayout = styled.div`
 width: 100%;
 max-width: 1440px;
 min-height:80vh;
+background-color: ${Colors.background_body};
 
 margin-top: 7em;
 display: flex;
@@ -267,7 +270,6 @@ img {
   margin: 0 auto;
 }
 p {
-  font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400;
   font-size: 16px;
@@ -282,5 +284,19 @@ p {
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
   }
+}
+`
+const Style = styled.div`
+width: 100%;
+height: 100%;
+position: relative;
+background-color: ${Colors.background_body};
+z-index: -2;
+
+display: flex;
+justify-content: center;
+align-items: center;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  min-height: 674px;
 }
 `

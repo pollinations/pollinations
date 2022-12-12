@@ -10,7 +10,13 @@ export const Colors = {
   offblack: '#2A2C1C',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
+  background_body: '#E9E9E9',
 };
+
+export const Fonts = {
+  body: 'Uncut-Sans-Variable',
+  headline: 'SERAFIN'
+}
 
 export const BaseContainer = styled.div`
   width: 100%;
@@ -57,7 +63,7 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 export const Headline = styled.p`
-font-family: 'Mattone';
+
 font-style: normal;
 font-weight: 500;
 font-size: 36px;

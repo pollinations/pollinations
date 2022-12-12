@@ -37,7 +37,6 @@ const TempLayout = ({ Content }) => {
 export default TempLayout
 
 const Headline = styled.p`
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 56px;
@@ -60,7 +59,6 @@ span {
 }
 `
 const ExplanationText = styled.p`
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 24px;

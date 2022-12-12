@@ -11,7 +11,6 @@ const CreateButton = styled.button`
 
     border: none;
 
-    font-family: 'DM Sans';
     font-style: normal;
     font-weight: 700;
     font-size: 16px;

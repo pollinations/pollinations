@@ -1,6 +1,6 @@
 import styled from "@emotion/styled"
 import BannerIcon from '../assets/imgs/bannerIcon.svg'
-import { MOBILE_BREAKPOINT } from "../styles/global"
+import { MOBILE_BREAKPOINT, Fonts } from "../styles/global"
 
 
 
@@ -62,7 +62,7 @@ backdrop-filter: blur(15px);
 border-radius: 20px;
 
 h2, h3, p {
-    font-family: 'DM Sans';
+    font-family: ${Fonts.body};
     font-style: normal;
     font-weight: 400;
 }

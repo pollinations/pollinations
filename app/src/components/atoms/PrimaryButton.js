@@ -11,7 +11,6 @@ margin-left: ${props => props.marginLeft ?? 'calc(-129px - 0.5em)'};
 
 border: none;
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 700;
 font-size: 17px;

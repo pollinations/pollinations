@@ -7,7 +7,7 @@ import RouterLink from './molecules/RouterLink'
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 import { SocialLinks } from './Social'
-import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../styles/global'
+import { Colors, Fonts, MOBILE_BREAKPOINT } from '../styles/global'
 
 const Footer = () => {
 
@@ -76,7 +76,6 @@ const LetsTalkStyle = styled.p`
 grid-area: lets-talk;
 justify-self: flex-start;
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 500;
 font-size: 28px;
@@ -161,7 +160,6 @@ grid-template-areas:
 }
 background-color: black;
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 18px;

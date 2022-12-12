@@ -9,7 +9,7 @@ import './index.css'
 
 const darkTheme = createMuiTheme({
   typography: {
-    fontFamily: 'Open Sans'
+    fontFamily: 'Uncut-Sans-Variable'
   },
   palette: {
     type: 'dark',

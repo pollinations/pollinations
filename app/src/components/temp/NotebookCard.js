@@ -54,7 +54,7 @@ const NotebookCard = ({ notebook }) => {
   
   
   const CardTitle = ({ to, children, variant, isCategory }) => (
-      <Typography className={`Lato noMargin ${isCategory && 'categoryText'}`} variant={variant} gutterBottom>
+      <Typography className={`noMargin ${isCategory && 'categoryText'}`} variant={variant} gutterBottom>
         <RouterLink to={to}>
           {children}
         </RouterLink>

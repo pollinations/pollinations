@@ -38,6 +38,8 @@ const Style = styled.div`
 width: 100%;
 height: 100%;
 position: relative;
+background-color: ${Colors.background_body};
+z-index: -2;
 
 display: flex;
 justify-content: center;

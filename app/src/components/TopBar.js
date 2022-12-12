@@ -1,10 +1,9 @@
 import IconButton from "@material-ui/core/IconButton"
-import React from "react"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
-import { GlobalSidePadding, MOBILE_BREAKPOINT } from "../styles/global"
+import { MOBILE_BREAKPOINT } from "../styles/global"
 
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from '../assets/menuIcon.svg'
@@ -16,36 +15,35 @@ import { SocialLinks } from './Social'
 const TopBar = ({ navRoutes }) => {
 
   const drawerState = React.useState(false);
-  const location = useLocation();
 
   
   return <OuterContainer>
     <TopContainer>
-    <NavBarStyle>
-      
-      <div style={{display: 'flex', }}>
-        <NavLink to='/' style={{ 
-            padding: 0, 
-            paddingRight: 80,
-            gridArea: 'logo', 
-            display: 'flex',
-             alignItems: 'center',
-              marginLeft: '1em' }}>
-          <Logo size='150px' small='150px' margin='0' />  
-        </NavLink>
+      <NavBarStyle>
+        
+        <div style={{display: 'flex', }}>
+          <NavLink to='/' style={{ 
+              padding: 0, 
+              paddingRight: 80,
+              gridArea: 'logo', 
+              display: 'flex',
+              alignItems: 'center',
+                marginLeft: '1em' }}>
+            <Logo size='150px' small='150px' margin='0' />  
+          </NavLink>
 
-        <NavigationItems navRoutes={navRoutes}/>
-      </div>
+          <NavigationItems navRoutes={navRoutes}/>
+        </div>
 
-      <SocialLinks small hideOnMobile gap='8px'/>
+        <SocialLinks small hideOnMobile gap='8px'/>
 
-      <MenuButton>
-        <IconButton onClick={()=>drawerState[1](true)} >
-          <img src={MobileMenuIcon}/>
-        </IconButton>
-      </MenuButton>
+        <MenuButton>
+          <IconButton onClick={()=>drawerState[1](true)} >
+            <img src={MobileMenuIcon}/>
+          </IconButton>
+        </MenuButton>
 
-    </NavBarStyle>
+      </NavBarStyle>
     </TopContainer>
 
     <TemporaryDrawer drawerState={drawerState}>

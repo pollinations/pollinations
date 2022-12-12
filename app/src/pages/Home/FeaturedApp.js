@@ -170,7 +170,7 @@ flex-direction: row;
 align-items: flex-start;
 padding: 0em 1.5em;
 gap: 70px;
-margin: 150px 0;
+margin: 75px 0;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   padding: 0em 1.5em;

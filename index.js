@@ -33,7 +33,7 @@ const requestListener = async function (req, res) {
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
   const url = await runModel("pollinations/stable-diffusion-private", {
-    prompts:prompt, 
+    prompts: prompt, 
     num_interpolation_steps: 1,  
     // seed: seed || 0
   }, true)

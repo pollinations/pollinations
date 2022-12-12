@@ -22,7 +22,7 @@ const TopBar = ({ navRoutes }) => {
   return <OuterContainer>
     <TopContainer css={StyleUrl(location.pathname)}>
     <NavBarStyle>
-      {/* <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>  */}
+      <NavigationItems navRoutes={navRoutes}/>
       
       <div style={{display: 'flex', }}>
         <NavLink to='/' style={{ 

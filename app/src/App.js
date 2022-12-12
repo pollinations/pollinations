@@ -52,6 +52,8 @@ const Pollinations = () => {
   const navigate = useNavigate()
 
   const navigateToNode = useCallback((nodeID = node.nodeID) => {
+    debug("navigateToNode", nodeID)
+    
     if (nodeID) navigate(`/n/${nodeID}`)
     else {
       console.error("For some reason NodeID is not set...", node)
@@ -113,7 +115,8 @@ const Pollinations = () => {
               <Route path=':nodeID' />
             </Route>
           </Route>
-
+          {/* Register a path that redirects to a url which is passed just after */}
+          <Route path="redirect/*" element={<Redirect />} />
           <Route
             path="p/:contentID/*"
             element={
@@ -184,6 +187,18 @@ const ModelRoutes = ({ node, navigateToNode, overrideContentID }) => {
       <Route path="create" element={<Creator ipfs={ipfs} node={node} dispatch={dispatch} />} />
     </Routes>
   )
+}
+
+
+const Redirect = () => {
+
+  const { '*': url} = useParams()
+
+  useEffect(() => {
+    window.location.href = url
+  }, [url])
+
+  return <div style={{padding:"40px"}}> <br /> <br /> <br /> <br /> <br /> <h2>Redirecting to Google Colab...</h2></div>
 }
 
 export default App

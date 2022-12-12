@@ -32,11 +32,11 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const url = await runModel("pollinations/stable-diffusion-private", {
+  const url = await runModel( {
     prompts: prompt, 
     num_interpolation_steps: 1,  
     // seed: seed || 0
-  }, true)
+  }, "pollinations/stable-diffusion-private")
 
   console.log("Showing image: ", url);
   // await showImage(url);

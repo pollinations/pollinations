@@ -28,6 +28,11 @@ const requestListener = async function (req, res) {
 
   const promptAndSeed = pathname.split("/prompt/")[1];
   
+  if (!promptAndSeed) {
+    res.writeHead(404);
+    res.end('404: Not Found');
+    return
+  }
   const [promptRaw, seed] = promptAndSeed.split("/");
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");

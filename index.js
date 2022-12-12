@@ -33,24 +33,24 @@ const requestListener = async function (req, res) {
     res.end('404: Not Found');
     return
   }
-  const [promptRaw, seed] = promptAndSeed.split("/");
+  const [promptRaw, seedOverride] = promptAndSeed.split("/");
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
   let url = null;
-  
+  let seed = seedOverride ? parseInt(seedOverride) : 13;
   while (!url) {
   
     const output = await runModel( {
       prompts: prompt,
       num_frames_per_prompt: 1,
       diffusion_steps: 15,
-      seed: Math.round(Math.random() * 1000000000)
+      seed
       // seed: seed || 0
     }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: 5})
 
     url = output?.output["00003.png"];
-
+    seed++;
   }
   
   console.log("Showing image: ", url);

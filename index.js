@@ -1,4 +1,4 @@
-import { runModel as runModelUncached } from '@pollinations/ipfsWebClient.js';
+import { runModel as runModelUncached } from '@pollinations/ipfs/ipfsWebClient.js';
 import http from 'http';
 import { parse } from 'url';
 import urldecode from 'urldecode';

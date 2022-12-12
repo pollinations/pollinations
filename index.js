@@ -34,7 +34,7 @@ const requestListener = async function (req, res) {
 
   const url = await runModel( {
     prompts: prompt, 
-    num_interpolation_steps: 1,  
+    num_frames_per_prompt: 1,  
     // seed: seed || 0
   }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private")
 

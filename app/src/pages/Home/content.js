@@ -1,4 +1,4 @@
-import DataNationImg from '../../assets/imgs/datanation_img.png'
+import DataNationImg from '../../assets/imgs/wedatanation/wedatanation.gif'
 import DreaMachineImg from '../../assets/imgs/dreamachine.png'
 import AvatarImg from '../../assets/imgs/avatar_img.png'
 

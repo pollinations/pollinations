@@ -157,6 +157,7 @@ const FeatureAppImg = styled.img`
 max-width: 100%;
 width: 520px;
 height: auto;
+border-radius: 20px;
 `
 
 const GridTwoColumns = styled.div`

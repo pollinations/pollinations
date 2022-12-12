@@ -13,12 +13,14 @@
   "dependencies": {
     "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
     "await-sleep": "^0.0.1",
-    "get-pixels": "^3.3.3",
-    "jimp": "^0.16.1",
     "lodash.memoize": "^4.1.2",
     "memoize-fs": "^2.2.0",
     "mjpeg-server": "^0.3.1",
     "node-fetch": "^2.6.7",
     "urldecode": "^1.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.15.18",
+    "serverless-esbuild": "^1.33.2"
   }
 }

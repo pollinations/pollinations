@@ -1,8 +1,7 @@
-import awsModelRunner from '@pollinations/ipfs/awsModelRunner.js';
+import { runModel as runModelUncached } from '@pollinations/ipfs/ipfsWebClient.js';
 import urldecode from 'urldecode';
 
 import memoize from 'lodash.memoize';
-import { cache } from './cache.js';
 import fetch from 'node-fetch';
 
 'use strict';
@@ -31,11 +30,10 @@ export const hello = async (pathname) => {
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
   const url = await runModel({
-    text:prompt, 
-    grid_size: 1,  
-    intermediate_outputs: false,
-    seed: seed || 0
-  }, "pollinations/min-dalle", true)
+    prompts:prompt, 
+    seed: seed || 0,
+    num_interpolation_steps: 1,
+  }, "pollinations/stable-diffusion-private")
 
   console.log("Showing image: ", url);
   // await showImage(url);
@@ -64,5 +62,5 @@ export const hello = async (pathname) => {
 
 
 
-const runModel = memoize(awsModelRunner, params => JSON.stringify(params))
+const runModel = memoize(runModelUncached, params => JSON.stringify(params))
 

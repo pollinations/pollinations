@@ -52,7 +52,7 @@ export default memo(function ResultViewer({ ipfs }) {
   const createURL = customEndpoint ? customEndpoint : `/p/${contentID}/create`
   const modelName = metadata?.name || customEndpoint 
 
-  return <BaseContainer >
+  return <Wrapper >
 
       {/* <SEO metadata={metadata} ipfs={ipfs} cid={contentID} /> */}
     <Banner/>
@@ -79,8 +79,11 @@ export default memo(function ResultViewer({ ipfs }) {
       <IpfsLog ipfs={ipfs} contentID={contentID} />
     </div> }
 
-  </BaseContainer>
+  </Wrapper>
 })
+const Wrapper = styled(BaseContainer)`
+margin-top: 5em;
+`;
 const Space = styled.div`
 width: 100%;
 height: 2em;

@@ -28,7 +28,7 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
 
   debug("ipfs state before rendering model", ipfs)
 
-  return <BaseContainer>
+  return <Wrapper>
 
       {/* <SEO metadata={metadata} ipfs={ipfs} cid={contentID} /> */}
       <Banner/>
@@ -73,8 +73,12 @@ export default React.memo(function Create({ ipfs, node, dispatch }) {
           }
         </div>
           
-    </BaseContainer>
+    </Wrapper>
 });
+
+const Wrapper = styled(BaseContainer)`
+margin-top: 5em;
+`;
 
 const TwoColumns = styled.div`
 display: grid;

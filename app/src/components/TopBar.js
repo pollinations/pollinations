@@ -20,7 +20,7 @@ const TopBar = ({ navRoutes }) => {
 
   
   return <OuterContainer>
-    <TopContainer css={StyleUrl(location.pathname)}>
+    <TopContainer>
     <NavBarStyle>
       
       <div style={{display: 'flex', }}>
@@ -110,9 +110,10 @@ span {
 }
 `
 const TopContainer = styled.div`
-  ${props => props.css};
+  position: absolute;
+  z-index: 1;
   width: 100%;
-padding: 0 30px;
+  padding: 0 30px;
   display: flex;
   justify-content: center;
 `
@@ -144,14 +145,4 @@ justify-self: flex-end;
   display: none;
 }
 `
-
-const StyleUrl = (url) => {
-  if (url?.slice(0,2) === '/c') return `position: relative;`;
-  if (url?.slice(0,2) === '/p') return `position: relative;`;
-  if (url?.slice(0,2) === '/n') return `position: relative;`;
-  return ` 
-    position: absolute;
-    z-index: 1;`
-};
-
 export default TopBar

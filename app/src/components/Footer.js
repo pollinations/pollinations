@@ -19,7 +19,7 @@ return <OuterContainer>
             <span> hello@pollinations.ai </span>
         </LetsTalkStyle>
         <SocialContainer>
-            <SocialLinks/>
+            <SocialLinks gap='17px' />
         </SocialContainer>
         <LogoContainer>
             <NavLink to='/' >

@@ -37,7 +37,7 @@ const TopBar = ({ navRoutes }) => {
         <NavigationItems navRoutes={navRoutes}/>
       </div>
 
-      <SocialLinks small hideOnMobile gap='1em'/>
+      <SocialLinks small hideOnMobile gap='8px'/>
 
       <MenuButton>
         <IconButton onClick={()=>drawerState[1](true)} >

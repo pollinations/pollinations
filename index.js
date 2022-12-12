@@ -32,12 +32,13 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const url = await runModel( {
+  const output = await runModel( {
     prompts: prompt, 
     num_frames_per_prompt: 1,  
     // seed: seed || 0
   }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private")
 
+  const url = output?.output["00003.png"];
   console.log("Showing image: ", url);
   // await showImage(url);
 

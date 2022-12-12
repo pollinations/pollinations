@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import heroBG from '../../assets/imgs/bg_hero_landing.png';
 import scrolldown from '../../assets/imgs/scrolldown_hero_landing.png';
-import { MOBILE_BREAKPOINT, Colors } from '../../styles/global';
+import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase } from './components';
 
 
@@ -59,7 +59,7 @@ bottom: 36px;
 }`;
 
 const Headline = styled.p`
-font-family: 'SERAFIN';
+font-family: ${Fonts.headline};
 font-style: normal;
 font-weight: 400;
 font-size: 92px;
@@ -69,6 +69,7 @@ margin: 0;
 color: ${Colors.offWhite};
 
 span {
+  font-family: ${Fonts.headline};
   color: ${Colors.lime};
 }
 

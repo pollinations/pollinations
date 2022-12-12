@@ -22,7 +22,6 @@ const TopBar = ({ navRoutes }) => {
   return <OuterContainer>
     <TopContainer css={StyleUrl(location.pathname)}>
     <NavBarStyle>
-      <NavigationItems navRoutes={navRoutes}/>
       
       <div style={{display: 'flex', }}>
         <NavLink to='/' style={{ 

@@ -1,6 +1,6 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import {  MOBILE_BREAKPOINT, Colors } from '../../styles/global';
+import {  MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import BgImg from '../../assets/imgs/gradient-background.png'
 
 import { BackgroundImage, Container as ContainerBase } from './components';
@@ -50,7 +50,7 @@ const FeaturedApps = props => {
   `
 
   const Headline = styled.p`
-  font-family: 'SERAFIN';
+  font-family: ${Fonts.headline};
   font-style: normal;
   font-weight: 400;
   font-size: 92px;
@@ -64,6 +64,7 @@ const FeaturedApps = props => {
   color: ${Colors.offWhite};
 
   span {
+    font-family: ${Fonts.headline};
     color: ${Colors.lime};
   }
 

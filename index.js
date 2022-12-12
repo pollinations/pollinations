@@ -1,13 +1,14 @@
+import { runModel as runModelUncached } from '@pollinations/ipfsWebClient.js';
 import http from 'http';
-import awsModelRunner from '@pollinations/ipfs/awsModelRunner.js';
-import { parse }  from 'url';
+import { parse } from 'url';
 import urldecode from 'urldecode';
-import jimp from "jimp"
 
 import memoize from 'lodash.memoize';
-import { cache } from './cache.js';
-import { gifCreator } from './gifCreator.js';
 import fetch from 'node-fetch';
+import { cache } from './cache.js';
+
+
+const runModel = memoize(cache(runModelUncached), params => JSON.stringify(params))
 
 const requestListener = async function (req, res) {
 
@@ -53,8 +54,6 @@ const requestListener = async function (req, res) {
   res.end();
 
 }
-
-const runModel = memoize(cache(awsModelRunner), params => JSON.stringify(params))
 
 
 const server = http.createServer(requestListener);

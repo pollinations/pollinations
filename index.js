@@ -36,7 +36,7 @@ const requestListener = async function (req, res) {
     prompts: prompt, 
     num_interpolation_steps: 1,  
     // seed: seed || 0
-  }, "pollinations/stable-diffusion-private")
+  }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private")
 
   console.log("Showing image: ", url);
   // await showImage(url);

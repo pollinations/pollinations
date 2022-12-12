@@ -114,7 +114,7 @@ export default React.memo(function Create() {
 const PageLayout = styled.div`
 padding: ${GlobalSidePadding};
 width: 100%;
-margin-top: 1em;
+margin-top: 5em;
 min-height: 80vh;
 
 background: radial-gradient(43.05% 43.05% at 50% 56.95%, #2F3039 0%, #000000 100%);

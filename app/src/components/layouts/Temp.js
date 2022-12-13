@@ -39,13 +39,14 @@ export default TempLayout
 const Headline = styled.p`
 font-style: normal;
 font-weight: 400;
-  font-size: 92px;
-  line-height: 94px;
+font-size: 92px;
+line-height: 94px;
 color: #fff;
 margin-top: 0;
 
 font-family: ${Fonts.headline};
 color: ${Colors.lime};
+text-transform: uppercase;
 
 span {
   font-weight: 700;

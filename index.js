@@ -76,17 +76,17 @@ const requestListener = async function (req, res) {
 
 }
 
-// // dummy handler that  redirects all requests to the static image: https://i.imgur.com/emiRJ04.gif
-// const requestListener = async function (req, res) {
-//   // return a 302 redirect to the static image
-//   res.writeHead(302, {
-//     'Location': 'https://im.ezgif.com/tmp/ezgif-1-d8a8c8c315.gif'
-//   });
-//   res.end();
-// }
+// dummy handler that  redirects all requests to the static image: https://i.imgur.com/emiRJ04.gif
+const dummyListener = async function (req, res) {
+  // return a 302 redirect to the static image
+  res.writeHead(302, {
+    'Location': 'https://im.ezgif.com/tmp/ezgif-1-d8a8c8c315.gif'
+  });
+  res.end();
+}
   
 
-const server = http.createServer(requestListener);
+const server = http.createServer(dummyListener);
 server.listen(8080);
 
 

@@ -80,7 +80,7 @@ const requestListener = async function (req, res) {
 const dummyListener = async function (req, res) {
   // return a 302 redirect to the static image
   res.writeHead(302, {
-    'Location': 'https://im.ezgif.com/tmp/ezgif-1-d8a8c8c315.gif'
+    'Location': 'https://im.ezgif.com/tmp/ezgif-1-bca5e603bf.gif'
   });
   res.end();
 }

@@ -25,7 +25,8 @@ export const FeaturedApplicationsContent = [
         title: 'Busy Bee',
         subtitle: 'Create. Bond. Have fun!',
         description: <> Add our bot to Twitter, Discord or any social media platform. Your members can then post a text and receive back an image created on the spot! Increase engagement, turn your community into the place to be. </>,
-        img: AvatarImg
+        img:'https://drive.google.com/uc?export=download&id=1sSwhBIBVBbUw8ucz8YryhJ6ao1apmaq3' 
+        //AvatarImg
     },
     {
         title: 'Pollinations Studio',

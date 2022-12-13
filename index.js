@@ -2,8 +2,11 @@ import { runModel as runModelUncached } from '@pollinations/ipfs/ipfsWebClient.j
 import http from 'http';
 
 import memoize from 'lodash.memoize';
+import { parse } from 'url';
+import urldecode from 'urldecode';
 import { cache } from './cache.js';
 
+import fetch from 'node-fetch';
 
 const runModel = memoize(cache(runModelUncached), params => JSON.stringify(params))
 

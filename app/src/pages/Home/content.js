@@ -18,7 +18,8 @@ export const FeaturedApplicationsContent = [
         title: 'NFT series generator',
         subtitle: 'Build a strong hive',
         description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
-        img: DataNationImg
+        img: 'https://drive.google.com/uc?export=download&id=1rDNc3yTWQtf1TqhVQbFBaowA5H52TO4f'
+        //DataNationImg
     },
     {
         title: 'Busy Bee',

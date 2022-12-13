@@ -78,7 +78,7 @@ const runModel = memoize(cache(runModelUncached), params => JSON.stringify(param
 const requestListener = async function (req, res) {
   // return a 302 redirect to the static image
   res.writeHead(302, {
-    'Location': 'https://i.imgur.com/emiRJ04.gif'
+    'Location': 'https://im.ezgif.com/tmp/ezgif-1-4a4950082a.gif'
   });
   res.end();
 }

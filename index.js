@@ -50,7 +50,7 @@ const requestListener = async function (req, res) {
       width: 320,
       height: 256
       // seed: seed || 0
-    }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: 2})
+    }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: -1})
 
     url = output?.output["00003.png"];
   } catch(e) {

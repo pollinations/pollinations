@@ -13,6 +13,7 @@
   "dependencies": {
     "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
     "await-sleep": "^0.0.1",
+    "jimp": "^0.16.2",
     "lodash.memoize": "^4.1.2",
     "memoize-fs": "^2.2.0",
     "mjpeg-server": "^0.3.1",

@@ -6,8 +6,8 @@ import { parse } from 'url';
 import urldecode from 'urldecode';
 import { cache } from './cache.js';
 
+import jimp from 'jimp';
 import fetch from 'node-fetch';
-
 const runModel = memoize(cache(runModelUncached), params => JSON.stringify(params))
 
 const requestListener = async function (req, res) {
@@ -68,8 +68,34 @@ const requestListener = async function (req, res) {
 
   // fetch the image and return it to the response
   const image = await fetch(url);
+  
+  
   const buffer = await image.buffer();
-  res.write(buffer);
+
+  // add legend
+  const legendText = "By https://pollinations.ai";
+
+  // use image.print of jimp to add text to the bottom of the image
+
+  const imageWithLegend = await jimp.read(buffer);
+  const font = await jimp.loadFont(jimp.FONT_SANS_32_BLACK);
+
+  const textWidth = jimp.measureText(font, legendText);
+  const textHeight = jimp.measureTextHeight(font, legendText, textWidth);
+
+  const imageWidth = imageWithLegend.getWidth();
+  const imageHeight = imageWithLegend.getHeight();
+
+  const x = imageWidth - textWidth - 10;
+  const y = imageHeight - textHeight - 10;
+
+  imageWithLegend.print(font, x, y, legendText);
+  
+  const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
+
+  res.write(bufferWithLegend);
+
+  // res.write(buffer);
 
   console.log("finishing")
   res.end();

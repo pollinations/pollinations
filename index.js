@@ -45,7 +45,7 @@ const requestListener = async function (req, res) {
     const output = await runModel( {
       prompts: prompt,
       num_frames_per_prompt: 1,
-      diffusion_steps: 10,
+      diffusion_steps: 20,
       seed,
       // width: 320,
       // height: 256
@@ -86,7 +86,7 @@ const dummyListener = async function (req, res) {
 }
   
 
-const server = http.createServer(requestListener);
+const server = http.createServer(dummyListener);
 server.listen(8080);
 
 

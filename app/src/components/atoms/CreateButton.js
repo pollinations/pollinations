@@ -11,18 +11,19 @@ const CreateButton = styled.button`
 
     border: none;
 
+    font-family: 'Uncut-Sans-Variable';
     font-style: normal;
     font-weight: 700;
     font-size: 16px;
-    line-height: 22px;
-    text-align: center;
+    line-height: 20px;
+
     text-transform: uppercase;
 
     color: #040405;
     cursor: pointer;
 
     :disabled {
-    background-color: grey;
+    background-color: ${Colors.active_button};
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100px;

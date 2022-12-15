@@ -171,7 +171,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     )
   }   
     <CreateButton disabled={loading} formik={formik} >
-        {loading ? <CircularProgress thickness={2} size={20} /> : 'CREATE'}
+        {loading ? 'CREATING' : 'CREATE'}
     </CreateButton>
     
 

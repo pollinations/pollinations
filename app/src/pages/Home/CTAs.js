@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import LetsTalkImg from '../../assets/imgs/letstalk.png'
 import Star6Img from '../../assets/imgs/star_6.png'
 import { Star as StarBase, LetsTalk as LetsTalkBase, Container as BaseContainer, DecorationIMG } from './components'
-import CTA from '../../components/CTA.js'
+import CTA, { EmailCTA } from '../../components/CTA.js'
+import { useState } from 'react'
 
 
 // Decorations
@@ -35,7 +36,8 @@ const CTAsContent = {
   mission: {
     title: <> We are on a mission to help <br/> people imagine new worlds with <br/> the help of AI. </>,
     cta_text: 'SEND A HELLO',
-    cta_link: '/integrate',
+    cta_link: 'hello@pollinations.ai',
+    cta_type: 'email',
     deco: <>
       <LetsTalk src={LetsTalkImg} />
       <BottomStar src={Star6Img} />
@@ -48,6 +50,7 @@ const CTAsContent = {
     </>,
     cta_text: 'ABOUT US',
     cta_link: '/about',
+    cta_type: 'link',
     deco: <>
       <TopStar src={Star6Img} />
     </>
@@ -60,25 +63,31 @@ const CTAs = ({ content, center }) => {
 
     if (!content) throw new Error('CTAs component requires a content prop');
 
-    const SectionContent = CTAsContent[content];
+    const { title, cta_link, cta_text, cta_type, deco } = CTAsContent[content];
 
     return <Style>
     <Container center={center}>
       <HeadlineText textAlign={center ? 'center' : 'left'}>
-        {SectionContent.title}
+        {title}
       </HeadlineText>
   
-      <CTA outlined onClick={() => navigate(SectionContent.cta_link)}>
-        {SectionContent.cta_text}
+      { cta_type === 'link' ?
+      <CTA outlined onClick={() => navigate(cta_link)}>
+        {cta_text}
       </CTA>
-
-      {SectionContent.deco}
+      :
+      <EmailCTA outlined {...CTAsContent[content]}>
+        {cta_text}
+      </EmailCTA>
+      }
+      {deco}
 
     </Container>
     </Style>
   }
 
 export default CTAs;
+
 
 
 

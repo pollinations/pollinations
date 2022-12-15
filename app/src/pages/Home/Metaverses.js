@@ -1,7 +1,7 @@
 import styled from '@emotion/styled'
 import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
-import CTA from '../../components/CTA'
+import CTA, { EmailCTA } from '../../components/CTA'
 import { Container as ContainerBase } from './components'
 
 
@@ -27,10 +27,13 @@ const PopulateMetaverses = props => {
             Feel like learning more?
         </Body>
         
-        <CTA light outlined onClick={() => navigate('/integrate')}>
-            Reach out
-        </CTA>
-  
+        <EmailCTA 
+            light 
+            outlined 
+            cta_text='Reach out' 
+            cta_link='hello@pollinations.ai'
+        />
+        
     </Container>
     </Style>
   }

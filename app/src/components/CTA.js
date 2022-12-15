@@ -1,5 +1,6 @@
 import { Colors, Headline, MOBILE_BREAKPOINT } from '../styles/global'
 import styled from '@emotion/styled'
+import { useState } from 'react';
 
 
 const CTAButton = props => {
@@ -8,6 +9,25 @@ const CTAButton = props => {
     if (outlined) return <CtaStyle {...props} ColorScheme={light ? ColorScheme.outlinedLight : ColorScheme.outlined}  />;
 
     return <CtaStyle  {...props} ColorScheme={ColorScheme.contained}/>;
+}
+export function EmailCTA({ cta_link, cta_text, ...rest }){
+  const [ text, setText ] = useState(cta_text)
+
+  function handleClick(){
+    setText(`${cta_link} copied to clipboard.`)
+    navigator.clipboard.writeText(cta_link)
+    setTimeout(()=>{
+      setText(cta_text)
+    },[1000])
+  }
+
+  return <CTAButton {...rest} onClick={handleClick}
+    onMouseOver={()=>setText(`copy ${cta_link}?`)}
+    onMouseOut={()=>setText(cta_text)}>
+    {text}
+  </CTAButton>
+
+
 }
 
 export default CTAButton

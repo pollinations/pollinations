@@ -5,6 +5,7 @@ export const MOBILE_BREAKPOINT = '769px';
 
 export const Colors = {
   accent: 'rgb(233, 250, 41)',
+  active_button: '#C93CD0',
   lime: '#E0F142',
   offwhite: '#FAFAFA',
   offblack: '#2A2C1C',

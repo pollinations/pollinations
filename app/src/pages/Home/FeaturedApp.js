@@ -103,10 +103,7 @@ const FeaturedApp = props => {
 
     </GridTwoColumns>
 }
-const MediaContainer = styled.div`
-max-width: 100%;
-height: 100%;
-`
+
 const FeaturedAppStyle = styled.div`
 display: flex;
 flex-direction: column;
@@ -160,8 +157,8 @@ p {
 }
 `
 const FeatureAppImg = styled.img`
-max-width: 100%;
-width: 520px;
+max-width: 520px;
+width: 100%;
 height: auto;
 padding: 20px;
 `
@@ -169,7 +166,6 @@ padding: 20px;
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1110px;
-// position: relative;
 align-self: center;
 
 display: grid;

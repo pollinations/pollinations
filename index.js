@@ -87,7 +87,7 @@ const requestListener = async function (req, res) {
   const imageHeight = imageWithLegend.getHeight();
 
   const x = imageWidth - textWidth - 10;
-  const y = imageHeight - textHeight - 0;
+  const y = imageHeight - 10;
 
   imageWithLegend.print(font, x, y, legendText);
   

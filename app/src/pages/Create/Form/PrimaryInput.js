@@ -44,6 +44,7 @@ return <CreateInputFullWidth
         disabled={isDisabled}
         placeholder='Type your prompt'
         fullWidth
+        dark
         />
 }
 

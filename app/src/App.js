@@ -19,7 +19,7 @@ import ScrollToTop from './utils/ScrollToTop'
 
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
-
+import DashBoard from './pages/Dashboard'
 
 const debug = Debug("AppContainer")
 
@@ -70,6 +70,7 @@ const Pollinations = () => {
       <Route path="redirect/*" element={<Redirect />} />
       
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
+      <Route exact path='d' element={<DashBoard/>}/>
     </Routes>
       
     <Footer />

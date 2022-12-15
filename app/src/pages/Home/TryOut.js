@@ -191,8 +191,8 @@ width: 53vw;
     padding-right: 7rem;
 }
 height: 65px;
-background: #FAFAFA;
-box-shadow: 0px 4px 24px -1px rgba(185, 185, 185, 0.24);
+background: ${props => props.dark ? 'linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%)' : Colors.offwhite};
+box-shadow: ${props => props.dark ? '' : ' 0px 4px 24px -1px rgba(185, 185, 185, 0.24)'};
 border-radius: 60px;
 border: none;
 
@@ -202,7 +202,7 @@ font-weight: 400;
 font-size: 18px;
 line-height: 22px;
 
-color: ${Colors.offblack};
+color: ${props => props.dark ? Colors.offwhite : Colors.offblack};
 :disabled {
   color: grey;
 }

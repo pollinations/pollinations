@@ -73,7 +73,7 @@ const requestListener = async function (req, res) {
   const buffer = await image.buffer();
 
   // add legend
-  const legendText = "https://pollinations.ai";
+  const legendText = "pollinations.ai";
 
   // use image.print of jimp to add text to the bottom of the image
 

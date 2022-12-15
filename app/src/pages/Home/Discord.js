@@ -17,7 +17,7 @@ const DiscordSection = props => {
         contribute on Discord.
         <br/>
         <br/>
-        <LinkStyle href='https://discord.gg/8HqSRhJVxn'>
+        <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 3}}>
             join our discord
         </LinkStyle>
       </Body>

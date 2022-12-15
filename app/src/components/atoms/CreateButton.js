@@ -24,6 +24,7 @@ const CreateButton = styled.button`
 
     :disabled {
     background-color: ${Colors.active_button};
+    color: ${Colors.offwhite};
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100px;

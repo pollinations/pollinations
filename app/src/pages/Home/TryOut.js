@@ -87,7 +87,7 @@ export default React.memo(function TryOut() {
       </Button>
     }
 
-    { !ipfs?.output?.done ? <PollenStatus log={ipfs?.output?.log} />  : <></>}
+    {/* { !ipfs?.output?.done ? <PollenStatus log={ipfs?.output?.log} />  : <></>} */}
     
     <Previewer output={stableDiffOutput} prompts={prompts}  />   
 

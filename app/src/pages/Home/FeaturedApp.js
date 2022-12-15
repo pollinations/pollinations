@@ -84,9 +84,11 @@ const FeaturedApp = props => {
 
     const { title, subtitle, description, img, right, imgs } = props;
 
-    return <GridTwoColumns>
-        { (!imgs && !right) ? <FeatureAppImg src={img}/> : <></> }
+    let media = !imgs ? <FeatureAppImg src={img}/> : <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
 
+    return <GridTwoColumns>
+
+        { !right && media }
         <FeaturedAppStyle>
             <h1>
                 {title}
@@ -98,9 +100,8 @@ const FeaturedApp = props => {
                 {description}
             </p>
         </FeaturedAppStyle>
-        { (!imgs && right) ? <FeatureAppImg src={img}/> : <></> }
-        <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>
-
+        { right ? media : <></> }
+        
     </GridTwoColumns>
 }
 

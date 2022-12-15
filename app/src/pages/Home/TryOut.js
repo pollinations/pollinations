@@ -73,10 +73,10 @@ export default React.memo(function TryOut() {
     <PageLayout >
 
     <Headline>
-      Explain your vision with words <br/> and watch it come to life
+      TRY IT OUT!
     </Headline>
     <SubHeadline>
-      This artificial intelligence is fine-tuned to create portraits. 
+      Explain your vision using any language and watch it come to live. 
     </SubHeadline>
 
     <Controls dispatch={dispatch} loading={isLoading} inputs={inputs} />

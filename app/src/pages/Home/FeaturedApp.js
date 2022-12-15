@@ -157,10 +157,12 @@ p {
 }
 `
 const FeatureAppImg = styled.img`
-max-width: 520px;
+// max-width: 500px;
 width: 100%;
 height: auto;
-padding: 20px;
+// padding: 20px;
+border-radius: 20px;
+
 `
 
 const GridTwoColumns = styled.div`
@@ -197,7 +199,7 @@ function SlickSlider({ imgs }){
         autoplay: true,
       };
 
-    return <Slider {...settings}>
+    return <Slider {...settings} style={{padding: '2em'}}>
         {
             imgs.map(img=> <FeatureAppImg key={img} src={img}/>)
         }

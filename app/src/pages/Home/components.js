@@ -1,5 +1,5 @@
 
-import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
+import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global'
 import styled from '@emotion/styled'
 
 
@@ -53,7 +53,7 @@ ${props => props.right && ('right:' + props.right + ';') };
 // LINK
 
 export const LinkStyle = styled.a`
-font-family: 'Uncut Sans';
+font-family: ${Fonts.body};
 font-style: normal;
 font-weight: 700;
 font-size: 18px;

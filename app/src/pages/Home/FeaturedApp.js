@@ -5,7 +5,9 @@ import BgImg from '../../assets/imgs/gradient-background.png'
 
 import { BackgroundImage, Container as ContainerBase } from './components';
 import { FeaturedApplicationsContent } from './content'
-// why we do it
+
+import Slider from "react-slick";
+import '../../assets/slick.min.css'
 
 
 const FeaturedApps = props => {
@@ -80,10 +82,10 @@ const FeaturedApps = props => {
 
 const FeaturedApp = props => {
 
-    const { title, subtitle, description, img, right } = props;
+    const { title, subtitle, description, img, right, imgs } = props;
 
     return <GridTwoColumns>
-        { !right ? <FeatureAppImg src={img}/> : <></> }
+        { (!imgs && !right) ? <FeatureAppImg src={img}/> : <></> }
 
         <FeaturedAppStyle>
             <h1>
@@ -96,11 +98,15 @@ const FeaturedApp = props => {
                 {description}
             </p>
         </FeaturedAppStyle>
-
-        { right ? <FeatureAppImg src={img}/> : <></> }
+        { (!imgs && right) ? <FeatureAppImg src={img}/> : <></> }
+        <SlickSlider imgs={imgs}/>
 
     </GridTwoColumns>
 }
+const MediaContainer = styled.div`
+max-width: 100%;
+height: 100%;
+`
 const FeaturedAppStyle = styled.div`
 display: flex;
 flex-direction: column;
@@ -157,18 +163,17 @@ const FeatureAppImg = styled.img`
 max-width: 100%;
 width: 520px;
 height: auto;
-border-radius: 20px;
+padding: 20px;
 `
 
 const GridTwoColumns = styled.div`
 width: 100%;
 max-width: 1110px;
-position: relative;
+// position: relative;
 align-self: center;
 
-display: flex;
-flex-direction: row;
-align-items: flex-start;
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 padding: 0em 1.5em;
 gap: 70px;
 margin: 75px 0;
@@ -177,6 +182,28 @@ margin: 75px 0;
   padding: 0em 1.5em;
   margin: 100px 0;
   flex-wrap: wrap;
-
 }
 `;
+
+
+
+
+function SlickSlider({ imgs }){
+    if (!imgs) return <></>;    
+    console.log(imgs)
+    const settings = {
+        dots: false,
+        infinite: true,
+        speed: 500,
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        autoplay: true,
+      };
+
+    return <Slider {...settings}>
+        {
+            imgs.map(img=> <FeatureAppImg key={img} src={img}/>)
+        }
+    </Slider>
+}

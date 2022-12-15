@@ -61,8 +61,8 @@ backdrop-filter: blur(15px);
 /* Note: backdrop-filter has minimal browser support */
 border-radius: 20px;
 
+font-family: ${Fonts.body};
 h2, h3, p {
-    font-family: ${Fonts.body};
     font-style: normal;
     font-weight: 400;
 }

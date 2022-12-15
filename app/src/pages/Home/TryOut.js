@@ -73,7 +73,7 @@ export default React.memo(function TryOut() {
     <PageLayout >
 
     <Headline>
-      CREATE YOUR <i> AI AVATAR </i>
+      Explain your vision with words <br/> and watch it come to life
     </Headline>
     <SubHeadline>
       This artificial intelligence is fine-tuned to create portraits. 

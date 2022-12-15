@@ -34,7 +34,30 @@ export const FeaturedApplicationsContent = [
         title: 'Busy Bee',
         subtitle: 'Create. Bond. Have fun!',
         description: <> Add our bot to Twitter, Discord or any social media platform. Your members can then post a text and receive back an image created on the spot! Increase engagement, turn your community into the place to be. </>,
-        img:'https://drive.google.com/uc?export=download&id=1sSwhBIBVBbUw8ucz8YryhJ6ao1apmaq3' 
+        img:'https://drive.google.com/uc?export=download&id=1sSwhBIBVBbUw8ucz8YryhJ6ao1apmaq3',
+        imgs: [
+            './busybee/busybee-0.png',
+            './busybee/busybee-1.png',
+            './busybee/busybee-2.png',
+            './busybee/busybee-3.png',
+            './busybee/busybee-4.png',
+            './busybee/busybee-5.png',
+            './busybee/busybee-6.png',
+            './busybee/busybee-7.png',
+            './busybee/busybee-8.png',
+            './busybee/busybee-9.png',
+            './busybee/busybee-10.png',
+            './busybee/busybee-11.png',
+            './busybee/busybee-12.png',
+            './busybee/busybee-13.png',
+            './busybee/busybee-14.png',
+            './busybee/busybee-15.png',
+            './busybee/busybee-16.png',
+            './busybee/busybee-17.png',
+            './busybee/busybee-18.png',
+            './busybee/busybee-19.png',
+            './busybee/busybee-20.png',
+        ]
         //AvatarImg
     },
     {

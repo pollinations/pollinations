@@ -99,7 +99,7 @@ const FeaturedApp = props => {
             </p>
         </FeaturedAppStyle>
         { (!imgs && right) ? <FeatureAppImg src={img}/> : <></> }
-        <SlickSlider imgs={imgs}/>
+        <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>
 
     </GridTwoColumns>
 }
@@ -186,7 +186,8 @@ margin: 75px 0;
 
 
 
-function SlickSlider({ imgs }){
+function SlickSlider({ imgs, pad }){
+    console.log(pad)
     if (!imgs) return <></>;    
     console.log(imgs)
     const settings = {
@@ -199,7 +200,7 @@ function SlickSlider({ imgs }){
         autoplay: true,
       };
 
-    return <Slider {...settings} style={{padding: '2em'}}>
+    return <Slider {...settings} style={{width: '100%', padding: pad ? '2.5em' : '0em'}}>
         {
             imgs.map(img=> <FeatureAppImg key={img} src={img}/>)
         }

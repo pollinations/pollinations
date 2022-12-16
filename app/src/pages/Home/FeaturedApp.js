@@ -188,9 +188,9 @@ margin: 75px 0;
 
 
 function SlickSlider({ imgs, pad }){
-    console.log(pad)
+
     if (!imgs) return <></>;    
-    console.log(imgs)
+
     const settings = {
         dots: false,
         infinite: true,

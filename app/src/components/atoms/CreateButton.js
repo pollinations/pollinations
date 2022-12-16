@@ -23,12 +23,28 @@ const CreateButton = styled.button`
     cursor: pointer;
 
     :disabled {
-    background-color: ${Colors.active_button};
+    // background-color: ${Colors.active_button};
     color: ${Colors.offwhite};
+    background: linear-gradient(90deg, magenta, #ff99ff);
+	background-size: 400% 400%;
+	animation: gradient 2s ease infinite;
+    animation-direction: alternate;
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100px;
     margin-left: ${props => props.marginLeft || 'calc(-100px - 0.5em)'};
+    }
+
+    @keyframes gradient {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
     }
 `
 

@@ -1,5 +1,5 @@
 import Debug from "debug"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Navigate, Route, Routes, useParams } from "react-router"
 import { BrowserRouter } from "react-router-dom"
 import Footer from "./components/Footer"
@@ -20,6 +20,10 @@ import ScrollToTop from './utils/ScrollToTop'
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
 import DashBoard from './pages/Dashboard'
+import LoginPage from "./pages/Login"
+import { getCurrentUser } from "./supabase/user"
+import ProtectedRoute from "./routes/protectedRoute"
+import { useAuth } from "./hooks/useAuth"
 
 const debug = Debug("AppContainer")
 
@@ -32,12 +36,30 @@ const App = () => (
   </BrowserRouter>
 )
 
+function useCurrentUser(){
+  const [ session, setSession ] = useState()
+
+  async function FetchSession(){
+    setSession(await getCurrentUser())
+  }
+
+  useEffect(()=>{
+    FetchSession()
+  },[])
+
+  return session
+}
+
 const Pollinations = () => {
+
+  const { user } = useAuth()
+
+  const isUser = user;
 
   return ( <>
     <SEOMetadata/>
       
-    <TopBar navRoutes={MAIN_NAV_ROUTES} />
+    <TopBar isUser={isUser}  />
 
     <Routes>
       <Route exact path='/' element={<Home />} />
@@ -69,8 +91,13 @@ const Pollinations = () => {
       {/* Register a path that redirects to a url which is passed just after */}
       <Route path="redirect/*" element={<Redirect />} />
       
+      <Route exact path='login' element={<LoginPage/>}/>
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
-      <Route exact path='d' element={<DashBoard/>}/>
+      <Route exact path='d' element={<ProtectedRoute user={isUser}> <DashBoard/> </ProtectedRoute>}/>
+      <Route exact path='temp' element={<DashBoard/>}/>
+
+      <Route path="*" element={<Navigate to="/" replace={true} />}/>
+      
     </Routes>
       
     <Footer />

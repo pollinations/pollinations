@@ -1,6 +1,6 @@
 import React from 'react'
 import IconButton from "@material-ui/core/IconButton"
-import { NavLink } from "react-router-dom"
+import { NavLink, useLocation } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
@@ -11,63 +11,98 @@ import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
 import NavigationItems from "./organisms/NavigationItems"
 import { SocialLinks } from './Social'
+import { MAIN_NAV_ROUTES, USER_NAV_ROUTES } from '../routes/publicRoutes'
+import { useAuth } from '../hooks/useAuth'
+import LoggedUser from './organisms/LoggedUser'
+
 
 
 const TopBar = ({ navRoutes }) => {
 
   const drawerState = React.useState(false);
-
-  
+  const location = useLocation()
+  const { user } = useAuth()
+  const isUser = (location.pathname === '/d');
   return <OuterContainer>
-    <TopContainer>
-      <NavBarStyle>
-        
-        <div style={{display: 'flex', }}>
-          <NavLink to='/' style={{ 
-              padding: 0, 
-              paddingRight: 80,
-              gridArea: 'logo', 
-              display: 'flex',
-              alignItems: 'center',
-                marginLeft: '1em' }}>
-            <Logo size='150px' small='150px' margin='0' />  
-          </NavLink>
+      <TopContainer>
+        {
+          user ?
+          <UserNav drawerState={drawerState} navRoutes={USER_NAV_ROUTES}/>
+          :
+          <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
+        }
+      </TopContainer>
 
-          <NavigationItems navRoutes={navRoutes}/>
-        </div>
+      <MobileMenu navRoutes={user ? USER_NAV_ROUTES : MAIN_NAV_ROUTES} drawerState={drawerState}/>
+      
+    </OuterContainer>
+  };
 
-        <SocialLinks small hideOnMobile gap='8px'/>
+const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
+  <div style={{display: 'flex', }}>
+    <NavLink to='/' style={{ 
+        padding: 0, 
+        paddingRight: 80,
+        gridArea: 'logo', 
+        display: 'flex',
+        alignItems: 'center',
+          marginLeft: '1em' }}>
+      <Logo size='150px' small='150px' margin='0' />  
+    </NavLink>
 
-        <MenuButton>
-          <IconButton onClick={()=>drawerState[1](true)} >
-            <img src={MobileMenuIcon}/>
-          </IconButton>
-        </MenuButton>
+    <NavigationItems navRoutes={navRoutes}/>
+  </div>
 
-      </NavBarStyle>
-    </TopContainer>
+  <SocialLinks small hideOnMobile gap='8px'/>
 
-    <TemporaryDrawer drawerState={drawerState}>
-      <MobileMenuStyle>
-        <MobileCloseIconStyle>
-          <IconButton onClick={()=>drawerState[1](false)}>
-            <CloseOutlined />
-          </IconButton>
-        </MobileCloseIconStyle>
+  <MenuButton>
+    <IconButton onClick={()=>drawerState[1](true)} >
+      <img src={MobileMenuIcon}/>
+    </IconButton>
+  </MenuButton>
+</NavBarStyle>;
 
-        <NavigationItems column navRoutes={navRoutes} margin='5em 0 0 0' gap='2em'/>
-        <div >
-          <CTAStyle>
-              Let's talk 
-              <br/>
-              <span> hello@pollinations.ai </span>
-          </CTAStyle>
-          <SocialLinks small gap='1em' />
-        </div>
-      </MobileMenuStyle>
-    </TemporaryDrawer>
-  </OuterContainer>
-};
+const UserNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
+
+  <NavLink to='/' style={{ 
+      padding: 0, 
+      paddingRight: 80,
+      gridArea: 'logo', 
+      display: 'flex',
+      alignItems: 'center',
+        marginLeft: '1em' }}>
+    <Logo size='150px' small='150px' margin='0' />  
+  </NavLink>
+  
+  <LoggedUser />
+
+<MenuButton>
+  <IconButton onClick={()=>drawerState[1](true)} >
+    <img src={MobileMenuIcon}/>
+  </IconButton>
+</MenuButton>
+</NavBarStyle>;
+
+const MobileMenu = ({drawerState, navRoutes}) => <TemporaryDrawer drawerState={drawerState}>
+  <MobileMenuStyle>
+    <MobileCloseIconStyle>
+      <IconButton onClick={()=>drawerState[1](false)}>
+        <CloseOutlined />
+      </IconButton>
+    </MobileCloseIconStyle>
+
+    <NavigationItems column navRoutes={navRoutes} margin='5em 0 0 0' gap='2em'/>
+    <div >
+      <CTAStyle>
+          Let's talk 
+          <br/>
+          <span> hello@pollinations.ai </span>
+      </CTAStyle>
+      <SocialLinks small gap='1em' />
+    </div>
+  </MobileMenuStyle>
+</TemporaryDrawer>
+
 const OuterContainer = styled.div`
 width: 100%;
 display: flex;

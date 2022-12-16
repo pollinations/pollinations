@@ -25,7 +25,7 @@ const CreateButton = styled.button`
     :disabled {
     // background-color: ${Colors.active_button};
     color: ${Colors.offwhite};
-    background: linear-gradient(90deg, magenta, #ff99ff);
+    background: linear-gradient(90deg, magenta, #cc00cc);
 	background-size: 400% 400%;
 	animation: gradient 2s ease infinite;
     animation-direction: alternate;

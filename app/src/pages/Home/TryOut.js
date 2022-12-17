@@ -7,18 +7,17 @@ import CreateButton from '../../components/atoms/CreateButton';
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
-import { Colors, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, Fonts, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 
 // take it away
 import { Button } from '@material-ui/core';
 import { useFormik } from 'formik';
 import { zipObj } from 'ramda';
 import { IpfsLog } from '../../components/Logs';
-import { PollenStatus, getPollenStatus } from '../../components/PollenStatus';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
 
-const debug = Debug("Envisioning");
+import PollenProgress from '../../components/PollenProgress'
 
 const MODEL = "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion";
 
@@ -29,28 +28,14 @@ const form = {
     title: "Prompt",
     description: "The image you want to be generated",
   },
-  // "num": {
-  //   type: "number",
-  //   default: 4,
-  //   title: "Image Count",
-  //   description: "How many images to generate"
-  // }
 }
 
-// const initialCIDs = [
-//   "QmaCRMm2cQ9SVvgz5Afp4d1QuttU5At3ghxQgZKgXAEi44",
-//   "QmP6ZqG1NYks9sh1zKGUArGToyx48n7e6iQRV3w6FfpXTM",
-//   // octopus phone
-//   // "QmYsfQwTyKv9KnxMTumnm9aKDWpdAzKkNH8Ap6TALzr86L",
-//   // "QmcEagJ2oGxuaDZQywiKRFqdeYTKjJftxUjXM9q4heGdT6",
-// ]
 
 export default React.memo(function TryOut() {
 
-  // select random initial CID
-  const initialCID = null; // initialCIDs[Math.floor(Math.random() * initialCIDs.length)];
 
   const { submitToAWS, isLoading, ipfs, updatePollen, nodeID, setNodeID } = useAWSNode({});
+
 
   useRandomPollen(nodeID, MODEL, setNodeID);
 
@@ -60,14 +45,11 @@ export default React.memo(function TryOut() {
     await submitToAWS({...values, seed: Math.floor(Math.random() * 100000)}, MODEL, false, {priority: 1});
   }
 
-
-  
   const [isAdmin, _] = useIsAdmin();
 
   const hasImageInRoot = ipfs?.output && Object.keys(ipfs.output).find(key => key.endsWith(".jpg") || key.endsWith(".png"));
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
-  const { prompts } = getPollenStatus(ipfs?.output?.log)
 
   return <Style>
     <PageLayout >
@@ -87,15 +69,17 @@ export default React.memo(function TryOut() {
       </Button>
     }
 
-    {/* { !ipfs?.output?.done ? <PollenStatus log={ipfs?.output?.log} />  : <></>} */}
+    { isLoading ? <PollenProgress log={ipfs?.output?.log} /> : <></>}
     
-    <Previewer output={stableDiffOutput} prompts={prompts}  />   
+    <Previewer output={stableDiffOutput} />   
 
     {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
     </PageLayout>
   </Style>
 });
+
+
 
 
 const Headline = styled.p`
@@ -111,8 +95,8 @@ margin: 0;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 90%;
-  font-size: 24px;
-  line-height: 30px;
+  font-size: 46px;
+  line-height: 50px;
 }
 `
 const SubHeadline = styled.p`

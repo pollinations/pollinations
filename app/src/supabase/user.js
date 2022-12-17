@@ -13,8 +13,12 @@ export const signOut = () => supabase.auth.signOut((err) => {
 // Ex: handleSocialLogin("facebook", "https://pollinations.ai")
 export async function handleSocialLogin(provider, redirectTo = "localhost:3000/") {
     return await supabase.auth.signInWithOAuth({
-        provider: provider
-    }, {
+        provider: provider,
+        options: {
+            redirectTo: "localhost:3000/"
+        }
+    }, 
+    {
         redirectTo: window.location.origin + redirectTo
     })
 }

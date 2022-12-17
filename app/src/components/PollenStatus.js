@@ -38,6 +38,7 @@ export const getPollenStatus = (log) => {
     prompts: []
   };
   const pollenStatuses = log.split("\n").filter(line => line?.startsWith("pollen_status:")).map(removePrefix);
+
   if (!pollenStatuses || pollenStatuses.length ===0) 
     return {};
   debug("pollen statuses", pollenStatuses);

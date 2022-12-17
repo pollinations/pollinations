@@ -48,7 +48,7 @@ grid-area: social;
 justify-self: flex-start;
 
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-    margin-left: 24px;
+    // margin-left: 24px;
 }
 `
 const LogoContainer = styled.div`

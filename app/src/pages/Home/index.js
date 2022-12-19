@@ -27,5 +27,8 @@ display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
+input:focus, textarea:focus, select:focus{
+  outline: none;
+}
 `;
 

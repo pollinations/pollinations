@@ -150,6 +150,10 @@ const TopContainer = styled.div`
   padding: 0 30px;
   display: flex;
   justify-content: center;
+  @media (max-width: ${MOBILE_BREAKPOINT}){
+    padding: 0;
+  }
+  
 `
 
 const NavBarStyle = styled.div`

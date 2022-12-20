@@ -153,6 +153,8 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     onChange={formik.handleChange}
   />
   <CreateTextArea
+    key={key}
+    id={key}
    maxlength={10}
    rows={4}
    value={formik.values[key]}

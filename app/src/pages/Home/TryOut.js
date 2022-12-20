@@ -171,6 +171,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
 const CreateButton = styled(CreateButtonBase)`
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   margin: 0;
+  min-width: 142px;
 }
 
 `

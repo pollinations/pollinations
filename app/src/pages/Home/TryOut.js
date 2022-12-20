@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import useAWSNode from '@pollinations/ipfs/reactHooks/useAWSNode';
 import Debug from "debug";
 import React from "react";
-import CreateButton from '../../components/atoms/CreateButton';
+import CreateButtonBase from '../../components/atoms/CreateButton';
 import { overrideDefaultValues } from "../../components/form/helpers";
 import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
@@ -152,37 +152,65 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
     value={formik.values[key]}
     onChange={formik.handleChange}
   />
-  {/* <CreateTextArea style={{display: 'none'}}/> */}
-    <CreateButton disabled={loading} formik={formik} >
-        {loading ? 'CREATING' : 'CREATE'}
-    </CreateButton>
+  <CreateTextArea
+   maxlength={10}
+   rows={4}
+   value={formik.values[key]}
+   onChange={formik.handleChange}
+   disabled={loading}
+  />
+  <CreateButton disabled={loading} formik={formik}  >
+      {loading ? 'CREATING' : 'CREATE'}
+  </CreateButton>
     
 
 </CreateForm>
 }
-// export const CreateTextArea = styled.textarea`
-// resize: none;
-// width: 100%;
-// background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
-// // border-radius: 60px;
-// border: none;
+const CreateButton = styled(CreateButtonBase)`
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  margin: 0;
+}
 
-// font-style: normal;
-// font-weight: 400;
-// font-size: 18px;
-// line-height: 23px;
-// display: flex;
-// align-items: center;
+`
+const CreateTextArea = styled.textarea`
+resize: none;
+width: 100%;
 
-// color: #FFFFFF;
-// padding: 0.5rem;
+background: ${Colors.offwhite};
+box-shadow: 0px 4px 24px -1px rgba(185, 185, 185, 0.24);
+border-radius: 20px;
+border: none;
 
-
-// `
-const CreateForm = styled.form`
-
+font-style: normal;
+font-weight: 400;
+font-size: 18px;
+line-height: 23px;
 display: flex;
 align-items: center;
+
+color: ${Colors.offblack};
+padding: 0.5rem;
+@media (min-width: ${MOBILE_BREAKPOINT}) {
+  display: none;
+}
+:disabled {
+  color: ${Colors.gray1};
+}
+
+`
+const CreateForm = styled.form`
+width: 100%;
+padding: 0 1em;
+display: flex;
+align-items: center;
+justify-content: center;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+flex-direction: column;
+justify-content: center;
+align-items: center;
+
+gap: 1em;
+}
 `
 // move to own component
 export const CreateInput = styled.input`
@@ -190,6 +218,7 @@ width: 53vw;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 90vw;    
     padding-right: 7rem;
+    display: none;
 }
 height: 65px;
 background: ${props => props.dark ? 'linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%)' : Colors.offwhite};

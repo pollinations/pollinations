@@ -1,31 +1,32 @@
 import styled from '@emotion/styled';
 import { Colors, Fonts, MOBILE_BREAKPOINT } from '../styles/global'
-import Star from '../assets/imgs/pollenprograss/Star3.png'
-import Arrows from '../assets/imgs/pollenprograss/arrows.png'
+import StarIMG from '../assets/imgs/pollenprograss/Star3.png'
+import ArrowsIMG from '../assets/imgs/pollenprograss/arrows.png'
 import {getPollenStatus} from './PollenStatus'
+
+const Star =  props => <img src={StarIMG} style={{width: 25, height: 25}} alt='decoration_star' />;
+const Arrows =  props => <img src={ArrowsIMG} style={{width: 32, height: 14}} alt='decoration_star' />;
 
 const PollenProgress = ({ log }) => {
 
     const { pollenStatuses } = getPollenStatus(log)
-    console.log(pollenStatuses)
 
     return <StepsContainer>
   
       <StepTitle color={StepTitleColors['done']}>
         Connecting
       </StepTitle>
-  
-      <img src={Star} style={{width: 25, height: 25}} alt='decoration_star' />
-  
+      <Star/>
+
       <StepTitle color={StepTitleColors[(pollenStatuses?.length < 1) ? 'active' : 'done']  }>
         Pimping
       </StepTitle>
-  
-      <img src={Arrows} style={{width: 32, height: 14}} alt='decoration_star' />
+      { (pollenStatuses?.length < 1) ? <Arrows/> : <Star/> }
 
       <StepTitle color={StepTitleColors[(pollenStatuses?.length > 1) ? 'active' : 'waiting']  }>
         Generating
       </StepTitle>
+      { (pollenStatuses?.length > 1) ? <Arrows/> : <></> }
   
     </StepsContainer>
   }

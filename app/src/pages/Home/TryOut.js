@@ -140,20 +140,19 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
    } ,
     enableReinitialize: true,
   });
+  
+  const key = Object.keys(formik.values)[0]
 
   return <CreateForm onSubmit={formik.handleSubmit}>
 
-  { // Basic Inputs
-    Object.keys(formik.values).map(key => 
-    !inputs[key].advanced && <CreateInput
-        key={key}
-        disabled={loading}
-        id={key}
-        value={formik.values[key]}
-        onChange={formik.handleChange}
-    />
-    )
-  }   
+  <CreateInput
+    key={key}
+    disabled={loading}
+    id={key}
+    value={formik.values[key]}
+    onChange={formik.handleChange}
+  />
+  {/* <CreateTextArea style={{display: 'none'}}/> */}
     <CreateButton disabled={loading} formik={formik} >
         {loading ? 'CREATING' : 'CREATE'}
     </CreateButton>
@@ -161,7 +160,25 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
 
 </CreateForm>
 }
+// export const CreateTextArea = styled.textarea`
+// resize: none;
+// width: 100%;
+// background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+// // border-radius: 60px;
+// border: none;
 
+// font-style: normal;
+// font-weight: 400;
+// font-size: 18px;
+// line-height: 23px;
+// display: flex;
+// align-items: center;
+
+// color: #FFFFFF;
+// padding: 0.5rem;
+
+
+// `
 const CreateForm = styled.form`
 
 display: flex;

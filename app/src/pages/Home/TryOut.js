@@ -173,7 +173,6 @@ const CreateButton = styled(CreateButtonBase)`
   margin: 0;
   min-width: 142px;
 }
-
 `
 const CreateTextArea = styled.textarea`
 resize: none;

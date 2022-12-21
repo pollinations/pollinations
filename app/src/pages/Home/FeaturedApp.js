@@ -82,13 +82,21 @@ const FeaturedApps = props => {
 
 const FeaturedApp = props => {
 
-    const { title, subtitle, description, img, right, imgs } = props;
+    const { title, subtitle, description, img, right, imgs, video } = props;
 
-    let media = !imgs ? <FeatureAppImg src={img}/> : <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
+    // let media = !imgs ? <FeatureAppImg src={img}/> : <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
+
+
+    const Media = props => {
+        if (props.img) return <FeatureAppImg src={img}/>;
+        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
+        if (props.video) return <FeatureAppVideo src={video} playsInline autoPlay muted />;
+        return <></>;
+    }
 
     return <GridTwoColumns>
 
-        { !right && media }
+        { !right && <Media {...props}/> }
         <FeaturedAppStyle>
             <h1>
                 {title}
@@ -100,7 +108,7 @@ const FeaturedApp = props => {
                 {description}
             </p>
         </FeaturedAppStyle>
-        { right ? media : <></> }
+        { right ? <Media {...props}/> : <></> }
         
     </GridTwoColumns>
 }
@@ -163,7 +171,13 @@ width: 100%;
 height: auto;
 // padding: 20px;
 border-radius: 20px;
-
+`
+const FeatureAppVideo = styled.video`
+// max-width: 500px;
+width: 100%;
+height: auto;
+// padding: 20px;
+border-radius: 20px;
 `
 
 const GridTwoColumns = styled.div`

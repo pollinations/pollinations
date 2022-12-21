@@ -1,6 +1,8 @@
 import DataNationImg from '../../assets/imgs/wedatanation/wedatanation.gif'
 import DreaMachineImg from '../../assets/imgs/dreamachine.png'
+
 import AvatarImg from '../../assets/imgs/avatar_img.png'
+
 
 
 export const Metaverses = [
@@ -18,7 +20,7 @@ export const FeaturedApplicationsContent = [
         title: 'NFT series generator',
         subtitle: 'Build a strong hive',
         description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
-        img: 'https://drive.google.com/uc?export=download&id=1rDNc3yTWQtf1TqhVQbFBaowA5H52TO4f',
+        // img: 'https://drive.google.com/uc?export=download&id=1rDNc3yTWQtf1TqhVQbFBaowA5H52TO4f',
         imgs: [
             './wedatanation/wedatanation_1.png',
             './wedatanation/wedatanation_2.png',
@@ -43,7 +45,7 @@ export const FeaturedApplicationsContent = [
         title: 'Busy Bee',
         subtitle: 'Create. Bond. Have fun!',
         description: <> Add our bot to Twitter, Discord or any social media platform. Your members can then post a text and receive back an image created on the spot! Increase engagement, turn your community into the place to be. </>,
-        img:'https://drive.google.com/uc?export=download&id=1sSwhBIBVBbUw8ucz8YryhJ6ao1apmaq3',
+        // img:'https://drive.google.com/uc?export=download&id=1sSwhBIBVBbUw8ucz8YryhJ6ao1apmaq3',
         imgs: [
             './busybee/busybee-0.png',
             './busybee/busybee-1.png',
@@ -73,6 +75,6 @@ export const FeaturedApplicationsContent = [
         title: 'Pollinations Studio',
         subtitle: 'Immerse yourself into a flow of dreams',
         description: <> We offer commissioned works such as music videos, immersive installations, interactive experiences and more.</>,
-        img: DreaMachineImg
+        video: './dreamachine/dreamachine_00.webm'
     },
 ]

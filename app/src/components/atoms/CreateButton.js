@@ -33,6 +33,7 @@ const CreateButton = styled.button`
     @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 100px;
     margin-left: ${props => props.marginLeft || 'calc(-100px - 0.5em)'};
+    font-weight: 500;
     }
 
     @keyframes gradient {

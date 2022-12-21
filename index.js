@@ -90,7 +90,8 @@ const requestListener = async function (req, res) {
   const x = imageWidth - textWidth - 10;
   const y = imageHeight - 36;
 
-  imageWithLegend.print(font, x, y, legendText);
+  if (!seedOverride)
+    imageWithLegend.print(font, x, y, legendText);
   
   const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
 

@@ -52,9 +52,9 @@ function useCurrentUser(){
 
 const Pollinations = () => {
 
-  const { user } = useAuth()
+  // const { user } = useAuth()
 
-  const isUser = user;
+  const isUser = false;
 
   return ( <>
     <SEOMetadata/>
@@ -91,7 +91,7 @@ const Pollinations = () => {
       {/* Register a path that redirects to a url which is passed just after */}
       <Route path="redirect/*" element={<Redirect />} />
       
-      <Route exact path='login' element={<LoginPage/>}/>
+      {/* <Route exact path='login' element={<LoginPage/>}/> */}
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
       <Route exact path='d' element={<ProtectedRoute user={isUser}> <DashBoard/> </ProtectedRoute>}/>
       <Route exact path='temp' element={<DashBoard/>}/>

@@ -40,7 +40,7 @@ const requestListener = async function (req, res) {
   let url = null;
   let seed = seedOverride ? parseInt(seedOverride) : 13;
   while (!url) {
-    try {
+    // try {
   
     const output = await runModel( {
       prompts: prompt,
@@ -53,10 +53,11 @@ const requestListener = async function (req, res) {
     }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: 5})
 
     url = output?.output["00003.png"];
-  } catch(e) {
-    console.error(e)
-    console.log("retrying...")
-  }
+  // } catch(e) {
+  //   console.error(e)
+  //   console.log(e)
+  //   console.log("retrying...")
+  // }
     seed++;
   }
   

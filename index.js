@@ -50,7 +50,7 @@ const requestListener = async function (req, res) {
       // width: 320,
       // height: 256
       // seed: seed || 0
-    }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: -1})
+    }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, {priority: 5})
 
     url = output?.output["00003.png"];
   } catch(e) {
@@ -116,3 +116,49 @@ const server = http.createServer(requestListener);
 server.listen(8080);
 
 
+// call rest api like this
+
+// const body = {
+//   "image": "replicate:pollinations/lemonade-preset",
+//   "input": {
+//       "image": await toBase64(image),
+//       "styles": styles,
+//       "num_images_per_style": num_images_per_style,
+//       "strength": strength,
+//       "gender": gender,
+//       "ethnicity": ethnicity
+//   }
+// }
+
+// const response = await fetch('https://rest.pollinations.ai/pollen', {
+//   method: 'POST',
+//   body: JSON.stringify(body),
+//   headers: {
+//       "Authorization": `Bearer ${document.querySelector('#token').value}`,
+//       "Content-Type": "application/json"
+//   }
+// });
+
+const callPimpedDiffusion = async (prompt, token) => {
+
+    const body = {
+      image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion",
+      input: {
+        prompt
+      }
+    }
+
+  const response = await fetch('https://rest.pollinations.ai/pollen', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+    }
+  });
+
+  console.log(await response.json())
+  
+}
+
+// callPimpedDiffusion("apple", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwb2xsaW5hdGlvbnMtZ2VuZXJpYy1mcm9udGVuZCIsImV4cCI6MTY4NTI2NTQ1Nn0.Zzf45fZcmLt9WK74si9KO1TexdzZ5qJi1ED2pHvMqBo")

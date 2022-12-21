@@ -50,7 +50,7 @@ const CtaStyle = styled.button`
     
     font-family: 'Uncut-Sans-Variable';
     font-style: normal;
-    font-weight: 700;
+    font-weight: 500;
     font-size: 16px;
     line-height: 20px;  
     text-transform: uppercase;

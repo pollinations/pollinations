@@ -24,7 +24,7 @@ const Content = [
     </Style>,
   },
   {
-    headline: 'Build community through AI art!',
+    headline: <> Build <br/>community<br/> through <br/> AI art </>,
     content: <Style>
     Imagine that within Discord or Slack people can write a prompt to a bot and get the exact media they want. They can create challenges, NFTs, games and much more, making for a fun, interactive, artistic experience. <span>Send us a hello</span> to see what this looks like.
     </Style>,

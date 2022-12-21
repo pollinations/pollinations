@@ -81,7 +81,6 @@ export default function Models() {
 
 const ShowReelHeadline = styled(Headline)`
 margin: 2em 0 0 0;
-font-family: "DM Sans";
 font-weight: 600;
 font-size: 48px;
 `
@@ -95,14 +94,13 @@ flex-direction: column;
 
 width: 100%;
 min-height: 100vh;
+margin-top: 5em;
 h3 {
   text-align: center;
   margin: 1em 0 0 0;
   font-size: 3rem;
-  font-family: Open Sans;
   font-weight: 400;
   line-height: 1.167;
-  font-family: Lato;
 }
 margin-bottom: 2em;
 `;

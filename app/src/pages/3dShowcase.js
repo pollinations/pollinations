@@ -124,7 +124,6 @@ margin-left: 0;
 `
 
 const Headline = styled.p`
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: ${props => props.fontWeight || '400'};
 font-size: ${props => props.fontSize || '56px'};
@@ -156,7 +155,6 @@ span {
 const ExplanationText = styled.p`
 align-self: flex-start;
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 24px;

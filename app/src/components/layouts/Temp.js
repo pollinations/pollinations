@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global'
+import { BackGroundImage, MOBILE_BREAKPOINT, Fonts, Colors } from '../../styles/global'
 import whyBG from '../../assets/imgs/BG7.png'
 
 const TempLayout = ({ Content }) => {
@@ -37,13 +37,16 @@ const TempLayout = ({ Content }) => {
 export default TempLayout
 
 const Headline = styled.p`
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
-font-size: 56px;
-line-height: 73px;
+font-size: 92px;
+line-height: 94px;
 color: #fff;
 margin-top: 0;
+
+font-family: ${Fonts.headline};
+color: ${Colors.lime};
+text-transform: uppercase;
 
 span {
   font-weight: 700;
@@ -60,7 +63,6 @@ span {
 }
 `
 const ExplanationText = styled.p`
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 24px;

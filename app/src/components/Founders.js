@@ -60,7 +60,6 @@ img {
     margin: 0;
 }
 p {
-    font-family: 'DM Sans';
   font-style: normal;
   font-weight: 400;
   font-size: 18px;

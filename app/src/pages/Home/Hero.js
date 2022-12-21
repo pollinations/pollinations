@@ -1,102 +1,93 @@
 import styled from '@emotion/styled';
-import heroBG from '../../assets/imgs/bghero.jpg';
-import heroBGOverlay from '../../assets/imgs/bgherooverlay.jpeg';
-import { BackGroundImage, MOBILE_BREAKPOINT } from '../../styles/global';
-// Hero Section
+import heroBG from '../../assets/imgs/bg_hero_landing.png';
+import scrolldown from '../../assets/imgs/scrolldown_hero_landing.png';
+import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
+import { BackgroundImage, Container as ContainerBase } from './components';
 
-const Hero = props => {
 
-    return <HeroGradient>
-  
-      <HeroHeadline>
-        YOUR ENGINE FOR PERSONALIZED MEDIA
-      </HeroHeadline>
+const Hero = props => <Style>
+  <Container>
+    <Headline>
+      YOUR ENGINE FOR
+      <br/>
+      <span> PERSONALIZED MEDIA </span>
+    </Headline>
 
-      <HeroSubHeadLine>
-        We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
-      </HeroSubHeadLine> 
+    <SubHeadline>
+      We combine and fine-tune algorithms to match any aesthetics, allowing the creation of unlimited, customized AI media.
+    </SubHeadline> 
       
-  
-      <HeroImage 
-        src={heroBGOverlay} 
-        zIndex='-1' 
-        opacity='68%' 
-        blend='screen' 
-        transform='rotate(-180deg)' 
-        alt="hero_bg_overlay" />
-      
-      <HeroImage 
-        src={heroBG} 
-        zIndex='-2' 
-        alt="hero_bg" />
-  
-    </HeroGradient>
-  }
+    <ScrollDown src={scrolldown}/>
 
-  export default Hero
-  
-  const HeroStyle = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  </Container>
 
-  width: 100%;
-  min-height: 100vh;
-  `;
-  
-  const HeroGradient = styled(HeroStyle)`
-    background: radial-gradient(50% 74.25% at 50% 53.59%, 
-    rgba(22, 50, 122, 0.58) 0%, 
-    rgba(34, 128, 134, 0.54) 47.4%, 
-    rgba(151, 190, 67, 0.01) 100%);
-    max-height: 100vh;
-  `
-  const HeroImage = styled(BackGroundImage)`
-  height: 100%;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-  height: auto;
-  min-height: 100vh;
-  }
-  `
-  
-  
-  const HeroHeadline = styled.p`
-  max-width: 750px;
-  font-family: 'Leiko';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 64px;
-  line-height: 82px;
-  text-align: center;
-  text-transform: uppercase;
-  margin: 0;
-  color: #FFFFFF;
+  <BackgroundImage 
+    src={heroBG} 
+    zIndex='-2' 
+    alt="hero_bg" />
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    max-width: 600px;
-    font-size: 38px;
-    line-height: 35px;
-  }
+</Style>;
   
-  `
-  
-  const HeroSubHeadLine = styled.p`
-  max-width: 500px;
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 24px;
-  line-height: 26px;
-  /* identical to box height */
-  
-  text-align: center;
-  
-  color: #D8E449;
+export default Hero
+const Style = styled.div`
+width: 100%;
+height: 100%;
+position: relative;
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    font-size: 18px;
-    max-width: 70%;
-    line-height: 25px;
-  }
-  `
+display: flex;
+justify-content: center;
+`
+
+const Container = styled(ContainerBase)`
+position: relative;
+display: flex;
+flex-direction: column;
+justify-content: flex-end;
+align-items: flex-start;
+
+padding: 3.19% 4.72% ;
+`;
+
+const ScrollDown = styled.img`
+position: absolute;
+width: 90px;
+height: 46px;
+right: 2.8%;
+bottom: 36px;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  display: none;
+}`;
+
+const Headline = styled.p`
+font-family: ${Fonts.headline};
+font-style: normal;
+font-weight: 400;
+font-size: 92px;
+line-height: 94px;
+text-transform: capitalize;
+margin: 0;
+color: ${Colors.offWhite};
+
+span {
+  font-family: ${Fonts.headline};
+  color: ${Colors.lime};
+}
+
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 56px;
+  line-height: 62px;
+}`;
+
+const SubHeadline = styled.p`
+max-width: 500px;
+font-family: 'Uncut-Sans-Variable';
+font-style: normal;
+font-weight: 400;
+font-size: 24px;
+line-height: 34px;
+color: ${Colors.offWhite};
+
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  font-size: 20px;
+  line-height: 27px;
+}`;

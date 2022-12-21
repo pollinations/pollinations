@@ -18,7 +18,7 @@ function AuthProvider({ children }) {
 
     React.useEffect(() => {
         // Check active sessions and sets the user
-        const session = supabase.auth.session()
+        const session = supabase.auth.getSession()
     
         setUser(session?.user ?? null)
     

@@ -3,13 +3,13 @@ import CssBaseline from '@material-ui/core/CssBaseline'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
-// import { AuthProvider } from './hooks/useAuth'
+import { AuthProvider } from './hooks/useAuth'
 
 import './index.css'
 
 const darkTheme = createMuiTheme({
   typography: {
-    fontFamily: 'Open Sans'
+    fontFamily: 'Uncut-Sans-Variable'
   },
   palette: {
     type: 'dark',
@@ -24,10 +24,10 @@ const darkTheme = createMuiTheme({
 
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
-      {/* <AuthProvider> */}
+      <AuthProvider>
           <CssBaseline />
           <App />
-      {/* </AuthProvider> */}
+      </AuthProvider>
     </ThemeProvider>,
   document.getElementById('root')
 );

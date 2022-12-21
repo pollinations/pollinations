@@ -44,6 +44,7 @@ return <CreateInputFullWidth
         disabled={isDisabled}
         placeholder='Type your prompt'
         fullWidth
+        dark
         />
 }
 
@@ -62,7 +63,6 @@ background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 
 // border-radius: 60px;
 border: none;
 
-font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 18px;

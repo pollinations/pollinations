@@ -4,8 +4,23 @@ export const GlobalSidePadding = '0 3%';
 export const MOBILE_BREAKPOINT = '769px';
 
 export const Colors = {
-  accent: 'rgb(233, 250, 41)'
+  accent: 'rgb(233, 250, 41)',
+  active_button: '#C93CD0',
+  lime: '#E0F142',
+  offwhite: '#FAFAFA',
+  offblack: '#2A2C1C',
+  gray1: '#B3B3B3',
+  gray2: '#8A8A8A',
+  background_body: '#E9E9E9',
+  wine: '#670C6B',
+  magenta: '#C93CD0',
+  gray4: '#BDBDBD',
 };
+
+export const Fonts = {
+  body: 'Uncut-Sans-Variable',
+  headline: 'SERAFIN'
+}
 
 export const BaseContainer = styled.div`
   width: 100%;
@@ -52,7 +67,7 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 export const Headline = styled.p`
-font-family: 'Mattone';
+
 font-style: normal;
 font-weight: 500;
 font-size: 36px;

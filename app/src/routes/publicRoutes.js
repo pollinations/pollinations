@@ -22,3 +22,8 @@ export const MARKDOWN_ROUTES = [
     ROUTES.help,
     ROUTES.impressum
 ]
+
+export const USER_NAV_ROUTES = [
+    { label: 'Usage', to: '/d/usage', id: 'usage' },
+    { label: 'API Token', to: 'd/api_token', id: 'api_token' }
+  ]

@@ -25,39 +25,6 @@ const SelectModel = ({ models, selectedModel, onSelectModel, isDisabled }) => <>
     </FormControl>
 </>
 
-const SelectStyle = styled.select`
-background: #383838;
-border-radius: 4px;
-border: none;
-height: 37px;
 
-font-family: 'DM Sans';
-font-style: normal;
-font-weight: 500;
-font-size: 16px;
-line-height: 21px;
-
-
-display: flex;
-align-items: center;
-
-color: #FFFFFF;
-padding-left: 0.5em;
-
-option, option:selected {
-// background: #383838;
-
-    font-family: 'DM Sans';
-    font-style: normal;
-    font-weight: 500;
-    font-size: 16px;
-    line-height: 21px;
-    display: flex;
-    align-items: center;
-
-    color: #FFFFFF;
-}
-
-`
 
 export default SelectModel;

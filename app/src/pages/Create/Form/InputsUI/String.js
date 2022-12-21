@@ -8,7 +8,6 @@ display: flex;
 flex-direction: column;
 
 label{
-    font-family: 'DM Sans';
     font-style: normal;
     font-weight: 500;
     font-size: 14px;
@@ -27,7 +26,6 @@ resize: none;
 min-height: 50px;
     max-height: 100px;
     
-    font-family: 'DM Sans';
 font-style: normal;
 font-weight: 400;
 font-size: 24px;

@@ -14,7 +14,6 @@ const FilterUi = ({options, option}) => {
               opacity: option.selected === opt ? '1' : '0.5', 
               borderRadius: '60px',
               fontWeigth: '600',
-              fontFamily: "DM Sans", 
             }}
             onClick={() => option.setSelected(opt)}>
             {opt}

@@ -52,9 +52,9 @@ function useCurrentUser(){
 
 const Pollinations = () => {
 
-  const { user } = useAuth()
+  // const { user } = useAuth()
 
-  const isUser = user;
+  const isUser = false;
 
   return ( <>
     <SEOMetadata/>

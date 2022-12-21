@@ -2,7 +2,7 @@ import { Accordion, AccordionSummary } from "@material-ui/core";
 import Add from '@material-ui/icons/Add';
 import styled from '@emotion/styled';
 import ParameterViewer from './InputsUI/';
-import { MOBILE_BREAKPOINT } from "../../../styles/global";
+import { MOBILE_BREAKPOINT, Fonts } from "../../../styles/global";
 import CreditsView from "./Credits";
 import CreateButton from "../../../components/atoms/CreateButton";
 
@@ -79,7 +79,7 @@ margin-bottom: 2em;
     background: transparent;
 }
 .MuiAccordionSummary-content{
-    font-family: 'DM Sans';
+    font-family: ${Fonts.body};
     font-style: normal;
     font-weight: 500;
     font-size: 14px;

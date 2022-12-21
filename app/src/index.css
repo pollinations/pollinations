@@ -1,17 +1,20 @@
-@import url(//fonts.googleapis.com/css?family=Source+Code+Pro);
-@import url(//fonts.googleapis.com/css?family=Lato);
 @import url(//fonts.googleapis.com/css?family=Open+Sans);
 
-
-@import url(//fonts.googleapis.com/css?family=DM+Sans);
-
 @font-face {
-  font-family: Leiko;
-  src: url(./assets/fonts/leiko/Leiko-Regular.otf);
+  font-family: SERAFIN;
+  src: url(./assets/fonts/SERAFIN.otf)
 }
 @font-face {
-  font-family: Mattone;
-  src: url(./assets/fonts/Mattone/Mattone-Regular.otf)
+  font-family: Uncut-Sans-Variable;
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+}
+@font-face {
+  font-family: Uncut Sans;
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+}
+
+* {
+  font-family: Uncut-Sans-Variable;
 }
 
 ::selection {
@@ -62,9 +65,6 @@ a {
   padding: 10px 0;
 }
 
-.Lato {
-  font-family: "Lato" !important;
-}
 
 
 .noMargin {

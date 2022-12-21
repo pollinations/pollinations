@@ -75,6 +75,6 @@ export const FeaturedApplicationsContent = [
         title: 'Pollinations Studio',
         subtitle: 'Immerse yourself into a flow of dreams',
         description: <> We offer commissioned works such as music videos, immersive installations, interactive experiences and more.</>,
-        video: './dreamachine/dreamachine_00.webm'
+        video: './dreamachine/dreamachine_00.mp4'
     },
 ]

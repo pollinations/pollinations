@@ -144,4 +144,4 @@ const callWebUI = async (prompt) => {
   
 }
 
-console.log(await callWebUI("apple"))
+// console.log(await callWebUI("apple"))

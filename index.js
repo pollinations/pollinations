@@ -8,6 +8,7 @@ import { cache } from './cache.js';
 
 import jimp from 'jimp';
 import fetch from 'node-fetch';
+
 const runModel = memoize(cache(runModelUncached), params => JSON.stringify(params))
 
 const requestListener = async function (req, res) {
@@ -37,44 +38,14 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  let url = null;
-  let seed = 13; //seedOverride ? parseInt(seedOverride) : 13;
-  while (!url) {
-    try {
-    
-      const output = await runModel( {
-        prompts: prompt,
-        num_frames_per_prompt: 1,
-        diffusion_steps: 20,
-        seed,
-        // width: 320,
-        // height: 256
-        // seed: seed || 0
-      }, "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/stable-diffusion-private",false, 
-        {
-          priority: seedOverride ? 5 : -1
-        })
+  const response = await callWebUI(prompt);
+  console.log("response: ", response)
 
-      url = output?.output["00003.png"];
-    } catch(e) {
-      console.error(e)
-      console.log(e)
-      console.log("retrying...")
-    }
-    seed++;
-  }
-  
-  console.log("Showing image: ", url);
-  // await showImage(url);
+  const base64Image = response["images"][0];
 
-  // finish()
+  // convert base64 image to buffer
 
-
-  // fetch the image and return it to the response
-  const image = await fetch(url);
-  
-  
-  const buffer = await image.buffer();
+  const buffer = Buffer.from(base64Image, 'base64');
 
   // add legend
   const legendText = "pollinations.ai";
@@ -144,26 +115,33 @@ server.listen(8080);
 //   }
 // });
 
-const callPimpedDiffusion = async (prompt, token) => {
+const callWebUI = async (prompt) => {
+
+    // const body = {
+    //   image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion",
+    //   input: {
+    //     prompt
+    //   }
+    // }
 
     const body = {
-      image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion",
-      input: {
-        prompt
-      }
+        "prompt": prompt,
+        "steps": 20,
+        "height": 384,
+        "sampler_index": "Euler a",
+        "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"
+ 
     }
-
-  const response = await fetch('https://rest.pollinations.ai/pollen', {
+  const response = await fetch('http://127.0.0.1:7862/sdapi/v1/txt2img', {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
-        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json"
     }
   });
 
-  console.log(await response.json())
+  return await response.json()
   
 }
 
-// callPimpedDiffusion("apple", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwb2xsaW5hdGlvbnMtZ2VuZXJpYy1mcm9udGVuZCIsImV4cCI6MTY4NTI2NTQ1Nn0.Zzf45fZcmLt9WK74si9KO1TexdzZ5qJi1ED2pHvMqBo")
+console.log(await callWebUI("apple"))

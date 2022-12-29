@@ -1,4 +1,3 @@
-import { runModel as runModelUncached } from '@pollinations/ipfs/ipfsWebClient.js';
 import http from 'http';
 
 import memoize from 'lodash.memoize';
@@ -10,7 +9,6 @@ import { exec } from 'child_process';
 import jimp from 'jimp';
 import fetch from 'node-fetch';
 
-const runModel = memoize(cache(runModelUncached), params => JSON.stringify(params))
 
 const requestListener = async function (req, res) {
 
@@ -39,7 +37,7 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const response = await callWebUI(prompt);
+  const response = await runModel(prompt);
   console.log("response: ", response)
 
   const base64Image = response["images"][0];
@@ -157,3 +155,6 @@ exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
   }
   console.log(`stdout: ${stdout}`);
 })
+
+
+const runModel = memoize(cache(callWebUI), params => JSON.stringify(params))

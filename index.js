@@ -3,7 +3,6 @@ import http from 'http';
 import memoize from 'lodash.memoize';
 import { parse } from 'url';
 import urldecode from 'urldecode';
-import { cache } from './cache.js';
 
 import { exec } from 'child_process';
 import jimp from 'jimp';
@@ -157,4 +156,4 @@ exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
 })
 
 
-const runModel = memoize(cache(callWebUI), params => JSON.stringify(params))
+const runModel = memoize(callWebUI, params => JSON.stringify(params))

@@ -2,7 +2,6 @@ import styled from '@emotion/styled';
 import CarolPic from '../assets/imgs/founders/carol.jpg';
 import NielsPic from '../assets/imgs/founders/niels.jpg';
 import ThomasPic from '../assets/imgs/founders/thomash.jpg';
-import AlePic from '../assets/imgs/founders/ale.jpg';
 import { MOBILE_BREAKPOINT } from '../styles/global';
 
 const FoundersArray = [
@@ -20,11 +19,6 @@ const FoundersArray = [
         name: <>Niels <br/> Warncke <br/> </>,
         title: 'CTO',
         pic: NielsPic,
-    },
-    {
-        name: <>Alexandre <br/> Silveira <br/> </>,
-        title: 'CCM',
-        pic: AlePic,
     },
 ]
 

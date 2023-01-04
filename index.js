@@ -46,24 +46,36 @@ const requestListener = async function (req, res) {
   const buffer = Buffer.from(base64Image, 'base64');
 
   // add legend
-  const legendText = "pollinations.ai";
 
   // use image.print of jimp to add text to the bottom of the image
 
-  const imageWithLegend = await jimp.read(buffer);
-  const font = await jimp.loadFont(jimp.FONT_SANS_32_BLACK);
+  const logoURL = "https://i.imgur.com/RJC1dWT.png";
 
-  const textWidth = jimp.measureText(font, legendText);
-  const textHeight = jimp.measureTextHeight(font, legendText, textWidth);
+  const imageWithLegend = await jimp.read(buffer);
+
+  const logo = await jimp.read(logoURL);
+
+  // resize logo to 100x10
+
+  const aspectRatio = logo.getWidth() / logo.getHeight();
+  logo.resize(170, 170 / aspectRatio);
+  
+  const logoWidth = 170;
+  const logoHeight = 25;
 
   const imageWidth = imageWithLegend.getWidth();
   const imageHeight = imageWithLegend.getHeight();
 
-  const x = imageWidth - textWidth - 10;
-  const y = imageHeight - 36;
+  const x = imageWidth - logoWidth - 10;
+  const y = imageHeight - logoHeight - 10;
 
+  // if no seed is given add the logo to the bottom right corner
   if (!seedOverride)
-    imageWithLegend.print(font, x, y, legendText);
+    imageWithLegend.composite(logo, x, y, {
+      mode: jimp.BLEND_SOURCE_OVER,
+      opacitySource: 1,
+      opacityDest: 1
+    });
   
   const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
 
@@ -130,7 +142,7 @@ const callWebUI = async (prompt) => {
         "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"
  
     }
-  const response = await fetch('http://127.0.0.1:7862/sdapi/v1/txt2img', {
+  const response = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {

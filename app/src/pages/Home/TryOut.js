@@ -161,7 +161,7 @@ const Controls = ({dispatch , loading, inputs, currentID }) => {
    onChange={formik.handleChange}
    disabled={loading}
   />
-  <CreateButton disabled={loading} formik={formik}  >
+  <CreateButton disabled={loading}>
       {loading ? 'CREATING' : 'CREATE'}
   </CreateButton>
     

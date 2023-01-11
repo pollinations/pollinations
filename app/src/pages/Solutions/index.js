@@ -9,6 +9,7 @@ import Increase from './Increase'
 import FeaturedApps from "./FeaturedApp"
 import PopulateMetaverses from "./Metaverses"
 import DiscordSection from '../../components/Discord'
+import Bots from "./YesToBots"
 
 export default function Solutions() {
   return <Style>
@@ -17,6 +18,7 @@ export default function Solutions() {
     <Integrate />
     <BlankSection/>
     <Increase/>
+    <Bots/>
     <FeaturedApps />
     <PopulateMetaverses />
     <CTAs content='about'/>

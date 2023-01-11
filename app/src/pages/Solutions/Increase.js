@@ -69,7 +69,6 @@ gap: 2em;
 @media (min-width: ${MOBILE_BREAKPOINT}) {
 display: none;
 }
-
 `
 
 

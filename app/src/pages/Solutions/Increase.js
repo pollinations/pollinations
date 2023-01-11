@@ -59,66 +59,41 @@ const TextItem = () => {
     </>
 }
 
-const BENEFITS = [
-    {
-        body: 'Royalty-free media to mint and share.'
-    },
-    {
-        body: 'Customized images, video, 3D objects and audio.'
-    },
-    {
-        body: 'Implemented with just a block of code.'
-    },
-    {
-        body: 'Easy, fast and fun!'
-    }
-]
+
 function AvatarImgs(){
+
+    const margins = [
+        '0',
+        '20',
+        '0',
+        '40',
+        '60',
+        '0',
+    ]
     
-    return <IntegrateListStyle>
+    return <div style={{float: 'right', display: 'flex'}}>
+        
+    <IntegrateListStyle>
+        <div/>
         {
-            Icons.map( (icon, idx) => <IntegrateIcons src={icon}/>
+            Icons.map( (icon, idx) => <AvatarIMG src={icon} style={{marginTop: margins[idx]}}/>
             )
         }
-    
-    
-    
     </IntegrateListStyle>
+    </div>
 }
 const IntegrateListStyle = styled.div`
-float: right;
 
 display: grid;
 grid-template-columns: 1fr 1fr 1fr;
-gap: 26px;
+grid-column-gap: 26px;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
-    gap: 0px;
+    grid-column-gap: 0px;
 }
 margin-bottom: 5em;
 
 `
-const IntegrateIconsContainer = styled.div`
-display: flex;
-align-items: center;
-gap: 26px;
-p {
-    width: 50%;
-    font-family: ${Fonts.body};
-    font-style: normal;
-    font-weight: 400;
-    font-size: 22px;
-    line-height: 30px;
-
-    color: ${Colors.offwhite};
-}
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-    margin-top: 4em;
-    p {
-        width: 90%;
-    }
- }
-`
-const IntegrateIcons = styled.img`
+const AvatarIMG = styled.img`
 width: 225px;
 height: auto;
 `

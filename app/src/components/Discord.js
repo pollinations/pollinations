@@ -1,11 +1,11 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import DiscordIMG from '../../assets/imgs/discord_black.png'
-import Star6Img from '../../assets/imgs/star_6.png'
-import DiscordBG from '../../assets/imgs/discord_bg.png'
+import DiscordIMG from '../assets/imgs/discord_black.png'
+import Star6Img from '../assets/imgs/star_6.png'
+import DiscordBG from '../assets/imgs/discord_bg.png'
 
-import { Colors, MOBILE_BREAKPOINT, BackGroundImage, Fonts } from '../../styles/global'
-import { Star as StarBase, LinkStyle, Container as ContainerBase } from './components'
+import { Colors, MOBILE_BREAKPOINT, BackGroundImage, Fonts } from '../styles/global'
+import { Star as StarBase, LinkStyle, Container as ContainerBase } from '../pages/Home/components'
 
 const DiscordSection = props => {
 

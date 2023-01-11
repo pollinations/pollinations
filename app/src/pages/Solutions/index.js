@@ -1,23 +1,34 @@
 import styled from "@emotion/styled"
 
 import Hero from "./Hero"
-import TryOut from "./TryOut"
+import PresetsIntro from "./PresetsIntro"
 import CTAs from "./CTAs"
+import Integrate from './Integrate'
+import Increase from './Increase'
+
 import FeaturedApps from "./FeaturedApp"
 import PopulateMetaverses from "./Metaverses"
 import DiscordSection from '../../components/Discord'
 
-export default function Home() {
+export default function Solutions() {
   return <Style>
     <Hero />
-    <TryOut />
-    <CTAs content='mission' center />
+    <PresetsIntro />
+    <Integrate />
+    <BlankSection/>
+    <Increase/>
     <FeaturedApps />
     <PopulateMetaverses />
     <CTAs content='about'/>
     <DiscordSection />
   </Style>
 }
+
+const BlankSection = styled.div`
+background-color: black;
+width: 100%;
+min-height: 100vh;
+`
 
 const Style = styled.div`
 width: 100%;

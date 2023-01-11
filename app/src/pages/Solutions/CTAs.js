@@ -1,5 +1,5 @@
 import styled from '@emotion/styled'
-import { Colors, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
+import { Colors, Fonts, Headline, MOBILE_BREAKPOINT } from '../../styles/global'
 import { useNavigate } from 'react-router-dom'
 import LetsTalkImg from '../../assets/imgs/letstalk.png'
 import Star6Img from '../../assets/imgs/star_6.png'
@@ -34,7 +34,7 @@ right: 85px;
 // Content
 const CTAsContent = {
   mission: {
-    title: <> We are on a mission to help <br/> people imagine new worlds with <br/> the help of AI. </>,
+    title: <> How will your company leverage AI creation? </>,
     cta_text: 'SEND A HELLO',
     cta_link: 'hello@pollinations.ai',
     cta_type: 'email',
@@ -61,26 +61,21 @@ const CTAs = ({ content, center }) => {
 
     const navigate = useNavigate()
 
-    if (!content) throw new Error('CTAs component requires a content prop');
 
     const { title, cta_link, cta_text, cta_type, deco } = CTAsContent[content];
 
     return <Style>
     <Container center={center}>
       <HeadlineText textAlign={center ? 'center' : 'left'}>
-        {title}
+        How will your company leverage AI creation? 
       </HeadlineText>
   
-      { cta_type === 'link' ?
-      <CTA outlined onClick={() => navigate(cta_link)}>
-        {cta_text}
-      </CTA>
-      :
+      
       <EmailCTA outlined {...CTAsContent[content]}>
-        {cta_text}
+        Reach Out
       </EmailCTA>
-      }
-      {deco}
+      
+      <LetsTalk src={LetsTalkImg} />
 
     </Container>
     </Style>
@@ -94,15 +89,21 @@ export default CTAs;
 
 
 const HeadlineText = styled(Headline)`
-  font-family: 'Uncut-Sans-Variable';
-  font-style: normal;
-  font-weight: 500;
-  font-size: 56px;
-  line-height: 68px;  
-  text-align: ${props => props.textAlign || 'center'};
-  color: ${Colors.offblack};  
-  max-width: 970px;
-  margin-bottom: 45px;
+font-family: ${Fonts.body};
+font-style: normal;
+font-weight: 500;
+font-size: 56px;
+line-height: 68px;
+/* or 121% */
+
+
+/* off-white */
+
+color: ${Colors.offwhite};
+
+ 
+
+  
   z-index: 1;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -119,7 +120,6 @@ const HeadlineText = styled(Headline)`
   const Style = styled.div`
   width: 100%;
   height: 100%;
-  background-color: ${Colors.lime};
 
   display: flex;
   justify-content: center;

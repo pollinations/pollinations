@@ -2,7 +2,10 @@ import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
 import DiscordIMG from '../assets/imgs/discord_black.png'
 import Star6Img from '../assets/imgs/star_6.png'
+import DarkStarImg from '../assets/imgs/darkstar.png'
+
 import DiscordBG from '../assets/imgs/discord_bg.png'
+import DarkDiscordBGSrc from '../assets/imgs/dark_discord_bg.png'
 
 import { Colors, MOBILE_BREAKPOINT, BackGroundImage, Fonts } from '../styles/global'
 import { Star as StarBase, LinkStyle, Container as ContainerBase } from '../pages/Home/components'
@@ -29,6 +32,30 @@ const DiscordSection = props => {
     src={DiscordBG} 
     alt="discord_bg" />
   </Style>
+}
+
+export function DiscordSectionDark(props){
+
+  return <Style>
+  <Container>
+    <DiscordLogo src={DiscordIMG} alt="discord"  isDark />
+    <Body isDark>
+      Discuss, get help and <br/>
+      contribute on Discord.
+      <br/>
+      <br/>
+      <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 3}} isDark>
+          join our discord
+      </LinkStyle>
+    </Body>
+    <Star src={DarkStarImg} isDark/>
+  </Container>
+
+  <BackGroundImage 
+  zIndex='-1'
+  src={DarkDiscordBGSrc} 
+  alt="discord_bg" />
+</Style>
 }
 
 export default DiscordSection
@@ -70,6 +97,7 @@ gap: 100px;
 const DiscordLogo = styled.img`
 width: 100%;
 max-width: 291px;
+${props => props.isDark ? 'filter: invert(180);' : ''};
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   max-width: 260px;
   margin-top: 10em;
@@ -92,7 +120,7 @@ font-weight: 500;
 font-size: 40px;
 line-height: 50px;
 
-color: ${Colors.offblack};
+color: ${props => props.isDark ? Colors.offwhite : Colors.offblack};
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 36px;

@@ -65,7 +65,7 @@ text-transform: uppercase;
 
 /* off-black */
 
-color: ${Colors.offblack};
+color: ${props => props.isDark ? Colors.lime : Colors.offblack};
 `
 
 

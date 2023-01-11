@@ -8,8 +8,9 @@ import Increase from './Increase'
 
 import FeaturedApps from "./FeaturedApp"
 import PopulateMetaverses from "./Metaverses"
-import DiscordSection from '../../components/Discord'
+import {DiscordSectionDark} from '../../components/Discord'
 import Bots from "./YesToBots"
+import LemonadeAvatar from './LemonadeAvatar'
 
 export default function Solutions() {
   return <Style>
@@ -19,10 +20,12 @@ export default function Solutions() {
     <BlankSection/>
     <Increase/>
     <Bots/>
-    <FeaturedApps />
-    <PopulateMetaverses />
+    <LemonadeAvatar />
+
+
+
     <CTAs content='about'/>
-    <DiscordSection />
+    <DiscordSectionDark />
   </Style>
 }
 

@@ -12,7 +12,12 @@ const Increase = props => {
 
     return <Style>
     
-    <IntegrateBody/>
+    <IntegrateStyle>
+        <Title>
+            Increase engagement and build <span><i>a strong hive.</i></span> 
+        </Title>
+        <TextItem/>
+    </IntegrateStyle>
 
     <BackgroundImage 
         transform='rotateZ(180deg)'
@@ -28,21 +33,8 @@ const Style = styled.div`
     width: 100%;
     height: 100%;
     position: relative;   
-    min-height: 10vh;
+    min-height: 120vh;
 `
-
-
-
-function IntegrateBody(props){
-
-
-    return <IntegrateStyle>
-        <Title>
-            Increase engagement and build <span><i>a strong hive.</i></span> 
-        </Title>
-        <TextItem/>
-    </IntegrateStyle>
-}
 
 
 const TextItem = () => {
@@ -55,12 +47,33 @@ const TextItem = () => {
         <TextItemBody>
             Creating NFT series was never that easy. Find your astethetic and we deliver a tool to create unlimited, unique, roylities free images matching your vision.
         </TextItemBody>
-        <AvatarImgs/>
+        <AvatarImgsDesktop/>
+        <AvatarImgsMobile/>
     </>
 }
 
+function AvatarImgsMobile(){
+    return <AvatarStyleMobile>
+        {
+            Icons.map(avatar => <AvatarIMG src={avatar} />)
+        }
+    </AvatarStyleMobile>
+}
+const AvatarStyleMobile = styled.div`
+margin-top: 5em;
+width: 100%;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 2em;
+@media (min-width: ${MOBILE_BREAKPOINT}) {
+display: none;
+}
 
-function AvatarImgs(){
+`
+
+
+function AvatarImgsDesktop(){
 
     const margins = [
         '0',
@@ -71,7 +84,7 @@ function AvatarImgs(){
         '0',
     ]
     
-    return <div style={{float: 'right', display: 'flex'}}>
+    return <AvatarContainer>
         
     <IntegrateListStyle>
         <div/>
@@ -80,10 +93,18 @@ function AvatarImgs(){
             )
         }
     </IntegrateListStyle>
-    </div>
+    </AvatarContainer>
 }
+const AvatarContainer = styled.div`
+position: absolute;
+right: 10em;
+bottom: 5em;
+display: flex;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+display: none;
+}
+`
 const IntegrateListStyle = styled.div`
-
 display: grid;
 grid-template-columns: 1fr 1fr 1fr;
 grid-column-gap: 26px;

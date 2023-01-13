@@ -4,7 +4,7 @@ import { NavLink, useLocation } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
-import { MOBILE_BREAKPOINT } from "../styles/global"
+import { MOBILE_BREAKPOINT, Colors } from "../styles/global"
 
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from '../assets/menuIcon.svg'
@@ -23,13 +23,14 @@ const TopBar = ({ navRoutes }) => {
   const location = useLocation()
   const { user } = useAuth()
   const isUser = (location.pathname === '/d');
+
   return <OuterContainer>
       <TopContainer>
         {
           user ?
-          <UserNav drawerState={drawerState} navRoutes={USER_NAV_ROUTES}/>
+          <UserNav drawerState={drawerState} navRoutes={USER_NAV_ROUTES} isSolutions={location.pathname === '/solutions'}/>
           :
-          <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
+          <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES} isSolutions={location.pathname === '/solutions'}/>
         }
       </TopContainer>
 
@@ -38,7 +39,7 @@ const TopBar = ({ navRoutes }) => {
     </OuterContainer>
   };
 
-const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
+const PublicNav = ({ navRoutes, drawerState, isSolutions }) => <NavBarStyle isSolutions={isSolutions}> 
   <div style={{display: 'flex', }}>
     <NavLink to='/' style={{ 
         padding: 0, 
@@ -47,10 +48,10 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
         display: 'flex',
         alignItems: 'center',
           marginLeft: '1em' }}>
-      <Logo size='150px' small='150px' margin='0' />  
+      <Logo size='150px' small='150px' margin='0' Invert={isSolutions} />  
     </NavLink>
 
-    <NavigationItems navRoutes={navRoutes}/>
+    <NavigationItems navRoutes={navRoutes} isSolutions/>
   </div>
 
   <SocialLinks small hideOnMobile gap='8px'/>
@@ -62,7 +63,7 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
   </MenuButton>
 </NavBarStyle>;
 
-const UserNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
+const UserNav = ({ navRoutes, drawerState, isSolutions }) => <NavBarStyle> 
 
   <NavLink to='/' style={{ 
       padding: 0, 
@@ -169,7 +170,7 @@ const NavBarStyle = styled.div`
 
   font-size: 1rem;
   .MuiTypography-colorPrimary{
-    color: #fdfdfd !important;  
+    color: ${props => props.isSolutions ? Colors.offblack : Colors.offwhite} !important;  
   }
   padding: 1% 0;
   @media (max-width: ${MOBILE_BREAKPOINT}){

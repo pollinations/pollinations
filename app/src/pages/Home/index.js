@@ -5,7 +5,7 @@ import TryOut from "./TryOut"
 import CTAs from "./CTAs"
 import FeaturedApps from "./FeaturedApp"
 import PopulateMetaverses from "./Metaverses"
-import DiscordSection from './Discord'
+import DiscordSection from '../../components/Discord'
 
 export default function Home() {
   return <Style>

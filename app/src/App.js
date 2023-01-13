@@ -9,6 +9,7 @@ import PageTemplate from "./components/PageTemplate"
 import TopBar from "./components/TopBar"
 // Pages
 import Home from "./pages/Home/"
+import Solutions from "./pages/Solutions/"
 import Models from "./pages/Models"
 import About from "./pages/About"
 import Integrate from "./pages/Integrate"
@@ -63,6 +64,7 @@ const Pollinations = () => {
 
     <Routes>
       <Route exact path='/' element={<Home />} />
+      <Route exact path='solutions' element={<Solutions />}/>
       <Route exact path='about' element={<About/>}/>
       <Route exact path='integrate' element={<Integrate/>}/>
       <Route exact path='3d' element={<Showcase3d/>}/>

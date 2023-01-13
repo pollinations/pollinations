@@ -2,13 +2,10 @@ import styled from "@emotion/styled"
 
 import Hero from "./Hero"
 import PresetsIntro from "./PresetsIntro"
-import CTAs from "./CTAs"
+import CTA from "./CTA"
 import Integrate from './Integrate'
 import Increase from './Increase'
-
-import FeaturedApps from "./FeaturedApp"
-import PopulateMetaverses from "./Metaverses"
-import {DiscordSectionDark} from '../../components/Discord'
+import { DiscordSectionDark } from '../../components/Discord'
 import Bots from "./YesToBots"
 import LemonadeAvatar from './LemonadeAvatar'
 
@@ -21,10 +18,7 @@ export default function Solutions() {
     <Increase/>
     <Bots/>
     <LemonadeAvatar />
-
-
-
-    <CTAs content='about'/>
+    <CTA />
     <DiscordSectionDark />
   </Style>
 }

@@ -18,6 +18,7 @@ import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { useRandomPollen } from '../../hooks/useRandomPollen';
 
 import PollenProgress from '../../components/PollenProgress'
+import { getPollenStatus } from '../../components/PollenStatus';
 
 const MODEL = "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion";
 
@@ -50,6 +51,7 @@ export default React.memo(function TryOut() {
   const hasImageInRoot = ipfs?.output && Object.keys(ipfs.output).find(key => key.endsWith(".jpg") || key.endsWith(".png"));
   const stableDiffOutput = hasImageInRoot ? ipfs?.output : ipfs?.output && ipfs?.output["stable-diffusion"];
   
+  const { prompts } = getPollenStatus(ipfs?.output?.log)
 
   return <Style>
     <PageLayout >
@@ -71,7 +73,7 @@ export default React.memo(function TryOut() {
 
     { isLoading ? <PollenProgress log={ipfs?.output?.log} /> : <></>}
     
-    <Previewer output={stableDiffOutput} />   
+    <Previewer output={stableDiffOutput} prompts={prompts} />   
 
     {isAdmin && <IpfsLog ipfs={ipfs} contentID={ipfs[".cid"]} /> }
       
@@ -244,7 +246,7 @@ margin: 1em 0;
 `
 
 
-const Previewer = ({ output }) => {
+const Previewer = ({ output, prompts }) => {
 
     if (!output) return null;
 
@@ -253,13 +255,17 @@ const Previewer = ({ output }) => {
     return <PreviewerStyle
         children={
         images?.slice(0,3)
-        .map(([filename, url, type]) => 
+        .map(([filename, url, type], idx) => (<div>
             <MediaViewer 
             key={filename}
             content={url} 
             filename={filename} 
             type={type}
-        />)
+            />
+            <p style={{color:"black"}}>
+              {prompts && prompts[idx]}
+            </p>
+       </div>))
     }/>
 }
 

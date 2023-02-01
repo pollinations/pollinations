@@ -30,6 +30,7 @@ import Billing from './pages/Dashboard/billing'
 import Token from './pages/Dashboard/token'
 import BillingHistory from './pages/Dashboard/billing_history'
 import BillingPreferences from './pages/Dashboard/billing_preferences'
+import SignUpPage from "./pages/SignUp"
 
 const debug = Debug("AppContainer")
 
@@ -98,6 +99,7 @@ const Pollinations = () => {
       <Route path="redirect/*" element={<Redirect />} />
       
       <Route exact path='login' element={<LoginPage/>}/>
+      <Route exact path='signuptest' element={<SignUpPage/>}/>
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
       <Route path='d' element={<ProtectedRoute user={isUser}> <UserArea/> </ProtectedRoute>}>
         <Route path='usage' element={<Chart/>}/>

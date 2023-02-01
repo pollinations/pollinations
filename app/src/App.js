@@ -19,11 +19,18 @@ import ScrollToTop from './utils/ScrollToTop'
 
 import Showcase3d from "./pages/3dShowcase"
 import CreateModel from './pages/Create/'
-import DashBoard from './pages/Dashboard'
+import UserArea from './pages/Dashboard'
 import LoginPage from "./pages/Login"
 import { getCurrentUser } from "./supabase/user"
 import ProtectedRoute from "./routes/protectedRoute"
 import { useAuth } from "./hooks/useAuth"
+
+import Chart from './pages/Dashboard/chart'
+import Billing from './pages/Dashboard/billing'
+import Token from './pages/Dashboard/token'
+import BillingHistory from './pages/Dashboard/billing_history'
+import BillingPreferences from './pages/Dashboard/billing_preferences'
+import SignUpPage from "./pages/SignUp"
 
 const debug = Debug("AppContainer")
 
@@ -92,9 +99,18 @@ const Pollinations = () => {
       <Route path="redirect/*" element={<Redirect />} />
       
       <Route exact path='login' element={<LoginPage/>}/>
+      <Route exact path='signuptest' element={<SignUpPage/>}/>
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
-      {/* <Route exact path='d' element={<ProtectedRoute user={isUser}> <DashBoard/> </ProtectedRoute>}/> */}
-      <Route exact path='temp' element={<DashBoard/>}/>
+      <Route path='d' element={<ProtectedRoute user={isUser}> <UserArea/> </ProtectedRoute>}>
+        <Route path='usage' element={<Chart/>}/>
+        <Route path='billing'>
+          <Route path='' element={<Billing />}/>
+          <Route path='history' element={<BillingHistory />}/>
+          <Route path='preferences' element={<BillingPreferences />}/>
+        </Route>
+        <Route path='token' element={<Token />}/>
+      </Route>
+      <Route exact path='temp' element={<UserArea/>}/>
 
       <Route path="*" element={<Navigate to="/" replace={true} />}/>
       
@@ -104,6 +120,7 @@ const Pollinations = () => {
   </>
   )
 }
+
 
 const Redirect = () => {
 

@@ -1,8 +1,16 @@
 import * as React from 'react'
 import supabase from '../supabase/client'
-import { getCurrentUser, signOut, getUser } from '../supabase/user'
+import { getCurrentUser, handleSocialLogin, signOut } from '../supabase/user'
 
 const AuthContext = React.createContext()
+
+const loginProviders = [
+    "discord",
+    "google",
+    "github",
+    "twitter",
+    "facebook",
+]
 
 function AuthProvider({ children }) {
 
@@ -30,16 +38,14 @@ function AuthProvider({ children }) {
         await signOut()
         setUser(null)
     }
-
-
-
     
 
   return <AuthContext.Provider value={ {
       user,
-      getUser,
+      loginProviders,
       getCurrentUser,
-      handleSignOut,      
+      handleSignOut,
+      handleSignIn: handleSocialLogin,
       }}>
       {children}
     </AuthContext.Provider>

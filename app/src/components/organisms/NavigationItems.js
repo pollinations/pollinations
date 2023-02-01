@@ -10,7 +10,7 @@ const NavigationItems = ({ navRoutes, column, margin, gap, ...rest }) => {
         </RouterLink>
     ));
 
-    if (column) return <VerticalStyle margin={margin} gap={gap}>
+    if (column) return <VerticalStyle margin={margin} gap={gap} {...rest}>
         {nav_items}
     </VerticalStyle>
 
@@ -59,6 +59,7 @@ text-align: center;
 
 display: flex;
 flex-direction: column;
+justify-content: flex-end;
 gap: ${props => props.gap || ''};
 margin: ${props => props.margin || ''};
 a {
@@ -66,7 +67,7 @@ a {
     font-weight: 500;
     font-size: 24px;
     line-height: 31px;
-    text-align: center;
+    text-align: ${props => props.align || 'center'};
 
     text-transform: capitalize;
 

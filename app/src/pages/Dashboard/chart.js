@@ -230,41 +230,22 @@ const MyResponsiveBar = ({ data /* see data tab */ }) => (
 )
 const Chart = props =>{
   return (<Style>
-  <Container>
       
     
       <MyResponsiveBar data={mockData}/>
       
 
-  </Container>
 
 </Style>)
 };
 
 export default Chart
 
-
-
 const Style = styled.div`
 width: 100%;
 height: 100%;
+max-height: 80vh;
 position: relative;
 display: flex;
 justify-content: center;
 `
-
-const Container = styled.div`
-margin-top: 2em;
-width: 90%;
-
-position: relative;
-
-
-background: linear-gradient(90.41deg, rgba(255, 255, 255, 0.17) 1.53%, rgba(255, 255, 255, 0.1) 98.72%);
-box-shadow: 0px 4px 24px -1px rgba(0, 0, 0, 0.17);
-backdrop-filter: blur(15px);
-border-radius: 20px;
-
-padding: 2% 1% ;
-`;
-

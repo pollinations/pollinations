@@ -145,6 +145,7 @@ span {
 `
 const TopContainer = styled.div`
   position: absolute;
+  top: 0;
   z-index: 1;
   width: 100%;
   padding: 0 30px;
@@ -153,7 +154,6 @@ const TopContainer = styled.div`
   @media (max-width: ${MOBILE_BREAKPOINT}){
     padding: 0;
   }
-  
 `
 
 const NavBarStyle = styled.div`

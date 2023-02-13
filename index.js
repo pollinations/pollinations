@@ -48,6 +48,7 @@ const requestListener = async function (req, res) {
     return
   }
 
+  console.log("queue size", activeQueues[ip].size)
   await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, activeQueues[ip].size > 0)));
 }
 

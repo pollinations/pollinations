@@ -15,6 +15,11 @@ const requestListener = async function (req, res) {
 
   console.log("path: ", pathname);
 
+
+  // get ip address of the request
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  console.log("ip: ", ip);
+
   if (!pathname.startsWith("/prompt")) {
     res.writeHead(404);
     res.end('404: Not Found');
@@ -126,13 +131,6 @@ server.listen(8080);
 // });
 
 const callWebUI = async (prompt) => {
-
-    // const body = {
-    //   image: "614871946825.dkr.ecr.us-east-1.amazonaws.com/pollinations/pimped-diffusion",
-    //   input: {
-    //     prompt
-    //   }
-    // }
 
     const body = {
         "prompt": prompt,

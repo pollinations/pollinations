@@ -46,7 +46,7 @@ const requestListener = async function (req, res) {
     res.end('404: Not Found');
     return
   }
-  console.log(activeQueues[ip])
+
   await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, ip)));
 }
 

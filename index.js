@@ -33,7 +33,7 @@ const requestListener = async function (req, res) {
     console.log("waiting for ip to finish")
     await activeIPs[ip];
   }
-  
+
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
   // const { showImage, finish } = gifCreator(res);
 
@@ -146,7 +146,7 @@ const callWebUI = async (prompt) => {
 
     const body = {
         "prompt": prompt,
-        "steps": 30,
+        "steps": 17,
         "height": 384,
         "sampler_index": "Euler a",
         "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"

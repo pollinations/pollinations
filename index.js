@@ -35,7 +35,6 @@ const requestListener = async function (req, res) {
     activeQueues[ip] = new PQueue({concurrency: 1});
   }
 
-
   // const { showImage, finish } = gifCreator(res);
 
   // await showImage("https://i.imgur.com/lTAeMmN.jpg");
@@ -47,8 +46,8 @@ const requestListener = async function (req, res) {
     res.end('404: Not Found');
     return
   }
-
-  await activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, ip));
+  console.log(activeQueues[ip])
+  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, ip)));
 }
 
 // dummy handler that  redirects all requests to the static image: https://i.imgur.com/emiRJ04.gif
@@ -125,17 +124,14 @@ exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
 
 
 const runModel = memoize(callWebUI, params => JSON.stringify(params))
-async function createAndReturnImage(res, promptAndSeed, ip) {
+async function createAndReturnImage(res, promptAndSeed) {
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
 
   const [promptRaw, seedOverride] = promptAndSeed.split("/");
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const runPromise = runModel(prompt);
-  activeQueues[ip] = runPromise;
-
-  const response = await runPromise;
+  const response = await  runModel(prompt);
   console.log("response: ", response);
 
   const base64Image = response["images"][0];

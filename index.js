@@ -9,6 +9,7 @@ import jimp from 'jimp';
 import fetch from 'node-fetch';
 import PQueue from 'p-queue';
 
+import sleep from 'await-sleep';
 
 const activeQueues = {};
 
@@ -47,7 +48,7 @@ const requestListener = async function (req, res) {
     return
   }
 
-  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, ip)));
+  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, activeQueues[ip].size > 0)));
 }
 
 // dummy handler that  redirects all requests to the static image: https://i.imgur.com/emiRJ04.gif
@@ -124,7 +125,14 @@ exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
 
 
 const runModel = memoize(callWebUI, params => JSON.stringify(params))
-async function createAndReturnImage(res, promptAndSeed) {
+
+async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
+
+  if (sleepBefore) {
+    console.log("sleeping 3000ms because there was an image in the queue before");
+    await sleep(3000);
+  }
+
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
 
   const [promptRaw, seedOverride] = promptAndSeed.split("/");

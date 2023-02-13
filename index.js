@@ -9,6 +9,8 @@ import jimp from 'jimp';
 import fetch from 'node-fetch';
 
 
+const activeIPs = {};
+
 const requestListener = async function (req, res) {
 
   const { pathname } = parse(req.url, true);
@@ -25,6 +27,13 @@ const requestListener = async function (req, res) {
     res.end('404: Not Found');
     return
   }
+
+  // if ip address is already processing an image wait for it to finish
+  if (activeIPs[ip]) {
+    console.log("waiting for ip to finish")
+    await activeIPs[ip];
+  }
+  
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
   // const { showImage, finish } = gifCreator(res);
 
@@ -41,7 +50,10 @@ const requestListener = async function (req, res) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const response = await runModel(prompt);
+  const runPromise = runModel(prompt);
+  activeIPs[ip] = runPromise;
+
+  const response = await runPromise;
   console.log("response: ", response)
 
   const base64Image = response["images"][0];

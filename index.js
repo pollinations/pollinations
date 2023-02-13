@@ -7,9 +7,10 @@ import urldecode from 'urldecode';
 import { exec } from 'child_process';
 import jimp from 'jimp';
 import fetch from 'node-fetch';
+import PQueue from 'p-queue';
 
 
-const activeIPs = {};
+const activeQueues = {};
 
 const requestListener = async function (req, res) {
 
@@ -18,23 +19,23 @@ const requestListener = async function (req, res) {
   console.log("path: ", pathname);
 
 
-  // get ip address of the request
-  const ip = req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  console.log("ip: ", ip);  
-
   if (!pathname.startsWith("/prompt")) {
     res.writeHead(404);
     res.end('404: Not Found');
     return
   }
 
+
+  // get ip address of the request
+  const ip = req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  console.log("ip: ", ip);  
+
   // if ip address is already processing an image wait for it to finish
-  if (activeIPs[ip]) {
-    console.log("waiting for ip to finish")
-    await activeIPs[ip];
+  if (!activeQueues[ip]) {
+    activeQueues[ip] = new PQueue({concurrency: 1});
   }
 
-  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+
   // const { showImage, finish } = gifCreator(res);
 
   // await showImage("https://i.imgur.com/lTAeMmN.jpg");
@@ -46,63 +47,8 @@ const requestListener = async function (req, res) {
     res.end('404: Not Found');
     return
   }
-  const [promptRaw, seedOverride] = promptAndSeed.split("/");
 
-  const prompt = urldecode(promptRaw).replaceAll("_", " ");
-
-  const runPromise = runModel(prompt);
-  activeIPs[ip] = runPromise;
-
-  const response = await runPromise;
-  console.log("response: ", response)
-
-  const base64Image = response["images"][0];
-
-  // convert base64 image to buffer
-
-  const buffer = Buffer.from(base64Image, 'base64');
-
-  // add legend
-
-  // use image.print of jimp to add text to the bottom of the image
-
-  const logoURL = "https://i.imgur.com/RJC1dWT.png";
-
-  const imageWithLegend = await jimp.read(buffer);
-
-  const logo = await jimp.read(logoURL);
-
-  // resize logo to 100x10
-
-  const aspectRatio = logo.getWidth() / logo.getHeight();
-  logo.resize(170, 170 / aspectRatio);
-  
-  const logoWidth = 170;
-  const logoHeight = 25;
-
-  const imageWidth = imageWithLegend.getWidth();
-  const imageHeight = imageWithLegend.getHeight();
-
-  const x = imageWidth - logoWidth - 10;
-  const y = imageHeight - logoHeight - 10;
-
-  // if no seed is given add the logo to the bottom right corner
-  if (!seedOverride)
-    imageWithLegend.composite(logo, x, y, {
-      mode: jimp.BLEND_SOURCE_OVER,
-      opacitySource: 1,
-      opacityDest: 1
-    });
-  
-  const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
-
-  res.write(bufferWithLegend);
-
-  // res.write(buffer);
-
-  console.log("finishing")
-  res.end();
-
+  await activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, ip));
 }
 
 // dummy handler that  redirects all requests to the static image: https://i.imgur.com/emiRJ04.gif
@@ -179,3 +125,59 @@ exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
 
 
 const runModel = memoize(callWebUI, params => JSON.stringify(params))
+async function createAndReturnImage(res, promptAndSeed, ip) {
+  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+
+  const [promptRaw, seedOverride] = promptAndSeed.split("/");
+
+  const prompt = urldecode(promptRaw).replaceAll("_", " ");
+
+  const runPromise = runModel(prompt);
+  activeQueues[ip] = runPromise;
+
+  const response = await runPromise;
+  console.log("response: ", response);
+
+  const base64Image = response["images"][0];
+
+  // convert base64 image to buffer
+  const buffer = Buffer.from(base64Image, 'base64');
+
+  // add legend
+  // use image.print of jimp to add text to the bottom of the image
+  const logoURL = "https://i.imgur.com/RJC1dWT.png";
+
+  const imageWithLegend = await jimp.read(buffer);
+
+  const logo = await jimp.read(logoURL);
+
+  // resize logo to 100x10
+  const aspectRatio = logo.getWidth() / logo.getHeight();
+  logo.resize(170, 170 / aspectRatio);
+
+  const logoWidth = 170;
+  const logoHeight = 25;
+
+  const imageWidth = imageWithLegend.getWidth();
+  const imageHeight = imageWithLegend.getHeight();
+
+  const x = imageWidth - logoWidth - 10;
+  const y = imageHeight - logoHeight - 10;
+
+  // if no seed is given add the logo to the bottom right corner
+  if (!seedOverride)
+    imageWithLegend.composite(logo, x, y, {
+      mode: jimp.BLEND_SOURCE_OVER,
+      opacitySource: 1,
+      opacityDest: 1
+    });
+
+  const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
+
+  res.write(bufferWithLegend);
+
+  // res.write(buffer);
+  console.log("finishing");
+  res.end();
+}
+

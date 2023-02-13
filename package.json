@@ -18,6 +18,7 @@
     "memoize-fs": "^2.2.0",
     "mjpeg-server": "^0.3.1",
     "node-fetch": "^2.6.7",
+    "p-queue": "^7.3.4",
     "urldecode": "^1.0.1"
   },
   "devDependencies": {

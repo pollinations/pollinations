@@ -17,7 +17,7 @@ const requestListener = async function (req, res) {
 
 
   // get ip address of the request
-  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const ip = req.headers["X-Real-IP"] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   console.log("ip: ", ip);
 
   if (!pathname.startsWith("/prompt")) {

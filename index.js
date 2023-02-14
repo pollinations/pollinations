@@ -108,7 +108,7 @@ const callWebUI = async (prompt) => {
 
     const body = {
         "prompt": prompt,
-        "steps": 10,
+        "steps": 20,
         "height": 384,
         "sampler_index": "Euler a",
         "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"

@@ -213,7 +213,13 @@ function addPollinationsLogoWithImagemagick(buffer) {
 
 
   return new Promise((resolve, reject) => {
-    exec(`convert -background none -gravity southeast -geometry +10+10 logo.png -composite ${tempImageFile} ${tempOutputFile}`, (error, stdout, stderr) => {
+    exec(`convert -background none -gravity southeast -geometry +10+10  ${tempImageFile} logo.png -composite ${tempOutputFile}`, (error, stdout, stderr) => {
+
+      if (error) {
+        console.log(`error: ${error.message}`);
+        reject(error);
+        return;
+      }
       // get buffer
       const bufferWithLegend = fs.readFileSync(tempOutputFile);
 

@@ -13,6 +13,21 @@ import sleep from 'await-sleep';
 
 const activeQueues = {};
 
+
+// add legend
+// use image.print of jimp to add text to the bottom of the image
+const logoURL = "https://i.imgur.com/RJC1dWT.png";
+
+let logo = null
+
+(async () => { 
+  logo = await jimp.read(logoURL);
+  // resize logo to 100x10
+  const aspectRatio = logo.getWidth() / logo.getHeight();
+  logo.resize(170, 170 / aspectRatio);
+})();
+
+
 const requestListener = async function (req, res) {
 
   const { pathname } = parse(req.url, true);
@@ -148,17 +163,10 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
   // convert base64 image to buffer
   const buffer = Buffer.from(base64Image, 'base64');
 
-  // add legend
-  // use image.print of jimp to add text to the bottom of the image
-  const logoURL = "https://i.imgur.com/RJC1dWT.png";
-
   const imageWithLegend = await jimp.read(buffer);
 
-  const logo = await jimp.read(logoURL);
 
-  // resize logo to 100x10
-  const aspectRatio = logo.getWidth() / logo.getHeight();
-  logo.resize(170, 170 / aspectRatio);
+
 
   const logoWidth = 170;
   const logoHeight = 25;

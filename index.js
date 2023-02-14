@@ -18,7 +18,7 @@ const activeQueues = {};
 // use image.print of jimp to add text to the bottom of the image
 const logoURL = "https://i.imgur.com/RJC1dWT.png";
 
-let logo = null
+let logo = null;
 
 (async () => { 
   logo = await jimp.read(logoURL);

@@ -167,8 +167,8 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
 
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
-  console.log(bufferWithLegend)
-  res.write(buffer);
+  // console.log(bufferWithLegend)
+  res.write(bufferWithLegend);
 
   // res.write(buffer);
   console.log("finishing");

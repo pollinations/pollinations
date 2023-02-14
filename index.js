@@ -16,18 +16,7 @@ import fs from 'fs';
 const activeQueues = {};
 
 
-// add legend
-// use image.print of jimp to add text to the bottom of the image
-const logoURL = "https://i.imgur.com/RJC1dWT.png";
 
-let logo = null;
-
-(async () => { 
-  logo = await jimp.read(logoURL);
-  // resize logo to 100x10
-  const aspectRatio = logo.getWidth() / logo.getHeight();
-  logo.resize(170, 170 / aspectRatio);
-})();
 
 
 const requestListener = async function (req, res) {

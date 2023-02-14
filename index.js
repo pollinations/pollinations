@@ -93,7 +93,7 @@ const callWebUI = async (prompt) => {
 
     const body = {
         "prompt": prompt,
-        "steps": 17,
+        "steps": 10,
         "height": 384,
         "sampler_index": "Euler a",
         "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"
@@ -131,7 +131,7 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
 
   if (sleepBefore) {
     console.log("sleeping 3000ms because there was an image in the queue before");
-    await sleep(3000);
+    await sleep(8000);
   }
 
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -141,7 +141,7 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
   const response = await  runModel(prompt);
-  console.log("response: ", response);
+  // console.log("response: ", response);
 
   const base64Image = response["images"][0];
 

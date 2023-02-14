@@ -163,31 +163,31 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
   // convert base64 image to buffer
   const buffer = Buffer.from(base64Image, 'base64');
 
-  const imageWithLegend = await jimp.read(buffer);
+  // const imageWithLegend = await jimp.read(buffer);
 
 
 
 
-  const logoWidth = 170;
-  const logoHeight = 25;
+  // const logoWidth = 170;
+  // const logoHeight = 25;
 
-  const imageWidth = imageWithLegend.getWidth();
-  const imageHeight = imageWithLegend.getHeight();
+  // const imageWidth = imageWithLegend.getWidth();
+  // const imageHeight = imageWithLegend.getHeight();
 
-  const x = imageWidth - logoWidth - 10;
-  const y = imageHeight - logoHeight - 10;
+  // const x = imageWidth - logoWidth - 10;
+  // const y = imageHeight - logoHeight - 10;
 
-  // if no seed is given add the logo to the bottom right corner
-  if (!seedOverride)
-    imageWithLegend.composite(logo, x, y, {
-      mode: jimp.BLEND_SOURCE_OVER,
-      opacitySource: 1,
-      opacityDest: 1
-    });
+  // // if no seed is given add the logo to the bottom right corner
+  // if (!seedOverride)
+  //   imageWithLegend.composite(logo, x, y, {
+  //     mode: jimp.BLEND_SOURCE_OVER,
+  //     opacitySource: 1,
+  //     opacityDest: 1
+  //   });
 
-  const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
+  // const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
 
-  res.write(bufferWithLegend);
+  res.write(buffer);
 
   // res.write(buffer);
   console.log("finishing");

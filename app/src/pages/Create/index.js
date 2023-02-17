@@ -59,7 +59,7 @@ export default React.memo(function Create() {
 
     return <PageLayout >
         <SEOMetadata title={selectedModel.name ?? 'Polllinations'} />
-        <Banner/>
+        {/* <Banner/> */}
         <ParametersArea>
             <FlexBetween>
                 <h2>

@@ -16,31 +16,31 @@ export const Metaverses = [
 
 
 export const FeaturedApplicationsContent = [
-    {
-        title: 'NFT series generator',
-        subtitle: 'Build a strong hive',
-        description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
-        // img: 'https://drive.google.com/uc?export=download&id=1rDNc3yTWQtf1TqhVQbFBaowA5H52TO4f',
-        imgs: [
-            './wedatanation/wedatanation_1.png',
-            './wedatanation/wedatanation_2.png',
-            './wedatanation/wedatanation_3.png',
-            './wedatanation/wedatanation_4.png',
-            './wedatanation/wedatanation_5.png',
-            './wedatanation/wedatanation_6.png',
-            './wedatanation/wedatanation_7.png',
-            './wedatanation/wedatanation_8.png',
-            './wedatanation/wedatanation_9.png',
-            './wedatanation/wedatanation_10.png',
-            './wedatanation/wedatanation_11.png',
-            './wedatanation/wedatanation_12.png',
-            './wedatanation/wedatanation_13.png',
-            './wedatanation/wedatanation_14.png',
-            './wedatanation/wedatanation_15.png',
-            './wedatanation/wedatanation_16.png',
-            './wedatanation/wedatanation_17.png',
-        ]
-    },
+    // {
+    //     title: 'NFT series generator',
+    //     subtitle: 'Build a strong hive',
+    //     description: <> Our models allow the creation of infinite pieces of media according to your aesthetics, so they are perfect NFT series creators! <br/><br/> Antropomorphic animals wearing different accessories? Sure! <br/> Pixelated portraits? Yes! </>,
+    //     // img: 'https://drive.google.com/uc?export=download&id=1rDNc3yTWQtf1TqhVQbFBaowA5H52TO4f',
+    //     imgs: [
+    //         './wedatanation/wedatanation_1.png',
+    //         './wedatanation/wedatanation_2.png',
+    //         './wedatanation/wedatanation_3.png',
+    //         './wedatanation/wedatanation_4.png',
+    //         './wedatanation/wedatanation_5.png',
+    //         './wedatanation/wedatanation_6.png',
+    //         './wedatanation/wedatanation_7.png',
+    //         './wedatanation/wedatanation_8.png',
+    //         './wedatanation/wedatanation_9.png',
+    //         './wedatanation/wedatanation_10.png',
+    //         './wedatanation/wedatanation_11.png',
+    //         './wedatanation/wedatanation_12.png',
+    //         './wedatanation/wedatanation_13.png',
+    //         './wedatanation/wedatanation_14.png',
+    //         './wedatanation/wedatanation_15.png',
+    //         './wedatanation/wedatanation_16.png',
+    //         './wedatanation/wedatanation_17.png',
+    //     ]
+    // },
     {
         title: 'Busy Bee',
         subtitle: 'Create. Bond. Have fun!',

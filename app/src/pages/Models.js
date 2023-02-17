@@ -44,7 +44,7 @@ export default function Models() {
       <ModelsStyle>
         <TopAlert options={options} />
         {/* <Alert severity="warning">The models using Googl colab are currently not working correctly. If possible use the models that run on our own GPUs for now (with the Bee Icon)</Alert>    */}
-        <Banner/>
+        {/* <Banner/> */}
 
         <ShowReelHeadline>
           {!options.length || 'What will you create?'}

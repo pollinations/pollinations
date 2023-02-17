@@ -1,6 +1,6 @@
 import React from 'react'
 import IconButton from "@material-ui/core/IconButton"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
@@ -11,29 +11,21 @@ import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
 import NavigationItems from "./organisms/NavigationItems"
 import { SocialLinks } from './Social'
-import { MAIN_NAV_ROUTES, USER_NAV_ROUTES } from '../routes/publicRoutes'
-import { useAuth } from '../hooks/useAuth'
-import LoggedUser from './organisms/LoggedUser'
+import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 
 
-const TopBar = ({ navRoutes }) => {
+const TopBar = () => {
 
   const drawerState = React.useState(false);
-  const location = useLocation()
-  const { user } = useAuth()
-  const isUser = (location.pathname === '/d');
+
+  
   return <OuterContainer>
       <TopContainer>
-        {
-          user ?
-          <UserNav drawerState={drawerState} navRoutes={USER_NAV_ROUTES}/>
-          :
-          <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
-        }
+        <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
       </TopContainer>
 
-      <MobileMenu navRoutes={user ? USER_NAV_ROUTES : MAIN_NAV_ROUTES} drawerState={drawerState}/>
+      <MobileMenu navRoutes={MAIN_NAV_ROUTES} drawerState={drawerState}/>
       
     </OuterContainer>
   };
@@ -50,8 +42,8 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
       <Logo size='150px' small='150px' margin='0' />  
     </NavLink>
 
-    <NavigationItems navRoutes={navRoutes}/>
   </div>
+  <NavigationItems navRoutes={navRoutes} isEnd/>
 
   <SocialLinks small hideOnMobile gap='8px'/>
 
@@ -62,26 +54,7 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
   </MenuButton>
 </NavBarStyle>;
 
-const UserNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
 
-  <NavLink to='/' style={{ 
-      padding: 0, 
-      paddingRight: 80,
-      gridArea: 'logo', 
-      display: 'flex',
-      alignItems: 'center',
-        marginLeft: '1em' }}>
-    <Logo size='150px' small='150px' margin='0' />  
-  </NavLink>
-  
-  <LoggedUser />
-
-<MenuButton>
-  <IconButton onClick={()=>drawerState[1](true)} >
-    <img src={MobileMenuIcon}/>
-  </IconButton>
-</MenuButton>
-</NavBarStyle>;
 
 const MobileMenu = ({drawerState, navRoutes}) => <TemporaryDrawer drawerState={drawerState}>
   <MobileMenuStyle>

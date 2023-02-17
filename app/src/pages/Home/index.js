@@ -13,8 +13,7 @@ export default function Home() {
     <TryOut />
     <CTAs content='mission' center />
     <FeaturedApps />
-    <PopulateMetaverses />
-    <CTAs content='about'/>
+    <CTAs content='about' center/>
     <DiscordSection />
   </Style>
 }

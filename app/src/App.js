@@ -36,30 +36,13 @@ const App = () => (
   </BrowserRouter>
 )
 
-function useCurrentUser(){
-  const [ session, setSession ] = useState()
-
-  async function FetchSession(){
-    setSession(await getCurrentUser())
-  }
-
-  useEffect(()=>{
-    FetchSession()
-  },[])
-
-  return session
-}
 
 const Pollinations = () => {
-
-  // const { user } = useAuth()
-
-  const isUser = false;
 
   return ( <>
     <SEOMetadata/>
       
-    <TopBar isUser={isUser}  />
+    <TopBar />
 
     <Routes>
       <Route exact path='/' element={<Home />} />
@@ -93,7 +76,6 @@ const Pollinations = () => {
       
       <Route exact path='login' element={<LoginPage/>}/>
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
-      {/* <Route exact path='d' element={<ProtectedRoute user={isUser}> <DashBoard/> </ProtectedRoute>}/> */}
       <Route exact path='temp' element={<DashBoard/>}/>
 
       <Route path="*" element={<Navigate to="/" replace={true} />}/>

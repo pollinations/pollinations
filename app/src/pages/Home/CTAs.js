@@ -46,7 +46,6 @@ const CTAsContent = {
   about: {
     title: <>
       Pollinations is a lively, collaborative <span> <i> ecosystem for AI-generated media. </i></span>
-      We are crafting a web3 valueflow to host and reward the open-source community.
     </>,
     cta_text: 'ABOUT US',
     cta_link: '/about',

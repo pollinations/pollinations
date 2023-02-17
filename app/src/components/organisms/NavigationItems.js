@@ -27,10 +27,12 @@ align-self: center;
 list-style: none;
 
 display: flex;
-justify-content: ${props => props.isUser ? 'flex-end' : 'center'};
+justify-content: ${props => props.isEnd ? 'flex-end' : 'center'};
 align-items: center;
 width: 100%;
 gap: 2.7em;
+
+padding-right: ${props => props.isEnd ? '1em' : '0'};
 
 overflow-y: hidden;
 background-color: transparent;

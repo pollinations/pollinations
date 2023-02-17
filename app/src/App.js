@@ -93,7 +93,6 @@ const Pollinations = () => {
       
       <Route exact path='login' element={<LoginPage/>}/>
       <Route exact path='c' element={<Navigate replace to="Anything" />} />
-      {/* <Route exact path='d' element={<ProtectedRoute user={isUser}> <DashBoard/> </ProtectedRoute>}/> */}
       <Route exact path='temp' element={<DashBoard/>}/>
 
       <Route path="*" element={<Navigate to="/" replace={true} />}/>

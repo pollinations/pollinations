@@ -17,23 +17,17 @@ import LoggedUser from './organisms/LoggedUser'
 
 
 
-const TopBar = ({ navRoutes }) => {
+const TopBar = () => {
 
   const drawerState = React.useState(false);
-  const location = useLocation()
-  const { user } = useAuth()
-  const isUser = (location.pathname === '/d');
+
+  
   return <OuterContainer>
       <TopContainer>
-        {
-          user ?
-          <UserNav drawerState={drawerState} navRoutes={USER_NAV_ROUTES}/>
-          :
-          <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
-        }
+        <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES}/>
       </TopContainer>
 
-      <MobileMenu navRoutes={user ? USER_NAV_ROUTES : MAIN_NAV_ROUTES} drawerState={drawerState}/>
+      <MobileMenu navRoutes={MAIN_NAV_ROUTES} drawerState={drawerState}/>
       
     </OuterContainer>
   };
@@ -50,8 +44,8 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
       <Logo size='150px' small='150px' margin='0' />  
     </NavLink>
 
-    <NavigationItems navRoutes={navRoutes}/>
   </div>
+  <NavigationItems navRoutes={navRoutes} isEnd/>
 
   <SocialLinks small hideOnMobile gap='8px'/>
 

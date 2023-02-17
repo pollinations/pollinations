@@ -70,7 +70,7 @@ const CTAs = ({ content, center }) => {
         {title}
       </HeadlineText>
   
-      { cta_type === 'link' ?
+      {/* { cta_type === 'link' ?
       <CTA outlined onClick={() => navigate(cta_link)}>
         {cta_text}
       </CTA>
@@ -78,7 +78,7 @@ const CTAs = ({ content, center }) => {
       <EmailCTA outlined {...CTAsContent[content]}>
         {cta_text}
       </EmailCTA>
-      }
+      } */}
       {deco}
 
     </Container>

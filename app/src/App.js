@@ -36,19 +36,6 @@ const App = () => (
   </BrowserRouter>
 )
 
-function useCurrentUser(){
-  const [ session, setSession ] = useState()
-
-  async function FetchSession(){
-    setSession(await getCurrentUser())
-  }
-
-  useEffect(()=>{
-    FetchSession()
-  },[])
-
-  return session
-}
 
 const Pollinations = () => {
 

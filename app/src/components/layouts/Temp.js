@@ -69,7 +69,6 @@ font-size: 24px;
 line-height: 31px;
 color: #fff;
 
-margin-top: 5em;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   font-size: 18px;
   line-height: 25px;

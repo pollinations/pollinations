@@ -1,6 +1,6 @@
 import React from 'react'
 import IconButton from "@material-ui/core/IconButton"
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
@@ -11,9 +11,7 @@ import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
 import NavigationItems from "./organisms/NavigationItems"
 import { SocialLinks } from './Social'
-import { MAIN_NAV_ROUTES, USER_NAV_ROUTES } from '../routes/publicRoutes'
-import { useAuth } from '../hooks/useAuth'
-import LoggedUser from './organisms/LoggedUser'
+import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 
 
@@ -56,26 +54,7 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
   </MenuButton>
 </NavBarStyle>;
 
-const UserNav = ({ navRoutes, drawerState }) => <NavBarStyle> 
 
-  <NavLink to='/' style={{ 
-      padding: 0, 
-      paddingRight: 80,
-      gridArea: 'logo', 
-      display: 'flex',
-      alignItems: 'center',
-        marginLeft: '1em' }}>
-    <Logo size='150px' small='150px' margin='0' />  
-  </NavLink>
-  
-  <LoggedUser />
-
-<MenuButton>
-  <IconButton onClick={()=>drawerState[1](true)} >
-    <img src={MobileMenuIcon}/>
-  </IconButton>
-</MenuButton>
-</NavBarStyle>;
 
 const MobileMenu = ({drawerState, navRoutes}) => <TemporaryDrawer drawerState={drawerState}>
   <MobileMenuStyle>

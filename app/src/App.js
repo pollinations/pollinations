@@ -39,14 +39,10 @@ const App = () => (
 
 const Pollinations = () => {
 
-  // const { user } = useAuth()
-
-  const isUser = false;
-
   return ( <>
     <SEOMetadata/>
       
-    <TopBar isUser={isUser}  />
+    <TopBar />
 
     <Routes>
       <Route exact path='/' element={<Home />} />

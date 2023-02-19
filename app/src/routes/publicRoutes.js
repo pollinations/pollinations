@@ -1,6 +1,6 @@
 export const ROUTES = {
     about: { label: "About", to: "/about", id: 'about' },
-    integrate: { label: "Integrate", to: "/integrate", id: 'integrate' },
+    // integrate: { label: "Integrate", to: "/integrate", id: 'integrate' },
     // feed: { label: "Feed", to: "/feed", id: 'feed' },
     help: { label: "Help", to: "/help", id: 'help' },
     impressum: { label: "impressum", to: "/impressum", id: 'impressum' },
@@ -11,7 +11,7 @@ export const ROUTES = {
   }
 export const MAIN_NAV_ROUTES = [
     ROUTES.explore,
-    ROUTES.integrate,
+    // ROUTES.integrate,
     ROUTES.about, 
     // ROUTES.feed,
     // ROUTES.help

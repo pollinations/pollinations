@@ -5,7 +5,7 @@ import PresetsIntro from "./PresetsIntro"
 import CTA from "./CTA"
 import Integrate from './Integrate'
 import Increase from './Increase'
-import { DiscordSectionDark } from '../../components/Discord'
+// import { DiscordSectionDark } from '../../components/Discord'
 import Bots from "./YesToBots"
 import LemonadeAvatar from './LemonadeAvatar'
 
@@ -19,7 +19,7 @@ export default function Solutions() {
     <Bots/>
     <LemonadeAvatar />
     <CTA />
-    <DiscordSectionDark />
+    {/* <DiscordSectionDark /> */}
   </Style>
 }
 

@@ -8,7 +8,7 @@ import PageTemplate from "./components/PageTemplate"
 // Components
 import TopBar from "./components/TopBar"
 // Pages
-import Home from "./pages/Home/"
+import Home from "./pages/Solutions/"
 import Models from "./pages/Models"
 import About from "./pages/About"
 import Integrate from "./pages/Integrate"

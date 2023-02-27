@@ -8,18 +8,15 @@ import Increase from './Increase'
 // import { DiscordSectionDark } from '../../components/Discord'
 import Bots from "./YesToBots"
 import LemonadeAvatar from './LemonadeAvatar'
+import Discord from './Discord'
 
 export default function Solutions() {
   return <Style>
     <Hero />
     <PresetsIntro />
-    <Integrate />
     <BlankSection/>
-    <Increase/>
-    <Bots/>
-    <LemonadeAvatar />
-    <CTA />
-    {/* <DiscordSectionDark /> */}
+    <CTA content='about' center/>
+    <Discord />
   </Style>
 }
 

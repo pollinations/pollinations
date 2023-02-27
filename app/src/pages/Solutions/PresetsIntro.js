@@ -5,6 +5,7 @@ import { MediaViewer } from '../../components/MediaViewer';
 import { getMedia } from '../../data/media';
 import { Colors, Fonts, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
+import { BackgroundImage } from './components';
 
 
 export default function PresetsIntro() {
@@ -25,6 +26,10 @@ export default function PresetsIntro() {
 
       
     </PageLayout>
+    <BackgroundImage 
+    src='gradient_background.png'
+    zIndex='-2' 
+    alt="hero_bg" />
   </Style>
 };
 
@@ -77,7 +82,6 @@ const PageLayout = styled.div`
 width: 100%;
 max-width: 1440px;
 min-height:80vh;
-background-color: ${Colors.background_body};
 
 margin-top: 2em;
 display: flex;
@@ -104,6 +108,7 @@ width: 100%;
 height: 100%;
 position: relative;
 background-color: ${Colors.background_body};
+// background: radial-gradient(20.85% 62.41% at 100% 82.4%, rgba(233, 250, 41, 0.65) 0%, rgba(233, 233, 233, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */;
 z-index: 0;
 
 display: flex;

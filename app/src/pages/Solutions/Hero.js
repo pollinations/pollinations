@@ -8,13 +8,13 @@ import { BackgroundImage, Container as ContainerBase } from './components';
 const Hero = props => <Style>
   <Container>
     <Headline>
-    eMpowering people to create media on the spot  
+    eMpowering people to 12321create media on the spot  
     </Headline>
       
   </Container>
 
   <BackgroundImage 
-    src={heroBG} 
+    src='bgHero.png' 
     zIndex='-2' 
     alt="hero_bg" />
 

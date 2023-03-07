@@ -1,5 +1,4 @@
 import styled from '@emotion/styled'
-import { useNavigate } from 'react-router-dom'
 import DiscordIMG from '../../assets/imgs/discord_black.png'
 import Star6Img from '../../assets/imgs/star_6.png'
 import DiscordBG from '../../assets/imgs/discord_bg.png'
@@ -24,10 +23,10 @@ const DiscordSection = props => {
       <Star src={Star6Img}/>
     </Container>
 
-    <BackGroundImage 
+    {/* <BackGroundImage 
     zIndex='-1'
     src={DiscordBG} 
-    alt="discord_bg" />
+    alt="discord_bg" /> */}
   </Style>
 }
 
@@ -38,7 +37,7 @@ const Style = styled.div`
 width: 100%;
 height: 100%;
 position: relative;
-background-color: ${Colors.background_body};
+background-color: ${Colors.lime};
 z-index: -2;
 
 display: flex;

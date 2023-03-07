@@ -66,7 +66,7 @@ font-size: 92px;
 line-height: 94px;
 text-transform: capitalize;
 margin: 0;
-color: ${Colors.offWhite};
+color: ${Colors.offwhite};
 
 span {
   font-family: ${Fonts.headline};

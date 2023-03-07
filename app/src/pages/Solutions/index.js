@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 
 import Hero from "./Hero"
-import PresetsIntro from "./PresetsIntro"
+import LayoutLight01 from "./WhoWeAre"
 import CTA from "./CTA"
 import Integrate from './Integrate'
 import Increase from './Increase'
@@ -13,9 +13,10 @@ import Discord from './Discord'
 export default function Solutions() {
   return <Style>
     <Hero />
-    <PresetsIntro />
+    <LayoutLight01 long id='activityupdate'  />
     <BlankSection/>
-    <CTA content='about' center/>
+    <LayoutLight01 id='whoweare'/>
+    {/* <CTA content='about' center/> */}
     <Discord />
   </Style>
 }

@@ -8,7 +8,7 @@ import { BackgroundImage, Container as ContainerBase } from './components';
 const Hero = props => <Style>
   <Container>
     <Headline>
-    eMpowering people to 12321create media on the spot  
+      AI powered experiences  
     </Headline>
       
   </Container>
@@ -40,15 +40,6 @@ align-items: center;
 // padding: 3.19% 4.72% ;
 `;
 
-const ScrollDown = styled.img`
-position: absolute;
-width: 90px;
-height: 46px;
-right: 2.8%;
-bottom: 36px;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  display: none;
-}`;
 
 const Headline = styled.p`
 max-width: 60%;
@@ -59,7 +50,7 @@ font-size: 96px;
 line-height: 106px;
 text-transform: capitalize;
 margin: 0;
-color: ${Colors.offblack};
+color: ${Colors.offwhite};
 
 text-align: center;
 text-transform: capitalize;

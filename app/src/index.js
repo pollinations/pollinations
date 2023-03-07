@@ -4,8 +4,10 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
 import { AuthProvider } from './hooks/useAuth'
+import { BrowserRouter } from "react-router-dom"
 
 import './index.css'
+import ScrollToTop from './utils/ScrollToTop'
 
 const darkTheme = createMuiTheme({
   typography: {
@@ -26,7 +28,11 @@ ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
       <AuthProvider>
           <CssBaseline />
-          <App />
+          <BrowserRouter>
+            <ScrollToTop>
+              <App />
+            </ScrollToTop>
+          </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>,
   document.getElementById('root')

@@ -17,6 +17,13 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 
+export const Flex = styled.div`
+display: flex;
+flex-direction: ${props => props.Direction || 'column'};
+justify-content: ${props => props.JustifyContent || 'flex-start'};
+align-items: ${props => props.AlignItems || 'flex-start'};
+gap: ${props => props.Gap || 0};
+`
 
 
 

@@ -9,12 +9,14 @@ import Increase from './Increase'
 import Bots from "./YesToBots"
 import LemonadeAvatar from './LemonadeAvatar'
 import Discord from './Discord'
+import Dreamachine from './Dreamachine'
 
 export default function Solutions() {
   return <Style>
     <Hero />
     <LayoutLight01 long id='activityupdate'  />
-    <BlankSection/>
+    {/* <BlankSection/> */}
+    <Dreamachine />
     <LayoutLight01 id='whoweare'/>
     {/* <CTA content='about' center/> */}
     <Discord />

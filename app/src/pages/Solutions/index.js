@@ -15,10 +15,8 @@ export default function Solutions() {
   return <Style>
     <Hero />
     <LayoutLight01 long id='activityupdate'  />
-    {/* <BlankSection/> */}
     <Dreamachine />
     <LayoutLight01 id='whoweare'/>
-    {/* <CTA content='about' center/> */}
     <Discord />
   </Style>
 }

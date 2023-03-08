@@ -7,7 +7,7 @@ import Home from "./pages/Solutions/"
 
 const App = () => <>
   <SEOMetadata/>
-  <TopBar />
+  {/* <TopBar /> */}
   <Routes>
     <Route exact path='/' element={<Home />} />
     <Route exact path='/impressum' element={<PageTemplate label='impressum'/>} />

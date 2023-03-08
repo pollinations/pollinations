@@ -4,6 +4,8 @@ import {  MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 
 import { BackgroundImage, Container as ContainerBase, Flex } from './components';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
+import SwiperComponent from './Swiper';
+// import Swiper styles
 
 
 import Slider from "react-slick";
@@ -145,7 +147,8 @@ const FeaturedApp = props => {
                 {description}
             </p>
         </FeaturedAppStyle>
-        <Media {...props}/>
+        {/* <Media {...props}/> */}
+        <SwiperComponent />
         
     </GridTwoColumns>
     </Flex>

@@ -15,7 +15,7 @@ const Hero = props => <Style>
   </Container>
   <PlayerWrapper>
   {/* <iframe width="100%" height="100%" src="https://www.youtube.com/embed/HHaxu013Jfo?controls=0&modestbranding=1&autoplay=1&loop=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loop autoplay muted></iframe> */}
-  <Player src='https://www.twitch.tv/watchmeforever' />
+  <Player src='https://streamable.com/3turb8' />
   </PlayerWrapper>
   <BackgroundImage 
     src='bgHero.png' 

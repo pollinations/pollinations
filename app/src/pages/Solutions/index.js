@@ -10,12 +10,14 @@ import Bots from "./YesToBots"
 import LemonadeAvatar from './LemonadeAvatar'
 import Discord from './Discord'
 import Dreamachine from './Dreamachine'
+import MusicVideo from './MusicVideo'
 
 export default function Solutions() {
   return <Style>
     <Hero />
     <LayoutLight01 long id='activityupdate'  />
     <Dreamachine />
+    <MusicVideo />
     <LayoutLight01 id='whoweare'/>
     <Discord />
   </Style>

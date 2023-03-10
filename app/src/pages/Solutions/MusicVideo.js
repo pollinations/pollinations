@@ -13,12 +13,13 @@ import '../../assets/slick.min.css'
 
 const FeaturedApplicationsContent = [
     {
-        title: 'DREAMACHINE',
-        subtitle: 'Immerse yourself into a flow of dreams',
+        title: 'AI Video',
+        subtitle: 'Introducing the ultimate video creation tool - now powered by AI!',
         description: <> 
-            Immersive installation in which the participants share their dream with an Artificial Intelligence model that creates a visual representation of it. 
-            <br/> The result is a continuous stream of dreams that can be exhibited in real-time on any type of display.
-            <br/> <br/> Reach out for more information or personalized setup.</>,
+            Say goodbye to the hassle of editing and creating music videos from scratch. With our cutting-edge technology, we can easily produce professional-grade videos. 
+            <br/> <br/>Whether you're a musician, content creator, or simply looking to create eye-catching visuals.
+            <br/> <br/>Bring your ideas to life with our innovative video creation technology today!
+        </>,
         video: './dreamachine/dreamachine_00.mp4'
     },
 ]
@@ -33,7 +34,7 @@ top: 0;
   height: 59px;
 }`;
 
-const FeaturedApps = props => {
+const MusicVideo = props => {
   
     return <Style>
     <TopBand src={TopBandPresetsDesign}/>
@@ -54,7 +55,7 @@ const FeaturedApps = props => {
     </Style>
   }
 
-  export default FeaturedApps
+  export default MusicVideo
 
   const Container = styled(ContainerBase)`
   display: flex;
@@ -120,10 +121,10 @@ const SubHeadline = styled.p`
 `
 
 const Slides = [
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
+    { type: 'img', src:'./sarkis.png'},
+    { type: 'img', src:'./rampue.png'},
+    { type: 'img', src:'./inc.png'},
+    { type: 'img', src:'./rampue1.png'},
   ]
 const FeaturedApp = props => {
 

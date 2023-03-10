@@ -13,9 +13,13 @@ import { MOBILE_BREAKPOINT } from '../../styles/global'
 // import required modules
 import { FreeMode, Navigation, Thumbs } from "swiper";
 
-export default function SwiperComponent() {
-  const [thumbsSwiper, setThumbsSwiper] = useState(null);
 
+
+
+
+export default function SwiperComponent({ Slides }) {
+  const [thumbsSwiper, setThumbsSwiper] = useState(null);
+  if (!Slides) return <></>;
   return (
     <Style>
       <Swiper
@@ -30,18 +34,15 @@ export default function SwiperComponent() {
         modules={[FreeMode, Navigation, Thumbs]}
         className="mySwiper2"
       >
-        <SwiperSlide>
-        <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
-        <SwiperSlide>
-        <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
-        <SwiperSlide>
-        <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
-        <SwiperSlide>
-        <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
+        {
+          Slides.map( (slide, i) => <SwiperSlide key={slide.src + i}>
+            {
+              slide.type === 'video' ?
+              <video src={slide.src}/> :
+              <img src={slide.src}/>
+            }
+          </SwiperSlide>)
+        }
       </Swiper>
       <Swiper
         onSwiper={setThumbsSwiper}
@@ -53,16 +54,29 @@ export default function SwiperComponent() {
         modules={[FreeMode, Navigation, Thumbs]}
         className="mySwiper"
       >
-        <SwiperSlide>
-            <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
-        <SwiperSlide>
-        <video muted autoPlay src='./dreamachine/dreamachine_00.mp4' />
-        </SwiperSlide>
+        {
+          Slides.map( (slide, i) => <SwiperSlide key={slide.src + i}>
+            {
+              slide.type === 'video' ?
+              <video src={slide.src}/> :
+              <img src={slide.src}/>
+            }
+          </SwiperSlide>)
+        }
       </Swiper>
     </Style>
   );
 }
+
+const EachSlide = ({ Slides }) => 
+  Slides.map( (slide, i) => <SwiperSlide key={slide.src + i}>
+    {
+      slide.type === 'video' ?
+      <video src={slide.src}/> :
+      <img src={slide.src}/>
+    }
+  </SwiperSlide>)
+
 
 const Style = styled.div`
 max-width: 50vw;

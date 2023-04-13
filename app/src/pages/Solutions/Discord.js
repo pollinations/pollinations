@@ -1,9 +1,8 @@
 import styled from '@emotion/styled'
 import DiscordIMG from '../../assets/imgs/discord_black.png'
 import Star6Img from '../../assets/imgs/star_6.png'
-import DiscordBG from '../../assets/imgs/discord_bg.png'
 
-import { Colors, MOBILE_BREAKPOINT, BackGroundImage, Fonts } from '../../styles/global'
+import { Colors, MOBILE_BREAKPOINT, Fonts } from '../../styles/global'
 import { Star as StarBase, LinkStyle, Container as ContainerBase } from './components'
 
 const DiscordSection = props => {
@@ -22,11 +21,6 @@ const DiscordSection = props => {
       </Body>
       <Star src={Star6Img}/>
     </Container>
-
-    {/* <BackGroundImage 
-    zIndex='-1'
-    src={DiscordBG} 
-    alt="discord_bg" /> */}
   </Style>
 }
 

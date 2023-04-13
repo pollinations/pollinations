@@ -11,5 +11,5 @@ config={{
     },
   }}
   playing={true}
-url={src} width='100%' height='100%' autoplay muted playsinline loop />
+url={src} width='1920' height='100vh' autoplay muted playsinline loop />
 }

@@ -11,17 +11,15 @@ import SwiperComponent from './Swiper';
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
 
-const FeaturedApplicationsContent = [
-    {
-        title: 'DREAMACHINE',
-        subtitle: 'Immerse yourself into a flow of dreams',
-        description: <> 
-            Immersive installation in which the participants share their dream with an Artificial Intelligence model that creates a visual representation of it. 
-            <br/> The result is a continuous stream of dreams that can be exhibited in real-time on any type of display.
-            <br/> <br/> Reach out for more information or personalized setup.</>,
-        video: './dreamachine/dreamachine_00.mp4'
-    },
-]
+const dreamachine_props = {
+    title: 'DREAMACHINE',
+    subtitle: 'Immerse yourself into a flow of dreams',
+    description: <> 
+        Immersive installation in which the participants share their dream with an Artificial Intelligence model that creates a visual representation of it. 
+        <br/> The result is a continuous stream of dreams that can be exhibited in real-time on any type of display.
+        <br/> <br/> Reach out for more information or personalized setup.</>,
+    video: './dreamachine/dreamachine_00.mp4'
+}   
 const TopBand = styled.img`
 position: absolute;
 width: 100%;
@@ -39,13 +37,7 @@ const FeaturedApps = props => {
     <TopBand src={TopBandPresetsDesign}/>
 
     <Container>
-
-
-        {
-            FeaturedApplicationsContent.map( (item, idx) => <FeaturedApp {...item} right={idx%2} />)
-        }
-
-    
+        <FeaturedApp {...dreamachine_props}/>
     </Container>
     <BackgroundImage 
         src='gradient_background.png'

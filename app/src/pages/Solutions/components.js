@@ -79,7 +79,7 @@ color: ${Colors.offblack};
 
 export const Container = styled.div`
 width: 100%;
-max-width: 1440px;
+// max-width: 1440px;
 min-height: 100vh;
 `
 

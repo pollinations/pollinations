@@ -5,13 +5,33 @@ import TopBar from "./components/TopBar"
 import Footer from "./components/Footer"
 import Home from "./pages/Solutions/"
 
+const AppRoutes = [
+  {
+    exact: true,
+    path: '/',
+    element: <Home />,
+    key: 'home'
+  },
+  {
+    exact: true,
+    path: '/impressum',
+    element: <PageTemplate label='impressum'/>,
+    key: 'impressum'
+  },
+  {
+    path: '*',
+    element: <Navigate to="/" replace={true} />,
+    key: '404'
+  },
+]
+
 const App = () => <>
   <SEOMetadata/>
-  {/* <TopBar /> */}
+  <TopBar />
   <Routes>
-    <Route exact path='/' element={<Home />} />
-    <Route exact path='/impressum' element={<PageTemplate label='impressum'/>} />
-    <Route path="*" element={<Navigate to="/" replace={true} />}/>
+    {
+      AppRoutes.map( route => <Route {...route}/>)
+    }
   </Routes>
   <Footer />
 </>;

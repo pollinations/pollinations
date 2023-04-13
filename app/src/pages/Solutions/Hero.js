@@ -7,7 +7,7 @@ import Player from './Player';
 const Hero = props => <Style>
   <Container>
     <Headline>
-      AI powered experiences  
+      Pollinations
     </Headline>
       
   </Container>

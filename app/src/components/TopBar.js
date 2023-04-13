@@ -9,7 +9,7 @@ import { MOBILE_BREAKPOINT } from "../styles/global"
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
-import NavigationItems from "./organisms/NavigationItems"
+import NavigationItems from "./NavigationItems"
 import { SocialLinks } from './Social'
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 

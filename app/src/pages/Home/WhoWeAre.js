@@ -1,9 +1,6 @@
 import styled from '@emotion/styled';
 import React from "react";
-import CreateButtonBase from '../../components/atoms/CreateButton';
-import { MediaViewer } from '../../components/MediaViewer';
-import { getMedia } from '../../data/media';
-import { Colors, Fonts, GlobalSidePadding, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, MOBILE_BREAKPOINT } from '../../styles/global';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import { BackgroundImage } from './components';
 import { Link } from "react-router-dom"

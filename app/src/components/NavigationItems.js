@@ -1,6 +1,6 @@
-import RouterLink from '../molecules/RouterLink'
+import RouterLink from './RouterLink'
 import styled from '@emotion/styled'
-import { MOBILE_BREAKPOINT } from '../../styles/global'
+import { MOBILE_BREAKPOINT } from '../styles/global'
 
 const NavigationItems = ({ navRoutes, column, margin, gap, ...rest }) => {
 

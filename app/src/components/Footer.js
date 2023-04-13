@@ -2,12 +2,12 @@ import styled from '@emotion/styled'
 import Logo from './Logo'
 
 import { NavLink } from "react-router-dom"
-import RouterLink from './molecules/RouterLink'
+import RouterLink from './RouterLink'
 
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 import { SocialLinks } from './Social'
-import { Colors, Fonts, MOBILE_BREAKPOINT } from '../styles/global'
+import { Colors, MOBILE_BREAKPOINT } from '../styles/global'
 
 const Footer = () => {
 

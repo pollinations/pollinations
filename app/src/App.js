@@ -3,7 +3,7 @@ import { SEOMetadata } from "./components/Helmet"
 import PageTemplate from "./components/PageTemplate"
 import TopBar from "./components/TopBar"
 import Footer from "./components/Footer"
-import Home from "./pages/Solutions/"
+import Home from "./pages/Home/"
 
 const AppRoutes = [
   {

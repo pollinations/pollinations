@@ -17,6 +17,13 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 
+export const Flex = styled.div`
+display: flex;
+flex-direction: ${props => props.Direction || 'column'};
+justify-content: ${props => props.JustifyContent || 'flex-start'};
+align-items: ${props => props.AlignItems || 'flex-start'};
+gap: ${props => props.Gap || 0};
+`
 
 
 
@@ -72,7 +79,7 @@ color: ${Colors.offblack};
 
 export const Container = styled.div`
 width: 100%;
-max-width: 1440px;
+// max-width: 1440px;
 min-height: 100vh;
 `
 

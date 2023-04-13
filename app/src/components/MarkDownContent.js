@@ -1,8 +1,8 @@
 import Typography from "@material-ui/core/Typography"
 import Markdown from "markdown-to-jsx"
 import { range, zipObj } from "ramda"
-import useFetchText from "../../hooks/useFetchText"
-import useMarkdown from "../../hooks/useMarkdown"
+import useFetchText from "../hooks/useFetchText"
+import useMarkdown from "../hooks/useMarkdown"
 
 // replacements allow replacing dynamic content in the markdown
 // the syntax is {[key]} which will be matched with the props passed to this object

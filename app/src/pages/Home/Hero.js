@@ -6,13 +6,13 @@ import Player from './Player';
 
 const Hero = props => <Style>
   <Container>
-    <Headline>
+    {/* <Headline>
       Pollinations
-    </Headline>
+    </Headline> */}
       
   </Container>
   <PlayerWrapper>
-    <Player src='https://streamable.com/c12w4k' />
+    <Player src='https://streamable.com/w9p5rz' />
   </PlayerWrapper>
   <BackgroundImage 
     src='bgHero.png' 
@@ -27,6 +27,9 @@ const PlayerWrapper = styled.div`
 position: absolute;
 overflow: hidden;
 z-index: -1;
+// object-fit: cover;
+top:0;
+
 `
 
 const Style = styled.div`

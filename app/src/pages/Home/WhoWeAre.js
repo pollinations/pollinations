@@ -39,12 +39,10 @@ The Explore page has been removed. Our current focus is on AI music video creati
 
 export default function LayoutLight01({ id, long }) {
 
-
   let content = {
     'whoweare': <WhoWeAreContent/>,
     'activityupdate': <ActivityUpdateContent/>
   }
-
   
   return <Style>
     <TopBand src={TopBandPresetsDesign}/>
@@ -68,39 +66,6 @@ top: 0;
   width: auto;
   height: 59px;
 }`;
-
-
-const Headline = styled.p`
-font-family: 'Uncut-Sans-Variable';
-font-style: normal;
-font-weight: 500;
-font-size: 46px;
-line-height: 58px;
-
-color: ${Colors.offblack};
-margin: 0;
-
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  max-width: 90%;
-  font-size: 46px;
-  line-height: 50px;
-}
-`
-const BodyText = styled.p`
-width: 37%;
-font-family: 'Uncut-Sans-Variable';
-font-style: normal;
-font-weight: 400;
-font-size: 24px;
-line-height: 34px;
-color: ${Colors.offblack};
-margin: 0;
-
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: 90%;
-}
-
-`
 
 // STYLES
 const PageLayout = styled.div`
@@ -173,10 +138,4 @@ align-items: center;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   min-height: 674px;
 }
-
-
-
-
-
-
 `

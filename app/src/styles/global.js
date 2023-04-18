@@ -2,6 +2,7 @@ import styled from '@emotion/styled'
 
 export const GlobalSidePadding = '0 3%';
 export const MOBILE_BREAKPOINT = '769px';
+export const HUGE_BREAKPOINT = '2560px';
 
 export const Colors = {
   accent: 'rgb(233, 250, 41)',
@@ -25,7 +26,11 @@ export const Fonts = {
 export const BaseContainer = styled.div`
   width: 100%;
   padding: ${GlobalSidePadding};
+  @media (min-width: ${HUGE_BREAKPOINT}) {
+    max-width: 50%;
+  }
 `;
+
 
 export const MarkDownStyle = styled.div`
 h6 {

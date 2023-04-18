@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 import React from "react";
-import { Colors, MOBILE_BREAKPOINT } from '../../styles/global';
+import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import { BackgroundImage } from './components';
 
@@ -74,14 +74,16 @@ top: 0;
 }`;
 
 // STYLES
-const PageLayout = styled.div`
+const PageLayout = styled(BaseContainer)`
+width: 100%;
+
 display: flex;
 flex-direction: column;
 align-items: flex-start;
 justify-content: center;
 gap: 1em;
 padding: 7%;
-
+margin: auto;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   padding: 8em 5%;

@@ -5,15 +5,15 @@ import Player from './Player';
 
 
 const Hero = props => <Style>
-  <Container>
-    {/* <Headline>
+  {/* <Container>
+    <Headline>
       Pollinations
-    </Headline> */}
+    </Headline>
       
-  </Container>
-  <PlayerWrapper>
+  </Container> */}
+  <HeroContainer>
     <Player src='https://streamable.com/w9p5rz' />
-  </PlayerWrapper>
+  </HeroContainer>
   <BackgroundImage 
     src='bgHero.png' 
     zIndex='-2' 
@@ -22,13 +22,36 @@ const Hero = props => <Style>
 </Style>;
   
 export default Hero
+const HeroContainer = styled.div`
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+
+  .VideoBackground{
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+`;
+
+const VideoBackground = styled.video`
+  
+`;
 
 const PlayerWrapper = styled.div`
-position: absolute;
-overflow: hidden;
+width: 100%;
+min-height: 100%;
+min-height: 90vh;
+top: 0;
+bottom: 0;
+left: 0;
+right:0;
+// position: absolute;
 z-index: -1;
-// object-fit: cover;
-top:0;
 
 `
 

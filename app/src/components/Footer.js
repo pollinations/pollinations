@@ -2,12 +2,12 @@ import styled from '@emotion/styled'
 import Logo from './Logo'
 
 import { NavLink } from "react-router-dom"
-import RouterLink from './molecules/RouterLink'
+import RouterLink from './RouterLink'
 
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 import { SocialLinks } from './Social'
-import { Colors, Fonts, MOBILE_BREAKPOINT } from '../styles/global'
+import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../styles/global'
 
 const Footer = () => {
 
@@ -47,9 +47,6 @@ const SocialContainer = styled.div`
 grid-area: social;
 justify-self: flex-start;
 
-@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-    // margin-left: 24px;
-}
 `
 const LogoContainer = styled.div`
 grid-area: logo;
@@ -131,11 +128,10 @@ const RouteLink = (route) => {
 }
             
 
-const FooterStyle = styled.div`
+const FooterStyle = styled(BaseContainer)`
 padding: 3em 86px 0 86px;
 
 width: 100%;
-max-width: 1440px;
 min-height: 418px;
 
 display: grid;

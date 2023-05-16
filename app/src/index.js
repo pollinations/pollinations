@@ -3,9 +3,10 @@ import CssBaseline from '@material-ui/core/CssBaseline'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import App from './App'
-import { AuthProvider } from './hooks/useAuth'
+import { BrowserRouter } from "react-router-dom"
 
 import './index.css'
+import ScrollToTop from './utils/ScrollToTop'
 
 const darkTheme = createMuiTheme({
   typography: {
@@ -24,10 +25,12 @@ const darkTheme = createMuiTheme({
 
 ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
-      <AuthProvider>
-          <CssBaseline />
-          <App />
-      </AuthProvider>
+        <CssBaseline />
+        <BrowserRouter>
+          <ScrollToTop>
+            <App />
+          </ScrollToTop>
+        </BrowserRouter>
     </ThemeProvider>,
   document.getElementById('root')
 );

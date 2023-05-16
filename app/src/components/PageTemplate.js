@@ -1,5 +1,5 @@
 import { textContent } from "../assets"
-import MarkDownContent from "../components/molecules/MarkDownContent"
+import MarkDownContent from "./MarkDownContent"
 import { BackGroundImage, MarkDownStyle, SmallContainer } from "../styles/global"
 import { SEOImage, SEOMetadata } from "./Helmet"
 import heroBGOverlay from '../assets/imgs/bgherooverlay.jpeg'

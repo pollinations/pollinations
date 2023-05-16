@@ -4,12 +4,12 @@ import { NavLink } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 
 import styled from "@emotion/styled"
-import { MOBILE_BREAKPOINT } from "../styles/global"
+import { MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../styles/global"
 
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
-import NavigationItems from "./organisms/NavigationItems"
+import NavigationItems from "./NavigationItems"
 import { SocialLinks } from './Social'
 import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
@@ -129,9 +129,8 @@ const TopContainer = styled.div`
   }
 `
 
-const NavBarStyle = styled.div`
+const NavBarStyle = styled(BaseContainer)`
   width: 100%;
-  max-width: 1440px;
 
   display: grid;
   grid-template-columns: 1fr 1fr;

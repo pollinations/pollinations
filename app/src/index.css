@@ -12,28 +12,22 @@
   font-family: Uncut Sans;
   src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
 }
-
 * {
   font-family: Uncut-Sans-Variable;
 }
-
 ::selection {
   background: #485ea4; /* WebKit/Blink Browsers */
 }
 ::-moz-selection {
   background: #485ea4; /* Gecko Browsers */
 }
-
 body {
   margin: 20px;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: black !important;
 }
-
-
-
-
 .MuiAccordionSummary-root {
   padding: 0 !important;
 }
@@ -59,34 +53,25 @@ h1 {
     font-size: 9rem !important;
   }
 }
-
+.media-container {
+  height: 56.25vw;
+  max-width: 100vw !important;
+}
 a {
   color: whitesmoke;
   padding: 10px 0;
 }
-
-
-
 .noMargin {
   margin: 0 !important;
 }
-
 error {
   color: red;
   font-weight: bold;
   font-size: large;
 }
-
 .video_container {
   width: 100%;
 }
-
-
-
-
-
-
-
 .MuiBackdrop-root{
   background-color: rgba(0,0,0,0.1) !important;
 }

@@ -4,18 +4,19 @@ import Star6Img from '../../assets/imgs/star_6.png'
 
 import { Colors, MOBILE_BREAKPOINT, Fonts } from '../../styles/global'
 import { Star as StarBase, LinkStyle, Container as ContainerBase } from './components'
+import { Link } from 'react-router-dom'
 
 const DiscordSection = props => {
 
     return <Style>
     <Container>
-      <DiscordLogo src={DiscordIMG} alt="discord"  />
+      <Link to="https://discord.gg/8HqSRhJVxn'"><DiscordLogo src={DiscordIMG} alt="discord"  /></Link>
       <Body>
         Discuss, get help and <br/>
         contribute on Discord.
         <br/>
         <br/>
-        <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 3}}>
+        <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 10}}>
             join our discord
         </LinkStyle>
       </Body>
@@ -32,7 +33,6 @@ width: 100%;
 height: 100%;
 position: relative;
 background-color: ${Colors.lime};
-z-index: -2;
 
 display: flex;
 justify-content: center;

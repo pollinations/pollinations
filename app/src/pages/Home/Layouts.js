@@ -2,7 +2,8 @@ import styled from '@emotion/styled';
 import React from "react";
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
-import { BackgroundImage } from './components';
+import { BackgroundImage, LinkStyle } from './components';
+import { Link } from 'react-router-dom';
 
 
 let WhoWeAreContent = () => <>
@@ -13,7 +14,7 @@ let WhoWeAreContent = () => <>
     <p>
       We combine the strengths of different models and fine-tune the code to get specific results. 
       <br/> <br/>
-      To talk to us, reach out on Discord or at hello@pollinations.ai
+      To talk to us, reach out on <LinkStyle to="https://discord.com/invite/8HqSRhJVxn">Discord</LinkStyle> or at hello@pollinations.ai
     </p>
 </>
 
@@ -23,8 +24,8 @@ let ActivityUpdateContent = () => <>
     </h2>
     <p>
       The Explore page is no longer available, although we had a great time with it, it's time to move forward. 
-      <br/> However, the same AI models are <i><b> still accessible for free</b></i> on our Discord channels.
-      <br/> From now on Pollinations will redirect its focus on AI music video creation, and an exciting real-time immersive AI product called the Dreamachine which will be launched very soon.
+      <br/><br/> However, we have migrated models to <Link to="https://replicate.com/pollinations"> Replicate</Link> and are still maintaining the <b><i>Generative Image URL</i></b> which is primarily being used in combination with ChatGPT.
+      <br/><br/> From now on Pollinations will redirect its focus on AI music video creation, and an exciting real-time immersive AI product called the Dreamachine which will be launched very soon.
       <br/><br/>
       <i><b>Stay tuned!</b></i>
     </p>  
@@ -128,7 +129,6 @@ const Style = styled.div`
 width: 100%;
 position: relative;
 background-color: ${props => props.dark ? 'black' : Colors.background_body};
-z-index: 0;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
 

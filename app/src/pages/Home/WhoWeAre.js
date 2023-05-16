@@ -130,7 +130,6 @@ width: 100%;
 height: 100%;
 position: relative;
 background-color: ${Colors.background_body};
-z-index: 0;
 
 display: flex;
 justify-content: center;

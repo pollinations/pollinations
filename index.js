@@ -1,6 +1,6 @@
 import http from 'http';
 
-import memoize from 'lodash.memoize';
+// import memoize from 'lodash.memoize';
 import { parse } from 'url';
 import urldecode from 'urldecode';
 
@@ -13,21 +13,44 @@ import sleep from 'await-sleep';
 import tempfile from 'tempfile';
 
 import fs from 'fs';
+import { cacheGeneratedImages } from './cacheGeneratedImages.js';
 const activeQueues = {};
 
 
+const imageGenerationQueue = new PQueue({concurrency: 1});
 
+// add legend
+// use image.print of jimp to add text to the bottom of the image
+
+let logo = null;
+
+(async () => { 
+  const logoPath = "./pollinations_logo.png";
+  console.log("loading logo", logoPath)
+  // get buffer
+  const buffer = fs.readFileSync(logoPath);
+  logo = await jimp.read(buffer);
+
+  // resize logo to 100x10
+  const aspectRatio = logo.getWidth() / logo.getHeight();
+  logo.resize(170, 170 / aspectRatio);
+})();
 
 
 const requestListener = async function (req, res) {
 
-  const { pathname } = parse(req.url, true);
+  let { pathname } = parse(req.url, true);
 
   console.log("path: ", pathname);
-
+  
+  let useKandinky = false;
+  // if pathname contains /kandinsky set useKandinsky to true and replace /kandinisky with /prompt
+  if (pathname.startsWith("/kandinsky")) {
+    useKandinky = true;
+    pathname = pathname.replace("/kandinsky", "/prompt");
+  }
 
   if (!pathname.startsWith("/prompt")) {
-    res.writeHead(404);
     res.end('404: Not Found');
     return
   }
@@ -54,8 +77,9 @@ const requestListener = async function (req, res) {
     return
   }
 
-  console.log("queue size", activeQueues[ip].size)
-  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, activeQueues[ip].size > 0)));
+  // console.log("queue size", imageGenerationQueue.size)
+  console.log("IP queue size", activeQueues[ip].size)
+  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, activeQueues[ip].size,  useKandinky)));
 }
 
 // dummy handler that  redirects all requests to the static : https://i.imgur.com/emiRJ04.gif
@@ -69,7 +93,7 @@ const dummyListener = async function (req, res) {
   
 
 const server = http.createServer(requestListener);
-server.listen(8080);
+server.listen(16384);
 
 
 // call rest api like this
@@ -95,17 +119,31 @@ server.listen(8080);
 //   }
 // });
 
-const callWebUI = async (prompt) => {
+let concurrentRequests = 0;
+const callWebUI = params => async (prompt, extraParams={}) => {
 
+  
+  // more steps means better image quality. 60 steps is good quality. 10 steps is fast.
+  // set the amount of steps based on the queue size. 
+  // if the queue is greater than 10 use only 10 steps 
+  // if the queue is zero use 60 steps
+  // smooth between 5 and 60 steps based on the queue size
+  const steps = Math.min(60, Math.max(10, 60 - concurrentRequests * 10));
+  console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt);
+  concurrentRequests++;
+  
     const body = {
         "prompt": prompt,
-        "steps": 30,
+        "steps": steps,
         "height": 384,
         "sampler_index": "Euler a",
-        "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly"
- 
-    }
-  const response = await fetch('http://127.0.0.1:7860/sdapi/v1/txt2img', {
+        "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly",
+        ...params,
+        ...extraParams
+      }
+  
+    console.log("calling steps", body.steps, "prompt",body.prompt);
+    const response = await fetch('http://localhost:7860/sdapi/v1/txt2img', {
     method: 'POST',
     body: JSON.stringify(body),
     headers: {
@@ -113,29 +151,47 @@ const callWebUI = async (prompt) => {
     }
   });
 
-  return await response.json()
-  
+  const resJson = await response.json();
+  const base64Image = resJson["images"][0];
+  // convert base64 image to buffer
+  const buffer = Buffer.from(base64Image, 'base64');
+
+  concurrentRequests--;
+  return buffer;
 }
 
+// wget http://localhost:12345/kandinsky/{prompt} -O image.png
 
-exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
-  if (error) {
-      console.log(`error: ${error.message}`);
-      return;
-  }
-  if (stderr) {
-      console.log(`stderr: ${stderr}`);
-      return;
-  }
-  console.log(`stdout: ${stdout}`);
-})
+const callKandinsky = async (prompt) => {
+  // url encode prompt
+  const promptEncoded = encodeURIComponent(prompt);
+  const url = `http://localhost:12345/kandinsky/${promptEncoded}`;
+
+  const response = await fetch(url);
+  const buffer = await response.buffer();
+
+  return buffer;
+}
+// exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
+//   if (error) {
+//       console.log(`error: ${error.message}`);
+//       return;
+//   }
+//   if (stderr) {
+//       console.log(`stderr: ${stderr}`);
+//       return;
+//   }
+//   console.log(`stdout: ${stdout}`);
+// })
 
 
-const runModel = memoize(callWebUI, params => JSON.stringify(params))
+const runModel = cacheGeneratedImages(callWebUI())
 
-async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
+const runKandinsky = cacheGeneratedImages(callWebUI({width: 786, height:512, steps: 100 }))//, "/tmp/kandinsky_cache")
 
-  if (sleepBefore) {
+async function createAndReturnImage(res, promptAndSeed, ipQueueSize,  useKandinky) {
+
+  if (ipQueueSize > 0) {
     console.log("sleeping 3000ms because there was an image in the queue before");
     await sleep(5000);
   }
@@ -146,13 +202,9 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
 
   const prompt = urldecode(promptRaw).replaceAll("_", " ");
 
-  const response = await  runModel(prompt);
-  // console.log("response: ", response);
 
-  const base64Image = response["images"][0];
+  const buffer = useKandinky ? await runKandinsky(prompt) : await runModel(prompt);
 
-  // convert base64 image to buffer
-  const buffer = Buffer.from(base64Image, 'base64');
 
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
@@ -162,30 +214,6 @@ async function createAndReturnImage(res, promptAndSeed, sleepBefore) {
   // res.write(buffer);
   console.log("finishing");
   res.end();
-}
-
-async function addPollinationsLogo(buffer, seedOverride) {
-  const imageWithLegend = await jimp.read(buffer);
-
-  const logoWidth = 170;
-  const logoHeight = 25;
-
-  const imageWidth = imageWithLegend.getWidth();
-  const imageHeight = imageWithLegend.getHeight();
-
-  const x = imageWidth - logoWidth - 10;
-  const y = imageHeight - logoHeight - 10;
-
-  // if no seed is given add the logo to the bottom right corner
-
-  imageWithLegend.composite(logo, x, y, {
-    mode: jimp.BLEND_SOURCE_OVER,
-    opacitySource: 1,
-    opacityDest: 1
-  });
-
-  const bufferWithLegend = await imageWithLegend.getBufferAsync(jimp.MIME_JPEG);
-  return bufferWithLegend;
 }
 
 // imagemagick command line command to composite the logo on top of the image

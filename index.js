@@ -126,18 +126,19 @@ const callWebUI = params => async (prompt, extraParams={}) => {
   // more steps means better image quality. 60 steps is good quality. 10 steps is fast.
   // set the amount of steps based on the queue size. 
   // if the queue is greater than 10 use only 10 steps 
-  // if the queue is zero use 60 steps
-  // smooth between 5 and 60 steps based on the queue size
-  const steps = Math.min(60, Math.max(10, 60 - concurrentRequests * 10));
+  // if the queue is zero use 50 steps
+  // smooth between 5 and 50 steps based on the queue size
+  const steps = Math.min(50, Math.max(10, 50 - concurrentRequests * 10));
   console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt);
   concurrentRequests++;
   
     const body = {
-        "prompt": prompt,
+        "prompt": prompt,//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
         "steps": steps,
         "height": 384,
         "sampler_index": "Euler a",
-        "negative_prompt": "empty, boring, blank space, black, dark, low quality, noisy, grainy, watermark, signature, logo, writing, text, person, people, human, baby, cute, young, simple, cartoon, face, uncanny valley, deformed, silly",
+        "negative_prompt": "cgi, doll, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
+        "cfg_scale": steps < 20 ? 3.0 : 7.0,
         ...params,
         ...extraParams
       }
@@ -193,7 +194,7 @@ async function createAndReturnImage(res, promptAndSeed, ipQueueSize,  useKandink
 
   if (ipQueueSize > 0) {
     console.log("sleeping 3000ms because there was an image in the queue before");
-    await sleep(5000);
+    await sleep(1000);
   }
 
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -249,3 +250,4 @@ function addPollinationsLogoWithImagemagick(buffer) {
     });
   });
 }
+

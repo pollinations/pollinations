@@ -2,6 +2,9 @@ import styled from '@emotion/styled';
 import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase } from './components';
 import Player from './Player';
+import { useEventSource, useEventSourceListener } from "@react-nano/use-event-source";
+import { useState } from 'react';
+import { isMature } from '../../data/mature';
 
 
 const Hero = props => <Style>
@@ -13,15 +16,87 @@ const Hero = props => <Style>
   </Container> */}
   <HeroContainer>
     <Player src='https://streamable.com/w9p5rz' />
+    <GenerativeImageFeed />
   </HeroContainer>
-  <BackgroundImage 
+  {/* <BackgroundImage 
     src='bgHero.png' 
     zIndex='-2' 
-    alt="hero_bg" />
+    alt="hero_bg" /> */}
 
 </Style>;
   
-export default Hero
+export default Hero;
+
+
+function GenerativeImageFeed() {
+  const [image, setImage] = useState(null);
+  const [nextPrompt, setNextPrompt] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [serverLoad, setServerLoad] = useState(0);
+  const [imagesGenerated, setImagesGenerated] = useState(0);
+  
+  const [eventSource, eventSourceStatus] = useEventSource("https://image.pollinations.ai/feed", true);
+  useEventSourceListener(eventSource, ['message'], evt => {
+    const data = JSON.parse(evt.data);
+    if (data["imageURL"]) {
+      setImagesGenerated(no => no + 1);
+      if (isMature(data["prompt"])) {
+        console.log("skipping mature prompt: ", data["prompt"]);
+        return;
+      }
+      setImage(data);
+      setNextPrompt(data["prompt"])
+    }
+
+    setServerLoad(data["concurrentRequests"]);
+  }, [setImage, setServerLoad]);
+
+  return (
+      <div>
+        <br /><br /><br /><br /><br />
+        <GenerativeImageURLContainer>
+        <h2>Generative Image URL feed</h2>
+          {eventSourceStatus === "open" ? null : <div>connecting...</div>}
+          {image && <div style={{wordBreak:"break-all"}}>
+                      <img src={image["imageURL"]} alt="generative_image" onLoad={() => {
+                        setPrompt(nextPrompt);
+                        console.log("loaded image. setting prompt to: ", nextPrompt)
+                      }} /> 
+                      <br/>
+                      Prompt: <b>{prompt}</b>
+                    </div>
+          }
+          <ServerLoadDisplay concurrentRequests={serverLoad} />
+          Generated #: <b>{imagesGenerated}</b>
+          </GenerativeImageURLContainer>
+      </div>
+  );
+}
+
+// create a small ascii visualization of server load
+// very high is 5 concurrent requests
+// use some UTF-8 characters to make it look nicer
+function ServerLoadDisplay({ concurrentRequests }) {
+  const max = 5;
+  const load = Math.min(max, concurrentRequests);
+  const loadDisplay = "▁▃▅▇█▉".slice(1, load+1);
+  return <div>Server Load: {loadDisplay}</div>
+}
+
+
+// try to vertically and horizontally center content
+const GenerativeImageURLContainer = styled.div`
+  background-color: rgba(0,0,0,0.7);
+  color: white;
+
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 2em;
+
+`;
+
 const HeroContainer = styled.div`
   position: relative;
   height: 100vh;

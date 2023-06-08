@@ -40,8 +40,9 @@ function GenerativeImageFeed() {
     const data = JSON.parse(evt.data);
     if (data["imageURL"]) {
       setImagesGenerated(no => no + 1);
-      if (isMature(data["prompt"])) {
-        console.log("skipping mature prompt: ", data["prompt"]);
+      const matureWord = isMature(data["prompt"]);
+      if (matureWord) {
+        console.log("skipping mature word: ", matureWord, data["prompt"]);
         return;
       }
       setImage(data);

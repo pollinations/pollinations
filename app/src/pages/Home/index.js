@@ -1,6 +1,6 @@
 import styled from "@emotion/styled"
 import Hero from "./Hero"
-import LayoutLight01, { LaytoutDark01 } from "./Layouts"
+import WhoWeAre, { ActivityUpdate } from "./Layouts"
 import Discord from './Discord'
 import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
@@ -8,10 +8,10 @@ import MusicVideo from './MusicVideo'
 export default function Solutions() {
   return <Style>
     <Hero />
-    <LaytoutDark01 long id='activityupdate'  />
+    <ActivityUpdate />
     {/* <Dreamachine /> */}
     {/* <MusicVideo /> */}
-    <LayoutLight01 id='whoweare'/>
+    <WhoWeAre />
     <Discord />
   </Style>
 }

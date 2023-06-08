@@ -56,7 +56,7 @@ function GenerativeImageFeed() {
       <div>
         <br /><br /><br /><br /><br />
         <GenerativeImageURLContainer>
-        <h2>Generative Image URL feed</h2>
+        <h2 style={{marginTop: "0px"}}>Image URL Feed</h2>
           {eventSourceStatus === "open" ? null : <div>connecting...</div>}
           {image && <div style={{wordBreak:"break-all"}}>
                       <img src={image["imageURL"]} alt="generative_image" onLoad={() => {
@@ -94,7 +94,7 @@ const GenerativeImageURLContainer = styled.div`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 2em;
+  padding: 1em;
 
 `;
 

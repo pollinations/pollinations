@@ -14,10 +14,9 @@ import tempfile from 'tempfile';
 
 import fs from 'fs';
 import { cacheGeneratedImages } from './cacheGeneratedImages.js';
+import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 const activeQueues = {};
 
-
-const imageGenerationQueue = new PQueue({concurrency: 1});
 
 // add legend
 // use image.print of jimp to add text to the bottom of the image
@@ -39,6 +38,17 @@ let logo = null;
 
 const requestListener = async function (req, res) {
 
+  // // CORS
+  // res.setHeader('Access-Control-Allow-Origin', '*');
+	// res.setHeader('Access-Control-Request-Method', '*');
+	// res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+	// res.setHeader('Access-Control-Allow-Headers', '*');
+	// if ( req.method === 'OPTIONS' ) {
+	// 	res.writeHead(200);
+	// 	res.end();
+	// 	return;
+	// }
+
   let { pathname } = parse(req.url, true);
 
   console.log("path: ", pathname);
@@ -48,6 +58,12 @@ const requestListener = async function (req, res) {
   if (pathname.startsWith("/kandinsky")) {
     useKandinky = true;
     pathname = pathname.replace("/kandinsky", "/prompt");
+  }
+
+  // /feed uses server sent events to update the client with the latest images
+  if (pathname.startsWith("/feed")) {
+    registerFeedListener(req, res);
+    return;
   }
 
   if (!pathname.startsWith("/prompt")) {
@@ -69,9 +85,9 @@ const requestListener = async function (req, res) {
 
   // await showImage("https://i.imgur.com/lTAeMmN.jpg");
 
-  const promptAndSeed = pathname.split("/prompt/")[1];
+  const promptRaw = pathname.split("/prompt/")[1];
   
-  if (!promptAndSeed) {
+  if (!promptRaw) {
     res.writeHead(404);
     res.end('404: Not Found');
     return
@@ -79,45 +95,18 @@ const requestListener = async function (req, res) {
 
   // console.log("queue size", imageGenerationQueue.size)
   console.log("IP queue size", activeQueues[ip].size)
-  await (activeQueues[ip].add(() => createAndReturnImage(res, promptAndSeed, activeQueues[ip].size,  useKandinky)));
-}
-
-// dummy handler that  redirects all requests to the static : https://i.imgur.com/emiRJ04.gif
-const dummyListener = async function (req, res) {
-  // return a 302 redirect to the static image
-  res.writeHead(302, {
-    'Location': 'https://i.imgur.com/DgRPBiJ.gif'
-  });
-  res.end();
-}
+  await (activeQueues[ip].add(async () => {
+    const bufferWithLegend = await createAndReturnImageCached(promptRaw, res, activeQueues[ip].size,  useKandinky)
   
+    // console.log(bufferWithLegend)
+    res.write(bufferWithLegend);
+    res.end();
+
+  }));
+}
 
 const server = http.createServer(requestListener);
 server.listen(16384);
-
-
-// call rest api like this
-
-// const body = {
-//   "image": "replicate:pollinations/lemonade-preset",
-//   "input": {
-//       "image": await toBase64(image),
-//       "styles": styles,
-//       "num_images_per_style": num_images_per_style,
-//       "strength": strength,
-//       "gender": gender,
-//       "ethnicity": ethnicity
-//   }
-// }
-
-// const response = await fetch('https://rest.pollinations.ai/pollen', {
-//   method: 'POST',
-//   body: JSON.stringify(body),
-//   headers: {
-//       "Authorization": `Bearer ${document.querySelector('#token').value}`,
-//       "Content-Type": "application/json"
-//   }
-// });
 
 let concurrentRequests = 0;
 const callWebUI = params => async (prompt, extraParams={}) => {
@@ -131,6 +120,8 @@ const callWebUI = params => async (prompt, extraParams={}) => {
   const steps = Math.min(50, Math.max(10, 50 - concurrentRequests * 10));
   console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt);
   concurrentRequests++;
+  
+  sendToFeedListeners({concurrentRequests});
   
     const body = {
         "prompt": prompt,//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
@@ -161,61 +152,31 @@ const callWebUI = params => async (prompt, extraParams={}) => {
   return buffer;
 }
 
-// wget http://localhost:12345/kandinsky/{prompt} -O image.png
 
-const callKandinsky = async (prompt) => {
-  // url encode prompt
-  const promptEncoded = encodeURIComponent(prompt);
-  const url = `http://localhost:12345/kandinsky/${promptEncoded}`;
+const runModel = callWebUI();
 
-  const response = await fetch(url);
-  const buffer = await response.buffer();
+const runKandinsky = callWebUI({width: 786, height:512, steps: 100 });
 
-  return buffer;
-}
-// exec("./connect_reverse_ssh.sh", (error, stdout, stderr) => {
-//   if (error) {
-//       console.log(`error: ${error.message}`);
-//       return;
-//   }
-//   if (stderr) {
-//       console.log(`stderr: ${stderr}`);
-//       return;
-//   }
-//   console.log(`stdout: ${stdout}`);
-// })
-
-
-const runModel = cacheGeneratedImages(callWebUI())
-
-const runKandinsky = cacheGeneratedImages(callWebUI({width: 786, height:512, steps: 100 }))//, "/tmp/kandinsky_cache")
-
-async function createAndReturnImage(res, promptAndSeed, ipQueueSize,  useKandinky) {
+async function createAndReturnImage(promptRaw, res, ipQueueSize,  useKandinky) {
 
   if (ipQueueSize > 0) {
     console.log("sleeping 3000ms because there was an image in the queue before");
-    await sleep(1000);
+    await sleep(2000);
   }
 
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
 
-  const [promptRaw, seedOverride] = promptAndSeed.split("/");
-
-  const prompt = urldecode(promptRaw).replaceAll("_", " ");
-
+  const prompt = urldecode(promptRaw);
 
   const buffer = useKandinky ? await runKandinsky(prompt) : await runModel(prompt);
 
-
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
-  // console.log(bufferWithLegend)
-  res.write(bufferWithLegend);
-
-  // res.write(buffer);
-  console.log("finishing");
-  res.end();
+  sendToFeedListeners({concurrentRequests, imageURL: `https://image.pollinations.ai/prompt/${promptRaw}`, prompt});
+  return bufferWithLegend;
 }
+
+const createAndReturnImageCached = cacheGeneratedImages(createAndReturnImage);
 
 // imagemagick command line command to composite the logo on top of the image
 // convert -background none -gravity southeast -geometry +10+10 logo.png -composite image.jpg image.jpg

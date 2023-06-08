@@ -35,15 +35,11 @@ let ActivityUpdateContent = () => <>
 
 
 
-let content = {
-  'whoweare': <WhoWeAreContent/>,
-  'activityupdate': <ActivityUpdateContent/>
-}
-export default function LayoutLight01({ id, long }) {
+export default function WhoWeAre() {
   return <Style>
     <TopBand src={TopBandPresetsDesign}/>
-    <PageLayout long={long}>
-      {id ? content[id] : <></>}
+    <PageLayout long={false}>
+      <WhoWeAreContent />
     </PageLayout>
     <BackgroundImage 
       src='gradient_background.png'
@@ -53,10 +49,10 @@ export default function LayoutLight01({ id, long }) {
   </Style>
 };
 
-export function LaytoutDark01({ id, long }){
+export function ActivityUpdate(){
   return <Style dark={true}>
-    <PageLayout long={long} dark={true}>
-      {id ? content[id] : <></>}
+    <PageLayout long={true} dark={true}>
+      <ActivityUpdateContent />
     </PageLayout>
   </Style> 
 }

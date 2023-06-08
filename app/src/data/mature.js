@@ -15,4 +15,12 @@ import { words } from "./matureWords.js";
 
 
 // export a function that returns true if a mature word is found in the text
-export const isMature = raw_input => words.find(word => raw_input.toLowerCase().includes(word.toLowerCase()));
+// export const isMature = raw_input => words.find(word => raw_input.toLowerCase().includes(word.toLowerCase()));
+
+// use \\b${word}\\b to match only whole words
+
+const wordsSet = new Set(words);
+export const isMature = raw_input => { 
+    const inputWords = raw_input.toLowerCase().split(/\b/);
+    return inputWords.find(inputWord => wordsSet.has(inputWord));
+};

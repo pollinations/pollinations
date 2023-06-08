@@ -33,11 +33,13 @@ function GenerativeImageFeed() {
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
+  const [imagesGenerated, setImagesGenerated] = useState(0);
   
   const [eventSource, eventSourceStatus] = useEventSource("https://image.pollinations.ai/feed", true);
   useEventSourceListener(eventSource, ['message'], evt => {
     const data = JSON.parse(evt.data);
     if (data["imageURL"]) {
+      setImagesGenerated(no => no + 1);
       if (isMature(data["prompt"])) {
         console.log("skipping mature prompt: ", data["prompt"]);
         return;
@@ -55,7 +57,7 @@ function GenerativeImageFeed() {
         <GenerativeImageURLContainer>
         <h2>Generative Image URL feed</h2>
           {eventSourceStatus === "open" ? null : <div>connecting...</div>}
-          {image && <div>
+          {image && <div style={{wordBreak:"break-all"}}>
                       <img src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(nextPrompt);
                         console.log("loaded image. setting prompt to: ", nextPrompt)
@@ -64,10 +66,23 @@ function GenerativeImageFeed() {
                       Prompt: <b>{prompt}</b>
                     </div>
           }
+          <ServerLoadDisplay concurrentRequests={serverLoad} />
+          Generated #: <b>{imagesGenerated}</b>
           </GenerativeImageURLContainer>
       </div>
   );
 }
+
+// create a small ascii visualization of server load
+// very high is 5 concurrent requests
+// use some UTF-8 characters to make it look nicer
+function ServerLoadDisplay({ concurrentRequests }) {
+  const max = 5;
+  const load = Math.min(max, concurrentRequests);
+  const loadDisplay = "▁▃▅▇█▉".slice(1, load+1);
+  return <div>Server Load: {loadDisplay}</div>
+}
+
 
 // try to vertically and horizontally center content
 const GenerativeImageURLContainer = styled.div`

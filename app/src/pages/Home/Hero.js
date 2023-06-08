@@ -59,7 +59,7 @@ function GenerativeImageFeed() {
         <h2 style={{marginTop: "0px"}}>Image URL Feed</h2>
           {eventSourceStatus === "open" ? null : <div>connecting...</div>}
           {image && <div style={{wordBreak:"break-all"}}>
-                      <img src={image["imageURL"]} alt="generative_image" onLoad={() => {
+                      <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(nextPrompt);
                         console.log("loaded image. setting prompt to: ", nextPrompt)
                       }} /> 
@@ -84,8 +84,24 @@ function ServerLoadDisplay({ concurrentRequests }) {
   return <div>Server Load: {loadDisplay}</div>
 }
 
+const ImageStyle = styled.img`
+  max-width: 100%;
+`;
 
-// try to vertically and horizontally center content
+// // try to vertically and horizontally center content
+// const GenerativeImageURLContainer = styled.div`
+//   background-color: rgba(0,0,0,0.7);
+//   color: white;
+
+//   position: absolute;
+//   top: 50%;
+//   left: 50%;
+//   transform: translate(-50%, -50%);
+//   padding: 1em;
+
+// `;
+
+// responsive version that makes the container occupy the full width of the screen if on mobile
 const GenerativeImageURLContainer = styled.div`
   background-color: rgba(0,0,0,0.7);
   color: white;
@@ -95,8 +111,14 @@ const GenerativeImageURLContainer = styled.div`
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 1em;
-
-`;
+  width:80%;
+  max-width: 550px;
+  @media (max-width: 600px) {
+    width: 100%;
+    left: 0;
+    transform: translate(0, -50%);
+  }
+`
 
 const HeroContainer = styled.div`
   position: relative;

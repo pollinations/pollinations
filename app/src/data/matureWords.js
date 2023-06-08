@@ -270,7 +270,7 @@ export const words = [
    "l3itch",
    "labia",
    "lmfao",
-   "lust",
+   // "lust",
    "lusting",
    "m0f0",
    "m0fo",

@@ -31,7 +31,12 @@ function GenerativeImageFeed() {
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
-  const [imagesGenerated, setImagesGenerated] = useState(0);
+
+  // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
+  
+  // define 2023-06-09
+  const imagesGeneratedCalculated = estimateGeneratedImages();
+  const [imagesGenerated, setImagesGenerated] = useState(imagesGeneratedCalculated);
 
   useEffect(() => {
     const eventSource = new EventSource("https://image.pollinations.ai/feed");
@@ -78,6 +83,13 @@ function GenerativeImageFeed() {
           </GenerativeImageURLContainer>
       </div>
   );
+}
+
+function estimateGeneratedImages() {
+  const launchDate = new Date("2023-06-09T00:00:00.000Z");
+
+  const imagesGeneratedCalculated = 1296000 + Math.floor((Date.now() - launchDate) / 10000);
+  return imagesGeneratedCalculated;
 }
 
 // create a small ascii visualization of server load

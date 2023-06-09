@@ -13,7 +13,6 @@
     "@nivo/bar": "^0.80.0",
     "@nivo/core": "^0.80.0",
     "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
-    "@react-nano/use-event-source": "^0.13.0",
     "@supabase/supabase-js": "^2.1.3",
     "abort-controller": "^3.0.0",
     "ansi-to-react": "^6.1.6",

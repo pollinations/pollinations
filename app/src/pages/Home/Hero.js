@@ -2,10 +2,8 @@ import styled from '@emotion/styled';
 import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase } from './components';
 import Player from './Player';
-import { useEventSource, useEventSourceListener } from "@react-nano/use-event-source";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
-
 
 const Hero = props => <Style>
   {/* <Container>
@@ -34,30 +32,35 @@ function GenerativeImageFeed() {
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
   const [imagesGenerated, setImagesGenerated] = useState(0);
-  
-  const [eventSource, eventSourceStatus] = useEventSource("https://image.pollinations.ai/feed", true);
-  useEventSourceListener(eventSource, ['message'], evt => {
-    const data = JSON.parse(evt.data);
-    if (data["imageURL"]) {
-      setImagesGenerated(no => no + 1);
-      const matureWord = isMature(data["prompt"]);
-      if (matureWord) {
-        console.log("skipping mature word:", matureWord, data["prompt"]);
-        return;
-      }
-      setImage(data);
-      setNextPrompt(data["prompt"])
-    }
 
-    setServerLoad(data["concurrentRequests"]);
+  useEffect(() => {
+    const eventSource = new EventSource("https://image.pollinations.ai/feed");
+    eventSource.onmessage = evt => {
+      const data = JSON.parse(evt.data);
+      // console.log("got message", data);
+      if (data["imageURL"]) {
+        setImagesGenerated(no => no + 1);
+        const matureWord = isMature(data["prompt"]);
+        if (matureWord) {
+          console.log("skipping mature word:", matureWord, data["prompt"]);
+          return;
+        }
+        setImage(data);
+        setNextPrompt(data["originalPrompt"])
+      }
+
+      setServerLoad(data["concurrentRequests"]);
+    }
+    return () => {
+      eventSource.close();
+    }
   }, [setImage, setServerLoad]);
 
   return (
       <div>
         <br /><br /><br /><br /><br />
         <GenerativeImageURLContainer>
-        <h2 style={{marginTop: "0px"}}>Image URL Feed</h2>
-          {eventSourceStatus === "open" ? null : <div>connecting...</div>}
+        <ImageURLHeading>Image URL Feed</ImageURLHeading>
           {image && <div style={{wordBreak:"break-all"}}>
                       <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(nextPrompt);
@@ -68,7 +71,10 @@ function GenerativeImageFeed() {
                     </div>
           }
           <ServerLoadDisplay concurrentRequests={serverLoad} />
-          Generated #: <b>{imagesGenerated}</b>
+          Generated #: <b>{imagesGenerated}</b><br/>
+          <hr />
+          Create: <b><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a> </b> <br />
+          Create with ChatGPT: <b><a href="https://gist.github.com/voodoohop/bba815fe2643fbdce8a712679ae16664">Gist</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
           </GenerativeImageURLContainer>
       </div>
   );
@@ -136,9 +142,10 @@ const HeroContainer = styled.div`
   }
 `;
 
-const VideoBackground = styled.video`
-  
-`;
+const ImageURLHeading = styled.h2`
+margin-top: 0px; 
+margin-bottom: 0px;
+`; 
 
 const PlayerWrapper = styled.div`
 width: 100%;

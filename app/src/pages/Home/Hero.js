@@ -2,7 +2,6 @@ import styled from '@emotion/styled';
 import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase } from './components';
 import Player from './Player';
-import { useEventSource, useEventSourceListener } from "@react-nano/use-event-source";
 import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
@@ -38,7 +37,7 @@ function GenerativeImageFeed() {
     const eventSource = new EventSource("https://image.pollinations.ai/feed");
     eventSource.onmessage = evt => {
       const data = JSON.parse(evt.data);
-      console.log("got message", data);
+      // console.log("got message", data);
       if (data["imageURL"]) {
         setImagesGenerated(no => no + 1);
         const matureWord = isMature(data["prompt"]);

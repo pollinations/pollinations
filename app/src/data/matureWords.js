@@ -1,6 +1,7 @@
 export const words = [
    "panties",
    "bra",
+   "topless",
    "young",
    "naked",
    "girl",
@@ -80,6 +81,7 @@ export const words = [
    "booooobs",
    "booooooobs",
    "breast",
+   "breasts",
    "buceta",
    "bugger",
    "bum",

@@ -6,6 +6,7 @@ export const words = [
    "girl",
    "child",
    "years",
+   "year",
    "hentai",
    "waifu",
    "spanking",

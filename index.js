@@ -5,7 +5,7 @@ import { parse } from 'url';
 import urldecode from 'urldecode';
 
 import { exec } from 'child_process';
-import jimp from 'jimp';
+
 import fetch from 'node-fetch';
 import PQueue from 'p-queue';
 
@@ -15,25 +15,12 @@ import tempfile from 'tempfile';
 import fs from 'fs';
 import { cacheGeneratedImages } from './cacheGeneratedImages.js';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
+
+import { translateIfNecessary } from './translateIfNecessary.js';
+
 const activeQueues = {};
 
 
-// add legend
-// use image.print of jimp to add text to the bottom of the image
-
-let logo = null;
-
-(async () => { 
-  const logoPath = "./pollinations_logo.png";
-  console.log("loading logo", logoPath)
-  // get buffer
-  const buffer = fs.readFileSync(logoPath);
-  logo = await jimp.read(buffer);
-
-  // resize logo to 100x10
-  const aspectRatio = logo.getWidth() / logo.getHeight();
-  logo.resize(170, 170 / aspectRatio);
-})();
 
 
 const requestListener = async function (req, res) {
@@ -166,17 +153,20 @@ async function createAndReturnImage(promptRaw, res, ipQueueSize,  useKandinky) {
 
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
 
-  const prompt = urldecode(promptRaw);
+  const promptAnyLanguage = urldecode(promptRaw);
+  
+  const prompt = promptAnyLanguage; // await translateIfNecessary(promptAnyLanguage);
 
   const buffer = useKandinky ? await runKandinsky(prompt) : await runModel(prompt);
 
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
-  sendToFeedListeners({concurrentRequests, imageURL: `https://image.pollinations.ai/prompt/${promptRaw}`, prompt});
+  sendToFeedListeners({concurrentRequests, imageURL: `https://image.pollinations.ai/prompt/${promptRaw}`, prompt, originalPrompt: promptAnyLanguage}, {saveAsLastState: true});
   return bufferWithLegend;
 }
 
 const createAndReturnImageCached = cacheGeneratedImages(createAndReturnImage);
+
 
 // imagemagick command line command to composite the logo on top of the image
 // convert -background none -gravity southeast -geometry +10+10 logo.png -composite image.jpg image.jpg
@@ -185,7 +175,7 @@ function addPollinationsLogoWithImagemagick(buffer) {
 
   // create temporary file for the image
   const tempImageFile = tempfile({extension: 'png'});
-  const tempOutputFile = tempfile({extension: 'png'});
+  const tempOutputFile = tempfile({extension: 'jpg'});
 
   // write buffer to temporary file
   fs.writeFileSync(tempImageFile, buffer);
@@ -211,4 +201,7 @@ function addPollinationsLogoWithImagemagick(buffer) {
     });
   });
 }
+
+
+
 

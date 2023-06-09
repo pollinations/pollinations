@@ -23,7 +23,7 @@ export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stable
     const hash = crypto.createHash('md5').update(prompt).digest("hex").slice(0, 4);
 
     // create a filename from the prompt
-    const path = saveFolder + "/" + sanitizedPrompt+"_" + hash + ".png";
+    const path = saveFolder + "/" + sanitizedPrompt+"_" + hash + ".jpg";
     // if file exists return it
     if (fs.existsSync(path)) {
       console.log("file exists, returning it", path);
@@ -42,3 +42,7 @@ export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stable
   };
 
 };
+
+
+// bash one-liner to rename all .png files in a folder to .jpg
+// for f in *.png; do mv -- "$f" "${f%.png}.jpg"; done

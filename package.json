@@ -12,7 +12,10 @@
   "license": "ISC",
   "dependencies": {
     "@pollinations/ipfs": "github:pollinations/pollinations-ipfs",
+    "@vitalets/google-translate-api": "^9.2.0",
     "await-sleep": "^0.0.1",
+    "cld": "^2.9.0",
+    "fastify": "^4.17.0",
     "jimp": "^0.16.2",
     "lodash.memoize": "^4.1.2",
     "memoize-fs": "^2.2.0",

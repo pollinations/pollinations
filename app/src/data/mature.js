@@ -19,7 +19,8 @@ import { words } from "./matureWords.js";
 
 // use \\b${word}\\b to match only whole words
 
-const wordsSet = new Set(words);
+const wordsSet = new Set([...words, ...words.map(word => word + "s")]);
+
 export const isMature = raw_input => { 
     const inputWords = raw_input.toLowerCase().replaceAll("_"," ").split(/\b/);
     return inputWords.find(inputWord => wordsSet.has(inputWord));

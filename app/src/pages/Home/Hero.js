@@ -86,7 +86,7 @@ function GenerativeImageFeed() {
 }
 
 function estimateGeneratedImages() {
-  const launchDate = new Date("2023-06-09T00:00:00.000Z");
+  const launchDate = new Date("2023-06-12T00:00:00.000Z");
 
   const imagesGeneratedCalculated = 1326520 + Math.floor((Date.now() - launchDate) / 2000);
   return imagesGeneratedCalculated;

@@ -68,7 +68,7 @@ function GenerativeImageFeed() {
         <ImageURLHeading>Image URL Feed</ImageURLHeading>
           {image && <div style={{wordBreak:"break-all"}}>
                       <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
-                        setPrompt(nextPrompt);
+                        setPrompt(shorten(nextPrompt));
                         console.log("loaded image. setting prompt to: ", nextPrompt)
                       }} /> 
                       <br/>
@@ -84,6 +84,8 @@ function GenerativeImageFeed() {
       </div>
   );
 }
+
+const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
 
 function estimateGeneratedImages() {
   const launchDate = new Date("2023-06-12T00:00:00.000Z");

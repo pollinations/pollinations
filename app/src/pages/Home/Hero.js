@@ -88,7 +88,7 @@ function GenerativeImageFeed() {
 function estimateGeneratedImages() {
   const launchDate = new Date("2023-06-09T00:00:00.000Z");
 
-  const imagesGeneratedCalculated = 1296000 + Math.floor((Date.now() - launchDate) / 10000);
+  const imagesGeneratedCalculated = 1326520 + Math.floor((Date.now() - launchDate) / 2000);
   return imagesGeneratedCalculated;
 }
 
@@ -106,18 +106,6 @@ const ImageStyle = styled.img`
   max-width: 100%;
 `;
 
-// // try to vertically and horizontally center content
-// const GenerativeImageURLContainer = styled.div`
-//   background-color: rgba(0,0,0,0.7);
-//   color: white;
-
-//   position: absolute;
-//   top: 50%;
-//   left: 50%;
-//   transform: translate(-50%, -50%);
-//   padding: 1em;
-
-// `;
 
 // responsive version that makes the container occupy the full width of the screen if on mobile
 const GenerativeImageURLContainer = styled.div`
@@ -136,7 +124,7 @@ const GenerativeImageURLContainer = styled.div`
     left: 0;
     transform: translate(0, -50%);
   }
-`
+`;
 
 const HeroContainer = styled.div`
   position: relative;

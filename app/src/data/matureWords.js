@@ -1,6 +1,7 @@
 export const words = [
    "panties",
    // "woman",
+   "pregnant",
    "bra",
    "topless",
    "young",
@@ -302,6 +303,7 @@ export const words = [
    "masterbation",
    "masterbations",
    "masturbate",
+   "masturbating",
    "mo-fo",
    "mof0",
    "mofo",

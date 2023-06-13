@@ -17,6 +17,8 @@ import { cacheGeneratedImages } from './cacheGeneratedImages.js';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 
 import { translateIfNecessary } from './translateIfNecessary.js';
+import { sendToAnalytics } from './sendToAnalytics.js';
+import { isMature } from "./lib/mature.js"
 
 const activeQueues = {};
 
@@ -25,27 +27,10 @@ const activeQueues = {};
 
 const requestListener = async function (req, res) {
 
-  // // CORS
-  // res.setHeader('Access-Control-Allow-Origin', '*');
-	// res.setHeader('Access-Control-Request-Method', '*');
-	// res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-	// res.setHeader('Access-Control-Allow-Headers', '*');
-	// if ( req.method === 'OPTIONS' ) {
-	// 	res.writeHead(200);
-	// 	res.end();
-	// 	return;
-	// }
 
-  let { pathname } = parse(req.url, true);
-
-  console.log("path: ", pathname);
-  
-  let useKandinky = false;
-  // if pathname contains /kandinsky set useKandinsky to true and replace /kandinisky with /prompt
-  if (pathname.startsWith("/kandinsky")) {
-    useKandinky = true;
-    pathname = pathname.replace("/kandinsky", "/prompt");
-  }
+  let { pathname, query } = parse(req.url, true);
+    // get query params
+    const extraParams = {...query};
 
   // /feed uses server sent events to update the client with the latest images
   if (pathname.startsWith("/feed")) {
@@ -59,9 +44,14 @@ const requestListener = async function (req, res) {
   }
 
 
+
+
   // get ip address of the request
   const ip = req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-  console.log("ip: ", ip);  
+
+  if (activeQueues[ip]?.size > 0) {
+    console.log("ip: ", ip, "queue size", activeQueues[ip]?.size);  
+  }
 
   // if ip address is already processing an image wait for it to finish
   if (!activeQueues[ip]) {
@@ -74,6 +64,11 @@ const requestListener = async function (req, res) {
 
   const promptRaw = pathname.split("/prompt/")[1];
   
+
+  // extract a unique client id from the request
+
+  sendToAnalytics(req, "imageRequested", {promptRaw, concurrentRequests});
+
   if (!promptRaw) {
     res.writeHead(404);
     res.end('404: Not Found');
@@ -81,14 +76,13 @@ const requestListener = async function (req, res) {
   }
 
   // console.log("queue size", imageGenerationQueue.size)
-  console.log("IP queue size", activeQueues[ip].size)
   await (activeQueues[ip].add(async () => {
-    const bufferWithLegend = await createAndReturnImageCached(promptRaw, res, activeQueues[ip].size,  useKandinky)
+    const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, activeQueues[ip].size, concurrentRequests);
   
     // console.log(bufferWithLegend)
     res.write(bufferWithLegend);
     res.end();
-
+    sendToAnalytics(req, "imageGenerated", {promptRaw, concurrentRequests});
   }));
 }
 
@@ -96,7 +90,7 @@ const server = http.createServer(requestListener);
 server.listen(16384);
 
 let concurrentRequests = 0;
-const callWebUI = params => async (prompt, extraParams={}) => {
+const callWebUI = async (prompt, extraParams={}) => {
 
   
   // more steps means better image quality. 60 steps is good quality. 10 steps is fast.
@@ -104,21 +98,22 @@ const callWebUI = params => async (prompt, extraParams={}) => {
   // if the queue is greater than 10 use only 10 steps 
   // if the queue is zero use 50 steps
   // smooth between 5 and 50 steps based on the queue size
-  const steps = Math.min(50, Math.max(10, 50 - concurrentRequests * 10));
-  console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt);
+  const steps = isMature(prompt) ? 5 : Math.min(50, Math.max(10, 50 - concurrentRequests * 10));
+  console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
   concurrentRequests++;
   
+  const safeParams = makeParamsSafe(extraParams);
+
   sendToFeedListeners({concurrentRequests});
   
     const body = {
-        "prompt": prompt,//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
+        "prompt": prompt + " <lora:noiseoffset:0.6>  <lora:flat_color:0.2>  <lora:add_detail:0.4> ",//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
         "steps": steps,
         "height": 384,
-        "sampler_index": "Euler a",
-        "negative_prompt": "cgi, doll, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
+        "sampler_index": "Euler a",//"DPM++ SDE Karras",
+        "negative_prompt": "easynegative naked woman, huge breasts, cgi, doll, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
         "cfg_scale": steps < 20 ? 3.0 : 7.0,
-        ...params,
-        ...extraParams
+        ...safeParams
       }
   
     console.log("calling steps", body.steps, "prompt",body.prompt);
@@ -136,19 +131,33 @@ const callWebUI = params => async (prompt, extraParams={}) => {
   const buffer = Buffer.from(base64Image, 'base64');
 
   concurrentRequests--;
+  sendToFeedListeners({concurrentRequests});
   return buffer;
 }
 
+const maxPixels = 640 * 640;
+const makeParamsSafe = ({width=512, height=384, seed}) => {
+  // if we exaggerate with the dimensions, cool things down a  little
+  // maintaining aspect ratio
+  if (width * height > maxPixels) {
+    const ratio = Math.sqrt(maxPixels / (width * height));
+    width = Math.floor(width * ratio);
+    height = Math.floor(height * ratio);
+  }
 
-const runModel = callWebUI();
+  // if seed is not an integer set to a random integer
+  if (seed && !Number.isInteger(parseInt(seed))) {
+    seed = Math.floor(Math.random() * 1000000);
+  }
 
-const runKandinsky = callWebUI({width: 786, height:512, steps: 100 });
+  return {width, height, seed};
+}
 
-async function createAndReturnImage(promptRaw, res, ipQueueSize,  useKandinky) {
+async function createAndReturnImage(promptRaw, extraParams, res, ipQueueSize, concurrentRequests) {
 
   if (ipQueueSize > 0) {
     console.log("sleeping 3000ms because there was an image in the queue before");
-    await sleep(2000);
+    await sleep(4000);
   }
 
   res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -157,11 +166,13 @@ async function createAndReturnImage(promptRaw, res, ipQueueSize,  useKandinky) {
   
   const prompt = promptAnyLanguage; // await translateIfNecessary(promptAnyLanguage);
 
-  const buffer = useKandinky ? await runKandinsky(prompt) : await runModel(prompt);
+  const buffer = await callWebUI(prompt, extraParams);
 
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
-  sendToFeedListeners({concurrentRequests, imageURL: `https://image.pollinations.ai/prompt/${promptRaw}`, prompt, originalPrompt: promptAnyLanguage}, {saveAsLastState: true});
+  const imageURL = `https://image.pollinations.ai/prompt/${promptRaw}`;
+  sendToFeedListeners({concurrentRequests, imageURL, prompt, originalPrompt: promptAnyLanguage}, {saveAsLastState: true});
+  
   return bufferWithLegend;
 }
 

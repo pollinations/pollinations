@@ -1,7 +1,7 @@
 let feedListeners = [];
-let lastState = null;
+let lastStates = [];
 // create a server sent event stream
-export const registerFeedListener = (req, res) => {
+export const registerFeedListener = async (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -17,16 +17,17 @@ export const registerFeedListener = (req, res) => {
     feedListeners = feedListeners.filter(listener => listener !== res);
   });
 
-  if (lastState) {
-   sendToListener(res, lastState);
-    // sendToListener(res, lastState);
+  for (const lastState of lastStates) {
+    await sendToListener(res, lastState);
   }
   
 };
 
 export const sendToFeedListeners = (data, options={}) => {
-  if (options.saveAsLastState)
-    lastState = data;
+  if (options.saveAsLastState) {
+    lastStates.push(data);
+    lastStates = lastStates.slice(-20);
+  }
   feedListeners.forEach(listener => sendToListener(listener, data));
 };
 

@@ -26,7 +26,6 @@
     "urldecode": "^1.0.1"
   },
   "devDependencies": {
-    "esbuild": "^0.15.18",
-    "serverless-esbuild": "^1.33.2"
+    "esbuild": "^0.15.18"
   }
 }

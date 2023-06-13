@@ -79,7 +79,7 @@ function GenerativeImageFeed() {
           Generated #: <b>{imagesGenerated}</b><br/>
           <hr />
           Create: <b><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a> </b> <br />
-          Create with ChatGPT: <b><a href="https://chat.openai.com/share/18122445-2373-4c5d-a7d5-ab949ffc438c">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
+          Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
           </GenerativeImageURLContainer>
       </div>
   );

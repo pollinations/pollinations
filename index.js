@@ -1,10 +1,12 @@
 import http from 'http';
 
 // import memoize from 'lodash.memoize';
+// import memoize from 'lodash.memoize';
 import { parse } from 'url';
 import urldecode from 'urldecode';
 
 import { exec } from 'child_process';
+
 
 import fetch from 'node-fetch';
 import PQueue from 'p-queue';
@@ -13,13 +15,6 @@ import sleep from 'await-sleep';
 import tempfile from 'tempfile';
 
 import fs from 'fs';
-import { cacheGeneratedImages } from './cacheGeneratedImages.js';
-import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-
-import { translateIfNecessary } from './translateIfNecessary.js';
-import { sendToAnalytics } from './sendToAnalytics.js';
-import { isMature } from "./lib/mature.js"
-
 const activeQueues = {};
 
 
@@ -28,9 +23,7 @@ const activeQueues = {};
 const requestListener = async function (req, res) {
 
 
-  let { pathname, query } = parse(req.url, true);
-    // get query params
-    const extraParams = {...query};
+  console.log("path: ", pathname);
 
   // /feed uses server sent events to update the client with the latest images
   if (pathname.startsWith("/feed")) {

@@ -45,7 +45,7 @@ function GenerativeImageFeed() {
       // console.log("got message", data);
       if (data["imageURL"]) {
         setImagesGenerated(no => no + 1);
-        const matureWord = isMature(data["prompt"]);
+        const matureWord = isMature(data["prompt"]) && false;
         if (matureWord) {
           console.log("skipping mature word:", matureWord, data["prompt"]);
           return;

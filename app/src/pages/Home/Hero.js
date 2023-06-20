@@ -82,7 +82,7 @@ function GenerativeImageFeed() {
       <div>
         <br /><br /><br /><br /><br />
         <GenerativeImageURLContainer>
-        <ImageURLHeading>Image URL Feed <span style={{color:"red", fontSize:"90%"}}>(Potential gorillas or NSFW content)</span></ImageURLHeading>
+        <ImageURLHeading>Image URL Feed <span style={{color:"red", fontSize:"90%"}}>(Potential gorillas and/or NSFW content)</span></ImageURLHeading>
           {image && <div style={{wordBreak:"break-all"}}>
                       <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(shorten(nextPrompt));

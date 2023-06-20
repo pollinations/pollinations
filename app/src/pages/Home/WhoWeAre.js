@@ -12,8 +12,6 @@ let WhoWeAreContent = () => <>
         profoundly involved <br/> <i><b> in the AI ecosystem.</b></i>
       </h2>
       <p>
-        We combine the strengths of different models and fine-tune the code to get specific results. 
-       <br/> <br/>
         To talk to us, reach out on Discord or at hello@pollinations.ai
       </p>
 

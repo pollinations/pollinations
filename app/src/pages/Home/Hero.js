@@ -135,7 +135,8 @@ function estimateGeneratedImages() {
 function ServerLoadDisplay({ concurrentRequests }) {
   const max = 5;
   const load = Math.min(max, concurrentRequests);
-  const loadDisplay = "▁▃▅▇█▉".slice(1, load+1);
+  const loadDisplay = "▁▃▅▇▉".slice(1, load+1);
+  
   return <div>Server Load: {loadDisplay}</div>
 }
 

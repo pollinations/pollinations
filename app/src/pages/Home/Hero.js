@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
 import Button from '@material-ui/core/Button';
-import { Divider, Input } from '@material-ui/core';
+import { Divider, Input, Typography } from '@material-ui/core';
 
 const Hero = props => <Style>
   {/* <Container>
@@ -82,7 +82,7 @@ function GenerativeImageFeed() {
       <div>
         <br /><br /><br /><br /><br />
         <GenerativeImageURLContainer>
-        <ImageURLHeading>Image URL Feed</ImageURLHeading>
+        <ImageURLHeading>Image URL Feed <span style={{color:"red", fontSize:"90%"}}>(Potential gorillas or NSFW content)</span></ImageURLHeading>
           {image && <div style={{wordBreak:"break-all"}}>
                       <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(shorten(nextPrompt));

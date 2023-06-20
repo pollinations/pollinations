@@ -5,6 +5,9 @@ import Player from './Player';
 import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
+import Button from '@material-ui/core/Button';
+import { Divider, Input } from '@material-ui/core';
+
 const Hero = props => <Style>
   {/* <Container>
     <Headline>
@@ -39,23 +42,37 @@ function GenerativeImageFeed() {
   const [imagesGenerated, setImagesGenerated] = useState(imagesGeneratedCalculated);
 
   useEffect(() => {
-    const eventSource = new EventSource("https://image.pollinations.ai/feed");
-    eventSource.onmessage = evt => {
-      const data = JSON.parse(evt.data);
-      // console.log("got message", data);
-      if (data["imageURL"]) {
-        setImagesGenerated(no => no + 1);
-        const matureWord = isMature(data["prompt"]) && false;
-        if (matureWord) {
-          console.log("skipping mature word:", matureWord, data["prompt"]);
-          return;
+    const getEventSource = () => {
+      const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
+      imageFeedSource.onmessage = evt => {
+        const data = JSON.parse(evt.data);
+        // console.log("got message", data);
+        if (data["imageURL"]) {
+          setImagesGenerated(no => no + 1);
+          const matureWord = isMature(data["prompt"]) && false;
+          if (matureWord) {
+            console.log("skipping mature word:", matureWord, data["prompt"]);
+            return;
+          }
+          setImage(data);
+          setNextPrompt(data["originalPrompt"])
         }
-        setImage(data);
-        setNextPrompt(data["originalPrompt"])
-      }
+        setServerLoad(data["concurrentRequests"]);
+      };
+      return imageFeedSource;
+    };
 
-      setServerLoad(data["concurrentRequests"]);
-    }
+    
+    let eventSource = getEventSource();
+
+    // on error close and reopen
+    eventSource.onerror = async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      console.log("event source error. closing and reopening")
+      eventSource.close();
+      eventSource = getEventSource();
+    };
+
     return () => {
       eventSource.close();
     }
@@ -77,14 +94,32 @@ function GenerativeImageFeed() {
           }
           <ServerLoadDisplay concurrentRequests={serverLoad} />
           Generated #: <b>{imagesGenerated}</b><br/>
-          <hr />
+          <br />
           Create: <b><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a> </b> <br />
+          {/* links */}
           Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
+          {/* input field */}
+          <br />
+          <br />
+          <PromptInput />
+          
           </GenerativeImageURLContainer>
       </div>
   );
 }
 
+
+const PromptInput = () => {
+  const [prompt, setPrompt] = useState("");
+
+  return <div>
+    <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} style={{width:"100%"}} placeholder='Or type your prompt here'/>
+    {/* right aligned button */}
+    <div style={{textAlign:"right"}}>
+      <Button onClick={() => window.open(`https://image.pollinations.ai/prompt/${prompt}`)}>Create</Button>
+    </div>
+  </div>
+}  
 const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
 
 function estimateGeneratedImages() {
@@ -100,7 +135,8 @@ function estimateGeneratedImages() {
 function ServerLoadDisplay({ concurrentRequests }) {
   const max = 5;
   const load = Math.min(max, concurrentRequests);
-  const loadDisplay = "▁▃▅▇█▉".slice(1, load+1);
+  const loadDisplay = "▁▃▅▇▉".slice(1, load+1);
+  
   return <div>Server Load: {loadDisplay}</div>
 }
 

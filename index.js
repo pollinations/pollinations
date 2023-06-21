@@ -15,6 +15,17 @@ import sleep from 'await-sleep';
 import tempfile from 'tempfile';
 
 import fs from 'fs';
+import { cacheGeneratedImages } from './cacheGeneratedImages.js';
+import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
+
+import { translateIfNecessary } from './translateIfNecessary.js';
+import { sendToAnalytics } from './sendToAnalytics.js';
+import { isMature } from "./lib/mature.js"
+
+
+
+
+
 const activeQueues = {};
 
 
@@ -22,8 +33,9 @@ const activeQueues = {};
 
 const requestListener = async function (req, res) {
 
-
-  console.log("path: ", pathname);
+  let { pathname, query } = parse(req.url, true);
+    // get query params
+    const extraParams = {...query};
 
   // /feed uses server sent events to update the client with the latest images
   if (pathname.startsWith("/feed")) {
@@ -70,12 +82,18 @@ const requestListener = async function (req, res) {
 
   // console.log("queue size", imageGenerationQueue.size)
   await (activeQueues[ip].add(async () => {
-    const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, activeQueues[ip].size, concurrentRequests);
-  
-    // console.log(bufferWithLegend)
-    res.write(bufferWithLegend);
-    res.end();
-    sendToAnalytics(req, "imageGenerated", {promptRaw, concurrentRequests});
+    try {
+      const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, req, activeQueues[ip].size, concurrentRequests);
+    
+      // console.log(bufferWithLegend)
+      res.write(bufferWithLegend);
+      res.end();
+      sendToAnalytics(req, "imageGenerated", {promptRaw, concurrentRequests});
+    } catch (e) {
+      console.error(e);
+      res.writeHead(500);
+      res.end('500: Internal Server Error');
+    }
   }));
 }
 
@@ -91,16 +109,22 @@ const callWebUI = async (prompt, extraParams={}) => {
   // if the queue is greater than 10 use only 10 steps 
   // if the queue is zero use 50 steps
   // smooth between 5 and 50 steps based on the queue size
-  const steps = isMature(prompt) ? 4 : Math.min(50, Math.max(15, 50 - concurrentRequests * 10));
+  const steps = isMature(prompt) ? 10 : Math.min(50, Math.max(15, 50 - concurrentRequests * 10));
+  
   console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
+  
+  const animal = prompt.toLowerCase().includes("black") ? "panda:1.3" : "gorilla:1.45";
+  const appendToPrompt = isMature(prompt) ? `. (${animal})` : "";
+  
   concurrentRequests++;
   
   const safeParams = makeParamsSafe(extraParams);
 
+  
   sendToFeedListeners({concurrentRequests});
   
     const body = {
-        "prompt": prompt + " <lora:noiseoffset:0.6>  <lora:flat_color:0.2>  <lora:add_detail:0.4> ",//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
+        "prompt": prompt + " <lora:noiseoffset:0.6>  <lora:flat_color:0.2>  <lora:add_detail:0.4> "+ appendToPrompt,//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
         "steps": steps,
         "height": 384,
         "sampler_index": "Euler a",//"DPM++ SDE Karras",
@@ -146,7 +170,7 @@ const makeParamsSafe = ({width=512, height=384, seed}) => {
   return {width, height, seed};
 }
 
-async function createAndReturnImage(promptRaw, extraParams, res, ipQueueSize, concurrentRequests) {
+async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSize, concurrentRequests) {
 
   if (ipQueueSize > 0) {
     console.log("sleeping 3000ms because there was an image in the queue before");
@@ -157,13 +181,14 @@ async function createAndReturnImage(promptRaw, extraParams, res, ipQueueSize, co
 
   const promptAnyLanguage = urldecode(promptRaw);
   
-  const prompt = promptAnyLanguage; // await translateIfNecessary(promptAnyLanguage);
+  const prompt = await translateIfNecessary(promptAnyLanguage);
 
   const buffer = await callWebUI(prompt, extraParams);
 
   const bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer);
 
-  const imageURL = `https://image.pollinations.ai/prompt/${promptRaw}`;
+  // get current url from request
+  const imageURL = `https://image.pollinations.ai${req.url}`; 
   sendToFeedListeners({concurrentRequests, imageURL, prompt, originalPrompt: promptAnyLanguage}, {saveAsLastState: true});
   
   return bufferWithLegend;

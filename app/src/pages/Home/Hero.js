@@ -46,6 +46,8 @@ function GenerativeImageFeed() {
       const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
+        if (data["nsfw"])
+          return;
         // console.log("got message", data);
         if (data["imageURL"]) {
           setImagesGenerated(no => no + 1);
@@ -82,7 +84,8 @@ function GenerativeImageFeed() {
       <div>
         <br /><br /><br /><br /><br />
         <GenerativeImageURLContainer>
-        <ImageURLHeading>Image URL Feed <span style={{color:"red", fontSize:"90%"}}>(Potential gorillas and/or NSFW content)</span></ImageURLHeading>
+        <ImageURLHeading>Image URL Feed <span style={{color:"red", fontSize:"90%"}}>
+          <br />(Potential gorillas and/or NSFW content)</span></ImageURLHeading>
           {image && <div style={{wordBreak:"break-all"}}>
                       <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
                         setPrompt(shorten(nextPrompt));

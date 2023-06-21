@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
 import Button from '@material-ui/core/Button';
-import { Divider, Input, Typography } from '@material-ui/core';
+import { Divider, Input, Tooltip, Typography } from '@material-ui/core';
 
 const Hero = props => <Style>
   {/* <Container>
@@ -95,7 +95,7 @@ function GenerativeImageFeed() {
           <ServerLoadDisplay concurrentRequests={serverLoad} />
           Generated #: <b>{imagesGenerated}</b><br/>
           <br />
-          Create: <b><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a> </b> <br />
+          Create: <b style={{whiteSpace: "nowrap"}}><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a><ParamsButton /> </b> <br />
           {/* links */}
           Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
           {/* input field */}
@@ -121,6 +121,12 @@ const PromptInput = () => {
   </div>
 }  
 const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
+
+function ParamsButton() {
+  const [showParams, setShowParams] = useState(false);
+  return <Tooltip title="?width=[width]&height=[height]&seed=[seed]"><Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button></Tooltip>
+  // <Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button>;
+}
 
 function estimateGeneratedImages() {
   const launchDate = new Date("2023-06-12T00:00:00.000Z");

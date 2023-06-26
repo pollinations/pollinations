@@ -22,7 +22,7 @@ let ActivityUpdateContent = () => <>
     </h2>
     <p>
       The Explore page is no longer available, although we had a great time with it, it's time to move forward. 
-      <br/><br/> However, we have migrated models to <Link to="https://replicate.com/pollinations"> Replicate</Link> and are still maintaining the <b><i>Generative Image URL</i></b> which is primarily being used in combination with ChatGPT.
+      <br/><br/> However, we have migrated models to <a href="https://replicate.com/pollinations"> Replicate</a> and are still maintaining the <b><i>Generative Image URL</i></b> which is primarily being used in combination with ChatGPT.
       <br/><br/> From now on Pollinations will redirect its focus on AI music video creation, and an exciting real-time immersive AI product called the Dreamachine which will be launched very soon.
       <br/><br/>
       <i><b>Stay tuned!</b></i>

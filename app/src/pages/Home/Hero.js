@@ -46,6 +46,7 @@ function GenerativeImageFeed() {
       const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
+        setServerLoad(data["concurrentRequests"]);
         if (data["nsfw"])
           return;
         // console.log("got message", data);
@@ -59,7 +60,6 @@ function GenerativeImageFeed() {
           setImage(data);
           setNextPrompt(data["originalPrompt"])
         }
-        setServerLoad(data["concurrentRequests"]);
       };
       return imageFeedSource;
     };

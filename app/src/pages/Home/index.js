@@ -8,11 +8,11 @@ import MusicVideo from './MusicVideo'
 export default function Solutions() {
   return <Style>
     <Hero />
+    <Discord />
     <ActivityUpdate />
     {/* <Dreamachine /> */}
     {/* <MusicVideo /> */}
     <WhoWeAre />
-    <Discord />
   </Style>
 }
 const Style = styled.div`

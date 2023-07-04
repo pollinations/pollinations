@@ -1,6 +1,6 @@
 import fs from 'fs';
 import crypto from 'crypto';
-import memoize from 'lodash.memoize';
+// import memoize from 'lodash.memoize';
 
 export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stableDiffusion_cache") => {
   // create folder if it doesn't exist
@@ -46,6 +46,24 @@ export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stable
 
   return  memoize(cachedFunc, (prompt, extraParams) => prompt + "-" + JSON.stringify(extraParams));
 
+};
+
+
+const memoize = (fn, getKey) => {
+  const cache = {};
+  return (...args) => {
+    const key = getKey(...args);
+
+    if (cache[key]) {
+      return cache[key];
+    }
+
+    const result = fn(...args);
+
+    cache[key] = result;
+
+    return result;
+  };
 };
 
 

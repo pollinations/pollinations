@@ -23,6 +23,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { isMature } from "./lib/mature.js"
 
 import FormData from 'form-data';
+import { getXLImage } from './sdxl.js';
 
 const activeQueues = {};
 
@@ -84,7 +85,7 @@ const requestListener = async function (req, res) {
   
   // console.log("queue size", imageGenerationQueue.size)
     try {
-     const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, req,  activeQueues[ip].size, concurrentRequests, activeQueues[ip]);    
+     const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, req,  activeQueues[ip].size, activeQueues[ip]);    
      // console.log(bufferWithLegend)
      res.write(bufferWithLegend);
      res.end();
@@ -113,7 +114,7 @@ const callWebUI = async (prompt, extraParams={}) => {
 
   const nsfwDivider = isMature(prompt) ? 2 : 1;
 
-  const steps = Math.floor(Math.max(5, Math.min(50, (50 - (concurrentRequests * 7)) / nsfwDivider)));
+  const steps = Math.floor(Math.max(5, Math.min(50, (30 - (concurrentRequests * 7)) / nsfwDivider)));
   
   console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
   
@@ -126,7 +127,7 @@ const callWebUI = async (prompt, extraParams={}) => {
     const safeParams = makeParamsSafe(extraParams);
 
     
-    sendToFeedListeners({concurrentRequests});
+    sendToFeedListeners({concurrentRequests, prompt, steps});
     
       const body = {
           "prompt": prompt + " <lora:noiseoffset:0.6>  <lora:flat_color:0.2>  <lora:add_detail:0.4> ",//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
@@ -134,7 +135,7 @@ const callWebUI = async (prompt, extraParams={}) => {
           "height": 384,
           "sampler_index": "Euler a",//"DPM++ SDE Karras",
           "negative_prompt": "easynegative, cgi, doll, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
-          "cfg_scale": steps < 20 ? 3.0 : 7.0,
+          "cfg_scale": steps < 15 ? 3.0 : 7.0,
           ...safeParams
         }
     
@@ -157,7 +158,7 @@ const callWebUI = async (prompt, extraParams={}) => {
   }
   
   concurrentRequests--;
-  // sendToFeedListeners({concurrentRequests});
+  sendToFeedListeners({concurrentRequests});
   return buffer;
 }
 
@@ -175,7 +176,14 @@ const nsfwCheck = async (buffer) => {
 }
 
 const maxPixels = 640 * 640;
-const makeParamsSafe = ({width=512, height=384, seed}) => {
+const makeParamsSafe = ({width=512, height=384, seed, xl}) => {
+
+
+  // if seed is not an integer set to a random integer
+  if (seed && !Number.isInteger(parseInt(seed))) {
+    seed = Math.floor(Math.random() * 1000000); 
+  }
+
   // if we exaggerate with the dimensions, cool things down a  little
   // maintaining aspect ratio
   if (width * height > maxPixels) {
@@ -184,15 +192,11 @@ const makeParamsSafe = ({width=512, height=384, seed}) => {
     height = Math.floor(height * ratio);
   }
 
-  // if seed is not an integer set to a random integer
-  if (seed && !Number.isInteger(parseInt(seed))) {
-    seed = Math.floor(Math.random() * 1000000); 
-  }
 
   return {width, height, seed};
 }
 
-async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSize, concurrentRequests, enqueue) {
+async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSize, enqueue) {
 
   if (ipQueueSize > 0) {
     console.log("sleeping as long as the queue size");
@@ -208,7 +212,7 @@ async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSiz
     
     const prompt = await translateIfNecessary(promptAnyLanguage);
 
-    const buffer = await callWebUI(prompt, extraParams);
+    const buffer = extraParams["xl"] ? await getXLImage(prompt, extraParams): await callWebUI(prompt, extraParams);
 
     const {concept, nsfw: isMature} = await nsfwCheck(buffer);
     
@@ -217,10 +221,12 @@ async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSiz
 
     // check for header add_header 'X-Lusti' 'true';
 
+
+
     const logoPath =  (req.headers['x-lusti'] || extraParams["lusti"] || isMature) ? 'logo_lusti_small_black.png' : 'logo.png';
 
 
-    let bufferWithLegend = await addPollinationsLogoWithImagemagick(buffer, logoPath);
+    let bufferWithLegend = extraParams["nologo"] ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
 
     // if (isChild && isMature) {
     //   // blur

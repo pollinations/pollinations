@@ -20,7 +20,6 @@ const TwitchSection = props => {
         embed.destroy();
       }
       
-
     }, []);
 
     return <Style>

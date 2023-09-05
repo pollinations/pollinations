@@ -56,6 +56,14 @@ export function ActivityUpdate(){
 }
 
 
+export function DarkLayout({children, style}){
+  return <Style dark={true} style={style}>
+    <PageLayout long={true} dark={true}>
+      {children}
+    </PageLayout>
+  </Style> 
+}
+
 
 const TopBand = styled.img`
 position: absolute;

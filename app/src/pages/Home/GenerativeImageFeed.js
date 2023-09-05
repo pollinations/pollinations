@@ -136,7 +136,7 @@ const GenerativeImageURLContainer = styled.div`
     transform: translate(0, -50%);
   }
 `;
-const ImageURLHeading = styled.h2`
+const ImageURLHeading = styled.h3`
 margin-top: 0px; 
 margin-bottom: 0px;
 `;

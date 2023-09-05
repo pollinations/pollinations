@@ -15,7 +15,6 @@ const Hero = props => <Style>
   </Container> */}
   <HeroContainer>
     <Player src='https://streamable.com/w9p5rz' />
-    <GenerativeImageFeed />
   </HeroContainer>
   {/* <BackgroundImage 
     src='bgHero.png' 
@@ -39,7 +38,7 @@ justify-content: center;
 
 const HeroContainer = styled.div`
   position: relative;
-  height: 100vh;
+  height: 50vh;
   width: 100vw;
   overflow: hidden;
 

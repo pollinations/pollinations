@@ -4,10 +4,12 @@ import WhoWeAre, { ActivityUpdate } from "./Layouts"
 import Discord from './Discord'
 import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
+import TwitchSection from "./DreamSection"
 
 export default function Solutions() {
   return <Style>
     <Hero />
+    <TwitchSection />
     <Discord />
     <ActivityUpdate />
     {/* <Dreamachine /> */}

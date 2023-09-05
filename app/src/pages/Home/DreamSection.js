@@ -37,6 +37,8 @@ const TwitchSection = props => {
         {/* <!-- Add a placeholder for the Twitch embed --> */}
         <div id="twitch-embed"></div>   
         {/* <!-- Create a Twitch.Embed object that will render within the "twitch-embed" element --> */}
+        Chat to take part in the collective dream!  
+
       </Body>
       <Star src={Star6Img}/>
     </Container>

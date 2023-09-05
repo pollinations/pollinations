@@ -58,7 +58,7 @@ export function GenerativeImageFeed() {
     <div>
       <br /><br /><br /><br /><br />
       <GenerativeImageURLContainer>
-        <ImageURLHeading>Image URL Feed</ImageURLHeading>
+        <ImageURLHeading>Image Feed</ImageURLHeading>
         {image && <div style={{ wordBreak: "break-all" }}>
           <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
             setPrompt(shorten(nextPrompt));
@@ -117,7 +117,9 @@ function ServerLoadDisplay({ concurrentRequests }) {
 }
 const ImageStyle = styled.img`
   max-width: 100%;
+  max-height: 400px;
 `;
+
 // responsive version that makes the container occupy the full width of the screen if on mobile
 const GenerativeImageURLContainer = styled.div`
   background-color: rgba(0,0,0,0.7);
@@ -136,7 +138,7 @@ const GenerativeImageURLContainer = styled.div`
     transform: translate(0, -50%);
   }
 `;
-const ImageURLHeading = styled.h3`
+const ImageURLHeading = styled.h2`
 margin-top: 0px; 
 margin-bottom: 0px;
 `;

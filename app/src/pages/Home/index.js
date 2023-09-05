@@ -1,15 +1,19 @@
 import styled from "@emotion/styled"
 import Hero from "./Hero"
-import WhoWeAre, { ActivityUpdate } from "./Layouts"
+import WhoWeAre, { ActivityUpdate, DarkLayout } from "./Layouts"
 import Discord from './Discord'
 import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
 import TwitchSection from "./DreamSection"
+import { GenerativeImageFeed } from "./GenerativeImageFeed"
 
 export default function Solutions() {
   return <Style>
     <Hero />
     <TwitchSection />
+    <DarkLayout style={{height:"100vh"}}>
+      <GenerativeImageFeed />
+    </DarkLayout>
     <Discord />
     <ActivityUpdate />
     {/* <Dreamachine /> */}

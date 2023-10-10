@@ -26,7 +26,7 @@ const TwitchSection = props => {
     <Container>
       <Body>
         {/*  Heading */}
-        <h1 style={{fontFamily: Fonts.heading, fontSize: '30px', lineHeight: '60px', color: Colors.offblack, marginBottom: '0.5em'}}>Dreamachine</h1>
+        {/* <h1 style={{fontFamily: Fonts.heading, fontSize: '30px', lineHeight: '60px', color: Colors.offblack, marginBottom: '0.5em'}}>Dreamachine</h1> */}
         {/* Discuss, get help and <br/>
         contribute on Discord.
         <br/>

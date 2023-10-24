@@ -33,7 +33,10 @@ class Predictor:
 
     def _save_result(self, result):
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        output_path = f"out-{timestamp}.png"
+        output_dir = "output"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_path = os.path.join(output_dir, f"out-{timestamp}.png")
         result.save(output_path)
         return output_path
 

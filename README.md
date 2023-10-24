@@ -43,7 +43,7 @@ python main.py \
 You’ll see an output like this:
 
 ```sh
-Output image saved to: out-20231026-144506.png
+Output image saved to: output/out-20231026-144506.png
 Using seed: 48404
 100%|███████████████████████████| 4/4 [00:00<00:00,  5.54it/s]
 ```

@@ -41,12 +41,16 @@ def main():
     args = parse_args()
     predictor = Predictor()
 
-    try:
-        while True:
-            output_path = predictor.predict(args.prompt, args.width, args.height, args.steps, args.seed)
-            print(f"Output image saved to: {output_path}")
-    except KeyboardInterrupt:
-        print("\nStopped by user.")
+    if args.continuous:
+        try:
+            while True:
+                output_path = predictor.predict(args.prompt, args.width, args.height, args.steps, args.seed)
+                print(f"Output image saved to: {output_path}")
+        except KeyboardInterrupt:
+            print("\nStopped by user.")
+    else:
+        output_path = predictor.predict(args.prompt, args.width, args.height, args.steps, args.seed)
+        print(f"Output image saved to: {output_path}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate images based on text prompts.")
@@ -55,6 +59,7 @@ def parse_args():
     parser.add_argument("--height", type=int, default=512, help="The height of the generated image.")
     parser.add_argument("--steps", type=int, default=8, help="The number of inference steps.")
     parser.add_argument("--seed", type=int, default=None, help="Seed for random number generation.")
+    parser.add_argument("--continuous", action='store_true', help="Enable continuous generation.")
     return parser.parse_args()
 
 if __name__ == "__main__":

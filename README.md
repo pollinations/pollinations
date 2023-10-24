@@ -48,4 +48,13 @@ Using seed: 48404
 100%|███████████████████████████| 4/4 [00:00<00:00,  5.54it/s]
 ```
 
-That's it!
+## Options
+
+| Parameter     | Type  | Default | Description                                                   |
+|---------------|-------|---------|---------------------------------------------------------------|
+| prompt        | str   | N/A     | A text string for image generation.                           |
+| --width       | int   | 512     | The width of the generated image.                             |
+| --height      | int   | 512     | The height of the generated image.                            |
+| --steps       | int   | 8       | The number of inference steps.                                |
+| --seed        | int   | None    | Seed for random number generation.                            |
+| --continuous  | flag  | False   | Enable continuous generation.                                 |

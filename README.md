@@ -1,6 +1,6 @@
-# Run Latent Consistency Models locally
+# Run latent consistency models on your Mac
 
-Latent Consistency Models (LCMs) are based on Stable Diffusion, but they can generate images much faster, needing only 4 to 8 steps for a good image (compared to 25 to 50 steps). [Simian Luo et al](https://arxiv.org/abs/2310.04378) released the first Stable Diffusion distilled model. It’s distilled from the Dreamshaper fine-tune by incorporating classifier-free guidance into the model’s input.
+Latent consistency models (LCMs) are based on Stable Diffusion, but they can generate images much faster, needing only 4 to 8 steps for a good image (compared to 25 to 50 steps). [Simian Luo et al](https://arxiv.org/abs/2310.04378) released the first Stable Diffusion distilled model. It’s distilled from the Dreamshaper fine-tune by incorporating classifier-free guidance into the model’s input.
 
 You can [run Latent Consistency Models in the cloud on Replicate](https://replicate.com/luosiallen/latent-consistency-model), but it's also possible to run it locally.
 
@@ -37,7 +37,7 @@ The script will automatically download the [`SimianLuo/LCM_Dreamshaper_v7`](http
 ```sh
 python main.py \
   "a beautiful apple floating in outer space, like a planet" \
-  --steps 4 --width 768
+  --steps 4 --width 512 --height 512
 ```
 
 You’ll see an output like this:

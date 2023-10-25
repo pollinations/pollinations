@@ -6,7 +6,12 @@ You can [run Latent Consistency Models in the cloud on Replicate](https://replic
 
 ## Prerequisites
 
-You need Python 3.10 or above.
+You’ll need:
+
+- a Mac with an M1 or M2 chip
+- 16GB RAM or more
+- macOS 12.3 or higher
+- Python 3.10 or above
 
 ## Install
 

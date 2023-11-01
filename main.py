@@ -31,6 +31,19 @@ class Predictor:
 
         return self._save_result(result)
 
+    def predict_from_file(self, prompt_file: str, width: int, height: int, steps: int, seed: int = None, continuous: bool = False):
+        with open(prompt_file, 'r') as file:
+            prompts = file.readlines()
+
+        while True:
+            for prompt in prompts:
+                prompt = prompt.strip()
+                output_path = self.predict(prompt, width, height, steps, seed)
+                print(f"Output image saved for '{prompt}' to: {output_path}")
+
+            if not continuous:
+                return
+
     def _save_result(self, result):
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         output_dir = "output"
@@ -44,20 +57,16 @@ def main():
     args = parse_args()
     predictor = Predictor()
 
-    if args.continuous:
-        try:
-            while True:
-                output_path = predictor.predict(args.prompt, args.width, args.height, args.steps, args.seed)
-                print(f"Output image saved to: {output_path}")
-        except KeyboardInterrupt:
-            print("\nStopped by user.")
+    if args.prompts:
+        predictor.predict_from_file(args.prompts, args.width, args.height, args.steps, args.seed, args.continuous)
     else:
         output_path = predictor.predict(args.prompt, args.width, args.height, args.steps, args.seed)
         print(f"Output image saved to: {output_path}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate images based on text prompts.")
-    parser.add_argument("prompt", type=str, help="A single text prompt for image generation.")
+    parser.add_argument("prompt", type=str, help="A single text prompt for image generation.", nargs='?')
+    parser.add_argument("--prompts", type=str, help="A file containing text prompts for image generation, one per line.")
     parser.add_argument("--width", type=int, default=512, help="The width of the generated image.")
     parser.add_argument("--height", type=int, default=512, help="The height of the generated image.")
     parser.add_argument("--steps", type=int, default=8, help="The number of inference steps.")

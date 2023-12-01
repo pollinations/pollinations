@@ -10,7 +10,7 @@ import { GenerativeImageFeed } from "./GenerativeImageFeed"
 export default function Solutions() {
   return <Style>
     <Hero />
-    <TwitchSection />
+    {/* <TwitchSection /> */}
     <DarkLayout style={{height:"100vh"}}>
       <GenerativeImageFeed />
     </DarkLayout>

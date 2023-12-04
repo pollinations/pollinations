@@ -150,7 +150,7 @@ class Predictor:
 
     
 
-        max_batch_size = 16
+        max_batch_size = 32
         if model == "pixart":
             max_batch_size = 1
             # replace all non alpha numeric characters from prompts with spaces

@@ -2,7 +2,7 @@ import styled from '@emotion/styled';
 import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 import Button from '@material-ui/core/Button';
-import { Input, Tooltip } from '@material-ui/core';
+import { Input, Tooltip, Typography } from '@material-ui/core';
 
 export function GenerativeImageFeed() {
   const [image, setImage] = useState(null);
@@ -68,6 +68,10 @@ export function GenerativeImageFeed() {
     return () => clearInterval(interval);
   }, [imageQueue, setImage, setNextPrompt, setImageQueue, loading]);
 
+  const formatImagesGenerated = (num) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
+
   return (
     <div>
       <br /><br /><br /><br /><br />
@@ -83,7 +87,7 @@ export function GenerativeImageFeed() {
           Prompt: <b>{prompt}</b>
         </div>}
         <ServerLoadDisplay concurrentRequests={serverLoad} />
-        Generated #: <b>{imagesGenerated}</b><br />
+        Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
         <br />
         Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a><ParamsButton /> </b> <br />
         {/* links */}

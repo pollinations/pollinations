@@ -23,13 +23,14 @@ export function GenerativeImageFeed() {
         const data = JSON.parse(evt.data);
         setServerLoad(data["concurrentRequests"]);
         if (data["nsfw"])
+          console.log("Skipping NSFW content:", data["nsfw"], data)
           return;
-        // console.log("got message", data);
+
         if (data["imageURL"]) {
           setImagesGenerated(no => no + 1);
           const matureWord = isMature(data["prompt"]) && false;
           if (matureWord) {
-            console.log("skipping mature word:", matureWord, data["prompt"]);
+            console.log("Skipping mature word:", matureWord, data["prompt"]);
             return;
           }
           setImageQueue(prevQueue => [...prevQueue, data]);
@@ -43,7 +44,7 @@ export function GenerativeImageFeed() {
     // on error close and reopen
     eventSource.onerror = async () => {
       await new Promise(r => setTimeout(r, 1000));
-      console.log("event source error. closing and reopening");
+      console.log("Event source error. Closing and re-opening.");
       eventSource.close();
       eventSource = getEventSource();
     };
@@ -74,7 +75,7 @@ export function GenerativeImageFeed() {
         {image && <div style={{ wordBreak: "break-all" }}>
           <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
             setPrompt(shorten(nextPrompt));
-            console.log("loaded image. setting prompt to: ", nextPrompt);
+            console.log("Loaded image. Setting prompt to: ", nextPrompt);
           }} />
           <br />
           Prompt: <b>{prompt}</b>
@@ -94,6 +95,7 @@ export function GenerativeImageFeed() {
     </div>
   );
 }
+
 const PromptInput = () => {
   const [prompt, setPrompt] = useState("");
 
@@ -105,12 +107,14 @@ const PromptInput = () => {
     </div>
   </div>;
 };
+
 const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
 function ParamsButton() {
   const [showParams, setShowParams] = useState(false);
   return <Tooltip title="?width=[width]&height=[height]&seed=[seed]"><Button size="small" style={{ minWidth: "16px", display: "inline-block", fontSize: "90%" }} onClick={() => setShowParams(!showParams)}><span style={{ textTransform: "none" }}> {showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button></Tooltip>;
   // <Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button>;
 }
+
 function estimateGeneratedImages() {
   const launchDate = new Date("2023-06-12T00:00:00.000Z");
 
@@ -150,10 +154,12 @@ const GenerativeImageURLContainer = styled.div`
     transform: translate(0, -50%);
   }
 `;
+
 const ImageURLHeading = styled.h3`
 margin-top: 0px; 
 margin-bottom: 0px;
 `;
+
 const PlayerWrapper = styled.div`
 width: 100%;
 min-height: 100%;

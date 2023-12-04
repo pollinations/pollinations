@@ -1,5 +1,11 @@
-## 🌸 Pollinations
+<div id="header">
+  <img src="https://i.ibb.co/p049Y5S/86964862.png" width="50"/>   <img src="https://i.ibb.co/r6JZ336/sketch1700556567238.png" width="250">
+</div>
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/toolkitr/tkr/blob/main/LICENSE)
+[![Python Versions](https://img.shields.io/badge/python-%203.7+%20-blue)](https://www.python.org/downloads/)
+##
+## 🌸 [pollinations.ai](https://pollinations.ai/)
 Pollinations are an effort to make generative art more approachable. 
 - A frontend hosting a set of [curated notebooks](https://github.com/pollinations/hive) that allow creating and experimenting with generative art.
 - The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content

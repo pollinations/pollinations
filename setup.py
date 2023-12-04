@@ -2,8 +2,13 @@ import pathlib
 from setuptools import setup
 
 # Python version
-PYTHON_REQUIRED_MAJOR: int   = 3
-PYTHON_MINIMUM_MINOR:  int   = 7
+PYTHON_REQUIRED_MAJOR: int = 3
+PYTHON_MINIMUM_MINOR:  int = 7
+
+# Pollinations version
+POLLINATIONS_MAJOR:    int = 0
+POLLINATIONS_MINOR:    int = 1
+POLLINATIONS_PATCH:    int = 0
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent
@@ -14,7 +19,7 @@ README: str = (HERE / "README.md").read_text()
 # This call to setup() does all the work
 setup(
     name="pollinations",
-    version="0.1.0",
+    version=f"{POLLINATIONS_MAJOR}.{POLLINATIONS_MINOR}.{POLLINATIONS_PATCH}",
     description="Make Google Colab Notebooks available as a Servbice",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -28,8 +33,8 @@ setup(
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Artificial Intelligence"
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
+        f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}",
+        f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
     ],
     packages=["pollinations"],
     include_package_data=True,

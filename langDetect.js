@@ -6,7 +6,7 @@ export function detectEnglish(text) {
     return new Promise((resolve, reject) => {
         exec(`python langdetect.py "${text}"`, (err, stdout, stderr) => {
         if (err) {
-            console.log("ERROR", err);
+            console.error("ERROR", err);
             reject(err);
         }
         // console.log("stdout", stdout);

@@ -54,7 +54,7 @@ const requestListener = async function (req, res) {
   const activeQueueSize = activeQueues[ip]?.size;
 
   if (activeQueueSize > 0) {
-    console.log("ip: ", ip, "queue size", activeQueues[ip]?.size);  
+    console.error("ip: ", ip, "queue size", activeQueues[ip]?.size);  
   }
 
 
@@ -83,14 +83,14 @@ const requestListener = async function (req, res) {
 
 
   
-  // console.log("queue size", imageGenerationQueue.size)
+  // console.error("queue size", imageGenerationQueue.size)
     try {
      const bufferWithLegend = await createAndReturnImageCached(promptRaw, extraParams, res, req,  activeQueues[ip].size, activeQueues[ip]);    
-     // console.log(bufferWithLegend)
+     // console.error(bufferWithLegend)
      res.write(bufferWithLegend);
      res.end();
 
-      // console.log(bufferWithLegend)
+      // console.error(bufferWithLegend)
 
     } catch (e) {
       console.error(e);
@@ -114,9 +114,9 @@ const callWebUI = async (prompt, extraParams={}) => {
 
   const nsfwDivider = isMature(prompt) ? 2 : 1;
 
-  const steps = Math.floor(Math.max(5, Math.min(50, (30 - (concurrentRequests * 7)) / nsfwDivider)));
+  const steps = Math.floor(Math.max(8, Math.min(50, (30 - (concurrentRequests * 7)) / nsfwDivider)));
   
-  console.log("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
+  console.error("concurent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
   
   // const animal = prompt.toLowerCase().includes("black") ? "panda:1.3" : "gorilla:1.2";
   // const appendToPrompt = isMature(prompt) ? `. (${animal})` : "";
@@ -130,16 +130,16 @@ const callWebUI = async (prompt, extraParams={}) => {
     sendToFeedListeners({concurrentRequests, prompt, steps});
     
       const body = {
-          "prompt": prompt + " <lora:noiseoffset:0.6>  <lora:flat_color:0.2>  <lora:add_detail:0.4> ",//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
+          "prompt": prompt + " <lora:noiseoffset:0.2>  <lora:flat_color:0.1>  <lora:add_detail:0.2> ",//+" | key visual| intricate| highly detailed| precise lineart| vibrant| comprehensive cinematic",
           "steps": steps,
           "height": 384,
           "sampler_index": "Euler a",//"DPM++ SDE Karras",
-          "negative_prompt": "easynegative, cgi, doll, lowres, text, error, cropped, worst quality, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
-          "cfg_scale": steps < 15 ? 3.0 : 7.0,
+          "negative_prompt": "easynegative, cgi, doll, lowres, text, error, cropped, worst quality", //, low quality, jpeg artifacts, ugly, duplicate, morbid, mutilated, out of frame, extra fingers, mutated hands, poorly drawn hands, poorly drawn face, mutation, deformed, blurry, dehydrated, bad anatomy, bad proportions, extra limbs, cloned face, disfigured, gross proportions, malformed limbs, missing arms, missing legs, extra arms, extra legs, fused fingers, too many fingers, long neck, text, watermark, artist name, copyright name, name, necklace",
+          "cfg_scale": steps < 15 ? 2.0 : 3.0,
           ...safeParams
         }
     
-      console.log("calling steps", body.steps, "prompt",body.prompt);
+      console.error("calling steps", body.steps, "prompt",body.prompt);
       const response = await fetch('http://localhost:7860/sdapi/v1/txt2img', {
       method: 'POST',
       body: JSON.stringify(body),
@@ -199,11 +199,11 @@ const makeParamsSafe = ({width=512, height=384, seed, xl}) => {
 async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSize, enqueue) {
 
   if (ipQueueSize > 0) {
-    console.log("sleeping as long as the queue size");
+    console.error("sleeping as long as the queue size");
     //  (so e.g. if someone drops 30 images in parallel to pollinations we penalize that
     await sleep(2000 * ipQueueSize);
   } else
-    console.log("no queue size, no sleep", ipQueueSize);
+    console.error("no queue size, no sleep", ipQueueSize);
 
   return await enqueue.add(async () => {
     res.writeHead(200, { 'Content-Type': 'image/jpeg' });
@@ -217,16 +217,16 @@ async function createAndReturnImage(promptRaw, extraParams, res, req, ipQueueSiz
     const {concept, nsfw: isMature} = await nsfwCheck(buffer);
     
     const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
-    console.log("isMature", isMature, "concepts", isChild);
+    console.error("isMature", isMature, "concepts", isChild);
 
     // check for header add_header 'X-Lusti' 'true';
 
 
 
-    const logoPath =  (req.headers['x-lusti'] || extraParams["lusti"] || isMature) ? 'logo_lusti_small_black.png' : 'logo.png';
+    const logoPath =  (req.headers['x-lusti'] || extraParams["lusti"] || isMature) ? null : 'logo.png';
 
 
-    let bufferWithLegend = extraParams["nologo"] ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
+    let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
 
     // if (isChild && isMature) {
     //   // blur
@@ -267,7 +267,7 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath="logo.png") {
     exec(`convert -background none -gravity southeast -geometry +10+10  ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
 
       if (error) {
-        console.log(`error: ${error.message}`);
+        console.error(`error: ${error.message}`);
         reject(error);
         return;
       }
@@ -298,7 +298,7 @@ function blurImage(buffer, size=8) {
     exec(`convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`, (error, stdout, stderr) => {
 
       if (error) {
-        console.log(`error: ${error.message}`);
+        console.error(`error: ${error.message}`);
         reject(error);
         return;
       }

@@ -10,7 +10,7 @@ import fetch from 'node-fetch';
 
 export const hello = async (pathname) => {
   
-  console.log("path: ", pathname);
+  console.error("path: ", pathname);
 
   if (!pathname.startsWith("/prompt")) {
     return {
@@ -35,7 +35,7 @@ export const hello = async (pathname) => {
     num_interpolation_steps: 1,
   }, "pollinations/stable-diffusion-private")
 
-  console.log("Showing image: ", url);
+  console.error("Showing image: ", url);
   // await showImage(url);
 
   // finish()
@@ -46,7 +46,7 @@ export const hello = async (pathname) => {
   const buffer = await image.buffer();
 
 
-  console.log("finishing")
+  console.error("finishing")
 
   return {
     statusCode: 200,

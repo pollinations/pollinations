@@ -1,53 +1,62 @@
 import fs from 'fs';
 import crypto from 'crypto';
-// import memoize from 'lodash.memoize';
 
+// Function to generate a cache path
+const generateCachePath = (prompt, extraParams, saveFolder) => {
+  const sanitizedPrompt = prompt.replaceAll("/", "_").replaceAll(" ", "_")
+    .replaceAll("?", "_").replaceAll("!", "_").replaceAll(":", "_")
+    .replaceAll(";", "_").replaceAll("(", "_").replaceAll(")", "_")
+    .replaceAll("’", "_").replaceAll("“", "_").replaceAll("”", "_")
+    .replaceAll("‘", "_").replaceAll("…", "_").replaceAll("—", "_")
+    .slice(0, 50)
+    .toLowerCase();
+
+  const hash = crypto.createHash('md5').update(prompt + JSON.stringify(extraParams)).digest("hex").slice(0, 4);
+  return `${saveFolder}/${sanitizedPrompt}_${hash}.jpg`;
+};
+
+// Modified cacheGeneratedImages function
 export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stableDiffusion_cache") => {
-  // create folder if it doesn't exist
-
   if (!fs.existsSync(saveFolder)) {
     fs.mkdirSync(saveFolder);
   }
 
-
-  const cachedFunc =  async  (prompt, extraParams, ...args) => {
-    // const sanitizedPrompt = prompt.replace(/[^a-zA-Z0-9]/g, "_");
-    // allow foreign language characters
-    const sanitizedPrompt = prompt.replaceAll("/", "_").replaceAll(" ", "_")
-      .replaceAll("?", "_").replaceAll("!", "_").replaceAll(":", "_")
-      .replaceAll(";", "_").replaceAll("(", "_").replaceAll(")", "_")
-      .replaceAll("’", "_").replaceAll("“", "_").replaceAll("”", "_")
-      .replaceAll("‘", "_").replaceAll("…", "_").replaceAll("—", "_")
-      .slice(0, 50)
-      .toLowerCase();
-    
-    // calculate 4 byte hash of prompt
-
-    const hash = crypto.createHash('md5').update(prompt + JSON.stringify(extraParams)).digest("hex").slice(0, 4);
-
-    // create a filename from the prompt
-    const path = saveFolder + "/" + sanitizedPrompt+"_" + hash + ".jpg";
-    // if file exists return it
+  const cachedFunc = async (prompt, extraParams, ...args) => {
+    const path = generateCachePath(prompt, extraParams, saveFolder);
     if (fs.existsSync(path)) {
-      console.log("file exists, returning it", path);
-      // read file
+      console.error("file exists, returning it", path);
       return fs.readFileSync(path);
     }
-
-    // generate image
     const buffer = await imageGeneratorFn(prompt, extraParams, ...args);
-
-    // write buffer to file
-    console.log("writing file", path);
+    console.error("writing file", path);
     fs.writeFileSync(path, buffer);
-
     return buffer;
   };
 
-  return  memoize(cachedFunc, (prompt, extraParams) => prompt + "-" + JSON.stringify(extraParams));
-
+  return memoize(cachedFunc, (prompt, extraParams) => prompt + "-" + JSON.stringify(extraParams));
 };
 
+// Function to check if an image is cached
+export const isImageCached = (prompt, extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
+  const path = generateCachePath(prompt, extraParams, saveFolder);
+  return fs.existsSync(path);
+};
+
+
+// Function to retrieve a cached image
+export const getCachedImage = (prompt="", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
+  const path = generateCachePath(prompt, extraParams, saveFolder);
+  if (fs.existsSync(path)) {
+    return fs.readFileSync(path);
+  }
+  return null; // Or handle this case as per your application's logic
+};
+
+export const cacheImage = (prompt, extraParams, buffer, saveFolder = "/tmp/stableDiffusion_cache") => {
+  
+  const path = generateCachePath(prompt, extraParams, saveFolder);
+  fs.writeFileSync(path, buffer);
+}
 
 const memoize = (fn, getKey) => {
   const cache = {};
@@ -66,6 +75,3 @@ const memoize = (fn, getKey) => {
   };
 };
 
-
-// bash one-liner to rename all .png files in a folder to .jpg
-// for f in *.png; do mv -- "$f" "${f%.png}.jpg"; done

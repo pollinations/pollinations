@@ -10,9 +10,9 @@ import { splitEvery } from 'ramda';
 import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 
-const BATCH_SIZE = 16; // Number of requests per batch
+const BATCH_SIZE = 32; // Number of requests per batch
 
-const concurrency = 4; // Number of concurrent requests per bucket key
+const concurrency = 3; // Number of concurrent requests per bucket key
 
 const generalImageQueue = new PQueue({ concurrency});
 let currentBatches = [];
@@ -106,7 +106,7 @@ const requestListener = async function (req, res) {
     .join('-');
 
 
-  const memCacheKey = `${bucketKey}-${prompt}`;
+  const memCacheKey = `${bucketKey}-${prompt}-${JSON.stringify(extraParams)}`;
 
   // Initialize the stats for this bucket key if they don't exist yet
   if (!bucketKeyStats[bucketKey]) {

@@ -15,7 +15,7 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompts, extraParams = {}) => {
 
   const concurrentRequests = prompts.length;
-  const steps = 3; //Math.round(Math.max(2, (10 - concurrentRequests)));
+  const steps = 4; //Math.round(Math.max(2, (10 - concurrentRequests)));
   console.log("concurrent requests", concurrentRequests, "steps", steps, "prompts", prompts, "extraParams", extraParams);
 
 

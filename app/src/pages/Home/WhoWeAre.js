@@ -8,7 +8,7 @@ import { Link } from "react-router-dom"
 let WhoWeAreContent = () => <>
 
       <h2>
-        We area team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i> 
+        We are a team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i> 
         profoundly involved <br/> <i><b> in the AI ecosystem.</b></i>
       </h2>
       <p>

@@ -56,12 +56,12 @@ const processBatches = async () => {
       const chunks = splitEvery(BATCH_SIZE, jobs);
       const chunk = chunks.shift();
       if (chunk) {
-        generalImageQueue.add(async () => processChunk(chunk, bucketKey, extraParams));
         batch.jobs = batch.jobs.slice(chunk.length);
         if (batch.jobs.length === 0) {
           // Remove the processed batch from the array
           currentBatches.splice(batchIndex, 1);
         }
+        generalImageQueue.add(async () => processChunk(chunk, bucketKey, extraParams));
       }
     }
   }

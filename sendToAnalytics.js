@@ -7,17 +7,26 @@ const apiSecret = process.env.GA_API_SECRET;
 
 export async function sendToAnalytics(request, name, metadata) {
     const referrer = request.headers.referer || request.headers.referrer;
-
-    // robustly determine a unique client id from the request
-    const client_id = request.headers["x-real-ip"] || request.headers['x-forwarded-for'] || request.connection.remoteAddress;    
+    const userAgent = request.headers['user-agent'];
+    const language = request.headers['accept-language'];
+    const clientIP = request.headers["x-real-ip"] || request.headers['x-forwarded-for'] || request.connection.remoteAddress;
+    
+    // Extracting query parameters
+    const queryParams = request.query; 
 
     const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
         method: "POST",
         body: JSON.stringify({
-        client_id,
+        clientIP,
         "events": [{
             "name": name,
-            "params": {...metadata, referrer }
+            "params": { 
+                ...metadata, 
+                referrer,
+                userAgent,
+                language,
+                queryParams
+            }
         }]
         })
     });

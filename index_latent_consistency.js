@@ -12,7 +12,7 @@ import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 
 const BATCH_SIZE = 32; // Number of requests per batch
 
-const concurrency = 3; // Number of concurrent requests per bucket key
+const concurrency = 2; // Number of concurrent requests per bucket key
 
 const generalImageQueue = new PQueue({ concurrency});
 let currentBatches = [];
@@ -31,7 +31,7 @@ let bucketKeyStats = {};
 
 const processChunk = async (chunk, bucketKey, extraParams) => {
   try {
-    const buffersWithLegend = await createAndReturnImageCached(chunk.map(job => job.prompt), extraParams);
+    const buffersWithLegend = await createAndReturnImageCached(chunk.map(job => job.prompt), extraParams, {concurrentRequests: countJobs(true)});
     chunk.forEach((job, index) => {
       job.callback(null, buffersWithLegend[index]);
       cacheImage(job.prompt, extraParams, buffersWithLegend[index].buffer);
@@ -68,10 +68,20 @@ const processBatches = async () => {
   setTimeout(processBatches, 25);
 }
 
-const countJobs = () => {
-  return currentBatches.reduce((acc, batch) => acc + batch.jobs.length, 0);
+let jobCounts = [];
+
+const countJobs = (average = false) => {
+  const currentCount = currentBatches.reduce((acc, batch) => acc + batch.jobs.length, 0);
+  if (average) {
+    jobCounts.push(currentCount);
+    if (jobCounts.length > 5) {
+      jobCounts.shift();
+    }
+    return jobCounts.reduce((a, b) => a + b) / jobCounts.length;
+  }
+  return currentCount;
 }
-  
+
 let memCache = {};
 
 const requestListener = async function (req, res) {
@@ -105,6 +115,8 @@ const requestListener = async function (req, res) {
     .map(key => extraParams[key])
     .join('-');
 
+  const concurrentRequests = countJobs();
+  sendToAnalytics(req, "imageRequested", {promptRaw:prompt, concurrentRequests});
 
   const memCacheKey = `${bucketKey}-${prompt}-${JSON.stringify(extraParams)}`;
 
@@ -176,7 +188,8 @@ const requestListener = async function (req, res) {
         console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
         
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        sendToFeedListeners({ concurrentRequests: countJobs(), imageURL, prompt, originalPrompt: prompt, nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
+        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt: prompt, nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
+        sendToAnalytics(req, "imageGenerated", { promptRaw:prompt, concurrentRequests });
 
 
       };

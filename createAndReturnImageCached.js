@@ -12,10 +12,10 @@ import FormData from 'form-data';
 const SERVER_URL = 'http://localhost:5555/predict';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
-const callWebUI = async (prompts, extraParams = {}) => {
+const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
 
-  const concurrentRequests = prompts.length;
-  const steps = 2; //Math.round(Math.max(2, (10 - concurrentRequests)));
+
+  const steps = Math.round(Math.max(1, (6 - (concurrentRequests))));
   console.log("concurrent requests", concurrentRequests, "steps", steps, "prompts", prompts, "extraParams", extraParams);
 
 
@@ -99,7 +99,7 @@ const nsfwCheck = async (buffer) => {
   const json = await res.json();
   return json;
 };
-const maxPixels = 640 * 640;
+const maxPixels = 768 * 768;
 const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) => {
 
 
@@ -120,9 +120,9 @@ const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) =>
   return { width, height, seed, model };
 };
 
-export async function createAndReturnImageCached(prompts, extraParams) {
+export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
   // filter all prompts that contain  "content:"
-  const concurrentRequests = prompts.length;
+
   prompts = await Promise.all(prompts.map(async promptRaw => {
     if (promptRaw.includes("content:")) {
       promptRaw = promptRaw.replace("content:", "");

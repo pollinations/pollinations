@@ -9,6 +9,7 @@ export function GenerativeImageFeed() {
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
+  const [imageQueue, setImageQueue] = useState([]);
 
   // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
   // define 2023-06-09
@@ -31,13 +32,11 @@ export function GenerativeImageFeed() {
             console.log("skipping mature word:", matureWord, data["prompt"]);
             return;
           }
-          setImage(data);
-          setNextPrompt(data["originalPrompt"]);
+          setImageQueue(prevQueue => [...prevQueue, data]);
         }
       };
       return imageFeedSource;
     };
-
 
     let eventSource = getEventSource();
 
@@ -52,7 +51,20 @@ export function GenerativeImageFeed() {
     return () => {
       eventSource.close();
     };
-  }, [setImage, setServerLoad]);
+  }, [setImageQueue, setServerLoad]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (imageQueue.length > 0) {
+        const nextImage = imageQueue.shift();
+        setImage(nextImage);
+        setNextPrompt(nextImage["originalPrompt"]);
+        setImageQueue(imageQueue);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [imageQueue, setImage, setNextPrompt, setImageQueue]);
 
   return (
     <div>

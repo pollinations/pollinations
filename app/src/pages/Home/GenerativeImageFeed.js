@@ -10,6 +10,7 @@ export function GenerativeImageFeed() {
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
   const [imageQueue, setImageQueue] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
   // define 2023-06-09
@@ -55,16 +56,17 @@ export function GenerativeImageFeed() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (imageQueue.length > 0) {
+      if (imageQueue.length > 0 && !loading) {
         const nextImage = imageQueue.shift();
         setImage(nextImage);
         setNextPrompt(nextImage["originalPrompt"]);
         setImageQueue(imageQueue);
+        setLoading(true);
       }
-    }, 1000);
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [imageQueue, setImage, setNextPrompt, setImageQueue]);
+  }, [imageQueue, setImage, setNextPrompt, setImageQueue, loading]);
 
   return (
     <div>
@@ -75,6 +77,7 @@ export function GenerativeImageFeed() {
           <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
             setPrompt(shorten(nextPrompt));
             console.log("loaded image. setting prompt to: ", nextPrompt);
+            setLoading(false);
           }} />
           <br />
           Prompt: <b>{prompt}</b>
@@ -111,10 +114,14 @@ function ParamsButton() {
   return <Tooltip title="?width=[width]&height=[height]&seed=[seed]"><Button size="small" style={{ minWidth: "16px", display: "inline-block", fontSize: "90%" }} onClick={() => setShowParams(!showParams)}><span style={{ textTransform: "none" }}> {showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button></Tooltip>;
   // <Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button>;
 }
-function estimateGeneratedImages() {
-  const launchDate = new Date("2023-06-12T00:00:00.000Z");
 
-  const imagesGeneratedCalculated = 1326520 + Math.floor((Date.now() - launchDate) / 2000);
+function estimateGeneratedImages() {
+  const launchDate = 1701718083442;
+  const now = Date.now();
+  const differenceInSeconds = (now - launchDate) / 1000;
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 3);
+
+  const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
 // create a small ascii visualization of server load

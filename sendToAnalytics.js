@@ -17,7 +17,7 @@ export async function sendToAnalytics(request, name, metadata) {
     const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
         method: "POST",
         body: JSON.stringify({
-        clientIP,
+        client_id:clientIP,
         "events": [{
             "name": name,
             "params": { 

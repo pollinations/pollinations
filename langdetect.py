@@ -8,5 +8,5 @@ parser.add_argument('text', metavar='text', type=str, nargs='+',
 args = parser.parse_args()
 
 text = ' '.join(args.text)
-result = detect(text=text, low_memory=False)
+result = detect(text=text, low_memory=True)
 print(result["lang"])

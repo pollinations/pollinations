@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import tempfile from 'tempfile';
 import fs from 'fs';
 import { sendToFeedListeners } from './feedListeners.js';
-import { translateIfNecessary } from './translateIfNecessary.js';
+import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { isMature } from "./lib/mature.js";
 import FormData from 'form-data';
@@ -15,7 +15,7 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
 
 
-  const steps = Math.round(Math.max(1, (6 - (concurrentRequests))));
+  const steps = Math.round(Math.max(1, (6 - (concurrentRequests/2))));
   console.log("concurrent requests", concurrentRequests, "steps", steps, "prompts", prompts, "extraParams", extraParams);
 
 
@@ -39,7 +39,6 @@ const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
     // Start timing for fetch
     const fetch_start_time = Date.now();
     // Send the request to the Flask server
-    console.log("fetch_startfetch")
     const response = await fetch(SERVER_URL, {
       method: 'POST',
       headers: {
@@ -48,7 +47,6 @@ const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
       body: JSON.stringify(body),
     });
     const fetch_end_time = Date.now();
-    console.log("fetch_endfetch")
     // Calculate the time spent in fetch
     const fetch_duration = fetch_end_time - fetch_start_time;
 
@@ -95,18 +93,44 @@ const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
 const nsfwCheck = async (buffer) => {
   const form = new FormData();
   form.append('file', buffer, { filename: 'image.jpg' });
+  const nsfwCheckStartTime = Date.now();
   const res = await fetch('http://localhost:10000/check', { method: 'POST', body: form });
+  const nsfwCheckEndTime = Date.now();
+  console.log(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
   const json = await res.json();
   return json;
 };
-const maxPixels = 768 * 768;
-const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) => {
+
+const idealSideLength = {
+  turbo: 512, 
+  pixart: 1024, 
+  deliberate: 768,
+};
+
+
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo" }) => {
+
+  const sideLength = idealSideLength[model] || idealSideLength["turbo"];
+
+  const maxPixels = sideLength * sideLength;
+
+  // if width or height is not an integer set to sideLength
+
+  if (!Number.isInteger(parseInt(width))) {
+    width = sideLength;
+  }
+  
+  if (!Number.isInteger(parseInt(height))) {
+    height = sideLength;
+  }
 
 
   // if seed is not an integer set to a random integer
   if (seed && !Number.isInteger(parseInt(seed))) {
     seed = Math.floor(Math.random() * 1000000);
   }
+
+  // const maxPixels = maxPixelsAll[model] || maxPixelsAll["turbo"];
 
   // if we exaggerate with the dimensions, cool things down a  little
   // maintaining aspect ratio
@@ -115,31 +139,20 @@ const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) =>
     width = Math.floor(width * ratio);
     height = Math.floor(height * ratio);
   }
-
-
+  
   return { width, height, seed, model };
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
-  // filter all prompts that contain  "content:"
-
-  prompts = await Promise.all(prompts.map(async promptRaw => {
-    if (promptRaw.includes("content:")) {
-      promptRaw = promptRaw.replace("content:", "");
-    }
-    const promptAnyLanguage = urldecode(promptRaw);
-
-    const prompt = await translateIfNecessary(promptAnyLanguage);
-
-   return promptRaw;
-  }));
 
       const buffers = await callWebUI(prompts, extraParams, concurrentRequests);
 
       const buffersWithLegends = await Promise.all(buffers.map(async buffer => {
-        const { concept, nsfw: isMature } = await nsfwCheck(buffer);
+        // const { concept, nsfw: isMature } = await nsfwCheck(buffer);
 
-        const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
+        // const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
+        const isMature = false;
+        const isChild = false;
         console.error("isMature", isMature, "concepts", isChild);
 
         const logoPath = isMature ? null : 'logo.png';

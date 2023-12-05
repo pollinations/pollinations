@@ -1,18 +1,20 @@
+import urldecode from 'urldecode';
 import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
-import { createAndReturnImageCached } from './createAndReturnImageCached.js';
+import { createAndReturnImageCached, makeParamsSafe } from './createAndReturnImageCached.js';
 import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
 import awaitSleep from 'await-sleep';
 import { splitEvery } from 'ramda';
 import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
+import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 
-const BATCH_SIZE = 32; // Number of requests per batch
+const BATCH_SIZE = 10; // Number of requests per batch
 
-const concurrency = 2; // Number of concurrent requests per bucket key
+const concurrency = 3; // Number of concurrent requests per bucket key
 
 const generalImageQueue = new PQueue({ concurrency});
 let currentBatches = [];
@@ -46,7 +48,7 @@ const processChunk = async (chunk, bucketKey, extraParams) => {
 
 const processBatches = async () => {
   if (generalImageQueue.pending < concurrency) {
-    console.log("batch processor became free.pending", generalImageQueue.pending,"concurrency", concurrency);
+    // console.log("batch processor became free.pending", generalImageQueue.pending,"concurrency", concurrency);
 
     // Determine if we should use the first batch (90% of cases) or the second batch (10% of cases)
     const batchIndex = Math.random() < 0.8 ? 0 : 1;
@@ -65,7 +67,7 @@ const processBatches = async () => {
       }
     }
   }
-  setTimeout(processBatches, 25);
+  setTimeout(processBatches, 100);
 }
 
 let jobCounts = [];
@@ -77,7 +79,7 @@ const countJobs = (average = false) => {
     if (jobCounts.length > 5) {
       jobCounts.shift();
     }
-    return jobCounts.reduce((a, b) => a + b) / jobCounts.length;
+    return Math.round(jobCounts.reduce((a, b) => a + b) / jobCounts.length);
   }
   return currentCount;
 }
@@ -99,7 +101,7 @@ const requestListener = async function (req, res) {
     return;
   }
 
-  const prompt = pathname.split("/prompt/")[1];
+  let prompt = pathname.split("/prompt/")[1];
 
   if (!prompt) {
     res.writeHead(404);
@@ -107,16 +109,21 @@ const requestListener = async function (req, res) {
     return;
   }
 
+  prompt = await normalizeAndTranslatePrompt(prompt);
+  
   const extraParams = {...query};
 
 
+  const safeParams = makeParamsSafe(extraParams);
+
   const bucketKey = ["model","width","height"]
-    .filter(key => extraParams[key])
-    .map(key => extraParams[key])
+    .filter(key => safeParams[key])
+    .map(key => safeParams[key])
     .join('-');
 
   const concurrentRequests = countJobs();
-  sendToAnalytics(req, "imageRequested", {promptRaw:prompt, concurrentRequests});
+  const analyticsMetadata = { promptRaw: prompt, concurrentRequests, bucketKey, model: safeParams["model"] };
+  sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
   const memCacheKey = `${bucketKey}-${prompt}-${JSON.stringify(extraParams)}`;
 
@@ -133,7 +140,7 @@ const requestListener = async function (req, res) {
     // Filter out timestamps older than 60 seconds
     imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
     // Log the number of images returned in the last minute
-    console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
+    // console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
     return;
   }
 
@@ -185,11 +192,11 @@ const requestListener = async function (req, res) {
         // Filter out timestamps older than 60 seconds
         imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
         // Log the number of images returned in the last minute
-        console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
+        // console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
         
         const imageURL = `https://image.pollinations.ai${req.url}`;
         sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt: prompt, nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
-        sendToAnalytics(req, "imageGenerated", { promptRaw:prompt, concurrentRequests });
+        sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 
 
       };
@@ -217,7 +224,6 @@ const requestListener = async function (req, res) {
   // Filter out timestamps older than 60 seconds
   requestTimestamps = requestTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
   // Log the number of image requests in the last minute
-  console.log(`Image requests in the last minute: ${requestTimestamps.length}`);
   printQueueStatus();
 };
 
@@ -260,8 +266,20 @@ const printQueueStatus = () => {
 
 
 const server = http.createServer(requestListener);
-server.listen(16384);
+server.listen(16385);
 processBatches();
 
 
 
+const normalizeAndTranslatePrompt = async (promptRaw) => {
+  promptRaw = sanitizeString(promptRaw);
+  
+  if (promptRaw.includes("content:")) {
+    promptRaw = promptRaw.replace("content:", "");
+  }
+  const promptAnyLanguage = urldecode(promptRaw);
+
+  const prompt = await translateIfNecessary(promptAnyLanguage);
+
+  return prompt;
+};

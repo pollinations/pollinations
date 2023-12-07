@@ -132,6 +132,7 @@ function estimateGeneratedImages() {
 // very high is 5 concurrent requests
 // use some UTF-8 characters to make it look nicer
 function ServerLoadDisplay({ concurrentRequests }) {
+  concurrentRequests = Math.round(concurrentRequests/2);
   const max = 5;
   const load = Math.min(max, concurrentRequests);
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 1);

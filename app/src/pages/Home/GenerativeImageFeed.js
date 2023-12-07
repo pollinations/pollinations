@@ -2,7 +2,7 @@ import styled from '@emotion/styled';
 import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 import Button from '@material-ui/core/Button';
-import { Input, Tooltip } from '@material-ui/core';
+import { Input, Tooltip, Typography } from '@material-ui/core';
 
 export function GenerativeImageFeed() {
   const [image, setImage] = useState(null);
@@ -10,6 +10,7 @@ export function GenerativeImageFeed() {
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
   const [imageQueue, setImageQueue] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
   // define 2023-06-09
@@ -56,16 +57,21 @@ export function GenerativeImageFeed() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (imageQueue.length > 0) {
+      if (imageQueue.length > 0 && !loading) {
         const nextImage = imageQueue.shift();
         setImage(nextImage);
         setNextPrompt(nextImage["originalPrompt"]);
         setImageQueue(imageQueue);
+        setLoading(true);
       }
-    }, 1000);
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [imageQueue, setImage, setNextPrompt, setImageQueue]);
+  }, [imageQueue, setImage, setNextPrompt, setImageQueue, loading]);
+
+  const formatImagesGenerated = (num) => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  };
 
   return (
     <div>
@@ -75,13 +81,14 @@ export function GenerativeImageFeed() {
         {image && <div style={{ wordBreak: "break-all" }}>
           <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
             setPrompt(shorten(nextPrompt));
-            console.log("Loaded image. Setting prompt to: ", nextPrompt);
+            console.log("loaded image. setting prompt to: ", nextPrompt);
+            setLoading(false);
           }} />
           <br />
           Prompt: <b>{prompt}</b>
         </div>}
         <ServerLoadDisplay concurrentRequests={serverLoad} />
-        Generated #: <b>{imagesGenerated}</b><br />
+        Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
         <br />
         Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a><ParamsButton /> </b> <br />
         {/* links */}
@@ -116,15 +123,19 @@ function ParamsButton() {
 }
 
 function estimateGeneratedImages() {
-  const launchDate = new Date("2023-06-12T00:00:00.000Z");
+  const launchDate = 1701718083442;
+  const now = Date.now();
+  const differenceInSeconds = (now - launchDate) / 1000;
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 3);
 
-  const imagesGeneratedCalculated = 1326520 + Math.floor((Date.now() - launchDate) / 2000);
+  const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
 // create a small ascii visualization of server load
 // very high is 5 concurrent requests
 // use some UTF-8 characters to make it look nicer
 function ServerLoadDisplay({ concurrentRequests }) {
+  concurrentRequests = Math.round(concurrentRequests/2);
   const max = 5;
   const load = Math.min(max, concurrentRequests);
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 1);

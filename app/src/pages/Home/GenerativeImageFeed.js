@@ -9,11 +9,10 @@ export function GenerativeImageFeed() {
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
-  const [imageQueue, setImageQueue] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // const [imageQueue, setImageQueue] = useState([]);
   const loadedImages = useRef([]);
-  const loadingImages = useRef([]);
-  console.log("Image queue:", imageQueue);
+  const queuedImages = useRef([]);
+  // console.log("Image queue:", imageQueue);
 
   // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
   // define 2023-06-09
@@ -38,16 +37,7 @@ export function GenerativeImageFeed() {
             console.log("Skipping mature word:", matureWord, data["prompt"]);
             return;
           }
-          setImageQueue(prevQueue => [...prevQueue, data]);
-          if (loadingImages.current.length < 5) {
-            const img = new Image();
-            img.src = data["imageURL"];
-            img.onload = () => {
-              loadedImages.current.push(data);
-              loadingImages.current = loadingImages.current.filter(image => image !== data);
-            };
-            loadingImages.current.push(data);
-          }
+          queuedImages.current.push(data);
         }
       };
       return imageFeedSource;
@@ -66,21 +56,31 @@ export function GenerativeImageFeed() {
     return () => {
       eventSource.close();
     };
-  }, [setImageQueue, setServerLoad]);
+  }, [setServerLoad]);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (loadedImages.current.length > 0 && !loading) {
+      if (loadedImages.current.length > 0) {
         const nextImage = loadedImages.current.shift();
         setImage(nextImage);
         setNextPrompt(nextImage["originalPrompt"]);
-        setImageQueue(imageQueue.filter(img => img !== nextImage));
-        setLoading(true);
       }
-    }, 1000);
+
+      if (loadedImages.current.length < 5) {
+        if (queuedImages.current.length > 0) {
+          const data = queuedImages.current.shift();
+          const img = new Image();
+          img.src = data["imageURL"];
+          img.onload = () => {
+            loadedImages.current.push(data);
+          };
+        };
+      }
+    }, 700);
 
     return () => clearInterval(interval);
-  }, [imageQueue, setImage, setNextPrompt, setImageQueue, loading]);
+  }, [setImage, setNextPrompt]);
 
   const formatImagesGenerated = (num) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -95,7 +95,6 @@ export function GenerativeImageFeed() {
           <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
             setPrompt(shorten(nextPrompt));
             console.log("loaded image. setting prompt to: ", nextPrompt);
-            setLoading(false);
           }} />
           <br />
           Prompt: <b>{prompt}</b>

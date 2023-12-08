@@ -7,7 +7,10 @@ from diffusers import (
     StableDiffusionPipeline,
     EulerAncestralDiscreteScheduler,
     PixArtAlphaPipeline,
-    ConsistencyDecoderVAE
+    ConsistencyDecoderVAE,
+    LCMScheduler,
+    DPMSolverSDEScheduler,
+    StableDiffusionXLPipeline
 )
 from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
@@ -17,6 +20,9 @@ import threading
 from transformers import T5EncoderModel
 import torch
 import re
+from instaflow.pipeline_rf import RectifiedFlowPipeline
+from safety_checker.censor import check_safety
+
 
 MODEL_NAME = "PixArt-alpha/PixArt-LCM-XL-2-1024-MS"
 VAE_NAME = "openai/consistency-decoder"
@@ -29,13 +35,18 @@ lock = threading.Lock()
 
 class Predictor:
     def __init__(self):
-
+        # self.instaflow_pipe = self._load_instaflow_model()
         self.turbo_pipe = self._load_turbo_model()
         self.deliberate_pipe = self._load_deliberate_model()
         self.pixart_pipe = self._load_pixart()
+        self.dreamshaper_pipe = self._load_dreamshaper_model()
         print("CUDA version:", torch.version.cuda)
         print("PyTorch version:", torch.__version__)
 
+    def _load_instaflow_model(self):
+        pipe = RectifiedFlowPipeline.from_pretrained("XCLIU/instaflow_0_9B_from_sd_1_5", torch_dtype=torch.float16) 
+        return pipe.to("cuda") 
+    
     def _load_deliberate_model(self):
         """Loads and compiles the Deliberate model."""
         print("Loading Deliberate model...")
@@ -47,7 +58,8 @@ class Predictor:
         pipe.safety_checker = None
         print("Deliberate model loaded.")
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        pipe.to("cuda")
+        pipe.enable_model_cpu_offload()
+        # pipe.to("cuda")
         return pipe
         return self._compile_pipeline(pipe)
 
@@ -60,8 +72,26 @@ class Predictor:
             variant="fp16"
         )
         print("Turbo model loaded.")
+        # pipeline.scheduler = LCMScheduler.from_config(pipeline.scheduler.config)
+        # pipeline.enable_model_cpu_offload()
         return pipeline.to("cuda")
         return self._compile_pipeline(pipeline.to("cuda"))
+
+    def _load_dreamshaper_model(self):
+        # DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
+        # models/dreamshaperXL_turboDpmppSDEKarras.safetensors 
+        # use StableDiffusionXLPipeline
+        print("Loading DreamShaper model...")
+        pipe = StableDiffusionXLPipeline.from_single_file(
+            "models/dreamshaperXL_turboDpmppSDEKarras.safetensors", 
+            torch_dtype=torch.float16, 
+            safety_checker=None
+        ) 
+        pipe.safety_checker = None
+        print("DreamShaper model loaded.")
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
+        pipe.enable_model_cpu_offload()
+        return pipe
 
     def _load_pixart(self):
         #only 1024-MS version is supported for now
@@ -101,8 +131,11 @@ class Predictor:
             # cache_dir=MODEL_CACHE
         )
         # speed-up T5
-        pipe.text_encoder.to_bettertransformer()
-        return pipe.to("cuda")
+        # pipe.text_encoder.to_bettertransformer()
+        pipe.enable_model_cpu_offload()
+        vae.enable_model_cpu_offload()
+
+        return pipe
 
     def _compile_pipeline(self, pipe):
         """Compiles the pipeline using xformers and Triton if available."""
@@ -140,37 +173,53 @@ class Predictor:
 
         print(f"Running batch with model: {model}, width: {width}, height: {height}, number of prompts: {len(prompts)}, steps: {steps}")
 
-        # print prompts in one line each
-        print("Prompts:")
-        for prompt in prompts:
-            print(prompt)
 
-        # make all prompts maximum 350 characters
-        prompts = [prompt[:350] for prompt in prompts]
-
-    
+        # make all prompts maximum 250 characters
+        prompts = [prompt[:250] for prompt in prompts]
 
         max_batch_size = 32
         if model == "pixart":
-            max_batch_size = 1
+            max_batch_size = 2
             # replace all non alpha numeric characters from prompts with spaces
             prompts = [re.sub(r'([^\s\w]|_)+', ' ', prompt) for prompt in prompts]
         if model == "deliberate":
-            max_batch_size = 1
+            max_batch_size = 2
+        if model == "dreamshaper":
+            max_batch_size = 2
         # Process in chunks of 8
+        predict_duration = 0
         for i in range(0, len(prompts),max_batch_size):
             chunked_prompts = prompts[i:i+max_batch_size]
             print("running on prompts", chunked_prompts)
             with lock:
-                if model == "deliberate":
-                    batch_results = self.deliberate_pipe(prompt=chunked_prompts, guidance_scale=3.5, num_inference_steps=24, width=width, height=height).images
-                elif model == "pixart":
-                    batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=20, width=width, height=height).images
-                else:  # turbo model
-                    batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
+                predict_start_time = time.time()
+                try:
+                    if model == "deliberate" and self.deliberate_pipe:
+                        batch_results = self.deliberate_pipe(prompt=chunked_prompts, guidance_scale=3.5, num_inference_steps=24, width=width, height=height).images
+                    elif model == "pixart" and self.pixart_pipe:
+                        batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=4, width=width, height=height).images
+                    elif model == "instaflow":
+                        batch_results = self.instaflow_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
+                    elif model == "dreamshaper":
+                        batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=5, width=width, height=height).images
+                    else:  # turbo model
+                        batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
+                except Exception as e:
+                    print("Exception occurred:", e)
+                    # print stack
+                    import traceback
+                    traceback.print_exc()
+                    # quit the process
+                    os._exit(1)
+
+                concepts, has_nsfw_concepts = check_safety(batch_results, 0.0)
+                predict_end_time = time.time()
+
+                # Calculate the time spent in predict_batch
+                predict_duration += predict_end_time - predict_start_time
 
             # Save results and add to output
-            for result_image, prompt in zip(batch_results, chunked_prompts):
+            for i, (result_image, prompt) in enumerate(zip(batch_results, chunked_prompts)):
                 output_path = self._save_result(result_image)
                 results.append({
                     "output_path": output_path,
@@ -178,11 +227,13 @@ class Predictor:
                     "width": width,
                     "height": height,
                     "steps": steps,
-                    "prompt": prompt
+                    "prompt": prompt,
+                    "has_nsfw_concept": has_nsfw_concepts[i],
+                    "concept": concepts[i]
                 })
                 print(f"Saved result for model: {model}, output path: {output_path}")
 
-        return results
+        return results, predict_duration
 
     def _validate_params(self, data):
         default_params = {"width": 512, "height": 512, "steps": 4, "seed": None, "model": "turbo"}
@@ -244,12 +295,8 @@ def predict_endpoint():
     data.update(validated_params)
     
     # Start timing for predict_batch
-    predict_start_time = time.time()
-    response = predictor.predict_batch(data)
-    predict_end_time = time.time()
 
-    # Calculate the time spent in predict_batch
-    predict_duration = predict_end_time - predict_start_time
+    response, predict_duration = predictor.predict_batch(data)
 
     accumulated_predict_duration += predict_duration
 

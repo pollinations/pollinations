@@ -4,17 +4,18 @@ import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
-import { createAndReturnImageCached, makeParamsSafe } from './createAndReturnImageCached.js';
+import { createAndReturnImageCached, makeParamsSafe } from './createAndReturnImages.js';
 import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
 import awaitSleep from 'await-sleep';
 import { splitEvery } from 'ramda';
 import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
+import { getClosesPrompt } from './promptEmbedding.js';
 
-const BATCH_SIZE = 10; // Number of requests per batch
+const BATCH_SIZE = 8; // Number of requests per batch
 
-const concurrency = 3; // Number of concurrent requests per bucket key
+const concurrency = 2; // Number of concurrent requests per bucket key
 
 const generalImageQueue = new PQueue({ concurrency});
 let currentBatches = [];
@@ -101,7 +102,7 @@ const requestListener = async function (req, res) {
     return;
   }
 
-  let prompt = pathname.split("/prompt/")[1];
+  const originalPrompt = pathname.split("/prompt/")[1];
 
   if (!prompt) {
     res.writeHead(404);
@@ -109,10 +110,9 @@ const requestListener = async function (req, res) {
     return;
   }
 
-  prompt = await normalizeAndTranslatePrompt(prompt);
+  let prompt = await normalizeAndTranslatePrompt(originalPrompt, req);
   
   const extraParams = {...query};
-
 
   const safeParams = makeParamsSafe(extraParams);
 
@@ -266,20 +266,42 @@ const printQueueStatus = () => {
 
 
 const server = http.createServer(requestListener);
-server.listen(16385);
+server.listen(process.env.PORT || 16384);
 processBatches();
 
 
 
-const normalizeAndTranslatePrompt = async (promptRaw) => {
+const normalizeAndTranslatePrompt = async (promptRaw, req) => {
+  // first 200 characters are used for the prompt
+  promptRaw = promptRaw.substring(0,250);
+  // 
   promptRaw = sanitizeString(promptRaw);
   
   if (promptRaw.includes("content:")) {
     promptRaw = promptRaw.replace("content:", "");
   }
-  const promptAnyLanguage = urldecode(promptRaw);
+  let prompt = sanitizeString(urldecode(promptRaw));
 
-  const prompt = await translateIfNecessary(promptAnyLanguage);
+  // check from the request headers if the user most likely speaks english (value starts with en)
+  const englishLikely = req.headers["accept-language"]?.startsWith("en");
+  
+  if (!englishLikely) {
+    const startTime = Date.now();
+    prompt = await translateIfNecessary(prompt);
+    const endTime = Date.now();
+    console.log(`Translation time: ${endTime - startTime}ms`);
+  }
 
-  return prompt;
+  const finalPrompt = prompt || promptRaw;
+
+  // if prompt is less than 70 characters get closes prompt from prompt embeddings
+
+  if (finalPrompt.length < 70) {
+    const closestPrompt = await getClosesPrompt(finalPrompt);
+    console.log("got closest prompt", closestPrompt)
+    return closestPrompt;
+  }
+
+  return finalPrompt;
 };
+

@@ -3,36 +3,40 @@ import { exec } from 'child_process';
 import fetch from 'node-fetch';
 import tempfile from 'tempfile';
 import fs from 'fs';
-import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
 import { sendToFeedListeners } from './feedListeners.js';
-import { translateIfNecessary } from './translateIfNecessary.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { isMature } from "./lib/mature.js";
 import FormData from 'form-data';
 
 const SERVER_URL = 'http://localhost:5555/predict';
-const callWebUI = async (prompt, extraParams = {}, concurrentRequests) => {
+let total_start_time = Date.now();
+let accumulated_fetch_duration = 0;
+const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
 
 
-  const nsfwDivider = isMature(prompt) ? 2 : 1;
-  const steps = Math.round(Math.max(2, (10 - concurrentRequests) / nsfwDivider));
-  console.log("concurrent requests", concurrentRequests, "steps", steps, "prompt", prompt, "extraParams", extraParams);
+  const steps = Math.min(4,Math.round(Math.max(1, (6 - (concurrentRequests/4)))));
+  console.log("concurrent requests", concurrentRequests, "steps", steps, "prompts", prompts, "extraParams", extraParams);
 
-  let imagePath = null;
+
+  let images = [];
   try {
     const safeParams = makeParamsSafe(extraParams);
 
-    sendToFeedListeners({ concurrentRequests, prompt, steps });
+    prompts.forEach(prompt => {
+      sendToFeedListeners({ concurrentRequests, prompt, steps });
+    });
 
     const body = {
-      "prompt": prompt,
+      "prompts": prompts,
       "steps": steps,
       "height": 384,
       ...safeParams
     };
 
-    console.log("calling steps", body.steps, "prompt", body.prompt);
+    console.log("calling prompt", body.prompts);
 
+    // Start timing for fetch
+    const fetch_start_time = Date.now();
     // Send the request to the Flask server
     const response = await fetch(SERVER_URL, {
       method: 'POST',
@@ -41,6 +45,18 @@ const callWebUI = async (prompt, extraParams = {}, concurrentRequests) => {
       },
       body: JSON.stringify(body),
     });
+    const fetch_end_time = Date.now();
+    
+    // Calculate the time spent in fetch
+    const fetch_duration = fetch_end_time - fetch_start_time;
+    accumulated_fetch_duration += fetch_duration;
+
+    // Calculate the total time the app has been running
+    const total_time = Date.now() - total_start_time;
+
+    // Calculate and print the percentage of time spent in fetch
+    const fetch_percentage = (accumulated_fetch_duration / total_time) * 100;
+    console.log(`Fetch time percentage: ${fetch_percentage}%`);
 
     if (!response.ok) {
       throw new Error(`Server responded with ${response.status}`);
@@ -49,19 +65,25 @@ const callWebUI = async (prompt, extraParams = {}, concurrentRequests) => {
     const jsonResponse = await response.json();
     console.log("jsonResponse", jsonResponse);
     // quit the process
-    imagePath = jsonResponse.output_path;
-
+    images = jsonResponse;
   } catch (e) {
     throw e;
   }
 
 
   // load from imagePath to buffer using readFileSync
-  console.log("reading image from path", imagePath);
-  const buffer = fs.readFileSync(imagePath);
+
+  const buffers = images.map(({output_path, ...rest}) => {
+    console.log("reading image from path", output_path);
+    const buffer = fs.readFileSync(output_path);
+    // delete imagePath
+    setTimeout(() => fs.unlink(output_path, () => null), 10000);
+    return { buffer, ...rest };
+  })
+
   // delete imagePath
-  setTimeout(() => fs.unlink(imagePath, () => null), 10000);
-  return buffer;
+  
+  return buffers;
 };
 // NSFW API
 // # curl command
@@ -70,18 +92,45 @@ const callWebUI = async (prompt, extraParams = {}, concurrentRequests) => {
 const nsfwCheck = async (buffer) => {
   const form = new FormData();
   form.append('file', buffer, { filename: 'image.jpg' });
+  const nsfwCheckStartTime = Date.now();
   const res = await fetch('http://localhost:10000/check', { method: 'POST', body: form });
+  const nsfwCheckEndTime = Date.now();
+  console.log(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
   const json = await res.json();
   return json;
 };
-const maxPixels = 640 * 640;
-const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) => {
+
+const idealSideLength = {
+  turbo: 512, 
+  pixart: 1024, 
+  deliberate: 768,
+  dreamshaper: 800,
+};
+
+
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo" }) => {
+
+  const sideLength = idealSideLength[model] || idealSideLength["turbo"];
+
+  const maxPixels = sideLength * sideLength;
+
+  // if width or height is not an integer set to sideLength
+
+  if (!Number.isInteger(parseInt(width))) {
+    width = sideLength;
+  }
+  
+  if (!Number.isInteger(parseInt(height))) {
+    height = sideLength;
+  }
 
 
   // if seed is not an integer set to a random integer
   if (seed && !Number.isInteger(parseInt(seed))) {
     seed = Math.floor(Math.random() * 1000000);
   }
+
+  // const maxPixels = maxPixelsAll[model] || maxPixelsAll["turbo"];
 
   // if we exaggerate with the dimensions, cool things down a  little
   // maintaining aspect ratio
@@ -90,65 +139,31 @@ const makeParamsSafe = ({ width = 512, height = 512, seed, model = "turbo" }) =>
     width = Math.floor(width * ratio);
     height = Math.floor(height * ratio);
   }
-
-
+  
   return { width, height, seed, model };
 };
 
-export async function createAndReturnImageCached(promptRaw, extraParams,concurrentRequests, res, req) {
-  // filter all prompts that contain  "content:"
+export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
 
-  if (promptRaw.includes("content:")) {
-    // res.writeHead(404);
-    // res.end('404: Not Found');
-    // throw new Error("prompt contains content:");
-    promptRaw = promptRaw.replace("content:", "");
-  }
+      const buffers = await callWebUI(prompts, extraParams, concurrentRequests);
 
-  // if (ipQueueSize > 0) {
-  //   console.error("sleeping as long as the queue size");
-  //   //  (so e.g. if someone drops 30 images in parallel to pollinations we penalize that
-  //   await sleep(2000);
-  // } else
-  //   console.error("no queue size, no sleep", ipQueueSize);
-    const result = await (async () => {
-      res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+      // console.log("buffers", buffers);
+      const buffersWithLegends = await Promise.all(buffers.map(async ({buffer, has_nsfw_concept: isMature, concept}) => {
+        // const { concept, nsfw: isMature } = await nsfwCheck(buffer);
 
-      const promptAnyLanguage = urldecode(promptRaw);
+        const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
 
-      const prompt = await translateIfNecessary(promptAnyLanguage);
+        console.error("isMature", isMature, "concepts", isChild);
 
-      const buffer = await callWebUI(prompt, extraParams, concurrentRequests);
+        const logoPath = isMature ? null : 'logo.png';
 
-      const { concept, nsfw: isMature } = await nsfwCheck(buffer);
+        let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
 
-      const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
-      console.error("isMature", isMature, "concepts", isChild);
-
-      // check for header add_header 'X-Lusti' 'true';
-      // const logoPath =  (req.headers['x-lusti'] || extraParams["lusti"] || isMature) ? 'logo_lusti_small_black.png' : 'logo.png';
-      const logoPath = (req.headers['x-lusti'] || extraParams["lusti"] || isMature) ? null : 'logo.png';
-
-      let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
-
-      // if (isChild && isMature) {
-      //   // blur
-      //   bufferWithLegend = await blurImage(bufferWithLegend, 8);
-      // }
-      // get current url from request
-      const imageURL = `https://image.pollinations.ai${req.url}`;
-
-      sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt: promptAnyLanguage, nsfw: isMature, isChild, model: extraParams["model"] }, { saveAsLastState: true });
+        return { buffer:bufferWithLegend, isChild, isMature };
+      }));
 
 
-      sendToAnalytics(req, "imageGenerated", { promptRaw, concurrentRequests });
-
-      // res.write(bufferWithLegend);
-      // res.end();
-      return bufferWithLegend;
-    })();
-
-    return result;
+    return buffersWithLegends;
 }
 // imagemagick command line command to composite the logo on top of the image
 // convert -background none -gravity southeast -geometry +10+10 logo.png -composite image.jpg image.jpg

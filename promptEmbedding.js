@@ -10,9 +10,32 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const prompts = ['"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting","analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, stained, highly detailed, found footage","anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed","cinematic {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, moody, epic, gorgeous, film grain, grainy","comic {prompt} . graphic illustration, comic art, graphic novel art, vibrant, highly detailed","play-doh style {prompt} . sculpture, clay art, centered composition, Claymation","concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed","breathtaking {prompt} . award-winning, professional, highly detailed","ethereal fantasy concept art of  {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy","isometric style {prompt} . vibrant, beautiful, crisp, detailed, ultra detailed, intricate","line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics","low-poly style {prompt} . low-poly game art, polygon mesh, jagged, blocky, wireframe edges, centered composition","neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern, magenta highlights, dark purple shadows, high contrast, cinematic, ultra detailed, intricate, professional","origami style {prompt} . paper art, pleated paper, folded, origami art, pleats, cut and fold, centered composition","cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed","pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics","texture {prompt} top down close-up"',
-"cinematic still {prompt} . emotional, harmonious, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy","cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed","anime artwork {prompt} . anime style, key visual, vibrant, studio anime,  highly detailed","manga style {prompt} . vibrant, high-energy, detailed, iconic, Japanese comic style","concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed","pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics","ethereal fantasy concept art of  {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy","neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern, magenta highlights, dark purple shadows, high contrast, cinematic, ultra detailed, intricate, professional","professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting"
-];
+const prompts = [
+"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting",
+"analog film photo {prompt} . faded film, desaturated, 35mm photo, grainy, vignette, vintage, Kodachrome, Lomography, found footage",
+"anime artwork {prompt} . anime style, key visual, vibrant, studio anime, highly detailed",
+"cinematic {prompt} . shallow depth of field, vignette, highly detailed, high budget, bokeh, moody, epic, gorgeous, film grain, grainy",
+"comic {prompt} . graphic illustration, comic art, graphic novel art, vibrant, highly detailed",
+"play-doh style {prompt} . sculpture, clay art, centered composition, Claymation",
+"concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed",
+"breathtaking {prompt} . award-winning, professional, highly detailed",
+"ethereal fantasy concept art of  {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy",
+"isometric style {prompt} . vibrant, beautiful, crisp, detailed, ultra detailed, intricate",
+"line art drawing {prompt} . professional, sleek, modern, minimalist, graphic, line art, vector graphics",
+"low-poly style {prompt} . low-poly game art, polygon mesh, jagged, blocky, wireframe edges, centered composition",
+"neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern",
+"origami style {prompt} . paper art, pleated paper, folded, origami art, pleats, cut and fold, centered composition",
+"cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed",
+"pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics","texture {prompt} top down close-up",
+"cinematic still {prompt} . emotional, harmonious, vignette, highly detailed, high budget, bokeh, cinemascope, moody, epic, gorgeous, film grain, grainy",
+"cinematic photo {prompt} . 35mm photograph, film, bokeh, professional, 4k, highly detailed",
+"anime artwork {prompt} . anime style, key visual, vibrant, studio anime,  highly detailed",
+"manga style {prompt} . vibrant, high-energy, detailed, iconic, Japanese comic style",
+"concept art {prompt} . digital artwork, illustrative, painterly, matte painting, highly detailed",
+"pixel-art {prompt} . low-res, blocky, pixel art style, 8-bit graphics",
+"ethereal fantasy concept art of  {prompt} . magnificent, celestial, ethereal, painterly, epic, majestic, magical, fantasy art, cover art, dreamy",
+"neonpunk style {prompt} . cyberpunk, vaporwave, neon, vibes, vibrant, stunningly beautiful, crisp, detailed, sleek, ultramodern, magenta highlights, dark purple shadows, high contrast, cinematic, ultra detailed, intricate, professional",
+"professional 3d model {prompt} . octane render, highly detailed, volumetric, dramatic lighting"];
 // Embeddings file path
 const embeddingsFilePath = "./embeddings.json";
 

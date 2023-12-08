@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 import Button from '@material-ui/core/Button';
 import { Input, Tooltip, Typography } from '@material-ui/core';
@@ -11,9 +11,6 @@ export function GenerativeImageFeed() {
   const [serverLoad, setServerLoad] = useState(0);
   const [imageQueue, setImageQueue] = useState([]);
   const [loading, setLoading] = useState(false);
-  const loadedImages = useRef([]);
-  const loadingImages = useRef([]);
-  console.log("Image queue:", imageQueue);
 
   // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
   // define 2023-06-09
@@ -26,10 +23,9 @@ export function GenerativeImageFeed() {
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
         setServerLoad(data["concurrentRequests"]);
-        if (data["nsfw"]) {
+        if (data["nsfw"])
           console.log("Skipping NSFW content:", data["nsfw"], data)
           return;
-        }
 
         if (data["imageURL"]) {
           setImagesGenerated(no => no + 1);
@@ -39,15 +35,6 @@ export function GenerativeImageFeed() {
             return;
           }
           setImageQueue(prevQueue => [...prevQueue, data]);
-          if (loadingImages.current.length < 5) {
-            const img = new Image();
-            img.src = data["imageURL"];
-            img.onload = () => {
-              loadedImages.current.push(data);
-              loadingImages.current = loadingImages.current.filter(image => image !== data);
-            };
-            loadingImages.current.push(data);
-          }
         }
       };
       return imageFeedSource;
@@ -70,14 +57,14 @@ export function GenerativeImageFeed() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (loadedImages.current.length > 0 && !loading) {
-        const nextImage = loadedImages.current.shift();
+      if (imageQueue.length > 0 && !loading) {
+        const nextImage = imageQueue.shift();
         setImage(nextImage);
         setNextPrompt(nextImage["originalPrompt"]);
-        setImageQueue(imageQueue.filter(img => img !== nextImage));
+        setImageQueue(imageQueue);
         setLoading(true);
       }
-    }, 1000);
+    }, 50);
 
     return () => clearInterval(interval);
   }, [imageQueue, setImage, setNextPrompt, setImageQueue, loading]);

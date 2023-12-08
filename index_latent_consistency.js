@@ -104,7 +104,7 @@ const requestListener = async function (req, res) {
 
   const originalPrompt = pathname.split("/prompt/")[1];
 
-  if (!prompt) {
+  if (!originalPrompt) {
     res.writeHead(404);
     res.end('404: Not Found');
     return;
@@ -195,7 +195,7 @@ const requestListener = async function (req, res) {
         // console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
         
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt: prompt, nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
+        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
         sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 
 
@@ -273,6 +273,7 @@ processBatches();
 
 const normalizeAndTranslatePrompt = async (promptRaw, req) => {
   // first 200 characters are used for the prompt
+  promptRaw = urldecode(promptRaw);
   promptRaw = promptRaw.substring(0,250);
   // 
   promptRaw = sanitizeString(promptRaw);
@@ -280,7 +281,7 @@ const normalizeAndTranslatePrompt = async (promptRaw, req) => {
   if (promptRaw.includes("content:")) {
     promptRaw = promptRaw.replace("content:", "");
   }
-  let prompt = sanitizeString(urldecode(promptRaw));
+  let prompt = promptRaw;
 
   // check from the request headers if the user most likely speaks english (value starts with en)
   const englishLikely = req.headers["accept-language"]?.startsWith("en");

@@ -17,7 +17,7 @@ const BATCH_SIZE = 8; // Number of requests per batch
 
 const concurrency = 2; // Number of concurrent requests per bucket key
 
-const generalImageQueue = new PQueue({ concurrency});
+const generalImageQueue = new PQueue({ concurrency });
 let currentBatches = [];
 
 const queueFullImages = [readFileSync("./queuefull1.png"), readFileSync("./queuefull2.png"), readFileSync("./queuefull3.png")];
@@ -36,24 +36,24 @@ const processChunk = async (chunk, bucketKey, extraParams) => {
   try {
     const buffersWithLegend = await createAndReturnImageCached(chunk.map(job => job.prompt), extraParams, {concurrentRequests: countJobs(true)});
     chunk.forEach((job, index) => {
-      job.callback(null, buffersWithLegend[index]);
-      cacheImage(job.prompt, extraParams, buffersWithLegend[index].buffer);
+      job.timingInfo.push({ step: 'Start processing chunk', timestamp: Date.now() });
+      job.callback(null, buffersWithLegend[index], job.timingInfo);
+      cacheImage(job.originalPrompt, extraParams, buffersWithLegend[index].buffer);
       // Increment the count of images returned for this bucket key
       bucketKeyStats[bucketKey].returned++;
+      job.timingInfo.push({ step: 'End processing chunk', timestamp: Date.now() });
     });
   } catch (e) {
     console.error(e);
-    chunk.forEach(job => job.callback(e)); // Error callback
+    chunk.forEach(job => job.callback(e, null, job.timingInfo)); // Error callback
   }
 };
 
 const processBatches = async () => {
-  if (generalImageQueue.pending < concurrency) {
-    // console.log("batch processor became free.pending", generalImageQueue.pending,"concurrency", concurrency);
-
-    // Determine if we should use the first batch (90% of cases) or the second batch (10% of cases)
+  const processingPromises = [];
+  while (generalImageQueue.size + generalImageQueue.pending < concurrency) {
     const batchIndex = Math.random() < 0.8 ? 0 : 1;
-    const batch = currentBatches[batchIndex];
+    const batch = currentBatches[batchIndex % currentBatches.length];
     if (batch) {
       const { bucketKey, jobs, extraParams } = batch;
       const chunks = splitEvery(BATCH_SIZE, jobs);
@@ -61,14 +61,20 @@ const processBatches = async () => {
       if (chunk) {
         batch.jobs = batch.jobs.slice(chunk.length);
         if (batch.jobs.length === 0) {
-          // Remove the processed batch from the array
           currentBatches.splice(batchIndex, 1);
         }
-        generalImageQueue.add(async () => processChunk(chunk, bucketKey, extraParams));
+        processingPromises.push(generalImageQueue.add(() => processChunk(chunk, bucketKey, extraParams)));
       }
     }
+    if (processingPromises.length >= concurrency) {
+      await Promise.all(processingPromises);
+      processingPromises.length = 0; // Clear the array
+    }
+    await awaitSleep(100);
   }
-  setTimeout(processBatches, 100);
+  if (processingPromises.length > 0) {
+    await Promise.all(processingPromises); // Ensure all remaining promises are settled
+  }
 }
 
 let jobCounts = [];
@@ -110,8 +116,6 @@ const requestListener = async function (req, res) {
     return;
   }
 
-  let prompt = await normalizeAndTranslatePrompt(originalPrompt, req);
-  
   const extraParams = {...query};
 
   const safeParams = makeParamsSafe(extraParams);
@@ -122,10 +126,10 @@ const requestListener = async function (req, res) {
     .join('-');
 
   const concurrentRequests = countJobs();
-  const analyticsMetadata = { promptRaw: prompt, concurrentRequests, bucketKey, model: safeParams["model"] };
+  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests, bucketKey, model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const memCacheKey = `${bucketKey}-${prompt}-${JSON.stringify(extraParams)}`;
+  const memCacheKey = `${bucketKey}-${originalPrompt}-${JSON.stringify(extraParams)}`;
 
   // Initialize the stats for this bucket key if they don't exist yet
   if (!bucketKeyStats[bucketKey]) {
@@ -135,27 +139,21 @@ const requestListener = async function (req, res) {
   if (memCache[memCacheKey]) {
     res.write(await memCache[memCacheKey]);
     res.end();
-    // Add current timestamp to imageReturnTimestamps array
     imageReturnTimestamps.push(Date.now());
-    // Filter out timestamps older than 60 seconds
     imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
-    // Log the number of images returned in the last minute
-    // console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
     return;
   }
 
-  if (await isImageCached(prompt, extraParams)) {
-    const cachedImage = await getCachedImage(prompt, extraParams);
+  if (await isImageCached(originalPrompt, extraParams)) {
+    const cachedImage = await getCachedImage(originalPrompt, extraParams);
     res.write(cachedImage);
     res.end();
     return;
   }
 
-  // Increment the count of images requested for this bucket key
   bucketKeyStats[bucketKey].requested++;
 
   if (countJobs() > 100) {
-    // return a random queue full image
     const queueFullImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
     res.writeHead(200, { 'Content-Type': 'image/png' });
     res.write(queueFullImage);
@@ -165,19 +163,26 @@ const requestListener = async function (req, res) {
 
   const ip = req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
-  // we want to add a sleep if there was already a request from this ip
   if (!ipPromises[ip]) {
     ipPromises[ip] = Promise.resolve();
   }
 
+  const timingInfo = [{ step: 'Request received', timestamp: Date.now() }];
+
   memCache[memCacheKey] = new Promise(async (resolve, reject) => {
 
     ipPromises[ip] = ipPromises[ip].then(async () => {
-      // await awaitSleep(1000);
-    
+      timingInfo.push({ step: 'Start processing IP promise', timestamp: Date.now() });
+      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo);
+
+      if (!prompt) {
+        res.writeHead(500);
+        res.end('500: Internal Server Error');
+        return;
+      }
       console.error("prompt",prompt, "bucketKey", bucketKey);
 
-      const callback = (error, bufferAndMaturity) => {
+      const callback = (error, bufferAndMaturity, timingInfo) => {
         if (error) {
           res.writeHead(500);
           res.end('500: Internal Server Error');
@@ -187,43 +192,42 @@ const requestListener = async function (req, res) {
         res.write(bufferAndMaturity.buffer);
         resolve(bufferAndMaturity.buffer);
         res.end();
-        // Add current timestamp to imageReturnTimestamps array
         imageReturnTimestamps.push(Date.now());
-        // Filter out timestamps older than 60 seconds
         imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
-        // Log the number of images returned in the last minute
-        // console.log(`Images returned in the last minute: ${imageReturnTimestamps.length}`);
         
+        timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+
+        const requestReceivedTime = timingInfo[0].timestamp;
+        timingInfo = timingInfo.map(info => ({
+          ...info,
+          timestamp: info.timestamp - requestReceivedTime
+        }));
+        console.log('Timing Info:', timingInfo);
+
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"] }, { saveAsLastState: true });
+        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"], timingInfo }, { saveAsLastState: true });
         sendToAnalytics(req, "imageGenerated", analyticsMetadata);
-
-
       };
 
       const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
 
       if (!existingBatch) {
-        currentBatches.push({ bucketKey, jobs: [{prompt, callback}], extraParams });
+        currentBatches.push({ bucketKey, jobs: [{prompt, callback, originalPrompt, timingInfo}], extraParams });
         return;
       }
 
-      // make a sanity check to be sure a job with the same prompt doesn't already exist in the queue
       const existingJob = existingBatch.jobs.find(job => job.prompt === prompt);
       if (existingJob) {
         console.error("job already exists in queue", prompt);
         return;
       }
 
-      existingBatch.jobs.push({prompt, callback});
+      existingBatch.jobs.push({prompt, originalPrompt, callback, timingInfo});
     })
   });
 
-  // Add current timestamp to requestTimestamps array
   requestTimestamps.push(Date.now());
-  // Filter out timestamps older than 60 seconds
   requestTimestamps = requestTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
-  // Log the number of image requests in the last minute
   printQueueStatus();
 };
 
@@ -271,7 +275,8 @@ processBatches();
 
 
 
-const normalizeAndTranslatePrompt = async (promptRaw, req) => {
+const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo) => {
+  timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
   // first 200 characters are used for the prompt
   promptRaw = urldecode(promptRaw);
   promptRaw = promptRaw.substring(0,250);
@@ -279,7 +284,9 @@ const normalizeAndTranslatePrompt = async (promptRaw, req) => {
   promptRaw = sanitizeString(promptRaw);
   
   if (promptRaw.includes("content:")) {
-    promptRaw = promptRaw.replace("content:", "");
+    // promptRaw = promptRaw.replace("content:", "");
+    console.log("content: detected in prompt, returning null");
+    return null;
   }
   let prompt = promptRaw;
 
@@ -296,13 +303,19 @@ const normalizeAndTranslatePrompt = async (promptRaw, req) => {
   const finalPrompt = prompt || promptRaw;
 
   // if prompt is less than 70 characters get closes prompt from prompt embeddings
-
   if (finalPrompt.length < 70) {
-    const closestPrompt = await getClosesPrompt(finalPrompt);
-    console.log("got closest prompt", closestPrompt)
-    return closestPrompt;
+    try {
+      const closestPrompt = await getClosesPrompt(finalPrompt);
+      console.log("got closest prompt", closestPrompt)
+      timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
+      return closestPrompt;
+    } catch(e) {
+      console.error("error calculating embeddings", e.message);
+    } 
   }
 
+  timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
   return finalPrompt;
 };
+
 

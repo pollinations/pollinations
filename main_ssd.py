@@ -10,9 +10,10 @@ from diffusers import (
     ConsistencyDecoderVAE,
     LCMScheduler,
     DPMSolverSDEScheduler,
-    StableDiffusionXLPipeline
+    StableDiffusionXLPipeline,
+    StableDiffusionImg2ImgPipeline
 )
-from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
+# from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
 from performance_metrics import add_timestamp, get_average_generation_duration, calculate_throughput, get_timestamps
 import uuid
@@ -50,7 +51,7 @@ class Predictor:
     def _load_deliberate_model(self):
         """Loads and compiles the Deliberate model."""
         print("Loading Deliberate model...")
-        pipe = StableDiffusionPipeline.from_single_file(
+        pipe = StableDiffusionImg2ImgPipeline.from_single_file(
             "models/Deliberate_v4.safetensors", 
             torch_dtype=torch.float16, 
             safety_checker=None
@@ -58,9 +59,9 @@ class Predictor:
         pipe.safety_checker = None
         print("Deliberate model loaded.")
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        pipe.enable_model_cpu_offload()
+        # pipe.enable_model_cpu_offload()
         # pipe.to("cuda")
-        return pipe
+        return pipe.to("cuda")
         return self._compile_pipeline(pipe)
 
     def _load_turbo_model(self):
@@ -184,6 +185,7 @@ class Predictor:
             prompts = [re.sub(r'([^\s\w]|_)+', ' ', prompt) for prompt in prompts]
         if model == "deliberate":
             max_batch_size = 2
+            model = "dreamshaper"
         if model == "dreamshaper":
             max_batch_size = 2
         # Process in chunks of 8
@@ -204,6 +206,9 @@ class Predictor:
                         batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=5, width=width, height=height).images
                     else:  # turbo model
                         batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
+                        # if steps > 2:
+                        #     # now refine with delibate pipeline. strength = 0.1. steps=20. pass image=batch_results
+                        #     batch_results = self.deliberate_pipe(prompt=chunked_prompts, guidance_scale=2.0,strength=0.2, num_inference_steps=16, width=width, height=height, image=batch_results).images
                 except Exception as e:
                     print("Exception occurred:", e)
                     # print stack
@@ -311,9 +316,66 @@ def predict_endpoint():
     print("Returning response for one request.")
     return jsonify(response)
 
+# import clip
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+# clip_model, _ = clip.load("ViT-B/16", device=device)
+# @app.route('/embeddings', methods=['POST'])
+# def embeddings_endpoint():
+#     data = request.json
 
+#     prompts = data["prompts"]
+
+#     embeddings = []
+#     start_time = time.time()
+#     embeddings = []
+#     start_time = time.time()
+#     for prompt in prompts:
+#         token = clip.tokenize([prompt]).to(device)
+#         with torch.no_grad():
+#             embedding = clip_model.encode_text(token).cpu().numpy().tolist()
+#             embeddings.append(embedding[0])
+#     end_time = time.time()
+#     print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
+#     print("Returning embeddings for one request.", len(embeddings))
+#     return jsonify(embeddings)
+
+import uform
+
+model = uform.get_model('unum-cloud/uform-vl-english') # Just English
+
+# text_data = model.preprocess_text(text)
+# text_embedding = model.encode_text(text_data)
+
+@app.route('/embeddings', methods=['POST'])
+def embeddings_endpoint():
+    data = request.json
+
+    prompts = data["prompts"]
+
+
+    embeddings = []
+    start_time = time.time()
+    print("got prompts", prompts)
+    with torch.no_grad():
+        for prompt in prompts:
+            text_data = model.preprocess_text(prompt)
+            text_embedding = model.encode_text(text_data)
+            # remove first dimension
+            text_embedding = text_embedding[0]
+            # print("text_embedding:", text_embedding.shape)
+            embeddings.append(text_embedding.cpu().numpy().tolist())
+    end_time = time.time()
+    # print("embeddings:", embeddings)
+    # embeddings = embeddings.cpu().numpy().tolist()
+    print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
+    print("Returning embeddings for one request.", len(embeddings))
+    return jsonify(embeddings)
+
+
+import os
 if __name__ == "__main__":
     print("Starting Flask app...")
-    app.run(debug=False, host="0.0.0.0", port=5555)
+    # from env PORT or 5555
+    app.run(debug=False, host="0.0.0.0", port=os.environ.get("PORT", 5555))
 
 

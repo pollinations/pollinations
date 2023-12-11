@@ -102,7 +102,7 @@ export function GenerativeImageFeed() {
         <ServerLoadDisplay concurrentRequests={serverLoad} />
         Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
         <br />
-        Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://image.pollinations.ai/prompt/[prompt]</a><ParamsButton /> </b> <br />
+        Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
         {/* links */}
         Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
         {/* input field */}

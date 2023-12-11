@@ -1,5 +1,5 @@
 /n/* / 200
 /c/* / 200
 /* / 200
-/prompt/* https://image.pollinations.ai/prompt/:splat 301!
-/p/* https://image.pollinations.ai/prompt/:splat 301!
+https://pollinations.ai/prompt/* https://image.pollinations.ai/prompt/:splat 301!
+https://pollinations.ai/p/* https://image.pollinations.ai/prompt/:splat 301!

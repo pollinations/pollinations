@@ -25,7 +25,7 @@ def resource(deprecated: bool = False):
 # samples
 # BANNED_WORDS
 
-samples = [
+samples: list = [
     "Cat",
     "Sunset",
     "Tree",

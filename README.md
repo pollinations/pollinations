@@ -12,8 +12,9 @@ Pollinations are an effort to make generative art more approachable.
 - Pollinations are run on Google Colab at the moment (for the free cloud GPUs)
 
 [Instructions](docs/instructions.md) on using Pollinations.AI.
+<details>
+  <summary>🐍 Python Package</summary>
 
-## 🐍 Python Package
 ```python
 # Usage Example
 
@@ -37,15 +38,10 @@ print(image.url)
 ```
 ![image](https://github.com/flowa-ai/pollinations-patch/assets/152752280/448342b5-013f-4df9-a5a5-6d5f1f196cac)
 
+</details>
 
+## �👩‍💻 Development (outdated)
 
-## 🔗 Links
-
-- Frontend: https://pollinations.ai/
-- Instructions: [docs/instructions.md](docs/instructions.md)
-- Discord: https://discord.gg/azGuNpvPu8
-
-## �👩‍💻 Development
 <details>
   <summary>Development of Pollinations.AI Web App</summary>
 
@@ -116,4 +112,10 @@ print(image.url)
   ![Architecture Diagram](pollinations_architecture.png)
   
  </details>
+
+## 🔗 Links
+
+- Frontend: https://pollinations.ai/
+- Instructions: [docs/instructions.md](docs/instructions.md)
+- Discord: https://discord.gg/azGuNpvPu8
 

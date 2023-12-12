@@ -38,7 +38,7 @@ class ImageModel:
     """
 
     def __init__(self, save_file: str = "pollinations.jpg", *args, **kwargs) -> None:
-        self.__base: str = "image.pollinations"
+        self.__base: str = "pollinations"
         self.save_file: str = save_file
         self.prompt: str = None
         self.default_filter: list = abc.BANNED_WORDS

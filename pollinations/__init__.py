@@ -37,12 +37,9 @@ Functions:
 """
 
 
-from . import ai as _ai
+from . import ai
 
 __version__: str = "0.2.3"
-
-
-ai: object = _ai
 
 help: object = ai.help
 

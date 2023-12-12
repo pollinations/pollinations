@@ -141,7 +141,7 @@ class ImageModel:
 
         Parameters:
             prompts (list): List of prompts for the images.
-            model (str): The model for the ai to use.
+            model (str): The model for the ai to use. | turbo: ImageModel.Turbo, pixart: ImageModel.PixArt, deliberate: ImageModel.Deliberate, dreamshaper: ImageModel.Dreamshaper
             width (int): The width of the image.
             height (int): The height of the image.
             seed (int): The seed for the ai.

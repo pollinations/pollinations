@@ -46,8 +46,29 @@ class ImageModel:
         self.data: object = object
         self.is_filtered: bool = False
 
+        self.turbo: str = self.Turbo
+        self.pixart: str = self.PixArt
+        self.deliberate: str = self.Deliberate
+        self.dreamshaper: str = self.Dreamshaper
+
     def __repr__(self, *args, **kwargs) -> str:
         return f"ImageModel(save_file={self.save_file})"
+
+    @property
+    def Turbo(self, *args, **kwargs) -> str:
+        return 'turbo'
+    
+    @property
+    def PixArt(self, *args, **kwargs) -> str:
+        return 'pixart'
+
+    @property
+    def Deliberate(self, *args, **kwargs) -> str:
+        return 'deliberate'
+
+    @property
+    def Dreamshaper(self, *args, **kwargs) -> str:
+        return 'dreamshaper'
 
     @abc.resource(deprecated=False)
     def set_filter(self, filter: list, *args, **kwargs) -> object:
@@ -70,7 +91,7 @@ class ImageModel:
 
         Parameters:
             prompt (str): The prompt for the image.
-            model (str): The model for the ai to use.
+            model (str): The model for the ai to use | turbo: ImageModel.Turbo, pixart: ImageModel.PixArt, deliberate: ImageModel.Deliberate, dreamshaper: ImageModel.Dreamshaper
             width (int): The width of the image.
             height (int): The height of the image.
             seed (int): The seed for the ai.
@@ -81,7 +102,7 @@ class ImageModel:
         if seed is None: 
             seed: int = random.randint(0, 2 ** 32 - 1)
 
-        model_list: list = ['turbo', 'pixart', 'deliberate']
+        model_list: list = ['turbo', 'pixart', 'deliberate', 'dreamshaper']
         if model:
             if model not in model_list:
                 raise ValueError(f"Invalid model: {model} | Choose from {model_list}")

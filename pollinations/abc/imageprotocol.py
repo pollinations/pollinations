@@ -8,7 +8,7 @@ Classes:
 from typing import Protocol
 
 
-class ImageProtocol(Protocol): # 
+class ImageProtocol(Protocol):
     """
     ImageProtocol: Image protocol for the ImageObject class.
     """

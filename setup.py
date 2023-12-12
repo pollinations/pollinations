@@ -7,8 +7,8 @@ PYTHON_MINIMUM_MINOR:  int = 7
 
 # Pollinations version
 POLLINATIONS_MAJOR:    int = 0
-POLLINATIONS_MINOR:    int = 1
-POLLINATIONS_PATCH:    int = 0
+POLLINATIONS_MINOR:    int = 2
+POLLINATIONS_PATCH:    int = 3
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent
@@ -20,7 +20,7 @@ README: str = (HERE / "README.md").read_text()
 setup(
     name="pollinations",
     version=f"{POLLINATIONS_MAJOR}.{POLLINATIONS_MINOR}.{POLLINATIONS_PATCH}",
-    description="Make Google Colab Notebooks available as a Servbice",
+    description="(API) Interact with text2image ai generative models.",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/pollinations/pollinations",
@@ -39,6 +39,11 @@ setup(
     packages=["pollinations"],
     include_package_data=True,
     install_requires=["stomp-py"],
+    python_requires=f">={PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
+    project_urls={
+        'Pollinations': 'https://github.com/pollinations',
+        'Source': 'https://github.com/pollinations/pollinations',
+    }
     # entry_points={
     #     "console_scripts": [
     #         "colabservice=reader.__main__:main",

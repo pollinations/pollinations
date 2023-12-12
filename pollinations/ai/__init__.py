@@ -13,10 +13,24 @@ Functions:
 Variables:
     samples (list): List of sample prompts for the Image model.
     styles (dict): Dictionary of prompt styles for the Image model.
-    realistic (str): styles[realistic]
-    cartoon (str): styles[cartoon]
-    anime (str): styles[anime]
-    logo (str): styles[logo]
+    impressionism (str): styles["impressionism"]
+    expressionism (str): styles["expressionism"]
+    romanticism (str): styles["romanticism"]
+    surrealism (str): styles["surrealism"]
+    watercolor (str): styles["watercolor"]
+    futuristic (str): styles["futuristic"]
+    minimalist (str): styles["minimalist"]
+    modernism (str): styles["modernism"]
+    steampunk (str): styles["steampunk"]
+    realistic (str): styles["realistic"]
+    graffiti (str): styles["graffiti"]
+    abstract (str): styles["abstract"]
+    vintage (str): styles["vintage"]
+    cartoon (str): styles["cartoon"]
+    cubism (str): styles["cubism"]
+    gothic (str): styles["gothic"]
+    anime (str): styles["anime"]
+    logo (str): styles["logo"]
 
     BANNED_WORDS (list): List of banned words for the Image model filter.
 

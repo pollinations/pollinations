@@ -21,6 +21,8 @@ def resource(deprecated: bool = False):
 
     return decorator
 
+proto: str = "https://"
+ai: str = ".ai/prompt/"
 
 # samples
 # BANNED_WORDS

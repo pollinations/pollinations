@@ -40,6 +40,10 @@ setup(
     include_package_data=True,
     install_requires=["stomp-py"],
     python_requires=f">={PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
+    project_urls={
+        'Pollinations': 'https://github.com/pollinations',
+        'Source': 'https://github.com/pollinations/pollinations',
+    }
     # entry_points={
     #     "console_scripts": [
     #         "colabservice=reader.__main__:main",

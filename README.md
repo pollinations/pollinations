@@ -13,6 +13,32 @@ Pollinations are an effort to make generative art more approachable.
 
 [Instructions](docs/instructions.md) on using Pollinations.AI.
 
+## 🐍 Python Package
+```python
+# Usage Example
+
+import pollinations.ai as ai
+
+model: object = ai.ImageModel()
+# model.set_filter(ai.BANNED_WORDS)
+# model.set_filter([])
+
+image: object = model.generate(
+    prompt=f'Golden retriever puppy playing in the rain {ai.realistic}',
+    model=model.Turbo,
+    height=512,
+    seed=57184
+).save('image-output.jpg')
+
+print(image.url)
+```
+```javascript
+// >>> https://image.pollinations.ai/prompt/Golden%20retriever%20puppy%20playing%20in%20the%20rain%20realistic,%20realism,%20real%20life,%20ultra%20realistic,%20high%20quality,%20real?model=turbo&width=1024&height=512&seed=57184
+```
+![image](https://github.com/flowa-ai/pollinations-patch/assets/152752280/448342b5-013f-4df9-a5a5-6d5f1f196cac)
+
+
+
 ## 🔗 Links
 
 - Frontend: https://pollinations.ai/

@@ -37,7 +37,7 @@ class ImageModel:
         image(ImageObject): Returns self.data
     """
 
-    def __init__(self, save_file: str = "tkr-Image.jpg", *args, **kwargs) -> None:
+    def __init__(self, save_file: str = "pollinations.jpg", *args, **kwargs) -> None:
         self.__base: str = "image.pollinations"
         self.save_file: str = save_file
         self.prompt: str = None

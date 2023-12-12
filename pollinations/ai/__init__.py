@@ -48,10 +48,24 @@ Image: ImageModel = ImageModel
 samples: list = ext.samples
 styles: dict = ext.styles
 
+impressionism: str = ext.impressionism
+expressionism: str = ext.expressionism
+romanticism: str =  ext.romanticism
+surrealism: str =  ext.surrealism
+watercolor: str =  ext.watercolor
+futuristic: str =  ext.futuristic
+minimalist: str =  ext.minimalist
+modernism: str =  ext.modernism
+steampunk: str =  ext.steampunk
 realistic: str = ext.realistic
-cartoon: str = ext.cartoon
-anime: str = ext.anime
-logo: str = ext.logo
+graffiti: str =  ext.graffiti
+abstract: str =  ext.abstract
+cartoon: str =  ext.cartoon
+vintage: str =  ext.vintage
+cubism: str =  ext.cubism
+gothic: str =  ext.gothic
+anime: str =  ext.anime
+logo: str =  ext.logo
 
 sample_style: object = ext.sample_style
 sample: object = ext.sample
@@ -70,7 +84,7 @@ def help(*args, **kwargs) -> str:
         """
   sample(): returns 1 random sample prompt
 
-  sample_style(): returns a style of art (realistic, cartoon, anime, logo))
+  sample_style(): returns a style of art)
 
   sample_batch(size: int): returns size batch of random sample prompts
 

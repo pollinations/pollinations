@@ -129,7 +129,7 @@ const PromptInput = () => {
     <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} style={{ width: "100%" }} placeholder='Or type your prompt here' />
     {/* right aligned button */}
     <div style={{ textAlign: "right" }}>
-      <Button onClick={() => window.open(`https://image.pollinations.ai/prompt/${prompt}`)}>Create</Button>
+      <Button onClick={() => window.open(`https://pollinations.ai/prompt/${prompt}`)}>Create</Button>
     </div>
   </div>;
 };

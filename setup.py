@@ -1,5 +1,5 @@
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Python version
 PYTHON_REQUIRED_MAJOR: int = 3
@@ -8,7 +8,7 @@ PYTHON_MINIMUM_MINOR:  int = 7
 # Pollinations version
 POLLINATIONS_MAJOR:    int = 0
 POLLINATIONS_MINOR:    int = 3
-POLLINATIONS_PATCH:    int = 0
+POLLINATIONS_PATCH:    int = 1
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent
@@ -36,7 +36,7 @@ setup(
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}",
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
     ],
-    packages=["pollinations"],
+    packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     #install_requires=["stomp-py"],
     python_requires=f">={PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",

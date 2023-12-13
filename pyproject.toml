@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "pollinations"
+version = "0.3.0"
+description = "(API) Interact with text2image ai generative models."
+authors = ["Pollination in Blatant Space (thomash) <t.haferlach@gmail.com>"]
+license = "MIT"
+homepage = "https://github.com/pollinations/pollinations"
+
+[tool.poetry.dependencies]
+python = ">=3.7"

@@ -37,15 +37,12 @@ Functions:
 """
 
 
-from . import ai
+__version__: str = "0.3.0"
+def help(*args, **kwargs) -> str:
+    return '''
+    Use:
+        import pollinations.ai
 
-__version__: str = "0.2.6"
-
-help: object = ai.help
-
-ImageModel: object = ai.ImageModel
-Image: object = ai.Image
-
-sample: object = ai.sample
-sample_style: object = ai.sample_style
-sample_batch: object = ai.sample_batch
+    Instead of:
+        import pollinations
+    '''

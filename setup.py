@@ -38,7 +38,7 @@ setup(
     ],
     packages=["pollinations"],
     include_package_data=True,
-    install_requires=["stomp-py"],
+    #install_requires=["stomp-py"],
     python_requires=f">={PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
     project_urls={
         'Pollinations': 'https://github.com/pollinations',

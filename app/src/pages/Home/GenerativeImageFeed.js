@@ -86,34 +86,41 @@ export function GenerativeImageFeed() {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
+  // image clickable on the webpage.
   return (
-    <div>
-      <br /><br /><br /><br /><br />
-      <GenerativeImageURLContainer>
-        <ImageURLHeading>Image Feed</ImageURLHeading>
-        {image && <div style={{ wordBreak: "break-all" }}>
-          <ImageStyle src={image["imageURL"]} alt="generative_image" onLoad={() => {
-            setPrompt(shorten(nextPrompt));
-            console.log("loaded image. setting prompt to: ", nextPrompt);
-          }} />
+  <div>
+    <br /><br /><br /><br /><br />
+    <GenerativeImageURLContainer>
+      <ImageURLHeading>Image Feed</ImageURLHeading>
+      {image && (
+        <div style={{ wordBreak: "break-all" }}>
+          <a href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+            <ImageStyle
+              src={image["imageURL"]}
+              alt="generative_image"
+              onLoad={() => {
+                setPrompt(shorten(nextPrompt));
+                console.log("Loaded image. Setting prompt to: ", nextPrompt);
+              }}
+            />
+          </a>
           <br />
           Prompt: <b>{prompt}</b>
-        </div>}
-        <ServerLoadDisplay concurrentRequests={serverLoad} />
-        Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
-        <br />
-        Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
-        {/* links */}
-        Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
-        {/* input field */}
-        <br />
-        <br />
-        <PromptInput />
-
-      </GenerativeImageURLContainer>
-    </div>
-  );
-}
+        </div>
+      )}
+      <ServerLoadDisplay concurrentRequests={serverLoad} />
+      Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
+      <br />
+      Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
+      {/* links */}
+      Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
+      {/* input field */}
+      <br />
+      <br />
+      <PromptInput />
+    </GenerativeImageURLContainer>
+  </div>
+);
 
 const PromptInput = () => {
   const [prompt, setPrompt] = useState("");

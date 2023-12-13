@@ -1,5 +1,5 @@
 import pathlib
-from setuptools import setup
+from setuptools import setup, find_packages
 
 # Python version
 PYTHON_REQUIRED_MAJOR: int = 3
@@ -7,8 +7,8 @@ PYTHON_MINIMUM_MINOR:  int = 7
 
 # Pollinations version
 POLLINATIONS_MAJOR:    int = 0
-POLLINATIONS_MINOR:    int = 2
-POLLINATIONS_PATCH:    int = 3
+POLLINATIONS_MINOR:    int = 3
+POLLINATIONS_PATCH:    int = 1
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent
@@ -31,14 +31,14 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence"
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}",
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
     ],
-    packages=["pollinations"],
+    packages=find_packages(exclude=["tests"]),
     include_package_data=True,
-    install_requires=["stomp-py"],
+    #install_requires=["stomp-py"],
     python_requires=f">={PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",
     project_urls={
         'Pollinations': 'https://github.com/pollinations',

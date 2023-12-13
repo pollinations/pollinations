@@ -8,7 +8,7 @@ PYTHON_MINIMUM_MINOR:  int = 7
 # Pollinations version
 POLLINATIONS_MAJOR:    int = 0
 POLLINATIONS_MINOR:    int = 2
-POLLINATIONS_PATCH:    int = 5
+POLLINATIONS_PATCH:    int = 6
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent

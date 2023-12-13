@@ -39,7 +39,7 @@ Functions:
 
 from . import ai
 
-__version__: str = "0.2.4"
+__version__: str = "0.2.5"
 
 help: object = ai.help
 

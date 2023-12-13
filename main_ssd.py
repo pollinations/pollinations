@@ -11,9 +11,10 @@ from diffusers import (
     LCMScheduler,
     DPMSolverSDEScheduler,
     StableDiffusionXLPipeline,
-    StableDiffusionImg2ImgPipeline
+    StableDiffusionImg2ImgPipeline,
+    StableDiffusionXLImg2ImgPipeline,
 )
-# from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
+from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
 from performance_metrics import add_timestamp, get_average_generation_duration, calculate_throughput, get_timestamps
 import uuid
@@ -23,6 +24,35 @@ import torch
 import re
 from instaflow.pipeline_rf import RectifiedFlowPipeline
 from safety_checker.censor import check_safety
+
+
+
+import os
+import torch
+import torch.nn as nn
+from os.path import expanduser  # pylint: disable=import-outside-toplevel
+from urllib.request import urlretrieve  # pylint: disable=import-outside-toplevel
+def get_aesthetic_model(clip_model="vit_l_14"):
+    """load the aethetic model"""
+    home = expanduser("~")
+    cache_folder = home + "/.cache/emb_reader"
+    path_to_model = cache_folder + "/sa_0_4_"+clip_model+"_linear.pth"
+    if not os.path.exists(path_to_model):
+        os.makedirs(cache_folder, exist_ok=True)
+        url_model = (
+            "https://github.com/LAION-AI/aesthetic-predictor/blob/main/sa_0_4_"+clip_model+"_linear.pth?raw=true"
+        )
+        urlretrieve(url_model, path_to_model)
+    if clip_model == "vit_l_14":
+        m = nn.Linear(768, 1)
+    elif clip_model == "vit_b_32":
+        m = nn.Linear(512, 1)
+    else:
+        raise ValueError()
+    s = torch.load(path_to_model)
+    m.load_state_dict(s)
+    m.eval()
+    return m.half().to("cuda")
 
 
 MODEL_NAME = "PixArt-alpha/PixArt-LCM-XL-2-1024-MS"
@@ -38,9 +68,11 @@ class Predictor:
     def __init__(self):
         # self.instaflow_pipe = self._load_instaflow_model()
         self.turbo_pipe = self._load_turbo_model()
-        self.deliberate_pipe = self._load_deliberate_model()
+        # self.deliberate_pipe = self._load_deliberate_model()
         self.pixart_pipe = self._load_pixart()
-        self.dreamshaper_pipe = self._load_dreamshaper_model()
+        dreamshaper_pipes = self._load_dreamshaper_model()
+        self.dreamshaper_pipe = dreamshaper_pipes[0]
+        self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
         print("CUDA version:", torch.version.cuda)
         print("PyTorch version:", torch.__version__)
 
@@ -51,7 +83,7 @@ class Predictor:
     def _load_deliberate_model(self):
         """Loads and compiles the Deliberate model."""
         print("Loading Deliberate model...")
-        pipe = StableDiffusionImg2ImgPipeline.from_single_file(
+        pipe = StableDiffusionPipeline.from_single_file(
             "models/Deliberate_v4.safetensors", 
             torch_dtype=torch.float16, 
             safety_checker=None
@@ -59,10 +91,10 @@ class Predictor:
         pipe.safety_checker = None
         print("Deliberate model loaded.")
         pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
-        # pipe.enable_model_cpu_offload()
-        # pipe.to("cuda")
-        return pipe.to("cuda")
-        return self._compile_pipeline(pipe)
+        pipe.enable_model_cpu_offload()
+        return pipe
+
+        # return self._compile_pipeline(pipe.to("cuda"))
 
     def _load_turbo_model(self):
         """Loads the Turbo model."""
@@ -79,9 +111,6 @@ class Predictor:
         return self._compile_pipeline(pipeline.to("cuda"))
 
     def _load_dreamshaper_model(self):
-        # DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
-        # models/dreamshaperXL_turboDpmppSDEKarras.safetensors 
-        # use StableDiffusionXLPipeline
         print("Loading DreamShaper model...")
         pipe = StableDiffusionXLPipeline.from_single_file(
             "models/dreamshaperXL_turboDpmppSDEKarras.safetensors", 
@@ -91,8 +120,25 @@ class Predictor:
         pipe.safety_checker = None
         print("DreamShaper model loaded.")
         pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
-        pipe.enable_model_cpu_offload()
-        return pipe
+        # pipe.enable_model_cpu_offload()
+        # return  self._compile_pipeline(pipe)
+
+        pipe = pipe.to("cuda")
+
+        # create a separate img2img pipeline using vae, tokenizer, unet, scheduler, feature_extractor and image_encoder from the dreamshaper pipeline
+        img2img_pipe = StableDiffusionXLImg2ImgPipeline(
+            vae=pipe.vae,
+            tokenizer=pipe.tokenizer,
+            unet=pipe.unet,
+            scheduler=pipe.scheduler,
+            feature_extractor=pipe.feature_extractor,
+            image_encoder=pipe.image_encoder,
+            text_encoder=pipe.text_encoder,
+            text_encoder_2=pipe.text_encoder_2,
+            tokenizer_2=pipe.tokenizer_2,
+        )
+
+        return [pipe, img2img_pipe.to("cuda")]
 
     def _load_pixart(self):
         #only 1024-MS version is supported for now
@@ -171,6 +217,7 @@ class Predictor:
         height = data["height"]
         steps = data["steps"]
         prompts = data["prompts"]
+        refine = data["refine"]
 
         print(f"Running batch with model: {model}, width: {width}, height: {height}, number of prompts: {len(prompts)}, steps: {steps}")
 
@@ -178,7 +225,7 @@ class Predictor:
         # make all prompts maximum 250 characters
         prompts = [prompt[:250] for prompt in prompts]
 
-        max_batch_size = 32
+        max_batch_size = 8
         if model == "pixart":
             max_batch_size = 2
             # replace all non alpha numeric characters from prompts with spaces
@@ -187,7 +234,7 @@ class Predictor:
             max_batch_size = 2
             model = "dreamshaper"
         if model == "dreamshaper":
-            max_batch_size = 2
+            max_batch_size = 3
         # Process in chunks of 8
         predict_duration = 0
         for i in range(0, len(prompts),max_batch_size):
@@ -199,16 +246,20 @@ class Predictor:
                     if model == "deliberate" and self.deliberate_pipe:
                         batch_results = self.deliberate_pipe(prompt=chunked_prompts, guidance_scale=3.5, num_inference_steps=24, width=width, height=height).images
                     elif model == "pixart" and self.pixart_pipe:
-                        batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=4, width=width, height=height).images
+                        batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=16, width=width, height=height).images
                     elif model == "instaflow":
                         batch_results = self.instaflow_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
                     elif model == "dreamshaper":
-                        batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=5, width=width, height=height).images
+                        steps = int(steps * 1.5)
+                        batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=steps, width=width, height=height).images
                     else:  # turbo model
                         batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
-                        # if steps > 2:
+                        # if steps > 3:
                         #     # now refine with delibate pipeline. strength = 0.1. steps=20. pass image=batch_results
                         #     batch_results = self.deliberate_pipe(prompt=chunked_prompts, guidance_scale=2.0,strength=0.2, num_inference_steps=16, width=width, height=height, image=batch_results).images
+                        # use dreamshaper for refining
+                        # if refine and steps >= 4:
+                        #     batch_results = self.dreamshaper_img2img_pipe(prompt=chunked_prompts, guidance_scale=2.0,strength=0.5, num_inference_steps=8, width=width, height=height, image=batch_results).images
                 except Exception as e:
                     print("Exception occurred:", e)
                     # print stack
@@ -316,35 +367,10 @@ def predict_endpoint():
     print("Returning response for one request.")
     return jsonify(response)
 
-# import clip
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# clip_model, _ = clip.load("ViT-B/16", device=device)
-# @app.route('/embeddings', methods=['POST'])
-# def embeddings_endpoint():
-#     data = request.json
-
-#     prompts = data["prompts"]
-
-#     embeddings = []
-#     start_time = time.time()
-#     embeddings = []
-#     start_time = time.time()
-#     for prompt in prompts:
-#         token = clip.tokenize([prompt]).to(device)
-#         with torch.no_grad():
-#             embedding = clip_model.encode_text(token).cpu().numpy().tolist()
-#             embeddings.append(embedding[0])
-#     end_time = time.time()
-#     print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
-#     print("Returning embeddings for one request.", len(embeddings))
-#     return jsonify(embeddings)
-
-import uform
-
-model = uform.get_model('unum-cloud/uform-vl-english') # Just English
-
-# text_data = model.preprocess_text(text)
-# text_embedding = model.encode_text(text_data)
+import clip
+device = "cuda" if torch.cuda.is_available() else "cpu"
+clip_model, _ = clip.load("ViT-L/14", device=device)
+aesthetic_model = get_aesthetic_model()
 
 @app.route('/embeddings', methods=['POST'])
 def embeddings_endpoint():
@@ -352,24 +378,56 @@ def embeddings_endpoint():
 
     prompts = data["prompts"]
 
-
     embeddings = []
     start_time = time.time()
-    print("got prompts", prompts)
+
+    aesthetics_scores = []
+    # for prompt in prompts:
+    token = clip.tokenize(prompts, truncate=True).to(device)
     with torch.no_grad():
-        for prompt in prompts:
-            text_data = model.preprocess_text(prompt)
-            text_embedding = model.encode_text(text_data)
-            # remove first dimension
-            text_embedding = text_embedding[0]
-            # print("text_embedding:", text_embedding.shape)
-            embeddings.append(text_embedding.cpu().numpy().tolist())
+        embeddings = clip_model.encode_text(token)
+        aesthetics_scores = aesthetic_model(embeddings)
+        # squash last dimeinsion of aesthetics_scores
+        aesthetics_scores = aesthetics_scores.squeeze(-1)
+        print("aesthetics_score:", aesthetics_scores)
     end_time = time.time()
-    # print("embeddings:", embeddings)
-    # embeddings = embeddings.cpu().numpy().tolist()
     print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
     print("Returning embeddings for one request.", len(embeddings))
-    return jsonify(embeddings)
+
+
+    return jsonify({
+        "embeddings": embeddings.cpu().numpy().tolist(),
+        "aesthetics_scores": aesthetics_scores.cpu().numpy().tolist()
+    })
+
+# import uform
+
+# model = uform.get_model('unum-cloud/uform-vl-english') # Just English
+
+# @app.route('/embeddings', methods=['POST'])
+# def embeddings_endpoint():
+#     data = request.json
+
+#     prompts = data["prompts"]
+
+
+#     embeddings = []
+#     start_time = time.time()
+#     print("got prompts", prompts)
+#     with torch.no_grad():
+#         for prompt in prompts:
+#             text_data = model.preprocess_text(prompt)
+#             text_embedding = model.encode_text(text_data)
+#             # remove first dimension
+#             text_embedding = text_embedding[0]
+#             # print("text_embedding:", text_embedding.shape)
+#             embeddings.append(text_embedding.cpu().numpy().tolist())
+#     end_time = time.time()
+#     # print("embeddings:", embeddings)
+#     # embeddings = embeddings.cpu().numpy().tolist()
+#     print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
+#     print("Returning embeddings for one request.", len(embeddings))
+#     return jsonify(embeddings)
 
 
 import os

@@ -31,7 +31,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        "Topic :: Scientific/Engineering :: Artificial Intelligence"
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "License :: OSI Approved :: MIT License",
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}",
         f"Programming Language :: Python :: {PYTHON_REQUIRED_MAJOR}.{PYTHON_MINIMUM_MINOR}",

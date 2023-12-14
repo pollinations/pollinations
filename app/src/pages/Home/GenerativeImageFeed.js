@@ -120,7 +120,8 @@ export function GenerativeImageFeed() {
       <PromptInput />
     </GenerativeImageURLContainer>
   </div>
-);
+);}
+
 
 const PromptInput = () => {
   const [prompt, setPrompt] = useState("");

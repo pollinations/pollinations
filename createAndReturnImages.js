@@ -5,7 +5,6 @@ import tempfile from 'tempfile';
 import fs from 'fs';
 import { sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
-import { isMature } from "./lib/mature.js";
 import FormData from 'form-data';
 
 const SERVER_URL = 'http://localhost:5555/predict';
@@ -102,13 +101,22 @@ const nsfwCheck = async (buffer) => {
 
 const idealSideLength = {
   turbo: 512, 
-  pixart: 1024, 
+  pixart: 768, 
   deliberate: 768,
   dreamshaper: 800,
 };
 
 
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo" }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=true, refine=true }) => {
+
+  if (refine==="false") 
+    refine = false;
+  if (refine==="true")
+    refine = true;
+  if (enhance==="false")
+    enhance = false;
+  if (enhance==="true")
+    enhance = true;
 
   const sideLength = idealSideLength[model] || idealSideLength["turbo"];
 
@@ -140,7 +148,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
   
-  return { width, height, seed, model };
+  return { width, height, seed, model, enhance, refine};
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {

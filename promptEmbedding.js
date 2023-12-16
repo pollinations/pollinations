@@ -2,6 +2,7 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
+import _ from 'lodash';
 
 //dotenv
 import dotenv from 'dotenv';
@@ -23,7 +24,7 @@ async function calculateEmbeddings(prompts, saveToFile = true) {
 
     const newPrompts = prompts.filter(prompt => !embeddings[prompt]);
     if (newPrompts.length > 0) {
-        console.log("calculating embeddings for new prompts");
+        console.log("calculating embeddings for new prompts", newPrompts);
         const response = await fetch(embeddingsServerUrl, {
             method: 'POST',
             headers: {
@@ -31,9 +32,14 @@ async function calculateEmbeddings(prompts, saveToFile = true) {
             },
             body: JSON.stringify({ prompts: newPrompts })
         });
-        const data = await response.json();
+        const data = await response.json()
+        const embeds = data.embeddings;
+        const aesthetics = data.aesthetics_scores;
         newPrompts.forEach((prompt, index) => {
-            embeddings[prompt] = data[index];
+            embeddings[prompt] = { 
+                embedding: embeds[index],
+                aesthetic_score: aesthetics[index]
+            };
         });
 
         if (saveToFile) {
@@ -44,23 +50,32 @@ async function calculateEmbeddings(prompts, saveToFile = true) {
     return prompts.map(prompt => embeddings[prompt]);
 }
 
-// Function to find the closest embedding with reweighting based on usage count
-function findClosestEmbedding(embeddings, newEmbedding, usageCounts) {
-    let closestIndex = -1;
-    let minDistance = Infinity;
-
-    embeddings.forEach((embedding, index) => {
-        const distance = euclideanDistance(embedding, newEmbedding);
+// Function to find the closest embeddings with unique templates and reweighting based on usage count
+function findClosestEmbeddings(embeddings, newEmbedding, usageCounts, n = 30) {
+    let distances = embeddings.map((embedding, index) => {
+        const distance = euclideanDistance(embedding.embedding, newEmbedding);
         const adjustedDistance = distance * (1 + (usageCounts[index] || 0));
-        if (adjustedDistance < minDistance) {
-            minDistance = adjustedDistance;
-            closestIndex = index;
-        }
+        return { index, adjustedDistance };
     });
 
-    return closestIndex;
-}
+    // // Sort by adjusted distance
+    // distances = _.sortBy(distances, 'adjustedDistance');
 
+    // // Filter out to get unique templates
+    // const uniqueTemplates = new Set();
+    // const uniqueEmbeddings = distances.filter(d => {
+    //     const template = embeddings[d.index].template;
+    //     const isUnique = !uniqueTemplates.has(template);
+    //     if (isUnique) {
+    //         uniqueTemplates.add(template);
+    //     }
+    //     return isUnique;
+    // });
+    // console.log("uniqueEmbeddings", uniqueEmbeddings);
+    // Return the indices of the unique embeddings, up to n
+    const result = distances.slice(0, n).map(d => d.index);
+    return result;
+}
 // Euclidean distance calculation
 function euclideanDistance(vec1, vec2) {
     return Math.sqrt(vec1.reduce((acc, val, i) => acc + Math.pow(val - vec2[i], 2), 0));
@@ -77,10 +92,31 @@ export const getClosesPrompt = async (prompt) => {
     try {
         const newEmbedding = await calculateEmbeddings([prompt], false);
 
-        const closestIndex = findClosestEmbedding(embeddings, newEmbedding[0], usageCounts);
-        usageCounts[closestIndex] = (usageCounts[closestIndex] || 0) + 1;
-        console.log(`Closest prompt:`, PROMPTS[closestIndex]);
-        return prompt + ". " + prompt + ". " + PROMPTS[closestIndex].template.replace("{prompt}", "");
+        const closestIndices = findClosestEmbeddings(embeddings, newEmbedding[0].embedding, usageCounts);
+        const closestPrompts = closestIndices.map(index => PROMPTS[index]);
+
+        const substitutedPromptsNotUnique = closestPrompts.map(closestPrompt => applyTemplate(prompt, closestPrompt.template));
+
+        // Filter out to get unique prompts. maintain order
+        // also no more than 5
+        const uniquePromps = new Set();
+        const substitutedPrompts = substitutedPromptsNotUnique.filter(prompt => {
+            const isUnique = !uniquePromps.has(prompt);
+            if (isUnique) {
+                uniquePromps.add(prompt);
+            }
+            return isUnique;
+        }).slice(0, 3);
+
+        const aestheticScores = await calculateEmbeddings(substitutedPrompts, false).then(embeddings => embeddings.map(embedding => embedding.aesthetic_score));
+        console.log("aestheticScores", aestheticScores);
+        const maxScoreIndex = aestheticScores.indexOf(Math.max(...aestheticScores));
+        const template = closestPrompts[maxScoreIndex].template;
+
+        // Increase the usage count for the selected embedding
+        usageCounts[closestIndices[maxScoreIndex]] = (usageCounts[closestIndices[maxScoreIndex]] || 0) + 1;
+
+        return applyTemplate(prompt, template);
     } catch (e) {
         console.error("error", e)
         return prompt;
@@ -89,6 +125,10 @@ export const getClosesPrompt = async (prompt) => {
 
 let embeddings = null;
 let usageCounts = []; // Array to keep track of how many times each embedding has been used
+function applyTemplate(prompt, template) {
+    return prompt + ". " + prompt + ". " + template.replace("{prompt}", "") + "." + prompt;
+}
+
 async function optionallyCalculateEmbeddings() {
     if (embeddings) {
         return;

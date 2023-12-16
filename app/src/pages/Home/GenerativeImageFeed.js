@@ -77,7 +77,7 @@ export function GenerativeImageFeed() {
           };
         };
       }
-    }, 350);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [setImage, setNextPrompt]);

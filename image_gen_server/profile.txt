@@ -1,0 +1,933 @@
+Statistical profiling result from isolate-0x5858d10-7477-v8.log, (9816 ticks, 13 unaccounted, 0 excluded).
+
+ [Shared libraries]:
+   ticks  total  nonlib   name
+   4596   46.8%          /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     25    0.3%          [vdso]
+      3    0.0%          /usr/lib64/libstdc++.so.6.0.24
+      1    0.0%          /usr/lib64/libc-2.26.so
+
+ [JavaScript]:
+   ticks  total  nonlib   name
+    874    8.9%   16.8%  LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+    683    7.0%   13.2%  LazyCompile: *<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+    449    4.6%    8.6%  LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+    341    3.5%    6.6%  LazyCompile: *Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+    239    2.4%    4.6%  LazyCompile: *fDCTQuant /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:291:21
+    229    2.3%    4.4%  LazyCompile: *Resize._resizeWidthRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:114:53
+    129    1.3%    2.5%  LazyCompile: *getPixelIndex /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:713:34
+    127    1.3%    2.4%  LazyCompile: *pixelBppMapper /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:39:11
+    121    1.2%    2.3%  LazyCompile: *Filter._unFilterType4 /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:103:43
+    104    1.1%    2.0%  LazyCompile: *pixelBppMapper /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:52:11
+     85    0.9%    1.6%  LazyCompile: *CrcCalculator.write /home/ec2-user/generative_image_url/node_modules/pngjs/lib/crc.js:24:41
+     84    0.9%    1.6%  LazyCompile: *mapImage8Bit /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:173:22
+     73    0.7%    1.4%  LazyCompile: *Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+     38    0.4%    0.7%  LazyCompile: *initCategoryNumber /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:216:30
+     32    0.3%    0.6%  LazyCompile: *writeBits /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:254:21
+     30    0.3%    0.6%  LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     30    0.3%    0.6%  LazyCompile: *Resize._resizeHeightRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:195:54
+     29    0.3%    0.6%  Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+     21    0.2%    0.4%  LazyCompile: *Filter._unFilterType2 /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:77:43
+     14    0.1%    0.3%  LazyCompile: *Jimp.limit255 /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1021:26
+     14    0.1%    0.3%  LazyCompile: *Filter._unFilterType1 /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:65:43
+     14    0.1%    0.3%  Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+      6    0.1%    0.1%  LazyCompile: *srcOver /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/composite-modes.js:18:17
+      5    0.1%    0.1%  LazyCompile: *writeUInt32BE node:internal/buffer:814:23
+      5    0.1%    0.1%  Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      4    0.0%    0.1%  LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      3    0.0%    0.1%  Function: ^writeBits /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:254:21
+      3    0.0%    0.1%  Function: ^fDCTQuant /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:291:21
+      2    0.0%    0.0%  RegExp: ^\/|\\
+      2    0.0%    0.0%  LazyCompile: *SyncReader.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:9:37
+      2    0.0%    0.0%  LazyCompile: *Buffer node:buffer:270:16
+      2    0.0%    0.0%  Function: ^Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      1    0.0%    0.0%  RegExp: ^(.*)[\\/]node_modules[\\/]
+      1    0.0%    0.0%  RegExp: \u001b\[\d\d?m
+      1    0.0%    0.0%  LazyCompile: *resolve node:path:1091:10
+      1    0.0%    0.0%  LazyCompile: *nextTick node:internal/process/task_queues:104:18
+      1    0.0%    0.0%  Function: ^readableAddChunk node:internal/streams/readable:236:26
+      1    0.0%    0.0%  Function: ^prepareStackTrace node:internal/errors:91:27
+      1    0.0%    0.0%  Function: ^parse node:url:167:37
+      1    0.0%    0.0%  Function: ^isUint8Array node:internal/util/types:13:22
+      1    0.0%    0.0%  Function: ^isInsideNodeModules node:internal/util:404:29
+      1    0.0%    0.0%  Function: ^initCategoryNumber /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:216:30
+      1    0.0%    0.0%  Function: ^hasHooks node:internal/async_hooks:471:18
+      1    0.0%    0.0%  Function: ^formatPrimitive node:internal/util/inspect:1519:25
+      1    0.0%    0.0%  Function: ^finishMaybe node:internal/streams/writable:731:21
+      1    0.0%    0.0%  Function: ^concat node:buffer:536:32
+      1    0.0%    0.0%  Function: ^__classPrivateFieldGet file:///home/ec2-user/generative_image_url/node_modules/p-queue/dist/index.js:7:80
+      1    0.0%    0.0%  Function: ^SyncReader.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:9:37
+      1    0.0%    0.0%  Function: ^Readable.unpipe node:internal/streams/readable:839:37
+      1    0.0%    0.0%  Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+      1    0.0%    0.0%  Function: ^IncomingMessage node:_http_incoming:51:25
+      1    0.0%    0.0%  Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+      1    0.0%    0.0%  Function: ^<anonymous> node:net:707:24
+      1    0.0%    0.0%  Function: *wasm-function[15]
+
+ [C++]:
+   ticks  total  nonlib   name
+    707    7.2%   13.6%  __lll_unlock_wake
+    106    1.1%    2.0%  __memcpy_avx_unaligned_erms
+     79    0.8%    1.5%  __pthread_cond_wait
+     76    0.8%    1.5%  epoll_pwait
+     66    0.7%    1.3%  __pthread_cond_signal
+     39    0.4%    0.8%  fwrite
+     29    0.3%    0.6%  __GI___libc_malloc
+     27    0.3%    0.5%  _int_malloc
+     23    0.2%    0.4%  __GI___libc_write
+     20    0.2%    0.4%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+     19    0.2%    0.4%  __memset_avx2_erms
+     15    0.2%    0.3%  __memset_avx2_unaligned_erms
+     14    0.1%    0.3%  __GI_mprotect
+     12    0.1%    0.2%  _int_free
+     11    0.1%    0.2%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)
+     11    0.1%    0.2%  __GI__IO_file_xsputn
+      9    0.1%    0.2%  cfree@GLIBC_2.2.5
+      6    0.1%    0.1%  __libc_read
+      6    0.1%    0.1%  __GI___sched_yield
+      5    0.1%    0.1%  std::ostream::sentry::sentry(std::ostream&)
+      5    0.1%    0.1%  std::_Rb_tree_rebalance_for_erase(std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+      4    0.0%    0.1%  std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const
+      4    0.0%    0.1%  malloc_consolidate
+      4    0.0%    0.1%  __memcmp_avx2_movbe
+      4    0.0%    0.1%  __GI_shutdown
+      4    0.0%    0.1%  __GI_munmap
+      4    0.0%    0.1%  __GI___pthread_mutex_lock
+      4    0.0%    0.1%  __GI___mmap
+      3    0.0%    0.1%  std::_Rb_tree_increment(std::_Rb_tree_node_base*)
+      3    0.0%    0.1%  calloc
+      3    0.0%    0.1%  __strlen_avx2
+      3    0.0%    0.1%  __lll_lock_wait
+      3    0.0%    0.1%  __GI___pthread_rwlock_wrlock
+      3    0.0%    0.1%  __GI__IO_default_xsputn
+      2    0.0%    0.0%  std::ostream::operator<<(int)
+      2    0.0%    0.0%  operator new(unsigned long)
+      2    0.0%    0.0%  __pthread_mutex_unlock_usercnt
+      2    0.0%    0.0%  __GI___pthread_rwlock_unlock
+      1    0.0%    0.0%  sysmalloc
+      1    0.0%    0.0%  std::ostream::sentry::~sentry()
+      1    0.0%    0.0%  std::ostream& std::ostream::_M_insert<long>(long)
+      1    0.0%    0.0%  std::__detail::_Prime_rehash_policy::_M_next_bkt(unsigned long) const
+      1    0.0%    0.0%  pthread_sigmask
+      1    0.0%    0.0%  operator new(unsigned long, std::nothrow_t const&)
+      1    0.0%    0.0%  opendir
+      1    0.0%    0.0%  hack_digit
+      1    0.0%    0.0%  getsockopt
+      1    0.0%    0.0%  getrusage
+      1    0.0%    0.0%  epoll_ctl
+      1    0.0%    0.0%  __pthread_rwlock_tryrdlock
+      1    0.0%    0.0%  __pthread_cond_broadcast
+      1    0.0%    0.0%  __mempcpy_avx_unaligned_erms
+      1    0.0%    0.0%  __memchr_avx2
+      1    0.0%    0.0%  __lll_unlock_wake_private
+      1    0.0%    0.0%  __lll_lock_wait_private
+      1    0.0%    0.0%  __libc_write
+      1    0.0%    0.0%  __getdents
+      1    0.0%    0.0%  __GI___printf_fp
+      1    0.0%    0.0%  __GI__IO_file_close
+      1    0.0%    0.0%  _IO_old_init
+      1    0.0%    0.0%  _IO_no_init
+
+ [Summary]:
+   ticks  total  nonlib   name
+   3816   38.9%   73.5%  JavaScript
+   1362   13.9%   26.2%  C++
+   1097   11.2%   21.1%  GC
+   4625   47.1%          Shared libraries
+     13    0.1%          Unaccounted
+
+ [C++ entry points]:
+   ticks    cpp   total   name
+    179   36.1%    1.8%  __lll_unlock_wake
+     83   16.7%    0.8%  __memcpy_avx_unaligned_erms
+     32    6.5%    0.3%  fwrite
+     20    4.0%    0.2%  std::_Rb_tree_insert_and_rebalance(bool, std::_Rb_tree_node_base*, std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+     20    4.0%    0.2%  __GI___libc_malloc
+     19    3.8%    0.2%  __memset_avx2_erms
+     18    3.6%    0.2%  _int_malloc
+     13    2.6%    0.1%  __memset_avx2_unaligned_erms
+     13    2.6%    0.1%  __GI___libc_write
+      9    1.8%    0.1%  __GI__IO_file_xsputn
+      8    1.6%    0.1%  std::basic_ostream<char, std::char_traits<char> >& std::__ostream_insert<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&, char const*, long)
+      8    1.6%    0.1%  cfree@GLIBC_2.2.5
+      8    1.6%    0.1%  __GI_mprotect
+      7    1.4%    0.1%  _int_free
+      5    1.0%    0.1%  std::ostream::sentry::sentry(std::ostream&)
+      5    1.0%    0.1%  std::_Rb_tree_rebalance_for_erase(std::_Rb_tree_node_base*, std::_Rb_tree_node_base&)
+      5    1.0%    0.1%  __pthread_cond_signal
+      4    0.8%    0.0%  std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const
+      4    0.8%    0.0%  malloc_consolidate
+      3    0.6%    0.0%  std::_Rb_tree_increment(std::_Rb_tree_node_base*)
+      3    0.6%    0.0%  calloc
+      3    0.6%    0.0%  __memcmp_avx2_movbe
+      3    0.6%    0.0%  __GI___mmap
+      2    0.4%    0.0%  std::ostream::operator<<(int)
+      2    0.4%    0.0%  __GI_munmap
+      2    0.4%    0.0%  __GI___pthread_mutex_lock
+      2    0.4%    0.0%  __GI__IO_default_xsputn
+      1    0.2%    0.0%  sysmalloc
+      1    0.2%    0.0%  std::ostream::sentry::~sentry()
+      1    0.2%    0.0%  std::__detail::_Prime_rehash_policy::_M_next_bkt(unsigned long) const
+      1    0.2%    0.0%  operator new(unsigned long, std::nothrow_t const&)
+      1    0.2%    0.0%  operator new(unsigned long)
+      1    0.2%    0.0%  opendir
+      1    0.2%    0.0%  __strlen_avx2
+      1    0.2%    0.0%  __pthread_rwlock_tryrdlock
+      1    0.2%    0.0%  __pthread_mutex_unlock_usercnt
+      1    0.2%    0.0%  __pthread_cond_wait
+      1    0.2%    0.0%  __mempcpy_avx_unaligned_erms
+      1    0.2%    0.0%  __memchr_avx2
+      1    0.2%    0.0%  __getdents
+      1    0.2%    0.0%  __GI___pthread_rwlock_wrlock
+      1    0.2%    0.0%  __GI___pthread_rwlock_unlock
+      1    0.2%    0.0%  __GI__IO_file_close
+
+ [Bottom up (heavy) profile]:
+  Note: percentage shows a share of a particular caller in the total
+  amount of its parent calls.
+  Callers occupying less than 1.0% are not shown.
+
+   ticks parent  name
+   4596   46.8%  /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+   3059   66.6%    /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+    569   18.6%      Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+    317   55.7%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    317  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    260   82.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     57   18.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    252   44.3%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    252  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    252  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    316   10.3%      Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    316  100.0%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    231   73.1%          Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    231  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+     85   26.9%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     85  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+    253    8.3%      Function: ^toString node:buffer:783:46
+    249   98.4%        /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+    237   95.2%          LazyCompile: *Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+    207   87.3%            Function: ^_construct /home/ec2-user/generative_image_url/node_modules/@babel/runtime/helpers/construct.js:3:20
+     30   12.7%            LazyCompile: ~_construct /home/ec2-user/generative_image_url/node_modules/@babel/runtime/helpers/construct.js:3:20
+     12    4.8%          /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      6   50.0%            LazyCompile: ~Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      6   50.0%            Function: ^Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      4    1.6%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:269:47
+      4  100.0%          /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      4  100.0%            Function: ^processTicksAndRejections node:internal/process/task_queues:68:35
+    196    6.4%      Function: ^structuredStack structured-stack:3:38
+    121   61.7%        LazyCompile: *Buffer node:buffer:270:16
+     65   53.7%          LazyCompile: *Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+     65  100.0%            LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+     51   42.1%          Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+     48   94.1%            LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      3    5.9%            Function: ^SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      3    2.5%          Function: ^Parser._parseChunkBegin /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser.js:60:45
+      2   66.7%            LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      1   33.3%            Function: ^SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      2    1.7%          LazyCompile: ~resHandler /home/ec2-user/generative_image_url/node_modules/phin/lib/phin.compiled.js:1:1549
+      2  100.0%            Function: ^onceWrapper node:events:636:21
+     75   38.3%        Function: ^isInsideNodeModules node:internal/util:404:29
+     75  100.0%          Function: ^showFlaggedDeprecation node:buffer:173:32
+     75  100.0%            Function: ^Buffer node:buffer:270:16
+    150    4.9%      Function: ^compileFunction node:vm:308:25
+    145   96.7%        Function: ^wrapSafe node:internal/modules/cjs/loader:1017:18
+    145  100.0%          Function: ^Module._compile node:internal/modules/cjs/loader:1059:37
+    124   85.5%            Function: ^Module._extensions..js node:internal/modules/cjs/loader:1114:37
+     21   14.5%            LazyCompile: ~Module._extensions..js node:internal/modules/cjs/loader:1114:37
+      5    3.3%        LazyCompile: ~wrapSafe node:internal/modules/cjs/loader:1017:18
+      5  100.0%          LazyCompile: ~Module._compile node:internal/modules/cjs/loader:1059:37
+      5  100.0%            LazyCompile: ~Module._extensions..js node:internal/modules/cjs/loader:1114:37
+    130    4.2%      Function: ^initCategoryNumber /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:216:30
+     86   66.2%        Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+     86  100.0%          Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+     86  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     44   33.8%        LazyCompile: ~init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+     44  100.0%          LazyCompile: ~JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+     44  100.0%            LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    102    3.3%      Function: ^Inflate._processChunk /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:47:43
+     90   88.2%        Function: ^zlibBufferSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:138:24
+     90  100.0%          Function: ^inflateSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:154:21
+     90  100.0%            Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     12   11.8%        LazyCompile: ~zlibBufferSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:138:24
+     12  100.0%          Function: ^inflateSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:154:21
+     12  100.0%            Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     92    3.0%      LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+     92  100.0%        LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     62   67.4%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     62  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     30   32.6%          LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     30  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     87    2.8%      Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+     76   87.4%        Function: ^nativeModuleRequire node:internal/bootstrap/loaders:332:29
+      8   10.5%          Function: ~<anonymous> node:http:1:1
+      8  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      8   10.5%          Function: ~<anonymous> node:crypto:1:1
+      8  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      5    6.6%          Function: ~<anonymous> node:internal/modules/esm/loader:1:1
+      5  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      4    5.3%          Function: ~<anonymous> node:tls:1:1
+      4  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      4    5.3%          Function: ~<anonymous> node:internal/process/esm_loader:1:1
+      4  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      4    5.3%          Function: ~<anonymous> node:internal/modules/esm/fetch_module:1:1
+      4  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      4    5.3%          Function: ~<anonymous> node:_http_client:1:1
+      4  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      3    3.9%          Function: ~<anonymous> node:internal/child_process:1:1
+      3  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      3    3.9%          Function: ~<anonymous> node:_tls_wrap:1:1
+      3  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      3    3.9%          Function: ~<anonymous> node:_tls_common:1:1
+      3  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      2    2.6%          LazyCompile: ~initCJSParse node:internal/modules/esm/translators:58:28
+      2  100.0%            LazyCompile: ~commonjsStrategy node:internal/modules/esm/translators:148:60
+      2    2.6%          Function: ~<anonymous> node:internal/modules/esm/get_source:1:1
+      2  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      2    2.6%          Function: ~<anonymous> node:internal/crypto/hkdf:1:1
+      2  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      2    2.6%          Function: ~<anonymous> node:cluster:1:1
+      2  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      2    2.6%          Function: ~<anonymous> node:child_process:1:1
+      2  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      2    2.6%          Function: ~<anonymous> node:assert:1:1
+      2  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          LazyCompile: ~lookupAndConnect node:net:1017:26
+      1  100.0%            LazyCompile: ~Socket.connect node:net:959:36
+      1    1.3%          LazyCompile: ~lazyLoadStreams node:fs:2858:25
+      1  100.0%            LazyCompile: ~get ReadStream node:fs:3001:17
+      1    1.3%          LazyCompile: ~initializeCJSLoader node:internal/bootstrap/pre_execution:477:29
+      1  100.0%            LazyCompile: ~prepareMainThreadExecution node:internal/bootstrap/pre_execution:28:36
+      1    1.3%          LazyCompile: ~createWritableStdioStream node:internal/bootstrap/switches/is_main_thread:41:35
+      1  100.0%            LazyCompile: ~getStdout node:internal/bootstrap/switches/is_main_thread:125:19
+      1    1.3%          Function: ~<anonymous> node:net:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/tls/secure-context:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/modules/esm/module_map:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/modules/esm/get_format:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/fs/promises:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/crypto/util:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/cluster/primary:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:internal/blocklist:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:https:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:dns:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:dgram:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:_http_server:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:_http_outgoing:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    1.3%          Function: ~<anonymous> node:_http_common:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      7    8.0%        LazyCompile: ~compileForPublicLoader node:internal/bootstrap/loaders:246:25
+      5   71.4%          Function: ^loadNativeModule node:internal/modules/cjs/helpers:44:26
+      5  100.0%            Function: ^Module._load node:internal/modules/cjs/loader:757:24
+      2   28.6%          LazyCompile: ~loadNativeModule node:internal/modules/cjs/helpers:44:26
+      2  100.0%            LazyCompile: ~builtinStrategy node:internal/modules/esm/translators:254:58
+      4    4.6%        Function: ^compileForPublicLoader node:internal/bootstrap/loaders:246:25
+      4  100.0%          Function: ^loadNativeModule node:internal/modules/cjs/helpers:44:26
+      4  100.0%            Function: ^Module._load node:internal/modules/cjs/loader:757:24
+     81    2.6%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+     73   90.1%        LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     56   76.7%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     56  100.0%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     17   23.3%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      9   52.9%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      8   47.1%            LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      8    9.9%        Function: ^scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      8  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      8  100.0%            LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     75    2.5%      Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+     75  100.0%        Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+     75  100.0%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     75  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     66    2.2%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     50   75.8%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     50  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     36   72.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     14   28.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     16   24.2%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     16  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     16  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     48    1.6%      LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     33   68.8%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     33  100.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     33  100.0%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     15   31.3%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     11   73.3%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     11  100.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      4   26.7%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      3   75.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1   25.0%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     39    1.3%      /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      4   10.3%        Function: ^structuredStack structured-stack:3:38
+      3   75.0%          LazyCompile: *Buffer node:buffer:270:16
+      2   66.7%            Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+      1   33.3%            LazyCompile: *Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+      1   25.0%          Function: ^isInsideNodeModules node:internal/util:404:29
+      1  100.0%            Function: ^showFlaggedDeprecation node:buffer:173:32
+      3    7.7%        LazyCompile: ~translatePeerCertificate node:_tls_common:125:34
+      3  100.0%          LazyCompile: ~translatePeerCertificate node:_tls_common:125:34
+      3  100.0%            LazyCompile: ~TLSSocket.getPeerCertificate node:_tls_wrap:986:50
+      3    7.7%        Function: ^isConditionalExportsMainSugar node:internal/modules/esm/resolve:647:39
+      3  100.0%          LazyCompile: ~packageExportsResolve node:internal/modules/esm/resolve:678:31
+      2   66.7%            LazyCompile: ~resolveExports node:internal/modules/cjs/loader:472:24
+      1   33.3%            Function: ^resolveExports node:internal/modules/cjs/loader:472:24
+      3    7.7%        Function: ^fetch /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:1427:15
+      3  100.0%          Function: ^callWebUI file:///home/ec2-user/generative_image_url/index.js:91:19
+      3  100.0%            Function: ^memoized /home/ec2-user/generative_image_url/node_modules/lodash.memoize/index.js:567:26
+      3    7.7%        Function: ^FastBuffer node:internal/buffer:958:14
+      2   66.7%          LazyCompile: ~alloc node:buffer:360:30
+      2  100.0%            Function: ^Buffer node:buffer:270:16
+      1   33.3%          Function: ^createUnsafeBuffer node:internal/buffer:1059:28
+      1  100.0%            Function: ^allocate node:buffer:398:18
+      2    5.1%        LazyCompile: ~requestListener file:///home/ec2-user/generative_image_url/index.js:16:40
+      2  100.0%          LazyCompile: ~emit node:events:475:44
+      2  100.0%            LazyCompile: ~parserOnIncoming node:_http_server:857:26
+      2    5.1%        LazyCompile: ~isIPv6 node:internal/net:35:16
+      2  100.0%          LazyCompile: ~isIP node:internal/net:39:14
+      1   50.0%            LazyCompile: ~lookupAndConnect node:net:1017:26
+      1   50.0%            LazyCompile: ~calculateServerName node:_http_agent:345:29
+      1    2.6%        LazyCompile: ~structuredStack structured-stack:3:38
+      1  100.0%          LazyCompile: ~isInsideNodeModules node:internal/util:404:29
+      1  100.0%            LazyCompile: ~showFlaggedDeprecation node:buffer:173:32
+      1    2.6%        LazyCompile: ~strEscape node:internal/util/inspect:475:19
+      1  100.0%          LazyCompile: ~<anonymous> node:internal/util/inspect:1534:14
+      1  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      1    2.6%        LazyCompile: ~resolvePackageTargetString node:internal/modules/esm/resolve:507:36
+      1  100.0%          LazyCompile: ~resolvePackageTarget node:internal/modules/esm/resolve:572:30
+      1  100.0%            LazyCompile: ~packageExportsResolve node:internal/modules/esm/resolve:678:31
+      1    2.6%        LazyCompile: ~promisify node:internal/util:324:19
+      1  100.0%          Function: ~<anonymous> node:internal/fs/promises:1:1
+      1  100.0%            Function: ^compileForInternalLoader node:internal/bootstrap/loaders:299:27
+      1    2.6%        LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/await-sleep/index.js:1:18
+      1  100.0%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1  100.0%            Function: ^<anonymous> file:///home/ec2-user/generative_image_url/index.js:51:31
+      1    2.6%        LazyCompile: ~loadBufferFromPath /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:123:28
+      1  100.0%          LazyCompile: *Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      1  100.0%            LazyCompile: ~_construct /home/ec2-user/generative_image_url/node_modules/@babel/runtime/helpers/construct.js:3:20
+      1    2.6%        LazyCompile: ~getNodeRequestOptions /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:1316:31
+      1  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:1437:36
+      1  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      1    2.6%        LazyCompile: ~checkServerIdentity node:tls:274:59
+      1  100.0%          Function: ^onConnectSecure node:_tls_wrap:1518:25
+      1  100.0%            Function: ^emit node:events:475:44
+      1    2.6%        LazyCompile: ~check node:tls:171:15
+      1  100.0%          LazyCompile: ~wildcard node:tls:319:22
+      1  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      1    2.6%        LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      1  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      1  100.0%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1    2.6%        Function: ^writeByte /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:278:21
+      1  100.0%          LazyCompile: *writeBits /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:254:21
+      1  100.0%            LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      1    2.6%        Function: ^stat node:internal/modules/cjs/loader:151:14
+      1  100.0%          Function: ^tryFile node:internal/modules/cjs/loader:384:17
+      1  100.0%            Function: ^tryExtensions node:internal/modules/cjs/loader:400:23
+      1    2.6%        Function: ^isArrayBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:86:23
+      1  100.0%          LazyCompile: *Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      1  100.0%            Function: ^_construct /home/ec2-user/generative_image_url/node_modules/@babel/runtime/helpers/construct.js:3:20
+      1    2.6%        Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+      1  100.0%          Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+      1  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1    2.6%        Function: ^getOwn node:internal/bootstrap/loaders:180:16
+      1  100.0%          Function: ^syncExports node:internal/bootstrap/loaders:287:14
+      1  100.0%            LazyCompile: ~<anonymous> node:internal/bootstrap/loaders:273:15
+      1    2.6%        Function: ^calculateServerName node:_http_agent:345:29
+      1  100.0%          Function: ^addRequest node:_http_agent:242:49
+      1  100.0%            Function: ^ClientRequest node:_http_client:112:23
+      1    2.6%        Function: ^Module._findPath node:internal/modules/cjs/loader:494:28
+      1  100.0%          Function: ^Module._resolveFilename node:internal/modules/cjs/loader:848:35
+      1  100.0%            Function: ^Module._load node:internal/modules/cjs/loader:757:24
+      1    2.6%        Function: ^ClientRequest node:_http_client:112:23
+      1  100.0%          Function: ^request node:http:95:17
+      1  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:1437:36
+      1    2.6%        /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      1  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:926:61
+      1  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:254:27
+     37    1.2%      Function: ^fromStringFast node:buffer:413:24
+     37  100.0%        Function: ^fromString node:buffer:432:20
+     35   94.6%          Function: ^from node:buffer:296:28
+     27   77.1%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      8   22.9%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      2    5.4%          LazyCompile: ~from node:buffer:296:28
+      2  100.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     37    1.2%      Function: ^Resize._resizeWidthRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:114:53
+     37  100.0%        LazyCompile: ~Resize.resizeWidthRGBA /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:287:45
+     37  100.0%          LazyCompile: ~Resize.resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:343:36
+     37  100.0%            LazyCompile: ~resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+     35    1.1%      Function: ^handleWriteReq node:internal/stream_base_commons:45:24
+     35  100.0%        Function: ^writeGeneric node:internal/stream_base_commons:147:22
+     35  100.0%          Function: ^Socket._writeGeneric node:net:791:42
+     35  100.0%            Function: ^Socket._write node:net:828:35
+     33    1.1%      Function: ^processCallback node:zlib:540:25
+     31    1.0%      Function: ^Resize._resizeHeightRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:195:54
+     31  100.0%        LazyCompile: ~Resize.resizeHeightRGBA /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:339:46
+     31  100.0%          LazyCompile: ~Resize.resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:343:36
+     31  100.0%            LazyCompile: ~resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+    177    3.9%    LazyCompile: *<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+    177  100.0%      LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+    117   66.1%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+    117  100.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+    117  100.0%            Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     60   33.9%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     48   80.0%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     48  100.0%            LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     12   20.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      8   66.7%            LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      4   33.3%            Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+    168    3.7%    LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+    125   74.4%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+    125  100.0%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     89   71.2%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     70   78.7%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     19   21.3%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     36   28.8%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     36  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     43   25.6%      LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     26   60.5%        LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     20   76.9%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     20  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      6   23.1%          LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      6  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     17   39.5%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      6   35.3%          LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      6  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      6   35.3%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      6  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      4   23.5%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      4  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1    5.9%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+    126    2.7%    LazyCompile: *getPixelIndex /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:713:34
+    123   97.6%      LazyCompile: *<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+    123  100.0%        LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     94   76.4%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     94  100.0%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     29   23.6%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     22   75.9%            LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      7   24.1%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      3    2.4%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+      3  100.0%        LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      2   66.7%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      2  100.0%            Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1   33.3%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      1  100.0%            LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     70    1.5%    Function: ^structuredStack structured-stack:3:38
+     38   54.3%      LazyCompile: *Buffer node:buffer:270:16
+     23   60.5%        LazyCompile: *Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+     23  100.0%          LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+     23  100.0%            Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+     14   36.8%        Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+     14  100.0%          LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+     14  100.0%            Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+      1    2.6%        Function: ^Parser._parseChunkBegin /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser.js:60:45
+      1  100.0%          LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      1  100.0%            Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     32   45.7%      Function: ^isInsideNodeModules node:internal/util:404:29
+     32  100.0%        Function: ^showFlaggedDeprecation node:buffer:173:32
+     32  100.0%          Function: ^Buffer node:buffer:270:16
+     31   96.9%            Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+      1    3.1%            Function: ^Parser._parseChunkBegin /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser.js:60:45
+     63    1.4%    Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+     36   57.1%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     26   72.2%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     26  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     21   80.8%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      5   19.2%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     10   27.8%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     10  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     10  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     27   42.9%      Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     15   55.6%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     15  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     15  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     12   44.4%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     12  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     10   83.3%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2   16.7%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     56    1.2%    Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     30   53.6%      Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     30  100.0%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     21   70.0%          Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     21  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+      9   30.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      9  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+     26   46.4%      LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     26  100.0%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     26  100.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     26  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+
+    874    8.9%  LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+    873   99.9%    LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+    667   76.4%      Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    667  100.0%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    510   76.5%          Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    510  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+    157   23.5%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    157  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+    206   23.6%      LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    206  100.0%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    206  100.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    206  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+
+    707    7.2%  __lll_unlock_wake
+    179   25.3%    /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     35   19.6%      LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     26   74.3%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     26  100.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     26  100.0%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      9   25.7%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      6   66.7%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      6  100.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      3   33.3%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      2   66.7%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1   33.3%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     33   18.4%      Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+     28   84.8%        Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     16   57.1%          LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     16  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     12   42.9%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     12  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      5   15.2%        LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      5  100.0%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      5  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     32   17.9%      LazyCompile: *initCategoryNumber /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:216:30
+     24   75.0%        Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+     24  100.0%          Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+     24  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      8   25.0%        LazyCompile: ~init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+      8  100.0%          LazyCompile: ~JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+      8  100.0%            LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     16    8.9%      Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      8   50.0%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      8  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      8  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      8   50.0%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      8  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      7   87.5%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1   12.5%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     12    6.7%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     10   83.3%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     10  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      8   80.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2   20.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2   16.7%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      2  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      5    2.8%      LazyCompile: *writeBits /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:254:21
+      3   60.0%        Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      3  100.0%          Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      3  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2   40.0%        LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      2  100.0%          LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      1   50.0%            LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1   50.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      5    2.8%      Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+      5  100.0%        Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+      5  100.0%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      5  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      5    2.8%      Function: ^Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      5  100.0%        LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      5  100.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      5  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+      3    1.7%      Function: ^Module.load node:internal/modules/cjs/loader:969:33
+      3  100.0%        Function: ^Module._load node:internal/modules/cjs/loader:757:24
+      3  100.0%          Function: ^Module.require node:internal/modules/cjs/loader:997:36
+      3  100.0%            Function: ^require node:internal/modules/cjs/helpers:101:31
+      3    1.7%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+      3  100.0%        Function: ^scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      3  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      3  100.0%            LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      2    1.1%      LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      2  100.0%        LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      2  100.0%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      2    1.1%      Function: ^scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      2  100.0%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      2  100.0%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1   50.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1   50.0%            LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      2    1.1%      Function: ^initHuffmanTbl /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:208:26
+      2  100.0%        Function: ^init /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:768:15
+      2  100.0%          Function: ^JPEGEncoder /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:42:21
+      2  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2    1.1%      Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+      2  100.0%        Function: ^SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+      1   50.0%          LazyCompile: ~exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+      1  100.0%            LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      1   50.0%          Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+      1  100.0%            Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+
+    683    7.0%  LazyCompile: *<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+    681   99.7%    LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+    500   73.4%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+    500  100.0%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+    495   99.0%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+    405   81.8%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     90   18.2%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      5    1.0%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      5  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+    181   26.6%      LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+    122   67.4%        LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+    121   99.2%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+    121  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     59   32.6%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     37   62.7%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     37  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     22   37.3%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+     22  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+
+    449    4.6%  LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+    335   74.6%    Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    335  100.0%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    273   81.5%        Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    273  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+    273  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     62   18.5%        LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     62  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+     62  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+    114   25.4%    LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    114  100.0%      LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+    114  100.0%        LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+    114  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+    114  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+
+    341    3.5%  LazyCompile: *Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+    341  100.0%    LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+    341  100.0%      Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+    341  100.0%        Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+    341  100.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+    341  100.0%            Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+
+    239    2.4%  LazyCompile: *fDCTQuant /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:291:21
+    135   56.5%    LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+    135  100.0%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+    108   80.0%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+    108  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     84   77.8%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     24   22.2%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     27   20.0%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     27  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     27  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     98   41.0%    LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+     71   72.4%      Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     71  100.0%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     54   76.1%          Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     54  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+     17   23.9%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     17  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+     27   27.6%      LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+     27  100.0%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     27  100.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+     27  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+      6    2.5%    Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      4   66.7%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      2   50.0%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      2  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2   50.0%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      2  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      2  100.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2   33.3%      Function: ^JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      1   50.0%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      1  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1   50.0%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      1  100.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+
+    229    2.3%  LazyCompile: *Resize._resizeWidthRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:114:53
+    174   76.0%    Function: ^Resize.resizeWidthRGBA /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:287:45
+    174  100.0%      Function: ^Resize.resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:343:36
+    119   68.4%        Function: ^resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+    119  100.0%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+    119  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     55   31.6%        LazyCompile: ~resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+     55  100.0%          Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     55  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     55   24.0%    LazyCompile: ~Resize.resizeWidthRGBA /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:287:45
+     55  100.0%      LazyCompile: ~Resize.resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:343:36
+     55  100.0%        LazyCompile: ~resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+     55  100.0%          LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     55  100.0%            /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+
+    129    1.3%  LazyCompile: *getPixelIndex /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:713:34
+    118   91.5%    LazyCompile: *<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+    118  100.0%      LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+     89   75.4%        Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     89  100.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     88   98.9%            Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      1    1.1%            Function: ^createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+     29   24.6%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+     21   72.4%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+     21  100.0%            LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      8   27.6%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      6   75.0%            LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      2   25.0%            Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      9    7.0%    LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      6   66.7%      Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      6  100.0%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      6  100.0%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      6  100.0%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      3   33.3%      LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      2   66.7%        Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1   50.0%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      1  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1   50.0%          Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      1  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1   33.3%        LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1  100.0%          LazyCompile: ~compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      1  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      2    1.6%    Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:69:69
+      2  100.0%      LazyCompile: *scan /home/ec2-user/generative_image_url/node_modules/@jimp/utils/dist/index.js:43:14
+      2  100.0%        LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:1249:31
+      1   50.0%          LazyCompile: ~composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1  100.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+      1   50.0%          Function: ^composite /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/composite/index.js:25:19
+      1  100.0%            LazyCompile: ~createAndReturnImage file:///home/ec2-user/generative_image_url/index.js:129:36
+
+    127    1.3%  LazyCompile: *pixelBppMapper /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:39:11
+    118   92.9%    LazyCompile: *mapImage8Bit /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:173:22
+    107   90.7%      Function: ^exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+    107  100.0%        Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+    107  100.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+    107  100.0%            Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+     11    9.3%      LazyCompile: ~exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+      7   63.6%        LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      7  100.0%          LazyCompile: ~exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      7  100.0%            LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      4   36.4%        Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      4  100.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      4  100.0%            LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      8    6.3%    Function: ^exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+      8  100.0%      Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      8  100.0%        Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      8  100.0%          Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      8  100.0%            Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:430:32
+
+    121    1.2%  LazyCompile: *Filter._unFilterType4 /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:103:43
+    120   99.2%    Function: ^Filter._reverseFilterLine /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse.js:119:47
+     87   72.5%      Function: ^SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+     53   60.9%        LazyCompile: ~exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+     53  100.0%          LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     53  100.0%            LazyCompile: ~exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+     34   39.1%        Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+     34  100.0%          Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     34  100.0%            Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+     33   27.5%      LazyCompile: *SyncReader.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-reader.js:18:40
+     33  100.0%        Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+     33  100.0%          Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     33  100.0%            Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+
+    106    1.1%  __memcpy_avx_unaligned_erms
+     83   78.3%    /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+     25   30.1%      LazyCompile: *FastBuffer node:internal/buffer:958:14
+     18   72.0%        Function: ^fromArrayLike node:buffer:480:23
+     17   94.4%          Function: ^fromObject node:buffer:495:20
+     17  100.0%            Function: ^from node:buffer:296:28
+      1    5.6%          LazyCompile: ~fromObject node:buffer:495:20
+      1  100.0%            Function: ^from node:buffer:296:28
+      7   28.0%        LazyCompile: ~fromArrayLike node:buffer:480:23
+      7  100.0%          LazyCompile: ~fromObject node:buffer:495:20
+      6   85.7%            Function: ^from node:buffer:296:28
+      1   14.3%            LazyCompile: ~from node:buffer:296:28
+     19   22.9%      LazyCompile: *concat node:buffer:536:32
+     12   63.2%        Function: ^exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+     12  100.0%          Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     12  100.0%            Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      7   36.8%        Function: ^Inflate._processChunk /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:47:43
+      7  100.0%          Function: ^zlibBufferSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:138:24
+      7  100.0%            Function: ^inflateSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:154:21
+     10   12.0%      LazyCompile: *processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+     10  100.0%        LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      5   50.0%          LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      5  100.0%            LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      5   50.0%          Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      5  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+     10   12.0%      LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      9   90.0%        Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      9  100.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      6   66.7%            Function: ^getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      3   33.3%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1   10.0%        LazyCompile: ~encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1  100.0%          LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/jpeg/dist/index.js:25:72
+      1  100.0%            LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      5    6.0%      Function: ^_copyActual node:buffer:243:21
+      4   80.0%        Function: ^concat node:buffer:536:32
+      2   50.0%          LazyCompile: ~exports.process /home/ec2-user/generative_image_url/node_modules/pngjs/lib/filter-parse-sync.js:7:27
+      2  100.0%            LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      1   25.0%          LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      1  100.0%            LazyCompile: ~exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      1   25.0%          Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/phin/lib/phin.compiled.js:1:1891
+      1  100.0%            Function: ^emit node:events:475:44
+      1   20.0%        LazyCompile: ~concat node:buffer:536:32
+      1  100.0%          LazyCompile: ~Inflate._processChunk /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:47:43
+      1  100.0%            LazyCompile: ~zlibBufferSync /home/ec2-user/generative_image_url/node_modules/pngjs/lib/sync-inflate.js:138:24
+      4    4.8%      LazyCompile: ~<anonymous> /home/ec2-user/generative_image_url/node_modules/node-fetch/lib/index.js:269:47
+      4  100.0%        /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      4  100.0%          Function: ^processTicksAndRejections node:internal/process/task_queues:68:35
+      2    2.4%      LazyCompile: *writeBits /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:254:21
+      2  100.0%        Function: ^processDU /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:569:21
+      2  100.0%          LazyCompile: *JPEGEncoder.encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:628:25
+      2  100.0%            Function: ^encode /home/ec2-user/generative_image_url/node_modules/jpeg-js/lib/encoder.js:793:16
+      1    1.2%      LazyCompile: ~statSync node:fs:1543:18
+      1  100.0%        LazyCompile: ~tryStatSync node:internal/modules/esm/resolve:189:3
+      1  100.0%          LazyCompile: ~finalizeResolution node:internal/modules/esm/resolve:397:28
+      1  100.0%            LazyCompile: ~moduleResolve node:internal/modules/esm/resolve:988:23
+      1    1.2%      LazyCompile: ~readPackage node:internal/modules/cjs/loader:290:21
+      1  100.0%        LazyCompile: ~resolveExports node:internal/modules/cjs/loader:472:24
+      1  100.0%          LazyCompile: ~Module._findPath node:internal/modules/cjs/loader:494:28
+      1  100.0%            LazyCompile: ~Module._resolveFilename node:internal/modules/cjs/loader:848:35
+      1    1.2%      LazyCompile: ~getMIMEFromBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:28:27
+      1  100.0%        LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      1  100.0%          LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:430:32
+      1  100.0%            LazyCompile: ~Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      1    1.2%      LazyCompile: *Jimp /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:215:16
+      1  100.0%        Function: ^compositeBitmapOverBackground /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:215:39
+      1  100.0%          LazyCompile: ~getBuffer /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:226:19
+      1  100.0%            Function: ^<anonymous> /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/promisify.js:13:31
+      1    1.2%      Function: ~<anonymous> node:internal/main/run_main_module:1:1
+      1    1.2%      Function: ^nextTick node:internal/process/task_queues:104:18
+      1  100.0%        Function: ^maybeReadMore node:internal/streams/readable:602:23
+      1  100.0%          Function: ^addChunk node:internal/streams/readable:304:18
+      1  100.0%            Function: ^readableAddChunk node:internal/streams/readable:236:26
+      1    1.2%      Function: ^Resize._resizeWidthRGBChannels /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:114:53
+      1  100.0%        LazyCompile: ~Resize.resizeWidthRGBA /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:287:45
+      1  100.0%          LazyCompile: ~Resize.resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/modules/resize.js:343:36
+      1  100.0%            LazyCompile: ~resize /home/ec2-user/generative_image_url/node_modules/@jimp/plugin-resize/dist/index.js:34:30
+      1    1.2%      /home/ec2-user/.nvm/versions/node/v16.16.0/bin/node
+      1  100.0%        Function: ^FastBuffer node:internal/buffer:958:14
+      1  100.0%          LazyCompile: ~fromArrayLike node:buffer:480:23
+      1  100.0%            LazyCompile: ~fromObject node:buffer:495:20
+
+    104    1.1%  LazyCompile: *pixelBppMapper /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:52:11
+     97   93.3%    LazyCompile: *mapImage8Bit /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:173:22
+     79   81.4%      Function: ^exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+     79  100.0%        Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     79  100.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+     79  100.0%            Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+     18   18.6%      LazyCompile: ~exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+     15   83.3%        LazyCompile: ~module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+     12   80.0%          LazyCompile: ~exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+     12  100.0%            LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      3   20.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      3  100.0%            LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      3   16.7%        Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      3  100.0%          Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      3  100.0%            LazyCompile: ~parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      6    5.8%    Function: ^exports.dataToBitMap /home/ec2-user/generative_image_url/node_modules/pngjs/lib/bitmapper.js:201:32
+      6  100.0%      Function: ^module.exports /home/ec2-user/generative_image_url/node_modules/pngjs/lib/parser-sync.js:16:26
+      6  100.0%        Function: ^exports.read /home/ec2-user/generative_image_url/node_modules/pngjs/lib/png-sync.js:8:24
+      6  100.0%          Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/utils/image-bitmap.js:183:21
+      6  100.0%            Function: ^parseBitmap /home/ec2-user/generative_image_url/node_modules/@jimp/core/dist/index.js:430:32
+

@@ -68,11 +68,11 @@ class Predictor:
     def __init__(self):
         # self.instaflow_pipe = self._load_instaflow_model()
         self.turbo_pipe = self._load_turbo_model()
-        # self.deliberate_pipe = self._load_deliberate_model()
+        self.deliberate_pipe = self._load_deliberate_model()
         self.pixart_pipe = self._load_pixart()
         dreamshaper_pipes = self._load_dreamshaper_model()
         self.dreamshaper_pipe = dreamshaper_pipes[0]
-        self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
+        # self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
         print("CUDA version:", torch.version.cuda)
         print("PyTorch version:", torch.__version__)
 
@@ -120,25 +120,26 @@ class Predictor:
         pipe.safety_checker = None
         print("DreamShaper model loaded.")
         pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
-        # pipe.enable_model_cpu_offload()
+        pipe.enable_model_cpu_offload()
         # return  self._compile_pipeline(pipe)
 
-        pipe = pipe.to("cuda")
+        # pipe = pipe.to("cuda")
 
         # create a separate img2img pipeline using vae, tokenizer, unet, scheduler, feature_extractor and image_encoder from the dreamshaper pipeline
-        img2img_pipe = StableDiffusionXLImg2ImgPipeline(
-            vae=pipe.vae,
-            tokenizer=pipe.tokenizer,
-            unet=pipe.unet,
-            scheduler=pipe.scheduler,
-            feature_extractor=pipe.feature_extractor,
-            image_encoder=pipe.image_encoder,
-            text_encoder=pipe.text_encoder,
-            text_encoder_2=pipe.text_encoder_2,
-            tokenizer_2=pipe.tokenizer_2,
-        )
+        # img2img_pipe = StableDiffusionXLImg2ImgPipeline(
+        #     vae=pipe.vae,
+        #     tokenizer=pipe.tokenizer,
+        #     unet=pipe.unet,
+        #     scheduler=pipe.scheduler,
+        #     feature_extractor=pipe.feature_extractor,
+        #     image_encoder=pipe.image_encoder,
+        #     text_encoder=pipe.text_encoder,
+        #     text_encoder_2=pipe.text_encoder_2,
+        #     tokenizer_2=pipe.tokenizer_2,
+        # )
 
-        return [pipe, img2img_pipe.to("cuda")]
+        # return [pipe, img2img_pipe.to("cuda")]
+        return [pipe]
 
     def _load_pixart(self):
         #only 1024-MS version is supported for now
@@ -224,7 +225,6 @@ class Predictor:
 
         # make all prompts maximum 250 characters
         prompts = [prompt[:250] for prompt in prompts]
-
         max_batch_size = 8
         if model == "pixart":
             max_batch_size = 2
@@ -234,7 +234,7 @@ class Predictor:
             max_batch_size = 2
             model = "dreamshaper"
         if model == "dreamshaper":
-            max_batch_size = 3
+            max_batch_size =  3
         # Process in chunks of 8
         predict_duration = 0
         for i in range(0, len(prompts),max_batch_size):
@@ -253,6 +253,7 @@ class Predictor:
                         steps = int(steps * 1.5)
                         batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=steps, width=width, height=height).images
                     else:  # turbo model
+                        steps = min(steps,4)
                         batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
                         # if steps > 3:
                         #     # now refine with delibate pipeline. strength = 0.1. steps=20. pass image=batch_results

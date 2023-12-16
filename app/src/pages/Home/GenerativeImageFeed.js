@@ -113,7 +113,7 @@ export function GenerativeImageFeed() {
       <br />
       Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
       {/* links */}
-      Create with ChatGPT: <b><a href="https://chat.openai.com/share/d24ce24f-283a-4f76-bacb-6e0740c234a1">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
+      Create with ChatGPT: <b><a href="https://chat.openai.com/share/5b94d100-52f8-4142-ab94-8fa2e36d0a63">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
       {/* input field */}
       <br />
       <br />

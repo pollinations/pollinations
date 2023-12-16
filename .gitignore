@@ -2,3 +2,8 @@ venv
 *.png
 output/
 prompts.txt
+image_gen/venv
+image_gen/output/
+image_gen/*.png
+image_gen/prompts.txt
+

@@ -107,7 +107,7 @@ const idealSideLength = {
 };
 
 
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=true, refine=true }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=true, refine=true, nologo=false }) => {
 
   if (refine==="false") 
     refine = false;
@@ -117,6 +117,10 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     enhance = false;
   if (enhance==="true")
     enhance = true;
+  if (nologo==="false")
+    nologo = false;
+  if (nologo==="true")
+    nologo = true;
 
   const sideLength = idealSideLength[model] || idealSideLength["turbo"];
 
@@ -148,7 +152,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
   
-  return { width, height, seed, model, enhance, refine};
+  return { width, height, seed, model, enhance, refine, nologo};
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {

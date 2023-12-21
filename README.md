@@ -13,7 +13,7 @@ Pollinations are an effort to make generative art more approachable.
 
 [Instructions](docs/instructions.md) on using Pollinations.AI.
 <details>
-  <summary>🐍 Python Package</summary>
+  <summary><h2>🐍 Python Package</h2></summary>
 
 ```python
 # Usage Example

@@ -6,9 +6,9 @@ PYTHON_REQUIRED_MAJOR: int = 3
 PYTHON_MINIMUM_MINOR:  int = 7
 
 # Pollinations version
-POLLINATIONS_MAJOR:    int = 0
+POLLINATIONS_MAJOR:    int = 1
 POLLINATIONS_MINOR:    int = 3
-POLLINATIONS_PATCH:    int = 1
+POLLINATIONS_PATCH:    int = 2
 
 # The directory containing this file
 HERE:   str = pathlib.Path(__file__).parent
@@ -43,7 +43,10 @@ setup(
     project_urls={
         'Pollinations': 'https://github.com/pollinations',
         'Source': 'https://github.com/pollinations/pollinations',
-    }
+    },
+    install_requires=[
+        'requests',
+    ]
     # entry_points={
     #     "console_scripts": [
     #         "colabservice=reader.__main__:main",

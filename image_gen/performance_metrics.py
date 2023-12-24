@@ -2,14 +2,11 @@ import os
 import time
 import torch
 from flask import Flask, request, jsonify
-from diffusers import (
-    AutoPipelineForText2Image, 
-    StableDiffusionPipeline,
-    EulerAncestralDiscreteScheduler
-)
-from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
+
 import threading
 from collections import deque
+
+
 
 # Flask App Initialization
 app = Flask(__name__)

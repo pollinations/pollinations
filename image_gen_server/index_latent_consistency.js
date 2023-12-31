@@ -15,7 +15,7 @@ import { getClosesPrompt } from './promptEmbedding.js';
 
 const BATCH_SIZE = 8; // Number of requests per batch
 
-const concurrency = 2; // Number of concurrent requests per bucket key
+const concurrency = 3; // Number of concurrent requests per bucket key
 
 const generalImageQueue = new PQueue({ concurrency });
 let currentBatches = [];
@@ -45,7 +45,7 @@ const queuePerIp = (handler) => {
       console.log("ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
       // if queue size > 10 then redirect to 
       const ricUurl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
-      if (ipQueue[ip].size > 10) {
+      if (ipQueue[ip].size > 20) {
         console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
         rickrollCount[ip] += 1; // Increment rickroll count for this IP
         rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
@@ -172,7 +172,7 @@ const requestListener = queuePerIp(async function (req, res) {
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests, bucketKey, model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const memCacheKey = `${bucketKey}-${originalPrompt}-${JSON.stringify(extraParams)}`;
+  const memCacheKey = `${bucketKey}-${originalPrompt}-${JSON.stringify(safeParams)}`;
 
   // Initialize the stats for this bucket key if they don't exist yet
   if (!bucketKeyStats[bucketKey]) {
@@ -210,7 +210,7 @@ const requestListener = queuePerIp(async function (req, res) {
 
   memCache[memCacheKey] = new Promise(async (resolve, reject) => {
       timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, extraParams["enhance"]);
+      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams["enhance"]);
 
       if (!prompt) {
         res.writeHead(500);
@@ -242,7 +242,7 @@ const requestListener = queuePerIp(async function (req, res) {
         console.log('Timing Info:', timingInfo);
 
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: extraParams["model"], timingInfo }, { saveAsLastState: true });
+        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: safeParams["model"], timingInfo }, { saveAsLastState: true });
         sendToAnalytics(req, "imageGenerated", analyticsMetadata);
       };
 
@@ -320,7 +320,18 @@ const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance=f
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
   // first 200 characters are used for the prompt
   promptRaw = urldecode(promptRaw);
-  promptRaw = promptRaw.substring(0,250);
+
+  // if it is not a string make it a string
+  if (typeof promptRaw !== "string") {
+    promptRaw = ""+promptRaw;
+  }
+
+  // if prompt contains "A:" we want to take the part after "A:"
+  if (promptRaw.includes("A:")) {
+    promptRaw = promptRaw.split("A:")[1];
+  }
+
+  promptRaw = promptRaw.slice(0,250);
   // 
   promptRaw = sanitizeString(promptRaw);
   

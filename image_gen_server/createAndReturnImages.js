@@ -19,7 +19,7 @@ const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
 
   let images = [];
   try {
-    const safeParams = makeParamsSafe(extraParams);
+    const safeParams = extraParams
 
     prompts.forEach(prompt => {
       sendToFeedListeners({ concurrentRequests, prompt, steps });
@@ -102,12 +102,17 @@ const nsfwCheck = async (buffer) => {
 const idealSideLength = {
   turbo: 512, 
   pixart: 768, 
-  deliberate: 768,
+  deliberate: 640,
   dreamshaper: 800,
+  formulaxl: 800,
+  playground: 960,
+  dpo: 768,
+  dalle3xl: 768,
+  realvis: 768,
 };
 
 
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=true, refine=true, nologo=false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=true, nologo=false }) => {
 
   if (refine==="false") 
     refine = false;
@@ -138,7 +143,9 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
 
 
   // if seed is not an integer set to a random integer
-  if (seed && !Number.isInteger(parseInt(seed))) {
+  if (seed && Number.isInteger(parseInt(seed))) {
+    seed = parseInt(seed); 
+  } else {
     seed = Math.floor(Math.random() * 1000000);
   }
 
@@ -156,7 +163,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
-
+      extraParams = makeParamsSafe(extraParams);
       const buffers = await callWebUI(prompts, extraParams, concurrentRequests);
 
       // console.log("buffers", buffers);

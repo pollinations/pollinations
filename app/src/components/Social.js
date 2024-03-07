@@ -5,8 +5,8 @@ import styled from '@emotion/styled'
 import { Colors, MOBILE_BREAKPOINT } from '../styles/global'
 
 
-export const SocialLinks = ({ small, hideOnMobile, gap }) => (
-  <SocialStyle small={small} hideOnMobile={hideOnMobile} gap={gap}>
+export const SocialLinks = ({ small, hideOnMobile, gap, invert }) => (
+  <SocialStyle small={small} hideOnMobile={hideOnMobile} gap={gap} invert={invert}>
     {
     Object.keys(SOCIAL_LINKS).map(platform => 
         <Link
@@ -15,7 +15,7 @@ export const SocialLinks = ({ small, hideOnMobile, gap }) => (
           target="_blank"
           title={platform}
         >
-          <IconImg src={SOCIAL_LINKS[platform]?.icon_img} small={small} />
+          <IconImg src={SOCIAL_LINKS[platform]?.icon_img} small={small} invert={invert} />
         </Link>
       )
     }
@@ -25,6 +25,7 @@ export const SocialLinks = ({ small, hideOnMobile, gap }) => (
 const IconImg = styled.img`
 width: ${props => props.small ? '14px' : '22px'};
 height: auto;
+${props => props.invert ? 'filter:invert(100%)' : ''};
 `
 
 const SocialStyle = styled.div`
@@ -40,7 +41,7 @@ a {
   justify-content: center;
   align-items: center;
   border-radius: 50%;
-  border: ${props => props.small ? '0.75px' : '1px'} solid ${props => props.small ? 'white' : Colors.lime};
+  border: ${props => props.small ? '0.75px' : '1px'} solid ${props => props.small ? props.invert ? 'black' : 'white' : Colors.lime};
   width: ${props => props.small ? '30px' : '47px'} !important;
   height: ${props => props.small ? '30px' : '47px'} !important;
 }

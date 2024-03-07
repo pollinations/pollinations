@@ -9,16 +9,16 @@ import { GenerativeImageFeed } from "./GenerativeImageFeed"
 
 export default function Solutions() {
   return <Style>
+    <WhoWeAre />
     <Hero />
-    {/* <TwitchSection /> */}
+    <MusicVideo/>
     <DarkLayout style={{height:"100vh"}}>
       <GenerativeImageFeed />
     </DarkLayout>
+    {/* <TwitchSection /> */}
+    {/* <ActivityUpdate /> */}
     <Discord />
-    <ActivityUpdate />
     {/* <Dreamachine /> */}
-    {/* <MusicVideo /> */}
-    <WhoWeAre />
   </Style>
 }
 const Style = styled.div`

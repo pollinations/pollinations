@@ -45,7 +45,7 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
   </div>
   <NavigationItems navRoutes={navRoutes} isEnd/>
 
-  <SocialLinks small hideOnMobile gap='8px'/>
+  <SocialLinks small hideOnMobile gap='8px' invert/>
 
   <MenuButton>
     <IconButton onClick={()=>drawerState[1](true)} >

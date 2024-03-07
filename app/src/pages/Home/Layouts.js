@@ -33,6 +33,8 @@ let ActivityUpdateContent = () => <>
 
 
 
+
+
 export default function WhoWeAre() {
   return <Style>
     <TopBand src={TopBandPresetsDesign}/>
@@ -56,6 +58,7 @@ export function ActivityUpdate(){
 }
 
 
+
 export function DarkLayout({children, style}){
   return <Style dark={true} style={style}>
     <PageLayout long={true} dark={true}>
@@ -70,7 +73,7 @@ position: absolute;
 width: 100%;
 height: auto;
 right: 0;
-top: 0;
+bottom: 0;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   width: auto;
   height: 59px;

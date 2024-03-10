@@ -100,7 +100,7 @@ const nsfwCheck = async (buffer) => {
 };
 
 const idealSideLength = {
-  turbo: 512, 
+  turbo: 768, 
   pixart: 768, 
   deliberate: 640,
   dreamshaper: 800,
@@ -112,7 +112,7 @@ const idealSideLength = {
 };
 
 
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=true, nologo=false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=false, nologo=false, negative_prompt="worst quality, blurry" }) => {
 
   if (refine==="false") 
     refine = false;
@@ -146,7 +146,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
   if (seed && Number.isInteger(parseInt(seed))) {
     seed = parseInt(seed); 
   } else {
-    seed = Math.floor(Math.random() * 1000000);
+    seed = 42;
   }
 
   // const maxPixels = maxPixelsAll[model] || maxPixelsAll["turbo"];
@@ -159,7 +159,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
   
-  return { width, height, seed, model, enhance, refine, nologo};
+  return { width, height, seed, model, enhance, refine, nologo, negative_prompt};
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {

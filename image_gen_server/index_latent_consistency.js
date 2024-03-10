@@ -88,7 +88,7 @@ const processChunk = async (chunk, bucketKey, extraParams) => {
 const processBatches = async () => {
   const processingPromises = [];
   while (generalImageQueue.size + generalImageQueue.pending < concurrency) {
-    let batchIndex = currentBatches.findIndex(batch => batch.extraParams.model === 'turbo');
+    let batchIndex = currentBatches.findIndex(batch => batch.extraParams.model === 'turbo' || !batch.extraParams.model);
     if (batchIndex === -1) {
       // If no turbo model found, use the original logic
       batchIndex = Math.random() < 0.8 ? 0 : 1;
@@ -159,9 +159,14 @@ const requestListener = queuePerIp(async function (req, res) {
     return;
   }
 
-  const extraParams = {...query};
-
+  let extraParams = {...query};
+  // if (extraParams.model !== "turbo" && extraParams.model !== "dreamshaper" && extraParams.model !== "deliberate") {
+  //   extraParams.model = "turbo";
+  // }
+  
   const safeParams = makeParamsSafe(extraParams);
+
+  // extraParams = safeParams;
 
   const bucketKey = ["model","width","height"]
     .filter(key => safeParams[key])

@@ -12,7 +12,7 @@ export default function Solutions() {
     <WhoWeAre />
     <Hero />
     <MusicVideo/>
-    <DarkLayout style={{height:"100vh"}}>
+    <DarkLayout>
       <GenerativeImageFeed />
     </DarkLayout>
     {/* <TwitchSection /> */}

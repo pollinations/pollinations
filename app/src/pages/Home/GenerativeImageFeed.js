@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
 import { useEffect, useState, useRef } from 'react';
 import { isMature } from '../../data/mature';
-import { Input, Typography, Link, Box, Container, Grid, Paper, Tabs, Tab, AppBar, Button } from  '@material-ui/core';
+import { Input, Typography, Link, Box, Container, Grid, Paper, Tabs, Tab, AppBar, Button, Table, TableBody, TableCell, TableContainer, TableRow } from  '@material-ui/core';
 import { CodeBlock, dracula } from "react-code-blocks";
 
 export function GenerativeImageFeed() {
@@ -86,29 +86,58 @@ export function GenerativeImageFeed() {
     setTabValue(newValue);
   };
 
+  const shortUrl = shorten(image?.["imageURL"] || "");
+
   return (
     <Box>
       <GenerativeImageURLContainer>
         <ImageURLHeading>Image Feed</ImageURLHeading>
         {image && (
-          <ImageContainer>
-            <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-              <ImageStyle
-                src={image["imageURL"]}
-                alt="generative_image"
-                onLoad={() => {
-                  setPrompt(shorten(nextPrompt));
-                  console.log("Loaded image. Setting prompt to: ", nextPrompt);
-                }}
-              />
-            </Link>
-            <PromptDisplay>Prompt: <b>{prompt}</b></PromptDisplay>
-          </ImageContainer>
+          <>
+            <ImageContainer>
+              <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+                <ImageStyle
+                  src={image["imageURL"]}
+                  alt="generative_image"
+                  onLoad={() => {
+                    setPrompt(shorten(nextPrompt));
+                    console.log("Loaded image. Setting prompt to: ", nextPrompt);
+                  }}
+                />
+              </Link>
+            </ImageContainer>
+            <Box   style={{width: "600px", position:"relative"}} >
+            <TableContainer component={Paper}>
+              <Table aria-label="image info table" size="small">
+                <TableBody>
+                  <TableRow>
+                    <TableCell component="th" scope="row">Prompt</TableCell>
+                    <TableCell align="right">{shorten(prompt)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th" scope="row">Link</TableCell>
+                    <TableCell align="right">
+                      <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer">
+                        {shorten(`https://pollinations.ai/p/${encodeURIComponent(prompt)}`)}
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th" scope="row">Load</TableCell>
+                    <TableCell align="right"><ServerLoadDisplay concurrentRequests={serverLoad} /></TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell component="th" scope="row">#</TableCell>
+                    <TableCell align="right">{formatImagesGenerated(imagesGenerated)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+            </Box>
+          </>
         )}
-        <ServerLoadDisplay concurrentRequests={serverLoad} />
-        <Typography variant="h6" component="h4">Generated #: {formatImagesGenerated(imagesGenerated)}</Typography>
         <URLExplanation>
-          <Typography variant="body2" component="p" style={{ fontSize: '0.8rem', lineHeight: '1.2' }}>
+          <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.2' }}>
             To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.         
           </Typography>
           <AppBar position="static" style={{ background: 'black', color: 'white' }}>
@@ -120,12 +149,12 @@ export function GenerativeImageFeed() {
             </Tabs>
           </AppBar>
           {tabValue === 0 && <CodeBlock
-            text={`![Generative Image](${image?.imageURL})\nUse this markdown snippet to embed the image in your markdown content.`}
+            text={`![Generative Image](${shortUrl})\nUse this markdown snippet to embed the image in your markdown content.`}
             language={"markdown"}
             theme={dracula}
           />}
           {tabValue === 1 && <CodeBlock
-            text={`<img src="${image?.imageURL}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
+            text={`<img src="${shortUrl}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
             language={"html"}
             theme={dracula}
           />}
@@ -135,7 +164,7 @@ export function GenerativeImageFeed() {
             theme={dracula}
           />}
           {tabValue === 3 && <CodeBlock
-            text={`import requests\n\nimage_url = "${image?.imageURL}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
+            text={`import requests\n\nimage_url = "${shortUrl}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
             language={"python"}
             theme={dracula}
           />}
@@ -156,7 +185,7 @@ const PromptInput = () => {
   </InputContainer>;
 };
 
-const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
+const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;
 
 function estimateGeneratedImages() {
   const launchDate = 1701718083442;
@@ -172,9 +201,9 @@ function ServerLoadDisplay({ concurrentRequests }) {
   concurrentRequests = Math.round(concurrentRequests/2);
   const max = 5;
   const load = Math.min(max, concurrentRequests);
-  const loadDisplay = "▁▃▅▇▉".slice(1, load + 1);
+  const loadDisplay = "▁▃▅▇▉".slice(1, load + 2);
 
-  return <Box>Server Load: {loadDisplay}</Box>;
+  return <>{loadDisplay}</>;
 }
 
 const ImageStyle = styled.img`
@@ -219,3 +248,4 @@ const InputContainer = styled(Grid)`
   align-items: flex-end;
   margin-top: 1em;
 `;
+

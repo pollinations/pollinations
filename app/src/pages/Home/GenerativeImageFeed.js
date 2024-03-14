@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { isMature } from '../../data/mature';
 import { Input, Typography, Link, Box, Container, Grid, Paper, Tabs, Tab, AppBar, Button, Table, TableBody, TableCell, TableContainer, TableRow } from  '@material-ui/core';
 import { CodeBlock, dracula } from "react-code-blocks";
+import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export function GenerativeImageFeed() {
   const [image, setImage] = useState(null);
@@ -136,10 +137,13 @@ export function GenerativeImageFeed() {
             </Box>
           </>
         )}
+        <br />
         <URLExplanation>
-          <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.2' }}>
+          <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
             To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.         
           </Typography>
+          <br />
+
           <AppBar position="static" style={{ background: 'black', color: 'white' }}>
             <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
               <Tab label="Markdown" />
@@ -159,7 +163,23 @@ export function GenerativeImageFeed() {
             theme={dracula}
           />}
           {tabValue === 2 && <CodeBlock
-            text={`async function downloadImage(imageUrl) {\n  const response = await fetch(imageUrl);\n  const blob = await response.blob();\n  const url = window.URL.createObjectURL(blob);\n  const a = document.createElement('a');\n  a.style.display = 'none';\n  a.href = url;\n  a.download = 'image.png';\n  document.body.appendChild(a);\n  a.click();\n  window.URL.revokeObjectURL(url);\n  console.log('Download Completed');\n}\n\ndownloadImage('${image?.imageURL}');\n\n// This JavaScript snippet downloads the image using the fetch API with async/await.`}
+            text={`
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+async function downloadImage(imageUrl) {
+  // Fetching the image from the URL
+  const response = await fetch(imageUrl);
+  // Reading the response as a buffer
+  const buffer = await response.buffer();
+  // Writing the buffer to a file named 'image.png'
+  fs.writeFileSync('image.png', buffer);
+  // Logging completion message
+  console.log('Download Completed');
+}
+
+downloadImage('${image?.imageURL}');
+// This Node.js snippet downloads the image using node-fetch and saves it to disk.`}
             language={"javascript"}
             theme={dracula}
           />}
@@ -169,6 +189,8 @@ export function GenerativeImageFeed() {
             theme={dracula}
           />}
         </URLExplanation>
+        <br />
+
         <Link href={`https://pollinations.ai/p/${encodeURIComponent(nextPrompt)}?width=1080&height=720&nofeed=true&nologo=true`} underline="none">Generate Image</Link>
         <PromptInput />
       </GenerativeImageURLContainer>
@@ -223,11 +245,32 @@ const GenerativeImageURLContainer = styled(Container)`
   }
 `;
 
-const ImageURLHeading = styled(Typography)`
-  font-size: 1.5em;
+const ImageURLHeading = styled.p`
+  font-family: ${Fonts.headline} !important;
+  font-style: normal  !important;
+  font-weight: 400 !important;
+  font-size: 96px !important;
+  line-height: 105px !important;
+  text-transform: capitalize !important;
+
   margin: 0;
-  padding-bottom: 0.5em;
-`;
+  margin-top: 1em;
+  color: ${Colors.offblack};
+
+  span {
+    font-family: ${Fonts.headline};
+    color: ${Colors.lime};
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    max-width: 600px;
+    font-size: 58px;
+    line-height: 55px;
+    margin: 0;
+    margin-top: 1em;
+  }
+  `;
+
 
 const ImageContainer = styled(Paper)`
   margin-bottom: 1em;

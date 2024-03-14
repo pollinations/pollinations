@@ -7,18 +7,16 @@ import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import SwiperComponent from './Swiper';
 // import Swiper styles
 
-
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
 
 const FeaturedApplicationsContent = [
     {
         title: 'AI Video',
-        // subtitle: 'Introducing the ultimate video creation tool - now powered by AI!',
         description: <> 
-            Say goodbye to the hassle of editing and creating music videos from scratch. With our cutting-edge technology, we can easily produce professional-grade videos. 
-            <br/> <br/>Whether you're a musician, content creator, or simply looking to create eye-catching visuals.
-            <br/> <br/>Bring your ideas to life with our innovative video creation technology today!
+            Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. Instead of offering technology, we specialize in creating bespoke videos that bring your artistic visions to life.
+            <br/> <br/>Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
+            <br/> <br/>Let us help you transform your psychedelic ideas into stunning visual narratives.
         </>,
     },
 ]

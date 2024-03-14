@@ -1,21 +1,19 @@
 import styled from '@emotion/styled';
 import { useEffect, useState, useRef } from 'react';
 import { isMature } from '../../data/mature';
-import Button from '@material-ui/core/Button';
-import { Input, Tooltip, Typography } from '@material-ui/core';
+import { Input, Typography, Link, Box, Container, Grid, Paper, Tabs, Tab, AppBar, Button } from  '@material-ui/core';
+import { CodeBlock, dracula } from "react-code-blocks";
 
 export function GenerativeImageFeed() {
   const [image, setImage] = useState(null);
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
-  // const [imageQueue, setImageQueue] = useState([]);
+  const [tabValue, setTabValue] = useState(0);
+
   const loadedImages = useRef([]);
   const queuedImages = useRef([]);
-  // console.log("Image queue:", imageQueue);
 
-  // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
-  // define 2023-06-09
   const imagesGeneratedCalculated = estimateGeneratedImages();
   const [imagesGenerated, setImagesGenerated] = useState(imagesGeneratedCalculated);
 
@@ -45,7 +43,6 @@ export function GenerativeImageFeed() {
 
     let eventSource = getEventSource();
 
-    // on error close and reopen
     eventSource.onerror = async () => {
       await new Promise(r => setTimeout(r, 1000));
       console.log("Event source error. Closing and re-opening.");
@@ -57,7 +54,6 @@ export function GenerativeImageFeed() {
       eventSource.close();
     };
   }, [setServerLoad]);
-
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,61 +82,81 @@ export function GenerativeImageFeed() {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  // image clickable on the webpage.
-  return (
-  <div>
-    <br /><br /><br /><br /><br />
-    <GenerativeImageURLContainer>
-      <ImageURLHeading>Image Feed</ImageURLHeading>
-      {image && (
-        <div style={{ wordBreak: "break-all" }}>
-          <a href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-            <ImageStyle
-              src={image["imageURL"]}
-              alt="generative_image"
-              onLoad={() => {
-                setPrompt(shorten(nextPrompt));
-                console.log("Loaded image. Setting prompt to: ", nextPrompt);
-              }}
-            />
-          </a>
-          <br />
-          Prompt: <b>{prompt}</b>
-        </div>
-      )}
-      <ServerLoadDisplay concurrentRequests={serverLoad} />
-      Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
-      <br />
-      Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
-      {/* links */}
-      Create with ChatGPT: <b><a href="https://chat.openai.com/share/5b94d100-52f8-4142-ab94-8fa2e36d0a63">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
-      {/* input field */}
-      <br />
-      <br />
-      <PromptInput />
-    </GenerativeImageURLContainer>
-  </div>
-);}
+  const handleChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
 
+  return (
+    <Box>
+      <GenerativeImageURLContainer>
+        <ImageURLHeading>Image Feed</ImageURLHeading>
+        {image && (
+          <ImageContainer>
+            <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+              <ImageStyle
+                src={image["imageURL"]}
+                alt="generative_image"
+                onLoad={() => {
+                  setPrompt(shorten(nextPrompt));
+                  console.log("Loaded image. Setting prompt to: ", nextPrompt);
+                }}
+              />
+            </Link>
+            <PromptDisplay>Prompt: <b>{prompt}</b></PromptDisplay>
+          </ImageContainer>
+        )}
+        <ServerLoadDisplay concurrentRequests={serverLoad} />
+        <Typography variant="h6" component="h4">Generated #: {formatImagesGenerated(imagesGenerated)}</Typography>
+        <URLExplanation>
+          <Typography variant="body2" component="p" style={{ fontSize: '0.8rem', lineHeight: '1.2' }}>
+            To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.         
+          </Typography>
+          <AppBar position="static" style={{ background: 'black', color: 'white' }}>
+            <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
+              <Tab label="Markdown" />
+              <Tab label="HTML" />
+              <Tab label="JavaScript" />
+              <Tab label="Python" />
+            </Tabs>
+          </AppBar>
+          {tabValue === 0 && <CodeBlock
+            text={`![Generative Image](${image?.imageURL})\nUse this markdown snippet to embed the image in your markdown content.`}
+            language={"markdown"}
+            theme={dracula}
+          />}
+          {tabValue === 1 && <CodeBlock
+            text={`<img src="${image?.imageURL}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
+            language={"html"}
+            theme={dracula}
+          />}
+          {tabValue === 2 && <CodeBlock
+            text={`async function downloadImage(imageUrl) {\n  const response = await fetch(imageUrl);\n  const blob = await response.blob();\n  const url = window.URL.createObjectURL(blob);\n  const a = document.createElement('a');\n  a.style.display = 'none';\n  a.href = url;\n  a.download = 'image.png';\n  document.body.appendChild(a);\n  a.click();\n  window.URL.revokeObjectURL(url);\n  console.log('Download Completed');\n}\n\ndownloadImage('${image?.imageURL}');\n\n// This JavaScript snippet downloads the image using the fetch API with async/await.`}
+            language={"javascript"}
+            theme={dracula}
+          />}
+          {tabValue === 3 && <CodeBlock
+            text={`import requests\n\nimage_url = "${image?.imageURL}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
+            language={"python"}
+            theme={dracula}
+          />}
+        </URLExplanation>
+        <Link href={`https://pollinations.ai/p/${encodeURIComponent(nextPrompt)}?width=1080&height=720&nofeed=true&nologo=true`} underline="none">Generate Image</Link>
+        <PromptInput />
+      </GenerativeImageURLContainer>
+    </Box>
+  );
+}
 
 const PromptInput = () => {
   const [prompt, setPrompt] = useState("");
 
-  return <div>
-    <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} style={{ width: "100%" }} placeholder='Or type your prompt here' />
-    {/* right aligned button */}
-    <div style={{ textAlign: "right" }}>
-      <Button onClick={() => window.open(`https://pollinations.ai/prompt/${prompt}`)}>Create</Button>
-    </div>
-  </div>;
+  return <InputContainer>
+    <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} placeholder='Or type your prompt here' />
+    <Button onClick={() => window.open(`https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&nofeed=true&nologo=true`)}>Create</Button>
+  </InputContainer>;
 };
 
 const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
-function ParamsButton() {
-  const [showParams, setShowParams] = useState(false);
-  return <Tooltip title="?width=[width]&height=[height]&seed=[seed]"><Button size="small" style={{ minWidth: "16px", display: "inline-block", fontSize: "90%" }} onClick={() => setShowParams(!showParams)}><span style={{ textTransform: "none" }}> {showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button></Tooltip>;
-  // <Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button>;
-}
 
 function estimateGeneratedImages() {
   const launchDate = 1701718083442;
@@ -151,55 +167,55 @@ function estimateGeneratedImages() {
   const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
-// create a small ascii visualization of server load
-// very high is 5 concurrent requests
-// use some UTF-8 characters to make it look nicer
+
 function ServerLoadDisplay({ concurrentRequests }) {
   concurrentRequests = Math.round(concurrentRequests/2);
   const max = 5;
   const load = Math.min(max, concurrentRequests);
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 1);
 
-  return <div>Server Load: {loadDisplay}</div>;
+  return <Box>Server Load: {loadDisplay}</Box>;
 }
+
 const ImageStyle = styled.img`
   max-width: 100%;
   max-height: 400px;
 `;
 
-// responsive version that makes the container occupy the full width of the screen if on mobile
-const GenerativeImageURLContainer = styled.div`
+const GenerativeImageURLContainer = styled(Container)`
   background-color: rgba(0,0,0,0.7);
   color: white;
-
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  margin: 2em auto;
   padding: 1em;
-  width:80%;
-  max-width: 550px;
+  width: 80%;
+  border-radius: 8px;
   @media (max-width: 600px) {
-    width: 100%;
-    left: 0;
-    transform: translate(0, -50%);
+    width: 95%;
   }
 `;
 
-const ImageURLHeading = styled.h3`
-margin-top: 0px; 
-margin-bottom: 0px;
+const ImageURLHeading = styled(Typography)`
+  font-size: 1.5em;
+  margin: 0;
+  padding-bottom: 0.5em;
 `;
 
-const PlayerWrapper = styled.div`
-width: 100%;
-min-height: 100%;
-min-height: 90vh;
-top: 0;
-bottom: 0;
-left: 0;
-right:0;
-// position: absolute;
-z-index: -1;
+const ImageContainer = styled(Paper)`
+  margin-bottom: 1em;
+`;
 
+const PromptDisplay = styled(Box)`
+  margin-top: 0.5em;
+`;
+
+const URLExplanation = styled(Box)`
+  margin-top: 1em;
+  font-size: 0.9em;
+`;
+
+const InputContainer = styled(Grid)`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 1em;
 `;

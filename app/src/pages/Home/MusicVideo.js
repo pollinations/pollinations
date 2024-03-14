@@ -14,7 +14,7 @@ const FeaturedApplicationsContent = [
     {
         title: 'AI Video',
         description: <> 
-            Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. Instead of offering technology, we specialize in creating bespoke videos that bring your artistic visions to life.
+            Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. We specialize in creating bespoke videos that bring your artistic visions to life.
             <br/> <br/>Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
             <br/> <br/>Let us help you transform your psychedelic ideas into stunning visual narratives.
         </>,

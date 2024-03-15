@@ -21,9 +21,10 @@ const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
   try {
     const safeParams = extraParams
 
-    prompts.forEach(prompt => {
-      sendToFeedListeners({ concurrentRequests, prompt, steps });
-    });
+    if (!safeParams.nofeed)
+      prompts.forEach(prompt => {
+        sendToFeedListeners({...safeParams, concurrentRequests, prompt, steps });
+      });
 
     const body = {
       "prompts": prompts,
@@ -112,7 +113,7 @@ const idealSideLength = {
 };
 
 
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=false, nologo=false, negative_prompt="worst quality, blurry" }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=false, nologo=false, negative_prompt="worst quality, blurry", nofeed=false }) => {
 
   if (refine==="false") 
     refine = false;
@@ -159,7 +160,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
   
-  return { width, height, seed, model, enhance, refine, nologo, negative_prompt};
+  return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed};
 };
 
 export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
@@ -170,9 +171,11 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
       const buffersWithLegends = await Promise.all(buffers.map(async ({buffer, has_nsfw_concept: isMature, concept}) => {
         // const { concept, nsfw: isMature } = await nsfwCheck(buffer);
 
-        const isChild = Object.values(concept?.special_scores)?.some(score => score > 0);
+        const isChild = Object.values(concept?.special_scores)?.some(score => score > -0.05);
 
         console.error("isMature", isMature, "concepts", isChild);
+        if (isChild)
+          isMature = true;
 
         const logoPath = isMature ? null : 'logo.png';
 

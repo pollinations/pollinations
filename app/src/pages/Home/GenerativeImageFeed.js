@@ -132,7 +132,7 @@ export function GenerativeImageFeed() {
                     <TableCell align="right">
                       <Typography variant="body1" component="span" style={{ fontWeight: 'bold', color: 'deepSkyBlue' }}>
                         # {formatImagesGenerated(imagesGenerated)}
-                      </Typography>
+                      </Typography>,
                       &nbsp;&nbsp;
                       <ServerLoadDisplay concurrentRequests={serverLoad} />
                     </TableCell>
@@ -231,7 +231,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const load = Math.min(max, concurrentRequests);
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2);
 
-  return <>{loadDisplay}</>;
+  return <>Load: {loadDisplay}</>;
 }
 
 const ImageStyle = styled.img`
@@ -297,4 +297,5 @@ const InputContainer = styled(Grid)`
   align-items: flex-end;
   margin-top: 1em;
 `;
+
 

@@ -47,6 +47,7 @@ class StreamDiffusionWrapper:
         seed: int = 2,
         use_safety_checker: bool = False,
         engine_dir: Optional[Union[str, Path]] = "engines",
+        textual_inversions_dict: Optional[Dict[str, str]] = None,
     ):
         """
         Initializes the StreamDiffusionWrapper.
@@ -163,6 +164,7 @@ class StreamDiffusionWrapper:
             cfg_type=cfg_type,
             seed=seed,
             engine_dir=engine_dir,
+            textual_inversions_dict=textual_inversions_dict,
         )
         # print class name of stream
         print("loaded model", self.stream.__class__.__name__)
@@ -176,7 +178,7 @@ class StreamDiffusionWrapper:
 
     def prepare(
         self,
-        prompt: str,
+        prompt,
         negative_prompt: str = "",
         num_inference_steps: int = 50,
         guidance_scale: float = 1.2,
@@ -212,7 +214,7 @@ class StreamDiffusionWrapper:
     def __call__(
         self,
         image: Optional[Union[str, Image.Image, torch.Tensor]] = None,
-        prompt: Optional[str] = None,
+        prompt = None,
     ) -> Union[Image.Image, List[Image.Image]]:
         """
         Performs img2img or txt2img based on the mode.
@@ -235,7 +237,7 @@ class StreamDiffusionWrapper:
             return self.txt2img(prompt)
 
     def txt2img(
-        self, prompt: Optional[str] = None
+        self, prompt = None
     ) -> Union[Image.Image, List[Image.Image], torch.Tensor, np.ndarray]:
         """
         Performs txt2img.
@@ -367,6 +369,7 @@ class StreamDiffusionWrapper:
         cfg_type: Literal["none", "full", "self", "initialize"] = "self",
         seed: int = 2,
         engine_dir: Optional[Union[str, Path]] = "engines",
+        textual_inversions_dict: Optional[Dict[str, str]] = None,
     ) -> StreamDiffusion:
         """
         Loads the model.
@@ -431,6 +434,13 @@ class StreamDiffusionWrapper:
             traceback.print_exc()
             print("Model load has failed. Doesn't exist.")
             exit()
+        pipe.enable_freeu(s1=0.9, s2=0.2, b1=1.2, b2=1.4)
+
+        if textual_inversions_dict is not None:
+            # pipe.load_textual_inversion("./charturnerv2.pt", token="charturnerv2")
+            # for each of the dictionary items key is the name of the inversion and value is the path to the inversion
+            for key, value in textual_inversions_dict.items():
+                pipe.load_textual_inversion(value, token=key)
 
         stream = StreamDiffusion(
             pipe=pipe,
@@ -640,9 +650,6 @@ class StreamDiffusionWrapper:
         if seed < 0: # Random seed
             seed = np.random.randint(0, 1000000)
         print("stream", stream)
-        # print all methods and attributes of stream
-        import inspect
-        print(inspect.getmembers(stream))
         
         stream.prepare(
             "",

@@ -25,7 +25,7 @@ def main(
     use_denoising_batch: bool = True,
     guidance_scale: float = 1.2,
     cfg_type: Literal["none", "full", "self", "initialize"] = "self",
-    seed: int = 2,
+    seed: int = 2,  
     delta: float = 0.5,
 ):
     """

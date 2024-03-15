@@ -1,6 +1,7 @@
 import os
 import time
 import torch
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 from flask import Flask, request, jsonify
 from diffusers import (
     AutoPipelineForText2Image, 
@@ -46,6 +47,11 @@ from os.path import expanduser  # pylint: disable=import-outside-toplevel
 from urllib.request import urlretrieve  # pylint: disable=import-outside-toplevel
 
 tinyAutoencoder = AutoencoderTiny.from_pretrained("madebyollin/taesdxl", torch_dtype=torch.float16)
+
+tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-small")
+pimper_model = T5ForConditionalGeneration.from_pretrained("./superprompt-v1", device_map="auto")
+
+
 def get_aesthetic_model(clip_model="vit_l_14"):
     """load the aethetic model"""
     home = expanduser("~")
@@ -85,17 +91,21 @@ class Predictor:
     def __init__(self):
         # self.instaflow_pipe = self._load_instaflow_model()
         # self.turbo_pipe = self._load_turbo_model()
-        self.realisticvisions_pipe = self._load_realvisions_model()
-        self.streamdiffusion = self._load_streamdiffusion_model()
-        self.streamdeliberate = self._load_deliberate_model()
-        # self.pixart_pipe = self._load_pixart()
-        dreamshaper_pipes = self._load_dreamshaper_model()
-        self.dreamshaper_pipe = dreamshaper_pipes[0]
-        self.formulaxl_pipe = self.load_formulaxl_model()
-        self.playground_pipe = self._load_playground_model()
-        self.dpo_pipe = self.load_dpo_model()
-        self.dalle3xl_pipe = self.load_dalle3xl_model()
-        # self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
+        # self.realisticvisions_pipe = self._load_realvisions_model()
+        # self.cutycat_pipe = self.load_cutycat_model()
+    
+        self.streamdiffusion = self._load_streamdiffusion_model()#model_id_or_path="./models/haveall.safetensors")
+        self.streamdeliberate = self._load_streamdiffusion_model(model_id_or_path="./models/deliberate_v5_sfw.safetensors")
+        self.dreamshaper_pipe = self._load_dreamshaper_model()
+        self.juggernaut_pipe = self._load_streamdiffusion_model(model_id_or_path="./models/juggernautreborn.safetensors")
+        # # self.pixart_pipe = self._load_pixart()
+        # dreamshaper_pipes = self._load_dreamshaper_model()
+        # self.dreamshaper_pipe = dreamshaper_pipes[0]
+        # self.formulaxl_pipe = self.load_formulaxl_model()
+        # self.playground_pipe = self._load_playground_model()
+        # self.dpo_pipe = self.load_dpo_model()
+        # self.dalle3xl_pipe = self.load_dalle3xl_model()
+        # # self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
         print("CUDA version:", torch.version.cuda)
         print("PyTorch version:", torch.__version__)
 
@@ -115,9 +125,12 @@ class Predictor:
 
         # use StreamDiffusion
         print("Loading Deliberate model...")
+        lora_dict = {
+            "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
+        }
         pipe = StreamDiffusionWrapper(
             model_id_or_path="./models/Deliberate_v4.safetensors",
-            t_index_list=[0, 16, 32, 45],
+            t_index_list=[0, 12, 24, 45],
             frame_buffer_size=1,
             width=512,
             height=512,
@@ -127,6 +140,7 @@ class Predictor:
             use_denoising_batch=False,
             cfg_type="none",
             seed=2,
+            lora_dict=lora_dict,
         )
         print("Deliberate model loaded.")
         return pipe
@@ -152,36 +166,43 @@ class Predictor:
         return self._compile_pipeline(pipeline.to("cuda"))
 
     def _load_dreamshaper_model(self):
+        # print("Loading DreamShaper model...")
+        # pipe = StableDiffusionXLPipeline.from_single_file(
+        #     "models/dreamshaperXL_turboDpmppSDEKarras.safetensors", 
+        #     torch_dtype=torch.float16, 
+        #     safety_checker=None
+        # ) 
+        # pipe.safety_checker = None
+        # print("DreamShaper model loaded.")
+        # pipe.scheduler.config.use_karras_sigmas = 'true'
+        # pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        # pipe.vae = tinyAutoencoder
+        # pipe.enable_model_cpu_offload()
+        # # return  self._compile_pipeline(pipe)
+
+        # use streamdiffusion
         print("Loading DreamShaper model...")
-        pipe = StableDiffusionXLPipeline.from_single_file(
-            "models/dreamshaperXL_turboDpmppSDEKarras.safetensors", 
-            torch_dtype=torch.float16, 
-            safety_checker=None
-        ) 
-        pipe.safety_checker = None
+        lora_dict = {
+            "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
+        }
+        pipe = StreamDiffusionWrapper(
+            model_id_or_path="./models/dreamshaper_v15.safetensors",
+            t_index_list=[0, 12, 24, 45],
+            frame_buffer_size=1,
+            width=512,
+            height=512,
+            warmup=10,
+            acceleration="xformers",
+            mode="txt2img",
+            use_denoising_batch=False,
+            cfg_type="none",
+            seed=2,
+            lora_dict=lora_dict,
+        )
+
         print("DreamShaper model loaded.")
-        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
-        pipe.vae = tinyAutoencoder
-        pipe.enable_model_cpu_offload()
-        # return  self._compile_pipeline(pipe)
+        return pipe
 
-        # pipe = pipe.to("cuda")
-
-        # create a separate img2img pipeline using vae, tokenizer, unet, scheduler, feature_extractor and image_encoder from the dreamshaper pipeline
-        # img2img_pipe = StableDiffusionXLImg2ImgPipeline(
-        #     vae=pipe.vae,
-        #     tokenizer=pipe.tokenizer,
-        #     unet=pipe.unet,
-        #     scheduler=pipe.scheduler,
-        #     feature_extractor=pipe.feature_extractor,
-        #     image_encoder=pipe.image_encoder,
-        #     text_encoder=pipe.text_encoder,
-        #     text_encoder_2=pipe.text_encoder_2,
-        #     tokenizer_2=pipe.tokenizer_2,
-        # )
-
-        # return [pipe, img2img_pipe.to("cuda")]
-        return [pipe]
 
     def load_formulaxl_model(self):
         print("Loading FormulaXL model...")
@@ -192,9 +213,10 @@ class Predictor:
         ) 
         pipe.safety_checker = None
         print("FormulaXL model loaded.")
-        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
+        pipe.scheduler.config.use_karras_sigmas = 'true'
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
         pipe.vae = tinyAutoencoder
-
+        # pipe = pipe.to("cuda")
         pipe.enable_model_cpu_offload()
         return pipe
 
@@ -232,6 +254,13 @@ class Predictor:
     def load_dalle3xl_model(self):
         pipeline = DiffusionPipeline.from_pretrained("stablediffusionapi/juggernaut-xl-v5")
         pipeline.load_lora_weights("openskyml/dalle-3-xl")
+        pipeline.enable_model_cpu_offload()
+
+        pipeline.vae = tinyAutoencoder
+        return pipeline
+
+    def load_cutycat_model(self):
+        pipeline = DiffusionPipeline.from_single_file("models/cutycat.pth")
         pipeline.enable_model_cpu_offload()
 
         pipeline.vae = tinyAutoencoder
@@ -304,6 +333,14 @@ class Predictor:
         use_denoising_batch: bool = False,
         seed: int = 2,
     ):
+        lora_dict = {
+            "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
+        }
+        textual_inversions_dict = {
+            "badprompt": "/home/ubuntu/pollinations/image_gen/models/bad_prompt_version2-neg.pt"
+        }
+        textual_inversions_dict = None
+
         stream = StreamDiffusionWrapper(
             model_id_or_path=model_id_or_path,
             lora_dict=lora_dict,
@@ -317,7 +354,11 @@ class Predictor:
             use_denoising_batch=use_denoising_batch,
             cfg_type="none",
             seed=seed,
+            use_tiny_vae=True,
+            textual_inversions_dict=textual_inversions_dict,
         )
+
+
         return stream
     
     #realvisxlV30Turbo.oNAT.safetensors
@@ -333,10 +374,18 @@ class Predictor:
 
 
         # pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+        #/home/ubuntu/anaconda3/envs/streamdiffusion/lib/python3.10/site-pa
+        # ckages/diffusers/configuration_utils.py:139: FutureWarning: Access
+        # ing config attribute `use_karras_sigmas` directly via 'DPMSolverSD
+        # EScheduler' object attribute is deprecated. Please access 'use_kar
+        # ras_sigmas' over 'DPMSolverSDEScheduler's config object instead, e
+        # .g. 'scheduler.config.use_karras_sigmas'.
+        
+        pipe.scheduler.config.use_karras_sigmas = 'true'
+        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
+        # pipe.enable_model_cpu_offload()
+        pipe.vae = tinyAutoencoder
 
-        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, use_karras_sigmas='true')
-        # pipe.vae = tinyAutoencoder
-        pipe.enable_model_cpu_offload()
         pipe.enable_attention_slicing()
         # pipe.enable_xformers_memory_efficient_attention() 
         # pipe.enable_vae_tiling()
@@ -345,7 +394,7 @@ class Predictor:
         # adapter_id = "latent-consistency/lcm-lora-sdxl"
         # pipe.load_lora_weights(adapter_id)
         # pipe.fuse_lora()
-        return pipe
+        return pipe.to("cuda")
     
     def _compile_pipeline(self, pipe):
         """Compiles the pipeline using xformers and Triton if available."""
@@ -381,6 +430,11 @@ class Predictor:
         steps = data["steps"]
         prompts = data["prompts"]
         refine = data["refine"]
+        negative_prompt = data["negative_prompt"]
+
+        # if negative_prompt is not set then set it to "worst quality, low quality, blurry"
+        if not negative_prompt:
+            negative_prompt = "worst quality, low quality, blurry"
 
         print(f"Running batch with model: {model}, width: {width}, height: {height}, number of prompts: {len(prompts)}, steps: {steps}")
 
@@ -392,27 +446,32 @@ class Predictor:
             model = "realvis"
             # replace all non alpha numeric characters from prompts with spaces
             # prompts = [re.sub(r'([^\s\w]|_)+', ' ', prompt) for prompt in prompts]
-        if model == "deliberate":
-            max_batch_size = 1
-            # model = "dreamshaper"
-        if model == "dreamshaper":
-            max_batch_size =  3
-        if model == "formulaxl":
-            max_batch_size =  3
-        if model == "playground":
-            max_batch_size =  3
-        if model == "dpo":
-            max_batch_size =  3
-        if model == "dalle3xl":
-            max_batch_size =  3
-        if model == "realvis":
-            max_batch_size =  1
+        if model != "deliberate" and model != "dreamshaper" and model != "juggernaut":
+            model = "turbo"
+
+        # if model == "formulaxl":
+        #     max_batch_size =  3
+        # if model == "playground":
+        #     max_batch_size =  3
+        # if model == "dpo":
+        #     max_batch_size =  3
+        # if model == "dalle3xl":
+        #     max_batch_size =  3
+        # if model == "realvis":
+        #     max_batch_size =  1
+
+        # if model != "dreamshaper" and model != "juggernaut" and model != "deliberate":
+        #     model="turbo"
         
         # Process in chunks of 8
+
+        print("params:", model, width, height, steps, prompts, refine, negative_prompt)
         predict_duration = 0
         for i in range(0, len(prompts),max_batch_size):
             chunked_prompts = prompts[i:i+max_batch_size]
-            print("running on prompts", chunked_prompts)
+            original_prompt = chunked_prompts[0]
+            chunked_prompts[0] = prompt_pimping(original_prompt)
+            print("running on prompts", chunked_prompts, "original", original_prompt)
             with lock:
                 predict_start_time = time.time()
                 try:
@@ -421,7 +480,7 @@ class Predictor:
                         self.streamdeliberate.prepare(
                                 prompt=chunked_prompts[0],
                                 num_inference_steps=50,
-                                negative_prompt="deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers, deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation,",
+                                negative_prompt=negative_prompt,#"deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers, deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation,",
                                 guidance_scale=3.5,
                                 width=width,
                                 height=height,
@@ -432,26 +491,51 @@ class Predictor:
                         batch_results = [self.streamdeliberate()]
 
 
-                    elif model == "pixart" and self.pixart_pipe:
-                        batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=16, width=width, height=height).images
-                    elif model == "instaflow":
-                        batch_results = self.instaflow_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
-                    elif model == "dreamshaper":
-                        steps = int(steps * 2)
-                        batch_results = self.dreamshaper_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=steps, width=width, height=height).images
-                    elif model == "formulaxl":
-                        batch_results = self.formulaxl_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=16, width=width, height=height).images
-                    elif model == "playground":
-                        batch_results = self.playground_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=16, width=width, height=height).images
-                    elif model == "dpo":
-                        steps = int(steps * 2)
-                        batch_results = self.dpo_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=steps, width=width, height=height).images
-                    elif model == "dalle3xl":
-                        batch_results = self.dalle3xl_pipe(prompt=chunked_prompts, guidance_scale=5.0, num_inference_steps=16, width=width, height=height).images
+                    # elif model == "pixart" and self.pixart_pipe:
+                    #     batch_results = self.pixart_pipe(prompt=chunked_prompts[0], guidance_scale=0.0, num_inference_steps=16, width=width, height=height).images
+                    # elif model == "instaflow":
+                    #     batch_results = self.instaflow_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
+                    # elif model == "formulaxl":
+                    #     batch_results = self.formulaxl_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=16, width=width, height=height).images
+                    # elif model == "playground":
+                    #     batch_results = self.playground_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=16, width=width, height=height).images
+                    # elif model == "dpo":
+                    #     steps = int(steps * 2)
+                    #     batch_results = self.dpo_pipe(prompt=chunked_prompts, guidance_scale=2.0, num_inference_steps=steps, width=width, height=height).images
+                    # elif model == "dalle3xl":
+                    #     batch_results = self.dalle3xl_pipe(prompt=chunked_prompts, guidance_scale=5.0, num_inference_steps=16, width=width, height=height).images
                     elif model == "realvis":
                         batch_results = self.realisticvisions_pipe(prompt=chunked_prompts,
-                                                                   negative_prompt="worst quality, low quality, open mouth, blurry",
-                                                                    guidance_scale=5.0, num_inference_steps=(steps*4)+5, width=width, height=height).images
+                                                                   negative_prompt=negative_prompt,
+                                                                    guidance_scale=5.0, num_inference_steps=(steps*2)+6, width=width, height=height).images
+
+                    elif model == "dreamshaper":
+                        self.dreamshaper_pipe.prepare(
+                                prompt=chunked_prompts[0],
+                                num_inference_steps=50,
+                                guidance_scale=5.5,
+                                width=width,
+                                height=height,
+                                negative_prompt=negative_prompt
+                            )
+                        for _ in range(self.dreamshaper_pipe.batch_size - 1):
+                            self.dreamshaper_pipe()
+
+                        batch_results = [self.dreamshaper_pipe()]
+                    elif model == "juggernaut":
+                        self.juggernaut_pipe.prepare(
+                                prompt=chunked_prompts[0],
+                                num_inference_steps=50,
+                                guidance_scale=5.5,
+                                width=width,
+                                height=height,
+                                negative_prompt=negative_prompt
+                            )
+                        for _ in range(self.juggernaut_pipe.batch_size - 1):
+                            self.juggernaut_pipe()
+
+                        batch_results = [self.juggernaut_pipe()]
+
                     # else:  # turbo model
                     #     steps = min(steps,4)
                     #     batch_results = self.turbo_pipe(prompt=chunked_prompts, guidance_scale=0.0, num_inference_steps=steps, width=width, height=height).images
@@ -467,10 +551,11 @@ class Predictor:
                         self.streamdiffusion.prepare(
                                 prompt=chunked_prompts[0],
                                 num_inference_steps=50,
-                                negative_prompt="deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers, deformed, distorted, disfigured, poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation,",
+                                # negative_prompt="",
                                 guidance_scale=5.5,
                                 width=width,
                                 height=height,
+                                negative_prompt=negative_prompt
                             )
                         for _ in range(self.streamdiffusion.batch_size - 1):
                             self.streamdiffusion()
@@ -517,7 +602,7 @@ class Predictor:
             try:
                 if param in data:
                     params[param] = int(data[param])
-            except ValueError:
+            except:
                 print(f"Warning: Failed to convert '{param}'. Using default value.")
 
         # Ensure width and height are divisible by 8
@@ -647,10 +732,16 @@ def embeddings_endpoint():
 #     return jsonify(embeddings)
 
 
+def prompt_pimping(input_text):
+    output = pimper_model.generate(tokenizer(input_text, return_tensors="pt").input_ids.to("cuda"), max_length=77)
+    result_text = tokenizer.decode(output[0])
+    if len(result_text) < len(input_text):
+        print("ERRROR for some reason pimped prompt is shorter than original. returning original")
+        return input_text
+    return result_text
 import os
 if __name__ == "__main__":
     print("Starting Flask app...")
     # from env PORT or 5555
     app.run(debug=False, host="0.0.0.0", port=os.environ.get("PORT", 5555))
-
 

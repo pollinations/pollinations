@@ -45,7 +45,7 @@ const queuePerIp = (handler) => {
       console.log("ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
       // if queue size > 10 then redirect to 
       const ricUurl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
-      if (ipQueue[ip].size > 20) {
+      if (ipQueue[ip].size > 50) {
         console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
         rickrollCount[ip] += 1; // Increment rickroll count for this IP
         rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
@@ -247,7 +247,8 @@ const requestListener = queuePerIp(async function (req, res) {
         console.log('Timing Info:', timingInfo);
 
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        sendToFeedListeners({ concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, model: safeParams["model"], timingInfo }, { saveAsLastState: true });
+        if (!safeParams.nofeed)
+          sendToFeedListeners({...safeParams, concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, timingInfo }, { saveAsLastState: true });
         sendToAnalytics(req, "imageGenerated", analyticsMetadata);
       };
 

@@ -107,7 +107,7 @@ export function GenerativeImageFeed() {
                 />
               </Link>
             </ImageContainer>
-            <Box   style={{width: "600px", position:"relative"}} >
+            <Box style={{width: "600px", position:"relative"}}>
             <TableContainer component={Paper}>
               <Table aria-label="image info table" size="small">
                 <TableBody>
@@ -118,20 +118,26 @@ export function GenerativeImageFeed() {
                   <TableRow>
                     <TableCell component="th" scope="row">Link</TableCell>
                     <TableCell align="right">
-                      <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer">
+                      <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" style={{ color: 'deepSkyBlue' }}>
                         {shorten(`https://pollinations.ai/p/${encodeURIComponent(prompt)}`)}
                       </Link>
                     </TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell component="th" scope="row">Load</TableCell>
-                    <TableCell align="right"><ServerLoadDisplay concurrentRequests={serverLoad} /></TableCell>
+                    <TableCell component="th" scope="row">Dimensions</TableCell>
+                    <TableCell align="right">{`${image.width}x${image.height}, Seed: ${image.seed}`}</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell component="th" scope="row">#</TableCell>
-                    <TableCell align="right">{formatImagesGenerated(imagesGenerated)}</TableCell>
+                    <TableCell component="th" scope="row">Generations</TableCell>
+                    <TableCell align="right">
+                      <Typography variant="body1" component="span" style={{ fontWeight: 'bold', color: 'deepSkyBlue' }}>
+                        # {formatImagesGenerated(imagesGenerated)}
+                      </Typography>
+                      &nbsp;&nbsp;
+                      <ServerLoadDisplay concurrentRequests={serverLoad} />
+                    </TableCell>
                   </TableRow>
-                </TableBody>
+                  </TableBody>
               </Table>
             </TableContainer>
             </Box>

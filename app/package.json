@@ -74,6 +74,7 @@
     "swiper": "^9.1.0",
     "throttle-debounce": "^3.0.1",
     "tree-kill": "^1.2.2",
+    "use-debounce": "^10.0.0",
     "webhook-discord": "^3.7.8"
   },
   "scripts": {

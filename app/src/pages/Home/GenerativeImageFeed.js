@@ -10,7 +10,6 @@ export function GenerativeImageFeed() {
   const [nextPrompt, setNextPrompt] = useState("");
   const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
-  const [tabValue, setTabValue] = useState(0);
 
   const loadedImages = useRef([]);
   const queuedImages = useRef([]);
@@ -83,9 +82,6 @@ export function GenerativeImageFeed() {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
 
   const shortUrl = shorten(image?.["imageURL"] || "");
 
@@ -144,57 +140,7 @@ export function GenerativeImageFeed() {
           </>
         )}
         <br />
-        <URLExplanation>
-          <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
-            To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.         
-          </Typography>
-          <br />
-
-          <AppBar position="static" style={{ background: 'black', color: 'white' }}>
-            <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
-              <Tab label="Markdown" />
-              <Tab label="HTML" />
-              <Tab label="JavaScript" />
-              <Tab label="Python" />
-            </Tabs>
-          </AppBar>
-          {tabValue === 0 && <CodeBlock
-            text={`![Generative Image](${shortUrl})\nUse this markdown snippet to embed the image in your markdown content.`}
-            language={"markdown"}
-            theme={dracula}
-          />}
-          {tabValue === 1 && <CodeBlock
-            text={`<img src="${shortUrl}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
-            language={"html"}
-            theme={dracula}
-          />}
-          {tabValue === 2 && <CodeBlock
-            text={`
-import fs from 'fs';
-import fetch from 'node-fetch';
-
-async function downloadImage(imageUrl) {
-  // Fetching the image from the URL
-  const response = await fetch(imageUrl);
-  // Reading the response as a buffer
-  const buffer = await response.buffer();
-  // Writing the buffer to a file named 'image.png'
-  fs.writeFileSync('image.png', buffer);
-  // Logging completion message
-  console.log('Download Completed');
-}
-
-downloadImage('${image?.imageURL}');
-// This Node.js snippet downloads the image using node-fetch and saves it to disk.`}
-            language={"javascript"}
-            theme={dracula}
-          />}
-          {tabValue === 3 && <CodeBlock
-            text={`import requests\n\nimage_url = "${shortUrl}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
-            language={"python"}
-            theme={dracula}
-          />}
-        </URLExplanation>
+        <CodeExamples {...{ shortUrl, image}} />
         <br />
 
         <Link href={`https://pollinations.ai/p/${encodeURIComponent(nextPrompt)}?width=1080&height=720&nofeed=true&nologo=true`} underline="none">Generate Image</Link>
@@ -214,6 +160,62 @@ const PromptInput = () => {
 };
 
 const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;
+
+function CodeExamples({ shortUrl, image}) {
+  const [tabValue, setTabValue] = useState(0);
+
+  const handleChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  return <URLExplanation>
+    <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
+      To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.
+    </Typography>
+    <br />
+
+    <AppBar position="static" style={{ background: 'black', color: 'white' }}>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
+        <Tab label="Markdown" />
+        <Tab label="HTML" />
+        <Tab label="JavaScript" />
+        <Tab label="Python" />
+      </Tabs>
+    </AppBar>
+    {tabValue === 0 && <CodeBlock
+      text={`![Generative Image](${shortUrl})\nUse this markdown snippet to embed the image in your markdown content.`}
+      language={"markdown"}
+      theme={dracula} />}
+    {tabValue === 1 && <CodeBlock
+      text={`<img src="${shortUrl}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
+      language={"html"}
+      theme={dracula} />}
+    {tabValue === 2 && <CodeBlock
+      text={`
+import fs from 'fs';
+import fetch from 'node-fetch';
+
+async function downloadImage(imageUrl) {
+  // Fetching the image from the URL
+  const response = await fetch(imageUrl);
+  // Reading the response as a buffer
+  const buffer = await response.buffer();
+  // Writing the buffer to a file named 'image.png'
+  fs.writeFileSync('image.png', buffer);
+  // Logging completion message
+  console.log('Download Completed');
+}
+
+downloadImage('${image?.imageURL}');
+// This Node.js snippet downloads the image using node-fetch and saves it to disk.`}
+      language={"javascript"}
+      theme={dracula} />}
+    {tabValue === 3 && <CodeBlock
+      text={`import requests\n\nimage_url = "${shortUrl}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
+      language={"python"}
+      theme={dracula} />}
+  </URLExplanation>;
+}
 
 function estimateGeneratedImages() {
   const launchDate = 1701718083442;

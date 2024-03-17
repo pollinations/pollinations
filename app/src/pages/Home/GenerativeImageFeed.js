@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
 import { useEffect, useState, useRef } from 'react';
 import { isMature } from '../../data/mature';
-import { Input, Typography, Link, Box, Container, Grid, Paper, Tabs, Tab, AppBar, Button, Table, TableBody, TableCell, TableContainer, TableRow } from  '@material-ui/core';
-import { CodeBlock, dracula } from "react-code-blocks";
+import { Input, Typography, Link, Box, Container, Grid, Paper, Button, Table, TableBody, TableCell, TableContainer, TableRow } from  '@material-ui/core';
 import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
+import { CodeExamples } from './CodeExamples';
 
 export function GenerativeImageFeed() {
   const [image, setImage] = useState(null);
@@ -53,7 +53,7 @@ export function GenerativeImageFeed() {
     return () => {
       eventSource.close();
     };
-  }, [setServerLoad]);
+  }, [setServerLoad, setImagesGenerated]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -76,14 +76,10 @@ export function GenerativeImageFeed() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [setImage, setNextPrompt]);
-
-  const formatImagesGenerated = (num) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
+  }, [setImage, setNextPrompt, loadedImages, queuedImages]);
 
 
-  const shortUrl = shorten(image?.["imageURL"] || "");
+
 
   return (
     <Box>
@@ -103,44 +99,11 @@ export function GenerativeImageFeed() {
                 />
               </Link>
             </ImageContainer>
-            <Box style={{width: "600px", position:"relative"}}>
-            <TableContainer component={Paper}>
-              <Table aria-label="image info table" size="small">
-                <TableBody>
-                  <TableRow>
-                    <TableCell component="th" scope="row">Prompt</TableCell>
-                    <TableCell align="right">{shorten(prompt)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row">Link</TableCell>
-                    <TableCell align="right">
-                      <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" style={{ color: 'deepSkyBlue' }}>
-                        {shorten(`https://pollinations.ai/p/${encodeURIComponent(prompt)}`)}
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row">Dimensions</TableCell>
-                    <TableCell align="right">{`${image.width}x${image.height}, Seed: ${image.seed}`}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell component="th" scope="row">Generations</TableCell>
-                    <TableCell align="right">
-                      <Typography variant="body1" component="span" style={{ fontWeight: 'bold', color: 'deepSkyBlue' }}>
-                        # {formatImagesGenerated(imagesGenerated)}
-                      </Typography>,
-                      &nbsp;&nbsp;
-                      <ServerLoadDisplay concurrentRequests={serverLoad} />
-                    </TableCell>
-                  </TableRow>
-                  </TableBody>
-              </Table>
-            </TableContainer>
-            </Box>
+            <ImageData {...{prompt, image, imagesGenerated, serverLoad}} />
           </>
         )}
         <br />
-        <CodeExamples {...{ shortUrl, image}} />
+        <CodeExamples {...image } />
         <br />
 
         <Link href={`https://pollinations.ai/p/${encodeURIComponent(nextPrompt)}?width=1080&height=720&nofeed=true&nologo=true`} underline="none">Generate Image</Link>
@@ -161,60 +124,45 @@ const PromptInput = () => {
 
 const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;
 
-function CodeExamples({ shortUrl, image}) {
-  const [tabValue, setTabValue] = useState(0);
+function ImageData({ prompt, image, imagesGenerated, serverLoad }) {
+  return <Box style={{ width: "600px", position: "relative" }}>
+    <TableContainer component={Paper}>
+      <Table aria-label="image info table" size="small">
+        <TableBody>
+          <TableRow>
+            <TableCell component="th" scope="row">Prompt</TableCell>
+            <TableCell align="right">{shorten(prompt)}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">Link</TableCell>
+            <TableCell align="right">
+              <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" style={{ color: 'deepSkyBlue' }}>
+                {shorten(`https://pollinations.ai/p/${encodeURIComponent(prompt)}`)}
+              </Link>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">Dimensions</TableCell>
+            <TableCell align="right">{`${image.width}x${image.height}, Seed: ${image.seed}`}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">Model</TableCell>
+            <TableCell align="right">{image.model}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">Generations</TableCell>
+            <TableCell align="right">
+            <ServerLoadDisplay concurrentRequests={serverLoad} />, &nbsp;&nbsp;
+              <Typography variant="body1" component="span" style={{ fontWeight: 'bold', color: 'deepSkyBlue' }}>
+                # {formatImagesGenerated(imagesGenerated)}
+              </Typography>
 
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  return <URLExplanation>
-    <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
-      To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.
-    </Typography>
-    <br />
-
-    <AppBar position="static" style={{ background: 'black', color: 'white' }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
-        <Tab label="Markdown" />
-        <Tab label="HTML" />
-        <Tab label="JavaScript" />
-        <Tab label="Python" />
-      </Tabs>
-    </AppBar>
-    {tabValue === 0 && <CodeBlock
-      text={`![Generative Image](${shortUrl})\nUse this markdown snippet to embed the image in your markdown content.`}
-      language={"markdown"}
-      theme={dracula} />}
-    {tabValue === 1 && <CodeBlock
-      text={`<img src="${shortUrl}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`}
-      language={"html"}
-      theme={dracula} />}
-    {tabValue === 2 && <CodeBlock
-      text={`
-import fs from 'fs';
-import fetch from 'node-fetch';
-
-async function downloadImage(imageUrl) {
-  // Fetching the image from the URL
-  const response = await fetch(imageUrl);
-  // Reading the response as a buffer
-  const buffer = await response.buffer();
-  // Writing the buffer to a file named 'image.png'
-  fs.writeFileSync('image.png', buffer);
-  // Logging completion message
-  console.log('Download Completed');
-}
-
-downloadImage('${image?.imageURL}');
-// This Node.js snippet downloads the image using node-fetch and saves it to disk.`}
-      language={"javascript"}
-      theme={dracula} />}
-    {tabValue === 3 && <CodeBlock
-      text={`import requests\n\nimage_url = "${shortUrl}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# This Python script downloads the image using the requests library.`}
-      language={"python"}
-      theme={dracula} />}
-  </URLExplanation>;
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
+  </Box>;
 }
 
 function estimateGeneratedImages() {
@@ -235,6 +183,11 @@ function ServerLoadDisplay({ concurrentRequests }) {
 
   return <>Load: {loadDisplay}</>;
 }
+
+
+const formatImagesGenerated = (num) => {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
 
 const ImageStyle = styled.img`
   max-width: 100%;
@@ -288,7 +241,7 @@ const PromptDisplay = styled(Box)`
   margin-top: 0.5em;
 `;
 
-const URLExplanation = styled(Box)`
+export const URLExplanation = styled(Box)`
   margin-top: 1em;
   font-size: 0.9em;
 `;
@@ -299,5 +252,9 @@ const InputContainer = styled(Grid)`
   align-items: flex-end;
   margin-top: 1em;
 `;
+
+
+
+
 
 

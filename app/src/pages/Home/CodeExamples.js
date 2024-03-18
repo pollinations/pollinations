@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Typography, AppBar, Tabs, Tab } from '@material-ui/core';
 import { CodeBlock, dracula } from 'react-code-blocks';
-import { URLExplanation } from './styles';
+import { URLExplanation } from './GenerativeImageFeed';
 
 // Code examples as an object
 const CODE_EXAMPLES = {

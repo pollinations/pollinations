@@ -28,7 +28,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "StreamDiffusion"))
 
 from utils.wrapper_xl import StreamDiffusionWrapper
 
-from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
+# from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
 from performance_metrics import add_timestamp, get_average_generation_duration, calculate_throughput, get_timestamps
 import uuid

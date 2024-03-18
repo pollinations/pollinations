@@ -26,7 +26,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "StreamDiffusion"))
 # from streamdiffusion import StreamDiffusion
 # from streamdiffusion.image_utils import postprocess_image
 
-from utils.wrapper import StreamDiffusionWrapper
+from utils.wrapper_xl import StreamDiffusionWrapper
 
 from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
@@ -95,9 +95,9 @@ class Predictor:
         # self.cutycat_pipe = self.load_cutycat_model()
     
         self.streamdiffusion = self._load_streamdiffusion_model()#model_id_or_path="./models/haveall.safetensors")
-        self.streamdeliberate = self._load_streamdiffusion_model(model_id_or_path="./models/deliberate_v5_sfw.safetensors")
-        self.dreamshaper_pipe = self._load_dreamshaper_model()
-        self.juggernaut_pipe = self._load_streamdiffusion_model(model_id_or_path="./models/juggernautreborn.safetensors")
+        # self.streamdeliberate = self._load_streamdiffusion_model(model_id_or_path="./models/deliberate_v5_sfw.safetensors")
+        # self.dreamshaper_pipe = self._load_dreamshaper_model()
+        # self.juggernaut_pipe = self._load_streamdiffusion_model(model_id_or_path="./models/juggernautreborn.safetensors")
         # # self.pixart_pipe = self._load_pixart()
         # dreamshaper_pipes = self._load_dreamshaper_model()
         # self.dreamshaper_pipe = dreamshaper_pipes[0]
@@ -450,8 +450,8 @@ class Predictor:
             model = "realvis"
             # replace all non alpha numeric characters from prompts with spaces
             # prompts = [re.sub(r'([^\s\w]|_)+', ' ', prompt) for prompt in prompts]
-        if model != "deliberate" and model != "dreamshaper" and model != "juggernaut":
-            model = "turbo"
+        # if model != "deliberate" and model != "dreamshaper" and model != "juggernaut":
+        model = "turbo"
 
         # if model == "formulaxl":
         #     max_batch_size =  3

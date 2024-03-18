@@ -37,7 +37,7 @@ class StreamDiffusionWrapper:
         acceleration: Literal["none", "xformers", "tensorrt"] = "tensorrt",
         do_add_noise: bool = True,
         device_ids: Optional[List[int]] = None,
-        use_lcm_lora: bool = True,
+        use_lcm_lora: bool = False,
         use_tiny_vae: bool = True,
         enable_similar_image_filter: bool = False,
         similar_image_filter_threshold: float = 0.98,

@@ -1,107 +1,178 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Typography, Link, Box, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableRow, TextField, CircularProgress } from  '@material-ui/core';
-import { debounce } from 'lodash';
+import styled from '@emotion/styled';
+import { useEffect, useState, useRef } from 'react';
+import { isMature } from '../../data/mature';
+import { Input, Typography, Link, Box, Container, Grid, Paper, Button, Table, TableBody, TableCell, TableContainer, TableRow } from  '@material-ui/core';
+import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 import { CodeExamples } from './CodeExamples';
-import { useFeedLoader } from './useFeedLoader';
-import { useImageSlideshow } from './useImageSlideshow';
-import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
 
 export function GenerativeImageFeed() {
-  const { image, nextPrompt, updateImage, isLoading, onNewImage } = useImageSlideshow();
-  const { queuedImages, serverLoad, imagesGenerated } = useFeedLoader(onNewImage);
-  const [prompt, setPrompt] = useState('');
+  const [image, setImage] = useState(null);
+  const [nextPrompt, setNextPrompt] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [serverLoad, setServerLoad] = useState(0);
+
+  const loadedImages = useRef([]);
+  const queuedImages = useRef([]);
+
+  const imagesGeneratedCalculated = estimateGeneratedImages();
+  const [imagesGenerated, setImagesGenerated] = useState(imagesGeneratedCalculated);
 
   useEffect(() => {
-    setPrompt(nextPrompt);
-  }, [nextPrompt]);
+    const getEventSource = () => {
+      const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
+      imageFeedSource.onmessage = evt => {
+        const data = JSON.parse(evt.data);
+        setServerLoad(data["concurrentRequests"]);
+        if (data["nsfw"]) {
+          console.log("Skipping NSFW content:", data["nsfw"], data)
+          return;
+        }
 
+        if (data["imageURL"]) {
+          setImagesGenerated(no => no + 1);
+          const matureWord = isMature(data["prompt"]) && false;
+          if (matureWord) {
+            console.log("Skipping mature word:", matureWord, data["prompt"]);
+            return;
+          }
+          queuedImages.current.push(data);
+        }
+      };
+      return imageFeedSource;
+    };
+
+    let eventSource = getEventSource();
+
+    eventSource.onerror = async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      console.log("Event source error. Closing and re-opening.");
+      eventSource.close();
+      eventSource = getEventSource();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [setServerLoad, setImagesGenerated]);
 
   useEffect(() => {
-    if (prompt) {
-      updateImage({
-        imageURL:`https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&nofeed=true&nologo=true`
-      });
-    }
-  }, [prompt, updateImage]);
+    const interval = setInterval(() => {
+      if (loadedImages.current.length > 0) {
+        const nextImage = loadedImages.current.shift();
+        setImage(nextImage);
+        setNextPrompt(nextImage["originalPrompt"]);
+      }
+
+      if (loadedImages.current.length < 5) {
+        if (queuedImages.current.length > 0) {
+          const data = queuedImages.current.shift();
+          const img = new Image();
+          img.src = data["imageURL"];
+          img.onload = () => {
+            loadedImages.current.push(data);
+          };
+        };
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [setImage, setNextPrompt, loadedImages, queuedImages]);
+
+
+
 
   return (
     <Box>
       <GenerativeImageURLContainer>
         <ImageURLHeading>Image Feed</ImageURLHeading>
-        <ImageContainer>
-          {image ? (
-            <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-              <ImageStyle
-                src={image["imageURL"]}
-                alt="generative_image"
-              />
-            </Link>
-          ) : (
-            <Typography variant="h6" color="textSecondary">Loading image...</Typography>
-          )}
-        {isLoading && <CircularProgress color="secondary" />}
-        </ImageContainer>
-        <ImageData {...{prompt, setPrompt, image, imagesGenerated, serverLoad}} />
+        {image && (
+          <>
+            <ImageContainer>
+              <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+                <ImageStyle
+                  src={image["imageURL"]}
+                  alt="generative_image"
+                  onLoad={() => {
+                    setPrompt(shorten(nextPrompt));
+                    console.log("Loaded image. Setting prompt to: ", nextPrompt);
+                  }}
+                />
+              </Link>
+            </ImageContainer>
+            <ImageData {...{prompt, image, imagesGenerated, serverLoad}} />
+          </>
+        )}
         <br />
         <CodeExamples {...image } />
         <br />
+
         <Link href={`https://pollinations.ai/p/${encodeURIComponent(nextPrompt)}?width=1080&height=720&nofeed=true&nologo=true`} underline="none">Generate Image</Link>
+        <PromptInput />
       </GenerativeImageURLContainer>
     </Box>
   );
 }
 
+const PromptInput = () => {
+  const [prompt, setPrompt] = useState("");
+
+  return <InputContainer>
+    <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} placeholder='Or type your prompt here' />
+    <Button onClick={() => window.open(`https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=1080&height=720&nofeed=true&nologo=true`)}>Create</Button>
+  </InputContainer>;
+};
+
 const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;
 
-function ImageData({ prompt, setPrompt, image, imagesGenerated, serverLoad }) {
+function ImageData({ prompt, image, imagesGenerated, serverLoad }) {
   return <Box style={{ width: "600px", position: "relative" }}>
     <TableContainer component={Paper}>
       <Table aria-label="image info table" size="small">
         <TableBody>
           <TableRow>
             <TableCell component="th" scope="row">Prompt</TableCell>
-            <TableCell align="right">
-              <TextField
-                fullWidth
-                variant="outlined"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-            </TableCell>
+            <TableCell align="right">{shorten(prompt)}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">Link</TableCell>
             <TableCell align="right">
-              {image ? (
-                <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer" style={{ color: 'deepSkyBlue' }}>
-                  {shorten(image["imageURL"])}
-                </Link>
-              ) : (
-                <Typography color="textSecondary">No image loaded</Typography>
-              )}
+              <Link href={`https://pollinations.ai/p/${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" style={{ color: 'deepSkyBlue' }}>
+                {shorten(`https://pollinations.ai/p/${encodeURIComponent(prompt)}`)}
+              </Link>
             </TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">Dimensions</TableCell>
-            <TableCell align="right">{image ? `${image.width}x${image.height}, Seed: ${image.seed}` : 'N/A'}</TableCell>
+            <TableCell align="right">{`${image.width}x${image.height}, Seed: ${image.seed}`}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">Model</TableCell>
-            <TableCell align="right">{image ? image.model : 'N/A'}</TableCell>
+            <TableCell align="right">{image.model}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">Generations</TableCell>
             <TableCell align="right">
-              <ServerLoadDisplay concurrentRequests={serverLoad} />, &nbsp;&nbsp;
+            <ServerLoadDisplay concurrentRequests={serverLoad} />, &nbsp;&nbsp;
               <Typography variant="body1" component="span" style={{ fontWeight: 'bold', color: 'deepSkyBlue' }}>
                 # {formatImagesGenerated(imagesGenerated)}
               </Typography>
+
             </TableCell>
           </TableRow>
         </TableBody>
       </Table>
     </TableContainer>
   </Box>;
+}
+
+function estimateGeneratedImages() {
+  const launchDate = 1701718083442;
+  const now = Date.now();
+  const differenceInSeconds = (now - launchDate) / 1000;
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 3);
+
+  const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
+  return imagesGeneratedCalculated;
 }
 
 function ServerLoadDisplay({ concurrentRequests }) {
@@ -113,8 +184,77 @@ function ServerLoadDisplay({ concurrentRequests }) {
   return <>Load: {loadDisplay}</>;
 }
 
+
 const formatImagesGenerated = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+
+const ImageStyle = styled.img`
+  max-width: 100%;
+  max-height: 400px;
+`;
+
+const GenerativeImageURLContainer = styled(Container)`
+  background-color: rgba(0,0,0,0.7);
+  color: white;
+  margin: 2em auto;
+  padding: 1em;
+  width: 80%;
+  border-radius: 8px;
+  @media (max-width: 600px) {
+    width: 95%;
+  }
+`;
+
+const ImageURLHeading = styled.p`
+  font-family: ${Fonts.headline} !important;
+  font-style: normal  !important;
+  font-weight: 400 !important;
+  font-size: 96px !important;
+  line-height: 105px !important;
+  text-transform: capitalize !important;
+
+  margin: 0;
+  margin-top: 1em;
+  color: ${Colors.offblack};
+
+  span {
+    font-family: ${Fonts.headline};
+    color: ${Colors.lime};
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    max-width: 600px;
+    font-size: 58px;
+    line-height: 55px;
+    margin: 0;
+    margin-top: 1em;
+  }
+  `;
+
+
+const ImageContainer = styled(Paper)`
+  margin-bottom: 1em;
+`;
+
+const PromptDisplay = styled(Box)`
+  margin-top: 0.5em;
+`;
+
+export const URLExplanation = styled(Box)`
+  margin-top: 1em;
+  font-size: 0.9em;
+`;
+
+const InputContainer = styled(Grid)`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-top: 1em;
+`;
+
+
+
+
 
 

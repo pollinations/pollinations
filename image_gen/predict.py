@@ -28,7 +28,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "StreamDiffusion"))
 
 from utils.wrapper_xl import StreamDiffusionWrapper
 
-from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
+# from sfast.compilers.stable_diffusion_pipeline_compiler import compile, CompilationConfig
 from collections import defaultdict
 from performance_metrics import add_timestamp, get_average_generation_duration, calculate_throughput, get_timestamps
 import uuid
@@ -325,7 +325,7 @@ class Predictor:
 
     def _load_streamdiffusion_model(
         self,
-        model_id_or_path: str = "RunDiffusion/Juggernaut-XL-v9",
+        model_id_or_path: str = "stabilityai/stable-diffusion-xl-base-1.0",
         lora_dict: Optional[Dict[str, float]] = None,
         width: int = 768,
         height: int = 768,
@@ -344,7 +344,7 @@ class Predictor:
         stream = StreamDiffusionWrapper(
             model_id_or_path=model_id_or_path,
             # lora_dict=lora_dict,
-            # t_index_list=[0, 16, 32, 45],
+            t_index_list=[0, 16, 32, 45],
             frame_buffer_size=1,
             width=width,
             height=height,

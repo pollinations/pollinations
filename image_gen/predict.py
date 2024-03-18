@@ -325,26 +325,26 @@ class Predictor:
 
     def _load_streamdiffusion_model(
         self,
-        model_id_or_path: str = "./models/Swizz8.safetensors",
+        model_id_or_path: str = "RunDiffusion/Juggernaut-XL-v9",
         lora_dict: Optional[Dict[str, float]] = None,
-        width: int = 512,
-        height: int = 512,
+        width: int = 768,
+        height: int = 768,
         acceleration: Literal["none", "xformers", "tensorrt"] = "xformers",
         use_denoising_batch: bool = False,
         seed: int = 2,
     ):
-        lora_dict = {
-            "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
-        }
-        textual_inversions_dict = {
-            "badprompt": "/home/ubuntu/pollinations/image_gen/models/bad_prompt_version2-neg.pt"
-        }
-        textual_inversions_dict = None
+        # lora_dict = {
+        #     "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
+        # }
+        # textual_inversions_dict = {
+        #     "badprompt": "/home/ubuntu/pollinations/image_gen/models/bad_prompt_version2-neg.pt"
+        # }
+        # textual_inversions_dict = None
 
         stream = StreamDiffusionWrapper(
             model_id_or_path=model_id_or_path,
-            lora_dict=lora_dict,
-            t_index_list=[0, 16, 32, 45],
+            # lora_dict=lora_dict,
+            # t_index_list=[0, 16, 32, 45],
             frame_buffer_size=1,
             width=width,
             height=height,
@@ -354,8 +354,8 @@ class Predictor:
             use_denoising_batch=use_denoising_batch,
             cfg_type="none",
             seed=seed,
-            use_tiny_vae=True,
-            textual_inversions_dict=textual_inversions_dict,
+            # use_tiny_vae=True,
+            # textual_inversions_dict=textual_inversions_dict,
         )
 
 

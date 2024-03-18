@@ -49,7 +49,7 @@ from urllib.request import urlretrieve  # pylint: disable=import-outside-topleve
 tinyAutoencoder = AutoencoderTiny.from_pretrained("madebyollin/taesdxl", torch_dtype=torch.float16)
 
 tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-small")
-pimper_model = T5ForConditionalGeneration.from_pretrained("./superprompt-v1", device_map="auto")
+pimper_model = T5ForConditionalGeneration.from_pretrained("roborovski/superprompt-v1", device_map="auto")
 
 
 def get_aesthetic_model(clip_model="vit_l_14"):
@@ -427,6 +427,10 @@ class Predictor:
         model = data["model"]
         width = data["width"]
         height = data["height"]
+        if width<32:
+            width = 32
+        if height<32:
+            height=32
         steps = data["steps"]
         prompts = data["prompts"]
         refine = data["refine"]

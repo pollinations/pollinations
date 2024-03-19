@@ -1,19 +1,17 @@
 import { useState } from 'react';
-import { Typography, AppBar, Tabs, Tab, Box } from '@material-ui/core';
-import { CodeBlock, dracula } from 'react-code-blocks';
+import { Typography, AppBar, Tabs, Tab, Box, Link } from '@material-ui/core';
+import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from 'react-code-blocks';
 import { URLExplanation } from './styles';
 import { shorten } from './shorten';
 
 // Code examples as an object
 const CODE_EXAMPLES = {
-  link: ({imageURL}) => imageURL,
   markdown: ({imageURL, prompt, width, height, seed, model}) => 
 `# Image Parameters
-Prompt: ${prompt}
-Width: ${width}
-Height: ${height}
-Seed: ${seed}
-Model: ${model}
+Prompt: **${prompt}**
+Width: **${width}**
+Height: **${height}**
+Seed: **${seed}** (Each seed generates a new image)
 
 # Image
 ![Generative Image](${imageURL})`,
@@ -24,8 +22,7 @@ Model: ${model}
     <p>Prompt: ${prompt}</p>
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
-    <p>Seed: ${seed}</p>
-    <p>Model: ${model}</p>
+    <p>Seed: ${seed} <i>Each seed generates a new image variation</></p>
 
     <img 
       src="${imageURL}" 
@@ -57,8 +54,7 @@ async function downloadImage(imageUrl) {
 const prompt = '${shorten(prompt)}';
 const width = ${width};
 const height = ${height};
-const seed = ${seed};
-const model = '${model}';
+const seed = ${seed}; // Each seed generates a new image variation
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
@@ -82,8 +78,7 @@ def download_image(image_url):
 prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
-seed = ${seed}
-model = '${model}'
+seed = ${seed} # Each seed generates a new image variation
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -98,7 +93,9 @@ export function CodeExamples(image) {
     setTabValue(newValue);
   };
 
-  const codeExampleKeys = Object.keys(CODE_EXAMPLES);
+  const codeExampleTabs = Object.keys(CODE_EXAMPLES);
+
+  const allTabs = ["link", ...codeExampleTabs];
 
   return <URLExplanation>
     <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
@@ -108,22 +105,40 @@ export function CodeExamples(image) {
 
     <AppBar position="static" style={{ background: 'black', color: 'white' }}>
       <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="auto">
-        {codeExampleKeys.map((key) => (
+        {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
       </Tabs>
     </AppBar>
     <Box maxWidth='800px'>
-    {codeExampleKeys.map((key, index) => (
-      tabValue === index && <CodeBlock
+    {allTabs.map((key, index) => {
+      
+      if (tabValue !== index)
+        return null;
+
+      if (!image.imageURL)
+        return null;
+
+      if (key === "link") {
+        return (<Box margin="10px" maxWidth="800px" overflow="hidden" >
+            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
+            </Box>);
+      }
+      
+      const text = CODE_EXAMPLES[key](image);
+      
+      return (
+        tabValue === index && <CodeBlock
         key={key}
-        text={CODE_EXAMPLES[key](image)}
+        text={text}
         language={key}
-        theme={dracula} 
-        wrapLines
-        showLineNumbers={true}
+        theme={irBlack} 
+        // wrapLongLines
+        showLineNumbers={text.split("\n").length > 1}
+        customStyle={{overFlow:'scroll', maxWidth:'800px'}}
         />
-    ))}
+      )
+      })}
     </Box>
   </URLExplanation>;
 }

@@ -1,13 +1,44 @@
 import { useState } from 'react';
-import { Typography, AppBar, Tabs, Tab } from '@material-ui/core';
-import { CodeBlock, dracula } from 'react-code-blocks';
-import { URLExplanation } from './GenerativeImageFeed';
+import { Typography, AppBar, Tabs, Tab, Box } from '@material-ui/core';
+import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks';
+import { URLExplanation } from './styles';
+import { shorten } from './shorten';
 
 // Code examples as an object
 const CODE_EXAMPLES = {
-  markdown: ({shortUrl, prompt, width, height, seed, model}) => `![Generative Image](${shortUrl})\nPrompt: ${prompt}\nWidth: ${width}\nHeight: ${height}\nSeed: ${seed}\nModel: ${model}\nUse this markdown snippet to embed the image in your markdown content.`,
-  html: shortUrl => `<img src="${shortUrl}" alt="Generative Image">\nUse this HTML tag to embed the image in your web pages.`,
-  javascript: ({imageURL, prompt, width, height, seed, model}) => `
+  link: ({imageURL}) => imageURL,
+  markdown: ({imageURL, prompt, width, height, seed, model}) => 
+`# Image Parameters
+Prompt: ${prompt}
+Width: ${width}
+Height: ${height}
+Seed: ${seed}
+Model: ${model}
+
+# Image
+![Generative Image](${imageURL})`,
+  html: ({imageURL, prompt, width, height, seed, model}) => 
+`<html>
+  <body>
+    <h2>Image Parameters</h2>
+    <p>Prompt: ${prompt}</p>
+    <p>Width: ${width}</p>
+    <p>Height: ${height}</p>
+    <p>Seed: ${seed}</p>
+    <p>Model: ${model}</p>
+
+    <img 
+      src="${imageURL}" 
+      alt="${shorten(prompt)}"
+    />
+  </body>
+</html>
+`,
+
+
+  javascript: ({ prompt, width, height, seed, model}) => `
+// This Node.js snippet downloads the image using node-fetch and saves it to disk, including image details.
+
 import fs from 'fs';
 import fetch from 'node-fetch';
 
@@ -23,16 +54,41 @@ async function downloadImage(imageUrl) {
 }
 
 // Image details
-const imageUrl = '${imageURL}';
-const imagePrompt = '${prompt}';
-const imageWidth = ${width};
-const imageHeight = ${height};
-const imageSeed = ${seed};
-const imageModel = '${model}';
+const prompt = '${shorten(prompt)}';
+const width = ${width};
+const height = ${height};
+const seed = ${seed};
+const model = '${model}';
 
-downloadImage(imageUrl);
-// This Node.js snippet downloads the image using node-fetch and saves it to disk, including image details.`,
-  python: ({ imageURL, prompt, width, height, seed, model}) => `import requests\n\nimage_url = "${imageURL}"\nimg_data = requests.get(image_url).content\nwith open('image_name.jpg', 'wb') as handler:\n    handler.write(img_data)\n\n# Image details\n# Prompt: ${prompt}\n# Width: ${width}\n# Height: ${height}\n# Seed: ${seed}\n# Model: ${model}\n# This Python script downloads the image using the requests library and includes image details.`
+const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
+
+downloadImage(imageUrl);`,
+
+  python: ({ imageURL, prompt, width, height, seed, model}) => `
+# This Python snippet downloads the image using requests and saves it to disk, including image details.
+
+import requests
+
+def download_image(image_url):
+    # Fetching the image from the URL
+    response = requests.get(image_url)
+    # Writing the content to a file named 'image.jpg'
+    with open('image.jpg', 'wb') as file:
+        file.write(response.content)
+    # Logging completion message
+    print('Download Completed')
+
+# Image details
+prompt = '${shorten(prompt)}'
+width = ${width}
+height = ${height}
+seed = ${seed}
+model = '${model}'
+
+image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
+
+download_image(image_url)
+`
 };
 
 export function CodeExamples(image) {
@@ -42,28 +98,32 @@ export function CodeExamples(image) {
     setTabValue(newValue);
   };
 
-  const codeExampleKeys = ['markdown', 'html', 'javascript', 'python'];
-  const codeExampleLanguages = ['markdown', 'html', 'javascript', 'python'];
+  const codeExampleKeys = Object.keys(CODE_EXAMPLES);
 
   return <URLExplanation>
     <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
-      To generate an image with a specific prompt and customize its parameters, use the URL format below. This allows you to specify the image's width, height, and whether it should appear in the feed or display the Pollinations logo. No registration is needed, it's free to use, and super easy to integrate.
+      Integrate hassle-free without any sign-up, tokens, libraries or other complications.
     </Typography>
     <br />
 
     <AppBar position="static" style={{ background: 'black', color: 'white' }}>
       <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
-        {codeExampleKeys.map((key, index) => (
+        {codeExampleKeys.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
       </Tabs>
     </AppBar>
+    <Box maxWidth='800px'>
     {codeExampleKeys.map((key, index) => (
       tabValue === index && <CodeBlock
         key={key}
         text={CODE_EXAMPLES[key](image)}
-        language={codeExampleLanguages[index]}
-        theme={dracula} />
+        language={key}
+        theme={dracula} 
+        wrapLines
+        showLineNumbers={true}
+        />
     ))}
+    </Box>
   </URLExplanation>;
 }

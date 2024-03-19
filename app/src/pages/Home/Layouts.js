@@ -61,7 +61,7 @@ export function ActivityUpdate(){
 
 export function DarkLayout({children, style}){
   return <Style dark={true} style={style}>
-    <PageLayout long={true} dark={true}>
+    <PageLayout long={true} dark={true} style={{alignItems:"center"}}>
       {children}
     </PageLayout>
   </Style> 

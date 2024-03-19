@@ -11,10 +11,11 @@ export default function Solutions() {
   return <Style>
     <WhoWeAre />
     <Hero />
-    <MusicVideo/>
     <DarkLayout>
       <GenerativeImageFeed />
     </DarkLayout>
+    <MusicVideo/>
+
     {/* <TwitchSection /> */}
     {/* <ActivityUpdate /> */}
     <Discord />

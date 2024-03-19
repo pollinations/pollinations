@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
-import { debounce } from 'lodash';
 import { useInterval } from 'usehooks-ts'
+import { getLastServerLoad } from './useFeedLoader';
+
+// Assuming server load is a constant value of 5 for now
 
 export function useImageSlideshow() {
   const [image, setImage] = useState({});
@@ -9,9 +11,8 @@ export function useImageSlideshow() {
   const [isStopped, stop] = useState(false);
 
   const nextImage = useCallback(async () => {
-
     setLoadedImages(loadedImages => {
-    console.log("imgs", loadedImages, isStopped)
+      console.log("imgs", loadedImages, isStopped)
       if (loadedImages.length > 0) {
         const [img, ...newLoadedImages] = loadedImages;
         setImage(img);
@@ -19,15 +20,13 @@ export function useImageSlideshow() {
       }
       return loadedImages;
     })
-
   }, [loadedImages, isStopped]);
 
   useInterval(() => {
     if (!isStopped)
       nextImage();
   }, 3000);
-  
-  
+
   const onNewImage = useCallback((newImage, emptyQueue=false) => {
     return new Promise((resolve, reject) => {
       console.log("loading new image", newImage.prompt, emptyQueue);
@@ -46,26 +45,35 @@ export function useImageSlideshow() {
       };
     });
   }, [setLoadedImages]);
-  
-  
-  const debouncedUpdateImage = useCallback(debounce(async (newImage) => {
-    // console.log("debounced new image", newImage.prompt)
+
+  const dynamicDebounce = (func) => {
+    let timerId;
+    return (delay, ...args) => {
+      clearTimeout(timerId);
+      timerId = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const debouncedUpdateImage = useCallback(dynamicDebounce(async (newImage) => {
     await onNewImage(newImage, true);
     setIsLoading(false);
-  }, 6000), [onNewImage]);
+  }), [onNewImage]);
 
   const updateImage = useCallback((newImage) => {
     console.log("calling update image", newImage);
-    
-    // TODO: this is a bit hacky. we should probably separate slideshow logic from override image logic in the future
     const { imageURL, ...rest } = newImage
     setImage({ ...rest, imageURL: image.imageURL });
 
     setIsLoading(true);
     stop(true);
-    debouncedUpdateImage(newImage);
-  }, [stop, debouncedUpdateImage, image]); // Debounce time of 3000ms
 
+    const dynamicDebounceTime = Math.min(20000, 1000 + 2000 * getLastServerLoad()); // Adjusting debounce time based on server load
+    console.log("debounce time", dynamicDebounceTime);
+    debouncedUpdateImage(dynamicDebounceTime, newImage);
+
+  }, [stop, debouncedUpdateImage, image]);
 
   return { image, updateImage, isLoading, onNewImage };
 }

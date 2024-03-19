@@ -17,7 +17,7 @@ export function useFeedLoader(onNewImage) {
         }
         if (data["imageURL"]) {
           setImagesGenerated(no => no + 1);
-          const matureWord = isMature(data["prompt"]) && false;
+          const matureWord = isMature(data["prompt"]);
           if (matureWord) {
             console.log("Skipping mature word:", matureWord, data["prompt"]);
             return;

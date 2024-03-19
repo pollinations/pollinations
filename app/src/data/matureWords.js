@@ -1,4 +1,5 @@
 export const words = [
+   "erotic",
    "milf",
    "panties",
    "genital",

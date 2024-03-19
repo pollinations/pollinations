@@ -15,13 +15,10 @@ export function GenerativeImageFeed() {
 
 
   const handleParamChange = (param, value) => {
-    let newValue = value;
-    if (param === 'seed') {
-      newValue = parseInt(value, 10);
-    }
+
     const newImage = {
       ...image,
-      [param]: newValue,
+      [param]: value,
     };
     const imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}?width=${newImage.width}&height=${newImage.height}${newImage.seed ? `&seed=${newImage.seed}` : ''}&nofeed=true`
     updateImage({
@@ -67,21 +64,19 @@ function ImageData({ image, handleParamChange }) {
     <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none' }}>
       <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
         <TableBody>
-          {Object.entries({prompt, seed}).map(([key, value]) => (
-            <TableRow key={key} style={{ borderBottom: 'none' }}>
-              <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>{key}</TableCell>
-              <TableCell align="right" style={{ borderBottom: 'none' }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  value={value}
-                  onChange={(e) => handleParamChange(key, e.target.value)}
-                  onFocus={() => handleParamChange(key, value)}
-                  type={key === 'seed' ? 'number' : 'text'}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
+          <TableRow key="prompt" style={{ borderBottom: 'none' }}>
+            <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>prompt</TableCell>
+            <TableCell align="right" style={{ borderBottom: 'none' }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                value={prompt}
+                onChange={(e) => handleParamChange('prompt', e.target.value)}
+                onFocus={() => handleParamChange('prompt', prompt)}
+                type="text"
+              />
+            </TableCell>
+          </TableRow>
           <TableRow key="width" style={{ borderBottom: 'none' }}>
             <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>width</TableCell>
             <TableCell align="right" style={{ borderBottom: 'none' }}>
@@ -109,6 +104,20 @@ function ImageData({ image, handleParamChange }) {
                 marks
                 min={16}
                 max={2048}
+              />
+            </TableCell>
+          </TableRow>
+          <TableRow key="seed" style={{ borderBottom: 'none' }}>
+            <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>seed</TableCell>
+            <TableCell align="right" style={{ borderBottom: 'none' }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                value={seed}
+                onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
+                onFocus={() => handleParamChange('seed', seed)}
+                type="number"
+                style={{width:"25%"}}
               />
             </TableCell>
           </TableRow>

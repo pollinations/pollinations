@@ -46,19 +46,25 @@ export function useImageSlideshow() {
       };
     });
   }, [setLoadedImages]);
-
+  
+  
   const debouncedUpdateImage = useCallback(debounce(async (newImage) => {
+    // console.log("debounced new image", newImage.prompt)
     await onNewImage(newImage, true);
     setIsLoading(false);
-  }, 5000), [onNewImage]);
+  }, 6000), [onNewImage]);
 
   const updateImage = useCallback((newImage) => {
     console.log("calling update image", newImage);
-    setImage(newImage);
+    
+    // TODO: this is a bit hacky. we should probably separate slideshow logic from override image logic in the future
+    const { imageURL, ...rest } = newImage
+    setImage({ ...rest, imageURL: image.imageURL });
+
     setIsLoading(true);
     stop(true);
     debouncedUpdateImage(newImage);
-  }, [stop, debouncedUpdateImage]); // Debounce time of 3000ms
+  }, [stop, debouncedUpdateImage, image]); // Debounce time of 3000ms
 
 
   return { image, updateImage, isLoading, onNewImage };

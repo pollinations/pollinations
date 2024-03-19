@@ -9,9 +9,11 @@ import { shorten } from './shorten';
 
 export function GenerativeImageFeed() {
   // const [overrideImage, setOverrideImage] = useState({});
+  const [ serverLoad, setServerLoad] = useState(0);
 
-  const { image, updateImage, isLoading, onNewImage } = useImageSlideshow();
-  const { serverLoad, imagesGenerated } = useFeedLoader(onNewImage);
+
+  const { image, updateImage, isLoading, onNewImage } = useImageSlideshow(serverLoad);
+  const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
 
 
   const handleParamChange = (param, value) => {

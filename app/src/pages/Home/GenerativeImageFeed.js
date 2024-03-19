@@ -89,7 +89,7 @@ function ImageData({ image, handleParamChange }) {
                 onChange={(e, newValue) => handleParamChange('width', newValue)}
                 aria-labelledby="width-slider"
                 valueLabelDisplay="on"
-                step={1}
+                step={16}
                 marks
                 min={16}
                 max={2048}
@@ -105,7 +105,7 @@ function ImageData({ image, handleParamChange }) {
                 onChange={(e, newValue) => handleParamChange('height', newValue)}
                 aria-labelledby="height-slider"
                 valueLabelDisplay="on"
-                step={1}
+                step={16}
                 marks
                 min={16}
                 max={2048}

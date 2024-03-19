@@ -26,6 +26,7 @@ class StreamDiffusion:
         frame_buffer_size: int = 1,
         cfg_type: Literal["none", "full", "self", "initialize"] = "self",
     ) -> None:
+        self.adapters = []
         self.device = pipe.device
         self.dtype = torch_dtype
         self.generator = None
@@ -87,6 +88,7 @@ class StreamDiffusion:
         self.pipe.load_lora_weights(
             pretrained_model_name_or_path_or_dict, adapter_name, **kwargs
         )
+        self.adapters.append(adapter_name)
 
     def load_lora(
         self,
@@ -97,6 +99,9 @@ class StreamDiffusion:
         self.pipe.load_lora_weights(
             pretrained_lora_model_name_or_path_or_dict, adapter_name, **kwargs
         )
+        self.adapters.append(adapter_name)
+        
+
 
     def fuse_lora(
         self,
@@ -111,6 +116,10 @@ class StreamDiffusion:
             lora_scale=lora_scale,
             safe_fusing=safe_fusing,
         )
+        print("activating adapters", self.adapters)
+    
+        self.pipe.set_adapters(self.adapters, [1.0 for _ in self.adapters])
+        # print("active_adapters", self.pipe.get_active_adapters())
 
     def enable_similar_image_filter(self, threshold: float = 0.98, max_skip_frame: float = 10) -> None:
         self.similar_image_filter = True

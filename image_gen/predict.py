@@ -129,7 +129,7 @@ class Predictor:
 
     def _load_streamdiffusion_model(
         self,
-        model_id_or_path: str = "lykon/dreamshaper-xl-lightning",
+        model_id_or_path: str = "lykon/dreamshaper-xl-lightning", #RunDiffusion/Juggernaut-XL-Lightning
         lora_dict: Optional[Dict[str, float]] = None,
         width: int = 768,
         height: int = 768,
@@ -258,7 +258,7 @@ class Predictor:
         for i in range(0, len(prompts),max_batch_size):
             chunked_prompts = prompts[i:i+max_batch_size]
             original_prompt = chunked_prompts[0]
-            # chunked_prompts[0] = prompt_pimping(original_prompt)
+            chunked_prompts[0] = original_prompt + ". " + prompt_pimping(original_prompt)
             print("running on prompts", chunked_prompts, "original", original_prompt)
             with lock:
                 predict_start_time = time.time()
@@ -450,11 +450,11 @@ def embeddings_endpoint():
 
 
 def prompt_pimping(input_text):
-    output = pimper_model.generate(tokenizer(input_text, return_tensors="pt").input_ids.to("cuda"), max_length=77)
+    output = pimper_model.generate(tokenizer(input_text, return_tensors="pt").input_ids.to("cuda"), max_length=30)
     result_text = tokenizer.decode(output[0])
-    if len(result_text) < len(input_text):
-        print("ERRROR for some reason pimped prompt is shorter than original. returning original")
-        return input_text
+    # if len(result_text) < len(input_text):
+    #     print("ERRROR for some reason pimped prompt is shorter than original. returning original")
+    #     return input_text
     return result_text
 import os
 if __name__ == "__main__":

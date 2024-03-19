@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import traceback
 from typing import List, Literal, Optional, Union, Dict
+from huggingface_hub import hf_hub_download
 
 import numpy as np
 import torch
@@ -457,10 +458,11 @@ class StreamDiffusionWrapper:
             if use_lcm_lora:
                 if lcm_lora_id is not None:
                     stream.load_lcm_lora(
-                        pretrained_model_name_or_path_or_dict=lcm_lora_id
+                        pretrained_model_name_or_path_or_dict=lcm_lora_id,
+                        adapter_name="lcm"
                     )
                 else:
-                    stream.load_lcm_lora()
+                    stream.load_lcm_lora(adapter_name="lcm")
                 stream.fuse_lora()
 
             if lora_dict is not None:
@@ -468,6 +470,18 @@ class StreamDiffusionWrapper:
                     stream.load_lora(lora_name)
                     stream.fuse_lora(lora_scale=lora_scale)
                     print(f"Use LoRA: {lora_name} in weights {lora_scale}")
+
+            # Load ResAdapter
+            stream.load_lora(
+                hf_hub_download(
+                    repo_id="jiaxiangc/res-adapter",
+                    subfolder="sdxl-i",
+                    filename="resolution_lora.safetensors",
+                ),
+                adapter_name="res_adapter",
+            )
+            stream.fuse_lora(lora_scale=1.0)
+
 
         if use_tiny_vae:
             if vae_id is not None:

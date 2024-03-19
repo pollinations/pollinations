@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Typography, AppBar, Tabs, Tab, Box } from '@material-ui/core';
-import { CodeBlock, CopyBlock, dracula } from 'react-code-blocks';
+import { CodeBlock, dracula } from 'react-code-blocks';
 import { URLExplanation } from './styles';
 import { shorten } from './shorten';
 
@@ -64,7 +64,7 @@ const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?widt
 
 downloadImage(imageUrl);`,
 
-  python: ({ imageURL, prompt, width, height, seed, model}) => `
+  python: ({ prompt, width, height, seed, model}) => `
 # This Python snippet downloads the image using requests and saves it to disk, including image details.
 
 import requests
@@ -107,7 +107,7 @@ export function CodeExamples(image) {
     <br />
 
     <AppBar position="static" style={{ background: 'black', color: 'white' }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example">
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="auto">
         {codeExampleKeys.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}

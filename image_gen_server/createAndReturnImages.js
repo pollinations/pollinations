@@ -101,7 +101,7 @@ const nsfwCheck = async (buffer) => {
 };
 
 const idealSideLength = {
-  turbo: 768, 
+  turbo: 1024, 
   pixart: 768, 
   deliberate: 640,
   dreamshaper: 800,
@@ -179,7 +179,7 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
 
         const logoPath = isMature ? null : 'logo.png';
 
-        let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath);
+        let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams);
 
         return { buffer:bufferWithLegend, isChild, isMature };
       }));
@@ -187,10 +187,10 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
 
     return buffersWithLegends;
 }
-// imagemagick command line command to composite the logo on top of the image
-// convert -background none -gravity southeast -geometry +10+10 logo.png -composite image.jpg image.jpg
-function addPollinationsLogoWithImagemagick(buffer, logoPath = "logo.png") {
 
+// imagemagick command line command to composite the logo on top of the image
+// dynamically resizing the logo to use 30% of the image width
+function addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams) {
   // create temporary file for the image
   const tempImageFile = tempfile({ extension: 'png' });
   const tempOutputFile = tempfile({ extension: 'jpg' });
@@ -198,10 +198,16 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath = "logo.png") {
   // write buffer to temporary file
   fs.writeFileSync(tempImageFile, buffer);
 
+  // Calculate the new width of the logo as 30% of the image width
+  const targetWidth = extraParams.width * 0.3;
+  // Since the original width of the logo is 200px, calculate the scaling factor
+  const scaleFactor = targetWidth / 200;
+  // Calculate the new height of the logo based on the scaling factor
+  // Assuming the logo's original height is also known and proportional scaling is desired
+  const targetHeight = scaleFactor * 31; // Replace 200 with the logo's original height if different
 
   return new Promise((resolve, reject) => {
-    exec(`convert -background none -gravity southeast -geometry +10+10  ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
-
+    exec(`convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`error: ${error.message}`);
         reject(error);

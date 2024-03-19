@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
-export function useFeedLoader(onNewImage) {
-  const [serverLoad, setServerLoad] = useState(0);
+
+export function useFeedLoader(onNewImage, setServerLoad) {
   const [imagesGenerated, setImagesGenerated] = useState(estimateGeneratedImages());
 
   useEffect(() => {
@@ -10,13 +10,14 @@ export function useFeedLoader(onNewImage) {
       const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
-        setServerLoad(data["concurrentRequests"]);
+        setImagesGenerated(no => no + 1);
+        lastServerLoad = data["concurrentRequests"];
+        setServerLoad(lastServerLoad);
         if (data["nsfw"]) {
           console.log("Skipping NSFW content:", data["nsfw"], data);
           return;
         }
         if (data["imageURL"]) {
-          setImagesGenerated(no => no + 1);
           const matureWord = isMature(data["prompt"]);
           if (matureWord) {
             console.log("Skipping mature word:", matureWord, data["prompt"]);
@@ -42,7 +43,7 @@ export function useFeedLoader(onNewImage) {
     };
   }, [onNewImage]);
 
-  return { serverLoad, imagesGenerated };
+  return { imagesGenerated };
 }
 
 function estimateGeneratedImages() {
@@ -54,3 +55,8 @@ function estimateGeneratedImages() {
   const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
+
+
+let lastServerLoad = 0;
+
+export const getLastServerLoad = () => lastServerLoad;

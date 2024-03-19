@@ -33,14 +33,16 @@ export function GenerativeImageFeed() {
         <ImageURLHeading>Image Feed</ImageURLHeading>
         <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
           {image ? (
-            <Box maxWidth="600px">
+            <Box maxWidth="600px" marginBottom="50px">
             <ServerLoadAndGenerationInfo {...{serverLoad, imagesGenerated}} />
             <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
               <ImageStyle
                 src={image["imageURL"]}
                 alt="generative_image"
               />
+    
             </Link>
+
             </Box>
           ) : (
             <Typography variant="h6" color="textSecondary">Loading image...</Typography>
@@ -89,6 +91,7 @@ function ImageData({ image, handleParamChange }) {
                 marks
                 min={16}
                 max={2048}
+                style={{marginTop:"30px"}}
               />
             </TableCell>
           </TableRow>
@@ -104,6 +107,7 @@ function ImageData({ image, handleParamChange }) {
                 marks
                 min={16}
                 max={2048}
+                style={{marginTop:"30px"}}
               />
             </TableCell>
           </TableRow>

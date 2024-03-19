@@ -5,7 +5,7 @@ from typing import List, Optional, Union, Any, Dict, Tuple, Literal
 import numpy as np
 import PIL.Image
 import torch
-from diffusers import LCMScheduler, StableDiffusionPipeline, StableDiffusionXLPipeline
+from diffusers import LCMScheduler, StableDiffusionPipeline, StableDiffusionXLPipeline, EulerAncestralDiscreteScheduler,EulerDiscreteScheduler
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img import (
 retrieve_latents,
@@ -80,7 +80,7 @@ class StreamDiffusion:
         self,
         pretrained_model_name_or_path_or_dict: Union[
             str, Dict[str, torch.Tensor]
-        ] = "latent-consistency/lcm-lora-sdv1-5",
+        ] = "latent-consistency/lcm-lora-sdxl",
         adapter_name: Optional[Any] = None,
         **kwargs,
     ) -> None:
@@ -494,20 +494,20 @@ class StreamDiffusion:
                     self.frame_bff_size,
                 )
                 added_cond_kwargs = {"text_embeds": self.add_text_embeds.to(self.device), "time_ids": self.add_time_ids.to(self.device)}
-                x_0_pred_batch, model_pred = self.unet_step(x_t_latent, t_list, added_cond_kwargs=added_cond_kwargs)
+                x_0_pred_batch, model_pred = self.unet_step(x_t_latent, t, added_cond_kwargs=added_cond_kwargs, idx=idx)
                 
                 if idx < len(self.sub_timesteps_tensor) - 1:
                     if self.do_add_noise:
                         x_t_latent = self.alpha_prod_t_sqrt[
                             idx + 1
-                        ] * x_0_pred + self.beta_prod_t_sqrt[
+                        ] * x_0_pred_batch + self.beta_prod_t_sqrt[
                             idx + 1
                         ] * torch.randn_like(
-                            x_0_pred, device=self.device, dtype=self.dtype
+                            x_0_pred_batch, device=self.device, dtype=self.dtype
                         )
                     else:
-                        x_t_latent = self.alpha_prod_t_sqrt[idx + 1] * x_0_pred
-            x_0_pred_out = x_0_pred
+                        x_t_latent = self.alpha_prod_t_sqrt[idx + 1] * x_0_pred_batch
+            x_0_pred_out = x_0_pred_batch
         return x_0_pred_out
 
     @torch.no_grad()

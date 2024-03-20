@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer } from  '@material-ui/core';
+import { Typography, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, FormControlLabel } from  '@material-ui/core';
 import { debounce } from 'lodash';
 import { CodeExamples } from './CodeExamples';
 import { useFeedLoader } from './useFeedLoader';
@@ -8,38 +8,49 @@ import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyl
 import { shorten } from './shorten';
 
 export function GenerativeImageFeed() {
-  // const [overrideImage, setOverrideImage] = useState({});
   const [ serverLoad, setServerLoad] = useState(0);
-
 
   const { image, updateImage, isLoading, onNewImage } = useImageSlideshow(serverLoad);
   const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
 
-
   const handleParamChange = (param, value) => {
-
     const newImage = {
       ...image,
       [param]: value,
     };
-    const imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}?width=${newImage.width}&height=${newImage.height}${newImage.seed ? `&seed=${newImage.seed}` : ''}&nofeed=true`
+    updateImage(newImage);
+  };
+
+  const togglePrivate = (value) => {
     updateImage({
-      ...newImage,
-      imageURL
+      ...image,
+      isPrivate: value,
     });
   };
+
+  const generateImageURL = () => {
+    const { prompt, width, height, seed, isPrivate } = image;
+    return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?width=${width}&height=${height}${seed ? `&seed=${seed}` : ''}${isPrivate ? '&nofeed=true' : ''}`;
+  };
+
+  useEffect(() => {
+    if (image.prompt) { // Ensure there's a prompt to generate the URL
+      const imageURL = generateImageURL();
+      updateImage({ ...image, imageURL });
+    }
+  }, [image.prompt, image.width, image.height, image.seed, image.isPrivate]); // Regenerate URL on any of these changes
 
   return (
     <Box>
       <GenerativeImageURLContainer>
         <ImageURLHeading>Image Feed</ImageURLHeading>
         <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
-          {image ? (
+          {image.imageURL ? (
             <Box maxWidth="500px" marginBottom="50px">
             <ServerLoadAndGenerationInfo {...{serverLoad, imagesGenerated}} />
-            <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+            <Link href={image.imageURL} target="_blank" rel="noopener noreferrer">
               <ImageStyle
-                src={image["imageURL"]}
+                src={image.imageURL}
                 alt="generative_image"
               />
     
@@ -51,7 +62,7 @@ export function GenerativeImageFeed() {
           )}
         {isLoading && <CircularProgress color="secondary" />}
         </ImageContainer>
-        <ImageData {...{image, handleParamChange}} />
+        <ImageData {...{image, handleParamChange, togglePrivate}} />
         <br />
         <CodeExamples {...image } />
       </GenerativeImageURLContainer>
@@ -59,11 +70,8 @@ export function GenerativeImageFeed() {
   );
 }
 
-function ImageData({ image, handleParamChange }) {
-  const { prompt, width, height, seed, imageURL } = image;
-  if (!imageURL) {
-    return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
-  }
+function ImageData({ image, handleParamChange, togglePrivate }) {
+  const { prompt, width, height, seed, isPrivate } = image;
   return <Box style={{ width: "600px", position: "relative" }}>
     <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none' }}>
       <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
@@ -76,7 +84,6 @@ function ImageData({ image, handleParamChange }) {
                 variant="outlined"
                 value={prompt}
                 onChange={(e) => handleParamChange('prompt', e.target.value)}
-                onFocus={() => handleParamChange('prompt', prompt)}
                 type="text"
               />
             </TableCell>
@@ -121,9 +128,18 @@ function ImageData({ image, handleParamChange }) {
                 variant="outlined"
                 value={seed}
                 onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
-                onFocus={() => handleParamChange('seed', seed)}
                 type="number"
                 style={{width:"25%"}}
+              />
+            </TableCell>
+          </TableRow>
+          <TableRow key="isPrivate" style={{ borderBottom: 'none' }}>
+            <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>Private</TableCell>
+            <TableCell align="right" style={{ borderBottom: 'none' }}>
+              <Checkbox
+                checked={isPrivate || false}
+                onChange={(e) => togglePrivate(e.target.checked)}
+                color="primary"
               />
             </TableCell>
           </TableRow>

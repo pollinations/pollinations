@@ -35,7 +35,7 @@ export function GenerativeImageFeed() {
         <ImageURLHeading>Image Feed</ImageURLHeading>
         <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
           {image ? (
-            <Box maxWidth="600px" marginBottom="50px">
+            <Box maxWidth="500px" marginBottom="50px">
             <ServerLoadAndGenerationInfo {...{serverLoad, imagesGenerated}} />
             <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
               <ImageStyle

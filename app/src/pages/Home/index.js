@@ -10,7 +10,7 @@ import { GenerativeImageFeed } from "./GenerativeImageFeed"
 export default function Solutions() {
   return <Style>
     <WhoWeAre />
-    <Hero />
+    {/* <Hero /> */}
     <DarkLayout>
       <GenerativeImageFeed />
     </DarkLayout>

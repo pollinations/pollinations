@@ -11,7 +11,6 @@ import { splitEvery } from 'ramda';
 import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
-import { getClosesPrompt } from './promptEmbedding.js';
 
 const BATCH_SIZE = 1; // Number of requests per batch
 
@@ -360,18 +359,6 @@ const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance=f
 
   const finalPrompt = prompt || promptRaw;
 
-  // return finalPrompt;
-  // if prompt is less than 70 characters get closes prompt from prompt embeddings
-  if (enhance === true && finalPrompt.length < 100) { 
-    try {
-      const closestPrompt = await getClosesPrompt(finalPrompt);
-      console.log("got closest prompt", closestPrompt)
-      timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-      return closestPrompt;
-    } catch(e) {
-      console.error("error calculating embeddings", e.message);
-    } 
-  }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
   return finalPrompt;

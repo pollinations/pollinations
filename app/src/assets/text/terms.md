@@ -1,4 +1,4 @@
-## Terms & Conditions
+# Terms
 
 Welcome to Pollinations.ai! Our services empower you to harness AI technology for the creation and interaction with digital media. By utilizing our services, you consent to these terms, so please review them attentively.
 
@@ -34,7 +34,10 @@ We may amend these terms as necessary. By continuing to access or use our servic
 ### Governing Law
 These terms are subject to the laws of Germany, excluding its conflict of laws principles.
 
-## Privacy Policy for Pollinations.ai
+------
+
+
+# Privacy Policy
 
 Your privacy is paramount at Pollinations.ai. This policy outlines our practices regarding the collection, use, protection, and sharing of your information when you engage with our services.
 

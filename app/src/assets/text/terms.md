@@ -6,7 +6,7 @@ Welcome to Pollinations.ai! Our services empower you to harness AI technology fo
 By accessing or using Pollinations.ai, you confirm your understanding and agreement to these Terms & Conditions and our Privacy Policy. Should you disagree with any part of these terms, you are advised not to use our services.
 
 ### Use of Service
-Pollinations.ai offers AI-powered tools to craft digital media. You retain ownership and responsibility for the content you generate. We encourage you to review the licenses of the open-source models used in the creation process. Content produced through our services can be freely utilized for commercial purposes. Importantly, Pollinations does not permanently store any user-generated content or personal data on its servers. Data is stored temporarily to facilitate certain features, such as saving likes for the Discord bot, and is handled with the utmost respect for user privacy, collecting only the minimum necessary information.
+Pollinations.ai offers AI-powered tools to craft digital media. You retain ownership and responsibility for the content you generate. We encourage you to review the licenses of the open-source models used in the creation process. Content produced through our services can be utilized for commercial purposes within the bounds of legality and ethical standards. Importantly, Pollinations does not permanently store any user-generated content or personal data on its servers. Data is stored temporarily to facilitate certain features, such as saving likes for the Discord bot, and is handled with the utmost respect for user privacy, collecting only the minimum necessary information.
 
 #### User Conduct
 You commit to using the Pollinations.ai services ethically and legally. Specifically, you agree not to:
@@ -18,15 +18,12 @@ You commit to using the Pollinations.ai services ethically and legally. Specific
 #### Prohibition of Unauthorized Materials
 Our services must not be used to generate:
 ##### 2.1.1 Celebrity Deepfakes
-Creating pornographic materials featuring celebrities, politicians, or any public figures, whether real or synthesized, is strictly prohibited.
+Creating materials featuring celebrities, politicians, or any public figures, whether real or synthesized, in a manner that violates their rights or dignity is strictly prohibited.
 ##### 2.1.2 Child Sexual Abuse Material (CSAM)
-It is forbidden to produce CSAM or any pornographic content depicting individuals who are, or appear to be, under 18 years old. This applies to both fictional and real-life subjects.
-
-#### Acceptable Content
-With the exception of the restrictions mentioned, you are free to create adult content, including material that features fictional characters.
+It is forbidden to produce CSAM or any content depicting individuals who are, or appear to be, under 18 years old. This applies to both fictional and real-life subjects.
 
 ### Intellectual Property
-While you own the content you generate using Pollinations.ai, it is crucial to respect the licenses of the open-source models utilized. Most content can be freely used for commercial purposes, but we advise checking specific model licenses for any restrictions. Pollinations GmbH claims no intellectual property rights over the content created by users.
+While you own the content you generate using Pollinations.ai, it is crucial to respect the licenses of the open-source models utilized. Most content can be used for commercial purposes, but we advise checking specific model licenses for any restrictions. Pollinations GmbH claims no intellectual property rights over the content created by users.
 
 ### Modification of Terms
 We may amend these terms as necessary. By continuing to access or use our services after changes, you accept the revised terms.

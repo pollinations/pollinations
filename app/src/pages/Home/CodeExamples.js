@@ -32,7 +32,7 @@ Seed: **${seed}** (Each seed generates a new image)
     <p>Prompt: ${prompt}</p>
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
-    <p>Seed: ${seed} <i>Each seed generates a new image variation</></p>
+    <p>Seed: ${seed} <i>Each seed generates a new image variation</i></p>
 
     <img 
       src="${imageURL}" 
@@ -105,7 +105,7 @@ export function CodeExamples(image) {
 
   const codeExampleTabs = Object.keys(CODE_EXAMPLES);
 
-  const allTabs = ["link", ...codeExampleTabs];
+  const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
   return <URLExplanation>
     <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
@@ -126,12 +126,16 @@ export function CodeExamples(image) {
       if (tabValue !== index)
         return null;
 
-      if (!image.imageURL)
+      if (!image.imageURL && key !== "discord_bot")
         return null;
 
       if (key === "link") {
         return (<Box margin="10px" maxWidth="800px" overflow="hidden" >
             <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
+            </Box>);
+      } else if (key === "discord_bot") {
+        return (<Box margin="10px" maxWidth="800px" overflow="hidden" >
+            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>Discord Bot</Link>
             </Box>);
       }
       

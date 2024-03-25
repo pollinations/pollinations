@@ -106,8 +106,9 @@ model: object = ai.Model()
 image: object = model.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
     model=ai.turbo,
-    height=512,
-    seed=57184
+    width=${width},
+    height=${height},
+    seed=${seed}
 )
 image.save('image-output.jpg')
 

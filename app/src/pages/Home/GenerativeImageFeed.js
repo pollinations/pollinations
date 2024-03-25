@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer } from  '@material-ui/core';
+import { Typography, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton } from  '@material-ui/core';
+import InfoIcon from '@material-ui/icons/Info';
 import { debounce } from 'lodash';
 import { CodeExamples } from './CodeExamples';
 import { useFeedLoader } from './useFeedLoader';
@@ -22,13 +23,14 @@ export function GenerativeImageFeed() {
       ...image,
       [param]: value,
     };
-    const imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}?width=${newImage.width}&height=${newImage.height}${newImage.seed ? `&seed=${newImage.seed}` : ''}&nofeed=true`
+    let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}?width=${newImage.width}&height=${newImage.height}${newImage.seed ? `&seed=${newImage.seed}` : ''}`;
+    imageURL += newImage.nofeed ? `&nofeed=${newImage.nofeed}` : '';
+    imageURL += newImage.nologo ? `&nologo=${newImage.nologo}` : '';
     updateImage({
       ...newImage,
       imageURL
     });
   };
-
   return (
     <Box>
       <GenerativeImageURLContainer>
@@ -65,7 +67,7 @@ function TimingInfo({image}) {
   return <Box textAlign="right"><Typography variant="body2" component="i">{Math.round(timeMs/10)/100} s</Typography></Box>
 }
 function ImageData({ image, handleParamChange }) {
-  const { prompt, width, height, seed, imageURL } = image;
+  const { prompt, width, height, seed, imageURL, nofeed, nologo } = image;
   if (!imageURL) {
     return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
   }
@@ -128,6 +130,41 @@ function ImageData({ image, handleParamChange }) {
                 onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
                 onFocus={() => handleParamChange('seed', seed)}
                 type="number"
+                style={{width:"25%"}}
+              />
+            </TableCell>
+          </TableRow>
+          <TableRow key="nofeed" style={{ borderBottom: 'none' }}>
+            <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
+              private
+              <Tooltip title="Activating 'private' prevents images from appearing in the feed">
+                <IconButton size="small">
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
+            <TableCell align="right" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
+              <Checkbox
+                checked={nofeed}
+                onChange={(e) => handleParamChange('nofeed', e.target.checked)}
+                color="primary"
+              />
+            </TableCell>
+          </TableRow>
+          <TableRow key="nologo" style={{ borderBottom: 'none' }}>
+            <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
+              nologo
+              <Tooltip title="Hide the pollinations.ai logo. Get the password in Pollinations' Discord community.">
+                <IconButton size="small">
+                  <InfoIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </TableCell>
+            <TableCell align="right" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
+              <TextField
+                type="password"
+                variant="outlined"
+                onChange={(e) => handleParamChange('nologo', e.target.value)}
                 style={{width:"25%"}}
               />
             </TableCell>

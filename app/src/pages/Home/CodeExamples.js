@@ -133,14 +133,14 @@ export function CodeExamples(image) {
     </Typography>
     <br />
 
-    <AppBar position="static" style={{ background: 'black', color: 'white' }}>
+    <AppBar position="static" style={{ background: 'black', color: 'white', maxWidth:"700px"}}>
       <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="auto">
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
       </Tabs>
     </AppBar>
-    <Box maxWidth='800px'>
+    <Box maxWidth='700px'>
     {allTabs.map((key, index) => {
       
       if (tabValue !== index)
@@ -150,11 +150,11 @@ export function CodeExamples(image) {
         return null;
 
       if (key === "link") {
-        return (<Box margin="10px" maxWidth="800px" overflow="hidden" >
+        return (<Box margin="10px" overflow="hidden" >
             <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
             </Box>);
       } else if (key === "discord_bot") {
-        return (<Box margin="10px" maxWidth="800px" overflow="hidden" >
+        return (<Box margin="10px" overflow="hidden" >
             <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>Discord Bot</Link>
             </Box>);
       }
@@ -169,7 +169,7 @@ export function CodeExamples(image) {
         theme={irBlack} 
         // wrapLongLines
         showLineNumbers={text.split("\n").length > 1}
-        customStyle={{overFlow:'scroll', maxWidth:'800px'}}
+        customStyle={{overFlow:'scroll' }}
         />
       )
       })}

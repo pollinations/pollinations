@@ -42,9 +42,10 @@ export function GenerativeImageFeed() {
                 src={image["imageURL"]}
                 alt="generative_image"
               />
+              <br />
+              <TimingInfo image={image} />
     
             </Link>
-
             </Box>
           ) : (
             <Typography variant="h6" color="textSecondary">Loading image...</Typography>
@@ -59,6 +60,10 @@ export function GenerativeImageFeed() {
   );
 }
 
+function TimingInfo({image}) {
+  const timeMs = image?.timingInfo?.[5].timestamp;
+  return <Box textAlign="right"><Typography variant="body2" component="i">{Math.round(timeMs/10)/100} s</Typography></Box>
+}
 function ImageData({ image, handleParamChange }) {
   const { prompt, width, height, seed, imageURL } = image;
   if (!imageURL) {

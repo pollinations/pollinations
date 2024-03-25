@@ -23,14 +23,14 @@ export function GenerativeImageFeed() {
       ...image,
       [param]: value,
     };
-    let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}?width=${newImage.width}&height=${newImage.height}${newImage.seed ? `&seed=${newImage.seed}` : ''}`;
-    imageURL += newImage.nofeed ? `&nofeed=${newImage.nofeed}` : '';
-    imageURL += newImage.nologo ? `&nologo=${newImage.nologo}` : '';
+    const imageURL = getImageURL(newImage);
+
     updateImage({
       ...newImage,
       imageURL
     });
   };
+
   return (
     <Box>
       <GenerativeImageURLContainer>
@@ -60,6 +60,21 @@ export function GenerativeImageFeed() {
       </GenerativeImageURLContainer>
     </Box>
   );
+}
+
+function getImageURL(newImage) {
+  let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`;
+  let queryParams = [];
+  if (newImage.width && newImage.width !== 1024 && newImage.width !== "1024") queryParams.push(`width=${newImage.width}`);
+  if (newImage.height && newImage.height !== 1024 && newImage.height !== "1024") queryParams.push(`height=${newImage.height}`);
+  if (newImage.seed && newImage.seed !== 42 && newImage.seed !== "42") queryParams.push(`seed=${newImage.seed}`);
+  if (newImage.nofeed) queryParams.push(`nofeed=${newImage.nofeed}`);
+  if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
+
+  if (queryParams.length > 0) {
+    imageURL += '?' + queryParams.join('&');
+  }
+  return imageURL;
 }
 
 function TimingInfo({image}) {

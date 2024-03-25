@@ -258,7 +258,7 @@ class Predictor:
         for i in range(0, len(prompts),max_batch_size):
             chunked_prompts = prompts[i:i+max_batch_size]
             original_prompt = chunked_prompts[0]
-            chunked_prompts[0] = original_prompt + ". " + prompt_pimping(original_prompt)
+            chunked_prompts[0] = original_prompt #+ ". " + prompt_pimping(original_prompt)
             print("running on prompts", chunked_prompts, "original", original_prompt)
             with lock:
                 predict_start_time = time.time()

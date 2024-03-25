@@ -179,7 +179,7 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
 
         const logoPath = isMature ? null : 'logo.png';
 
-        let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams);
+        let bufferWithLegend = extraParams["nologo"] === "rokosbasilisk" || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams);
 
         return { buffer:bufferWithLegend, isChild, isMature };
       }));

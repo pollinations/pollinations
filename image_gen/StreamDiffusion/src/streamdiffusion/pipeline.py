@@ -132,7 +132,7 @@ class StreamDiffusion:
     @torch.no_grad()
     def prepare(
         self,
-        prompt: str,
+        prompt: List[str],
         negative_prompt: str = "",
         num_inference_steps: int = 50,
         guidance_scale: float = 1.2,

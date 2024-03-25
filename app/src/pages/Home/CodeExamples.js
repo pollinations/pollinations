@@ -10,7 +10,7 @@ const CODE_EXAMPLES = {
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
   
-![Image](https://image.pollinations.ai/prompt/{description})?width={width}&height={height})
+![Image](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
   
 where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
@@ -93,6 +93,25 @@ seed = ${seed} # Each seed generates a new image variation
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
 download_image(image_url)
+
+
+# Using the pollinations pypi package
+
+## pip install pollinations
+
+import pollinations as ai
+
+model: object = ai.Model()
+
+image: object = model.generate(
+    prompt=f'${shorten(prompt)} {ai.realistic}',
+    model=ai.turbo,
+    height=512,
+    seed=57184
+)
+image.save('image-output.jpg')
+
+print(image.url)
 `
 };
 

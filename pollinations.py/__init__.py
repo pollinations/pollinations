@@ -23,26 +23,43 @@
 """
 Interact with text-to-image generative AI models.
 
+Current Models:
+    turbo
+    dreamshaper
+    deliberate
+    pixart
+    playground
+    dpo
+    dalle3xl
+    formulaxl
+
 Classes:
-    Image (types.ImageModel): text-to-image generative AI model.
+    Image (types.Model): text-to-image generative AI model.
+      -> Also Model (same as Image)
+    ImageType (types.ImageType): Image wrapper.
+    ImageURL (types.ImageURL): Image URL wrapper.
 
-Object Classes:
-    ImageObject (types.ImageObject): Image object.
-
-Functions:
-    help(str): Prints general/basic information.
-    sample(str): Returns a sample prompt for the Image model.
-    sample_style(str): Returns a style of prompt for the Image model.
-    sample_batch(list, size=10): Returns a batch of sample prompts for the Image model.
+Methods:
+    sample (ext.sample): Returns a sample style for the Image model.
 """
 
+from .ai import *
+from .ext import *
 
-__version__: str = "0.3.1"
-def help(*args, **kwargs) -> str:
-    return '''
-    Use:
-        import pollinations.ai
+Image = Model
 
-    Instead of:
-        import pollinations
-    '''
+default = Models.default
+turbo = Models.turbo
+dreamshaper = Models.dreamshaper
+deliberate = Models.deliberate
+pixart = Models.pixart
+playground = Models.playground
+dpo = Models.dpo
+dalle3xl = Models.dalle3xl
+formulaxl = Models.formulaxl
+
+__version__ = "1.3.2"
+__author__ = "pollinations"
+__license__ = "MIT"
+__copyright__ = "Copyright 2023 pollinations"
+__all__ = ["Image", "ImageType", "ImageURL", "sample"]

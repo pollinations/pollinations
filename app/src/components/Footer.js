@@ -32,6 +32,11 @@ return <OuterContainer>
                 renderComponent={RouteLink} 
                 columns={1} />
         </NavigationContainer>
+        <TermsLinkContainer>
+            <NavLink to='/terms'>
+                Terms & Conditions
+            </NavLink>
+        </TermsLinkContainer>
     </FooterStyle>
 </OuterContainer> 
 }
@@ -67,7 +72,15 @@ justify-self: flex-end;
 }
 `
 
+const TermsLinkContainer = styled.div`
+grid-area: terms;
+justify-self: flex-end;
 
+@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
+    justify-self: center;
+    margin-bottom: 205px;
+}
+`
 
 const LetsTalkStyle = styled.p`
 grid-area: lets-talk;
@@ -132,14 +145,14 @@ const FooterStyle = styled(BaseContainer)`
 padding: 3em 86px 0 86px;
 
 width: 100%;
-min-height: 418px;
-
+padding-bottom: 30px;
 display: grid;
 grid-template-columns: 1fr 1fr;
 
 grid-template-areas: 
     "lets-talk logo"
-    "social navigation_footer"
+    "social terms"
+    "navigation_footer navigation_footer"
 ;
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -149,6 +162,7 @@ grid-template-areas:
     "navigation_footer"
     "lets-talk"
     "social"
+    "terms"
     ;
     padding: 0;
     margin-bottom: 2em;

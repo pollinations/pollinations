@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 
-const BATCH_SIZE = 1; // Number of requests per batch
+const BATCH_SIZE = 8; // Number of requests per batch
 
 const concurrency = 3; // Number of concurrent requests per bucket key
 

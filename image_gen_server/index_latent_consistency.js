@@ -184,6 +184,7 @@ const requestListener = queuePerIp(async function (req, res) {
   }
 
   if (memCache[memCacheKey]) {
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
     res.write(await memCache[memCacheKey]);
     res.end();
     imageReturnTimestamps.push(Date.now());
@@ -193,6 +194,7 @@ const requestListener = queuePerIp(async function (req, res) {
 
   if (await isImageCached(originalPrompt, extraParams)) {
     const cachedImage = await getCachedImage(originalPrompt, extraParams);
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
     res.write(cachedImage);
     res.end();
     console.error("image cached, returning from cache", originalPrompt, extraParams);
@@ -230,6 +232,8 @@ const requestListener = queuePerIp(async function (req, res) {
           reject(error);
           return;
         }
+      
+        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
         res.write(bufferAndMaturity.buffer);
         resolve(bufferAndMaturity.buffer);
         res.end();

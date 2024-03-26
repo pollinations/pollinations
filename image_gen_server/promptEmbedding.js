@@ -15,7 +15,7 @@ const embeddingsFilePath = "./embeddings.json";
 
 // Function to calculate embeddings using a local server
 async function calculateEmbeddings(prompts, saveToFile = true) {
-    const embeddingsServerUrl = 'http://127.0.0.1:5555/embeddings';
+    const embeddingsServerUrl = 'http://.1:5555/embeddings';
     let embeddings = {};
 
     if (fs.existsSync(embeddingsFilePath)) {

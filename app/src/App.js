@@ -19,6 +19,12 @@ const AppRoutes = [
     key: 'impressum'
   },
   {
+    exact: true,
+    path: '/terms',
+    element: <PageTemplate label='terms'/>,
+    key: 'terms'
+  },
+  {
     path: '*',
     element: <Navigate to="/" replace={true} />,
     key: '404'

@@ -7,20 +7,17 @@ import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import SwiperComponent from './Swiper';
 // import Swiper styles
 
-
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
 
 const FeaturedApplicationsContent = [
     {
         title: 'AI Video',
-        subtitle: 'Introducing the ultimate video creation tool - now powered by AI!',
         description: <> 
-            Say goodbye to the hassle of editing and creating music videos from scratch. With our cutting-edge technology, we can easily produce professional-grade videos. 
-            <br/> <br/>Whether you're a musician, content creator, or simply looking to create eye-catching visuals.
-            <br/> <br/>Bring your ideas to life with our innovative video creation technology today!
+            Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. We specialize in creating bespoke videos that bring your artistic visions to life.
+            <br/> <br/>Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
+            <br/> <br/>Let us help you transform your psychedelic ideas into stunning visual narratives.
         </>,
-        video: './dreamachine/dreamachine_00.mp4'
     },
 ]
 const TopBand = styled.img`
@@ -28,7 +25,7 @@ position: absolute;
 width: 100%;
 height: auto;
 right: 0;
-top: 0;
+bottom: 0;
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   width: auto;
   height: 59px;
@@ -154,8 +151,9 @@ const FeaturedApp = props => {
             </p>
         </FeaturedAppStyle>
         {/* <Media {...props}/> */}
-        <SwiperComponent Slides={Slides}/>
-        
+        {/* <SwiperComponent Slides={Slides}/> */}
+        <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     </GridTwoColumns>
     </Flex>
 }
@@ -205,9 +203,14 @@ width: 100%;
 align-self: center;
 
 display: grid;
-grid-template-columns: 1fr 1fr;
+grid-template-columns: 1fr;
 gap: 1em;
 margin: 2em 0;
+
+iframe {
+    margin: 3em auto;
+    padding: 2em 0;
+}
 
 @media (max-width: ${MOBILE_BREAKPOINT}) {
   grid-template-columns: 1fr;

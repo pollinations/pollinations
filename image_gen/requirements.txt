@@ -4,3 +4,4 @@ torchvision==0.15.2
 diffusers==0.21.4
 Pillow==10.1.0
 transformers==4.34.1
+flask

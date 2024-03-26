@@ -203,7 +203,7 @@ function ImageData({ image, handleParamChange }) {
                     variant="outlined"
                     onChange={(e) => handleParamChange('nologo', e.target.value)}
                     style={{width:"25%"}}
-                    value={nologo}
+                    value={nologo ? nologo : ""}
                   />
                 </TableCell>
               </TableRow>

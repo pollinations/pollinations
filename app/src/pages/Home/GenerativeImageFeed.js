@@ -21,7 +21,6 @@ export function GenerativeImageFeed() {
       [param]: value,
     };
     const imageURL = getImageURL(newImage);
-
     updateImage({
       ...newImage,
       imageURL

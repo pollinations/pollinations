@@ -1,34 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { isMature } from '../../data/mature';
-
 
 export function useFeedLoader(onNewImage, setServerLoad) {
   const [imagesGenerated, setImagesGenerated] = useState(estimateGeneratedImages());
+  const [isPaused, setIsPaused] = useState(false);
 
-  useEffect(() => {
-    const getEventSource = () => {
-      const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
-      imageFeedSource.onmessage = evt => {
-        const data = JSON.parse(evt.data);
-        setImagesGenerated(no => no + 1);
-        lastServerLoad = data["concurrentRequests"];
-        setServerLoad(lastServerLoad);
-        if (data["nsfw"]) {
-          console.log("Skipping NSFW content:", data["nsfw"], data);
+  const getEventSource = useCallback(() => {
+    const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
+    imageFeedSource.onmessage = evt => {
+      if (isPaused) return;
+      const data = JSON.parse(evt.data);
+      setImagesGenerated(no => no + 1);
+      lastServerLoad = data["concurrentRequests"];
+      setServerLoad(lastServerLoad);
+      if (data["nsfw"]) {
+        console.log("Skipping NSFW content:", data["nsfw"], data);
+        return;
+      }
+      if (data["imageURL"]) {
+        const matureWord = isMature(data["prompt"]);
+        if (matureWord) {
+          console.log("Skipping mature word:", matureWord, data["prompt"]);
           return;
         }
-        if (data["imageURL"]) {
-          const matureWord = isMature(data["prompt"]);
-          if (matureWord) {
-            console.log("Skipping mature word:", matureWord, data["prompt"]);
-            return;
-          }
-          onNewImage(data);
-        }
-      };
-      return imageFeedSource;
+        onNewImage(data);
+      }
     };
+    return imageFeedSource;
+  }, [isPaused, onNewImage, setServerLoad]);
 
+  useEffect(() => {
     let eventSource = getEventSource();
 
     eventSource.onerror = async () => {
@@ -41,9 +42,13 @@ export function useFeedLoader(onNewImage, setServerLoad) {
     return () => {
       eventSource.close();
     };
-  }, [onNewImage]);
+  }, [getEventSource]);
 
-  return { imagesGenerated };
+  const pause = useCallback((value) => {
+    setIsPaused(value);
+  }, []);
+
+  return { imagesGenerated, pause };
 }
 
 function estimateGeneratedImages() {
@@ -55,7 +60,6 @@ function estimateGeneratedImages() {
   const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
-
 
 let lastServerLoad = 0;
 

@@ -28,8 +28,6 @@ export function useImageSlideshow() {
   }, 3000);
 
   const onNewImage = useCallback((newImage, emptyQueue=false) => {
-    if (isStopped)
-      return
     return new Promise((resolve, reject) => {
       console.log("loading new image", newImage.prompt, emptyQueue);
       const img = new Image();
@@ -46,7 +44,7 @@ export function useImageSlideshow() {
         reject(error);
       };
     });
-  }, [setLoadedImages, isStopped]);
+  }, [setLoadedImages]);
 
   const dynamicDebounce = (func) => {
     let timerId;

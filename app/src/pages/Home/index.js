@@ -16,10 +16,9 @@ export default function Solutions() {
     <DarkLayout>
       <GenerativeImageFeed />
     </DarkLayout>
-    <ImageURLHeading>Events</ImageURLHeading>
-
-    <PageTemplate label='event' />
     <MusicVideo/>
+    <ImageURLHeading>Events</ImageURLHeading>
+    <PageTemplate label='event' />
 
     {/* <TwitchSection /> */}
     {/* <ActivityUpdate /> */}

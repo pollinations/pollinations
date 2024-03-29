@@ -11,7 +11,6 @@ import { shorten } from './shorten';
 
 export function GenerativeImageFeed() {
   const [ serverLoad, setServerLoad] = useState(0);
-  const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
 
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
   const  { updateImage, isWaiting, image } = useImageEditor({stop, image: slideshowImage});
@@ -30,9 +29,9 @@ export function GenerativeImageFeed() {
     });
   };
 
-  const toggleAdvancedOptions = () => {
-    setAdvancedOptionsOpen(!advancedOptionsOpen);
-  };
+
+  if (!image["imageURL"])
+    return <>Initializing...</>;
 
 
   return (
@@ -57,7 +56,7 @@ export function GenerativeImageFeed() {
           )}
           {isWaiting && <CircularProgress color="secondary" />}
         </ImageContainer>
-        <ImageData {...{image, handleParamChange, advancedOptionsOpen, toggleAdvancedOptions}} />
+        <ImageData {...{image, handleParamChange}} />
         <br />
         <CodeExamples {...image } />
       </GenerativeImageURLContainer>
@@ -85,7 +84,14 @@ function TimingInfo({image}) {
   return <Box textAlign="right"><Typography variant="body2" component="i">{Math.round(timeMs/10)/100} s</Typography></Box>
 }
 
-function ImageData({ image, handleParamChange, advancedOptionsOpen, toggleAdvancedOptions }) {
+function ImageData({ image, handleParamChange }) {
+
+  const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
+
+  const toggleAdvancedOptions = () => {
+    setAdvancedOptionsOpen(!advancedOptionsOpen);
+  };
+  
   const { prompt, width, height, seed, imageURL, nofeed, nologo } = image;
   if (!imageURL) {
     return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
@@ -199,6 +205,7 @@ function ImageData({ image, handleParamChange, advancedOptionsOpen, toggleAdvanc
                     variant="outlined"
                     onChange={(e) => handleParamChange('nologo', e.target.value)}
                     style={{width:"25%"}}
+                    value={nologo ? nologo : ""}
                   />
                 </TableCell>
               </TableRow>

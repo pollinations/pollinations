@@ -6,6 +6,8 @@ import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
 import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./GenerativeImageFeed"
+import PageTemplate from "../../components/PageTemplate"
+import { ImageURLHeading } from "./styles"
 
 export default function Solutions() {
   return <Style>
@@ -14,6 +16,9 @@ export default function Solutions() {
     <DarkLayout>
       <GenerativeImageFeed />
     </DarkLayout>
+    <ImageURLHeading>Events</ImageURLHeading>
+
+    <PageTemplate label='event' />
     <MusicVideo/>
 
     {/* <TwitchSection /> */}

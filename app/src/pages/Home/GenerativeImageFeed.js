@@ -5,7 +5,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { debounce } from 'lodash';
 import { CodeExamples } from './CodeExamples';
 import { useFeedLoader } from './useFeedLoader';
-import { useImageSlideshow } from './useImageSlideshow';
+import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
 import { shorten } from './shorten';
 
@@ -13,7 +13,8 @@ export function GenerativeImageFeed() {
   const [ serverLoad, setServerLoad] = useState(0);
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
 
-  const { image, updateImage, isLoading, onNewImage } = useImageSlideshow(serverLoad);
+  const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
+  const  { updateImage, isWaiting, image } = useImageEditor({stop, image: slideshowImage});
   const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
 
   const handleParamChange = (param, value) => {
@@ -32,6 +33,7 @@ export function GenerativeImageFeed() {
   const toggleAdvancedOptions = () => {
     setAdvancedOptionsOpen(!advancedOptionsOpen);
   };
+
 
   return (
     <Box>
@@ -53,7 +55,7 @@ export function GenerativeImageFeed() {
           ) : (
             <Typography variant="h6" color="textSecondary">Loading image...</Typography>
           )}
-          {isLoading && <CircularProgress color="secondary" />}
+          {isWaiting && <CircularProgress color="secondary" />}
         </ImageContainer>
         <ImageData {...{image, handleParamChange, advancedOptionsOpen, toggleAdvancedOptions}} />
         <br />

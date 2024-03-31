@@ -11,34 +11,34 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../st
 
 const Footer = () => {
 
-return <OuterContainer>
-    <FooterStyle>
-        <LetsTalkStyle>
-            Let's talk 
-            <br/>
-            <span> hello@pollinations.ai </span>
-        </LetsTalkStyle>
-        <SocialContainer>
-            <SocialLinks gap='17px' />
-        </SocialContainer>
-        <LogoContainer>
-            <NavLink to='/' >
-                <Logo size='250px' small='225px' margin='0' />  
-            </NavLink>
-        </LogoContainer>
-        <NavigationContainer>
-            <Items 
-                items={MAIN_NAV_ROUTES} 
-                renderComponent={RouteLink} 
-                columns={1} />
-        </NavigationContainer>
-        <TermsLinkContainer>
-            <NavLink to='/terms'>
-                Terms & Conditions
-            </NavLink>
-        </TermsLinkContainer>
-    </FooterStyle>
-</OuterContainer> 
+    return <OuterContainer>
+        <FooterStyle>
+            <LetsTalkStyle>
+                Let's talk
+                <br />
+                <span> hello@pollinations.ai </span>
+            </LetsTalkStyle>
+            <SocialContainer>
+                <SocialLinks gap='17px' />
+            </SocialContainer>
+            <LogoContainer>
+                <NavLink to='/' >
+                    <Logo size='250px' small='225px' margin='0' />
+                </NavLink>
+            </LogoContainer>
+            <NavigationContainer>
+                <Items
+                    items={MAIN_NAV_ROUTES}
+                    renderComponent={RouteLink}
+                    columns={1} />
+            </NavigationContainer>
+            <TermsLinkContainer>
+                <NavLink to='/terms'>
+                    Terms & Conditions
+                </NavLink>
+            </TermsLinkContainer>
+        </FooterStyle>
+    </OuterContainer>
 }
 export default Footer
 
@@ -51,13 +51,14 @@ background-color: black;
 const SocialContainer = styled.div`
 grid-area: social;
 justify-self: flex-start;
+@media only screen and (max-width: ${MOBILE_BREAKPOINT}){
+    justify-self: center;
 
 `
 const LogoContainer = styled.div`
 grid-area: logo;
 justify-self: flex-end;
-
-padding-top: 70px;
+padding-top: 1em;
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
     justify-self: center;
 }
@@ -68,45 +69,44 @@ justify-self: flex-end;
 
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
     justify-self: center;
-    margin-bottom: 205px;
 }
 `
 
 const TermsLinkContainer = styled.div`
 grid-area: terms;
 justify-self: flex-end;
-
+margin-bottom: 2em;
+color: ${Colors.offwhite};
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
     justify-self: center;
-    margin-bottom: 205px;
+    margin-top: 2em;
 }
 `
 
 const LetsTalkStyle = styled.p`
 grid-area: lets-talk;
 justify-self: flex-start;
-
 font-style: normal;
 font-weight: 500;
+span {
+    color: ${Colors.lime};
+}   
 font-size: 28px;
-line-height: 36px;
-
+line-height: 42px;
 color: ${Colors.offwhite};
-padding-bottom: 0em;
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-    margin-left: 24px;
-}
-
+    justify-self: center;
+    padding-bottom: 0em;
 `
 
 
-const Items = ({ items, renderComponent, columns }) => 
-    split(Object.keys(items), columns).map( col =>
+const Items = ({ items, renderComponent, columns }) =>
+    split(Object.keys(items), columns).map(col =>
         <ItemsStyle>
-            { col.map(renderComponent) }
+            {col.map(renderComponent)}
         </ItemsStyle>
     )
-;
+    ;
 const ItemsStyle = styled.div`
 
 
@@ -114,7 +114,7 @@ display: flex;
 gap: 3em;
 width: 100%;
 `
-        
+
 
 function split(array, cols) {
     if (cols === 1) return [array];
@@ -124,7 +124,7 @@ function split(array, cols) {
         .concat(
             split(
                 array
-                .slice(size), cols-1)
+                    .slice(size), cols - 1)
         );
 }
 
@@ -134,12 +134,12 @@ const RouteLink = (route) => {
         <RouterLink
             key={`plt_link_${route}`}
             to={to}
-            >
+        >
             {label}
         </RouterLink>
     )
 }
-            
+
 
 const FooterStyle = styled(BaseContainer)`
 padding: 3em 86px 0 86px;

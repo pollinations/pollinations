@@ -4,7 +4,7 @@
 **Time:** 20h CET  
 **Location:** Studio1111, Potsdamer Str. 96, Berlin Mitte
 
-Dive into a journey through sound and space where cosmic mysteries blend with Berlin's punk spirit. Yes, it’s a thing. 🎨🔊.
+Dive into a journey through sound and space where cosmic mysteries blend with cyberpunk spirit. Yes, it’s a thing. 🎨🔊.
 
 Featuring a diverse lineup including:  
 - **Saeko Killy** bringing beats even your grandma can't resist  

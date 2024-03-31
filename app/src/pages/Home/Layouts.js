@@ -101,14 +101,14 @@ h2 {
   font-weight: 500;
   font-size: 46px;
   line-height: 58px;
-
   color: ${props => props.dark ? Colors.offwhite : Colors.offblack};
-  margin: 0;
+  margin-top: 0.5em;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     font-size: 36px;
     line-height: 40px;
     margin-bottom: 1em;
+    margin-top: 0em;
   }
 }
 p {

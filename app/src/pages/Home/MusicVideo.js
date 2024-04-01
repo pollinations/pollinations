@@ -1,9 +1,7 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import {  MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
-
+import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase, Flex } from './components';
-import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import SwiperComponent from './Swiper';
 // import Swiper styles
 
@@ -13,54 +11,43 @@ import '../../assets/slick.min.css'
 const FeaturedApplicationsContent = [
     {
         title: 'AI Video',
-        description: <> 
+        description: <>
             Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. We specialize in creating bespoke videos that bring your artistic visions to life.
-            <br/> <br/>Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
-            <br/> <br/>Let us help you transform your psychedelic ideas into stunning visual narratives.
+            <br /> <br />Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
+            <br /> <br />Let us help you transform your psychedelic ideas into stunning visual narratives.
         </>,
     },
 ]
-const TopBand = styled.img`
-position: absolute;
-width: 100%;
-height: auto;
-right: 0;
-bottom: 0;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: auto;
-  height: 59px;
-}`;
 
 const MusicVideo = props => {
-  
+
     return <Style>
-    <TopBand src={TopBandPresetsDesign}/>
 
-    <Container>
+        <Container>
 
 
-        {
-            FeaturedApplicationsContent.map( (item, idx) => <FeaturedApp {...item} right={idx%2} />)
-        }
+            {
+                FeaturedApplicationsContent.map((item, idx) => <FeaturedApp {...item} right={idx % 2} />)
+            }
 
-    
-    </Container>
-    <BackgroundImage 
-        src='gradient_background.png'
-        zIndex='-2' 
+
+        </Container>
+        <BackgroundImage
+            src='gradient_background.png'
+            zIndex='-2'
         alt="presentation" />
     </Style>
-  }
+}
 
-  export default MusicVideo
+export default MusicVideo
 
-  const Container = styled(ContainerBase)`
+const Container = styled(ContainerBase)`
   display: flex;
   flex-direction: column;
   justify-content: center;
   `
 
-  const Style = styled.div`
+const Style = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
@@ -73,7 +60,7 @@ const MusicVideo = props => {
   padding-bottom: 5em;
   `
 
-  const Headline = styled.p`
+const Headline = styled.p`
   font-family: ${Fonts.headline};
   font-style: normal;
   font-weight: 400;
@@ -118,11 +105,11 @@ const SubHeadline = styled.p`
 `
 
 const Slides = [
-    { type: 'img', src:'./sarkis.png'},
-    { type: 'img', src:'./rampue.png'},
-    { type: 'img', src:'./inc.png'},
-    { type: 'img', src:'./rampue1.png'},
-  ]
+    { type: 'img', src: './sarkis.png' },
+    { type: 'img', src: './rampue.png' },
+    { type: 'img', src: './inc.png' },
+    { type: 'img', src: './rampue1.png' },
+]
 const FeaturedApp = props => {
 
     const { title, subtitle, description, img, right, imgs, video } = props;
@@ -130,8 +117,8 @@ const FeaturedApp = props => {
 
 
     const Media = props => {
-        if (props.img) return <FeatureAppImg src={img}/>;
-        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
+        if (props.img) return <FeatureAppImg src={img} />;
+        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'} />;
         if (props.video) return <FeatureAppVideo src={video} playsInline autoPlay muted />;
         return <></>;
     }
@@ -145,16 +132,16 @@ const FeaturedApp = props => {
         </SubHeadline>
         <GridTwoColumns>
 
-        <FeaturedAppStyle>
-            <p>
-                {description}
-            </p>
-        </FeaturedAppStyle>
-        {/* <Media {...props}/> */}
-        {/* <SwiperComponent Slides={Slides}/> */}
-        <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-        <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </GridTwoColumns>
+            <FeaturedAppStyle>
+                <p>
+                    {description}
+                </p>
+            </FeaturedAppStyle>
+            {/* <Media {...props}/> */}
+            {/* <SwiperComponent Slides={Slides}/> */}
+            <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </GridTwoColumns>
     </Flex>
 }
 
@@ -220,9 +207,9 @@ iframe {
 
 
 
-function SlickSlider({ imgs, pad }){
+function SlickSlider({ imgs, pad }) {
 
-    if (!imgs) return <></>;    
+    if (!imgs) return <></>;
 
     const settings = {
         dots: false,
@@ -232,11 +219,11 @@ function SlickSlider({ imgs, pad }){
         slidesToScroll: 1,
         arrows: false,
         autoplay: true,
-      };
+    };
 
-    return <Slider {...settings} style={{width: '100%', padding: pad ? '2.5em' : '0em'}}>
+    return <Slider {...settings} style={{ width: '100%', padding: pad ? '2.5em' : '0em' }}>
         {
-            imgs.map(img=> <FeatureAppImg key={img} src={img}/>)
+            imgs.map(img => <FeatureAppImg key={img} src={img} />)
         }
     </Slider>
 }

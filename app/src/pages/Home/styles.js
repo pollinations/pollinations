@@ -4,27 +4,29 @@ import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
   max-width: 100%;
-  max-height: 600px;
+  max-height: 640px;
 `;
 export const GenerativeImageURLContainer = styled(Container)`
-  background-color: rgba(0,0,0,0.7);
-  color: white;
-  margin: 2em auto;
-  padding: 1em;
-  width: 80%;
-  border-radius: 8px;
-  @media (max-width: 600px) {
-    width: 95%;
+  color: ${Colors.offwhite};
+  background-color: transparent;
+  margin: 0em;
+  padding: 0em;
+  width: 100%;
+  border-radius: 0px;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    width: 90%;
   }
 `;
 export const ImageURLHeading = styled.p`
   font-family: ${Fonts.headline} !important;
   font-style: normal  !important;
-  font-weight: 400 !important;
-  font-size: 96px !important;
-  line-height: 105px !important;
+  font-size: 100px !important;
+  text-align: center;
+  margin: 0;
+  margin-top: 60px;
+  margin-bottom: 60px;
   text-transform: capitalize !important;
-  color: ${Colors.offblack};
+  color: ${Colors.offwhite};
 
   span {
     font-family: ${Fonts.headline};
@@ -32,18 +34,23 @@ export const ImageURLHeading = styled.p`
   }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    max-width: 600px;
     font-size: 58px;
-    line-height: 55px;
-    margin: 0;
-    margin-top: 1em;
+    line-height: 100px;
+    margin: 30px auto;
   }
   `;
 export const ImageContainer = styled(Paper)`
-  margin-bottom: 0em;
+  margin: 0;
+  height: 640px;
+  margin-bottom: 60px;
+  display: flex;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    height: auto;
+    margin-bottom: 0px;
+  }
 `;
 
 export const URLExplanation = styled(Box)`
-  margin-top: 0em;
+  margin: 0em;
   font-size: 0.9em;
 `;

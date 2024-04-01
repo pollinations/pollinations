@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from '@material-ui/core';
 import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from 'react-code-blocks';
 import { URLExplanation } from './styles';
+import { Colors } from '../../styles/global';
+
 import InfoIcon from '@material-ui/icons/Info';
 
 import { shorten } from './shorten';
@@ -129,9 +131,9 @@ export function CodeExamples(image) {
 
   const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
-  return <URLExplanation> 
-    <AppBar position="static" style={{ background: 'black', color: 'white', width: "auto", marginTop: "30px" }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on">
+  return <URLExplanation > 
+    <AppBar position="static" style={{ color: 'white', width: "auto", marginTop: "30px", boxShadow: 'none' }}>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on"  >
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
@@ -148,11 +150,11 @@ export function CodeExamples(image) {
 
         if (key === "link") {
           return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
+            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'white', wordBreak: 'break-all' }}>{image.imageURL}</Link>
           </Box>);
         } else if (key === "discord_bot") {
           return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'deepskyblue', wordBreak: 'break-all' }}>Discord Bot</Link>
+            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'white', wordBreak: 'break-all' }}>Discord Bot</Link>
           </Box>);
         }
 
@@ -166,11 +168,18 @@ export function CodeExamples(image) {
             theme={irBlack}
             // wrapLongLines
             showLineNumbers={text.split("\n").length > 1}
-            customStyle={{ overflow: 'scroll', height: '300px' }}
-          />
+            customStyle={{
+              overflow: 'scroll',
+              height: '507px',
+              backgroundColor: 'transparent',
+              color: 'white',
+              scrollbarColor: 'transparent transparent' // scrollbar thumb and track colors
+
+            }}          />
         )
       })}
 
     </>
   </URLExplanation>;
 }
+

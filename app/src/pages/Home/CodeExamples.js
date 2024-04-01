@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Typography, AppBar, Tabs, Tab, Box, Link } from '@material-ui/core';
+import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from '@material-ui/core';
 import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from 'react-code-blocks';
 import { URLExplanation } from './styles';
+import InfoIcon from '@material-ui/icons/Info';
+
 import { shorten } from './shorten';
 
 // Code examples as an object
@@ -16,8 +18,8 @@ where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
   
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
-  markdown: ({imageURL, prompt, width, height, seed, model}) => 
-`# Image Parameters
+  markdown: ({ imageURL, prompt, width, height, seed, model }) =>
+    `# Image Parameters
 Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
@@ -25,8 +27,8 @@ Seed: **${seed}** (Each seed generates a new image)
 
 # Image
 ![Generative Image](${imageURL})`,
-  html: ({imageURL, prompt, width, height, seed, model}) => 
-`<html>
+  html: ({ imageURL, prompt, width, height, seed, model }) =>
+    `<html>
   <body>
     <h2>Image Parameters</h2>
     <p>Prompt: ${prompt}</p>
@@ -43,7 +45,7 @@ Seed: **${seed}** (Each seed generates a new image)
 `,
 
 
-  javascript: ({ prompt, width, height, seed, model}) => `
+  javascript: ({ prompt, width, height, seed, model }) => `
 // This Node.js snippet downloads the image using node-fetch and saves it to disk, including image details.
 
 import fs from 'fs';
@@ -70,7 +72,7 @@ const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?widt
 
 downloadImage(imageUrl);`,
 
-  python: ({ prompt, width, height, seed, model}) => `
+  python: ({ prompt, width, height, seed, model }) => `
 # This Python snippet downloads the image using requests and saves it to disk, including image details.
 
 import requests
@@ -127,52 +129,48 @@ export function CodeExamples(image) {
 
   const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
-  return <URLExplanation>
-    <Typography variant="body2" component="p" style={{ fontSize: '0.9rem', lineHeight: '1.3' }}>
-      Integrate hassle-free without any sign-up, tokens, libraries or other complications.
-    </Typography>
-    <br />
-
-    <AppBar position="static" style={{ background: 'black', color: 'white', maxWidth:"700px"}}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="auto">
+  return <URLExplanation> 
+    <AppBar position="static" style={{ background: 'black', color: 'white', width: "auto", marginTop: "30px" }}>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on">
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
       </Tabs>
     </AppBar>
-    <Box maxWidth='700px'>
-    {allTabs.map((key, index) => {
-      
-      if (tabValue !== index)
-        return null;
+    <>
+      {allTabs.map((key, index) => {
 
-      if (!image.imageURL && key !== "discord_bot")
-        return null;
+        if (tabValue !== index)
+          return null;
 
-      if (key === "link") {
-        return (<Box margin="10px" overflow="hidden" >
-            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
-            </Box>);
-      } else if (key === "discord_bot") {
-        return (<Box margin="10px" overflow="hidden" >
-            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color:'deepskyblue', wordBreak: 'break-all' }}>Discord Bot</Link>
-            </Box>);
-      }
-      
-      const text = CODE_EXAMPLES[key](image);
-      
-      return (
-        tabValue === index && <CodeBlock
-        key={key}
-        text={text}
-        language={key}
-        theme={irBlack} 
-        // wrapLongLines
-        showLineNumbers={text.split("\n").length > 1}
-        customStyle={{overFlow:'scroll' }}
-        />
-      )
+        if (!image.imageURL && key !== "discord_bot")
+          return null;
+
+        if (key === "link") {
+          return (<Box margin="30px" overflow="hidden" >
+            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'deepskyblue', wordBreak: 'break-all' }}>{image.imageURL}</Link>
+          </Box>);
+        } else if (key === "discord_bot") {
+          return (<Box margin="30px" overflow="hidden" >
+            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'deepskyblue', wordBreak: 'break-all' }}>Discord Bot</Link>
+          </Box>);
+        }
+
+        const text = CODE_EXAMPLES[key](image);
+
+        return (
+          tabValue === index && <CodeBlock
+            key={key}
+            text={text}
+            language={key}
+            theme={irBlack}
+            // wrapLongLines
+            showLineNumbers={text.split("\n").length > 1}
+            customStyle={{ overflow: 'scroll', height: '300px' }}
+          />
+        )
       })}
-    </Box>
+
+    </>
   </URLExplanation>;
 }

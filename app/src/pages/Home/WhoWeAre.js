@@ -2,8 +2,8 @@ import styled from '@emotion/styled';
 import React from "react";
 import { Colors, MOBILE_BREAKPOINT } from '../../styles/global';
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
-import { BackgroundImage } from './components';
 import { Link } from "react-router-dom"
+
 
 let WhoWeAreContent = () => <>
 
@@ -46,10 +46,7 @@ export default function LayoutLight01({ id, long }) {
     <PageLayout long={long}>
       {id ? content[id] : <></>}
     </PageLayout>
-    <BackgroundImage 
-    src='gradient_background.png'
-    zIndex='-2' 
-    alt="hero_bg" />
+
   </Style>
 };
 

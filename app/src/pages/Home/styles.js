@@ -4,7 +4,7 @@ import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
   max-width: 100%;
-  max-height: 640px;
+  max-height: 600px;
 `;
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
@@ -41,7 +41,7 @@ export const ImageURLHeading = styled.p`
   `;
 export const ImageContainer = styled(Paper)`
   margin: 0;
-  height: 640px;
+  height: 620px;
   margin-bottom: 60px;
   display: flex;
   @media (max-width: ${MOBILE_BREAKPOINT}) {

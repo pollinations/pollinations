@@ -46,7 +46,6 @@ const OuterContainer = styled.div`
 width: 100%;
 display: flex;
 justify-content: center;
-background-color: black;
 `
 const SocialContainer = styled.div`
 grid-area: social;
@@ -168,7 +167,6 @@ grid-template-areas:
     margin-bottom: 2em;
     max-width: 414px;
 }
-background-color: black;
 
 font-style: normal;
 font-weight: 400;

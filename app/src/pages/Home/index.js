@@ -9,8 +9,7 @@ import { GenerativeImageFeed } from "./GenerativeImageFeed"
 import PageTemplate from "../../components/PageTemplate"
 import { ImageURLHeading } from "./styles"
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
-import { MOBILE_BREAKPOINT } from '../../styles/global';
-
+import { MOBILE_BREAKPOINT } from '../../styles/global'
 
 export default function Solutions() {
   return <Style>

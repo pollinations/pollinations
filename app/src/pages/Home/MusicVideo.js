@@ -22,15 +22,16 @@ const FeaturedApplicationsContent = [
 const MusicVideo = props => {
 
     return <Style>
+
         <Container>
+
+
             {
                 FeaturedApplicationsContent.map((item, idx) => <FeaturedApp {...item} right={idx % 2} />)
             }
+
         </Container>
-        <BackgroundImage
-            src='gradient_background.png'
-            zIndex='-2'
-        alt="presentation" />
+
     </Style>
 }
 
@@ -50,7 +51,6 @@ const Style = styled.div`
 
   display: flex;
   justify-content: center;
-  background-color: ${Colors.background_body};
   padding: 1em 0;
   padding-bottom: 5em;
   `
@@ -65,7 +65,7 @@ const Headline = styled.p`
 
   margin: 0;
   margin-top: 1em;
-  color: ${Colors.offblack};
+  color: ${Colors.offwhite};
 
   span {
     font-family: ${Fonts.headline};
@@ -155,7 +155,7 @@ p {
     line-height: 34px;
     margin: 0;
 
-    color: ${Colors.offblack};
+    color: ${Colors.offwhite};
     @media (max-width: ${MOBILE_BREAKPOINT}) {
         max-width: 600px;
         font-size: 18px;

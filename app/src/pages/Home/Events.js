@@ -45,10 +45,10 @@ const MusicVideo = props => {
 
     
     </Container>
-    <BackgroundImage 
+    {/*<BackgroundImage 
         src='gradient_background.png'
         zIndex='-2' 
-        alt="presentation" />
+    alt="presentation" />*/}
     </Style>
   }
 

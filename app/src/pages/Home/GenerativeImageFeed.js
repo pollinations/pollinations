@@ -59,7 +59,6 @@ export function GenerativeImageFeed() {
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
               )}
-              {isWaiting && <CircularProgress color="secondary" />}
             </ImageContainer>
           </Grid>
           <Grid item xs={gridItemSize} >
@@ -86,7 +85,8 @@ export function GenerativeImageFeed() {
             <Box >
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
-              </Box>
+              {isWaiting && <CircularProgress color="secondary" style={{ margin: '30px auto', display: 'block' }} />}
+          </Box>
           </Grid>
         </Grid>
       )}

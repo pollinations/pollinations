@@ -22,15 +22,10 @@ const FeaturedApplicationsContent = [
 const MusicVideo = props => {
 
     return <Style>
-
         <Container>
-
-
             {
                 FeaturedApplicationsContent.map((item, idx) => <FeaturedApp {...item} right={idx % 2} />)
             }
-
-
         </Container>
         <BackgroundImage
             src='gradient_background.png'

@@ -4,7 +4,7 @@ import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
   max-width: 100%;
-  max-height: 400px;
+  max-height: 600px;
 `;
 export const GenerativeImageURLContainer = styled(Container)`
   background-color: rgba(0,0,0,0.7);
@@ -24,9 +24,6 @@ export const ImageURLHeading = styled.p`
   font-size: 96px !important;
   line-height: 105px !important;
   text-transform: capitalize !important;
-
-  margin: 0;
-  margin-top: 1em;
   color: ${Colors.offblack};
 
   span {
@@ -43,10 +40,10 @@ export const ImageURLHeading = styled.p`
   }
   `;
 export const ImageContainer = styled(Paper)`
-  margin-bottom: 1em;
+  margin-bottom: 0em;
 `;
 
 export const URLExplanation = styled(Box)`
-  margin-top: 1em;
+  margin-top: 0em;
   font-size: 0.9em;
 `;

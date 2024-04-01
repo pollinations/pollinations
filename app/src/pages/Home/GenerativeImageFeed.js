@@ -10,10 +10,10 @@ import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyl
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import { shorten } from './shorten';
 
+
 export function GenerativeImageFeed() {
   const [serverLoad, setServerLoad] = useState(0);
   const [tabValue, setTabValue] = useState(0);
-
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
   const { updateImage, isWaiting, image } = useImageEditor({ stop, image: slideshowImage });
   const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
@@ -35,20 +35,18 @@ export function GenerativeImageFeed() {
     setTabValue(newValue);
   };
 
+  const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
+
   return (
     <GenerativeImageURLContainer>
-      <Grid container >
-        <Grid item xs={12} md={12} >
-          <ImageURLHeading>Image Feed</ImageURLHeading>
-        </Grid>
-        <Grid item xs={12} md={6} >
-        </Grid>
+      <Grid item xs={12}>
+        <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
       {!image["imageURL"] ? (
         <>Initializing...</>
       ) : (
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={gridItemSize}>
             <ServerLoadAndGenerationInfo {...{ serverLoad, imagesGenerated, image }} />
             <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
               {image ? (
@@ -56,7 +54,6 @@ export function GenerativeImageFeed() {
                   <ImageStyle
                     src={image["imageURL"]}
                     alt="generative_image"
-                    style={{ width: 'auto', height: 'auto' }}
                   />
                 </Link>
               ) : (
@@ -65,9 +62,8 @@ export function GenerativeImageFeed() {
               {isWaiting && <CircularProgress color="secondary" />}
             </ImageContainer>
           </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Box display="flex" justifyContent="center">
+          <Grid item xs={gridItemSize} >
+            <Box display="flex" justifyContent="center" >
               <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
                 <Button
                   onClick={() => setTabValue(0)}
@@ -87,10 +83,10 @@ export function GenerativeImageFeed() {
                 </Button>
               </ButtonGroup>
             </Box>
-            <div>
+            <Box >
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
-            </div>
+              </Box>
           </Grid>
         </Grid>
       )}
@@ -131,9 +127,9 @@ function ImageData({ image, handleParamChange }) {
   }
   return (
     <>
-      <TableContainer height='600px' component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px' }}>
+      <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px' }}>
         <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
-          <TableBody >
+          <TableBody height='450px'  >
             <TableRow key="prompt" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>prompt</TableCell>
               <TableCell align="right" style={{ borderBottom: 'none' }}>
@@ -240,7 +236,7 @@ function ImageData({ image, handleParamChange }) {
 
 function ServerLoadAndGenerationInfo({ serverLoad, imagesGenerated, image }) {
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+    <Box display="flex" justifyContent="space-between" alignItems="center" >
       <ServerLoadDisplay concurrentRequests={serverLoad} />
       <Typography variant="body1" component="span" >
         #: <b style={{ color: 'deepskyblue' }}>{formatImagesGenerated(imagesGenerated)}</b>
@@ -261,3 +257,4 @@ function ServerLoadDisplay({ concurrentRequests }) {
 const formatImagesGenerated = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+

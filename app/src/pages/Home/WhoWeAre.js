@@ -43,7 +43,6 @@ export default function LayoutLight01({ id, long }) {
   }
   
   return <Style>
-    <TopBand src={TopBandPresetsDesign}/>
     <PageLayout long={long}>
       {id ? content[id] : <></>}
     </PageLayout>
@@ -54,16 +53,6 @@ export default function LayoutLight01({ id, long }) {
   </Style>
 };
 
-const TopBand = styled.img`
-position: absolute;
-width: 100%;
-height: auto;
-right: 0;
-top: 0;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: auto;
-  height: 59px;
-}`;
 
 // STYLES
 const PageLayout = styled.div`

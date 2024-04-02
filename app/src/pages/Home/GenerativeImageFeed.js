@@ -38,7 +38,7 @@ export function GenerativeImageFeed() {
   const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
 
   return (
-    <GenerativeImageURLContainer>
+    <GenerativeImageURLContainer style={{ paddingBottom: window.innerWidth <= parseInt(MOBILE_BREAKPOINT) ? '3em' : '0' }}>
       <Grid item xs={12}>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>

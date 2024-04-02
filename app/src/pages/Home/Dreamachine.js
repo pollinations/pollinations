@@ -1,9 +1,7 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
 import {  MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
-
 import { BackgroundImage, Container as ContainerBase, Flex } from './components';
-import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import SwiperComponent from './Swiper';
 // import Swiper styles
 
@@ -20,16 +18,7 @@ const dreamachine_props = {
         <br/> <br/> Reach out for more information or personalized setup.</>,
     video: './dreamachine/dreamachine_00.mp4'
 }   
-const TopBand = styled.img`
-position: absolute;
-width: 100%;
-height: auto;
-right: 0;
-top: 0;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  width: auto;
-  height: 59px;
-}`;
+
 
 const FeaturedApps = props => {
   
@@ -39,10 +28,10 @@ const FeaturedApps = props => {
     <Container>
         <FeaturedApp {...dreamachine_props}/>
     </Container>
-    <BackgroundImage 
+    {/*<BackgroundImage 
         src='gradient_background.png'
         zIndex='-2' 
-        alt="presentation" />
+alt="presentation" />*/}
     </Style>
   }
 

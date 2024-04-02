@@ -1,3 +1,8 @@
+<video controls width="384" height="384">
+  <source src="https://github.com/pollinations/pollinations/raw/master/app/src/assets/videos/doca_studio1111.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 **An Evening with the Department of Cosmic Affairs at Studio1111**
 
 **Date:** 4.4.2024  
@@ -11,11 +16,9 @@ Featuring a diverse lineup including:
 - The mind-bending audiovisuals of **Thomash & Exz** from The Department of Cosmic Affairs  
 - And a surprise performance 🌌🎨🎶
 
-Be there or be square 🟦. This is the kind of story you’ll want to tell your grandkids. Or your cat. Whichever judges you less.
-<video controls width="512" height="512">
-  <source src="https://github.com/pollinations/pollinations/raw/master/app/src/assets/videos/doca_studio1111.mov" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+*This is the kind of story you’ll want to tell your grandkids.*   
+*Or your cat, whichever judges you less.*  
+*Be there or be square 🟦.*
 
 Co-produced by Studio1111, Pollinations.AI, and the Department of Cosmic Affairs.
 

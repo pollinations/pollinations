@@ -7,7 +7,7 @@ import { sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import FormData from 'form-data';
 
-const SERVER_URL = 'http://localhost:5555/predict';
+const SERVER_URL = 'http://155.248.212.250:5555/predict';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {

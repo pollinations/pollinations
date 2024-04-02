@@ -127,7 +127,7 @@ function ImageData({ image, handleParamChange }) {
   }
   return (
     <>
-      <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px' }}>
+      <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px', backgroundColor: "transparent" }}>
         <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
           <TableBody height='450px'  >
             <TableRow key="prompt" style={{ borderBottom: 'none' }}>

@@ -6,7 +6,7 @@ import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
 import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./GenerativeImageFeed"
-import PageTemplate from "../../components/PageTemplate"
+import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
 import { MOBILE_BREAKPOINT } from '../../styles/global'

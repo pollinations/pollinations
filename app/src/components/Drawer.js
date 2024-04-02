@@ -12,18 +12,14 @@ export default function TemporaryDrawer({ drawerState, children }) {
     setState(open);
   };
 
-  return <Drawer anchor='right' open={state} onClose={toggleDrawer(false)}>
-      <DrawerContainer onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
-        {children}
-      </DrawerContainer>
+  // Removed the onClose prop to allow the page to be scrollable when the drawer is open
+  return <Drawer anchor='top' open={state} variant="persistent">
+    <DrawerContainer onKeyDown={toggleDrawer(false)}>
+      {children}
+    </DrawerContainer>
   </Drawer>
 };
 
 const DrawerContainer = styled.div`
-width: 100%;
-height: 100%;
-min-width: 77vw;
 background-color: black;
-z-index: 5;
 `;
-

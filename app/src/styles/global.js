@@ -47,7 +47,7 @@ p{
 `
 export const SmallContainer = styled.div`
 min-width: 20%;
-max-width: 800px;
+
 margin: auto;
 margin-bottom: 7em;
 padding: ${GlobalSidePadding};

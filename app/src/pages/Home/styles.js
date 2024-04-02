@@ -8,7 +8,7 @@ export const ImageStyle = styled.img`
 `;
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
-  background-color: transparent;
+  // background-color: transparent;
   margin: 0em;
   padding: 0em;
   width: 100%;

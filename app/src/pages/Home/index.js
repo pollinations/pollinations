@@ -6,23 +6,28 @@ import Dreamachine from './Dreamachine'
 import MusicVideo from './MusicVideo'
 import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./GenerativeImageFeed"
-import PageTemplate from "../../components/PageTemplate"
+import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
+import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
+import { MOBILE_BREAKPOINT } from '../../styles/global'
 
 export default function Solutions() {
   return <Style>
     <WhoWeAre />
+    <TopBand src={TopBandPresetsDesign} alt="Top Band" />
     {/* <Hero /> */}
-    <DarkLayout>
-      <GenerativeImageFeed />
-    </DarkLayout>
-    <MusicVideo/>
+    <GenerativeImageFeed />
+    <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+    <MusicVideo />
+    <TopBand src={TopBandPresetsDesign} alt="Top Band" />
     <ImageURLHeading>Events</ImageURLHeading>
     <PageTemplate label='event' />
-
     {/* <TwitchSection /> */}
     {/* <ActivityUpdate /> */}
+    <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+
     <Discord />
+    <TopBand src={TopBandPresetsDesign} alt="Top Band" />
     {/* <Dreamachine /> */}
   </Style>
 }
@@ -39,3 +44,12 @@ input:focus, textarea:focus, select:focus{
 }
 `;
 
+const TopBand = styled.img`
+position: relative; // Changed from absolute to relative
+width: 100%;
+height: auto;
+background: white; // Added white background as per instructions
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  width: auto;
+  height: 59px;
+}`;

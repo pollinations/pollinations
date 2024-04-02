@@ -7,7 +7,7 @@ import { CodeExamples } from './CodeExamples';
 import { useFeedLoader } from './useFeedLoader';
 import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
-import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
+import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import { shorten } from './shorten';
 
 
@@ -43,7 +43,9 @@ export function GenerativeImageFeed() {
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
       {!image["imageURL"] ? (
-        <>Initializing...</>
+        <Grid container justify="center" alignItems="center" style={{ marginBottom: "8em" }}>
+          <CircularProgress color={'inherit'} style={{ color: Colors.offwhite }} />
+        </Grid>
       ) : (
         <Grid container spacing={4}>
           <Grid item xs={gridItemSize}>

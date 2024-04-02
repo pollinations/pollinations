@@ -57,9 +57,13 @@ justify-self: flex-start;
 const LogoContainer = styled.div`
 grid-area: logo;
 justify-self: flex-end;
-padding-top: 1em;
+padding-top: 0em;
+filter: invert(1);
+display: flex;
+align-items: center;
 @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
     justify-self: center;
+    padding-top: 2em;
 }
 `
 const NavigationContainer = styled.div`

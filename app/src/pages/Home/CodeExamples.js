@@ -132,8 +132,8 @@ export function CodeExamples(image) {
   const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
   return <URLExplanation > 
-    <AppBar position="static" style={{ color: 'white', width: "auto", marginTop: "30px", boxShadow: 'none' }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on"  >
+    <AppBar position="static" style={{ color: Colors.lime, width: "auto", marginTop: "30px", boxShadow: 'none' }}>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{style: {background: Colors.lime}}} >
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
@@ -150,11 +150,11 @@ export function CodeExamples(image) {
 
         if (key === "link") {
           return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'white', wordBreak: 'break-all' }}>{image.imageURL}</Link>
+            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', wordBreak: 'break-all' }}>{image.imageURL}</Link>
           </Box>);
         } else if (key === "discord_bot") {
           return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', color: 'white', wordBreak: 'break-all' }}>Discord Bot</Link>
+            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', wordBreak: 'break-all' }}>Discord Bot</Link>
           </Box>);
         }
 
@@ -172,7 +172,7 @@ export function CodeExamples(image) {
               overflow: 'scroll',
               height: '507px',
               backgroundColor: 'transparent',
-              color: 'white',
+              color: Colors.offwhite,
               scrollbarColor: 'transparent transparent' // scrollbar thumb and track colors
 
             }}          />

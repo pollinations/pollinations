@@ -139,7 +139,7 @@ class Predictor:
     ):
         # lora_dict = {
         #     "/home/ubuntu/pollinations/image_gen/models/hd20horizon20v10.safetensors": 1.0
-        # }
+        #
         # textual_inversions_dict = {
         #     "badprompt": "/home/ubuntu/pollinations/image_gen/models/bad_prompt_version2-neg.pt"
         # }
@@ -261,6 +261,7 @@ class Predictor:
             chunked_prompts[0] = original_prompt + ". " + prompt_pimping(original_prompt)
             print("running on prompts", chunked_prompts, "original", original_prompt)
             with lock:
+            # if True:
                 predict_start_time = time.time()
                 try:
 

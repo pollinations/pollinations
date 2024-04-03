@@ -8,8 +8,7 @@ import { useFeedLoader } from './useFeedLoader';
 import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
 import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
-import { shorten } from './shorten';
-
+import DiscordIMG from '../../assets/icons/discord_logo1.svg' // Corrected the path to the discord image
 
 export function GenerativeImageFeed() {
   const [serverLoad, setServerLoad] = useState(0);
@@ -69,26 +68,28 @@ export function GenerativeImageFeed() {
                 <Button
                   onClick={() => setTabValue(0)}
                   variant={tabValue === 0 ? "contained" : "text"}
-                  color="primary"
-                  style={{ boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem", fontWeight: tabValue === 0 ? "bold" : "normal" }}
+                  color={tabValue === 0 ? "offblack" : "lime"}
+                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
                 >
                   Edit
                 </Button>
                 <Button
                   onClick={() => setTabValue(1)}
                   variant={tabValue === 1 ? "contained" : "text"}
-                  color="primary"
-                  style={{ boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem", fontWeight: tabValue === 1 ? "bold" : "normal" }}
+                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
                 >
                   Integrate
                 </Button>
               </ButtonGroup>
             </Box>
-            <Box >
+            <Box display="flex" justifyContent="center">
+              <Typography color="textSecondary" style={{ color: Colors.offwhite, marginTop: '3em', textAlign: 'center' }}>Tweak Your Image in Real-Time. Instant Results at Your Fingertips.</Typography>
+            </Box>
+            <Box>
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
-              {isWaiting && <CircularProgress color="secondary" style={{ margin: '30px auto', display: 'block' }} />}
-          </Box>
+              {isWaiting && <CircularProgress color={'inherit'}  style={{ color: Colors.lime, margin: '30px auto', display: 'block' }} />}
+            </Box>
           </Grid>
         </Grid>
       )}
@@ -113,9 +114,7 @@ function getImageURL(newImage) {
 
 function TimingInfo({ image }) {
   const timeMs = image?.timingInfo?.[5].timestamp;
-  return <Typography variant="body2" component="i">{Math.round(timeMs / 10) / 100} s</Typography>
-}
-
+  return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 10) / 100} s</b></span></Typography>}
 function ImageData({ image, handleParamChange }) {
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
 
@@ -140,8 +139,11 @@ function ImageData({ image, handleParamChange }) {
                   variant="outlined"
                   value={prompt}
                   onChange={(e) => handleParamChange('prompt', e.target.value)}
-                  onFocus={() => handleParamChange('prompt', prompt)}
                   type="text"
+                  InputProps={{
+                    style: { color: Colors.lime },
+                    classes: { notchedOutline: { borderColor: Colors.lime } },
+                  }}
                 />
               </TableCell>
             </TableRow>
@@ -157,7 +159,8 @@ function ImageData({ image, handleParamChange }) {
                   marks
                   min={16}
                   max={2048}
-                  style={{ marginTop: "30px" }}
+                  style={{ marginTop: "30px", color: Colors.lime}}
+                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
                 />
               </TableCell>
             </TableRow>
@@ -173,7 +176,8 @@ function ImageData({ image, handleParamChange }) {
                   marks
                   min={16}
                   max={2048}
-                  style={{ marginTop: "30px" }}
+                  style={{ marginTop: "30px", color: Colors.lime }}
+                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
                 />
               </TableCell>
             </TableRow>
@@ -188,13 +192,17 @@ function ImageData({ image, handleParamChange }) {
                   onFocus={() => handleParamChange('seed', seed)}
                   type="number"
                   style={{ width: "25%" }}
+                  InputProps={{
+                    style: { color: Colors.lime },
+                    classes: { notchedOutline: { borderColor: Colors.lime } },
+                  }}
                 />
               </TableCell>
             </TableRow>
             <TableRow key="nofeed" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
                 private
-                <Tooltip title="Activating 'private' prevents images from appearing in the feed">
+                <Tooltip title="Activating 'private' prevents images from appearing in the feed."  style={{ color: Colors.lime}}>
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>
@@ -204,15 +212,14 @@ function ImageData({ image, handleParamChange }) {
                 <Checkbox
                   checked={nofeed}
                   onChange={(e) => handleParamChange('nofeed', e.target.checked)}
-                  color="primary"
+                  style={{ color: Colors.lime }}
                 />
               </TableCell>
-
             </TableRow>
             <TableRow key="nologo" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
                 nologo
-                <Tooltip title="Hide the pollinations.ai logo. Get the password in Pollinations' Discord community.">
+                <Tooltip title="Hide the pollinations.ai logo. Get the password in Pollinations' Discord community." style={{ color: Colors.lime }}>
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>
@@ -225,9 +232,20 @@ function ImageData({ image, handleParamChange }) {
                   onChange={(e) => handleParamChange('nologo', e.target.value)}
                   style={{ width: "25%" }}
                   value={nologo ? nologo : ""}
+                  InputProps={{
+                    style: { color: Colors.lime },
+                    classes: { notchedOutline: { borderColor: Colors.lime } },
+                  }}
                 />
+  <IconButton
+    component="a"
+    href="https://discord.gg/8HqSRhJVxn"
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{ marginLeft: '20px', backgroundColor: 'transparent', color: 'red' }} >
+    <img src={DiscordIMG} alt="Discord" style={{ width: '100px' }} />
+  </IconButton>
               </TableCell>
-
             </TableRow>
           </TableBody>
         </Table>
@@ -241,7 +259,7 @@ function ServerLoadAndGenerationInfo({ serverLoad, imagesGenerated, image }) {
     <Box display="flex" justifyContent="space-between" alignItems="center" >
       <ServerLoadDisplay concurrentRequests={serverLoad} />
       <Typography variant="body1" component="span" >
-        #: <b style={{ color: 'deepskyblue' }}>{formatImagesGenerated(imagesGenerated)}</b>
+        #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
       </Typography >
       <TimingInfo image={image} />
     </Box>
@@ -253,7 +271,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const load = Math.min(max, concurrentRequests);
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2);
 
-  return <span>Server Load: <b style={{ color: 'deepskyblue' }}>{loadDisplay}</b></span>;
+  return <span>Server Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b></span>;
 }
 
 const formatImagesGenerated = (num) => {

@@ -1,25 +1,30 @@
+###### <span style="color:#e0f041">An Evening with</span> 
+#### *The Department of Cosmic Affairs*  
+###### <span style="color:#e0f041">at</span>  
+#### *Studio 1111*  
 <video controls width="384" height="384">
   <source src="https://github.com/pollinations/pollinations/raw/master/app/src/assets/videos/doca_studio1111.mov" type="video/mp4">
   Your browser does not support the video tag.
 </video>
+  
+  
+###### <span style="color:#e0f041">Date : </span> 4.4.2024  
+###### <span style="color:#e0f041">Time: </span> 20h CET  
+###### <span style="color:#e0f041">Location: </span> **Studio1111**  
+###### Potsdamer Str. 96, Berlin Mitte
+  
+    
+Dive into a journey through sound and space where cosmic mysteries blend with cyberpunk spirit. Yes, it’s a thing. 
 
-**An Evening with the Department of Cosmic Affairs at Studio1111**
+- **Saeko Killy** | Bringing beats even your grandma can't resist.  
+- **The Department of Cosmic Affairs**  | Mind-bending audiovisuals by **Thomash & Exz**.
+- **Surprise performance** 
 
-**Date:** 4.4.2024  
-**Time:** 20h CET  
-**Location:** Studio1111, Potsdamer Str. 96, Berlin Mitte
+This is the kind of story you’ll want to tell your grandkids.
+Or your cat, whichever judges you less.
+Be there or be square.
 
-Dive into a journey through sound and space where cosmic mysteries blend with cyberpunk spirit. Yes, it’s a thing. 🎨🔊.
+<span style="color:#e0f041">*Co-produced by Studio1111, Pollinations.AI, and the Department of Cosmic Affairs.*</span>  
 
-Featuring a diverse lineup including:  
-- **Saeko Killy** bringing beats even your grandma can't resist  
-- The mind-bending audiovisuals of **Thomash & Exz** from The Department of Cosmic Affairs  
-- And a surprise performance 🌌🎨🎶
+<span style="color:#e0f041">*\#FutureFauxPas \#SpaceOddities \#TimeTravelTitters \#WhimsicalWormholes \#MockingMeteors \#AIFables*</span>  
 
-*This is the kind of story you’ll want to tell your grandkids.*   
-*Or your cat, whichever judges you less.*  
-*Be there or be square 🟦.*
-
-Co-produced by Studio1111, Pollinations.AI, and the Department of Cosmic Affairs.
-
-\#FutureFauxPas \#SpaceOddities \#TimeTravelTitters \#WhimsicalWormholes \#MockingMeteors \#AIFables

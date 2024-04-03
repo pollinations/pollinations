@@ -7,28 +7,28 @@ import { Link } from "react-router-dom"
 
 let WhoWeAreContent = () => <>
 
-      <h2>
-        We are a team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i> 
-        profoundly involved <br/> <i><b> in the AI ecosystem.</b></i>
-      </h2>
-      <p>
-        To talk to us, reach out on Discord or at hello@pollinations.ai
-      </p>
+  <h2>
+    We are a team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i>
+    profoundly involved <br /> <i><b> in the AI ecosystem.</b></i>
+  </h2>
+  <p>
+    To talk to us, reach out on Discord or at hello@pollinations.ai
+  </p>
 
 
 </>
 
 let ActivityUpdateContent = () => <>
-      <h2>
-      <i><b> Pollinations activity update! </b></i>
-      </h2>
-      <p>
-The Explore page has been removed. Our current focus is on AI music video creation and the Dreamachine. However, you can still access our AI models via our <Link style={{color: "black"}} href="https://www.github.com/pollinations">Discord bots</Link> and on <Link style={{color: "black"}} href="https://replicate.com/pollinations">Replicate</Link>.
-      <br/>
-      <br/> From now on Pollinations will redirect its focus on AI music video creation, and the real-time immersive AI product called the Dreamachine.
-      <br/><br/>
-      <i><b>Stay tuned!</b></i>
-      </p>
+  <h2>
+    <i><b> Pollinations activity update! </b></i>
+  </h2>
+  <p>
+    The Explore page has been removed. Our current focus is on AI music video creation and the Dreamachine. However, you can still access our AI models via our <Link style={{ color: "black" }} href="https://www.github.com/pollinations">Discord bots</Link> and on <Link style={{ color: "black" }} href="https://replicate.com/pollinations">Replicate</Link>.
+    <br />
+    <br /> From now on Pollinations will redirect its focus on AI music video creation, and the real-time immersive AI product called the Dreamachine.
+    <br /><br />
+    <i><b>Stay tuned!</b></i>
+  </p>
 </>
 
 
@@ -38,10 +38,10 @@ The Explore page has been removed. Our current focus is on AI music video creati
 export default function LayoutLight01({ id, long }) {
 
   let content = {
-    'whoweare': <WhoWeAreContent/>,
-    'activityupdate': <ActivityUpdateContent/>
+    'whoweare': <WhoWeAreContent />,
+    'activityupdate': <ActivityUpdateContent />
   }
-  
+
   return <Style>
     <PageLayout long={long}>
       {id ? content[id] : <></>}

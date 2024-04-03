@@ -29,7 +29,7 @@ const MarkDownContent = ({ url, ...replacements }) => {
   overrides = {
     ...overrides,
     video: ({ src, controls, width, height, children, ...props }) => {
-      const style = isDesktop ? (props.style ? { float: 'right', ...props.style } : { float: 'right' }) : {};
+      const style = isDesktop ? (props.style ? { float: 'right', marginLeft: '50px', ...props.style } : { float: 'right', marginLeft: '50px' }) : {};
       return (
         <video src={src} controls={controls} width={width} height={height} style={style} {...props}>
           {children}
@@ -50,3 +50,4 @@ const applyReplacements = (replacements, content) =>
   Object.entries(replacements).reduce(replaceOne, content)
 
 const replaceOne = (content, [key, replacement]) => content.replaceAll(`{${key}}`, replacement)
+

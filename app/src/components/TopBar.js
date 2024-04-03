@@ -76,7 +76,7 @@ padding: 1em 1em 3em;
 const MobileCloseIconStyle = styled.div`
 position: absolute;
 top: 1em;
-right: 2em;
+right: 1em;
 .MuiIconButton-root:hover {
   background-color: white;
   color: black;
@@ -128,7 +128,6 @@ const NavBarStyle = styled(BaseContainer)`
 const MenuButton = styled.div`
   grid-area: mobilebutton;
   justify-self: flex-end;
-  margin: 1em; /* Add this line */
   @media (min-width: ${MOBILE_BREAKPOINT}){
     display: none;
   }

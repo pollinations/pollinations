@@ -3,18 +3,21 @@ import Markdown from "markdown-to-jsx"
 import { range, zipObj } from "ramda"
 import useFetchText from "../hooks/useFetchText"
 import useMarkdown from "../hooks/useMarkdown"
-import { useTheme } from '@material-ui/core/styles';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { useTheme } from "@material-ui/core/styles"
+import useMediaQuery from "@material-ui/core/useMediaQuery"
+import styled from "@emotion/styled"
 
 // replacements allow replacing dynamic content in the markdown
 // the syntax is {[key]} which will be matched with the props passed to this object
+
+const MOBILE_BREAKPOINT = "768px"
 
 const MarkDownContent = ({ url, ...replacements }) => {
   const raw = useFetchText(url)
   const { body } = useMarkdown(raw)
   const headersToInclude = range(1, 7)
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  const theme = useTheme()
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"))
 
   // header tags
   const tags = headersToInclude.map((i) => `h${i}`)
@@ -24,23 +27,32 @@ const MarkDownContent = ({ url, ...replacements }) => {
     <Typography variant={tag} children={children} />
   ))
 
-  let overrides = zipObj(tags, overrideElements);
+  let overrides = zipObj(tags, overrideElements)
 
   overrides = {
     ...overrides,
     video: ({ src, controls, width, height, children, ...props }) => {
-      const style = isDesktop ? (props.style ? { float: 'right', marginLeft: '50px', ...props.style } : { float: 'right', marginLeft: '50px' }) : {};
+      const style = isDesktop
+        ? props.style
+          ? { float: "right", marginLeft: "50px", ...props.style }
+          : { float: "right", marginLeft: "50px" }
+        : { display: "block", margin: "auto", ...props.style }
+
       return (
         <video src={src} controls={controls} width={width} height={height} style={style} {...props}>
           {children}
         </video>
-      );
-    }
-  };
+      )
+    },
+  }
 
   const contentWithReplacements = applyReplacements(replacements, body)
 
-  return <Markdown options={{ overrides }} >{contentWithReplacements}</Markdown>
+  return (
+    <StyledMarkdownContent>
+      <Markdown options={{ overrides }}>{contentWithReplacements}</Markdown>
+    </StyledMarkdownContent>
+  )
 }
 
 export default MarkDownContent
@@ -51,3 +63,18 @@ const applyReplacements = (replacements, content) =>
 
 const replaceOne = (content, [key, replacement]) => content.replaceAll(`{${key}}`, replacement)
 
+const StyledMarkdownContent = styled.div`
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ul,
+    li {
+      text-align: center;
+    }
+  }
+`

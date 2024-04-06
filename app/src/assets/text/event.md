@@ -2,7 +2,7 @@
 #### *The Department of Cosmic Affairs*  
 ###### <span style="color:#e0f041">at</span>  
 #### *Studio 1111*  
-<video controls width="384" height="384">
+<video controls width="315" height="384">
   <source src="https://github.com/pollinations/pollinations/raw/master/app/src/assets/videos/doca_studio1111.mov" type="video/mp4">
   Your browser does not support the video tag.
 </video>

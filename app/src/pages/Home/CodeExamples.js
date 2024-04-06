@@ -132,7 +132,7 @@ export function CodeExamples(image) {
   const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
   return <URLExplanation > 
-    <AppBar position="static" style={{ color: Colors.lime, width: "auto", marginTop: "30px", boxShadow: 'none' }}>
+    <AppBar position="static" style={{color:"white", width: "auto", marginTop: "30px", boxShadow: 'none' }}>
       <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{style: {background: Colors.lime}}} >
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />

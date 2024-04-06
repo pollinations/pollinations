@@ -82,9 +82,9 @@ export function GenerativeImageFeed() {
                 </Button>
               </ButtonGroup>
             </Box>
-            <Box display="flex" justifyContent="center">
+            {/* <Box display="flex" justifyContent="center">
               <Typography color="textSecondary" style={{ color: Colors.offwhite, marginTop: '3em', textAlign: 'center' }}>Tweak Your Image in Real-Time. Instant Results at Your Fingertips.</Typography>
-            </Box>
+            </Box> */}
             <Box>
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
@@ -212,7 +212,6 @@ function ImageData({ image, handleParamChange }) {
                 <Checkbox
                   checked={nofeed}
                   onChange={(e) => handleParamChange('nofeed', e.target.checked)}
-                  style={{ color: Colors.lime }}
                 />
               </TableCell>
             </TableRow>

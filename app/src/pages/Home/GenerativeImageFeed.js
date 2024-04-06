@@ -141,8 +141,8 @@ function ImageData({ image, handleParamChange }) {
                   onChange={(e) => handleParamChange('prompt', e.target.value)}
                   type="text"
                   InputProps={{
-                    style: { color: Colors.lime },
-                    classes: { notchedOutline: { borderColor: Colors.lime } },
+                    style: { color: Colors.white },
+                    classes: { notchedOutline: { borderColor: Colors.white } },
                   }}
                 />
               </TableCell>
@@ -159,7 +159,7 @@ function ImageData({ image, handleParamChange }) {
                   marks
                   min={16}
                   max={2048}
-                  style={{ marginTop: "30px", color: Colors.lime}}
+                  style={{ marginTop: "30px", color: Colors.white}}
                   ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
                 />
               </TableCell>
@@ -176,7 +176,7 @@ function ImageData({ image, handleParamChange }) {
                   marks
                   min={16}
                   max={2048}
-                  style={{ marginTop: "30px", color: Colors.lime }}
+                  style={{ marginTop: "30px", color: Colors.white }}
                   ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
                 />
               </TableCell>
@@ -193,7 +193,7 @@ function ImageData({ image, handleParamChange }) {
                   type="number"
                   style={{ width: "25%" }}
                   InputProps={{
-                    style: { color: Colors.lime },
+                    style: { color: Colors.white },
                     classes: { notchedOutline: { borderColor: Colors.lime } },
                   }}
                 />
@@ -233,7 +233,7 @@ function ImageData({ image, handleParamChange }) {
                   style={{ width: "25%" }}
                   value={nologo ? nologo : ""}
                   InputProps={{
-                    style: { color: Colors.lime },
+                    style: { color: Colors.white },
                     classes: { notchedOutline: { borderColor: Colors.lime } },
                   }}
                 />

@@ -16,6 +16,7 @@ export const Colors = {
   wine: '#670C6B',
   magenta: '#C93CD0',
   gray4: '#BDBDBD',
+  white: '#FFFFFF'
 };
 
 export const Fonts = {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab } from '@material-ui/core';
+import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/Info';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { debounce } from 'lodash';
@@ -82,9 +82,6 @@ export function GenerativeImageFeed() {
                 </Button>
               </ButtonGroup>
             </Box>
-            {/* <Box display="flex" justifyContent="center">
-              <Typography color="textSecondary" style={{ color: Colors.offwhite, marginTop: '3em', textAlign: 'center' }}>Tweak Your Image in Real-Time. Instant Results at Your Fingertips.</Typography>
-            </Box> */}
             <Box>
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
@@ -134,16 +131,11 @@ function ImageData({ image, handleParamChange }) {
             <TableRow key="prompt" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>prompt</TableCell>
               <TableCell align="right" style={{ borderBottom: 'none' }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
+                <TextareaAutosize
+                  minRows={3}
+                  style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
                   value={prompt}
                   onChange={(e) => handleParamChange('prompt', e.target.value)}
-                  type="text"
-                  InputProps={{
-                    style: { color: Colors.white },
-                    classes: { notchedOutline: { borderColor: Colors.white } },
-                  }}
                 />
               </TableCell>
             </TableRow>

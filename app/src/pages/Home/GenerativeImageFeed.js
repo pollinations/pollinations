@@ -218,7 +218,7 @@ function ImageData({ image, handleParamChange }) {
             <TableRow key="nologo" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
                 nologo
-                <Tooltip title="Hide the pollinations.ai logo. Get the password in Pollinations' Discord community." style={{ color: Colors.lime }}>
+                <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/8HqSRhJVxn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>
@@ -236,14 +236,6 @@ function ImageData({ image, handleParamChange }) {
                     classes: { notchedOutline: { borderColor: Colors.lime } },
                   }}
                 />
-  <IconButton
-    component="a"
-    href="https://discord.gg/8HqSRhJVxn"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ marginLeft: '20px', backgroundColor: 'transparent', color: 'red' }} >
-    <img src={DiscordIMG} alt="Discord" style={{ width: '100px' }} />
-  </IconButton>
               </TableCell>
             </TableRow>
           </TableBody>

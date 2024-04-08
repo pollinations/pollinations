@@ -37,14 +37,17 @@ export function useImageSlideshow() {
 
 export function useImageEditor({ stop, image }) {
   const [isWaiting, setIsWaiting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [editedImage, setEditedImage] = useState(null);
   
 
 
   const debouncedUpdateImage = useCallback(dynamicDebounce(async (newImage) => {
+    setIsWaiting(false);
+    setIsLoading(true);
     await loadImage(newImage);
     setEditedImage(image => ({...image, imageURL: newImage.imageURL}))
-    setIsWaiting(false);
+    setIsLoading(false);
   }), [setEditedImage, setIsWaiting]);
 
   const updateImage = useCallback((newImage) => {
@@ -61,7 +64,7 @@ export function useImageEditor({ stop, image }) {
 
   image = editedImage || image;
 
-  return { updateImage, isWaiting, image };
+  return { updateImage, isWaiting, image, isLoading };
 }
 
 

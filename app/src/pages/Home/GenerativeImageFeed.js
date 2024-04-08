@@ -14,7 +14,7 @@ export function GenerativeImageFeed() {
   const [serverLoad, setServerLoad] = useState(0);
   const [tabValue, setTabValue] = useState(0);
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
-  const { updateImage, isWaiting, image } = useImageEditor({ stop, image: slideshowImage });
+  const { updateImage, isWaiting, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
   const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
 
   const handleParamChange = (param, value) => {
@@ -85,7 +85,14 @@ export function GenerativeImageFeed() {
             <Box>
               {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
-              {isWaiting && <CircularProgress color={'inherit'}  style={{ color: Colors.lime, margin: '30px auto', display: 'block' }} />}
+              {(isWaiting || isLoading) && (
+                <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
+                  <CircularProgress color={'inherit'} style={{ color: isWaiting ? Colors.white : Colors.lime }} />
+                  <Typography style={{ color: isWaiting ? Colors.white : Colors.lime, marginTop: '10px' }}>
+                    {isWaiting ? 'Waiting...' : 'Generating...'}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 let WhoWeAreContent = () => <>
   <h2>
     We are a team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i>
-    deeply involved <br /> <i><b> in the AI ecosystem.</b></i>
+    deeply   involved <br /> <i>in the <b>open source</b> AI ecosystem.</i>
   </h2>
   <p>
     To talk to us, reach out on <LinkStyle to="https://discord.com/invite/8HqSRhJVxn">Discord</LinkStyle> or at hello@pollinations.ai

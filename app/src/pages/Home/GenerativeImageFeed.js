@@ -9,6 +9,9 @@ import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
 import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import DiscordIMG from '../../assets/icons/discord_logo1.svg' // Corrected the path to the discord image
+import debug from 'debug';
+
+const log = debug("GenerativeImageFeed")
 
 export function GenerativeImageFeed() {
   const [serverLoad, setServerLoad] = useState(0);
@@ -30,12 +33,15 @@ export function GenerativeImageFeed() {
     });
   };
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
 
   const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
 
+  // const latestImage = image.imageURL ? image : slideshowImage; 
+
+  // useEffect(() => {
+  //   log("latestImage", latestImage);
+  // }, latestImage);
+  
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: window.innerWidth <= parseInt(MOBILE_BREAKPOINT) ? '3em' : '0' }}>
       <Grid item xs={12}>
@@ -68,7 +74,7 @@ export function GenerativeImageFeed() {
                 <Button
                   onClick={() => setTabValue(0)}
                   variant={tabValue === 0 ? "contained" : "text"}
-                  color={tabValue === 0 ? "offblack" : "lime"}
+                  color={tabValue === 0 ? Colors.offblack : Colors.lime}
                   style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
                 >
                   Edit
@@ -89,7 +95,7 @@ export function GenerativeImageFeed() {
                 <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
                   <CircularProgress color={'inherit'} style={{ color: isWaiting ? Colors.white : Colors.lime }} />
                   <Typography style={{ color: isWaiting ? Colors.white : Colors.lime, marginTop: '10px' }}>
-                    {isWaiting ? 'Waiting...' : 'Generating...'}
+                    {isWaiting ? `Waiting ${isWaiting}...` : 'Generating...'}
                   </Typography>
                 </Box>
               )}
@@ -117,7 +123,7 @@ function getImageURL(newImage) {
 }
 
 function TimingInfo({ image }) {
-  const timeMs = image?.timingInfo?.[5].timestamp;
+  const timeMs = image?.generationTime || image?.timingInfo?.[5].timestamp;
   return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 10) / 100} s</b></span></Typography>}
 function ImageData({ image, handleParamChange }) {
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
@@ -193,7 +199,6 @@ function ImageData({ image, handleParamChange }) {
                   style={{ width: "25%" }}
                   InputProps={{
                     style: { color: Colors.white },
-                    classes: { notchedOutline: { borderColor: Colors.lime } },
                   }}
                 />
               </TableCell>
@@ -232,7 +237,6 @@ function ImageData({ image, handleParamChange }) {
                   value={nologo ? nologo : ""}
                   InputProps={{
                     style: { color: Colors.white },
-                    classes: { notchedOutline: { borderColor: Colors.lime } },
                   }}
                 />
               </TableCell>

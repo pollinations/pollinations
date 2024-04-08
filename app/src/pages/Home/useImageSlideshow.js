@@ -2,6 +2,9 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useInterval } from 'usehooks-ts';
 import { debounce } from 'lodash';
 import { getLastServerLoad } from './useFeedLoader';
+import debug from 'debug';
+
+const log = debug('useImageSlideshow');
 
 export function useImageSlideshow() {
   const [image, setImage] = useState({});

@@ -89,7 +89,7 @@ export function GenerativeImageFeed() {
               </ButtonGroup>
             </Box>
             <Box>
-              {tabValue === 0 && <ImageData {...{ image, handleParamChange }} />}
+              {tabValue === 0 && <ImageData {...{ image, handleParamChange, isLoading }} />}
               {tabValue === 1 && <CodeExamples {...image} />}
               {(isWaiting || isLoading) && (
                 <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
@@ -125,17 +125,17 @@ function getImageURL(newImage) {
 function TimingInfo({ image }) {
   const timeMs = image?.generationTime || image?.timingInfo?.[5].timestamp;
   return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 10) / 100} s</b></span></Typography>}
-function ImageData({ image, handleParamChange }) {
-  const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState(false);
 
-  const toggleAdvancedOptions = () => {
-    setAdvancedOptionsOpen(!advancedOptionsOpen);
-  };
+
+function ImageData({ image, handleParamChange, isLoading }) {
+
 
   const { prompt, width, height, seed, imageURL, nofeed, nologo } = image;
+
   if (!imageURL) {
     return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
   }
+
   return (
     <>
       <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px', backgroundColor: "transparent" }}>
@@ -149,6 +149,7 @@ function ImageData({ image, handleParamChange }) {
                   style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
                   value={prompt}
                   onChange={(e) => handleParamChange('prompt', e.target.value)}
+                  disabled={isLoading}
                 />
               </TableCell>
             </TableRow>
@@ -166,7 +167,8 @@ function ImageData({ image, handleParamChange }) {
                   max={2048}
                   style={{ marginTop: "30px", color: Colors.white}}
                   ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
-                />
+                  disabled={isLoading}
+              />
               </TableCell>
             </TableRow>
             <TableRow key="height" style={{ borderBottom: 'none' }}>
@@ -183,7 +185,8 @@ function ImageData({ image, handleParamChange }) {
                   max={2048}
                   style={{ marginTop: "30px", color: Colors.white }}
                   ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
-                />
+                  disabled={isLoading}
+            />
               </TableCell>
             </TableRow>
             <TableRow key="seed" style={{ borderBottom: 'none' }}>
@@ -200,6 +203,7 @@ function ImageData({ image, handleParamChange }) {
                   InputProps={{
                     style: { color: Colors.white },
                   }}
+                  disabled={isLoading}
                 />
               </TableCell>
             </TableRow>
@@ -216,6 +220,7 @@ function ImageData({ image, handleParamChange }) {
                 <Checkbox
                   checked={nofeed}
                   onChange={(e) => handleParamChange('nofeed', e.target.checked)}
+                  disabled={isLoading}
                 />
               </TableCell>
             </TableRow>
@@ -238,6 +243,7 @@ function ImageData({ image, handleParamChange }) {
                   InputProps={{
                     style: { color: Colors.white },
                   }}
+                  disabled={isLoading}
                 />
               </TableCell>
             </TableRow>

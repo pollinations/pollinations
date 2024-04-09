@@ -12,7 +12,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import Table from 'cli-table3'; // Importing cli-table3 for table formatting
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 
-const BATCH_SIZE = 8; // Number of requests per batch
+const BATCH_SIZE = 3; // Number of requests per batch
 
 const concurrency = 3; // Number of concurrent requests per bucket key
 
@@ -25,32 +25,42 @@ let requestTimestamps = []; // Array to store timestamps of image requests
 let imageReturnTimestamps = []; // Array to store timestamps of returned images
 
 // this is used to create a queue per ip address
+const BOT_IP = "150.136.112.172";
 
-
-// function that wraps an async request handler and keeps count of the number of requests from the same ip address
-// if an ip address already has a request in the queue, it will delay until the request is processed
-// the delay increases by 1 second for each request in the queue
+/**
+ * Function that wraps an async request handler and keeps count of the number of requests from the same IP address.
+ * If an IP address already has a request in the queue, it will delay until the request is processed.
+ * The delay increases by 1 second for each request in the queue.
+ * If the query parameter noqueue=pollinations is passed, the queue is skipped entirely.
+ * @param {Function} handler - The request handler function to wrap.
+ * @returns {Function} The wrapped async request handler.
+ */
 const queuePerIp = (handler) => {
   const ipQueue = {};
   const rickrollCount = {}; // Count of times each IP was rickrolled
   const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
   return async (req, res) => {
+    const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
+    if (urlParams.get('noqueue') === 'pollinations') {
+      await handler(req, res);
+      return;
+    }
+
     const ip = getIp(req);
     if (!ipQueue[ip]) {
-      ipQueue[ip] = new PQueue({ concurrency: 1 });
+      ipQueue[ip] = new PQueue({ concurrency: ip === BOT_IP ? 999999 : 1 });
       rickrollCount[ip] = 0; // Initialize rickroll count for this IP
       rickrollData[ip] = 0; // Initialize rickroll data for this IP
     } else {
       console.log("ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
-      // if queue size > 10 then redirect to 
-      const ricUurl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
+      const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
       if (ipQueue[ip].size > 50) {
         console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
         rickrollCount[ip] += 1; // Increment rickroll count for this IP
         rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
         console.log(`IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
         res.writeHead(302, {
-          'Location': ricUurl
+          'Location': ricUrl
         });
         res.end();
         return;
@@ -59,11 +69,12 @@ const queuePerIp = (handler) => {
     const queueSize = ipQueue[ip].size;
     await ipQueue[ip].add(async () => {
       await handler(req, res);
-      console.log("sleeping for",  queueSize * 1000, "ms")
+      console.log("sleeping for", queueSize * 1000, "ms");
       await awaitSleep(queueSize * 500); // Delay increases by 1 second for each request in the queue
     });
-  }
-}
+  };
+};
+
 // Initialize an object to track images requested and returned per bucket key
 let bucketKeyStats = {};
 

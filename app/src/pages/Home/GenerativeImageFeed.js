@@ -59,7 +59,7 @@ export function GenerativeImageFeed() {
               {image ? (
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
                   <ImageStyle
-                    src={image["imageURL"]}
+                    src={image["imageURL"]+"&referrer=pollinations_home"}
                     alt="generative_image"
                   />
                 </Link>
@@ -119,6 +119,7 @@ function getImageURL(newImage) {
   if (queryParams.length > 0) {
     imageURL += '?' + queryParams.join('&');
   }
+
   return imageURL;
 }
 

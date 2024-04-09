@@ -12,3 +12,7 @@
 
   # Default build command.
   command = "npm install && npm run build"
+
+[images]
+  remote_images = ["https://image.pollinations.ai/.*"]
+

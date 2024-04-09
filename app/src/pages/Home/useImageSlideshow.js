@@ -59,7 +59,7 @@ export function useImageEditor({ stop, image }) {
     setEditedImage(newImage);
 
     const serverLoad = getLastServerLoad();
-    const dynamicDebounceTime = Math.min(20000, 1000 + 2000 * serverLoad);
+    const dynamicDebounceTime = Math.min(20000, 3000 + 2000 * serverLoad);
     
     let countDown = Math.floor(dynamicDebounceTime / 1000); // Assuming dynamicDebounceTime is in milliseconds
     if (intervalRef.current)

@@ -270,10 +270,10 @@ class Predictor:
                             prompt=chunked_prompts[0],
                             num_inference_steps=n_steps,
                             # negative_prompt="",
-                            # guidance_scale=5.5,
+                            guidance_scale=2.5,
                             width=width,
                             height=height,
-                            negative_prompt=negative_prompt
+                            negative_prompt=None
                         )
                     for _ in range(self.streamdiffusion.batch_size - 1):
                         self.streamdiffusion()

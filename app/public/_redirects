@@ -1,5 +1,5 @@
 /n/* / 200
 /c/* / 200
-/prompt/* https://image.pollinations.ai/prompt/:splat 301
-/p/* https://image.pollinations.ai/prompt/:splat 301
+/prompt/* /.netlify/images?url=https%3A%2F%2Fimage.pollinations.ai%2Fprompt%2F:splat 301
+/p/* /.netlify/images?url=https%3A%2F%2Fimage.pollinations.ai%2Fprompt%2F:splat 301
 /terms / 200

@@ -269,8 +269,8 @@ class Predictor:
                     self.streamdiffusion.prepare(
                             prompt=chunked_prompts[0],
                             num_inference_steps=n_steps,
-                            # negative_prompt="",
-                            guidance_scale=2.5,
+                            # negative_prompt=negative_prompt,
+                            guidance_scale=0.0,
                             width=width,
                             height=height,
                             negative_prompt=None

@@ -56,7 +56,7 @@ export function useImageEditor({ stop, image }) {
 
   const updateImage = useCallback((newImage) => {
     stop(true);
-    setEditedImage(newImage);
+    setEditedImage({...newImage, imageURL: image.imageURL});
 
     const serverLoad = getLastServerLoad();
     const dynamicDebounceTime = Math.min(20000, 3000 + 2000 * serverLoad);

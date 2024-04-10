@@ -4,32 +4,31 @@ import fetch from 'node-fetch';
 import tempfile from 'tempfile';
 import fs from 'fs';
 import { sendToFeedListeners } from './feedListeners.js';
-import { sendToAnalytics } from './sendToAnalytics.js';
 import FormData from 'form-data';
 
 const SERVER_URL = 'http://localhost:5555/predict';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
-const callWebUI = async (prompts, extraParams = {}, concurrentRequests) => {
+const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip}) => {
 
 
   const steps = Math.min(4,Math.round(Math.max(1, (6 - (concurrentRequests/4)))));
-  console.log("concurrent requests", concurrentRequests, "steps", steps, "prompts", prompts, "extraParams", extraParams);
+  console.log("concurrent requests", concurrentRequests, "steps", steps, "jobs", jobs.length, "safeParams", safeParams);
 
 
   let images = [];
   try {
-    const safeParams = extraParams
 
     if (!safeParams.nofeed)
-      prompts.forEach(prompt => {
-        sendToFeedListeners({...safeParams, concurrentRequests, prompt, steps });
+      jobs.forEach(({prompt, ip}) => {
+        sendToFeedListeners({...safeParams, concurrentRequests, prompt, steps, ip });
       });
+
+    const prompts = jobs.map(({prompt}) => prompt);
 
     const body = {
       "prompts": prompts,
       "steps": steps,
-      "height": 384,
       ...safeParams
     };
 
@@ -163,9 +162,11 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
   return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed};
 };
 
-export async function createAndReturnImageCached(prompts, extraParams, { concurrentRequests = 1}) {
-      extraParams = makeParamsSafe(extraParams);
-      const buffers = await callWebUI(prompts, extraParams, concurrentRequests);
+export async function createAndReturnImageCached({jobs, safeParams, concurrentRequests = 1, ip}) {
+
+
+      safeParams = makeParamsSafe(safeParams);
+      const buffers = await callWebUI({jobs, safeParams, concurrentRequests});
 
       // console.log("buffers", buffers);
       const buffersWithLegends = await Promise.all(buffers.map(async ({buffer, has_nsfw_concept: isMature, concept}) => {
@@ -179,7 +180,7 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
 
         const logoPath = isMature ? null : 'logo.png';
 
-        let bufferWithLegend = extraParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams);
+        let bufferWithLegend = safeParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
 
         return { buffer:bufferWithLegend, isChild, isMature };
       }));
@@ -190,7 +191,7 @@ export async function createAndReturnImageCached(prompts, extraParams, { concurr
 
 // imagemagick command line command to composite the logo on top of the image
 // dynamically resizing the logo to use 30% of the image width
-function addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams) {
+function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
   // create temporary file for the image
   const tempImageFile = tempfile({ extension: 'png' });
   const tempOutputFile = tempfile({ extension: 'jpg' });
@@ -199,7 +200,7 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath, extraParams) {
   fs.writeFileSync(tempImageFile, buffer);
 
   // Calculate the new width of the logo as 30% of the image width
-  const targetWidth = extraParams.width * 0.3;
+  const targetWidth = safeParams.width * 0.3;
   // Since the original width of the logo is 200px, calculate the scaling factor
   const scaleFactor = targetWidth / 200;
   // Calculate the new height of the logo based on the scaling factor

@@ -59,7 +59,7 @@ export function GenerativeImageFeed() {
               {image ? (
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
                   <ImageStyle
-                    src={image["imageURL"]+"&referrer=pollinations_home"}
+                    src={image["imageURL"]}
                     alt="generative_image"
                   />
                 </Link>

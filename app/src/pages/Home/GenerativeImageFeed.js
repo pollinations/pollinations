@@ -10,6 +10,7 @@ import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyl
 import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import DiscordIMG from '../../assets/icons/discord_logo1.svg' // Corrected the path to the discord image
 import debug from 'debug';
+import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
 
 const log = debug("GenerativeImageFeed")
 
@@ -123,9 +124,6 @@ function getImageURL(newImage) {
   return imageURL;
 }
 
-function TimingInfo({ image }) {
-  const timeMs = image?.generationTime || image?.timingInfo?.[5].timestamp;
-  return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 10) / 100} s</b></span></Typography>}
 
 
 function ImageData({ image, handleParamChange, isLoading }) {
@@ -254,28 +252,4 @@ function ImageData({ image, handleParamChange, isLoading }) {
     </>
   );
 }
-
-function ServerLoadAndGenerationInfo({ serverLoad, imagesGenerated, image }) {
-  return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" >
-      <ServerLoadDisplay concurrentRequests={serverLoad} />
-      <Typography variant="body1" component="span" >
-        #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
-      </Typography >
-      <TimingInfo image={image} />
-    </Box>
-  );
-}
-function ServerLoadDisplay({ concurrentRequests }) {
-  concurrentRequests = Math.round(concurrentRequests / 2);
-  const max = 5;
-  const load = Math.min(max, concurrentRequests);
-  const loadDisplay = "▁▃▅▇▉".slice(1, load + 2);
-
-  return <span>Server Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b></span>;
-}
-
-const formatImagesGenerated = (num) => {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-};
 

@@ -166,40 +166,6 @@ class Predictor:
 
         return stream
     
-    #realvisxlV30Turbo.oNAT.safetensors
-    def _load_realvisions_model(self):
-        print("Loading RealVisions model...")
-        pipe = StableDiffusionXLPipeline.from_single_file(
-            "models/realvisxlV30Turbo.oNAT.safetensors", 
-            torch_dtype=torch.float16, 
-            safety_checker=None
-        ) 
-        pipe.safety_checker = None
-        print("RealVisions model loaded.")
-
-
-        # pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
-        #/home/ubuntu/anaconda3/envs/streamdiffusion/lib/python3.10/site-pa
-        # ckages/diffusers/configuration_utils.py:139: FutureWarning: Access
-        # ing config attribute `use_karras_sigmas` directly via 'DPMSolverSD
-        # EScheduler' object attribute is deprecated. Please access 'use_kar
-        # ras_sigmas' over 'DPMSolverSDEScheduler's config object instead, e
-        # .g. 'scheduler.config.use_karras_sigmas'.
-        
-        pipe.scheduler.config.use_karras_sigmas = 'true'
-        pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
-        # pipe.enable_model_cpu_offload()
-        pipe.vae = tinyAutoencoder
-
-        pipe.enable_attention_slicing()
-        # pipe.enable_xformers_memory_efficient_attention() 
-        # pipe.enable_vae_tiling()
-        # pipe.enable_model_cpu_offload()
-        # pipe = pipe.to("cuda")
-        # adapter_id = "latent-consistency/lcm-lora-sdxl"
-        # pipe.load_lora_weights(adapter_id)
-        # pipe.fuse_lora()
-        return pipe.to("cuda")
     
     def predict_batch(self, batch_data):
 
@@ -258,7 +224,7 @@ class Predictor:
         for i in range(0, len(prompts),max_batch_size):
             chunked_prompts = prompts[i:i+max_batch_size]
             original_prompt = chunked_prompts[0]
-            chunked_prompts[0] = original_prompt + ". " + prompt_pimping(original_prompt)
+            chunked_prompts[0] = original_prompt #+ ". " + prompt_pimping(original_prompt)
             print("running on prompts", chunked_prompts, "original", original_prompt)
             with lock:
             # if True:
@@ -269,11 +235,11 @@ class Predictor:
                     self.streamdiffusion.prepare(
                             prompt=chunked_prompts[0],
                             num_inference_steps=n_steps,
-                            # negative_prompt=negative_prompt,
-                            guidance_scale=0.0,
+                            negative_prompt=negative_prompt,
+                            guidance_scale=2.0,
                             width=width,
                             height=height,
-                            negative_prompt=None
+                            # negative_prompt=None
                         )
                     for _ in range(self.streamdiffusion.batch_size - 1):
                         self.streamdiffusion()

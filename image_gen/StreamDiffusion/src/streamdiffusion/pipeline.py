@@ -132,7 +132,7 @@ class StreamDiffusion:
     @torch.no_grad()
     def prepare(
         self,
-        prompt: str,
+        prompt: List[str],
         negative_prompt: str = "",
         num_inference_steps: int = 50,
         guidance_scale: float = 1.2,
@@ -141,6 +141,7 @@ class StreamDiffusion:
         seed: int = 2,
         width: Optional[int] = None,
         height: Optional[int] = None,
+        frame_buffer_size: int = 1,
     ) -> None:
         self.generator = generator
         self.generator.manual_seed(seed)
@@ -206,7 +207,10 @@ class StreamDiffusion:
             do_classifier_free_guidance=do_classifier_free_guidance,
             negative_prompt=negative_prompt,
         )
-        self.prompt_embeds = encoder_output[0].repeat(self.batch_size, 1, 1)
+        print("got encoder output shape", encoder_output[0].shape, "add_text_embeds", encoder_output[2].shape)
+        self.prompt_embeds = encoder_output[0]
+        if (len(self.prompt_embeds) < self.batch_size):
+            self.prompt_embeds = encoder_output[0].repeat(self.batch_size, 1, 1)
 
         # ADD
         self.add_text_embeds = encoder_output[2]
@@ -370,13 +374,26 @@ class StreamDiffusion:
             t_list = torch.concat([t_list, t_list], dim=0)
         else:
             x_t_latent_plus_uc = x_t_latent
-        model_pred = self.unet(
-            x_t_latent_plus_uc,
-            t_list,
-            encoder_hidden_states=self.prompt_embeds,
-            added_cond_kwargs=added_cond_kwargs,
-            return_dict=False,
-        )[0]
+        
+
+        model_preds = []
+        # print("start unet")
+        for i in range(x_t_latent_plus_uc.shape[0]):
+            x_t_latent_input = x_t_latent_plus_uc[i:i+1]
+            t_list_input = t_list[i:i+1]
+            encoder_hidden_states_input = self.prompt_embeds[i:i+1]
+            added_cond_kwargs_input = added_cond_kwargs
+
+            model_pred = self.unet(
+                x_t_latent_input,
+                t_list_input,
+                encoder_hidden_states=encoder_hidden_states_input,
+                added_cond_kwargs=added_cond_kwargs_input,
+                return_dict=False,
+            )[0]
+            model_preds.append(model_pred)
+        # print("done unet")
+        model_pred = torch.cat(model_preds, dim=0)
         if self.guidance_scale > 1.0 and (self.cfg_type == "initialize"):
             noise_pred_text = model_pred[1:]
             self.stock_noise = torch.concat(

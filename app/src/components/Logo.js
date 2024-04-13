@@ -8,6 +8,7 @@ const LogoImg = styled.img`
     @media only screen and (max-width: 600px){
         max-width: ${ props => props.small || '90%'};
     }
+    filter: invert(100%);
 `;
 const Logo = props => <LogoImg src={LogoLight} size='75%' {...props}/>;
 

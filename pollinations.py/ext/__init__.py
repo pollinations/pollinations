@@ -1,38 +1,5 @@
-'''
-pollinations.ext
-
-Functions:
-    sample(str): Returns a sample prompt for the Image model.
-    sample_style(str): Returns a style of prompt for the Image model.
-    sample_batch(list, size=10): Returns a batch of sample prompts for the Image model.
-
-Variables:
-    samples (list): List of sample prompts for the Image model.
-    styles (dict): Dictionary of prompt styles for the Image model.
-    impressionism (str): styles["impressionism"]
-    expressionism (str): styles["expressionism"]
-    romanticism (str): styles["romanticism"]
-    surrealism (str): styles["surrealism"]
-    watercolor (str): styles["watercolor"]
-    futuristic (str): styles["futuristic"]
-    minimalist (str): styles["minimalist"]
-    modernism (str): styles["modernism"]
-    steampunk (str): styles["steampunk"]
-    realistic (str): styles["realistic"]
-    graffiti (str): styles["graffiti"]
-    abstract (str): styles["abstract"]
-    vintage (str): styles["vintage"]
-    cartoon (str): styles["cartoon"]
-    cubism (str): styles["cubism"]
-    gothic (str): styles["gothic"]
-    anime (str): styles["anime"]
-    logo (str): styles["logo"]
-'''
-
 import random
-from .. import abc
 
-samples: list = abc.samples
 styles: dict = {
     "impressionism": "impressionism, light, color, brushstrokes, plein air",
     "expressionism": "expressionism, emotion, distortion, psychological",
@@ -74,16 +41,5 @@ anime: str = styles.get("anime")
 logo: str = styles.get("logo")
 
 
-@abc.resource(deprecated=False)
-def sample_style(*args, **kwargs) -> str:
-    return styles.get(random.choice(list(styles.keys())))
-
-
-@abc.resource(deprecated=False)
 def sample(*args, **kwargs) -> str:
-    return f"prompt: {random.choice(samples)}, details: ({sample_style()})"
-
-
-@abc.resource(deprecated=False)
-def sample_batch(size: int, *args, **kwargs) -> list:
-    return [sample() for iter in range(size)]
+    return styles.get(random.choice(list(styles.keys())))

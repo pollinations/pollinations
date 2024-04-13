@@ -180,6 +180,7 @@ const preMiddleware = async function (req, res) {
   }
 
   if (memCache[memCacheKey]) {
+    res.writeHead(200,{ 'Content-Type': 'image/jpeg'})
     res.write(await memCache[memCacheKey]);
     res.end();
     imageReturnTimestamps.push(Date.now());
@@ -188,6 +189,7 @@ const preMiddleware = async function (req, res) {
 
   if (await isImageCached(originalPrompt, safeParams)) {
     const cachedImage = await getCachedImage(originalPrompt, safeParams);
+    res.writeHead(200, { 'Content-Type': 'image/jpeg'})
     res.write(cachedImage);
     res.end();
     console.error("image cached, returning from cache", originalPrompt, safeParams);
@@ -233,6 +235,7 @@ const queuedImageGen =  queuePerIp(async ({req, res, timingInfo, memCacheKey, or
           reject(error);
           return;
         }
+        res.writeHead(200, { 'Content-Type': 'image/jpeg'})
         res.write(bufferAndMaturity.buffer);
         resolve(bufferAndMaturity.buffer);
         res.end();

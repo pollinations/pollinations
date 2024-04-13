@@ -13,23 +13,22 @@ Pollinations are an effort to make generative art more approachable.
 
 [Instructions](docs/instructions.md) on using Pollinations.AI.
 <details>
-  <summary>🐍 Python Package</summary>
+  <summary><h2>🐍 Python Package</h2></summary>
 
 ```python
 # Usage Example
 
-import pollinations.ai as ai
+import pollinations as ai
 
-model: object = ai.ImageModel()
-# model.set_filter(ai.BANNED_WORDS)
-# model.set_filter([])
+model: object = ai.Model()
 
 image: object = model.generate(
     prompt=f'Golden retriever puppy playing in the rain {ai.realistic}',
-    model=model.Turbo,
+    model=ai.turbo,
     height=512,
     seed=57184
-).save('image-output.jpg')
+)
+image.save('image-output.jpg')
 
 print(image.url)
 ```
@@ -118,4 +117,3 @@ print(image.url)
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
 - Discord: https://discord.gg/azGuNpvPu8
-

@@ -1,205 +1,255 @@
-import styled from '@emotion/styled';
-import { useEffect, useState, useRef } from 'react';
-import { isMature } from '../../data/mature';
-import Button from '@material-ui/core/Button';
-import { Input, Tooltip, Typography } from '@material-ui/core';
+import { useState, useEffect, useCallback } from 'react';
+import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize } from '@material-ui/core';
+import InfoIcon from '@material-ui/icons/Info';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import { debounce } from 'lodash';
+import { CodeExamples } from './CodeExamples';
+import { useFeedLoader } from './useFeedLoader';
+import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
+import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
+import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
+import DiscordIMG from '../../assets/icons/discord_logo1.svg' // Corrected the path to the discord image
+import debug from 'debug';
+import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
+
+const log = debug("GenerativeImageFeed")
 
 export function GenerativeImageFeed() {
-  const [image, setImage] = useState(null);
-  const [nextPrompt, setNextPrompt] = useState("");
-  const [prompt, setPrompt] = useState("");
   const [serverLoad, setServerLoad] = useState(0);
-  // const [imageQueue, setImageQueue] = useState([]);
-  const loadedImages = useRef([]);
-  const queuedImages = useRef([]);
-  // console.log("Image queue:", imageQueue);
+  const [tabValue, setTabValue] = useState(0);
+  const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
+  const { updateImage, isWaiting, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
+  const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
 
-  // estimate number generated so far 1296000 + 1 image per 10 seconds since 2023-06-09
-  // define 2023-06-09
-  const imagesGeneratedCalculated = estimateGeneratedImages();
-  const [imagesGenerated, setImagesGenerated] = useState(imagesGeneratedCalculated);
-
-  useEffect(() => {
-    const getEventSource = () => {
-      const imageFeedSource = new EventSource("https://image.pollinations.ai/feed");
-      imageFeedSource.onmessage = evt => {
-        const data = JSON.parse(evt.data);
-        setServerLoad(data["concurrentRequests"]);
-        if (data["nsfw"]) {
-          console.log("Skipping NSFW content:", data["nsfw"], data)
-          return;
-        }
-
-        if (data["imageURL"]) {
-          setImagesGenerated(no => no + 1);
-          const matureWord = isMature(data["prompt"]) && false;
-          if (matureWord) {
-            console.log("Skipping mature word:", matureWord, data["prompt"]);
-            return;
-          }
-          queuedImages.current.push(data);
-        }
-      };
-      return imageFeedSource;
+  const handleParamChange = (param, value) => {
+    const newImage = {
+      ...image,
+      [param]: value,
     };
+    const imageURL = getImageURL(newImage);
 
-    let eventSource = getEventSource();
-
-    // on error close and reopen
-    eventSource.onerror = async () => {
-      await new Promise(r => setTimeout(r, 1000));
-      console.log("Event source error. Closing and re-opening.");
-      eventSource.close();
-      eventSource = getEventSource();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [setServerLoad]);
-
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (loadedImages.current.length > 0) {
-        const nextImage = loadedImages.current.shift();
-        setImage(nextImage);
-        setNextPrompt(nextImage["originalPrompt"]);
-      }
-
-      if (loadedImages.current.length < 5) {
-        if (queuedImages.current.length > 0) {
-          const data = queuedImages.current.shift();
-          const img = new Image();
-          img.src = data["imageURL"];
-          img.onload = () => {
-            loadedImages.current.push(data);
-          };
-        };
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [setImage, setNextPrompt]);
-
-  const formatImagesGenerated = (num) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    updateImage({
+      ...newImage,
+      imageURL
+    });
   };
 
-  // image clickable on the webpage.
+
+  const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
+
+  // const latestImage = image.imageURL ? image : slideshowImage; 
+
+  // useEffect(() => {
+  //   log("latestImage", latestImage);
+  // }, latestImage);
+  
   return (
-  <div>
-    <br /><br /><br /><br /><br />
-    <GenerativeImageURLContainer>
-      <ImageURLHeading>Image Feed</ImageURLHeading>
-      {image && (
-        <div style={{ wordBreak: "break-all" }}>
-          <a href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-            <ImageStyle
-              src={image["imageURL"]}
-              alt="generative_image"
-              onLoad={() => {
-                setPrompt(shorten(nextPrompt));
-                console.log("Loaded image. Setting prompt to: ", nextPrompt);
-              }}
-            />
-          </a>
-          <br />
-          Prompt: <b>{prompt}</b>
-        </div>
+    <GenerativeImageURLContainer style={{ paddingBottom: window.innerWidth <= parseInt(MOBILE_BREAKPOINT) ? '3em' : '0' }}>
+      <Grid item xs={12}>
+        <ImageURLHeading>Image Feed</ImageURLHeading>
+      </Grid>
+      {!image["imageURL"] ? (
+        <Grid container justify="center" alignItems="center" style={{ marginBottom: "8em" }}>
+          <CircularProgress color={'inherit'} style={{ color: Colors.offwhite }} />
+        </Grid>
+      ) : (
+        <Grid container spacing={4}>
+          <Grid item xs={gridItemSize}>
+            <ServerLoadAndGenerationInfo {...{ serverLoad, imagesGenerated, image }} />
+            <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
+              {image ? (
+                <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
+                  <ImageStyle
+                    src={image["imageURL"]}
+                    alt="generative_image"
+                  />
+                </Link>
+              ) : (
+                <Typography variant="h6" color="textSecondary">Loading image...</Typography>
+              )}
+            </ImageContainer>
+          </Grid>
+          <Grid item xs={gridItemSize} >
+            <Box display="flex" justifyContent="center" >
+              <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
+                <Button
+                  onClick={() => setTabValue(0)}
+                  variant={tabValue === 0 ? "contained" : "text"}
+                  color={tabValue === 0 ? Colors.offblack : Colors.lime}
+                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  onClick={() => setTabValue(1)}
+                  variant={tabValue === 1 ? "contained" : "text"}
+                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                >
+                  Integrate
+                </Button>
+              </ButtonGroup>
+            </Box>
+            <Box>
+              {tabValue === 0 && <ImageData {...{ image, handleParamChange, isLoading }} />}
+              {tabValue === 1 && <CodeExamples {...image} />}
+              {(isWaiting || isLoading) && (
+                <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
+                  <CircularProgress color={'inherit'} style={{ color: isWaiting ? Colors.white : Colors.lime }} />
+                  <Typography style={{ color: isWaiting ? Colors.white : Colors.lime, marginTop: '10px' }}>
+                    {isWaiting ? `Waiting ${isWaiting}...` : 'Generating...'}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Grid>
+        </Grid>
       )}
-      <ServerLoadDisplay concurrentRequests={serverLoad} />
-      Generated #: <Typography variant="h6" component="h4">{formatImagesGenerated(imagesGenerated)}</Typography><br />
-      <br />
-      Create: <b style={{ whiteSpace: "nowrap" }}><a href={image?.imageURL}>https://pollinations.ai/p/[prompt]</a><ParamsButton /> </b> <br />
-      {/* links */}
-      Create with ChatGPT: <b><a href="https://chat.openai.com/share/5b94d100-52f8-4142-ab94-8fa2e36d0a63">ChatGPT</a>, <a href="https://www.reddit.com/r/ChatGPT/comments/zktygd/did_you_know_you_can_get_chatgpt_to_generate/">Reddit</a>, <a href="https://youtu.be/gRP3V2sz-M8?t=55">Youtube</a></b>
-      {/* input field */}
-      <br />
-      <br />
-      <PromptInput />
     </GenerativeImageURLContainer>
-  </div>
-);}
-
-
-const PromptInput = () => {
-  const [prompt, setPrompt] = useState("");
-
-  return <div>
-    <Input type="text" value={prompt} onChange={evt => setPrompt(evt.target.value)} style={{ width: "100%" }} placeholder='Or type your prompt here' />
-    {/* right aligned button */}
-    <div style={{ textAlign: "right" }}>
-      <Button onClick={() => window.open(`https://pollinations.ai/prompt/${prompt}`)}>Create</Button>
-    </div>
-  </div>;
-};
-
-const shorten = (str) => str.length > 200 ? str.slice(0, 200) + "..." : str;
-function ParamsButton() {
-  const [showParams, setShowParams] = useState(false);
-  return <Tooltip title="?width=[width]&height=[height]&seed=[seed]"><Button size="small" style={{ minWidth: "16px", display: "inline-block", fontSize: "90%" }} onClick={() => setShowParams(!showParams)}><span style={{ textTransform: "none" }}> {showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button></Tooltip>;
-  // <Button size="small"  style={{ minWidth: "16px", display: "inline-block", fontSize:"90%"}} onClick={() => setShowParams(!showParams)}><span style={{textTransform:"none"}}> { showParams ? "?width=[width]&height=[height]&seed=[seed]" : "+"}</span></Button>;
+  );
 }
 
-function estimateGeneratedImages() {
-  const launchDate = 1701718083442;
-  const now = Date.now();
-  const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 3);
+function getImageURL(newImage) {
+  let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`;
+  let queryParams = [];
+  if (newImage.width && newImage.width !== 1024 && newImage.width !== "1024") queryParams.push(`width=${newImage.width}`);
+  if (newImage.height && newImage.height !== 1024 && newImage.height !== "1024") queryParams.push(`height=${newImage.height}`);
+  if (newImage.seed && newImage.seed !== 42 && newImage.seed !== "42") queryParams.push(`seed=${newImage.seed}`);
+  if (newImage.nofeed) queryParams.push(`nofeed=${newImage.nofeed}`);
+  if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
 
-  const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
-  return imagesGeneratedCalculated;
-}
-// create a small ascii visualization of server load
-// very high is 5 concurrent requests
-// use some UTF-8 characters to make it look nicer
-function ServerLoadDisplay({ concurrentRequests }) {
-  concurrentRequests = Math.round(concurrentRequests/2);
-  const max = 5;
-  const load = Math.min(max, concurrentRequests);
-  const loadDisplay = "▁▃▅▇▉".slice(1, load + 1);
-
-  return <div>Server Load: {loadDisplay}</div>;
-}
-const ImageStyle = styled.img`
-  max-width: 100%;
-  max-height: 400px;
-`;
-
-// responsive version that makes the container occupy the full width of the screen if on mobile
-const GenerativeImageURLContainer = styled.div`
-  background-color: rgba(0,0,0,0.7);
-  color: white;
-
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 1em;
-  width:80%;
-  max-width: 550px;
-  @media (max-width: 600px) {
-    width: 100%;
-    left: 0;
-    transform: translate(0, -50%);
+  if (queryParams.length > 0) {
+    imageURL += '?' + queryParams.join('&');
   }
-`;
 
-const ImageURLHeading = styled.h3`
-margin-top: 0px; 
-margin-bottom: 0px;
-`;
+  return imageURL;
+}
 
-const PlayerWrapper = styled.div`
-width: 100%;
-min-height: 100%;
-min-height: 90vh;
-top: 0;
-bottom: 0;
-left: 0;
-right:0;
-// position: absolute;
-z-index: -1;
 
-`;
+
+function ImageData({ image, handleParamChange, isLoading }) {
+
+
+  const { prompt, width, height, seed, imageURL, nofeed, nologo } = image;
+
+  if (!imageURL) {
+    return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
+  }
+
+  return (
+    <>
+      <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px', backgroundColor: "transparent" }}>
+        <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
+          <TableBody height='450px'  >
+            <TableRow key="prompt" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>prompt</TableCell>
+              <TableCell align="right" style={{ borderBottom: 'none' }}>
+                <TextareaAutosize
+                  minRows={3}
+                  style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
+                  value={prompt}
+                  onChange={(e) => handleParamChange('prompt', e.target.value)}
+                  disabled={isLoading}
+                />
+              </TableCell>
+            </TableRow>
+            <TableRow key="width" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" style={{ borderBottom: 'none' }} component="th" scope="row">width</TableCell>
+              <TableCell style={{ borderBottom: 'none' }}>
+                <Slider
+                  value={width || 1024}
+                  onChange={(e, newValue) => handleParamChange('width', newValue)}
+                  aria-labelledby="width-slider"
+                  valueLabelDisplay="on"
+                  step={16}
+                  marks
+                  min={16}
+                  max={2048}
+                  style={{ marginTop: "30px", color: Colors.white}}
+                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
+                  disabled={isLoading}
+              />
+              </TableCell>
+            </TableRow>
+            <TableRow key="height" style={{ borderBottom: 'none' }}>
+              <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>height</TableCell>
+              <TableCell align="left" style={{ borderBottom: 'none' }}>
+                <Slider
+                  value={height || 1024}
+                  onChange={(e, newValue) => handleParamChange('height', newValue)}
+                  aria-labelledby="height-slider"
+                  valueLabelDisplay="on"
+                  step={16}
+                  marks
+                  min={16}
+                  max={2048}
+                  style={{ marginTop: "30px", color: Colors.white }}
+                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
+                  disabled={isLoading}
+            />
+              </TableCell>
+            </TableRow>
+            <TableRow key="seed" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>seed</TableCell>
+              <TableCell align="left" style={{ borderBottom: 'none' }}>
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  value={seed}
+                  onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
+                  onFocus={() => handleParamChange('seed', seed)}
+                  type="number"
+                  style={{ width: "25%" }}
+                  InputProps={{
+                    style: { color: Colors.white },
+                  }}
+                  disabled={isLoading}
+                />
+              </TableCell>
+            </TableRow>
+            <TableRow key="nofeed" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
+                private
+                <Tooltip title="Activating 'private' prevents images from appearing in the feed."  style={{ color: Colors.lime}}>
+                  <IconButton size="small">
+                    <InfoIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
+              <TableCell align="left" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
+                <Checkbox
+                  checked={nofeed}
+                  onChange={(e) => handleParamChange('nofeed', e.target.checked)}
+                  disabled={isLoading}
+                />
+              </TableCell>
+            </TableRow>
+            <TableRow key="nologo" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
+                nologo
+                <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/8HqSRhJVxn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
+                  <IconButton size="small">
+                    <InfoIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </TableCell>
+              <TableCell align="left" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
+                <TextField
+                  type="password"
+                  variant="outlined"
+                  onChange={(e) => handleParamChange('nologo', e.target.value)}
+                  style={{ width: "25%" }}
+                  value={nologo ? nologo : ""}
+                  InputProps={{
+                    style: { color: Colors.white },
+                  }}
+                  disabled={isLoading}
+                />
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+}
+

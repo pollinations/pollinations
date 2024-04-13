@@ -73,8 +73,8 @@ error {
   width: 100%;
 }
 .MuiBackdrop-root{
-  background-color: rgba(0,0,0,0.1) !important;
+  background-color: rgba(0, 0, 0, 0) !important;
 }
 .MuiPaper-root{
-  background-color: rgba(0,0,0,0.7) !important;
+  background-color: rgba(0,0,0,0) !important;
 }

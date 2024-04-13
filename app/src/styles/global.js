@@ -16,6 +16,7 @@ export const Colors = {
   wine: '#670C6B',
   magenta: '#C93CD0',
   gray4: '#BDBDBD',
+  white: '#FFFFFF'
 };
 
 export const Fonts = {
@@ -47,7 +48,7 @@ p{
 `
 export const SmallContainer = styled.div`
 min-width: 20%;
-max-width: 600px;
+
 margin: auto;
 margin-bottom: 7em;
 padding: ${GlobalSidePadding};

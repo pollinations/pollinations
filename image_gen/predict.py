@@ -236,7 +236,7 @@ class Predictor:
                             prompt=chunked_prompts[0],
                             num_inference_steps=n_steps,
                             negative_prompt=negative_prompt,
-                            guidance_scale=2.0,
+                            guidance_scale=3.5,
                             width=width,
                             height=height,
                             # negative_prompt=None

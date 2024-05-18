@@ -129,7 +129,7 @@ class Predictor:
 
     def _load_streamdiffusion_model(
         self,
-        model_id_or_path: str = "lykon/dreamshaper-xl-lightning", #RunDiffusion/Juggernaut-XL-Lightning
+        model_id_or_path: str = "/home/ubuntu/automatic/models/Stable-diffusion/boltning_fp16.safetensors", #RunDiffusion/Juggernaut-XL-Lightning
         lora_dict: Optional[Dict[str, float]] = None,
         width: int = 768,
         height: int = 768,

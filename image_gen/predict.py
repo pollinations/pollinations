@@ -53,33 +53,6 @@ tinyAutoencoder = AutoencoderTiny.from_pretrained("madebyollin/taesdxl", torch_d
 tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-small")
 pimper_model = T5ForConditionalGeneration.from_pretrained("roborovski/superprompt-v1", device_map="auto")
 
-
-def get_aesthetic_model(clip_model="vit_l_14"):
-    """load the aethetic model"""
-    home = expanduser("~")
-    cache_folder = home + "/.cache/emb_reader"
-    path_to_model = cache_folder + "/sa_0_4_"+clip_model+"_linear.pth"
-    if not os.path.exists(path_to_model):
-        os.makedirs(cache_folder, exist_ok=True)
-        url_model = (
-            "https://github.com/LAION-AI/aesthetic-predictor/blob/main/sa_0_4_"+clip_model+"_linear.pth?raw=true"
-        )
-        urlretrieve(url_model, path_to_model)
-    if clip_model == "vit_l_14":
-        m = nn.Linear(768, 1)
-    elif clip_model == "vit_b_32":
-        m = nn.Linear(512, 1)
-    else:
-        raise ValueError()
-    s = torch.load(path_to_model)
-    m.load_state_dict(s)
-    m.eval()
-    return m.half().to("cuda")
- 
-
-MODEL_NAME = "PixArt-alpha/PixArt-LCM-XL-2-1024-MS"
-VAE_NAME = "openai/consistency-decoder"
-
 # Flask App Initialization
 app = Flask(__name__)
 
@@ -91,41 +64,11 @@ lock = threading.Lock()
 
 class Predictor:
     def __init__(self):
-        # self.instaflow_pipe = self._load_instaflow_model()
-        # self.turbo_pipe = self._load_turbo_model()
-        # self.realisticvisions_pipe = self._load_realvisions_model()
-        # self.cutycat_pipe = self.load_cutycat_model()
-    
+
         self.streamdiffusion = self._load_streamdiffusion_model()#model_id_or_path="./models/haveall.safetensors")
-        # self.streamdeliberate = self._load_streamdiffusion_model(model_id_or_path="./models/deliberate_v5_sfw.safetensors")
-        # self.dreamshaper_pipe = self._load_dreamshaper_model()
-        # self.juggernaut_pipe = self._load_streamdiffusion_model(model_id_or_path="./models/juggernautreborn.safetensors")
-        # # self.pixart_pipe = self._load_pixart()
-        # dreamshaper_pipes = self._load_dreamshaper_model()
-        # self.dreamshaper_pipe = dreamshaper_pipes[0]
-        # self.formulaxl_pipe = self.load_formulaxl_model()
-        # self.playground_pipe = self._load_playground_model()
-        # self.dpo_pipe = self.load_dpo_model()
-        # self.dalle3xl_pipe = self.load_dalle3xl_model()
-        # # self.dreamshaper_img2img_pipe = dreamshaper_pipes[1]
         print("CUDA version:", torch.version.cuda)
         print("PyTorch version:", torch.__version__)
 
-
-    def load_dalle3xl_model(self):
-        pipeline = DiffusionPipeline.from_pretrained("stablediffusionapi/juggernaut-xl-v5")
-        pipeline.load_lora_weights("openskyml/dalle-3-xl")
-        pipeline.enable_model_cpu_offload()
-
-        pipeline.vae = tinyAutoencoder
-        return pipeline
-
-    def load_cutycat_model(self):
-        pipeline = DiffusionPipeline.from_single_file("models/cutycat.pth")
-        pipeline.enable_model_cpu_offload()
-
-        pipeline.vae = tinyAutoencoder
-        return pipeline
 
     def _load_streamdiffusion_model(
         self,
@@ -194,30 +137,11 @@ class Predictor:
 
 
         # make all prompts maximum 250 characters
-        prompts = [prompt[:250] for prompt in prompts]
+        # prompts = [prompt[:250] for prompt in prompts]
         max_batch_size = 1
-        if model == "pixart":
-            model = "realvis"
-            # replace all non alpha numeric characters from prompts with spaces
-            # prompts = [re.sub(r'([^\s\w]|_)+', ' ', prompt) for prompt in prompts]
-        # if model != "deliberate" and model != "dreamshaper" and model != "juggernaut":
+
         model = "turbo"
 
-        # if model == "formulaxl":
-        #     max_batch_size =  3
-        # if model == "playground":
-        #     max_batch_size =  3
-        # if model == "dpo":
-        #     max_batch_size =  3
-        # if model == "dalle3xl":
-        #     max_batch_size =  3
-        # if model == "realvis":
-        #     max_batch_size =  1
-
-        # if model != "dreamshaper" and model != "juggernaut" and model != "deliberate":
-        #     model="turbo"
-        
-        # Process in chunks of 8
 
         print("params:", model, width, height, steps, prompts, refine, negative_prompt)
         predict_duration = 0
@@ -356,7 +280,7 @@ def predict_endpoint():
 import clip
 device = "cuda" if torch.cuda.is_available() else "cpu"
 clip_model, _ = clip.load("ViT-L/14", device=device)
-aesthetic_model = get_aesthetic_model()
+# aesthetic_model = get_aesthetic_model()
 
 @app.route('/embeddings', methods=['POST'])
 def embeddings_endpoint():
@@ -385,35 +309,6 @@ def embeddings_endpoint():
         "embeddings": embeddings.cpu().numpy().tolist(),
         "aesthetics_scores": aesthetics_scores.cpu().numpy().tolist()
     })
-
-# import uform
-
-# model = uform.get_model('unum-cloud/uform-vl-english') # Just English
-
-# @app.route('/embeddings', methods=['POST'])
-# def embeddings_endpoint():
-#     data = request.json
-
-#     prompts = data["prompts"]
-
-
-#     embeddings = []
-#     start_time = time.time()
-#     print("got prompts", prompts)
-#     with torch.no_grad():
-#         for prompt in prompts:
-#             text_data = model.preprocess_text(prompt)
-#             text_embedding = model.encode_text(text_data)
-#             # remove first dimension
-#             text_embedding = text_embedding[0]
-#             # print("text_embedding:", text_embedding.shape)
-#             embeddings.append(text_embedding.cpu().numpy().tolist())
-#     end_time = time.time()
-#     # print("embeddings:", embeddings)
-#     # embeddings = embeddings.cpu().numpy().tolist()
-#     print(f"Time to calculate embeddings: {(end_time - start_time)*1000} milliseconds")
-#     print("Returning embeddings for one request.", len(embeddings))
-#     return jsonify(embeddings)
 
 
 def prompt_pimping(input_text):

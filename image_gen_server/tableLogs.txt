@@ -1,11 +1,10 @@
 Bucket Key,Jobs,Requests,Returns
-playground-512-768,1,9,8
-Realvis-500-900,3,3,0
-3Dcharacter-600-600,1,1,0
-turbo-1024-768,2,26,24
-turbo-768-1365,1,10,9
-turbo-960-720,1,4,3
-turbo-512-512,1,2,1
-turbo-1024-1024,1,202,181
+dreamshaper-800-800,2,2,0
+turbo-1024-1024,12,255,240
+turbo-1024-768,4,15,11
+turbo-886-1182,1,5,4
+turbo-1448-724,1,1,0
+turbo-893-1174,1,4,3
+turbo-1365-768,2,8,6
 Requests,Returned,Q-Size,Q-Pending,Q-Utilization
-40,74,0,3,N/I%
+40,42,0,1,N/I%

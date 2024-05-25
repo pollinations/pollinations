@@ -35,14 +35,16 @@ const queuePerIp = (handler) => {
   return async (params) => {
     const {req,res} = params;
     const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
-    // if (urlParams.get('noqueue') === 'pollinations') {
-    //   await handler(params);
-    //   return;
-    // }
-
     const ip = getIp(req);
+    const isBot =  ip === BOT_IP;
+    if (urlParams.get('referer') === 'discordbot' || isBot) {
+      await handler(params);
+      return;
+    }
+
+
     if (!ipQueue[ip]) {
-      ipQueue[ip] = new PQueue({ concurrency: ip === BOT_IP ? 999999 : 1 });
+      ipQueue[ip] = new PQueue({ concurrency: isBot ? 999999 : 1 });
       rickrollCount[ip] = 0; // Initialize rickroll count for this IP
       rickrollData[ip] = 0; // Initialize rickroll data for this IP
     } else {
@@ -63,7 +65,9 @@ const queuePerIp = (handler) => {
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
     await ipQueue[ip].add(async () => {
       console.log("[queue] sleeping for", queueSize * 1000, "ms");
-      await awaitSleep(Math.round(queueSize * countJobs(true)*2000)); // Delay increases by 1 second for each request in the queue
+      if (!isBot) {
+        await awaitSleep(Math.round(queueSize * countJobs(true)*2000)); // Delay increases by 1 second for each request in the queue
+      }
       console.log("[queue]starting handler for ip", ip)
       await handler(params);
       console.log("[queue]done handler for ip", ip)

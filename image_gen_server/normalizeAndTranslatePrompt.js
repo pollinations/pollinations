@@ -1,7 +1,13 @@
 import urldecode from 'urldecode';
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 
+const memoizedPrompts = new Map();
+
 export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance = false) => {
+  if (memoizedPrompts.has(promptRaw)) {
+    return memoizedPrompts.get(promptRaw);
+  }
+
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
   // first 200 characters are used for the prompt
   promptRaw = urldecode(promptRaw);
@@ -39,7 +45,7 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, en
 
   const finalPrompt = prompt || promptRaw;
 
-
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
+  memoizedPrompts.set(promptRaw, finalPrompt);
   return finalPrompt;
 };

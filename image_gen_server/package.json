@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@google-cloud/translate": "^7.2.1",
+    "@gradio/client": "^0.19.4",
     "@vitalets/google-translate-api": "^9.2.0",
     "async-lock": "^1.4.0",
     "await-sleep": "^0.0.1",

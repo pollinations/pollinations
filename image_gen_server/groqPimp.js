@@ -1,0 +1,109 @@
+"use strict";
+// dotenv
+import dotenv from "dotenv";
+dotenv.config();
+
+import Groq from "groq-sdk";
+
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
+});
+
+/**
+ * Main function to get and print chat completion from Groq.
+ */
+async function main() {
+    const chatCompletion = await memoizedPimpPrompt("dolphin octopus retro telephone");
+    // Print the completion returned by the LLM.
+    process.stdout.write(chatCompletion);
+}
+
+/**
+ * Function to get chat completion from Groq.
+ * Tries calling the LLM up to 3 times if it fails.
+ * @param {string} prompt - The input prompt for the LLM.
+ * @returns {Promise<string>} The chat completion response.
+ */
+ async function pimpPromptRaw(prompt) {
+    const maxRetries = 3;
+    let attempt = 0;
+    let response = "";
+
+    while (attempt < maxRetries) {
+        try {
+            response = (await groq.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: `Instruction Set for Image Prompt Diversification:
+
+                        Receive the original image prompt from the user.
+                        
+                        Analyze the prompt to identify the core elements, such as the main subject, setting, colors, lighting, and overall mood.
+                        
+                        Determine if any specific languages or cultures are particularly relevant to the subject matter of the image prompt. Consider the popularity of languages online, prioritizing more widely used words.
+                        Generate one distinctive new prompt that describes the same image from different perspectives while describing the same actual image. 
+                        
+                        Ensure that the prompts are diverse and avoid overfitting by following these guidelines:
+                        
+                        maintain a clear and vivid description of the image, including details about the main subject, setting, colours, lighting, and overall mood. 
+                        
+                        However, express these elements using varied vocabulary and sentence structure. Don't reuse adjectives, nouns, verbs, or even
+                        
+                        If a visual style or artist reference is present in the prompt, expand the prompt to contain many more details about the style or artists.
+                        
+                        If no visual style is given, decide on a typical style that would be used in that type of image.
+
+                        Example Input Prompt:
+                        Image in the style of cel-shaded Japanese anime, featuring a man sitting at the side of a pool. Fish and eyeballs float around.
+                        
+                        Example (OUTPUT):
+                        A lone figure sits in contemplation beside a pool of warped, kaleidoscopic waters, where fish and disembodied eyes drift aimlessly. The air is thick with the nostalgic haze of scan lines, as if the scene itself has been plucked from a worn, 80s anime tape. 1990. In a surreal, glitch-art dreamscape, a solitary man sits poolside, surrounded by a psychedelic swirl of carp and floating, unblinking portholes of the face. The entire screenshot is bathed in a warm, grainy glow, old Ghibli or other such studios
+                        
+                        ---
+
+                        Respond only with the new prompt like this:
+                        [prompt] - [style / artist / medium / art movement / photo style]                        
+                        `
+                    },
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                model: randomModel()
+            })).choices[0]?.message?.content || "";
+            break; // Exit loop if successful
+        } catch (error) {
+            attempt++;
+            if (attempt >= maxRetries) {
+                console.error(`Failed to get chat completion after ${maxRetries} attempts`);
+                return prompt;
+            }
+        }
+    }
+
+    return prompt + "\n\n" + response
+}
+
+// Memoize the pimpPrompt function
+const memoize = (fn) => {
+    const cache = new Map();
+    return async (arg) => {
+        if (cache.has(arg)) {
+            return cache.get(arg);
+        }
+        const result = await fn(arg);
+        cache.set(arg, result);
+        return result;
+    };
+};
+
+export const pimpPrompt = memoize(pimpPromptRaw);
+
+// main()
+
+const randomModel = () => {
+    const models = ["gemma-7b-it", "llama3-8b-8192", "mixtral-8x7b-32768"];
+    return models[Math.floor(Math.random() * models.length)];
+}

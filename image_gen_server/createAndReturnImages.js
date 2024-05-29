@@ -7,7 +7,8 @@ import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 
-const SERVER_URL = 'http://155.248.212.250:5000/generate';
+const SERVER_URL = 'http://localhost:5002/generate';
+const PIXART_SERVER_URL = "http://155.248.212.250:5001/generate_pixart"
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
@@ -51,7 +52,8 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        response = await fetch(SERVER_URL, {
+        const chosenServer = safeParams.model === "pixart" ? PIXART_SERVER_URL : SERVER_URL;
+        response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,7 +182,8 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
 
-  model = "turbo";
+  if (model !== "pixart" && model !== "turbo")
+    model = "turbo";
   return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
 };
 
@@ -194,7 +197,7 @@ export async function createAndReturnImageCached({ jobs, safeParams, concurrentR
   const buffers = await callWebUI({ jobs, safeParams, concurrentRequests });
 
   const buffersWithLegends = await Promise.all(buffers.map(async ({ buffer, has_nsfw_concept: isMature, concept }) => {
-    const isChild = Object.values(concept?.special_scores)?.some(score => score > -0.05);
+    const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
     console.error("isMature", isMature, "concepts", isChild);
     if (isChild) isMature = true;
 

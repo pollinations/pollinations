@@ -1,9 +1,11 @@
 import urldecode from 'urldecode';
 import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
+import { pimpPrompt } from './groqPimp.js';
 
 const memoizedPrompts = new Map();
 
 export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance = false) => {
+  // enhance = true
   if (memoizedPrompts.has(promptRaw)) {
     return memoizedPrompts.get(promptRaw);
   }
@@ -17,20 +19,11 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, en
     promptRaw = "" + promptRaw;
   }
 
-  // if prompt contains "A:" we want to take the part after "A:"
-  if (promptRaw.includes("A:")) {
-    promptRaw = promptRaw.split("A:")[1];
-  }
 
-  promptRaw = promptRaw.slice(0, 250);
+  // promptRaw = promptRaw.slice(0, 250);
   // 
   promptRaw = sanitizeString(promptRaw);
 
-  if (promptRaw.includes("content:")) {
-    // promptRaw = promptRaw.replace("content:", "");
-    console.log("content: detected in prompt, returning null");
-    return null;
-  }
   let prompt = promptRaw;
 
   // check from the request headers if the user most likely speaks english (value starts with en)
@@ -43,9 +36,14 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, en
     console.log(`Translation time: ${endTime - startTime}ms`);
   }
 
-  const finalPrompt = prompt || promptRaw;
+  let finalPrompt = prompt || promptRaw;
+
+  if (enhance && finalPrompt.length < 200) {
+    finalPrompt = await pimpPrompt(finalPrompt);
+  }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
   memoizedPrompts.set(promptRaw, finalPrompt);
+
   return finalPrompt;
 };

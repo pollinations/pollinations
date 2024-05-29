@@ -7,7 +7,7 @@ import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 
-const SERVER_URL = 'http://localhost:5002/generate';
+const SERVER_URL = 'http://155.248.212.250:5002/generate';
 const PIXART_SERVER_URL = "http://155.248.212.250:5001/generate_pixart"
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
@@ -63,8 +63,9 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
         if (response.ok) break; // If response is ok, break out of the loop
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
-        if (attempt < 5) await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        if (attempt < 5) await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
       }
+
     }
 
     const fetch_end_time = Date.now();

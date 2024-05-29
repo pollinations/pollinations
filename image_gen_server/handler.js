@@ -27,7 +27,15 @@ export const hello = async (pathname) => {
   
   const [promptRaw, seed] = promptAndSeed.split("/");
 
-  const prompt = urldecode(promptRaw).replaceAll("_", " ");
+  let prompt = promptRaw;
+
+  try {
+    prompt = urldecode(promptRaw);
+  } catch (e) {
+    console.error("Error decoding prompt: ", e);
+  }
+
+  prompt = prompt.replaceAll("_", " ");
 
   const url = await runModel({
     prompts:prompt, 

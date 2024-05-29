@@ -65,9 +65,10 @@ const queuePerIp = (handler) => {
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
     await ipQueue[ip].add(async () => {
       console.log("[queue] sleeping for", queueSize * 1000, "ms");
-      if (!isBot) {
-        await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
-      }
+      // if (!isBot) {
+      //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
+      // }
+      awaitSleep(1000)
       console.log("[queue] starting handler for IP", ip);
       const handlerStartTime = Date.now();
       await handler(params);

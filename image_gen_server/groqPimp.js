@@ -13,7 +13,7 @@ const groq = new Groq({
  * Main function to get and print chat completion from Groq.
  */
 async function main() {
-    const chatCompletion = await memoizedPimpPrompt("dolphin octopus retro telephone");
+    const chatCompletion = await memoizedPimpPrompt("dolphin octopus retro telephone", 42);
     // Print the completion returned by the LLM.
     process.stdout.write(chatCompletion);
 }
@@ -22,9 +22,10 @@ async function main() {
  * Function to get chat completion from Groq.
  * Tries calling the LLM up to 3 times if it fails.
  * @param {string} prompt - The input prompt for the LLM.
+ * @param {number} seed - The seed value for the random model selection.
  * @returns {Promise<string>} The chat completion response.
  */
- async function pimpPromptRaw(prompt) {
+async function pimpPromptRaw(prompt, seed) {
     const maxRetries = 3;
     let attempt = 0;
     let response = "";
@@ -68,7 +69,7 @@ async function main() {
                     },
                     {
                         role: "user",
-                        content: prompt
+                        content: "Input prompt: " + prompt
                     }
                 ],
                 model: randomModel()
@@ -83,18 +84,19 @@ async function main() {
         }
     }
 
-    return prompt + "\n\n" + response
+    return response + "\n\n" + prompt;
 }
 
 // Memoize the pimpPrompt function
 const memoize = (fn) => {
     const cache = new Map();
-    return async (arg) => {
-        if (cache.has(arg)) {
-            return cache.get(arg);
+    return async (arg, seed) => {
+        const cacheKey = `${arg}-${seed}`;
+        if (cache.has(cacheKey)) {
+            return cache.get(cacheKey);
         }
-        const result = await fn(arg);
-        cache.set(arg, result);
+        const result = await fn(arg, seed);
+        cache.set(cacheKey, result);
         return result;
     };
 };
@@ -105,5 +107,6 @@ export const pimpPrompt = memoize(pimpPromptRaw);
 
 const randomModel = () => {
     const models = ["gemma-7b-it", "llama3-8b-8192", "mixtral-8x7b-32768"];
-    return models[Math.floor(Math.random() * models.length)];
+    const randomIndex = Math.floor(Math.random() * models.length);
+    return models[randomIndex];
 }

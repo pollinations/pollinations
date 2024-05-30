@@ -18,7 +18,7 @@ from safetensors.torch import load_file
 from huggingface_hub import hf_hub_download
 import sys
 from typing import Literal, Dict, Optional
-from hidiffusion import apply_hidiffusion, remove_hidiffusion
+# from hidiffusion import apply_hidiffusion, remove_hidiffusion
 
 # from sfast.compilers.diffusion_pipeline_compiler import (compile,
 #                                                          CompilationConfig)
@@ -59,6 +59,9 @@ def get_boltning_pipe() -> DiffusionPipeline:
         device=pipe.device, dtype=pipe.dtype
     )
     pipe.scheduler = EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
+    # pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
+
+    # pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
     return pipe
 
 def get_lightning_pipe(steps:int = 4) -> DiffusionPipeline:
@@ -77,6 +80,7 @@ def get_lightning_pipe(steps:int = 4) -> DiffusionPipeline:
     # try DPMSolverSDEScheduler
     pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
     # pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
+    # pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
 
     # # Load resadapter for baseline
     # resadapter_model_name = "resadapter_v2_sdxl"
@@ -108,6 +112,7 @@ def get_hyper_pipe(steps:int = 4) -> DiffusionPipeline:
     # try DPMSolverSDEScheduler
     # pipe.scheduler = DPMSolverSDEScheduler.from_config(pipe.scheduler.config)
     pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config, timestep_spacing="trailing")
+    # pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
 
     # # Load resadapter for baseline
     # resadapter_model_name = "resadapter_v2_sdxl"
@@ -134,26 +139,19 @@ def get_tcd_pipe(steps: int = 4) -> DiffusionPipeline:
     
     pipe.load_lora_weights(tcd_lora_id)
     pipe.fuse_lora()
+    # pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=True)
     
     return pipe
 
 # override_steps = 2
 
 # Initialize the default pipe
-pipe_hyper = get_hyper_pipe(2)
+# pipe_hyper = get_hyper_pipe(2)
 
-pipe_lightning = get_lightning_pipe(4)
+# pipe_lightning = get_lightning_pipe(4)
+
 # apply_hidiffusion(pipe)
-# pipe = get_boltning_pipe()
-
-def apply_deepcache(pipe):
-    from DeepCache import DeepCacheSDHelper
-    helper = DeepCacheSDHelper(pipe=pipe)
-    helper.set_params(
-        cache_interval=3,
-        cache_branch_id=0,
-    )
-    helper.enable()
+pipe_boltning = get_lightning_pipe(4)
 
 # apply_deepcache(pipe)
 
@@ -187,7 +185,7 @@ class Predictor:
 
         print(f"Running batch with model: {model}, width: {width}, height: {height}, number of prompts: {len(prompts)}, steps: {steps}")
 
-        max_batch_size = 1
+        max_batch_size = 16
 
         model = "turbo"
 
@@ -201,16 +199,16 @@ class Predictor:
             with lock:
                 predict_start_time = time.time()
                 try:
-                    batch_results = []
-                    for prompt in chunked_prompts:
-                        # steps = override_steps
-                        if steps < 4:
-                            steps = 2
-                        else:
-                            steps = 4
-                        pipe = pipe_hyper if steps == 2 else pipe_lightning
-                        image = pipe(prompt, num_inference_steps=steps, guidance_scale=0.0, width=width, height=height, eta=0.3).images[0]
-                        batch_results.append(image)
+                    #batch_results = []
+                    # for prompt in chunked_prompts:
+                    # steps = override_steps
+                    if steps < 4:
+                        steps = 2
+                    else:
+                        steps = 4
+                    pipe = pipe_boltning # ipe_hyper if steps == 2 else pipe_lightning
+                    batch_results = pipe(chunked_prompts, num_inference_steps=4, guidance_scale=1.0, width=width, height=height).images
+                    # batch_results.append(image)
 
                 except Exception as e:
                     print("Exception occurred:", e)
@@ -340,4 +338,25 @@ def prompt_pimping(input_text):
 import os
 if __name__ == "__main__":
     print("Starting Flask app...")
-    app.run(debug=False, host="0.0.0.0", port=os.environ.get("PORT", 5555))
+    # app.run(debug=False, host="0.0.0.0", port=os.environ.get("PORT", 5555))
+
+    import time
+
+    # Run predict a few times with different prompts and measure the times
+    test_prompts = ["Authentic shaman making sushi. risohraph", "A futuristic cityscape", "A serene beach at dawn"]
+    for prompt in test_prompts:
+        print(f"Running predict for prompt: {prompt}")
+        start_time = time.time()
+        data = {
+            "model": "turbo",
+            "width": 768,
+            "height": 768,
+            "steps": 4,
+            "prompts": [prompt]*1,
+            "refine": False,
+            "negative_prompt": "ugly, chaotic"
+        }
+        response, predict_duration = predictor.predict_batch(data)
+        end_time = time.time()
+        print(f"Response: {response}")
+        print(f"Time taken for prompt '{prompt}': {(end_time - start_time) * 1000} milliseconds")

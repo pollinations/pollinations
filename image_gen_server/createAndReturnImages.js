@@ -7,7 +7,8 @@ import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 
-const SERVER_URL = 'http://localhost:5555/predict';
+const SERVER_URL = 'http://155.248.212.250:5002/generate';
+const PIXART_SERVER_URL = "http://155.248.212.250:5001/generate_pixart"
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
@@ -22,41 +23,54 @@ let accumulated_fetch_duration = 0;
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
-const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip}) => {
-
-  const steps = Math.min(4,Math.round(Math.max(1, (6 - (concurrentRequests/4)))));
+const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
+  const steps = Math.min(4, Math.round(Math.max(1, (6 - (concurrentRequests / 4)))));
   console.log("concurrent requests", concurrentRequests, "steps", steps, "jobs", jobs.length, "safeParams", safeParams);
 
   let images = [];
   try {
-
     if (!safeParams.nofeed)
-      jobs.forEach(({prompt, ip}) => {
-        sendToFeedListeners({...safeParams, concurrentRequests, prompt, steps, ip });
+      jobs.forEach(({ prompt, ip }) => {
+        sendToFeedListeners({ ...safeParams, concurrentRequests, prompt, steps, ip });
       });
 
-    const prompts = jobs.map(({prompt}) => prompt);
+    const prompts = jobs.map(({ prompt }) => prompt);
 
     const body = {
       "prompts": prompts,
-      "steps": steps,
-      ...safeParams
+      "width": safeParams.width,
+      "height": safeParams.height,
+      "seed": safeParams.seed,
+      "negative_prompt": safeParams.negative_prompt,
     };
 
     console.log("calling prompt", body.prompts);
 
     // Start timing for fetch
     const fetch_start_time = Date.now();
-    // Send the request to the Flask server
-    const response = await fetch(SERVER_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
+
+    // Retry logic for fetch
+    let response;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        const chosenServer = safeParams.model === "pixart" ? PIXART_SERVER_URL : SERVER_URL;
+        response = await fetch(chosenServer, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        if (response.ok) break; // If response is ok, break out of the loop
+      } catch (error) {
+        console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
+        if (attempt < 5) await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
+      }
+
+    }
+
     const fetch_end_time = Date.now();
-    
+
     // Calculate the time spent in fetch
     const fetch_duration = fetch_end_time - fetch_start_time;
     accumulated_fetch_duration += fetch_duration;
@@ -73,31 +87,43 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip}) => {
     }
 
     const jsonResponse = await response.json();
-    console.log("jsonResponse", jsonResponse);
+    // console.log("jsonResponse", jsonResponse);
     // quit the process
     images = jsonResponse;
 
     const exifTool = new ExifTool();
-    const buffers = await Promise.all(images.map(async ({output_path, ...rest}) => {
-      console.log("reading image from path", output_path);
-      let buffer = fs.readFileSync(output_path);
-      // Embed safeParams as metadata
-      await exifTool.write(output_path, {
-        UserComment: JSON.stringify({...safeParams, ...jsonResponse}),
-        Make: "Stable Diffusion"
-      });
-      buffer = fs.readFileSync(output_path); // Re-read to get the version with metadata
-      // delete imagePath
-      setTimeout(() => fs.unlink(output_path, () => null), 10000);
-      return { buffer, ...rest };
+    const buffers = await Promise.all(images.map(async ({ image, ...rest }) => {
+      console.log("decoding base64 image");
+      
+      const buffer = Buffer.from(image, 'base64');
+      try {
+        throw new Error("disabled exif tool");
+        const tempImageFile = tempfile({ extension: 'png' });
+        fs.writeFileSync(tempImageFile, buffer);
+
+        // Start timing for exif
+        const exif_start_time = Date.now();
+        // Embed safeParams as metadata
+        await exifTool.write(tempImageFile, {
+          UserComment: JSON.stringify({ ...safeParams, ...jsonResponse }),
+          Make: "Stable Diffusion"
+        });
+        const exif_end_time = Date.now();
+        console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
+
+        const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
+        fs.unlinkSync(tempImageFile);
+        return { buffer: bufferWithMetadata, ...rest };
+      } catch (e) {
+        console.error(e);
+        return { buffer: buffer, ...rest };
+      }
     }));
     await exifTool.end();
     return buffers;
   } catch (e) {
     throw e;
   }
-
-
 };
 
 /**
@@ -117,8 +143,8 @@ const nsfwCheck = async (buffer) => {
 };
 
 const idealSideLength = {
-  turbo: 1024, 
-  pixart: 768, 
+  turbo: 1024,
+  pixart: 768,
   deliberate: 640,
   dreamshaper: 800,
   formulaxl: 800,
@@ -133,7 +159,7 @@ const idealSideLength = {
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance=false, refine=false, nologo=false, negative_prompt="worst quality, blurry", nofeed=false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
   // Sanitize boolean parameters
   const sanitizeBoolean = (value) => value === "true" ? true : value === "false" ? false : value;
   refine = sanitizeBoolean(refine);
@@ -157,21 +183,23 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     width = Math.floor(width * ratio);
     height = Math.floor(height * ratio);
   }
-  
-  return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed};
+
+  if (model !== "pixart" && model !== "turbo")
+    model = "turbo";
+  return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
 };
 
 /**
  * Creates and returns images with optional logo and metadata, checking for NSFW content.
- * @param {{jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string}} params
- * @returns {Promise<Array<{buffer: Buffer, isChild: boolean, isMature: boolean}>>}
+ * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
+ * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
-export async function createAndReturnImageCached({jobs, safeParams, concurrentRequests = 1, ip}) {
+export async function createAndReturnImageCached({ jobs, safeParams, concurrentRequests = 1, ip }) {
   safeParams = makeParamsSafe(safeParams);
-  const buffers = await callWebUI({jobs, safeParams, concurrentRequests});
+  const buffers = await callWebUI({ jobs, safeParams, concurrentRequests });
 
-  const buffersWithLegends = await Promise.all(buffers.map(async ({buffer, has_nsfw_concept: isMature, concept}) => {
-    const isChild = Object.values(concept?.special_scores)?.some(score => score > -0.05);
+  const buffersWithLegends = await Promise.all(buffers.map(async ({ buffer, has_nsfw_concept: isMature, concept }) => {
+    const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
     console.error("isMature", isMature, "concepts", isChild);
     if (isChild) isMature = true;
 

@@ -1,10 +1,5 @@
 Bucket Key,Jobs,Requests,Returns
-dreamshaper-800-800,2,2,0
-turbo-1024-1024,12,255,240
-turbo-1024-768,4,15,11
-turbo-886-1182,1,5,4
-turbo-1448-724,1,1,0
-turbo-893-1174,1,4,3
-turbo-1365-768,2,8,6
+turbo-1024-1024,5,34,29
+turbo-768-1365,1,1,0
 Requests,Returned,Q-Size,Q-Pending,Q-Utilization
-40,42,0,1,N/I%
+40,65,0,1,N/I%

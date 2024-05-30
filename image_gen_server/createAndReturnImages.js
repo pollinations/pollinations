@@ -40,7 +40,8 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
       "prompts": prompts,
       "width": safeParams.width,
       "height": safeParams.height,
-      "seed": safeParams.seed
+      "seed": safeParams.seed,
+      "negative_prompt": safeParams.negative_prompt,
     };
 
     console.log("calling prompt", body.prompts);

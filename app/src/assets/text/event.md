@@ -8,7 +8,7 @@
 </video>
   
   
-###### <span style="color:#e0f041">Date : </span> 4.4.2024  
+###### <span style="color:#e0f041">Date : </span> 20.6.2024  
 ###### <span style="color:#e0f041">Time: </span> 20h CET  
 ###### <span style="color:#e0f041">Location: </span> **Studio1111**  
 ###### Potsdamer Str. 96, Berlin Mitte
@@ -16,7 +16,6 @@
     
 Dive into a journey through sound and space where cosmic mysteries blend with cyberpunk spirit. Yes, it’s a thing. 
 
-- **Saeko Killy** | Bringing beats even your grandma can't resist.  
 - **The Department of Cosmic Affairs**  | Mind-bending audiovisuals by **Thomash & Exz**.
 - **Surprise performance** 
 

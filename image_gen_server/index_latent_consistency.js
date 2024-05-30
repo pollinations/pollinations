@@ -37,7 +37,7 @@ const queuePerIp = (handler) => {
     const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
     const ip = getIp(req);
     const isBot =  ip === BOT_IP;
-    if (urlParams.get('referer') === 'discordbot' || isBot) {
+    if ((urlParams.get('referer') === 'discordbot') || isBot) {
       await handler(params);
       return;
     }
@@ -50,7 +50,7 @@ const queuePerIp = (handler) => {
     } else {
       console.log("[queue] ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
       const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
-      if (ipQueue[ip].size > 10) {
+      if (ipQueue[ip].size > 25) {
         console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
         rickrollCount[ip] += 1; // Increment rickroll count for this IP
         rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
@@ -65,17 +65,32 @@ const queuePerIp = (handler) => {
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
     await ipQueue[ip].add(async () => {
       console.log("[queue] sleeping for", queueSize * 1000, "ms");
-      if (!isBot) {
-        await awaitSleep(Math.round(queueSize * countJobs(true)*2000)); // Delay increases by 1 second for each request in the queue
-      }
-      console.log("[queue]starting handler for ip", ip)
+      // if (!isBot) {
+      //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
+      // }
+      awaitSleep(queueSize * 2000);
+      console.log("[queue] starting handler for IP", ip);
+      const handlerStartTime = Date.now();
       await handler(params);
-      console.log("[queue]done handler for ip", ip)
+      const handlerEndTime = Date.now();
+      console.log("[queue] done handler for IP", ip, "Duration:", handlerEndTime - handlerStartTime, "ms");
     });
+    logTopIPsByQueueSize(ipQueue);
   };
 };
 
+// Function to log the top IP addresses by number of images in the queue
+const logTopIPsByQueueSize = (ipQueue) => {
+  const sortedIPs = Object.entries(ipQueue)
+    .map(([ip, queue]) => ({ ip, queueSize: queue.size + queue.pending }))
+    .sort((a, b) => b.queueSize - a.queueSize)
+    .slice(0, 5); // Get top 5 IPs
 
+  console.log("Top IPs by Queue Size:");
+  sortedIPs.forEach((ipInfo, index) => {
+    console.log(`${index + 1}. IP: ${ipInfo.ip}, Queue Size: ${ipInfo.queueSize}`);
+  });
+};
 
 const processChunk = async (chunk, bucketKey, safeParams) => {
   try {
@@ -105,10 +120,10 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
 const processBatches = async () => {
   const processingPromises = [];
   while (generalImageQueue.size + generalImageQueue.pending < concurrency) {
-    let batchIndex = currentBatches.findIndex(batch => batch.safeParams.model === 'turbo' || !batch.safeParams.model);
+    let batchIndex = -1;// currentBatches.findIndex(batch => batch.safeParams.model === 'turbo' || !batch.safeParams.model);
     if (batchIndex === -1) {
       // If no turbo model found, use the original logic
-      batchIndex = Math.random() < 0.8 ? 0 : 1;
+      batchIndex = Math.random() < 0.7 ? 0 : 1;
     }
     const batch = currentBatches[batchIndex % currentBatches.length];
     if (batch) {
@@ -127,7 +142,7 @@ const processBatches = async () => {
       await Promise.all(processingPromises);
       processingPromises.length = 0; // Clear the array
     }
-    await awaitSleep(100);
+    await awaitSleep(10);
   }
   if (processingPromises.length > 0) {
     await Promise.all(processingPromises); // Ensure all remaining promises are settled
@@ -293,9 +308,11 @@ const queuedImageGen =  queuePerIp(async ({req, res, timingInfo, memCacheKey, or
       existingBatch.jobs.push(jobData);
 
   });
-
+  
   requestTimestamps.push(Date.now());
+  await memCache[memCacheKey];
   printQueueStatus();
+
 });
 
 /**
@@ -315,5 +332,6 @@ const checkCacheAndGenerate = async (req, res) => {
 const server = http.createServer(checkCacheAndGenerate);
 server.listen(process.env.PORT || 16384);
 processBatches();
+
 
 

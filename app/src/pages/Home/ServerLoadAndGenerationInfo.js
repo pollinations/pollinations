@@ -23,6 +23,6 @@ const formatImagesGenerated = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 function TimingInfo({ image }) {
-  const timeMs = image?.generationTime || image?.timingInfo?.[5].timestamp;
+  const timeMs = image?.generationTime || image?.timingInfo?.[5]?.timestamp;
   return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 100) / 10} s</b></span></Typography>;
 }

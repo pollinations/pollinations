@@ -55,12 +55,13 @@ async function pimpPromptRaw(prompt, seed) {
                         
                         If no visual style is given, decide on a typical style that would be used in that type of image.
 
+                        The image generator is not very good at text and screenshots. Try and rewrite those into more figurative prompts. E.g. instead of a spreadsheet make a prompt of an intricate isometric technical drawing that somehow represents the information in the spreadsheet.
+
                         Example Input Prompt:
                         Image in the style of cel-shaded Japanese anime, featuring a man sitting at the side of a pool. Fish and eyeballs float around.
                         
                         Example (OUTPUT):
-                        A lone figure sits in contemplation beside a pool of warped, kaleidoscopic waters, where fish and disembodied eyes drift aimlessly. The air is thick with the nostalgic haze of scan lines, as if the scene itself has been plucked from a worn, 80s anime tape. 1990. In a surreal, glitch-art dreamscape, a solitary man sits poolside, surrounded by a psychedelic swirl of carp and floating, unblinking portholes of the face. The entire screenshot is bathed in a warm, grainy glow, old Ghibli or other such studios
-                        
+                        A lone figure sits by the edge of a geometric, minimalist pool, surrounded by a composition of primary-colored squares and rectangles. The fish and eyeballs are reduced to simple, abstract forms, floating in an orderly fashion. The scene is bathed in a crisp, clean light, reminiscent of Mondrian's iconic style. The air feels cool and deliberate, as if each element was carefully placed with precision. This visual homage to Bauhaus principles combines clarity and balance, presenting a tranquil, modernist dreamscape.                        
                         ---
 
                         Respond only with the new prompt like this:
@@ -92,6 +93,7 @@ const memoize = (fn) => {
     const cache = new Map();
     return async (arg, seed) => {
         const cacheKey = `${arg}-${seed}`;
+        console.log("cache key", cacheKey);
         if (cache.has(cacheKey)) {
             return cache.get(cacheKey);
         }

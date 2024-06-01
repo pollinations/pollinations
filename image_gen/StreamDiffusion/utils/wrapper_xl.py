@@ -7,7 +7,7 @@ from huggingface_hub import hf_hub_download
 
 import numpy as np
 import torch
-from diffusers import AutoencoderTiny, StableDiffusionXLPipeline
+from diffusers import AutoencoderTiny, StableDiffusionXLPipeline, AutoencoderKL
 from PIL import Image
 
 from streamdiffusion import StreamDiffusion
@@ -472,15 +472,15 @@ class StreamDiffusionWrapper:
                     print(f"Use LoRA: {lora_name} in weights {lora_scale}")
 
             # Load ResAdapter
-            stream.load_lora(
-                hf_hub_download(
-                    repo_id="jiaxiangc/res-adapter",
-                    subfolder="sdxl-i",
-                    filename="resolution_lora.safetensors",
-                ),
-                adapter_name="res_adapter",
-            )
-            stream.fuse_lora(lora_scale=1.0)
+            # stream.load_lora(
+            #     hf_hub_download(
+            #         repo_id="jiaxiangc/res-adapter",
+            #         subfolder="sdxl-i",
+            #         filename="resolution_lora.safetensors",
+            #     ),
+            #     adapter_name="res_adapter",
+            # )
+            # stream.fuse_lora(lora_scale=1.0)
 
 
         if use_tiny_vae:
@@ -489,7 +489,7 @@ class StreamDiffusionWrapper:
                     device=pipe.device, dtype=pipe.dtype
                 )
             else:
-                stream.vae = AutoencoderTiny.from_pretrained("madebyollin/taesdxl").to(
+                stream.vae = AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix").to(
                     device=pipe.device, dtype=pipe.dtype
                 )
 

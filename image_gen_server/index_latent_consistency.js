@@ -8,75 +8,115 @@ import { createAndReturnImageCached, makeParamsSafe } from './createAndReturnIma
 import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
 import awaitSleep from 'await-sleep';
 import { splitEvery } from 'ramda';
-import { readFileSync, writeFileSync } from 'fs';
-import Table from 'cli-table3'; // Importing cli-table3 for table formatting
-import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
-
-const BATCH_SIZE = 8; // Number of requests per batch
-
-const concurrency = 3; // Number of concurrent requests per bucket key
-
-const generalImageQueue = new PQueue({ concurrency });
-let currentBatches = [];
+import { readFileSync } from 'fs';
+import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
+import { generalImageQueue, concurrency, BATCH_SIZE } from './generalImageQueue.js';
+import { bucketKeyStats, currentBatches, imageReturnTimestamps, requestTimestamps, printQueueStatus } from './bucketKeyStats.js';
+import { getIp } from './getIp.js';
+import { countJobs } from './bucketKeyStats.js';
 
 const queueFullImages = [readFileSync("./queuefull1.png"), readFileSync("./queuefull2.png"), readFileSync("./queuefull3.png")];
 
-let requestTimestamps = []; // Array to store timestamps of image requests
-let imageReturnTimestamps = []; // Array to store timestamps of returned images
-
 // this is used to create a queue per ip address
+const BOT_IP = "150.136.112.172";
 
-
-// function that wraps an async request handler and keeps count of the number of requests from the same ip address
-// if an ip address already has a request in the queue, it will delay until the request is processed
-// the delay increases by 1 second for each request in the queue
+/**
+ * Function that wraps an async request handler and keeps count of the number of requests from the same IP address.
+ * If an IP address already has a request in the queue, it will delay until the request is processed.
+ * The delay increases by 1 second for each request in the queue.
+ * If the query parameter noqueue=pollinations is passed, the queue is skipped entirely.
+ * @param {Function} handler - The request handler function to wrap.
+ * @returns {Function} The wrapped async request handler.
+ */
 const queuePerIp = (handler) => {
   const ipQueue = {};
   const rickrollCount = {}; // Count of times each IP was rickrolled
   const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
-  return async (req, res) => {
+  return async (params) => {
+    const {req,res} = params;
+    const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
     const ip = getIp(req);
+    const isBot =  ip === BOT_IP;
+    if ((urlParams.get('referer') === 'discordbot') || isBot) {
+      await handler(params);
+      return;
+    }
+
+
     if (!ipQueue[ip]) {
-      ipQueue[ip] = new PQueue({ concurrency: 1 });
+      ipQueue[ip] = new PQueue({ concurrency: isBot ? 999999 : 1 });
       rickrollCount[ip] = 0; // Initialize rickroll count for this IP
       rickrollData[ip] = 0; // Initialize rickroll data for this IP
     } else {
-      console.log("ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
-      // if queue size > 10 then redirect to 
-      const ricUurl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
-      if (ipQueue[ip].size > 50) {
+      console.log("[queue] ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
+      const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
+      if (ipQueue[ip].size > 25) {
         console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
         rickrollCount[ip] += 1; // Increment rickroll count for this IP
         rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
-        console.log(`IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
+        console.log(`[queue] IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
         res.writeHead(302, {
-          'Location': ricUurl
+          'Location': ricUrl
         });
         res.end();
         return;
       }
     }
-    const queueSize = ipQueue[ip].size;
+    const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
     await ipQueue[ip].add(async () => {
-      await handler(req, res);
-      console.log("sleeping for",  queueSize * 1000, "ms")
-      await awaitSleep(queueSize * 500); // Delay increases by 1 second for each request in the queue
-    });
-  }
-}
-// Initialize an object to track images requested and returned per bucket key
-let bucketKeyStats = {};
+      // if (!isBot) {
+      //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
+      // }
+      const sleepTime = countJobs(true) > 3 ? queueSize * 4000 : 0;
+      console.log("[queue] sleeping for",sleepTime, "ms");
 
-const processChunk = async (chunk, bucketKey, extraParams) => {
+      if (sleepTime > 30000) {
+        res.writeHead(429, { 'Content-Type': 'text/plain' });
+        res.end('429: Too Many Requests - Queue is full, please try again later.');
+        return;
+      }
+      await awaitSleep(sleepTime);
+      console.log("[queue] starting handler for IP", ip);
+      const handlerStartTime = Date.now();
+      await handler(params);
+      const handlerEndTime = Date.now();
+      console.log("[queue] done handler for IP", ip, "Duration:", handlerEndTime - handlerStartTime, "ms");
+    });
+    logTopIPsByQueueSize(ipQueue);
+  };
+};
+
+// Function to log the top IP addresses by number of images in the queue
+const logTopIPsByQueueSize = (ipQueue) => {
+  const sortedIPs = Object.entries(ipQueue)
+    .map(([ip, queue]) => ({ ip, queueSize: queue.size + queue.pending }))
+    .sort((a, b) => b.queueSize - a.queueSize)
+    .slice(0, 5); // Get top 5 IPs
+
+  console.log("Top IPs by Queue Size:");
+  sortedIPs.forEach((ipInfo, index) => {
+    console.log(`${index + 1}. IP: ${ipInfo.ip}, Queue Size: ${ipInfo.queueSize}`);
+  });
+};
+
+const processChunk = async (chunk, bucketKey, safeParams) => {
   try {
-    const buffersWithLegend = await createAndReturnImageCached(chunk.map(job => job.prompt), extraParams, {concurrentRequests: countJobs(true)});
+    chunk.forEach(job => {
+      job.timingInfo.push({ step: 'Start generating chunk', timestamp: Date.now() });
+    })
+
+    const buffersWithLegend = await createAndReturnImageCached({
+      jobs: chunk, 
+      safeParams, 
+      concurrentRequests: countJobs(true),
+    });
+
     chunk.forEach((job, index) => {
-      job.timingInfo.push({ step: 'Start processing chunk', timestamp: Date.now() });
       job.callback(null, buffersWithLegend[index], job.timingInfo);
-      cacheImage(job.originalPrompt, extraParams, buffersWithLegend[index].buffer);
+      cacheImage(job.originalPrompt, safeParams, buffersWithLegend[index].buffer);
       // Increment the count of images returned for this bucket key
       bucketKeyStats[bucketKey].returned++;
-      job.timingInfo.push({ step: 'End processing chunk', timestamp: Date.now() });
+      job.timingInfo.push({ step: 'End generating chunk', timestamp: Date.now() });
     });
   } catch (e) {
     console.error(e);
@@ -87,14 +127,14 @@ const processChunk = async (chunk, bucketKey, extraParams) => {
 const processBatches = async () => {
   const processingPromises = [];
   while (generalImageQueue.size + generalImageQueue.pending < concurrency) {
-    let batchIndex = currentBatches.findIndex(batch => batch.extraParams.model === 'turbo' || !batch.extraParams.model);
+    let batchIndex = -1;// currentBatches.findIndex(batch => batch.safeParams.model === 'turbo' || !batch.safeParams.model);
     if (batchIndex === -1) {
       // If no turbo model found, use the original logic
-      batchIndex = Math.random() < 0.8 ? 0 : 1;
+      batchIndex = Math.random() < 0.7 ? 0 : 1;
     }
     const batch = currentBatches[batchIndex % currentBatches.length];
     if (batch) {
-      const { bucketKey, jobs, extraParams } = batch;
+      const { bucketKey, jobs, safeParams } = batch;
       const chunks = splitEvery(BATCH_SIZE, jobs);
       const chunk = chunks.shift();
       if (chunk) {
@@ -102,52 +142,43 @@ const processBatches = async () => {
         if (batch.jobs.length === 0) {
           currentBatches.splice(batchIndex, 1);
         }
-        processingPromises.push(generalImageQueue.add(() => processChunk(chunk, bucketKey, extraParams)));
+        processingPromises.push(generalImageQueue.add(() => processChunk(chunk, bucketKey, safeParams)));
       }
     }
     if (processingPromises.length >= concurrency) {
       await Promise.all(processingPromises);
       processingPromises.length = 0; // Clear the array
     }
-    await awaitSleep(100);
+    await awaitSleep(10);
   }
   if (processingPromises.length > 0) {
     await Promise.all(processingPromises); // Ensure all remaining promises are settled
   }
 }
 
-let jobCounts = [];
-
-const countJobs = (average = false) => {
-  const currentCount = currentBatches.reduce((acc, batch) => acc + batch.jobs.length, 0);
-  if (average) {
-    jobCounts.push(currentCount);
-    if (jobCounts.length > 5) {
-      jobCounts.shift();
-    }
-    return Math.round(jobCounts.reduce((a, b) => a + b) / jobCounts.length);
-  }
-  return currentCount;
-}
-
 let memCache = {};
 
-const requestListener = queuePerIp(async function (req, res) {
-  
-
-
+/**
+ * @async
+ * @function
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ * @returns {Promise<Object|boolean>}
+ */
+const preMiddleware = async function (req, res) {
   console.error("requestListener", req.url);
   let { pathname, query } = parse(req.url, true);
+  let extraParams = {...query};
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
     sendToAnalytics(req, "feedRequested", {});
-    return;
+    return false;
   }
 
   if (!pathname.startsWith("/prompt")) {
     res.end('404: Not Found');
-    return;
+    return false;
   }
 
   const originalPrompt = pathname.split("/prompt/")[1];
@@ -155,50 +186,40 @@ const requestListener = queuePerIp(async function (req, res) {
   if (!originalPrompt) {
     res.writeHead(404);
     res.end('404: Not Found');
-    return;
+    return false;
   }
-
-  let extraParams = {...query};
-  // if (extraParams.model !== "turbo" && extraParams.model !== "dreamshaper" && extraParams.model !== "deliberate") {
-  //   extraParams.model = "turbo";
-  // }
   
+  const concurrentRequests = countJobs();
   const safeParams = makeParamsSafe(extraParams);
-
-  // extraParams = safeParams;
-
   const bucketKey = ["model","width","height"]
     .filter(key => safeParams[key])
     .map(key => safeParams[key])
     .join('-');
 
-  const concurrentRequests = countJobs();
+  const memCacheKey = `${bucketKey}-${originalPrompt}-${JSON.stringify(safeParams)}`;
+
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests, bucketKey, model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const memCacheKey = `${bucketKey}-${originalPrompt}-${JSON.stringify(safeParams)}`;
-
-  // Initialize the stats for this bucket key if they don't exist yet
   if (!bucketKeyStats[bucketKey]) {
     bucketKeyStats[bucketKey] = { requested: 0, returned: 0 };
   }
 
   if (memCache[memCacheKey]) {
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+    res.writeHead(200,{ 'Content-Type': 'image/jpeg'})
     res.write(await memCache[memCacheKey]);
     res.end();
     imageReturnTimestamps.push(Date.now());
-    imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
-    return;
+    return false;
   }
 
-  if (await isImageCached(originalPrompt, extraParams)) {
-    const cachedImage = await getCachedImage(originalPrompt, extraParams);
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+  if (await isImageCached(originalPrompt, safeParams)) {
+    const cachedImage = await getCachedImage(originalPrompt, safeParams);
+    res.writeHead(200, { 'Content-Type': 'image/jpeg'})
     res.write(cachedImage);
     res.end();
-    console.error("image cached, returning from cache", originalPrompt, extraParams);
-    return;
+    console.error("image cached, returning from cache", originalPrompt, safeParams);
+    return false;
   }
 
   bucketKeyStats[bucketKey].requested++;
@@ -208,15 +229,23 @@ const requestListener = queuePerIp(async function (req, res) {
     res.writeHead(200, { 'Content-Type': 'image/png' });
     res.write(queueFullImage);
     res.end();
-    return;
+    return false;
   }
 
+  const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
+  return {req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata};
+};
 
-  const timingInfo = [{ step: 'Request received', timestamp: Date.now() }];
-
+/**
+ * @async
+ * @function
+ * @param {Object} params - The parameters object.
+ * @returns {Promise<void>}
+ */
+const queuedImageGen =  queuePerIp(async ({req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata, ip}) =>  {
   memCache[memCacheKey] = new Promise(async (resolve, reject) => {
       timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams["enhance"]);
+      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
 
       if (!prompt) {
         res.writeHead(500);
@@ -232,13 +261,11 @@ const requestListener = queuePerIp(async function (req, res) {
           reject(error);
           return;
         }
-      
-        res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+        res.writeHead(200, { 'Content-Type': 'image/jpeg'})
         res.write(bufferAndMaturity.buffer);
         resolve(bufferAndMaturity.buffer);
         res.end();
         imageReturnTimestamps.push(Date.now());
-        imageReturnTimestamps = imageReturnTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
         
         timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
@@ -250,15 +277,32 @@ const requestListener = queuePerIp(async function (req, res) {
         console.log('Timing Info:', timingInfo);
 
         const imageURL = `https://image.pollinations.ai${req.url}`;
-        if (!safeParams.nofeed)
-          sendToFeedListeners({...safeParams, concurrentRequests, imageURL, prompt, originalPrompt:urldecode(originalPrompt), nsfw: bufferAndMaturity.isMature, isChild: bufferAndMaturity.isChild, timingInfo }, { saveAsLastState: true });
+      
+        if (!safeParams.nofeed) {
+          const concurrentRequests = countJobs();
+          const ip = getIp(req);
+          sendToFeedListeners({
+            ...safeParams, 
+            concurrentRequests, 
+            imageURL, 
+            prompt, 
+            originalPrompt: urldecode(originalPrompt), 
+            nsfw: bufferAndMaturity.isMature, 
+            isChild: bufferAndMaturity.isChild, 
+            timingInfo,
+            ip,
+          }, { saveAsLastState: true }
+          );
+        }
         sendToAnalytics(req, "imageGenerated", analyticsMetadata);
       };
 
-      const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
 
+      const jobData = {prompt, callback, originalPrompt, timingInfo, ip};
+      
+      const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
       if (!existingBatch) {
-        currentBatches.push({ bucketKey, jobs: [{prompt, callback, originalPrompt, timingInfo}], extraParams });
+        currentBatches.push({ bucketKey, jobs: [jobData], safeParams });
         return;
       }
 
@@ -268,108 +312,41 @@ const requestListener = queuePerIp(async function (req, res) {
         return;
       }
 
-      // check if a job from the same ip address is already in the queue for any of the batches
-      
-      const ip = getIp(req);
-
-      existingBatch.jobs.push({prompt, originalPrompt, callback, timingInfo, ip});
+      existingBatch.jobs.push(jobData);
 
   });
-
+  
   requestTimestamps.push(Date.now());
-  requestTimestamps = requestTimestamps.filter(timestamp => Date.now() - timestamp < 60000);
+  await memCache[memCacheKey];
   printQueueStatus();
+
 });
 
-const printQueueStatus = () => {
-  const batchHead= ['Bucket Key', 'Jobs', 'Requests', 'Returns'];
-  const batchTable = new Table({
-    head: batchHead,
-    colWidths: [20, 10, 10, 10],
- 
-  });
+/**
+ * @async
+ * @function
+ * @param {Object} req - The request object.
+ * @param {Object} res - The response object.
+ * @returns {Promise<void>}
+ */
+const checkCacheAndGenerate = async (req, res) => {
+  const result = await preMiddleware(req, res);
+  if (result) {
+    await queuedImageGen(result);
+  }
+};
 
-  const imageHead= ['Requests', 'Returned', 'Q-Size', 'Q-Pending', 'Q-Utilization'];
-  const imageTable = new Table({
-    head: imageHead,
-    colWidths: [10, 10, 10, 10, 10],
-  });
+const server = http.createServer(checkCacheAndGenerate);
 
-  currentBatches.forEach(batch => {
-    const bucketKeyStatsRow = bucketKeyStats[batch.bucketKey] || { requested: 0, returned: 0 };
-    batchTable.push([batch.bucketKey, batch.jobs.length, bucketKeyStatsRow.requested, bucketKeyStatsRow.returned]);
-  });
+// Set the timeout to 5 minutes (300,000 milliseconds)
+server.setTimeout(300000, (socket) => {
+  console.log('Request timed out.');
+  socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
+});
 
-  const queueSize = generalImageQueue.size;
-  const queuePending = generalImageQueue.pending;
-  // const queueUtilization = ((queueSize + queuePending) / (2 * generalImageQueue.concurrency) * 100).toFixed(2);
-  imageTable.push([requestTimestamps.length, imageReturnTimestamps.length, queueSize, queuePending, `N/I%`]);
-
-  console.log(batchTable.toString());
-  console.log(imageTable.toString());
-
-  // construct simple string tables for file writing
-  const fileBatchTableHeaders = batchHead.join(',');
-  const fileBatchTable = batchTable.map(row => row.join(',')).join('\n');
-  const fileImageTableHeaders = imageHead.join(',');
-  const fileImageTable = imageTable.map(row => row.join(',')).join('\n');
-  
-  // Write tables to a file
-  writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
-}
-
-
-const server = http.createServer(requestListener);
 server.listen(process.env.PORT || 16384);
 processBatches();
 
 
 
-const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance=false) => {
-  timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
-  // first 200 characters are used for the prompt
-  promptRaw = urldecode(promptRaw);
 
-  // if it is not a string make it a string
-  if (typeof promptRaw !== "string") {
-    promptRaw = ""+promptRaw;
-  }
-
-  // if prompt contains "A:" we want to take the part after "A:"
-  if (promptRaw.includes("A:")) {
-    promptRaw = promptRaw.split("A:")[1];
-  }
-
-  promptRaw = promptRaw.slice(0,250);
-  // 
-  promptRaw = sanitizeString(promptRaw);
-  
-  if (promptRaw.includes("content:")) {
-    // promptRaw = promptRaw.replace("content:", "");
-    console.log("content: detected in prompt, returning null");
-    return null;
-  }
-  let prompt = promptRaw;
-
-  // check from the request headers if the user most likely speaks english (value starts with en)
-  const englishLikely = req.headers["accept-language"]?.startsWith("en");
-  
-  if (!englishLikely) {
-    const startTime = Date.now();
-    prompt = await translateIfNecessary(prompt);
-    const endTime = Date.now();
-    console.log(`Translation time: ${endTime - startTime}ms`);
-  }
-
-  const finalPrompt = prompt || promptRaw;
-
-
-  timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  return finalPrompt;
-};
-
-function getIp(req) {
-  return req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-}
-
-// //

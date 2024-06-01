@@ -1,0 +1,51 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name image.pollinations.ai;
+
+    # Configuration for SSE under /feed
+    location /feed {
+        proxy_pass http://localhost:16384;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # SSE-specific settings
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 12h;
+        add_header Cache-Control no-cache;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    # Configuration for other paths
+    location / {
+        proxy_pass http://localhost:16384;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Caching settings for static content
+        expires max;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+
+        # High timeout settings
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        send_timeout 300s;
+    }
+
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/image.pollinations.ai/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/image.pollinations.ai/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+}

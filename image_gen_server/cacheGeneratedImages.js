@@ -15,6 +15,11 @@ const generateCachePath = (prompt, extraParams, saveFolder) => {
   return `${saveFolder}/${sanitizedPrompt}_${hash}.jpg`;
 };
 
+
+if (!fs.existsSync("/tmp/stableDiffusion_cache")) {
+  fs.mkdirSync("/tmp/stableDiffusion_cache");
+}
+
 // Modified cacheGeneratedImages function
 export const cacheGeneratedImages = (imageGeneratorFn, saveFolder = "/tmp/stableDiffusion_cache") => {
   if (!fs.existsSync(saveFolder)) {

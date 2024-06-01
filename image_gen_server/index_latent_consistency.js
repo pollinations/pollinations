@@ -64,11 +64,18 @@ const queuePerIp = (handler) => {
     }
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
     await ipQueue[ip].add(async () => {
-      console.log("[queue] sleeping for", queueSize * 1000, "ms");
       // if (!isBot) {
       //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
       // }
-      awaitSleep(queueSize * 2000);
+      const sleepTime = countJobs(true) > 3 ? queueSize * 4000 : 0;
+      console.log("[queue] sleeping for",sleepTime, "ms");
+
+      if (sleepTime > 30000) {
+        res.writeHead(429, { 'Content-Type': 'text/plain' });
+        res.end('429: Too Many Requests - Queue is full, please try again later.');
+        return;
+      }
+      await awaitSleep(sleepTime);
       console.log("[queue] starting handler for IP", ip);
       const handlerStartTime = Date.now();
       await handler(params);
@@ -238,7 +245,7 @@ const preMiddleware = async function (req, res) {
 const queuedImageGen =  queuePerIp(async ({req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata, ip}) =>  {
   memCache[memCacheKey] = new Promise(async (resolve, reject) => {
       timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams["enhance"]);
+      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
 
       if (!prompt) {
         res.writeHead(500);
@@ -330,8 +337,16 @@ const checkCacheAndGenerate = async (req, res) => {
 };
 
 const server = http.createServer(checkCacheAndGenerate);
+
+// Set the timeout to 5 minutes (300,000 milliseconds)
+server.setTimeout(300000, (socket) => {
+  console.log('Request timed out.');
+  socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
+});
+
 server.listen(process.env.PORT || 16384);
 processBatches();
+
 
 
 

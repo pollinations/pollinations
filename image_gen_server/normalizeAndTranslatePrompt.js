@@ -4,7 +4,8 @@ import { pimpPrompt } from './groqPimp.js';
 
 const memoizedPrompts = new Map();
 
-export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, enhance = false) => {
+export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, safeParams={}) => {
+    let { enhance=false, seed } = safeParams;
     const slashCount = (promptRaw.match(/\//g) || []).length;
     const slashPercentage = (slashCount / promptRaw.length) * 100;
     if (slashPercentage > 1 || promptRaw.length < 100) {
@@ -46,7 +47,7 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, en
   let finalPrompt = prompt || promptRaw;
 
   if (enhance) {
-    finalPrompt = await pimpPrompt(finalPrompt);
+    finalPrompt = await pimpPrompt(finalPrompt, seed);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });

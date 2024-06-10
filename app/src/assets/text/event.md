@@ -8,7 +8,7 @@
 </video>
   
   
-###### <span style="color:#e0f041">Date : </span> 20.4.2024  
+###### <span style="color:#e0f041">Date : </span> 27.4.2024  
 ###### <span style="color:#e0f041">Time: </span> 20h CET  
 ###### <span style="color:#e0f041">Location: </span> **Studio1111**  
 ###### Potsdamer Str. 96, Berlin Mitte

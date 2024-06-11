@@ -7,8 +7,8 @@ import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 
-const SERVER_URL = 'http://155.248.212.250:5002/generate';
-const PIXART_SERVER_URL = "http://155.248.212.250:5001/generate_pixart"
+const SERVER_URL = 'http://localhost:5002/generate';
+const PIXART_SERVER_URL = "http://localhost:5001/generate_pixart"
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
@@ -94,7 +94,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     const exifTool = new ExifTool();
     const buffers = await Promise.all(images.map(async ({ image, ...rest }) => {
       console.log("decoding base64 image");
-      
+
       const buffer = Buffer.from(image, 'base64');
       try {
         throw new Error("disabled exif tool");

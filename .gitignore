@@ -145,7 +145,6 @@ tmp
 # Jetbrains
 .idea
 venv
-*.png
 output/
 prompts.txt
 image_gen/venv
@@ -282,4 +281,4 @@ dist
 .pnp.*
 .DS_Store
 
-image_gen/db/
+image_gen/d

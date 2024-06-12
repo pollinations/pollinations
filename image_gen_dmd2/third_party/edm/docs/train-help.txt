@@ -1,0 +1,42 @@
+Usage: train.py [OPTIONS]
+
+  Train diffusion-based generative model using the techniques described in the
+  paper "Elucidating the Design Space of Diffusion-Based Generative Models".
+
+  Examples:
+
+  # Train DDPM++ model for class-conditional CIFAR-10 using 8 GPUs
+  torchrun --standalone --nproc_per_node=8 train.py --outdir=training-runs \
+      --data=datasets/cifar10-32x32.zip --cond=1 --arch=ddpmpp
+
+Options:
+  --outdir DIR              Where to save the results  [required]
+  --data ZIP|DIR            Path to the dataset  [required]
+  --cond BOOL               Train class-conditional model  [default: False]
+  --arch ddpmpp|ncsnpp|adm  Network architecture  [default: ddpmpp]
+  --precond vp|ve|edm       Preconditioning & loss function  [default: edm]
+  --duration MIMG           Training duration  [default: 200; x>0]
+  --batch INT               Total batch size  [default: 512; x>=1]
+  --batch-gpu INT           Limit batch size per GPU  [x>=1]
+  --cbase INT               Channel multiplier  [default: varies]
+  --cres LIST               Channels per resolution  [default: varies]
+  --lr FLOAT                Learning rate  [default: 0.001; x>0]
+  --ema MIMG                EMA half-life  [default: 0.5; x>=0]
+  --dropout FLOAT           Dropout probability  [default: 0.13; 0<=x<=1]
+  --augment FLOAT           Augment probability  [default: 0.12; 0<=x<=1]
+  --xflip BOOL              Enable dataset x-flips  [default: False]
+  --fp16 BOOL               Enable mixed-precision training  [default: False]
+  --ls FLOAT                Loss scaling  [default: 1; x>0]
+  --bench BOOL              Enable cuDNN benchmarking  [default: True]
+  --cache BOOL              Cache dataset in CPU memory  [default: True]
+  --workers INT             DataLoader worker processes  [default: 1; x>=1]
+  --desc STR                String to include in result dir name
+  --nosubdir                Do not create a subdirectory for results
+  --tick KIMG               How often to print progress  [default: 50; x>=1]
+  --snap TICKS              How often to save snapshots  [default: 50; x>=1]
+  --dump TICKS              How often to dump state  [default: 500; x>=1]
+  --seed INT                Random seed  [default: random]
+  --transfer PKL|URL        Transfer learning from network pickle
+  --resume PT               Resume from previous training state
+  -n, --dry-run             Print training options and exit
+  --help                    Show this message and exit.

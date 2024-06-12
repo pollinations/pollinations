@@ -1,0 +1,47 @@
+Usage: fid.py [OPTIONS] COMMAND [ARGS]...
+
+  Calculate Frechet Inception Distance (FID).
+
+  Examples:
+
+  # Generate 50000 images and save them as fid-tmp/*/*.png
+  torchrun --standalone --nproc_per_node=1 generate.py --outdir=fid-tmp --seeds=0-49999 --subdirs \
+      --network=https://nvlabs-fi-cdn.nvidia.com/edm/pretrained/edm-cifar10-32x32-cond-vp.pkl
+
+  # Calculate FID
+  torchrun --standalone --nproc_per_node=1 fid.py calc --images=fid-tmp \
+      --ref=https://nvlabs-fi-cdn.nvidia.com/edm/fid-refs/cifar10-32x32.npz
+
+  # Compute dataset reference statistics
+  python fid.py ref --data=datasets/my-dataset.zip --dest=fid-refs/my-dataset.npz
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  calc  Calculate FID for a given set of images.
+  ref   Calculate dataset reference statistics needed by 'calc'.
+
+
+Usage: fid.py calc [OPTIONS]
+
+  Calculate FID for a given set of images.
+
+Options:
+  --images PATH|ZIP  Path to the images  [required]
+  --ref NPZ|URL      Dataset reference statistics   [required]
+  --num INT          Number of images to use  [default: 50000; x>=2]
+  --seed INT         Random seed for selecting the images  [default: 0]
+  --batch INT        Maximum batch size  [default: 64; x>=1]
+  --help             Show this message and exit.
+
+
+Usage: fid.py ref [OPTIONS]
+
+  Calculate dataset reference statistics needed by 'calc'.
+
+Options:
+  --data PATH|ZIP  Path to the dataset  [required]
+  --dest NPZ       Destination .npz file  [required]
+  --batch INT      Maximum batch size  [default: 64; x>=1]
+  --help           Show this message and exit.

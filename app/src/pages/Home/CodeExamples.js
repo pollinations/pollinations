@@ -46,8 +46,53 @@ Seed: **${seed}** (Each seed generates a new image)
 </html>
 `,
 
+rust:(prompt, width, height, seed, model) => `
+// Here's the equivalent Rust code using the reqwest crate for HTTP requests
+// and the std::fs module for file operations.
+// First part of the code that fetches an image from a URL and saves it to a file.
 
-  javascript: ({ prompt, width, height, seed, model }) => `
+use reqwest::blocking::get;
+use std::fs::File;
+use std::io::copy;
+use std::io::Write;
+
+fn download_image(image_url: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Fetching the image from the URL
+    let response = get(image_url)?;
+    let mut file = File::create("image.jpg")?;
+    let content = response.bytes()?;
+    file.write_all(&content)?;
+
+    // Logging completion message
+    println!("Download Completed");
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Image details
+    let prompt = "the easy way to achieve a goal, efficient, simple, straightf...";
+    let width = 1024;
+    let height = 1024;
+    let seed = 42; // Each seed generates a new image variation
+    let model = "pollinations"; // Assuming a model name
+
+    let image_url = format!(
+        "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
+        prompt, width, height, seed, model
+    );
+
+    download_image(&image_url)?;
+
+    Ok(())
+}
+
+// Make sure you have the reqwest crate in your Cargo.toml:
+
+[dependencies]
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+`,
+
+  nodejs: ({ prompt, width, height, seed, model }) => `
 // This Node.js snippet downloads the image using node-fetch and saves it to disk, including image details.
 
 import fs from 'fs';

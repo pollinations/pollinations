@@ -49,7 +49,7 @@ export const isImageCached = (prompt, extraParams, saveFolder = "/tmp/stableDiff
 
 
 // Function to retrieve a cached image
-export const getCachedImage = (prompt="", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
+export const getCachedImage = (prompt = "", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
   const path = generateCachePath(prompt, extraParams, saveFolder);
   if (fs.existsSync(path)) {
     return fs.readFileSync(path);
@@ -58,7 +58,7 @@ export const getCachedImage = (prompt="", extraParams, saveFolder = "/tmp/stable
 };
 
 export const cacheImage = (prompt, extraParams, buffer, saveFolder = "/tmp/stableDiffusion_cache") => {
-  
+
   const path = generateCachePath(prompt, extraParams, saveFolder);
   fs.writeFileSync(path, buffer);
 }

@@ -44,7 +44,7 @@ export function KarmaImageFeed() {
   // }, latestImage);
   
   return (
-    <Iframe url="https://karma.yt"
+    <Iframe url="https://karma.yt?mode=embed"
         width="100%"
         height="700px"></Iframe>
 

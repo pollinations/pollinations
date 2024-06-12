@@ -4,7 +4,7 @@ import YoutubeLogo from '../assets/icons/youtube.png'
 import InstagramLogo from '../assets/icons/instagram.png'
 import TwitterLogo from '../assets/icons/twitter.png'
 import GithubLogo from '../assets/icons/github.png'
-import TikTokLogo from '../assets/icons/tiktok.png'
+// import TikTokLogo from '../assets/icons/tiktok1.png'/
 
 export const SOCIAL_LINKS = {
   discord: {
@@ -37,10 +37,10 @@ export const SOCIAL_LINKS = {
     icon_img: TwitterLogo,
     url: 'https://twitter.com/pollinations_ai' 
   },
-  tiktok: { 
-    label: 'Tiktok',
-    icon: ICONS.tiktok, 
-    icon_img: TikTokLogo,
-    url: 'https://tiktok.com/@pollinations.ai' 
-  },
+  // tiktok: { 
+  //   label: 'Tiktok',
+  //   icon: ICONS.tiktok, 
+  //   icon_img: TikTokLogo,
+  //   url: 'https://tiktok.com/@pollinations.ai' 
+  // },
 }

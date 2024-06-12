@@ -161,7 +161,7 @@ const idealSideLength = {
  */
 export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
   // Sanitize boolean parameters
-  const sanitizeBoolean = (value) => value === "true" ? true : value === "false" ? false : value;
+  const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
   refine = sanitizeBoolean(refine);
   enhance = sanitizeBoolean(enhance);
   nologo = sanitizeBoolean(nologo);

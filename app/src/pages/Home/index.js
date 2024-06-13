@@ -21,8 +21,9 @@ export default function Solutions() {
       <GenerativeImageFeed />
       <KarmaImageFeed />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      <Dreamachine />
       <MusicVideo />
+      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <Dreamachine />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <ImageURLHeading>Events</ImageURLHeading>
       <PageTemplate label="event" />

@@ -21,6 +21,7 @@ export default function Solutions() {
       <GenerativeImageFeed />
       <KarmaImageFeed />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <Dreamachine />
       <MusicVideo />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <ImageURLHeading>Events</ImageURLHeading>
@@ -31,7 +32,6 @@ export default function Solutions() {
 
       <Discord />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      {/* <Dreamachine /> */}
     </Style>
   )
 }

@@ -1,49 +1,41 @@
 import styled from '@emotion/styled'
 import { useNavigate } from 'react-router-dom'
-import {  MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
+import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
 import { BackgroundImage, Container as ContainerBase, Flex } from './components';
 import SwiperComponent from './Swiper';
+import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
+
 // import Swiper styles
-
-
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
 
 const dreamachine_props = {
     title: 'DREAMACHINE',
     subtitle: 'Immerse yourself into a flow of dreams',
-    description: <> 
-        Immersive installation in which the participants share their dream with an Artificial Intelligence model that creates a visual representation of it. 
-        <br/> The result is a continuous stream of dreams that can be exhibited in real-time on any type of display.
-        <br/> <br/> Reach out for more information or personalized setup.</>,
+    description: <>
+        Immersive installation in which the participants share their dream with an Artificial Intelligence model that creates a visual representation of it.
+        <br /> The result is a continuous stream of dreams that can be exhibited in real-time on any type of display.
+        <br /> <br /> Reach out for more information or personalized setup.</>,
     video: './dreamachine/dreamachine_00.mp4'
-}   
-
+}
 
 const FeaturedApps = props => {
-  
     return <Style>
-    <TopBand src={TopBandPresetsDesign}/>
-
-    <Container>
-        <FeaturedApp {...dreamachine_props}/>
-    </Container>
-    {/*<BackgroundImage 
-        src='gradient_background.png'
-        zIndex='-2' 
-alt="presentation" />*/}
+        <Container>
+            <FeaturedApp {...dreamachine_props} />
+        </Container>
     </Style>
-  }
+}
 
-  export default FeaturedApps
+export default FeaturedApps
 
-  const Container = styled(ContainerBase)`
+const Container = styled(ContainerBase)`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  `
+`
 
-  const Style = styled.div`
+const Style = styled.div`
   width: 100%;
   height: 100%;
   position: relative;
@@ -54,9 +46,9 @@ alt="presentation" />*/}
   background-color: ${Colors.background_body};
   padding: 1em 0;
   padding-bottom: 5em;
-  `
+`
 
-  const Headline = styled.p`
+const Headline = styled.p`
   font-family: ${Fonts.headline};
   font-style: normal;
   font-weight: 400;
@@ -101,20 +93,17 @@ const SubHeadline = styled.p`
 `
 
 const Slides = [
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-    { type: 'video', src:'./dreamachine/dreamachine_00.mp4'},
-  ]
+    { type: 'video', src: './dreamachine/dreamachine_00.mp4' },
+    { type: 'video', src: './dreamachine/dreamachine_00.mp4' },
+    { type: 'video', src: './dreamachine/dreamachine_00.mp4' },
+    { type: 'video', src: './dreamachine/dreamachine_00.mp4' },
+]
 const FeaturedApp = props => {
-
     const { title, subtitle, description, img, right, imgs, video } = props;
 
-
-
     const Media = props => {
-        if (props.img) return <FeatureAppImg src={img}/>;
-        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'}/>;
+        if (props.img) return <FeatureAppImg src={img} />;
+        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'} />;
         if (props.video) return <FeatureAppVideo src={video} playsInline autoPlay muted />;
         return <></>;
     }
@@ -127,16 +116,14 @@ const FeaturedApp = props => {
             {subtitle}
         </SubHeadline>
         <GridTwoColumns>
-
-        <FeaturedAppStyle>
-            <p>
-                {description}
-            </p>
-        </FeaturedAppStyle>
-        {/* <Media {...props}/> */}
-        <SwiperComponent Slides={Slides}/>
-        
-    </GridTwoColumns>
+            <FeaturedAppStyle>
+                <p>
+                    {description}
+                </p>
+            </FeaturedAppStyle>
+            {/* <Media {...props}/> */}
+            <SwiperComponent Slides={Slides} />
+        </GridTwoColumns>
     </Flex>
 }
 
@@ -194,12 +181,19 @@ margin: 2em 0;
 }
 `;
 
+const TopBand = styled.img`
+position: absolute;
+width: 100%;
+height: auto;
+right: 0;
+bottom: 0;
+@media (max-width: ${MOBILE_BREAKPOINT}) {
+  width: auto;
+  height: 59px;
+}`;
 
-
-
-function SlickSlider({ imgs, pad }){
-
-    if (!imgs) return <></>;    
+function SlickSlider({ imgs, pad }) {
+    if (!imgs) return <></>;
 
     const settings = {
         dots: false,
@@ -209,11 +203,11 @@ function SlickSlider({ imgs, pad }){
         slidesToScroll: 1,
         arrows: false,
         autoplay: true,
-      };
+    };
 
-    return <Slider {...settings} style={{width: '100%', padding: pad ? '2.5em' : '0em'}}>
+    return <Slider {...settings} style={{ width: '100%', padding: pad ? '2.5em' : '0em' }}>
         {
-            imgs.map(img=> <FeatureAppImg key={img} src={img}/>)
+            imgs.map(img => <FeatureAppImg key={img} src={img} />)
         }
     </Slider>
 }

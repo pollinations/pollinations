@@ -56,21 +56,22 @@ export function GenerativeImageFeed() {
         <Grid container spacing={4}>
           <Grid item xs={gridItemSize}>
             <ServerLoadAndGenerationInfo {...{ serverLoad, imagesGenerated, image }} />
-            <ImageContainer style={{ display: 'flex', justifyContent: 'center' }}>
-              {image ? (
+            <ImageContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {image ? (<>
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
                   <ImageStyle
                     src={image["imageURL"]}
                     alt="generative_image"
                   />
                 </Link>
+                <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
+                  Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning - Realistic, Lightning, HYPER</Link>
+                </Typography>
+              </>
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
               )}
             </ImageContainer>
-            <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
-              Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning - Realistic, Lightning, HYPER</Link>
-            </Typography>
           </Grid>
           <Grid item xs={gridItemSize} >
             <Box display="flex" justifyContent="center" >

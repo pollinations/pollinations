@@ -11,10 +11,20 @@ import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import TopBandPresetsDesign from "../../assets/imgs/presets-linha.png"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
+import { useEffect, useRef } from "react"
 
 export default function Solutions() {
+  const hiddenInputRef = useRef(null);
+
+  useEffect(() => {
+    if (hiddenInputRef.current) {
+      hiddenInputRef.current.focus();
+    }
+  }, []);
+
   return (
     <Style>
+      <input ref={hiddenInputRef} type="text" style={{ position: 'absolute', opacity: 0, height: 0, width: 0, border: 'none' }} aria-hidden="true" tabIndex="-1" />
       <WhoWeAre />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       {/* <Hero /> */}

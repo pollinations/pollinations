@@ -6,7 +6,7 @@ import Dreamachine from "./Dreamachine"
 import MusicVideo from "./MusicVideo"
 import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./GenerativeImageFeed"
-import { KarmaImageFeed } from "./KarmaImageFeed"
+import { KarmaSearch } from "./KarmaImageFeed"
 import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import TopBandPresetsDesign from "../../assets/imgs/presets-linha.png"
@@ -19,7 +19,7 @@ export default function Solutions() {
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       {/* <Hero /> */}
       <GenerativeImageFeed />
-      <KarmaImageFeed />
+      <KarmaSearch />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <MusicVideo />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />

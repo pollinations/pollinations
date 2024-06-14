@@ -42,7 +42,7 @@ export function GenerativeImageFeed() {
   // useEffect(() => {
   //   log("latestImage", latestImage);
   // }, latestImage);
-  
+
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: window.innerWidth <= parseInt(MOBILE_BREAKPOINT) ? '3em' : '0' }}>
       <Grid item xs={12}>
@@ -68,6 +68,9 @@ export function GenerativeImageFeed() {
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
               )}
             </ImageContainer>
+            <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
+              Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning - Realistic, Lightning, HYPER</Link>
+            </Typography>
           </Grid>
           <Grid item xs={gridItemSize} >
             <Box display="flex" justifyContent="center" >
@@ -164,10 +167,10 @@ function ImageData({ image, handleParamChange, isLoading }) {
                   marks
                   min={16}
                   max={2048}
-                  style={{ marginTop: "30px", color: Colors.white}}
-                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
+                  style={{ marginTop: "30px", color: Colors.white }}
+                  ThumbComponent={props => <span {...props} style={{ ...props.style, backgroundColor: Colors.lime }} />}
                   disabled={isLoading}
-              />
+                />
               </TableCell>
             </TableRow>
             <TableRow key="height" style={{ borderBottom: 'none' }}>
@@ -183,9 +186,9 @@ function ImageData({ image, handleParamChange, isLoading }) {
                   min={16}
                   max={2048}
                   style={{ marginTop: "30px", color: Colors.white }}
-                  ThumbComponent={props => <span {...props} style={{...props.style, backgroundColor: Colors.lime}} />}
+                  ThumbComponent={props => <span {...props} style={{ ...props.style, backgroundColor: Colors.lime }} />}
                   disabled={isLoading}
-            />
+                />
               </TableCell>
             </TableRow>
             <TableRow key="seed" style={{ borderBottom: 'none' }}>
@@ -209,7 +212,7 @@ function ImageData({ image, handleParamChange, isLoading }) {
             <TableRow key="nofeed" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
                 private
-                <Tooltip title="Activating 'private' prevents images from appearing in the feed."  style={{ color: Colors.lime}}>
+                <Tooltip title="Activating 'private' prevents images from appearing in the feed." style={{ color: Colors.lime }}>
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>

@@ -32,8 +32,8 @@ export default function Solutions() {
       <KarmaSearch />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <MusicVideo />
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      <Dreamachine />
+      {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <Dreamachine /> */}
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <ImageURLHeading>Events</ImageURLHeading>
       <PageTemplate label="event" />

@@ -52,7 +52,11 @@ def check_safety(x_image, safety_checker_adj: float):
 
     print("concept", concepts, "has_nsfw_concept", has_nsfw_concept)
 
-    return replace_sets_with_lists(concepts), replace_sets_with_lists(has_nsfw_concept)
+    # Convert numpy numbers to regular Python numbers
+    # concepts = replace_numpy_with_python(concepts)
+    # has_nsfw_concept = replace_numpy_with_python(has_nsfw_concept)
+
+    return replace_numpy_with_python(replace_sets_with_lists(concepts)), replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept))
 
 
 def censor_batch(x, safety_checker_adj: float):
@@ -167,6 +171,17 @@ def replace_sets_with_lists(obj):
         obj = list(obj)
     return obj
 
+# function to recursively traverse a list or dict and replace all numpy numbers with regular Python numbers
+def replace_numpy_with_python(obj):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = replace_numpy_with_python(v)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = replace_numpy_with_python(v)
+    elif isinstance(obj, np.generic):
+        obj = obj.item()
+    return obj
 
 # run with uvicorn
 # uvicorn scripts.censor:app --reload --port 10000

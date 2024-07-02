@@ -1,0 +1,26 @@
+
+compute_environment: LOCAL_MACHINE
+debug: true
+distributed_type: FSDP
+downcast_bf16: 'no'
+fsdp_config:
+  fsdp_auto_wrap_policy: SIZE_BASED_WRAP
+  fsdp_backward_prefetch_policy: BACKWARD_PRE
+  fsdp_forward_prefetch: false
+  fsdp_min_num_params: 3000
+  fsdp_offload_params: false
+  fsdp_sharding_strategy: 1
+  fsdp_state_dict_type: SHARDED_STATE_DICT
+  fsdp_sync_module_states: true
+  fsdp_use_orig_params: false
+machine_rank: 0
+main_training_function: main
+mixed_precision: 'no'
+num_machines: 1
+num_processes: 8
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false

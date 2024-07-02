@@ -35,6 +35,7 @@ pipe.load_lora_weights(hf_hub_download(repo_name, ckpt_name))
 pipe.fuse_lora(lora_scale=0.5)  # we might want to make the scale smaller for community models
 pipe.vae = AutoencoderTiny.from_pretrained("madebyollin/taesdxl", torch_dtype=torch.float16).to("cuda", torch.float16)
 pipe.scheduler = LCMScheduler.from_config(pipe.scheduler.config)
+# pipe.enable_sequential_cpu_offload()
 
 print("scheduler config", pipe.scheduler.config)
 print("scheduler timesteps", pipe.scheduler.timesteps)
@@ -95,12 +96,10 @@ async def generate(request: Request):
         generator = None
 
 
-    prompt_embeds,pooled_prompt_embeds = compel(prompts)
+    # prompt_embeds,pooled_prompt_embeds = compel(prompts)
     # Generate images for each prompt
-    images = pipe(prompt_embeds=prompt_embeds, pooled_prompt_embeds=pooled_prompt_embeds, num_inference_steps=4, guidance_scale=0, generator=generator, width=width, height=height, timesteps=[999, 749, 499, 249]).images
-    # images = pipe(prompt=prompts, num_inference_steps=4, guidance_scale=0, generator=generator, width=width, height=height, 
-    # timesteps=[999, 749, 499, 249]
-    # ).images
+    # images = pipe(prompt_embeds=prompt_embeds, pooled_prompt_embeds=pooled_prompt_embeds, num_inference_steps=4, guidance_scale=0, generator=generator, width=width, height=height, timesteps=[999, 749, 499, 249]).images
+    images = pipe(prompt=prompts, num_inference_steps=4, guidance_scale=0, generator=generator, width=width, height=height, timesteps=[999, 749, 499, 249]).images
 
     if not images:
         return JSONResponse(content={"error": "No images generated"}, status_code=500)
@@ -179,7 +178,7 @@ async def generate(request: Request):
 
     print(f"Total request time: {total_request_time:.2f} seconds")
     print(f"Percentage of time spent processing requests: {percentage_time_processing:.2f}%")
-
+    # print("Response", response_content["concept"])
     return JSONResponse(content=response_content, media_type="application/json")
 
 if __name__ == "__main__":

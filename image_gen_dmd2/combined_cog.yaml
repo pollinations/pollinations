@@ -1,0 +1,647 @@
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+  cuda: "11.7"
+
+  # python version in the form '3.8' or '3.8.12'
+  python_version: "3.9"
+
+  system_packages:
+    - "portaudio19-dev"
+    - "rubberband-cli"
+    - "ffmpeg"
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "torch==2.0.1"
+    - "git+https://github.com/CPJKU/madmom"
+    - "BeatNet==1.1.0"
+    - "pyrubberband==0.3.0"
+
+  # commands run after the environment is setup
+  run:
+    - "pip install -U git+https://github.com/facebookresearch/audiocraft.git@ab95eebc03f2951ebb75cf61398d82020787e4a3#egg=audiocraft"
+    - "pip install git+https://people.csail.mit.edu/hubert/git/pyaudio.git"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+train: "train.py:train"# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+  cuda: "11.7"
+
+  # a list of ubuntu apt packages to install
+  # system_packages:
+    # - "libgl1-mesa-glx"
+    # - "libglib2.0-0"
+
+  # python version in the form '3.8' or '3.8.12'
+  python_version: "3.9"
+
+  system_packages:
+    - "portaudio19-dev"
+    - "rubberband-cli"
+    - ffmpeg
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "torch==2.0.1"
+    - "pyaudio==0.2.13"
+    - "git+https://github.com/CPJKU/madmom"
+    - "BeatNet==1.1.0"
+    - "pyrubberband==0.3.0"
+
+  # commands run after the environment is setup
+  run:
+    - "pip install -U git+https://github.com/facebookresearch/audiocraft.git@ab95eebc03f2951ebb75cf61398d82020787e4a3#egg=audiocraft"
+    - "apt-get update && apt-get install -y ffmpeg"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+train: "train.py:train"# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  gpu: true
+  cuda: "11.8"
+  python_version: "3.11.1"
+  system_packages:
+    - "libgl1-mesa-glx"
+    #- "git"
+    - "ffmpeg"
+  python_packages:
+    - "git+https://github.com/pollinations/diffusers_xl.git@5cba90661226d167a95f6cee3903afe85a481f3d"
+    - "torch==2.0.1"
+    - "transformers==4.31.0"
+    - "invisible-watermark==0.2.0"
+    - "accelerate==0.21.0"
+    - "pandas==2.0.3"
+    
+  run:
+    - curl -o /usr/local/bin/pget -L "https://github.com/replicate/pget/releases/download/v0.0.1/pget" && chmod +x /usr/local/bin/pget
+    - pip install imageio imageio[ffmpeg] blend-modes
+    - pip install "git+https://github.com/pollinations/diffusers_xl.git@6b6ed22dbea71f93039cd598d4f70645fff6044c"
+    - pip install replicate python-dotenv
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+    - "git"
+    - "gcc"
+  #   - "libgl1-mesa-glx"
+  #   - "libglib2.0-0"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "torch==2.0.0"
+    - "git+https://github.com/CPJKU/madmom"
+    - "ninja"
+    - "allin1"
+    # - "pdf2image"
+  #   - "numpy==1.19.4"
+  #   - "torchvision==0.9.0"
+
+  # commands run after the environment is setup
+  run:
+    - "pip3 config set global.trusted-host 'shi-labs.com' --trusted-host=shi-labs.com"
+    - "pip3 install natten -f https://shi-labs.com/natten/wheels/cu117/torch2.0.0/index.html"
+    - "apt-get update"
+    - "apt-get -y install poppler-utils"
+    - "pip3 install pdf2image"
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  gpu: true
+  cuda: "11.8"
+  python_version: "3.11.1"
+  system_packages:
+    - "libgl1-mesa-glx"
+    #- "git"
+    - "ffmpeg"
+  python_packages:
+    - "git+https://github.com/pollinations/diffusers_xl.git@5cba90661226d167a95f6cee3903afe85a481f3d"
+    - "torch==2.0.1"
+    - "transformers==4.31.0"
+    - "invisible-watermark==0.2.0"
+    - "accelerate==0.21.0"
+    - "pandas==2.0.3"
+    
+  run:
+    - curl -o /usr/local/bin/pget -L "https://github.com/replicate/pget/releases/download/v0.0.1/pget" && chmod +x /usr/local/bin/pget
+<<<<<<<< HEAD:mosaicStream/animator/cog.yaml
+    - pip install imageio imageio[ffmpeg]
+    - pip install "git+https://github.com/pollinations/diffusers_xl.git@6b6ed22dbea71f93039cd598d4f70645fff6044c"
+    - pip install replicate python-dotenv
+========
+    - pip install imageio imageio[ffmpeg] blend-modes
+>>>>>>>> main:discmosaic/cog.yaml
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: false
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "curl"
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "zip"
+    - "libpng-dev"
+    - "libgl1"
+    - "libjpeg-dev"
+  # python version in the form '3.8' or '3.8.12'
+  python_version: "3.8"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "openai==0.23.0"
+    - "python-dotenv==0.21.0"
+    - "pytest==7.1.2"
+    - "googletrans==3.1.0a0"
+    - "opencv-python==4.6.0.66"
+    - "Pillow==9.3.0"
+    - "replicate==0.4.0"
+    - "mediapipe==0.9.0"
+  # commands run after the environment is setup
+  run:
+    - echo hey  
+predict: "predict.py:Predictor"# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: false
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "libsndfile1"
+  #   - "libgl1-mesa-glx"
+  #   - "libglib2.0-0"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+  - "openai"
+  - "librosa"
+  #   - "numpy==1.19.4"
+  #   - "torch==1.8.0"
+  #   - "torchvision==0.9.0"
+
+  # commands run after the environment is setup
+  run:
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: false
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+  #   - "libgl1-mesa-glx"
+  #   - "libglib2.0-0"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "python-dotenv"
+    - "librosa"
+
+  # commands run after the environment is setup
+  run:
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+    - "aria2"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "openai"
+    - "datasets==2.12.0"
+    - "diffusers==0.19.1"
+    - "huggingface-hub==0.15.1"
+    - "librosa==0.9.2"
+    - "matplotlib==3.7.1"
+    - "numpy==1.21.5"
+    - "sentencepiece==0.1.99"
+    - "soundfile==0.12.1"
+    - "torch==2.0.1"
+    - "torchaudio==2.0.2"
+    - "torchlibrosa==0.1.0"
+    - "torchvision==0.15.2"
+    - "tqdm==4.65.0"
+    - "transformers==4.32.0"
+
+  # commands run after the environment is setup
+  run:
+    - "git clone https://github.com/IAHispano/Applio-RVC-Fork.git"
+    - "cd Applio-RVC-Fork && git checkout 9501c81ded4aa114803b5eb3fba17f51ac44fbcc && make install"
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: false
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+  #   - "libgl1-mesa-glx"
+  #   - "libglib2.0-0"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.11"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+  #   - "numpy==1.19.4"
+  #   - "torch==1.8.0"
+  #   - "torchvision==0.9.0"
+
+  # commands run after the environment is setup
+  run:
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: false
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+  #   - "libgl1-mesa-glx"
+  #   - "libglib2.0-0"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "acids-rave"
+    - "onnxruntime"
+  #   - "numpy==1.19.4"
+  #   - "torch==1.8.0"
+  #   - "torchvision==0.9.0"
+
+  # commands run after the environment is setup
+  run:
+  #   - "echo env is ready!"
+  #   - "echo another command if needed"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+    - "portaudio19-dev"
+    - "rubberband-cli"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "torch==2.1.0"
+    - "git+https://git@github.com/facebookresearch/audiocraft#egg=audiocraft"
+    - "git+https://github.com/CPJKU/madmom"
+    - "BeatNet==1.1.3"
+    - "pyrubberband==0.3.0"
+
+  # commands run after the environment is setup
+  run:
+    - "pip install git+https://people.csail.mit.edu/hubert/git/pyaudio.git"
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  python_version: "3.10"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "ffmpeg"
+  python_packages:
+    - "ipython==8.10.0"
+    - "pandas==1.4.4"
+    - "scikit-image==0.19.3"
+    - "clean_fid==0.1.35"
+    - "torch==1.12.1"
+    - "torchvision==0.13.1"
+    - "ftfy==6.1.1"
+    - "scipy==1.10.0"
+    - "transformers==4.26.1"
+    - "omegaconf==2.3.0"
+    - "einops==0.4.1"
+    - "pytorch-lightning==1.7.7"
+    - "torchmetrics==0.11.1"
+    - "kornia==0.6"
+    - "accelerate==0.16.0"
+    - "jsonmerge==1.9.0"
+    - "resize-right==0.0.2"
+    - "torchdiffeq==0.2.3"
+    - "opencv-python==4.7.0.68"
+    - "numpngw==0.1.2"
+    - "triton==2.0.0.dev20221202"
+    - "open-clip-torch==2.13.0"
+    - "torchsde==0.2.5"
+    - "scikit-learn==1.2.1"
+    - "matplotlib==3.6.3"
+    - "omegaconf==2.3.0"
+    - "numexpr==2.8.4"
+
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+  cuda: "11.7"
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "aria2"
+    - "ffmpeg"
+
+  # python version in the form '3.8' or '3.8.12'
+  python_version: "3.7"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - "numpy==1.21.6"
+    - "torch==1.13.0"
+    - "torchvision==0.14.0"
+    - "transformers==4.19.2"
+    - "open_clip_torch==1.2.1"
+    - "autokeras==1.0.19"
+    - "torchmetrics==0.6.0"
+    - albumentations==0.4.3
+    - opencv-python==4.1.2.30
+    - pudb==2019.2
+    - imageio==2.9.0
+    - imageio-ffmpeg==0.4.2
+    - pytorch-lightning==1.4.2
+    - omegaconf==2.1.1
+    - test-tube==0.7.5
+    - streamlit==0.73.1
+    - einops==0.3.0
+    - torch-fidelity==0.3.0
+    - transformers==4.19.2
+    - torchmetrics==0.6.0
+    - kornia==0.6
+    - fire==0.4.0
+    - jupyterlab==3.3.4
+  
+  # commands run after the environment is setup
+  run:
+    - pip install -e git+https://github.com/CompVis/taming-transformers.git@master#egg=taming-transformers
+    - pip install -e git+https://github.com/openai/CLIP.git@main#egg=clip
+    - pip install diffusers
+    - pip install --upgrade --no-cache-dir gdown
+    #- wget https://drinkordiecdn.lol/sd-v1-3-full-ema.ckpt
+    - mkdir /stable-diffusion-checkpoints
+    - cd /stable-diffusion-checkpoints && wget https://pollinations-models.s3.amazonaws.com/v1-5-pruned-emaonly.ckpt
+    - pip install notebook
+    - git clone https://github.com/CompVis/taming-transformers
+    - git clone https://github.com/openai/CLIP
+    - git clone https://github.com/deforum/k-diffusion
+    - pip install jsonmerge clean-fid resize-right torchdiffeq
+    - pip install googletrans==3.1.0a0 librosa
+    # xformers
+    - pip install triton==2.0.0.dev20221120
+    - pip install ninja
+    - git clone https://github.com/facebookresearch/xformers.git
+    - export FORCE_CUDA="1" && export CUDA_VISIBLE_DEVICES=0 && export TORCH_CUDA_ARCH_LIST=8.0 && export CUDA_HOME=/usr/local/cuda-11.7 && cd xformers && git submodule update --init --recursive && pip install -r requirements.txt && pip install -e .
+
+
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_version: "3.10.4"
+  python_packages:
+    - "torch==2.0.1"
+    - "torchvision==0.15.2"
+    - "xformers==0.0.22"
+    - "tensorboard==2.16.2"
+    - "gfpgan==1.3.8"
+    - "lpips==0.1.4"
+    - "realesrgan==0.3.0"
+    - "gdown==5.1.0"
+    - "mediapipe==0.10.14"
+  run:
+    - git config --global --add safe.directory /src
+    - git clone https://github.com/philz1337x/stable-diffusion-webui-cog-init /stable-diffusion-webui
+    - python /stable-diffusion-webui/init_env.py --skip-torch-cuda-test
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  cuda: "11.1"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==7.30.1"
+    - "torchvision==0.11.1"
+    - "torch==1.10.0"
+    - "timm==0.4.12"
+    - "transformers==4.15.0"
+    - "fairscale==0.4.4"
+    - "pycocoevalcap==1.2"
+
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  cuda: "11.3"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==8.4.0"
+    - "future==0.18.2"
+    - "lmdb==1.3.0"
+    - "scikit-image==0.19.3"
+    - "torch==1.11.0 --extra-index-url=https://download.pytorch.org/whl/cu113"
+    - "torchvision==0.12.0 --extra-index-url=https://download.pytorch.org/whl/cu113"
+    - "scipy==1.9.0"
+    - "gdown==4.5.1"
+    - "pyyaml==6.0"
+    - "tb-nightly==2.11.0a20220906"
+    - "tqdm==4.64.1"
+    - "yapf==0.32.0"
+    - "lpips==0.1.4"
+    - "Pillow==9.2.0"
+    - "opencv-python==4.6.0.66"
+
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  cuda: "11.1"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==7.30.1"
+    - "torchvision==0.11.1"
+    - "torch==1.10.0"
+    - "timm==0.4.12"
+    - "transformers==4.15.0"
+    - "fairscale==0.4.4"
+    - "pycocoevalcap==1.2"
+
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  cuda: "11.3"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==8.4.0"
+    - "future==0.18.2"
+    - "lmdb==1.3.0"
+    - "scikit-image==0.19.3"
+    - "torch==1.11.0 --extra-index-url=https://download.pytorch.org/whl/cu113"
+    - "torchvision==0.12.0 --extra-index-url=https://download.pytorch.org/whl/cu113"
+    - "scipy==1.9.0"
+    - "gdown==4.5.1"
+    - "pyyaml==6.0"
+    - "tb-nightly==2.11.0a20220906"
+    - "tqdm==4.64.1"
+    - "yapf==0.32.0"
+    - "lpips==0.1.4"
+    - "Pillow==9.2.0"
+    - "opencv-python==4.6.0.66"
+
+predict: "predict.py:Predictor"
+# Configuration for Cog
+build:
+  gpu: true
+  cuda: "11.8"
+  python_version: "3.11"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libsm6"
+    - "libxext6"
+  python_packages:
+    - "torch==2.1.0"
+    - "torchvision"
+    - "diffusers==0.23.0"
+    - "transformers==4.35.0"
+    - "accelerate==0.24.0"
+    - "invisible-watermark==0.2.0"
+    - "omegaconf"
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+build:
+  gpu: true
+  cuda: "11.1"
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+  python_packages:
+    - "ipython==7.30.1"
+    - "torchvision==0.11.1"
+    - "torch==1.10.0"
+    - "timm==0.4.12"
+    - "transformers==4.15.0"
+    - "fairscale==0.4.4"
+    - "pycocoevalcap==1.2"
+
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  gpu: true
+  cuda: "11.8"
+  python_version: "3.11.1"
+  system_packages:
+    - "libgl1-mesa-glx"
+    #- "git"
+    - "ffmpeg"
+  python_packages:
+    - "torch==2.1.1"
+    - "transformers==4.36.1"
+    - "invisible-watermark==0.2.0"
+    - "accelerate==0.25.0"
+    - "diffusers==0.24.0"
+    
+  run:
+    - pip install imageio imageio[ffmpeg] blend-modes
+predict: "predict.py:Predictor"

@@ -36,7 +36,7 @@ export default function Solutions() {
       <Dreamachine /> */}
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <ImageURLHeading>Events</ImageURLHeading>
-      <PageTemplate label="event" />
+      {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />

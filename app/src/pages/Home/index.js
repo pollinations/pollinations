@@ -7,6 +7,7 @@ import MusicVideo from "./MusicVideo"
 import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./GenerativeImageFeed"
 import { KarmaYT } from "./KarmaYT"
+import { ChatPrompt } from "./ChatPrompt"
 import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import TopBandPresetsDesign from "../../assets/imgs/presets-linha.png"
@@ -29,13 +30,14 @@ export default function Solutions() {
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       {/* <Hero /> */}
       <GenerativeImageFeed />
-      <KarmaYT />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <ChatPrompt />
       <MusicVideo />
       {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <Dreamachine /> */}
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      <ImageURLHeading>Events</ImageURLHeading>
+      <KarmaYT />
+      {/* <ImageURLHeading>Events</ImageURLHeading> */}
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}

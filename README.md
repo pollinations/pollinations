@@ -15,28 +15,46 @@ Pollinations are an effort to make generative art more approachable.
 <details>
   <summary><h2>🐍 Python Package</h2></summary>
 
+# CHANGELOG V0.5.2
+```diff
++ Added Class generation methods
++ Improved Image.generate and Image.generate_batch methods
+```
+### NEW
 ```python
-# Usage Example
+import pollinations.ai as ai
 
-import pollinations as ai
+# SINGLE GENERATION
+# Version 1
+model: ai.Image = ai.Image()
+image: ai.ImageObject = model.generate(
+      prompt='cat in space',
+).save()
 
-model: object = ai.Model()
+# Version 2
+class Model(ai.Image):
+      params: dict = {
+            "prompt": "cat in space"
+      }
 
-image: object = model.generate(
-    prompt=f'Golden retriever puppy playing in the rain {ai.realistic}',
-    model=ai.turbo,
-    height=512,
-    seed=57184
-)
-image.save('image-output.jpg')
+model: ai.Image = Model()
+model.generate().save()
 
-print(image.url)
+# BATCH GENERATION
+# Version 1
+batch: list = ["lion in space", "dog in space"]
+image_generator: ai.Image = ai.Image()
+image_generator.generate_batch(prompts=batch, save=True, path="images")
+
+# Version 2
+class Model(ai.Image):
+      params: dict = {
+            "prompt": ["lion in space", "dog in space"]
+      }
+
+model: ai.Image = Model()
+model.generate_batch(save=True, path="images")
 ```
-```javascript
-// >>> https://image.pollinations.ai/prompt/Golden%20retriever%20puppy%20playing%20in%20the%20rain%20realistic,%20realism,%20real%20life,%20ultra%20realistic,%20high%20quality,%20real?model=turbo&width=1024&height=512&seed=57184
-```
-![image](https://github.com/flowa-ai/pollinations-patch/assets/152752280/448342b5-013f-4df9-a5a5-6d5f1f196cac)
-
 </details>
 
 ## �👩‍💻 Development (outdated)

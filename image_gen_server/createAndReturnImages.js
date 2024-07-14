@@ -61,7 +61,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
           },
           body: JSON.stringify(body),
         });
-        if (response?.ok) break; // If response is ok, break out of the loop
+        if (response.ok) break; // If response is ok, break out of the loop
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt < 5) await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
@@ -82,7 +82,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     const fetch_percentage = (accumulated_fetch_duration / total_time) * 100;
     console.log(`Fetch time percentage: ${fetch_percentage}%`);
 
-    if (!response.ok) {
+    if (!response?.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
 
@@ -97,8 +97,8 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
 
       const buffer = Buffer.from(image, 'base64');
       try {
-        throw new Error("disabled exif tool");
-        const tempImageFile = tempfile({ extension: 'png' });
+        // throw new Error("disabled exif tool");
+        const tempImageFile = tempfile({ extension: 'jpg' });
         fs.writeFileSync(tempImageFile, buffer);
 
         // Start timing for exif
@@ -203,7 +203,7 @@ export async function createAndReturnImageCached({ jobs, safeParams, concurrentR
     console.error("isMature", isMature, "concepts", isChild);
     if (isChild) isMature = true;
 
-    const logoPath = isMature ? null : await chooseLogoBasedOnImageBrightness(buffer);
+    const logoPath = isMature ? null : 'logo.png';
     let bufferWithLegend = safeParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
 
     return { buffer: bufferWithLegend, isChild, isMature };
@@ -224,11 +224,13 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
   const tempOutputFile = tempfile({ extension: 'jpg' });
 
   fs.writeFileSync(tempImageFile, buffer);
-  const targetWidth = safeParams.width * 0.1; // 10% of the image width
-  const targetHeight = targetWidth; // Since the logo is 100x100, maintaining aspect ratio
+
+  const targetWidth = safeParams.width * 0.3;
+  const scaleFactor = targetWidth / 200;
+  const targetHeight = scaleFactor * 31;
 
   return new Promise((resolve, reject) => {
-    exec(`convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+15+15 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
+    exec(`convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`error: ${error.message}`);
         reject(error);
@@ -238,30 +240,6 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
       fs.unlinkSync(tempImageFile);
       fs.unlinkSync(tempOutputFile);
       resolve(bufferWithLegend);
-    });
-  });
-}
-
-/**
- * Chooses the appropriate logo based on the image brightness.
- * @param {Buffer} buffer - The image buffer.
- * @returns {Promise<string>} - The path to the chosen logo file.
- */
-async function chooseLogoBasedOnImageBrightness(buffer) {
-  const tempImageFile = tempfile({ extension: 'png' });
-  fs.writeFileSync(tempImageFile, buffer);
-
-  return new Promise((resolve, reject) => {
-    exec(`convert ${tempImageFile} -colorspace Gray -format "%[fx:mean]" info:`, (error, stdout, stderr) => {
-      fs.unlinkSync(tempImageFile);
-      if (error) {
-        console.error(`error: ${error.message}`);
-        reject(error);
-        return;
-      }
-      const brightness = parseFloat(stdout);
-      const logoPath = brightness < 0.5 ? 'media/qr_code_pollinations_white.png' : 'media/qr_code_pollinations_black.png';
-      resolve(logoPath);
     });
   });
 }

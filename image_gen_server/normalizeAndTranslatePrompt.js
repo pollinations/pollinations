@@ -4,17 +4,17 @@ import { pimpPrompt } from './groqPimp.js';
 
 const memoizedPrompts = new Map();
 
-export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, safeParams={}) => {
-    let { enhance=false, seed } = safeParams;
-    const slashCount = (promptRaw.match(/\//g) || []).length;
-    const slashPercentage = (slashCount / promptRaw.length) * 100;
-    if (slashPercentage > 1 || promptRaw.length < 100) {
-        enhance = true;
-        // replace slashes with spaces
-        promptRaw = promptRaw.replace(/\//g, ' ');
-    }
+export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, safeParams = {}) => {
+  let { enhance = false, seed } = safeParams;
+  const slashCount = (promptRaw.match(/\//g) || []).length;
+  const slashPercentage = (slashCount / promptRaw.length) * 100;
+  if (slashPercentage > 1 || promptRaw.length < 100) {
+    enhance = true;
+    // replace slashes with spaces
+    promptRaw = promptRaw.replace(/\//g, ' ');
+  }
 
-    if (memoizedPrompts.has(promptRaw)) {
+  if (memoizedPrompts.has(promptRaw)) {
     return memoizedPrompts.get(promptRaw);
   }
 
@@ -48,6 +48,7 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, sa
 
   if (enhance) {
     finalPrompt = await pimpPrompt(finalPrompt, seed);
+    console.log(`Pimped prompt: ${finalPrompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });

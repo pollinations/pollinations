@@ -57,6 +57,7 @@ async function pimpPromptRaw(prompt, seed) {
 
                         The image generator is not very good at text and screenshots. Try and rewrite those into more figurative prompts. E.g. instead of a spreadsheet make a prompt of an intricate isometric technical drawing that somehow represents the information in the spreadsheet.
 
+                        When asked for a random prompt, generate an evocative and surprising one that fits user constraints, and provide any unspecified details.
                         Example Input Prompt:
                         Image in the style of cel-shaded Japanese anime, featuring a man sitting at the side of a pool. Fish and eyeballs float around.
                         

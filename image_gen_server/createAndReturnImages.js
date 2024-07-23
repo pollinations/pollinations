@@ -82,7 +82,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     const fetch_percentage = (accumulated_fetch_duration / total_time) * 100;
     console.log(`Fetch time percentage: ${fetch_percentage}%`);
 
-    if (!response.ok) {
+    if (!response?.ok) {
       throw new Error(`Server responded with ${response.status}`);
     }
 
@@ -97,8 +97,8 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
 
       const buffer = Buffer.from(image, 'base64');
       try {
-        throw new Error("disabled exif tool");
-        const tempImageFile = tempfile({ extension: 'png' });
+        // throw new Error("disabled exif tool");
+        const tempImageFile = tempfile({ extension: 'jpg' });
         fs.writeFileSync(tempImageFile, buffer);
 
         // Start timing for exif

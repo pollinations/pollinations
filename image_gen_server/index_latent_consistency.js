@@ -33,10 +33,10 @@ const queuePerIp = (handler) => {
   const rickrollCount = {}; // Count of times each IP was rickrolled
   const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
   return async (params) => {
-    const {req,res} = params;
+    const { req, res } = params;
     const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
     const ip = getIp(req);
-    const isBot =  ip === BOT_IP;
+    const isBot = ip === BOT_IP;
     if ((urlParams.get('referer') === 'discordbot') || isBot) {
       await handler(params);
       return;
@@ -68,7 +68,7 @@ const queuePerIp = (handler) => {
       //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
       // }
       const sleepTime = countJobs(true) > 3 ? queueSize * 4000 : 0;
-      console.log("[queue] sleeping for",sleepTime, "ms");
+      console.log("[queue] sleeping for", sleepTime, "ms");
 
       if (sleepTime > 30000) {
         res.writeHead(429, { 'Content-Type': 'text/plain' });
@@ -106,8 +106,8 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
     })
 
     const buffersWithLegend = await createAndReturnImageCached({
-      jobs: chunk, 
-      safeParams, 
+      jobs: chunk,
+      safeParams,
       concurrentRequests: countJobs(true),
     });
 
@@ -168,7 +168,7 @@ let memCache = {};
 const preMiddleware = async function (req, res) {
   console.error("requestListener", req.url);
   let { pathname, query } = parse(req.url, true);
-  let extraParams = {...query};
+  let extraParams = { ...query };
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
@@ -188,10 +188,10 @@ const preMiddleware = async function (req, res) {
     res.end('404: Not Found');
     return false;
   }
-  
+
   const concurrentRequests = countJobs();
   const safeParams = makeParamsSafe(extraParams);
-  const bucketKey = ["model","width","height"]
+  const bucketKey = ["model", "width", "height"]
     .filter(key => safeParams[key])
     .map(key => safeParams[key])
     .join('-');
@@ -206,7 +206,7 @@ const preMiddleware = async function (req, res) {
   }
 
   if (memCache[memCacheKey]) {
-    res.writeHead(200,{ 'Content-Type': 'image/jpeg'})
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' })
     res.write(await memCache[memCacheKey]);
     res.end();
     imageReturnTimestamps.push(Date.now());
@@ -215,7 +215,7 @@ const preMiddleware = async function (req, res) {
 
   if (await isImageCached(originalPrompt, safeParams)) {
     const cachedImage = await getCachedImage(originalPrompt, safeParams);
-    res.writeHead(200, { 'Content-Type': 'image/jpeg'})
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' })
     res.write(cachedImage);
     res.end();
     console.error("image cached, returning from cache", originalPrompt, safeParams);
@@ -224,16 +224,16 @@ const preMiddleware = async function (req, res) {
 
   bucketKeyStats[bucketKey].requested++;
 
-  if (countJobs() > 100) {
-    const queueFullImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
-    res.writeHead(200, { 'Content-Type': 'image/png' });
-    res.write(queueFullImage);
-    res.end();
-    return false;
-  }
+  // if (countJobs() > 100) {
+  //   const queueFullImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
+  //   res.writeHead(200, { 'Content-Type': 'image/png' });
+  //   res.write(queueFullImage);
+  //   res.end();
+  //   return false;
+  // }
 
   const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-  return {req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata};
+  return { req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata };
 };
 
 /**
@@ -242,80 +242,80 @@ const preMiddleware = async function (req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const queuedImageGen =  queuePerIp(async ({req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata, ip}) =>  {
+const queuedImageGen = queuePerIp(async ({ req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata, ip }) => {
   memCache[memCacheKey] = new Promise(async (resolve, reject) => {
-      timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-      const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+    timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
+    const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
 
-      if (!prompt) {
+    if (!prompt) {
+      res.writeHead(500);
+      res.end('500: Internal Server Error');
+      return;
+    }
+    console.error("prompt", prompt, "bucketKey", bucketKey);
+
+    const callback = (error, bufferAndMaturity, timingInfo) => {
+      if (error) {
         res.writeHead(500);
         res.end('500: Internal Server Error');
+        reject(error);
         return;
       }
-      console.error("prompt",prompt, "bucketKey", bucketKey);
+      res.writeHead(200, { 'Content-Type': 'image/jpeg' })
+      res.write(bufferAndMaturity.buffer);
+      resolve(bufferAndMaturity.buffer);
+      res.end();
+      imageReturnTimestamps.push(Date.now());
 
-      const callback = (error, bufferAndMaturity, timingInfo) => {
-        if (error) {
-          res.writeHead(500);
-          res.end('500: Internal Server Error');
-          reject(error);
-          return;
-        }
-        res.writeHead(200, { 'Content-Type': 'image/jpeg'})
-        res.write(bufferAndMaturity.buffer);
-        resolve(bufferAndMaturity.buffer);
-        res.end();
-        imageReturnTimestamps.push(Date.now());
-        
-        timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+      timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
-        const requestReceivedTime = timingInfo[0].timestamp;
-        timingInfo = timingInfo.map(info => ({
-          ...info,
-          timestamp: info.timestamp - requestReceivedTime
-        }));
-        console.log('Timing Info:', timingInfo);
+      const requestReceivedTime = timingInfo[0].timestamp;
+      timingInfo = timingInfo.map(info => ({
+        ...info,
+        timestamp: info.timestamp - requestReceivedTime
+      }));
+      console.log('Timing Info:', timingInfo);
 
-        const imageURL = `https://image.pollinations.ai${req.url}`;
-      
-        if (!safeParams.nofeed) {
-          const concurrentRequests = countJobs();
-          const ip = getIp(req);
-          sendToFeedListeners({
-            ...safeParams, 
-            concurrentRequests, 
-            imageURL, 
-            prompt, 
-            originalPrompt: urldecode(originalPrompt), 
-            nsfw: bufferAndMaturity.isMature, 
-            isChild: bufferAndMaturity.isChild, 
-            timingInfo,
-            ip,
-          }, { saveAsLastState: true }
-          );
-        }
-        sendToAnalytics(req, "imageGenerated", analyticsMetadata);
-      };
+      const imageURL = `https://image.pollinations.ai${req.url}`;
 
-
-      const jobData = {prompt, callback, originalPrompt, timingInfo, ip};
-      
-      const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
-      if (!existingBatch) {
-        currentBatches.push({ bucketKey, jobs: [jobData], safeParams });
-        return;
+      if (!safeParams.nofeed) {
+        const concurrentRequests = countJobs();
+        const ip = getIp(req);
+        sendToFeedListeners({
+          ...safeParams,
+          concurrentRequests,
+          imageURL,
+          prompt,
+          originalPrompt: urldecode(originalPrompt),
+          nsfw: bufferAndMaturity.isMature,
+          isChild: bufferAndMaturity.isChild,
+          timingInfo,
+          ip,
+        }, { saveAsLastState: true }
+        );
       }
+      sendToAnalytics(req, "imageGenerated", analyticsMetadata);
+    };
 
-      const existingJob = existingBatch.jobs.find(job => job.prompt === prompt);
-      if (existingJob) {
-        console.error("job already exists in queue", prompt);
-        return;
-      }
 
-      existingBatch.jobs.push(jobData);
+    const jobData = { prompt, callback, originalPrompt, timingInfo, ip };
+
+    const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
+    if (!existingBatch) {
+      currentBatches.push({ bucketKey, jobs: [jobData], safeParams });
+      return;
+    }
+
+    const existingJob = existingBatch.jobs.find(job => job.prompt === prompt);
+    if (existingJob) {
+      console.error("job already exists in queue", prompt);
+      return;
+    }
+
+    existingBatch.jobs.push(jobData);
 
   });
-  
+
   requestTimestamps.push(Date.now());
   await memCache[memCacheKey];
   printQueueStatus();

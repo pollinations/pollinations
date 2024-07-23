@@ -34,23 +34,24 @@ class leaderboard(commands.Cog):
             top_user_avatar = top_user.default_avatar.url
 
         embed = discord.Embed(
-            title="Top 10 prompters",
+            title="🏆 Top 10 Prompters 🏆",
             color=discord.Color.gold(),
-            description="This Shows the top 10 bot users across all of the servers the bot is in.",
+            description="This shows the top 10 bot users across all of the servers the bot is in.",
             timestamp=datetime.datetime.now(datetime.UTC),
         )
         embed.set_thumbnail(url=top_user_avatar)
 
         embed.add_field(
-            name=f"{NUMBER_EMOJIES[1]}  {top_user.name} - {leaderboard[top_user_id]} points",
+            name=f"{NUMBER_EMOJIES[1]}  {top_user.name} - {leaderboard[top_user_id]:,} points",
             value="** **",
+            inline=False,
         )
 
         for i, user in enumerate(leaderboard_):
             embed.add_field(
-                name=f"{NUMBER_EMOJIES[i+2]}  {leaderboard_[user]['name']} - {leaderboard_[user]['points']} points",
-                inline=False,
+                name=f"{NUMBER_EMOJIES[i+2]}  {leaderboard_[user]['name']} - {leaderboard_[user]['points']:,} points",
                 value="** **",
+                inline=False,
             )
 
         try:

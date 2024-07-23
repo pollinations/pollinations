@@ -20,7 +20,16 @@ latencies = []
 commands_ = {
     "</pollinate:1223762317359976519> 🎨": """Generates AI Images based on your prompts
 - **prompt** 🗣️ : Your prompt for the Image to be generated
-- **model** 🤖 : The model to be used for generating the Image
+- **width** ↔️ : The width of your prompted Image
+- **height** ↕️ : The height of your prompted Image
+- **enhance** 🖼️ : Specifies whether to enhance the image prompt or not
+- **cached** : specifies whether to return a cached image
+- **negative** ❎ : Specifies what not to be in the generated images
+- **nologo** 🚫 : Specifies whether to remove the logo from the generated images (deafault False)
+- **private** 🔒 : when set to True the generated Image will only be visible to you
+""",
+    "</multi-pollinate:1264942861800050891> 🎨": """Generates AI Images using all available models
+- **prompt** 🗣️ : Your prompt for the Image to be generated
 - **width** ↔️ : The width of your prompted Image
 - **height** ↕️ : The height of your prompted Image
 - **cached** : specifies whether to return a cached image
@@ -29,14 +38,11 @@ commands_ = {
 - **enhance** 🖼️ : Specifies whether to enhance the image prompt or not (default True)
 - **private** 🔒 : when set to True the generated Image will only be visible to you
 """,
-    "</multi-imagine:1187375074722975837> 🎨": """Generates AI Images using all available models
-- **prompt** 🗣️ : Your prompt for the Image to be generated
+    "</random:1264942861800050890> 🎨": """Generates Random AI Images
 - **width** ↔️ : The width of your prompted Image
 - **height** ↕️ : The height of your prompted Image
-- **cached** : specifies whether to return a cached image
 - **negative** ❎ : Specifies what not to be in the generated images
 - **nologo** 🚫 : Specifies whether to remove the logo from the generated images (deafault False)
-- **enhance** 🖼️ : Specifies whether to enhance the image prompt or not (default True)
 - **private** 🔒 : when set to True the generated Image will only be visible to you
 """,
     "</leaderboard:1188098851807166506> 🏆": "Shows the Global Leaderboard",
@@ -49,18 +55,18 @@ commands_ = {
 class pollinationsBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
+        intents.messages = True
+        intents.message_content = True
 
         super().__init__(command_prefix="!", intents=intents, help_command=None)
         self.synced = False
 
     @tasks.loop(minutes=5)
     async def change_status(self):
-        count = get_prompts_counts()
-
         await bot.change_presence(
             activity=discord.CustomActivity(
                 name="Custom Status",
-                state=f"Generated {count} Images so far...",
+                state=f"/pollinate to generate AI images",
             )
         )
 
@@ -97,7 +103,7 @@ async def on_message(message):
     if bot.user in message.mentions:
         if message.type is not discord.MessageType.reply:
             embed = discord.Embed(
-                description="Hello, I am the Pollinations.ai Bot. I am here to help you with your AI needs. Type `!help` or click </help:1187383172992872509> to get started.",
+                description="Hello, I am the Pollinations.ai Bot. I am here to help you with your AI needs. **To Generate Images click </pollinate:1223762317359976519> or </multi-imagine:1187375074722975837> or type `/help` for more commands**.",
                 color=discord.Color.og_blurple(),
             )
 
@@ -226,7 +232,7 @@ async def about(ctx):
     profilePicture = user.avatar.url
 
     embed = discord.Embed(
-        title="Pollinations.ai Bot",
+        title="About Pollinations.ai Bot 🙌",
         url="https://pollinations.ai/",
         description="I am the official Pollinations.ai Bot. I can generate AI Images from your prompts ✨.",
         color=discord.Color.og_blurple(),
@@ -247,7 +253,7 @@ async def about(ctx):
     )
     embed.add_field(
         name="How do I use this bot? 🤔",
-        value="You can use this bot by typing `!help` or clicking </help:1187383172992872509> to get started.",
+        value="You can use this bot by typing `/help` or clicking </help:1187383172992872509> to get started.",
         inline=False,
     )
     embed.add_field(
@@ -261,10 +267,31 @@ async def about(ctx):
         inline=False,
     )
 
-    embed.set_footer(
-        text="Information requested by: {}".format(ctx.author.name),
-        icon_url=ctx.author.avatar.url if ctx.author.avatar else None,
+    embed.add_field(
+        name="Total Images Generated",
+        value=f"```{get_prompts_counts()}```",
+        inline=True,
     )
+    embed.add_field(name="Servers", value=f"```{len(bot.guilds)}```", inline=True)
+
+    global start_time
+    current_time = datetime.datetime.now(datetime.UTC)
+    delta = current_time - start_time
+
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    embed.add_field(
+        name="Uptime",
+        value=f"```{hours} hours {minutes} minutes {seconds} seconds```",
+        inline=False,
+    )
+
+    embed.set_footer(
+        text="Bot created by Zngzy",
+        icon_url="https://i.ibb.co/6Pb7XG9/18622ff1cc55d7dca730d1ac246b6192.png",
+    )
+
     await ctx.send(embed=embed)
 
 

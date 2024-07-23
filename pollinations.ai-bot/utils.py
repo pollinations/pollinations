@@ -5,10 +5,12 @@ import io
 from urllib.parse import quote
 from pymongo import MongoClient
 import sys
-import itertools
 import json
 from PIL import Image
-from PIL.ExifTags import TAGS
+import piexif
+from bson.son import SON
+import discord
+import datetime
 
 client = MongoClient(MONGODB_URI)
 
@@ -23,15 +25,6 @@ prompts = db["prompts"]
 users = db["users"]
 multi_prompts = db["multi_prompts"]
 
-# Write users data to a JSON file on disk
-try:
-    users_data = list(users.find())
-    with open('users_data.json', 'w') as file:
-        json.dump(users_data, file, default=str)  # default=str to handle ObjectId serialization
-    print("\n Users data has been written to users_data.json \n")
-except Exception as e:
-    print(e)
-
 NUMBER_EMOJIES = {
     1: "🥇",
     2: "🥈",
@@ -42,8 +35,25 @@ NUMBER_EMOJIES = {
     7: "7️⃣",
     8: "8️⃣",
     9: "9️⃣",
-    10: "1️⃣0️⃣",
+    10: "🔟",
 }
+
+waiting_gifs = [
+    "https://media3.giphy.com/media/l0HlBO7eyXzSZkJri/giphy.gif?cid=ecf05e475p246q1gdcu96b5mkqlqvuapb7xay2hywmki7f5q&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+    "https://media2.giphy.com/media/QBd2kLB5qDmysEXre9/giphy.gif?cid=ecf05e47ha6xwa7rq38dcst49nefabwwrods631hvz67ptfg&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+    "https://media2.giphy.com/media/ZgqJGwh2tLj5C/giphy.gif?cid=ecf05e47gflyso481izbdcrw7y8okfkgdxgc7zoh34q9rxim&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+    "https://media0.giphy.com/media/EWhLjxjiqdZjW/giphy.gif?cid=ecf05e473fifxe2bg4act0zq73nkyjw0h69fxi52t8jt37lf&ep=v1_gifs_search&rid=giphy.gif&ct=g",
+    "https://i.giphy.com/26BRuo6sLetdllPAQ.webp",
+    "https://i.giphy.com/tXL4FHPSnVJ0A.gif",
+]
+
+
+class PromptTooLongError(discord.app_commands.AppCommandError):
+    pass
+
+
+class DimensionTooSmallError(discord.app_commands.AppCommandError):
+    pass
 
 
 def get_prompt_data(message_id: int):
@@ -106,7 +116,7 @@ def delete_multi_imagined_prompt_data(message_id: int):
 
 def get_prompts_counts():
     try:
-        return prompts.count_documents({})
+        return prompts.count_documents({}) + multi_prompts.count_documents({})
     except Exception as e:
         print(e)
         return None
@@ -134,16 +144,19 @@ def update_user_data(user_id: int, data: dict):
         print(e)
 
 
+pipeline = [
+    {"$unwind": "$prompts"},
+    {"$group": {"_id": "$_id", "count": {"$sum": 1}}},
+    {"$sort": SON([("count", -1)])},
+    {"$limit": 10},
+]
+
+
 def generate_global_leaderboard():
     try:
-        documents = users.find()
+        top_10_users = list(users.aggregate(pipeline))
+        top_10_users = {doc["_id"]: doc["count"] for doc in top_10_users}
 
-
-        data = {doc["_id"]: len(doc["prompts"]) for doc in documents}
-
-        sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
-
-        top_10_users = dict(itertools.islice(sorted_data.items(), 10))
         return top_10_users
 
     except Exception as e:
@@ -151,50 +164,73 @@ def generate_global_leaderboard():
         return None
 
 
-def read_json_from_exif(file_path):
-    # Open the image file
-    with Image.open(file_path) as img:
-        # Extract EXIF data
-        exif_data = img._getexif()
+async def generate_error_message(
+    interaction: discord.Interaction,
+    error,
+    cooldown_configuration=[
+        "- ```1 time every 10 seconds```",
+        "- ```5 times every 60 seconds```",
+        "- ```200 times every 24 hours```",
+    ],
+):
+    end_time = datetime.datetime.now() + datetime.timedelta(seconds=error.retry_after)
+    end_time_ts = int(end_time.timestamp())
 
-        # Find the 'UserComment' tag key
-        user_comment_key = next(
-            key for key, value in TAGS.items() if value == "UserComment"
+    embed = discord.Embed(
+        title="⏳ Cooldown",
+        description=f"### You can use this command again <t:{end_time_ts}:R>",
+        color=discord.Color.red(),
+        timestamp=interaction.created_at,
+    )
+    embed.set_image(url=random.choice(waiting_gifs))
+
+    embed.add_field(
+        name="How many times can I use this command?",
+        value="\n".join(cooldown_configuration),
+        inline=False,
+    )
+
+    try:
+        embed.set_footer(
+            text=f"{interaction.user} used /{interaction.command.name}",
+            icon_url=interaction.user.avatar,
+        )
+    except:
+        embed.set_footer(
+            text=f"{interaction.user} used /{interaction.command.name}",
+            icon_url=interaction.user.default_avatar,
         )
 
-        # Extract the UserComment
-        user_comment = exif_data.get(user_comment_key)
+    return embed
 
-        if user_comment:
-            try:
-                user_comment_decoded = user_comment.decode("ascii")
-                user_comment_decoded = user_comment_decoded[
-                    user_comment_decoded.find("{") :
-                ]
-                json_data = json.loads(user_comment_decoded)
-                return json_data
-            except Exception as e:
-                raise e
-        else:
-            return "No UserComment found in EXIF data."
+
+def extract_user_comment(image_bytes):
+    image = Image.open(io.BytesIO(image_bytes))
+    exif_data = piexif.load(image.info["exif"])
+    user_comment = exif_data.get("Exif", {}).get(piexif.ExifIFD.UserComment, None)
+
+    if user_comment:
+        try:
+            return user_comment.decode("utf-8")
+        except UnicodeDecodeError:
+            return "No user comment found."
+    else:
+        return "No user comment found."
 
 
 async def generate_image(
     prompt: str,
-    width: int = 500,
-    height: int = 500,
-    model: str = "turbo",
+    width: int = 800,
+    height: int = 800,
     negative: str | None = None,
     cached: bool = False,
     nologo: bool = False,
-    enhance: bool = True,
+    enhance: bool = False,
     private: bool = False,
     **kwargs,
 ):
-    model = model.lower()
-
     print(
-        f"Generating image with prompt: {prompt}, width: {width}, height: {height}, model: {model}, negative: {negative}, cached: {cached}, nologo: {nologo}, enhance: {enhance}",
+        f"Generating image with prompt: {prompt}, width: {width}, height: {height}, negative: {negative}, cached: {cached}, nologo: {nologo}, enhance: {enhance}",
         file=sys.stderr,
     )
 
@@ -204,10 +240,9 @@ async def generate_image(
     url += f"?seed={seed}" if not cached else ""
     url += f"&width={width}"
     url += f"&height={height}"
-    url += f"&model={model}" if model else ""
     url += f"&negative={negative}" if negative else ""
     url += f"&nologo={nologo}" if nologo else ""
-    url += f"&enhance={enhance}" if enhance == False else ""
+    url += f"&enhance={enhance}" if enhance else ""
     url += f"&nofeed={private}" if private else ""
     url += "&referer=discordbot"
 
@@ -215,7 +250,6 @@ async def generate_image(
         "prompt": prompt,
         "width": width,
         "height": height,
-        "model": model,
         "negative": negative,
         "cached": cached,
         "nologo": nologo,
@@ -229,16 +263,23 @@ async def generate_image(
         async with session.get(url) as response:
             response.raise_for_status()  # Raise an exception for non-2xx status codes
             image_data = await response.read()
+
+            if image_data:
+                user_comment = extract_user_comment(image_data)
+
             image_file = io.BytesIO(image_data)
             image_file.seek(0)
 
-            image_file2 = io.BytesIO(image_data)
-            image_file2.seek(0)
-    try:
-        json_data = read_json_from_exif(image_file2)
-        is_nsfw = json_data["0"]["has_nsfw_concept"]
-    except Exception as e:
-        print(e)
-        is_nsfw = False
+            try:
+                user_comment = user_comment[user_comment.find("{") :]
+                user_comment = json.loads(user_comment)
+                dic["nsfw"] = user_comment["0"]["has_nsfw_concept"]
+                if enhance or len(prompt) < 80:
+                    enhance_prompt = user_comment["0"]["prompt"]
+                    enhance_prompt = enhance_prompt[: enhance_prompt.rfind("\n")]
+                    dic["enhanced_prompt"] = enhance_prompt
+            except Exception as e:
+                print(e)
+                dic["nsfw"] = False
 
-    return (dic, image_file, is_nsfw)
+    return (dic, image_file)

@@ -11,7 +11,7 @@ export const SOCIAL_LINKS = {
     label: 'Discord',
     icon: ICONS.discord,
     icon_img: DiscordLogo,
-    url: 'https://discord.gg/8HqSRhJVxn',
+    url: 'https://discord.gg/k9F7SyTgqn',
   },
   github: {
     label: 'GitHub',
@@ -19,28 +19,28 @@ export const SOCIAL_LINKS = {
     icon_img: GithubLogo,
     url: 'https://www.github.com/pollinations'
   },
-  youtube: { 
+  youtube: {
     label: 'YouTube',
-    icon: ICONS.youtube, 
+    icon: ICONS.youtube,
     icon_img: YoutubeLogo,
-    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug' 
+    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug'
   },
-  instagram: { 
+  instagram: {
     label: 'Instagram',
-    icon: ICONS.instagram, 
+    icon: ICONS.instagram,
     icon_img: InstagramLogo,
-    url: 'https://instagram.com/pollinations_ai' 
+    url: 'https://instagram.com/pollinations_ai'
   },
-  twitter: { 
+  twitter: {
     label: 'Twitter',
-    icon: ICONS.twitter, 
+    icon: ICONS.twitter,
     icon_img: TwitterLogo,
-    url: 'https://twitter.com/pollinations_ai' 
+    url: 'https://twitter.com/pollinations_ai'
   },
-  tiktok: { 
+  tiktok: {
     label: 'Tiktok',
-    icon: ICONS.tiktok, 
+    icon: ICONS.tiktok,
     icon_img: TikTokLogo,
-    url: 'https://tiktok.com/@pollinations.ai' 
+    url: 'https://tiktok.com/@pollinations.ai'
   },
 }

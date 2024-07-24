@@ -9,20 +9,20 @@ import { useEffect } from 'react'
 
 const TwitchSection = props => {
 
-    useEffect(() => {
-      const embed = new Twitch.Embed("twitch-embed", {
-        width: 854,
-        height: 480,
-        channel: "korus_labs",
-      });
+  useEffect(() => {
+    const embed = new Twitch.Embed("twitch-embed", {
+      width: 854,
+      height: 480,
+      channel: "korus_labs",
+    });
 
-      return () => {
-        embed.destroy();
-      }
-      
-    }, []);
+    return () => {
+      embed.destroy();
+    }
 
-    return <Style>
+  }, []);
+
+  return <Style>
     <Container>
       <Body>
         {/*  Heading */}
@@ -31,16 +31,16 @@ const TwitchSection = props => {
         contribute on Discord.
         <br/>
         <br/>
-        <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 10}}>
+        <LinkStyle href='https://discord.gg/k9F7SyTgqn' style={{zIndex: 10}}>
             join our discord
         </LinkStyle> */}
         {/* <!-- Add a placeholder for the Twitch embed --> */}
-        <div id="twitch-embed"></div>   
+        <div id="twitch-embed"></div>
         {/* <!-- Create a Twitch.Embed object that will render within the "twitch-embed" element --> */}
-        Chat to take part in the collective dream!  
+        Chat to take part in the collective dream!
 
       </Body>
-      <Star src={Star6Img}/>
+      <Star src={Star6Img} />
     </Container>
   </Style>
 }

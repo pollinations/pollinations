@@ -258,7 +258,7 @@ async def about(ctx):
     )
     embed.add_field(
         name="How do I report a bug? 🪲",
-        value="You can report a bug by joining our [Discord Server](https://discord.gg/SFasNG4n6b).",
+        value="You can report a bug by joining our [Discord Server](https://discord.gg/k9F7SyTgqn).",
         inline=False,
     )
     embed.add_field(

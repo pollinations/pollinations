@@ -10,7 +10,7 @@ let WhoWeAreContent = () => <>
     deeply engaged <br /> <i>in the <b>open source</b> AI ecosystem.</i>
   </h2>
   <p>
-    To talk to us, reach out on <LinkStyle to="https://discord.com/invite/8HqSRhJVxn">Discord</LinkStyle> or at hello@pollinations.ai
+    To talk to us, reach out on <LinkStyle href="https://discord.gg/k9F7SyTgqn">Discord</LinkStyle> or at hello@pollinations.ai
   </p>
 </>
 

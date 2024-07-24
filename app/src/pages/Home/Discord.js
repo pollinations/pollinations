@@ -8,19 +8,19 @@ import { Link } from 'react-router-dom'
 
 const DiscordSection = props => {
 
-    return <Style>
+  return <Style>
     <Container>
-      <Link to="https://discord.gg/8HqSRhJVxn'"><DiscordLogo src={DiscordIMG} alt="discord"  /></Link>
+      <Link to="https://discord.gg/k9F7SyTgqn'"><DiscordLogo src={DiscordIMG} alt="discord" /></Link>
       <Body>
-        Discuss, get help and <br/>
+        Discuss, get help and <br />
         contribute on Discord.
-        <br/>
-        <br/>
-        <LinkStyle href='https://discord.gg/8HqSRhJVxn' style={{zIndex: 10}}>
-            join our discord
+        <br />
+        <br />
+        <LinkStyle href='https://discord.gg/k9F7SyTgqn' style={{ zIndex: 10 }}>
+          join our discord
         </LinkStyle>
       </Body>
-      <Star src={Star6Img}/>
+      <Star src={Star6Img} />
     </Container>
   </Style>
 }

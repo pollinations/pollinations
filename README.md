@@ -116,4 +116,4 @@ print(image.url)
 
 - Frontend: https://pollinations.ai/
 - Instructions: [docs/instructions.md](docs/instructions.md)
-- Discord: https://discord.gg/azGuNpvPu8
+- Discord: https://discord.gg/k9F7SyTgqn

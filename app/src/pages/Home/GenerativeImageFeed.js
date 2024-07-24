@@ -234,7 +234,7 @@ function ImageData({ image, handleParamChange, isLoading }) {
             <TableRow key="nologo" style={{ borderBottom: 'none' }}>
               <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
                 nologo
-                <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/8HqSRhJVxn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
+                <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/k9F7SyTgqn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>

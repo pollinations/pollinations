@@ -18,7 +18,7 @@
 <img src="https://img.shields.io/github/last-commit/zingzy/pollinations.ai-bot?logo=github" alt="GitHub last commit">
 <img src="https://img.shields.io/github/commit-activity/m/zingzy/pollinations.ai-bot?logo=github" alt="GitHub commit activity">
 <img src="https://img.shields.io/github/issues/zingzy/pollinations.ai-bot?logo=github" alt="GitHub issues">
-<a href="https://discord.gg/SFasNG4n6b"><img src="https://img.shields.io/discord/885844321461485618?logo=discord" alt="Discord"></a>
+<a href="https://discord.gg/k9F7SyTgqn"><img src="https://img.shields.io/discord/885844321461485618?logo=discord" alt="Discord"></a>
 </p>
 
 

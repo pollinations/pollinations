@@ -91,6 +91,11 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     // quit the process
     images = jsonResponse;
 
+    // if images is not an array make it an array
+    if (!Array.isArray(images)) {
+      images = [images];
+    }
+
     const exifTool = new ExifTool();
     const buffers = await Promise.all(images.map(async ({ image, ...rest }) => {
       console.log("decoding base64 image");

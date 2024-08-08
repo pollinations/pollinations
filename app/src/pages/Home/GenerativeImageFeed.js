@@ -50,7 +50,7 @@ export function GenerativeImageFeed() {
       </Grid>
       <Grid item xs={12}>
         <Typography variant="h6" color="primary" style={{ textAlign: 'center', margin: '20px 0' }}>
-          Model "Flux" is now available!
+          Model "?model=flux" is now available!
         </Typography>
       </Grid>
       {!image["imageURL"] ? (

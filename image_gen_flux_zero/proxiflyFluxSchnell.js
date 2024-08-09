@@ -40,11 +40,22 @@ async function convertWebPToJPG(webpBuffer) {
     return jpgBuffer;
 }
 
-async function generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent) {
+async function generateImage(prompt, seed, randomizeSeed, width = 768, height = 768, numInferenceSteps = 2, endpoint) {
+    const agent = getRandomProxyAgent();
     console.log("prompt", prompt, seed, randomizeSeed, width, height, numInferenceSteps);
+    console.log(`Using endpoint: ${endpoint}`);
+
+    // Ensure width and height are integers and greater than 32, else use defaults
+    width = Number.isInteger(width) && width > 32 ? width : 768;
+    height = Number.isInteger(height) && height > 32 ? height : 768;
+
+    // Ensure width and height are multiples of 8
+    width = Math.floor(width / 8) * 8;
+    height = Math.floor(height / 8) * 8;
+
     try {
         console.log('Sending initial request to generate image');
-        const initialResponse = await fetch('https://black-forest-labs-flux-1-schnell.hf.space/call/infer', {
+        const initialResponse = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -67,7 +78,7 @@ async function generateImage(prompt, seed, randomizeSeed, width, height, numInfe
 
         while (true) {
             console.log("Checking for eventId", eventId);
-            const finalResponse = await fetch(`https://black-forest-labs-flux-1-schnell.hf.space/call/infer/${eventId}`, {
+            const finalResponse = await fetch(`${endpoint}/${eventId}`, {
                 agent
             });
             console.log('Final request sent for eventId:', eventId);
@@ -106,12 +117,17 @@ async function generateImage(prompt, seed, randomizeSeed, width, height, numInfe
         throw error;
     }
 }
-
 async function generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent) {
     let attempt = 0;
+    const endpoints = [
+        'https://black-forest-labs-flux-1-schnell.hf.space/call/infer',
+        'https://voodoohop-flux-1-schnell.hf.space/call/infer'
+    ];
     while (attempt < 3) {
         try {
-            return await generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent);
+            const endpoint = attempt < 2 ? endpoints[0] : endpoints[1];
+            console.log(`Attempting to use endpoint: ${endpoint}`);
+            return await generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, endpoint);
         } catch (error) {
             console.error('Error generating image, retry #:', attempt, prompt, width, height);
             await sleep(500);
@@ -121,13 +137,20 @@ async function generateImageRetry(prompt, seed, randomizeSeed, width, height, nu
 }
 
 async function getImage({ prompt = null, prompts = null, seed = 123, randomizeSeed = false, width = 768, height = 768, numInferenceSteps = 2 } = {}) {
-    const agent = getRandomProxyAgent();
+    // Ensure width and height are integers and greater than 32, else use defaults
+    width = Number.isInteger(width) && width > 32 ? width : 768;
+    height = Number.isInteger(height) && height > 32 ? height : 768;
+
+    // Ensure width and height are multiples of 8
+    width = Math.floor(width / 8) * 8;
+    height = Math.floor(height / 8) * 8;
+
     if (prompts) {
-        const imagePromises = prompts.map(p => generateImageRetry(p, seed, randomizeSeed, width, height, numInferenceSteps, agent));
+        const imagePromises = prompts.map(p => generateImageRetry(p, seed, randomizeSeed, width, height, numInferenceSteps));
         const images = await Promise.all(imagePromises);
         return images;
     } else {
-        return [await generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent)];
+        return [await generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps)];
     }
 }
 

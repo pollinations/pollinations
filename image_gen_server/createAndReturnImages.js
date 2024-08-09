@@ -60,13 +60,15 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(body),
+          timeout: 30000, // 30 seconds timeout
         });
         if (response.ok) break; // If response is ok, break out of the loop
+        throw new Error(`Server responded with ${response.status}`);
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
-        if (attempt < 5) await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
+        if (attempt === 5) throw error;
+        await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
       }
-
     }
 
     const fetch_end_time = Date.now();
@@ -98,6 +100,10 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
 
     const exifTool = new ExifTool();
     const buffers = await Promise.all(images.map(async ({ image, ...rest }) => {
+      if (!image) {
+        console.error("image is null");
+        return { buffer: null, ...rest };
+      }
       console.log("decoding base64 image");
 
       const buffer = Buffer.from(image, 'base64');
@@ -127,6 +133,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     await exifTool.end();
     return buffers;
   } catch (e) {
+    console.error('Error in callWebUI:', e);
     throw e;
   }
 };

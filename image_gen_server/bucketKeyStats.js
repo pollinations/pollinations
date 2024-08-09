@@ -45,8 +45,8 @@ export const printQueueStatus = () => {
   const fileImageTable = imageTable.map(row => row.join(',')).join('\n');
 
   // Write tables to a file
-  writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
-};let jobCounts = [];
+  // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
+}; let jobCounts = [];
 export const countJobs = (average = false) => {
   const currentCount = currentBatches.reduce((acc, batch) => acc + batch.jobs.length, 0);
   if (average) {

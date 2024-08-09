@@ -26,6 +26,7 @@ Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
 Seed: **${seed}** (Each seed generates a new image)
+Model: **${model || 'turbo'}**
 
 # Image
 ![Generative Image](${imageURL})`,
@@ -37,6 +38,7 @@ Seed: **${seed}** (Each seed generates a new image)
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
     <p>Seed: ${seed} <i>Each seed generates a new image variation</i></p>
+    <p>Model: ${model || 'turbo'}</p>
 
     <img 
       src="${imageURL}" 
@@ -46,7 +48,7 @@ Seed: **${seed}** (Each seed generates a new image)
 </html>
 `,
 
-rust:(prompt, width, height, seed, model) => `
+  rust: ({ prompt, width, height, seed, model }) => `
 // Here's the equivalent Rust code using the reqwest crate for HTTP requests
 // and the std::fs module for file operations.
 // First part of the code that fetches an image from a URL and saves it to a file.
@@ -70,11 +72,11 @@ fn download_image(image_url: &str) -> Result<(), Box<dyn std::error::Error>> {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Image details
-    let prompt = "the easy way to achieve a goal, efficient, simple, straightf...";
-    let width = 1024;
-    let height = 1024;
-    let seed = 42; // Each seed generates a new image variation
-    let model = "pollinations"; // Assuming a model name
+    let prompt = "${shorten(prompt)}";
+    let width = ${width};
+    let height = ${height};
+    let seed = ${seed}; // Each seed generates a new image variation
+    let model = "${model || 'turbo'}"; // Using 'turbo' as default if model is not provided
 
     let image_url = format!(
         "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
@@ -114,6 +116,7 @@ const prompt = '${shorten(prompt)}';
 const width = ${width};
 const height = ${height};
 const seed = ${seed}; // Each seed generates a new image variation
+const model = '${model || 'turbo'}'; // Using 'turbo' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
@@ -138,6 +141,7 @@ prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
 seed = ${seed} # Each seed generates a new image variation
+model = '${model || 'turbo'}' # Using 'turbo' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -150,11 +154,11 @@ download_image(image_url)
 
 import pollinations as ai
 
-model: object = ai.Model()
+model_obj: object = ai.Model()
 
-image: object = model.generate(
+image: object = model_obj.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.turbo,
+    model=ai.${model || 'turbo'},
     width=${width},
     height=${height},
     seed=${seed}
@@ -176,9 +180,9 @@ export function CodeExamples(image) {
 
   const allTabs = ["link", "discord_bot", ...codeExampleTabs];
 
-  return <URLExplanation > 
-    <AppBar position="static" style={{color:"white", width: "auto", marginTop: "30px", boxShadow: 'none' }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{style: {background: Colors.lime}}} >
+  return <URLExplanation >
+    <AppBar position="static" style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: 'none' }}>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{ style: { background: Colors.lime } }} >
         {allTabs.map((key) => (
           <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
@@ -220,11 +224,10 @@ export function CodeExamples(image) {
               color: Colors.offwhite,
               scrollbarColor: 'transparent transparent' // scrollbar thumb and track colors
 
-            }}          />
+            }} />
         )
       })}
 
     </>
   </URLExplanation>;
 }
-

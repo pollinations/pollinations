@@ -42,6 +42,19 @@ const queuePerIp = (handler) => {
       return;
     }
 
+    if (urlParams.get('status') === 'true') {
+      const queuePosition = ipQueue[ip] ? ipQueue[ip].size + ipQueue[ip].pending : 0;
+      const stats = {
+        queuePosition,
+        totalRequests: countJobs(),
+        currentQueueSize: generalImageQueue.size + generalImageQueue.pending,
+        imagesReturned: bucketKeyStats[ip] ? bucketKeyStats[ip].returned : 0,
+        rickrollData: rickrollData[ip] || 0
+      };
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(stats));
+      return;
+    }
 
     if (!ipQueue[ip]) {
       ipQueue[ip] = new PQueue({ concurrency: isBot ? 999999 : 1 });
@@ -121,6 +134,19 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
   } catch (e) {
     console.error(e);
     chunk.forEach(job => job.callback(e, null, job.timingInfo)); // Error callback
+  } finally {
+    // Remove processed jobs from currentBatches
+    const batchIndex = currentBatches.findIndex(batch => batch.bucketKey === bucketKey);
+    if (batchIndex !== -1) {
+      currentBatches[batchIndex].jobs = currentBatches[batchIndex].jobs.filter(
+        job => !chunk.some(chunkJob => chunkJob.prompt === job.prompt)
+      );
+      if (currentBatches[batchIndex].jobs.length === 0) {
+        currentBatches.splice(batchIndex, 1);
+      }
+    }
+    // Decrement the count in bucketKeyStats
+    bucketKeyStats[bucketKey].requested -= chunk.length;
   }
 };
 
@@ -255,11 +281,15 @@ const queuedImageGen = queuePerIp(async ({ req, res, timingInfo, memCacheKey, or
     console.error("prompt", prompt, "bucketKey", bucketKey);
 
     const callback = (error, bufferAndMaturity, timingInfo) => {
+
       if (error) {
         res.writeHead(500);
         res.end('500: Internal Server Error');
         reject(error);
         return;
+      }
+      if (!timingInfo) {
+        timingInfo = [];
       }
       res.writeHead(200, { 'Content-Type': 'image/jpeg' })
       res.write(bufferAndMaturity.buffer);
@@ -346,7 +376,6 @@ server.setTimeout(300000, (socket) => {
 
 server.listen(process.env.PORT || 16384);
 processBatches();
-
 
 
 

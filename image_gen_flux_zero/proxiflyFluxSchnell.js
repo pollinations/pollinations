@@ -109,18 +109,18 @@ async function generateImage(prompt, seed, randomizeSeed, width, height, numInfe
 
 async function generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent) {
     let attempt = 0;
-    while (attempt < 10) {
+    while (attempt < 3) {
         try {
             return await generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent);
         } catch (error) {
-            console.error('Error generating image, retrying:', error);
+            console.error('Error generating image, retry #:', attempt, prompt, width, height);
             await sleep(500);
             attempt++;
         }
     }
 }
 
-async function getImage({ prompt = null, prompts = null, seed = 123, randomizeSeed = true, width = 768, height = 768, numInferenceSteps = 2 } = {}) {
+async function getImage({ prompt = null, prompts = null, seed = 123, randomizeSeed = false, width = 768, height = 768, numInferenceSteps = 2 } = {}) {
     const agent = getRandomProxyAgent();
     if (prompts) {
         const imagePromises = prompts.map(p => generateImageRetry(p, seed, randomizeSeed, width, height, numInferenceSteps, agent));

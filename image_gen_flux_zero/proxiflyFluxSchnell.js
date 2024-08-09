@@ -1,9 +1,14 @@
 import fetch from 'node-fetch';
-import HttpsProxyAgent from 'https-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import sleep from 'await-sleep';
 import fs from 'fs';
 import path from 'path';
 import http from 'http';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import tempfile from 'tempfile';
+
+const execAsync = promisify(exec);
 
 function getRandomProxyAgent() {
     const proxyFilePath = path.join('webshare_100_proxies.txt');
@@ -21,8 +26,22 @@ function getRandomProxyAgent() {
     return new HttpsProxyAgent(proxyUrl);
 }
 
-async function getImage({ prompt = "Hello!!", seed = 123, randomizeSeed = true, width = 768, height = 768, numInferenceSteps = 2 } = {}) {
-    const agent = getRandomProxyAgent();
+async function convertWebPToJPG(webpBuffer) {
+    const webpFilePath = tempfile({ extension: 'webp' });
+    const jpgFilePath = tempfile({ extension: 'jpg' });
+    fs.writeFileSync(webpFilePath, webpBuffer);
+
+    await execAsync(`ffmpeg -i ${webpFilePath} ${jpgFilePath}`);
+
+    const jpgBuffer = fs.readFileSync(jpgFilePath);
+    fs.unlinkSync(webpFilePath);
+    fs.unlinkSync(jpgFilePath);
+
+    return jpgBuffer;
+}
+
+async function generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent) {
+    console.log("prompt", prompt, seed, randomizeSeed, width, height, numInferenceSteps);
     try {
         console.log('Sending initial request to generate image');
         const initialResponse = await fetch('https://black-forest-labs-flux-1-schnell.hf.space/call/infer', {
@@ -55,32 +74,60 @@ async function getImage({ prompt = "Hello!!", seed = 123, randomizeSeed = true, 
             const finalText = await finalResponse.text();
             console.log('Final response received:', finalText);
 
-            if (finalText.startsWith('event:')) {
-                const [event, data] = finalText.split('\ndata: ');
-                const eventType = event.split(': ')[1];
-                console.log("eventType", eventType);
-                if (eventType === 'error') {
-                    console.error('Error event received:', data);
-                    break;
-                } else if (eventType === 'complete') {
-                    const finalData = JSON.parse(data);
-                    console.log('Final URL:', finalData[0].url);
+            const events = finalText.split('\n\n').filter(Boolean);
+            for (const eventText of events) {
+                if (eventText.startsWith('event:')) {
+                    const [event, data] = eventText.split('\ndata: ');
+                    const eventType = event.split(': ')[1];
+                    console.log("eventType", eventType);
+                    if (eventType === 'error') {
+                        console.error('Error event received:', data);
+                        throw new Error('Error event received:', data);
+                    } else if (eventType === 'complete') {
+                        const finalData = JSON.parse(data);
+                        console.log('Final URL:', finalData[0].url);
 
-                    // Fetch the final URL with the same proxy and return the base64 image
-                    console.log('Fetching final image from URL');
-                    const finalUrlResponse = await fetch(finalData[0].url, { agent });
-                    const buffer = await finalUrlResponse.buffer();
-                    const base64Image = buffer.toString('base64');
-                    console.log('Returning base64 image');
-                    return base64Image;
+                        // Fetch the final URL with the same proxy and convert the image to JPG
+                        console.log('Fetching final image from URL');
+                        const finalUrlResponse = await fetch(finalData[0].url, { agent });
+                        const webpBuffer = await finalUrlResponse.buffer();
+                        const jpgBuffer = await convertWebPToJPG(webpBuffer);
+                        const base64Image = jpgBuffer.toString('base64');
+                        console.log('Returning base64 image');
+                        return { image: base64Image };
+                    }
                 }
             }
 
-            await sleep(5000);
+            await sleep(500);
         }
     } catch (error) {
         console.error('Error:', error);
         throw error;
+    }
+}
+
+async function generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent) {
+    let attempt = 0;
+    while (attempt < 10) {
+        try {
+            return await generateImage(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent);
+        } catch (error) {
+            console.error('Error generating image, retrying:', error);
+            await sleep(500);
+            attempt++;
+        }
+    }
+}
+
+async function getImage({ prompt = null, prompts = null, seed = 123, randomizeSeed = true, width = 768, height = 768, numInferenceSteps = 2 } = {}) {
+    const agent = getRandomProxyAgent();
+    if (prompts) {
+        const imagePromises = prompts.map(p => generateImageRetry(p, seed, randomizeSeed, width, height, numInferenceSteps, agent));
+        const images = await Promise.all(imagePromises);
+        return images;
+    } else {
+        return [await generateImageRetry(prompt, seed, randomizeSeed, width, height, numInferenceSteps, agent)];
     }
 }
 
@@ -97,10 +144,10 @@ const server = http.createServer(async (req, res) => {
             try {
                 const params = JSON.parse(body);
                 console.log('Parsed request parameters:', params);
-                const base64Image = await getImage(params);
+                const base64Images = await getImage(params);
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ image: base64Image }));
-                console.log('Response sent with generated image');
+                res.end(JSON.stringify(base64Images));
+                console.log('Response sent with generated images');
             } catch (error) {
                 console.error('Error processing request:', error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });

@@ -8,7 +8,7 @@ import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 
 const SERVER_URL = 'http://localhost:5002/generate';
-const PIXART_SERVER_URL = "http://localhost:5001/generate_pixart"
+const FLUX_SERVER_URL = "http://localhost:5556/generate"
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
@@ -53,7 +53,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const chosenServer = safeParams.model === "pixart" ? PIXART_SERVER_URL : SERVER_URL;
+        const chosenServer = safeParams.model === "flux" ? FLUX_SERVER_URL : SERVER_URL;
         response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
@@ -149,7 +149,7 @@ const nsfwCheck = async (buffer) => {
 
 const idealSideLength = {
   turbo: 1024,
-  pixart: 768,
+  flux: 768,
   deliberate: 640,
   dreamshaper: 800,
   formulaxl: 800,
@@ -189,7 +189,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
     height = Math.floor(height * ratio);
   }
 
-  if (model !== "pixart" && model !== "turbo")
+  if (model !== "flux" && model !== "turbo")
     model = "turbo";
   return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
 };

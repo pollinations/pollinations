@@ -48,11 +48,11 @@ export function GenerativeImageFeed() {
       <Grid item xs={12}>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
-      {/* <Grid item xs={12}>
+      <Grid item xs={12}>
         <Typography variant="h6" color="primary" style={{ textAlign: 'center', margin: '20px 0' }}>
-          Model "?model=flux" is now available! 
+          Model "?model=flux" is now available!
         </Typography>
-      </Grid> */}
+      </Grid>
       {!image["imageURL"] ? (
         <Grid container justify="center" alignItems="center" style={{ marginBottom: "8em" }}>
           <CircularProgress color={'inherit'} style={{ color: Colors.offwhite }} />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize } from '@material-ui/core';
+import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize, Select, MenuItem, FormControl, InputLabel } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/Info';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { debounce } from 'lodash';
@@ -129,6 +129,7 @@ function getImageURL(newImage) {
   if (newImage.seed && newImage.seed !== 42 && newImage.seed !== "42") queryParams.push(`seed=${newImage.seed}`);
   if (newImage.nofeed) queryParams.push(`nofeed=${newImage.nofeed}`);
   if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`);
+  if (newImage.model && newImage.model !== "turbo") queryParams.push(`model=${newImage.model}`);
 
   if (queryParams.length > 0) {
     imageURL += '?' + queryParams.join('&');
@@ -142,7 +143,7 @@ function getImageURL(newImage) {
 function ImageData({ image, handleParamChange, isLoading }) {
 
 
-  const { prompt, width, height, seed, imageURL, nofeed, nologo } = image;
+  const { prompt, width, height, seed, imageURL, nofeed, nologo, model } = image;
 
   if (!imageURL) {
     return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
@@ -163,6 +164,23 @@ function ImageData({ image, handleParamChange, isLoading }) {
                   onChange={(e) => handleParamChange('prompt', e.target.value)}
                   disabled={isLoading}
                 />
+              </TableCell>
+            </TableRow>
+            <TableRow key="model" style={{ borderBottom: 'none' }}>
+              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>model</TableCell>
+              <TableCell align="right" style={{ borderBottom: 'none' }}>
+                <FormControl fullWidth>
+                  <InputLabel style={{ color: Colors.white }}>Model</InputLabel>
+                  <Select
+                    value={model || "turbo"}
+                    onChange={(e) => handleParamChange('model', e.target.value)}
+                    disabled={isLoading}
+                    style={{ color: Colors.white, width: '100%' }}
+                  >
+                    <MenuItem value="turbo">Turbo</MenuItem>
+                    <MenuItem value="flux">Flux</MenuItem>
+                  </Select>
+                </FormControl>
               </TableCell>
             </TableRow>
             <TableRow key="width" style={{ borderBottom: 'none' }}>
@@ -265,4 +283,3 @@ function ImageData({ image, handleParamChange, isLoading }) {
     </>
   );
 }
-

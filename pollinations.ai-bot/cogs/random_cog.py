@@ -14,11 +14,15 @@ class RandomImage(commands.Cog):
         await self.bot.wait_until_ready()
 
     @app_commands.command(name="random", description="Generate Random AI Images")
+    @app_commands.choices(
+        model=[app_commands.Choice(name=choice, value=choice) for choice in MODELS],
+    )
     @app_commands.guild_only()
     @app_commands.checks.cooldown(1, 15)
     @app_commands.describe(
         height="Height of the image",
         width="Width of the image",
+        model="The model to use for generating the image",
         negative="The things not to include in the image",
         nologo="Remove the logo",
         private="Only you can see the generated Image if set to True",
@@ -28,6 +32,7 @@ class RandomImage(commands.Cog):
         interaction: discord.Interaction,
         width: int = 1000,
         height: int = 1000,
+        model: app_commands.Choice[str] = MODELS[0],
         negative: str | None = None,
         nologo: bool = True,
         private: bool = False,
@@ -40,7 +45,7 @@ class RandomImage(commands.Cog):
         start = datetime.datetime.now()
 
         dic, image = await generate_image(
-            "Random Prompt", width, height, negative, False, nologo, None, private
+            "Random Prompt", width, height, model, negative, False, nologo, None, private
         )
 
         image_file = discord.File(image, filename="image.png")

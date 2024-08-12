@@ -8,12 +8,12 @@ while true; do
 
 
     # URL construction
-    URL="http://image.pollinations.ai/prompt/$RAND_STR"
+    URL="http://image.pollinations.ai/prompt/random_prompt_$RAND_STR"
 
     echo "Fetching $URL"
-    # Time the fetch operation
-    time curl -o /dev/null -s $URL
+    # Time the fetch operation and suppress wget output
+    time wget -qO- $URL > /dev/null
 
     # Wait for 30 seconds
-    sleep 60
+    sleep 30
 done

@@ -31,7 +31,7 @@ export default function Solutions() {
       {/* <Hero /> */}
       <GenerativeImageFeed />
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      <ChatPrompt />
+      {/* <ChatPrompt /> */}
       <MusicVideo />
       {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <Dreamachine /> */}

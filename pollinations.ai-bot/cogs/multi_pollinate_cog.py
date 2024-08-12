@@ -30,6 +30,11 @@ class Multi_pollinate(commands.Cog):
         url += f"&nologo=true"
         url += f"&enhance={data['enhance']}" if 'enhance' in data and data['enhance'] else ''
 
+        if index % 2 == 0:
+            url += f"&model=turbo"
+        else:
+            url += f"&model=flux"
+
         async with aiohttp.ClientSession() as session:
             async with session.get(data['urls'][index]) as response:
                 response.raise_for_status()
@@ -214,8 +219,13 @@ class Multi_pollinate(commands.Cog):
         for i in range(4):
             try:
                 time = datetime.datetime.now()
+                if i % 2 == 0:
+                    model = "turbo"
+                else:
+                    model = "flux"
+
                 dic, image = await generate_image(
-                    prompt, width, height, negative, cached, nologo, enhance, private
+                    prompt, width, height, model, negative, cached, nologo, enhance, private
                 )
 
                 image_urls.append(dic["bookmark_url"])

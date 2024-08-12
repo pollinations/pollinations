@@ -23,16 +23,16 @@ let accumulated_fetch_duration = 0;
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
-const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests, ip }) => {
-  const steps = Math.min(4, Math.round(Math.max(1, (6 - (concurrentRequests / 4)))));
-  console.log("concurrent requests", concurrentRequests, "steps", steps, "jobs", jobs.length, "safeParams", safeParams);
+const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
+  // const steps = Math.min(4, Math.round(Math.max(1, (6 - (concurrentRequests / 4)))));
+  console.log("concurrent requests", concurrentRequests, "jobs", jobs.length, "safeParams", safeParams);
 
   let images = [];
   try {
-    if (!safeParams.nofeed)
-      jobs.forEach(({ prompt, ip }) => {
-        sendToFeedListeners({ ...safeParams, concurrentRequests, prompt, steps, ip });
-      });
+    // if (!safeParams.nofeed)
+    //   jobs.forEach(({ prompt, ip }) => {
+    //     sendToFeedListeners({ ...safeParams, concurrentRequests, prompt, steps, ip, status: "start_generating" });
+    //   });
 
     const prompts = jobs.map(({ prompt }) => prompt);
 

@@ -222,6 +222,7 @@ async def generate_image(
     prompt: str,
     width: int = 800,
     height: int = 800,
+    model: str = "flux",
     negative: str | None = None,
     cached: bool = False,
     nologo: bool = False,
@@ -240,6 +241,7 @@ async def generate_image(
     url += f"?seed={seed}" if not cached else ""
     url += f"&width={width}"
     url += f"&height={height}"
+    url += f"&model={model}"
     url += f"&negative={negative}" if negative else ""
     url += f"&nologo={nologo}" if nologo else ""
     url += f"&enhance={enhance}" if enhance else ""

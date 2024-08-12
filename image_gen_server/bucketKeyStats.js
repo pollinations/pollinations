@@ -48,7 +48,13 @@ export const printQueueStatus = () => {
   // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
 }; let jobCounts = [];
 export const countJobs = (average = false) => {
-  const currentCount = currentBatches.reduce((acc, batch) => acc + batch.jobs.length, 0);
+  const currentCount = currentBatches.reduce((acc, batch) => {
+    if (batch.safeParams.model !== "flux") {
+      return acc + batch.jobs.length;
+    }
+    return acc;
+  }, 0);
+
   if (average) {
     jobCounts.push(currentCount);
     if (jobCounts.length > 5) {
@@ -58,4 +64,3 @@ export const countJobs = (average = false) => {
   }
   return currentCount;
 };
-

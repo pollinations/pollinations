@@ -20,6 +20,28 @@ const queueFullImages = [readFileSync("./queuefull1.png"), readFileSync("./queue
 // this is used to create a queue per ip address
 const BOT_IP = "150.136.112.172";
 
+const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
+
+const ipQueue = {};
+
+
+const rickrollCount = {}; // Count of times each IP was rickrolled
+const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
+
+
+const handleRickroll = (ip, res) => {
+  console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
+  rickrollCount[ip] += 1; // Increment rickroll count for this IP
+  rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
+  console.log(`[queue] IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
+  res.writeHead(302, {
+    'Location': ricUrl
+  });
+  res.end();
+};
+
+
+
 /**
  * Function that wraps an async request handler and keeps count of the number of requests from the same IP address.
  * If an IP address already has a request in the queue, it will delay until the request is processed.
@@ -29,9 +51,7 @@ const BOT_IP = "150.136.112.172";
  * @returns {Function} The wrapped async request handler.
  */
 const queuePerIp = (handler) => {
-  const ipQueue = {};
-  const rickrollCount = {}; // Count of times each IP was rickrolled
-  const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
+
   return async (params) => {
     const { req, res } = params;
     const urlParams = new URL(req.url, `http://${req.headers.host}`).searchParams;
@@ -62,25 +82,24 @@ const queuePerIp = (handler) => {
       rickrollData[ip] = 0; // Initialize rickroll data for this IP
     } else {
       console.log("[queue] ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
-      const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
       if (ipQueue[ip].size > 25) {
-        console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
-        rickrollCount[ip] += 1; // Increment rickroll count for this IP
-        rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
-        console.log(`[queue] IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
-        res.writeHead(302, {
-          'Location': ricUrl
-        });
-        res.end();
+        handleRickroll(ip, res);
         return;
       }
     }
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+
+    if (queueSize > 5) {
+      res.writeHead(429, { 'Content-Type': 'text/plain' });
+      res.end('429: Too Many Concurrent Requests - please try again later.');
+      return;
+    }
+
     await ipQueue[ip].add(async () => {
       // if (!isBot) {
       //   await awaitSleep(Math.round(queueSize * countJobs(true)*1000)); // Delay increases by 1 second for each request in the queue
       // }
-      const sleepTime = countJobs(true) > 3 ? queueSize * 4000 : 0;
+      const sleepTime = countJobs(true) > 3 ? queueSize * 1000 : 0;
       console.log("[queue] sleeping for", sleepTime, "ms");
 
       if (sleepTime > 30000) {
@@ -116,7 +135,12 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
   try {
     chunk.forEach(job => {
       job.timingInfo.push({ step: 'Start generating chunk', timestamp: Date.now() });
+
     })
+    if (!safeParams.nofeed)
+      chunk.forEach(({ prompt, ip, timingInfo }) => {
+        sendToFeedListeners({ ...safeParams, prompt, ip, status: "start_generating", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
+      });
 
     const buffersWithLegend = await createAndReturnImageCached({
       jobs: chunk,
@@ -151,13 +175,15 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
 };
 
 const processBatches = async () => {
-  const processingPromises = [];
-  while (generalImageQueue.size + generalImageQueue.pending < concurrency) {
-    let batchIndex = -1;// currentBatches.findIndex(batch => batch.safeParams.model === 'turbo' || !batch.safeParams.model);
-    if (batchIndex === -1) {
-      // If no turbo model found, use the original logic
-      batchIndex = Math.random() < 0.7 ? 0 : 1;
-    }
+
+  while (true) {
+    const processingPromises = [];
+    // let batchIndex = currentBatches.findIndex(batch => batch.safeParams.model === 'flux');
+    // if (batchIndex === -1) {
+    //   // If no turbo model found, use the original logic
+    //   batchIndex = Math.random() < 0.7 ? 0 : 1;
+    // }
+    const batchIndex = 0;
     const batch = currentBatches[batchIndex % currentBatches.length];
     if (batch) {
       const { bucketKey, jobs, safeParams } = batch;
@@ -169,22 +195,18 @@ const processBatches = async () => {
           currentBatches.splice(batchIndex, 1);
         }
         processingPromises.push(generalImageQueue.add(() => processChunk(chunk, bucketKey, safeParams)));
+      } else {
+        console.error("no chunk found for batch", batch);
       }
-    }
-    if (processingPromises.length >= concurrency) {
-      await Promise.all(processingPromises);
-      processingPromises.length = 0; // Clear the array
     }
     await awaitSleep(10);
   }
-  if (processingPromises.length > 0) {
-    await Promise.all(processingPromises); // Ensure all remaining promises are settled
-  }
 }
+
 
 let memCache = {};
 
-/**
+/** 
  * @async
  * @function
  * @param {Object} req - The request object.
@@ -259,6 +281,8 @@ const preMiddleware = async function (req, res) {
   // }
 
   const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
+  sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
+
   return { req, res, timingInfo, memCacheKey, originalPrompt, safeParams, bucketKey, analyticsMetadata };
 };
 
@@ -299,12 +323,6 @@ const queuedImageGen = queuePerIp(async ({ req, res, timingInfo, memCacheKey, or
 
       timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
-      const requestReceivedTime = timingInfo[0].timestamp;
-      timingInfo = timingInfo.map(info => ({
-        ...info,
-        timestamp: info.timestamp - requestReceivedTime
-      }));
-      console.log('Timing Info:', timingInfo);
 
       const imageURL = `https://image.pollinations.ai${req.url}`;
 
@@ -319,8 +337,9 @@ const queuedImageGen = queuePerIp(async ({ req, res, timingInfo, memCacheKey, or
           originalPrompt: urldecode(originalPrompt),
           nsfw: bufferAndMaturity.isMature,
           isChild: bufferAndMaturity.isChild,
-          timingInfo,
+          timingInfo: relativeTiming(timingInfo),
           ip,
+          status: "end_generating",
         }, { saveAsLastState: true }
         );
       }
@@ -377,5 +396,10 @@ server.setTimeout(300000, (socket) => {
 server.listen(process.env.PORT || 16384);
 processBatches();
 
-
+function relativeTiming(timingInfo) {
+  return timingInfo.map(info => ({
+    ...info,
+    timestamp: info.timestamp - timingInfo[0].timestamp
+  }));
+}
 

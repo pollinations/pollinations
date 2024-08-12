@@ -71,7 +71,15 @@ async function generateImage(prompt, seed, randomizeSeed, width = 768, height = 
             agent
         });
         console.log('Initial request sent');
-        const responseJson = await initialResponse.json();
+        const initialText = await initialResponse.text();
+        console.log("responseText", initialText);
+        let responseJson;
+        try {
+            responseJson = JSON.parse(initialText);
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+            throw new Error('Error parsing JSON:', initialText);
+        }
         console.log('Initial response received:', responseJson);
         const eventId = responseJson.event_id;
         console.log("eventId", eventId);
@@ -121,6 +129,7 @@ async function generateImageRetry(prompt, seed, randomizeSeed, width, height, nu
     let attempt = 0;
     const endpoints = [
         'https://black-forest-labs-flux-1-schnell.hf.space/call/infer',
+        // 'https://voodoohop-flux-1-schnell.hf.space/call/infer',
         'https://voodoohop-flux-1-schnell.hf.space/call/infer'
     ];
     while (attempt < 3) {

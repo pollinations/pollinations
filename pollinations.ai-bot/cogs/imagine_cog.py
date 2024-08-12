@@ -51,6 +51,7 @@ class ImagineButtonView(discord.ui.View):
         prompt = message_data["prompt"]
         width = message_data["width"]
         height = message_data["height"]
+        model = message_data.get("model", "flux")
         negative = message_data["negative"]
         cached = message_data["cached"]
         nologo = message_data["nologo"]
@@ -58,7 +59,7 @@ class ImagineButtonView(discord.ui.View):
 
         try:
             dic, image = await generate_image(
-                prompt, width, height, negative, cached, nologo, enhance
+                prompt, width, height, model, negative, cached, nologo, enhance
             )
         except Exception as e:
             print(e)
@@ -333,12 +334,16 @@ class Imagine(commands.Cog):
         self.bot.add_view(ImagineButtonView())
 
     @app_commands.command(name="pollinate", description="Generate AI Images")
+    @app_commands.choices(
+        model=[app_commands.Choice(name=choice, value=choice) for choice in MODELS],
+    )
     @app_commands.guild_only()
     @app_commands.checks.cooldown(1, 15)
     @app_commands.describe(
         prompt="Prompt of the Image you want want to generate",
         height="Height of the Image",
         width="Width of the Image",
+        model="Model to use for generating the Image",
         enhance="Enables AI Prompt Enhancement",
         negative="The things not to include in the Image",
         cached="Uses the Default seed",
@@ -351,6 +356,7 @@ class Imagine(commands.Cog):
         prompt: str,
         width: int = 1000,
         height: int = 1000,
+        model: app_commands.Choice[str] = MODELS[0],
         enhance: bool | None = None,
         negative: str | None = None,
         cached: bool = False,
@@ -368,7 +374,7 @@ class Imagine(commands.Cog):
         start = datetime.datetime.now()
 
         dic, image = await generate_image(
-            prompt, width, height, negative, cached, nologo, enhance, private
+            prompt, width, height, model, negative, cached, nologo, enhance, private
         )
 
         image_file = discord.File(image, filename="image.png")

@@ -38,6 +38,8 @@ async function pimpPromptRaw(prompt, seed) {
                         role: "system",
                         content: `Instruction Set for Image Prompt Diversification:
 
+                        If the prompt is in a language other than English, translate it to English first.
+                        
                         Receive the original image prompt from the user.
                         
                         Analyze the prompt to identify the core elements, such as the main subject, setting, colors, lighting, and overall mood.
@@ -65,7 +67,7 @@ async function pimpPromptRaw(prompt, seed) {
                         A lone figure sits by the edge of a geometric, minimalist pool, surrounded by a composition of primary-colored squares and rectangles. The fish and eyeballs are reduced to simple, abstract forms, floating in an orderly fashion. The scene is bathed in a crisp, clean light, reminiscent of Mondrian's iconic style. The air feels cool and deliberate, as if each element was carefully placed with precision. This visual homage to Bauhaus principles combines clarity and balance, presenting a tranquil, modernist dreamscape.                        
                         ---
 
-                        Respond only with the new prompt like this:
+                        Respond only with the new prompt. Nothing El:
                         [prompt] - [style / artist / medium / art movement / photo style]                        
                         `
                     },

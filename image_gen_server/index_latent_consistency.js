@@ -82,18 +82,18 @@ const queuePerIp = (handler) => {
       rickrollData[ip] = 0; // Initialize rickroll data for this IP
     } else {
       console.log("[queue] ip already in queue", ip, "queue length", ipQueue[ip].size, "pending", ipQueue[ip].pending);
-      if (ipQueue[ip].size > 25) {
+      if (ipQueue[ip].size > 10) {
         handleRickroll(ip, res);
         return;
       }
     }
     const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
 
-    if (queueSize > 5) {
-      res.writeHead(429, { 'Content-Type': 'text/plain' });
-      res.end('429: Too Many Concurrent Requests - please try again later.');
-      return;
-    }
+    // if (queueSize > 5) {
+    //   res.writeHead(429, { 'Content-Type': 'text/plain' });
+    //   res.end('429: Too Many Concurrent Requests - please try again later.');
+    //   return;
+    // }
 
     await ipQueue[ip].add(async () => {
       // if (!isBot) {

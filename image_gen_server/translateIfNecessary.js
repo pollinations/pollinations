@@ -7,27 +7,42 @@ import AsyncLock from 'async-lock';
 
 const lock = new AsyncLock();
 
+export async function detectLanguage(promptAnyLanguage) {
+  const controller = new AbortController();
+  const detectPromise = fetchDetection(promptAnyLanguage, controller.signal);
+  const timeoutPromise = new Promise((resolve) => {
+    setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, 1000);
+  });
+
+  return Promise.race([detectPromise, timeoutPromise]);
+}
+
 export async function translateIfNecessary(promptAnyLanguage) {
+  // convert underscores and - etc to spaces
+  promptAnyLanguage = promptAnyLanguage.replace(/[-_]/g, ' ');
+
   return lock.acquire('translate', async () => {
     promptAnyLanguage = "" + promptAnyLanguage;
     try {
       const translateStart = Date.now();
-      const controller = new AbortController();
-      const detectPromise = fetchDetection(promptAnyLanguage, controller.signal);
-      const timeoutPromise = new Promise((resolve) => {
-        setTimeout(() => {
-          controller.abort();
-          resolve();
-        }, 1000);
-      });
-      
-      const detectedLanguage = await Promise.race([detectPromise, timeoutPromise]);
+      const detectedLanguage = await detectLanguage(promptAnyLanguage);
 
-      if (detectedLanguage?.language === "en") {
+      if (detectedLanguage === "en") {
         return promptAnyLanguage;
       }
 
+      const controller = new AbortController();
       const translatePromise = fetchTranslation(promptAnyLanguage, controller.signal);
+      const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+          controller.abort();
+          resolve(null);
+        }, 1000);
+      });
+
       const result = await Promise.race([translatePromise, timeoutPromise]);
 
       if (result) {
@@ -35,9 +50,9 @@ export async function translateIfNecessary(promptAnyLanguage) {
         const translatedPrompt = result.translatedText;
         const translateEnd = Date.now();
         console.log(`Translation duration: ${translateEnd - translateStart}ms`);
-        console.log("translated prompt to english ",promptAnyLanguage, "---", translatedPrompt);
-      
-        return translatedPrompt;
+        console.log("translated prompt to english ", promptAnyLanguage, "---", translatedPrompt);
+
+        return translatedPrompt + "\n\n" + promptAnyLanguage;
       } else {
         return promptAnyLanguage;
       }
@@ -60,7 +75,7 @@ async function fetchDetection(promptAnyLanguage, signal) {
 
   const resultJson = await result.json();
 
-  return resultJson[0];
+  return resultJson[0]?.language;
 }
 
 async function fetchTranslation(promptAnyLanguage, signal) {
@@ -85,7 +100,7 @@ async function fetchTranslation(promptAnyLanguage, signal) {
 export function sanitizeString(str) {
   // Encode the string as UTF-8 and decode it back to filter out invalid characters
   const removedNonUtf8 = new TextDecoder().decode(new TextEncoder().encode(str));
-  if (removedNonUtf8) 
+  if (removedNonUtf8)
     return removedNonUtf8;
   return str;
 }

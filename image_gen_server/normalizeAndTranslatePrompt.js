@@ -1,5 +1,5 @@
 import urldecode from 'urldecode';
-import { sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
+import { detectLanguage, sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 import { pimpPrompt } from './groqPimp.js';
 
 const memoizedPrompts = new Map();
@@ -39,9 +39,14 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, sa
 
   if (!englishLikely) {
     const startTime = Date.now();
-    prompt = await translateIfNecessary(prompt);
+    const detectedLanguage = await detectLanguage(promptAnyLanguage);
+    if (detectedLanguage !== "en")
+      enhance = true;
+    // prompt = await translateIfNecessary(prompt);
     const endTime = Date.now();
     console.log(`Translation time: ${endTime - startTime}ms`);
+
+    // enhance = true;
   }
 
   let finalPrompt = prompt || promptRaw;

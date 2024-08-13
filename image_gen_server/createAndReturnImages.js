@@ -24,16 +24,10 @@ let accumulated_fetch_duration = 0;
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
 const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
-  // const steps = Math.min(4, Math.round(Math.max(1, (6 - (concurrentRequests / 4)))));
   console.log("concurrent requests", concurrentRequests, "jobs", jobs.length, "safeParams", safeParams);
 
   let images = [];
   try {
-    // if (!safeParams.nofeed)
-    //   jobs.forEach(({ prompt, ip }) => {
-    //     sendToFeedListeners({ ...safeParams, concurrentRequests, prompt, steps, ip, status: "start_generating" });
-    //   });
-
     const prompts = jobs.map(({ prompt }) => prompt);
 
     const body = {
@@ -89,8 +83,6 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
     }
 
     const jsonResponse = await response.json();
-    // console.log("jsonResponse", jsonResponse);
-    // quit the process
     images = jsonResponse;
 
     // if images is not an array make it an array
@@ -107,9 +99,9 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
       console.log("decoding base64 image");
 
       const buffer = Buffer.from(image, 'base64');
+      let tempImageFile;
       try {
-        // throw new Error("disabled exif tool");
-        const tempImageFile = tempfile({ extension: 'jpg' });
+        tempImageFile = tempfile({ extension: 'jpg' });
         fs.writeFileSync(tempImageFile, buffer);
 
         // Start timing for exif
@@ -123,11 +115,12 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
         console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
 
         const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
-        fs.unlinkSync(tempImageFile);
         return { buffer: bufferWithMetadata, ...rest };
       } catch (e) {
         console.error(e);
         return { buffer: buffer, ...rest };
+      } finally {
+        if (tempImageFile) fs.unlinkSync(tempImageFile);
       }
     }));
     await exifTool.end();

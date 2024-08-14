@@ -36,7 +36,7 @@ export default function Solutions() {
       {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <Dreamachine /> */}
       <TopBand src={TopBandPresetsDesign} alt="Top Band" />
-      <KarmaYT />
+      {/* <KarmaYT /> */}
       <ImageURLHeading>Events</ImageURLHeading>
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}

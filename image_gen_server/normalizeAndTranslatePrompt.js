@@ -39,9 +39,11 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, sa
 
   if (!englishLikely) {
     const startTime = Date.now();
-    const detectedLanguage = await detectLanguage(promptAnyLanguage);
-    if (detectedLanguage !== "en")
+    const detectedLanguage = await detectLanguage(promptRaw);
+    if (detectedLanguage !== "en") {
       enhance = true;
+    }
+
     // prompt = await translateIfNecessary(prompt);
     const endTime = Date.now();
     console.log(`Translation time: ${endTime - startTime}ms`);

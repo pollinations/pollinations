@@ -3,7 +3,7 @@ import Iframe from "react-iframe";
 export function KarmaYT() {
   return (
     <Iframe
-      url={`https://karma.yt?ref=pollinations&weed=${
+      url={`https://karma.pollinations.ai?ref=pollinations&weed=${
         Math.floor(Math.random() * 1337) + Date.now()
       }`}
       scrolling="true"

@@ -29,7 +29,7 @@ async function pimpPromptRaw(prompt, seed) {
     const maxRetries = 3;
     let attempt = 0;
     let response = "";
-
+    console.log("pimping prompt", prompt)
     while (attempt < maxRetries) {
         try {
             response = (await groq.chat.completions.create({
@@ -60,12 +60,6 @@ async function pimpPromptRaw(prompt, seed) {
                         The image generator is not very good at text and screenshots. Try and rewrite those into more figurative prompts. E.g. instead of a spreadsheet make a prompt of an intricate isometric technical drawing that somehow represents the information in the spreadsheet.
 
                         When asked for a random prompt, generate an evocative and surprising one that fits user constraints, and provide any unspecified details.
-                        Example Input Prompt:
-                        Image in the style of cel-shaded Japanese anime, featuring a man sitting at the side of a pool. Fish and eyeballs float around.
-                        
-                        Example (OUTPUT):
-                        A lone figure sits by the edge of a geometric, minimalist pool, surrounded by a composition of primary-colored squares and rectangles. The fish and eyeballs are reduced to simple, abstract forms, floating in an orderly fashion. The scene is bathed in a crisp, clean light, reminiscent of Mondrian's iconic style. The air feels cool and deliberate, as if each element was carefully placed with precision. This visual homage to Bauhaus principles combines clarity and balance, presenting a tranquil, modernist dreamscape.                        
-                        ---
 
                         Respond only with the new prompt. Nothing El:
                         [prompt] - [style / artist / medium / art movement / photo style]                        

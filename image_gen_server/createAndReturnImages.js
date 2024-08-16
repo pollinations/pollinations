@@ -28,7 +28,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
 
   let images = [];
   try {
-    const prompts = jobs.map(({ prompt }) => prompt);
+    const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
 
     const body = {
       "prompts": prompts,
@@ -211,6 +211,9 @@ export async function createAndReturnImageCached({ jobs, safeParams, concurrentR
     const logoPath = isMature ? null : 'logo.png';
     let bufferWithLegend = safeParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
 
+    // Resize the final image to the user's desired size
+    bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+
     return { buffer: bufferWithLegend, isChild, isMature };
   }));
 
@@ -274,4 +277,52 @@ function blurImage(buffer, size = 8) {
       resolve(bufferBlurred);
     });
   });
+}
+
+/**
+ * Resizes the image to the desired dimensions using ImageMagick.
+ * @param {Buffer} buffer - The image buffer.
+ * @param {number} width - The desired width.
+ * @param {number} height - The desired height.
+ * @returns {Promise<Buffer>} - The resized image buffer.
+ */
+function resizeImage(buffer, width, height) {
+  const tempImageFile = tempfile({ extension: 'png' });
+  const tempOutputFile = tempfile({ extension: 'jpg' });
+
+  fs.writeFileSync(tempImageFile, buffer);
+
+  // Ensure dimensions are within the allowed range
+  width = Math.max(32, Math.min(1512, width));
+  height = Math.max(32, Math.min(1512, height));
+
+  return new Promise((resolve, reject) => {
+    exec(`convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`error: ${error.message}`);
+        reject(error);
+        return;
+      }
+      const bufferResized = fs.readFileSync(tempOutputFile);
+      fs.unlinkSync(tempImageFile);
+      fs.unlinkSync(tempOutputFile);
+      resolve(bufferResized);
+    });
+  });
+}
+
+
+/**
+ * Sanitizes the prompt by removing potentially dangerous characters for filenames.
+ * Allows Unicode letters, numbers, spaces, and hyphens. Replaces newlines with spaces.
+ * @param {string} prompt - The original prompt.
+ * @returns {string} - The sanitized prompt.
+ */
+function sanitizePrompt(prompt) {
+  return prompt
+  //     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')  // Remove control characters
+  //     .replace(/[/\\?%*:|"<>]/g, '')                 // Remove characters illegal in filenames
+  //     .replace(/\s+/g, ' ')                          // Replace multiple spaces and newlines with a single space
+  //     .replace(/[^\p{L}\p{N}\s-]/gu, '')             // Keep Unicode letters, numbers, spaces, and hyphens
+  //     .trim();                                       // Remove leading and trailing whitespace
 }

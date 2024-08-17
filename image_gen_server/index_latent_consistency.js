@@ -166,7 +166,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   if (!needsProcessing) return;
 
-  const originalPrompt = pathname.split("/prompt/")[1];
+  const originalPrompt = pathname.split("/prompt/")[1] || "random prompt";
 
   const safeParams = makeParamsSafe(query);
 

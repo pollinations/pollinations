@@ -9,9 +9,63 @@ import { ExifTool } from 'exiftool-vendored';
 import { fileTypeFromBuffer } from 'file-type';
 
 const SERVER_URL = 'http://localhost:5002/generate';
-const FLUX_SERVER_URL = "http://54.91.176.109:5002/generate"; // "http://localhost:5556/generate"; //
+
+const FLUX_SERVERS = [
+  { url: "http://52.203.206.118:5002", status: true },
+  { url: "http://54.91.176.109:5002", status: true }
+];
+
+let fluxServerIndex = 0;
+
+/**
+ * Returns the next FLUX server URL in a round-robin fashion.
+ * @returns {string} - The next FLUX server URL.
+ */
+const getNextFluxServerUrl = () => {
+  const availableServers = FLUX_SERVERS.filter(server => server.status);
+  if (availableServers.length === 0) {
+    throw new Error("No available FLUX servers.");
+  }
+  const server = availableServers[fluxServerIndex % availableServers.length];
+  fluxServerIndex = (fluxServerIndex + 1) % availableServers.length;
+  return server.url + "/generate";
+};
+/**
+ * Checks the status of each FLUX server every 5 seconds.
+ */
+const checkServerStatus = () => {
+  console.log("Server status", FLUX_SERVERS)
+  FLUX_SERVERS.forEach(async (server) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(server.url, { method: 'GET', signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (response.ok || response.status === 404) {
+        server.status = true;
+      } else {
+        server.status = false;
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error(`Request to ${server.url} timed out.`);
+      } else {
+        console.error(`Error checking status of ${server.url}:`, error);
+      }
+      server.status = false;
+    }
+  });
+};
+
+// Check server status every 5 seconds
+setInterval(checkServerStatus, 5000);
+
+
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
+
 
 /**
  * @typedef {Object} Job
@@ -56,7 +110,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const chosenServer = safeParams.model === "flux" ? FLUX_SERVER_URL : SERVER_URL;
+        const chosenServer = safeParams.model === "flux" ? getNextFluxServerUrl() : SERVER_URL;
         response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
@@ -164,7 +218,6 @@ const idealSideLength = {
   dalle3xl: 768,
   realvis: 768,
 };
-
 /**
  * Sanitizes and adjusts parameters for image generation.
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
@@ -185,8 +238,12 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
   width = Number.isInteger(parseInt(width)) ? parseInt(width) : 512;
   height = Number.isInteger(parseInt(height)) ? parseInt(height) : 512;
 
-  // Ensure seed is an integer or default to a fixed value
+  // Ensure seed is a valid integer within the allowed range
+  const maxSeedValue = 18446744073709551500;
   seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+  if (seed < 0 || seed > maxSeedValue) {
+    seed = 42;
+  }
 
   // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
   if (width * height > maxPixels) {

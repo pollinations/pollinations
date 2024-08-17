@@ -27,6 +27,14 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
+  // steps depends on the concurrent requests
+  // if there are less then 3 use 4 steps
+  // if there are less than 4 use 3 steps
+  // if there are less than 5 use 2 steps
+  // if there are less than 6 use 1 step
+
+  const steps = concurrentRequests < 3 ? 4 : concurrentRequests < 4 ? 3 : concurrentRequests < 5 ? 2 : 1;
+
   try {
     // const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
     prompt = sanitizePrompt(prompt);
@@ -36,6 +44,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
       "height": safeParams.height,
       "seed": safeParams.seed,
       "negative_prompt": safeParams.negative_prompt,
+      "steps": steps
     };
 
     console.log("calling prompt", body.prompts);

@@ -6,11 +6,14 @@ import fs from 'fs';
 import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
+import { fileTypeFromBuffer } from 'file-type';
+import { getNextFluxServerUrl } from './availableServers.js';
 
 const SERVER_URL = 'http://localhost:5002/generate';
-const FLUX_SERVER_URL = "http://localhost:5556/generate"
+
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
+
 
 /**
  * @typedef {Object} Job
@@ -23,19 +26,27 @@ let accumulated_fetch_duration = 0;
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
-const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
-  console.log("concurrent requests", concurrentRequests, "jobs", jobs.length, "safeParams", safeParams);
+const callWebUI = async (prompt, safeParams, concurrentRequests) => {
+  console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  let images = [];
+  // steps depends on the concurrent requests
+  // if there are less then 3 use 4 steps
+  // if there are less than 4 use 3 steps
+  // if there are less than 5 use 2 steps
+  // if there are less than 6 use 1 step
+
+  const steps = concurrentRequests < 3 ? 4 : concurrentRequests < 4 ? 3 : concurrentRequests < 5 ? 2 : 1;
+
   try {
-    const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
-
+    // const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
+    prompt = sanitizePrompt(prompt);
     const body = {
-      "prompts": prompts,
+      "prompts": [prompt],
       "width": safeParams.width,
       "height": safeParams.height,
       "seed": safeParams.seed,
       "negative_prompt": safeParams.negative_prompt,
+      "steps": steps
     };
 
     console.log("calling prompt", body.prompts);
@@ -47,7 +58,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const chosenServer = safeParams.model === "flux" ? FLUX_SERVER_URL : SERVER_URL;
+        const chosenServer = safeParams.model === "flux" ? getNextFluxServerUrl() : SERVER_URL;
         response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
@@ -69,6 +80,7 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
 
     // Calculate the time spent in fetch
     const fetch_duration = fetch_end_time - fetch_start_time;
+    console.log(`Fetch duration: ${fetch_duration}ms`);
     accumulated_fetch_duration += fetch_duration;
 
     // Calculate the total time the app has been running
@@ -83,48 +95,44 @@ const callWebUI = async ({ jobs, safeParams = {}, concurrentRequests }) => {
     }
 
     const jsonResponse = await response.json();
-    images = jsonResponse;
+    // let images = jsonResponse;
 
-    // if images is not an array make it an array
-    if (!Array.isArray(images)) {
-      images = [images];
-    }
+    // // if images is not an array make it an array
+    // if (!Array.isArray(images)) {
+    //   images = [images];
+    // }
+    const { image, ...rest } = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
 
     const exifTool = new ExifTool();
-    const buffers = await Promise.all(images.map(async ({ image, ...rest }) => {
-      if (!image) {
-        console.error("image is null");
-        return { buffer: null, ...rest };
-      }
-      console.log("decoding base64 image");
 
-      const buffer = Buffer.from(image, 'base64');
-      let tempImageFile;
-      try {
-        tempImageFile = tempfile({ extension: 'jpg' });
-        fs.writeFileSync(tempImageFile, buffer);
+    if (!image) {
+      console.error("image is null");
+      throw new Error("image is null");
+    }
 
-        // Start timing for exif
-        const exif_start_time = Date.now();
-        // Embed safeParams as metadata
-        await exifTool.write(tempImageFile, {
-          UserComment: JSON.stringify({ ...safeParams, ...jsonResponse }),
-          Make: "Stable Diffusion"
-        });
-        const exif_end_time = Date.now();
-        console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
+    console.log("decoding base64 image");
 
-        const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
-        return { buffer: bufferWithMetadata, ...rest };
-      } catch (e) {
-        console.error(e);
-        return { buffer: buffer, ...rest };
-      } finally {
-        if (tempImageFile) fs.unlinkSync(tempImageFile);
-      }
-    }));
+    const buffer = Buffer.from(image, 'base64');
+    let tempImageFile;
+    const { ext } = await fileTypeFromBuffer(buffer);
+    tempImageFile = tempfile({ extension: ext });
+    fs.writeFileSync(tempImageFile, buffer);
+
+    // Start timing for exif
+    const exif_start_time = Date.now();
+    // Embed safeParams as metadata
+    await exifTool.write(tempImageFile, {
+      UserComment: JSON.stringify({ ...safeParams, ...jsonResponse }),
+      Make: "Stable Diffusion"
+    });
+    const exif_end_time = Date.now();
+    console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
+
+    const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
     await exifTool.end();
-    return buffers;
+    if (tempImageFile) fs.unlinkSync(tempImageFile);
+    return { buffer: bufferWithMetadata, ...rest };
+
   } catch (e) {
     console.error('Error in callWebUI:', e);
     throw e;
@@ -158,13 +166,12 @@ const idealSideLength = {
   dalle3xl: 768,
   realvis: 768,
 };
-
 /**
  * Sanitizes and adjusts parameters for image generation.
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "turbo", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
   // Sanitize boolean parameters
   const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
   refine = sanitizeBoolean(refine);
@@ -176,11 +183,15 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
   const maxPixels = sideLength * sideLength;
 
   // Ensure width and height are integers or default to sideLength
-  width = Number.isInteger(parseInt(width)) ? parseInt(width) : sideLength;
-  height = Number.isInteger(parseInt(height)) ? parseInt(height) : sideLength;
+  width = Number.isInteger(parseInt(width)) ? parseInt(width) : 512;
+  height = Number.isInteger(parseInt(height)) ? parseInt(height) : 512;
 
-  // Ensure seed is an integer or default to a fixed value
+  // Ensure seed is a valid integer within the allowed range
+  const maxSeedValue = 18446744073709551500;
   seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
+  if (seed < 0 || seed > maxSeedValue) {
+    seed = 42;
+  }
 
   // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
   if (width * height > maxPixels) {
@@ -190,7 +201,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
   }
 
   if (model !== "flux" && model !== "turbo")
-    model = "turbo";
+    model = "flux";
   return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
 };
 
@@ -199,25 +210,23 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "tur
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
-export async function createAndReturnImageCached({ jobs, safeParams, concurrentRequests = 1, ip }) {
-  safeParams = makeParamsSafe(safeParams);
-  const buffers = await callWebUI({ jobs, safeParams, concurrentRequests });
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests) {
+  const bufferAndMaturity = await callWebUI(prompt, safeParams, concurrentRequests);
 
-  const buffersWithLegends = await Promise.all(buffers.map(async ({ buffer, has_nsfw_concept: isMature, concept }) => {
-    const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
-    console.error("isMature", isMature, "concepts", isChild);
-    if (isChild) isMature = true;
+  let isMature = bufferAndMaturity.has_nsfw_concept;
+  const concept = bufferAndMaturity.concept;
+  const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
+  console.error("isMature", isMature, "concepts", isChild);
+  if (isChild) isMature = true;
 
-    const logoPath = isMature ? null : 'logo.png';
-    let bufferWithLegend = safeParams["nologo"] || !logoPath ? buffer : await addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams);
+  const logoPath = isMature ? null : 'logo.png';
+  let bufferWithLegend = safeParams["nologo"] || !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
-    // Resize the final image to the user's desired size
-    bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+  // Resize the final image to the user's desired size
+  bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
-    return { buffer: bufferWithLegend, isChild, isMature };
-  }));
+  return { buffer: bufferWithLegend, isChild, isMature };
 
-  return buffersWithLegends;
 }
 
 /**
@@ -227,9 +236,11 @@ export async function createAndReturnImageCached({ jobs, safeParams, concurrentR
  * @param {Object} safeParams - Parameters for adjusting the logo size.
  * @returns {Promise<Buffer>} - The image buffer with the logo added.
  */
-function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
-  const tempImageFile = tempfile({ extension: 'png' });
-  const tempOutputFile = tempfile({ extension: 'jpg' });
+async function
+  addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
+  const { ext } = await fileTypeFromBuffer(buffer);
+  const tempImageFile = tempfile({ extension: ext });
+  const tempOutputFile = tempfile({ extension: "jpg" });
 
   fs.writeFileSync(tempImageFile, buffer);
 
@@ -258,9 +269,10 @@ function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
  * @param {number} [size=8] - The size of the blur effect.
  * @returns {Promise<Buffer>} - The blurred image buffer.
  */
-function blurImage(buffer, size = 8) {
-  const tempImageFile = tempfile({ extension: 'png' });
-  const tempOutputFile = tempfile({ extension: 'jpg' });
+async function blurImage(buffer, size = 8) {
+  const { ext } = await fileTypeFromBuffer(buffer);
+  const tempImageFile = tempfile({ extension: ext });
+  const tempOutputFile = tempfile({ extension: ext });
 
   fs.writeFileSync(tempImageFile, buffer);
 
@@ -286,9 +298,10 @@ function blurImage(buffer, size = 8) {
  * @param {number} height - The desired height.
  * @returns {Promise<Buffer>} - The resized image buffer.
  */
-function resizeImage(buffer, width, height) {
-  const tempImageFile = tempfile({ extension: 'png' });
-  const tempOutputFile = tempfile({ extension: 'jpg' });
+async function resizeImage(buffer, width, height) {
+  const { ext } = await fileTypeFromBuffer(buffer);
+  const tempImageFile = tempfile({ extension: ext });
+  const tempOutputFile = tempfile({ extension: "jpg" });
 
   fs.writeFileSync(tempImageFile, buffer);
 

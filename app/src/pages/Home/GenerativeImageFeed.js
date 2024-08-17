@@ -15,11 +15,11 @@ import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
 const log = debug("GenerativeImageFeed")
 
 export function GenerativeImageFeed() {
-  const [serverLoad, setServerLoad] = useState(0);
+  const [lastImage, setLastImage] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
   const { updateImage, isWaiting, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
-  const { imagesGenerated } = useFeedLoader(onNewImage, setServerLoad);
+  const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage);
 
   const handleParamChange = (param, value) => {
     const newImage = {
@@ -60,7 +60,7 @@ export function GenerativeImageFeed() {
       ) : (
         <Grid container spacing={4}>
           <Grid item xs={gridItemSize}>
-            <ServerLoadAndGenerationInfo {...{ serverLoad, imagesGenerated, image }} />
+            <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {image ? (<>
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">

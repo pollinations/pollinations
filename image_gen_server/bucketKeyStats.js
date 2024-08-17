@@ -4,7 +4,6 @@ import { generalImageQueue } from './generalImageQueue.js';
 
 // Initialize an object to track images requested and returned per bucket key
 export let bucketKeyStats = {};
-export let currentBatches = [];
 export let requestTimestamps = []; // Array to store timestamps of image requests
 
 export let imageReturnTimestamps = []; // Array to store timestamps of returned images
@@ -25,7 +24,7 @@ export const printQueueStatus = () => {
     colWidths: [10, 10, 10, 10, 10],
   });
 
-  currentBatches.forEach(batch => {
+  currentJobs.forEach(batch => {
     const bucketKeyStatsRow = bucketKeyStats[batch.bucketKey] || { requested: 0, returned: 0 };
     batchTable.push([batch.bucketKey, batch.jobs.length, bucketKeyStatsRow.requested, bucketKeyStatsRow.returned]);
   });
@@ -47,8 +46,9 @@ export const printQueueStatus = () => {
   // Write tables to a file
   // writeFileSync('tableLogs.txt', `${fileBatchTableHeaders}\n${fileBatchTable}\n${fileImageTableHeaders}\n${fileImageTable}`);
 }; let jobCounts = [];
+
 export const countJobs = (average = false) => {
-  const currentCount = currentBatches.reduce((acc, batch) => {
+  const currentCount = currentJobs.reduce((acc, batch) => {
     if (batch.safeParams.model !== "flux") {
       return acc + batch.jobs.length;
     }

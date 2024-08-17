@@ -177,19 +177,12 @@ async def generate(request: Request):
         # check again if its a positive integer and not a float or something else
         seed = int(seed) if seed > 0 else -1
 
+        # Get the steps parameter, default to 2 if not supplied
+        steps = convert_to_int(data.get('steps', 2), 2)
+
         # Log the start time for the entire request processing
         request_start_time = time.time()
 
-        # Determine the number of steps based on the percentage
-        if percentage_time_processing_last_2_minutes > 85:
-            steps = 1
-        elif percentage_time_processing_last_2_minutes > 75:
-            steps = 2
-        elif percentage_time_processing_last_2_minutes > 65:
-            steps = 3
-        else:
-            steps = 4
-        # steps = 1 
         # Prepare payload for ComfyUI
         prompt = create_prompt(prompts[0], width, height, seed if seed != -1 else None, steps)
 
@@ -271,6 +264,8 @@ async def generate(request: Request):
         logger.error(f"Error in generate: {e}")
         logger.error(traceback.format_exc())
         return JSONResponse(content={"error": str(e)}, status_code=500)
+import os
 
 if __name__ == "__main__":
-    uvicorn.run(app, host='0.0.0.0', port=5002)
+    port = int(os.getenv("PORT", 5002))
+    uvicorn.run(app, host='0.0.0.0', port=port)

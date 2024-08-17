@@ -231,6 +231,13 @@ async def generate(request: Request):
             "prompt": prompts[0]
         }
 
+        # Delete the local image file after it is not needed anymore
+        try:
+            os.remove(image_path)
+            logger.info(f"Deleted local image file: {image_path}")
+        except Exception as e:
+            logger.error(f"Error deleting local image file: {e}")
+
         # Log the end time for the entire request processing
         request_end_time = time.time()
         total_request_time = request_end_time - request_start_time

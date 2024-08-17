@@ -11,7 +11,7 @@ import { splitEvery } from 'ramda';
 import { readFileSync } from 'fs';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { generalImageQueue, concurrency, BATCH_SIZE } from './generalImageQueue.js';
-import { bucketKeyStats, currentBatches, imageReturnTimestamps, requestTimestamps, printQueueStatus } from './bucketKeyStats.js';
+import { bucketKeyStats, currentJobs, imageReturnTimestamps, requestTimestamps, printQueueStatus } from './bucketKeyStats.js';
 import { getIp } from './getIp.js';
 import { countJobs } from './bucketKeyStats.js';
 
@@ -160,13 +160,13 @@ const processChunk = async (chunk, bucketKey, safeParams) => {
     chunk.forEach(job => job.callback(e, null, job.timingInfo)); // Error callback
   } finally {
     // Remove processed jobs from currentBatches
-    const batchIndex = currentBatches.findIndex(batch => batch.bucketKey === bucketKey);
+    const batchIndex = currentJobs.findIndex(batch => batch.bucketKey === bucketKey);
     if (batchIndex !== -1) {
-      currentBatches[batchIndex].jobs = currentBatches[batchIndex].jobs.filter(
+      currentJobs[batchIndex].jobs = currentJobs[batchIndex].jobs.filter(
         job => !chunk.some(chunkJob => chunkJob.prompt === job.prompt)
       );
-      if (currentBatches[batchIndex].jobs.length === 0) {
-        currentBatches.splice(batchIndex, 1);
+      if (currentJobs[batchIndex].jobs.length === 0) {
+        currentJobs.splice(batchIndex, 1);
       }
     }
     // Decrement the count in bucketKeyStats
@@ -184,7 +184,7 @@ const processBatches = async () => {
     //   batchIndex = Math.random() < 0.7 ? 0 : 1;
     // }
     const batchIndex = 0;
-    const batch = currentBatches[batchIndex % currentBatches.length];
+    const batch = currentJobs[batchIndex % currentJobs.length];
     if (batch) {
       const { bucketKey, jobs, safeParams } = batch;
       const chunks = splitEvery(BATCH_SIZE, jobs);
@@ -192,7 +192,7 @@ const processBatches = async () => {
       if (chunk) {
         batch.jobs = batch.jobs.slice(chunk.length);
         if (batch.jobs.length === 0) {
-          currentBatches.splice(batchIndex, 1);
+          currentJobs.splice(batchIndex, 1);
         }
         processingPromises.push(generalImageQueue.add(() => processChunk(chunk, bucketKey, safeParams)));
       } else {
@@ -349,9 +349,9 @@ const queuedImageGen = queuePerIp(async ({ req, res, timingInfo, memCacheKey, or
 
     const jobData = { prompt, callback, originalPrompt, timingInfo, ip };
 
-    const existingBatch = currentBatches.find(batch => batch.bucketKey === bucketKey);
+    const existingBatch = currentJobs.find(batch => batch.bucketKey === bucketKey);
     if (!existingBatch) {
-      currentBatches.push({ bucketKey, jobs: [jobData], safeParams });
+      currentJobs.push({ bucketKey, jobs: [jobData], safeParams });
       return;
     }
 

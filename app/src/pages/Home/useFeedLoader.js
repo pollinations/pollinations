@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { isMature } from '../../data/mature';
 
 
-export function useFeedLoader(onNewImage, setServerLoad) {
+export function useFeedLoader(onNewImage, setLastImage) {
   const [imagesGenerated, setImagesGenerated] = useState(estimateGeneratedImages());
 
   useEffect(() => {
@@ -11,19 +11,30 @@ export function useFeedLoader(onNewImage, setServerLoad) {
       imageFeedSource.onmessage = evt => {
         const data = JSON.parse(evt.data);
         setImagesGenerated(no => no + 1);
-        lastServerLoad = data["concurrentRequests"];
-        setServerLoad(lastServerLoad);
-        if (data["nsfw"]) {
-          console.log("Skipping NSFW content:", data["nsfw"], data);
-          return;
-        }
-        if (data["imageURL"]) {
-          const matureWord = isMature(data["prompt"]);
-          if (matureWord) {
-            console.log("Skipping mature word:", matureWord, data["prompt"]);
+        // lastServerLoad = data["concurrentRequests"];
+        if (data["status"] === "end_generating")
+          setLastImage(data);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const nsfwParam = urlParams.get('nsfw');
+
+        if (nsfwParam !== 'true') {
+          if (data["nsfw"]) {
+            console.log("Skipping NSFW content:", data["nsfw"], data);
             return;
           }
-          onNewImage(data);
+          if (data["imageURL"]) {
+            const matureWord = isMature(data["prompt"]);
+            if (matureWord) {
+              console.log("Skipping mature word:", matureWord, data["prompt"]);
+              return;
+            }
+            onNewImage(data);
+          }
+        } else {
+          if (data["imageURL"]) {
+            onNewImage(data);
+          }
         }
       };
       return imageFeedSource;

@@ -93,14 +93,14 @@ export function GenerativeImageFeed() {
                   onClick={() => setTabValue(0)}
                   variant={tabValue === 0 ? "contained" : "text"}
                   color={tabValue === 0 ? Colors.offblack : Colors.lime}
-                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
                 >
                   Edit
                 </Button>
                 <Button
                   onClick={() => setTabValue(1)}
                   variant={tabValue === 1 ? "contained" : "text"}
-                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
                 >
                   Integrate
                 </Button>
@@ -132,7 +132,7 @@ export function GenerativeImageFeed() {
 function ModelInfo({ model }) {
 
   if (model === "turbo") {
-    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
+    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center', fontSize: '1rem' }}>
       Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning</Link>
       &nbsp;&nbsp;
       LoRA: <Link href="https://huggingface.co/tianweiy/DMD2" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>DMD2</Link>
@@ -142,7 +142,7 @@ function ModelInfo({ model }) {
   }
 
   if (model === "flux") {
-    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
+    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center', fontSize: '1rem' }}>
       Model: <Link href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Flux.Schnell</Link>
       &nbsp;&nbsp;
       Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image_gen_server/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
@@ -181,7 +181,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
           <Typography variant="body2" color="textSecondary">Prompt</Typography>
           <TextareaAutosize
             minRows={3}
-            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.2rem' }}
+            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.1rem' }}
             value={prompt}
             onChange={(e) => handleParamChange('prompt', e.target.value)}
             onFocus={handleFocus}
@@ -229,7 +229,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                 </Grid>
                 <Grid item xs={12} sm={6} md={8}>
                   <Typography variant="body2" color="textSecondary">Dimensions</Typography>
-                  <Box display="flex" alignItems="center">
+                  <Box display="flex" flexDirection="column" alignItems="center">
                     <TextField
                       variant="outlined"
                       value={width}
@@ -240,7 +240,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                         style: { color: Colors.white },
                       }}
                       disabled={isLoading}
-                      style={{ marginRight: '10px', width: '45%' }}
+                      style={{ marginBottom: '10px', width: '100%' }}
                     />
                     <Typography variant="body2" color="textSecondary" style={{ margin: '0 10px' }}>x</Typography>
                     <TextField
@@ -253,7 +253,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                         style: { color: Colors.white },
                       }}
                       disabled={isLoading}
-                      style={{ width: '45%' }}
+                      style={{ width: '100%' }}
                     />
                   </Box>
                 </Grid>

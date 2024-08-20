@@ -3,8 +3,8 @@ import { Box, Container, Paper } from '@material-ui/core';
 import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
-  max-width: 600px;
-  max-height: 600px;
+  max-width: 512px;
+  max-height: 512px;
 `;
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};

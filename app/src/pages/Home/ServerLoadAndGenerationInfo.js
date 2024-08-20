@@ -1,10 +1,9 @@
 import { Typography, Box } from '@material-ui/core';
 import { Colors } from '../../styles/global';
-
 export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image }) {
   console.log("lastImage", lastImage);
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" >
+    <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth="600px" margin="0 auto">
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
       <Typography variant="body1" component="span">
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>

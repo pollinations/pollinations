@@ -5,8 +5,8 @@ import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 export const ImageStyle = styled.img`
   width: 100%;
   height: auto;
-  max-width: 512px;
-  max-height: 512px;
+  max-width: 640px;
+  max-height: 640px;
 `;
 
 export const GenerativeImageURLContainer = styled(Container)`

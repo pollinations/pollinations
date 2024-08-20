@@ -10,6 +10,31 @@ import { shorten } from './shorten';
 
 // Code examples as an object
 const CODE_EXAMPLES = {
+  api_description: () => `
+# Pollinations AI Image Generation API
+
+## Endpoint
+GET https://image.pollinations.ai/prompt/{prompt}
+
+## Description
+This endpoint generates an image based on the provided prompt and optional parameters. It returns a raw image file.
+
+## Parameters
+- prompt (required): The text description of the image you want to generate. Should be URL-encoded.
+- model (optional): The model to use for generation. Options: 'flux' or 'turbo'. Default: 'turbo'
+- seed (optional): Seed for reproducible results. Default: random
+- width (optional): Width of the generated image. Default: 1024
+- height (optional): Height of the generated image. Default: 1024
+- nologo (optional): Set to 'true' to turn off the rendering of the logo
+- nofeed (optional): Set to 'true' to prevent the image from appearing in the public feed
+- enhance (optional): Set to 'true' or 'false' to turn on or off prompt enhancing (passes prompts through an LLM to add detail)
+
+## Example Usage
+https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true&enhance=true
+
+## Response
+The API returns a raw image file (typically JPEG or PNG) as the response body.
+`,
   llm_prompt: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
@@ -178,13 +203,14 @@ export function CodeExamples(image) {
 
   const codeExampleTabs = Object.keys(CODE_EXAMPLES);
 
-  const allTabs = ["link", "discord_bot", ...codeExampleTabs];
+  // Add "api_description" as the first tab
+  const allTabs = ["api_description", "link", "discord_bot", ...codeExampleTabs.filter(tab => tab !== "api_description")];
 
   return <URLExplanation >
     <AppBar position="static" style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: 'none' }}>
       <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{ style: { background: Colors.lime } }} >
         {allTabs.map((key) => (
-          <Tab key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} />
+          <Tab key={key} label={key === "api_description" ? "API Description" : key.charAt(0).toUpperCase() + key.slice(1)} />
         ))}
       </Tabs>
     </AppBar>
@@ -218,12 +244,9 @@ export function CodeExamples(image) {
             // wrapLongLines
             showLineNumbers={text.split("\n").length > 1}
             customStyle={{
-              overflow: 'scroll',
-              height: '507px',
               backgroundColor: 'transparent',
               color: Colors.offwhite,
-              scrollbarColor: 'transparent transparent' // scrollbar thumb and track colors
-
+              scrollbarColor: 'transparent transparent', // scrollbar thumb and track colors
             }} />
         )
       })}

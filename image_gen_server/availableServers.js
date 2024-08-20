@@ -2,7 +2,8 @@ import fetch from 'node-fetch';
 
 const FLUX_SERVERS = [
     { url: "http://52.203.206.118:5002", status: true },
-    { url: "http://54.91.176.109:5002", status: true }
+    { url: "http://54.91.176.109:5002", status: true },
+    { url: "http://52.20.220.68:5002", status: true },
 ];
 
 let fluxServerIndex = 0;

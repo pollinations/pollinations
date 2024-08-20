@@ -66,10 +66,12 @@ export function GenerativeImageFeed() {
             <ImageContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {image ? (<>
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-                  <ImageStyle
-                    src={image["imageURL"]}
-                    alt="generative_image"
-                  />
+                  <Box maxWidth="90%">
+                    <ImageStyle
+                      src={image["imageURL"]}
+                      alt="generative_image"
+                    />
+                  </Box>
                 </Link>
                 <Box display="flex" alignItems="center">
                   <ModelInfo model={image["model"]} />
@@ -113,19 +115,12 @@ export function GenerativeImageFeed() {
                   <CodeExamples {...image} />
                 </>
               )}
-              {isLoading && (
-                <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
-                  <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />
-                  <Typography style={{ color: Colors.lime, marginTop: '10px' }}>
-                    Generating...
-                  </Typography>
-                </Box>
-              )}
             </Box>
           </Grid>
         </Grid>
-      )}
-    </GenerativeImageURLContainer>
+      )
+      }
+    </GenerativeImageURLContainer >
   );
 }
 
@@ -199,10 +194,12 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                 backgroundColor: Colors.lime,
                 color: Colors.offblack,
                 padding: '10px 20px',
+                display: isLoading ? 'none' : 'block'
               }}
             >
               Imagine
             </Button>
+            {isLoading && <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />}
           </Box>
         </Grid>
         <Grid item xs={12}>
@@ -211,8 +208,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
               <Typography>Advanced Options</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
+              <Grid container direction="column" spacing={2}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Model</Typography>
                   <FormControl fullWidth>
                     <Select
@@ -227,7 +224,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} sm={6} md={8}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Dimensions</Typography>
                   <Box display="flex" flexDirection="column" alignItems="center">
                     <TextField
@@ -257,7 +254,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Seed</Typography>
                   <TextField
                     fullWidth
@@ -272,8 +269,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                     disabled={isLoading}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6} md={8}>
-                  <Box display="flex" justifyContent="space-around" alignItems="center" height="100%">
+                <Grid item>
+                  <Box display="flex" flexDirection="row" alignItems="center" justifyContent="space-between">
                     <Box>
                       <Typography variant="body2" color="textSecondary">
                         Private

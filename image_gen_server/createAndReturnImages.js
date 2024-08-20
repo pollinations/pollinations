@@ -217,9 +217,10 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const exifTool = new ExifTool();
   const tempImageFile = tempfile({ extension: "jpg" });
   fs.writeFileSync(tempImageFile, bufferWithLegend);
+  const { buffer: _buffer, ...maturity } = bufferAndMaturity;
   // Embed safeParams as metadata
   await exifTool.write(tempImageFile, {
-    UserComment: JSON.stringify({ ...safeParams, ...bufferAndMaturity }),
+    UserComment: JSON.stringify({ ...safeParams, ...maturity }),
     Make: "Stable Diffusion"
   });
   const exif_end_time = Date.now();

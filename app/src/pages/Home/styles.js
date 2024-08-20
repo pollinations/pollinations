@@ -12,7 +12,7 @@ export const GenerativeImageURLContainer = styled(Container)`
   margin: 0em;
   padding: 0em;
   width: 100%;
-  max-width: 700px;
+  max-width: 960px;
   border-radius: 0px;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 90%;

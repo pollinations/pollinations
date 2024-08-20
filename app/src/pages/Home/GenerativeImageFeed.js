@@ -11,6 +11,7 @@ import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } f
 import DiscordIMG from '../../assets/icons/discord_logo1.svg';
 import debug from 'debug';
 import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 
 const log = debug("GenerativeImageFeed");
 
@@ -45,9 +46,13 @@ export function GenerativeImageFeed() {
     stop(true); // Stop the slideshow when any form control is focused
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(image["imageURL"]);
+  };
+
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: '3em' }}>
-      <Grid item xs={12}>
+      <Grid item>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
       {!image["imageURL"] ? (
@@ -66,7 +71,15 @@ export function GenerativeImageFeed() {
                     alt="generative_image"
                   />
                 </Link>
-                <ModelInfo model={image["model"]} />
+                <Box display="flex" alignItems="center">
+                  <ModelInfo model={image["model"]} />
+                  &nbsp;&nbsp;
+                  <Tooltip title="Copy link" >
+                    <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
+                      <FileCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </>
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>

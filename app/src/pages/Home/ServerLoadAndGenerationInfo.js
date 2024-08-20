@@ -4,13 +4,13 @@ import { Colors } from '../../styles/global';
 export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image }) {
   console.log("lastImage", lastImage);
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box display="flex" justifyContent="space-between" alignItems="center" >
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
       <Typography variant="body1" component="span">
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
-      </Typography>
+      </Typography >
       <TimingInfo image={lastImage} />
-    </Box>
+    </Box >
   );
 }
 function ServerLoadDisplay({ concurrentRequests }) {

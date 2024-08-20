@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize, Select, MenuItem, FormControl, InputLabel } from '@material-ui/core';
+import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/Info';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { debounce } from 'lodash';
@@ -8,58 +8,55 @@ import { useFeedLoader } from './useFeedLoader';
 import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading, ImageContainer, ImageStyle } from './styles';
 import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
-import DiscordIMG from '../../assets/icons/discord_logo1.svg' // Corrected the path to the discord image
+import DiscordIMG from '../../assets/icons/discord_logo1.svg';
 import debug from 'debug';
 import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
 
-const log = debug("GenerativeImageFeed")
+const log = debug("GenerativeImageFeed");
 
 export function GenerativeImageFeed() {
   const [lastImage, setLastImage] = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [imageParams, setImageParams] = useState({});
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
-  const { updateImage, isWaiting, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
+  const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage);
 
-  const handleParamChange = (param, value) => {
-    const newImage = {
-      ...image,
-      [param]: value,
-    };
-    const imageURL = getImageURL(newImage);
+  useEffect(() => {
+    setImageParams(image);
+  }, [image]);
 
+  const handleParamChange = (param, value) => {
+    setImageParams(prevParams => ({
+      ...prevParams,
+      [param]: value,
+    }));
+  };
+
+  const handleSubmit = () => {
+    const imageURL = getImageURL(imageParams);
     updateImage({
-      ...newImage,
+      ...imageParams,
       imageURL
     });
   };
 
-
-  const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
-
-  // const latestImage = image.imageURL ? image : slideshowImage; 
-
-  // useEffect(() => {
-  //   log("latestImage", latestImage);
-  // }, latestImage);
+  const handleFocus = () => {
+    stop(true); // Stop the slideshow when any form control is focused
+  };
 
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: window.innerWidth <= parseInt(MOBILE_BREAKPOINT) ? '3em' : '0' }}>
       <Grid item xs={12}>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
-      <Grid item xs={12}>
-        <Typography variant="h6" color="primary" style={{ textAlign: 'center', margin: '20px 0' }}>
-          Model "?model=flux" is now available!
-        </Typography>
-      </Grid>
       {!image["imageURL"] ? (
         <Grid container justify="center" alignItems="center" style={{ marginBottom: "8em" }}>
           <CircularProgress color={'inherit'} style={{ color: Colors.offwhite }} />
         </Grid>
       ) : (
-        <Grid container spacing={4}>
-          <Grid item xs={gridItemSize}>
+        <Grid container spacing={4} direction="column">
+          <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {image ? (<>
@@ -82,7 +79,7 @@ export function GenerativeImageFeed() {
               )}
             </ImageContainer>
           </Grid>
-          <Grid item xs={gridItemSize} >
+          <Grid item xs={12}>
             <Box display="flex" justifyContent="center" >
               <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
                 <Button
@@ -103,13 +100,17 @@ export function GenerativeImageFeed() {
               </ButtonGroup>
             </Box>
             <Box>
-              {tabValue === 0 && <ImageData {...{ image, handleParamChange, isLoading }} />}
-              {tabValue === 1 && <CodeExamples {...image} />}
-              {(isWaiting || isLoading) && (
+              {tabValue === 0 && <ImageData {...{ image: imageParams, handleParamChange, handleFocus, isLoading, handleSubmit }} />}
+              {tabValue === 1 && (
+                <>
+                  <CodeExamples {...image} />
+                </>
+              )}
+              {isLoading && (
                 <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
-                  <CircularProgress color={'inherit'} style={{ color: isWaiting ? Colors.white : Colors.lime }} />
-                  <Typography style={{ color: isWaiting ? Colors.white : Colors.lime, marginTop: '10px' }}>
-                    {isWaiting ? `Waiting ${isWaiting}...` : 'Generating...'}
+                  <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />
+                  <Typography style={{ color: Colors.lime, marginTop: '10px' }}>
+                    Generating...
                   </Typography>
                 </Box>
               )}
@@ -138,11 +139,7 @@ function getImageURL(newImage) {
   return imageURL;
 }
 
-
-
-function ImageData({ image, handleParamChange, isLoading }) {
-
-
+function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSubmit }) {
   const { prompt, width, height, seed, imageURL, nofeed, nologo, model } = image;
 
   if (!imageURL) {
@@ -150,136 +147,144 @@ function ImageData({ image, handleParamChange, isLoading }) {
   }
 
   return (
-    <>
-      <TableContainer component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '30px', backgroundColor: "transparent" }}>
-        <Table aria-label="image info table" size="small" style={{ borderCollapse: 'collapse' }}>
-          <TableBody height='450px'  >
-            <TableRow key="prompt" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>prompt</TableCell>
-              <TableCell align="right" style={{ borderBottom: 'none' }}>
-                <TextareaAutosize
-                  minRows={3}
-                  style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
-                  value={prompt}
-                  onChange={(e) => handleParamChange('prompt', e.target.value)}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-            <TableRow key="model" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none' }}>model</TableCell>
-              <TableCell align="right" style={{ borderBottom: 'none' }}>
-                <FormControl fullWidth>
-                  <InputLabel style={{ color: Colors.white }}>Model</InputLabel>
-                  <Select
-                    value={model || "turbo"}
-                    onChange={(e) => handleParamChange('model', e.target.value)}
+    <Box component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '20px', backgroundColor: "transparent" }}>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Typography variant="body2" color="textSecondary">Prompt</Typography>
+          <TextareaAutosize
+            minRows={3}
+            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
+            value={prompt}
+            onChange={(e) => handleParamChange('prompt', e.target.value)}
+            onFocus={handleFocus}
+            disabled={isLoading}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <Box display="flex" justifyContent="flex-end" mt={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSubmit}
+              disabled={isLoading}
+              style={{
+                backgroundColor: Colors.lime,
+                color: Colors.offblack,
+                padding: '10px 20px',
+              }}
+            >
+              Imagine
+            </Button>
+          </Box>
+        </Grid>
+        <Grid item xs={12}>
+          <Accordion style={{ backgroundColor: 'transparent', color: Colors.white }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon style={{ color: Colors.lime }} />}>
+              <Typography>Advanced Options</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="body2" color="textSecondary">Model</Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      value={model || "turbo"}
+                      onChange={(e) => handleParamChange('model', e.target.value)}
+                      onFocus={handleFocus}
+                      disabled={isLoading}
+                      style={{ color: Colors.white, width: '100%' }}
+                    >
+                      <MenuItem value="turbo">Turbo</MenuItem>
+                      <MenuItem value="flux">Flux</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} sm={6} md={8}>
+                  <Typography variant="body2" color="textSecondary">Dimensions</Typography>
+                  <Box display="flex" alignItems="center">
+                    <TextField
+                      variant="outlined"
+                      value={width}
+                      onChange={(e) => handleParamChange('width', parseInt(e.target.value))}
+                      onFocus={handleFocus}
+                      type="number"
+                      InputProps={{
+                        style: { color: Colors.white },
+                      }}
+                      disabled={isLoading}
+                      style={{ marginRight: '10px', width: '45%' }}
+                    />
+                    <Typography variant="body2" color="textSecondary" style={{ margin: '0 10px' }}>x</Typography>
+                    <TextField
+                      variant="outlined"
+                      value={height}
+                      onChange={(e) => handleParamChange('height', parseInt(e.target.value))}
+                      onFocus={handleFocus}
+                      type="number"
+                      InputProps={{
+                        style: { color: Colors.white },
+                      }}
+                      disabled={isLoading}
+                      style={{ width: '45%' }}
+                    />
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={4}>
+                  <Typography variant="body2" color="textSecondary">Seed</Typography>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    value={seed}
+                    onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
+                    onFocus={handleFocus}
+                    type="number"
+                    InputProps={{
+                      style: { color: Colors.white },
+                    }}
                     disabled={isLoading}
-                    style={{ color: Colors.white, width: '100%' }}
-                  >
-                    <MenuItem value="turbo">Turbo</MenuItem>
-                    <MenuItem value="flux">Flux</MenuItem>
-                  </Select>
-                </FormControl>
-              </TableCell>
-            </TableRow>
-            <TableRow key="width" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" style={{ borderBottom: 'none' }} component="th" scope="row">width</TableCell>
-              <TableCell style={{ borderBottom: 'none' }}>
-                <Slider
-                  value={width || 1024}
-                  onChange={(e, newValue) => handleParamChange('width', newValue)}
-                  aria-labelledby="width-slider"
-                  valueLabelDisplay="on"
-                  step={16}
-                  marks
-                  min={16}
-                  max={2048}
-                  style={{ marginTop: "30px", color: Colors.white }}
-                  ThumbComponent={props => <span {...props} style={{ ...props.style, backgroundColor: Colors.lime }} />}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-            <TableRow key="height" style={{ borderBottom: 'none' }}>
-              <TableCell component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>height</TableCell>
-              <TableCell align="left" style={{ borderBottom: 'none' }}>
-                <Slider
-                  value={height || 1024}
-                  onChange={(e, newValue) => handleParamChange('height', newValue)}
-                  aria-labelledby="height-slider"
-                  valueLabelDisplay="on"
-                  step={16}
-                  marks
-                  min={16}
-                  max={2048}
-                  style={{ marginTop: "30px", color: Colors.white }}
-                  ThumbComponent={props => <span {...props} style={{ ...props.style, backgroundColor: Colors.lime }} />}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-            <TableRow key="seed" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>seed</TableCell>
-              <TableCell align="left" style={{ borderBottom: 'none' }}>
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  value={seed}
-                  onChange={(e) => handleParamChange('seed', parseInt(e.target.value))}
-                  onFocus={() => handleParamChange('seed', seed)}
-                  type="number"
-                  style={{ width: "25%" }}
-                  InputProps={{
-                    style: { color: Colors.white },
-                  }}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-            <TableRow key="nofeed" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
-                private
-                <Tooltip title="Activating 'private' prevents images from appearing in the feed." style={{ color: Colors.lime }}>
-                  <IconButton size="small">
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-              <TableCell align="left" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
-                <Checkbox
-                  checked={nofeed}
-                  onChange={(e) => handleParamChange('nofeed', e.target.checked)}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-            <TableRow key="nologo" style={{ borderBottom: 'none' }}>
-              <TableCell align="left" component="th" scope="row" style={{ borderBottom: 'none', width: '20%' }}>
-                nologo
-                <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/k9F7SyTgqn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
-                  <IconButton size="small">
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
-              <TableCell align="left" style={{ borderBottom: 'none', display: 'flex', alignItems: 'center' }}>
-                <TextField
-                  type="password"
-                  variant="outlined"
-                  onChange={(e) => handleParamChange('nologo', e.target.value)}
-                  style={{ width: "25%" }}
-                  value={nologo ? nologo : ""}
-                  InputProps={{
-                    style: { color: Colors.white },
-                  }}
-                  disabled={isLoading}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </>
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={8}>
+                  <Box display="flex" justifyContent="space-around" alignItems="center" height="100%">
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        Private
+                        <Tooltip title="Activating 'private' prevents images from appearing in the feed." style={{ color: Colors.lime }}>
+                          <IconButton size="small">
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Typography>
+                      <Checkbox
+                        checked={nofeed}
+                        onChange={(e) => handleParamChange('nofeed', e.target.checked)}
+                        onFocus={handleFocus}
+                        disabled={isLoading}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="textSecondary">
+                        No Logo
+                        <Tooltip title={<span>Hide the pollinations.ai logo. Get the password in Pollinations' Discord community. <Link href="https://discord.gg/k9F7SyTgqn" target="_blank" style={{ color: Colors.lime }}>Join here</Link></span>} interactive style={{ color: Colors.lime }}>
+                          <IconButton size="small">
+                            <InfoIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Typography>
+                      <Checkbox
+                        checked={nologo}
+                        onChange={(e) => handleParamChange('nologo', e.target.checked)}
+                        onFocus={handleFocus}
+                        disabled={isLoading}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }

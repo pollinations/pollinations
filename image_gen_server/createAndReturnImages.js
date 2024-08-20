@@ -103,8 +103,6 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     // }
     const { image, ...rest } = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
 
-    const exifTool = new ExifTool();
-
     if (!image) {
       console.error("image is null");
       throw new Error("image is null");
@@ -118,18 +116,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     tempImageFile = tempfile({ extension: ext });
     fs.writeFileSync(tempImageFile, buffer);
 
-    // Start timing for exif
-    const exif_start_time = Date.now();
-    // Embed safeParams as metadata
-    await exifTool.write(tempImageFile, {
-      UserComment: JSON.stringify({ ...safeParams, ...jsonResponse }),
-      Make: "Stable Diffusion"
-    });
-    const exif_end_time = Date.now();
-    console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
-
     const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
-    await exifTool.end();
     if (tempImageFile) fs.unlinkSync(tempImageFile);
     return { buffer: bufferWithMetadata, ...rest };
 
@@ -183,8 +170,8 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
   const maxPixels = sideLength * sideLength;
 
   // Ensure width and height are integers or default to sideLength
-  width = Number.isInteger(parseInt(width)) ? parseInt(width) : 512;
-  height = Number.isInteger(parseInt(height)) ? parseInt(height) : 512;
+  width = Number.isInteger(parseInt(width)) ? parseInt(width) : 768;
+  height = Number.isInteger(parseInt(height)) ? parseInt(height) : 768;
 
   // Ensure seed is a valid integer within the allowed range
   const maxSeedValue = 18446744073709551500;
@@ -224,6 +211,22 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
   // Resize the final image to the user's desired size
   bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+
+  // Start timing for exif
+  const exif_start_time = Date.now();
+  const exifTool = new ExifTool();
+  const tempImageFile = tempfile({ extension: "jpg" });
+  fs.writeFileSync(tempImageFile, bufferWithLegend);
+  // Embed safeParams as metadata
+  await exifTool.write(tempImageFile, {
+    UserComment: JSON.stringify({ ...safeParams, ...bufferAndMaturity }),
+    Make: "Stable Diffusion"
+  });
+  const exif_end_time = Date.now();
+  console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
+  bufferWithLegend = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
+  await exifTool.end();
+  if (tempImageFile) fs.unlinkSync(tempImageFile);
 
   return { buffer: bufferWithLegend, isChild, isMature };
 

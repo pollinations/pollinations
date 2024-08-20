@@ -3,20 +3,20 @@ import { Box, Container, Paper } from '@material-ui/core';
 import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
+  width: 100%;
+  height: auto;
   max-width: 512px;
   max-height: 512px;
 `;
+
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
   // background-color: transparent;
   margin: 0em;
   padding: 0em;
-  width: 100%;
   max-width: 960px;
   border-radius: 0px;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
     width: 90%;
-  }
 `;
 export const ImageURLHeading = styled.p`
   font-family: ${Fonts.headline} !important;

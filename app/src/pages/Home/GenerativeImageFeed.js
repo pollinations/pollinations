@@ -153,7 +153,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
           <Typography variant="body2" color="textSecondary">Prompt</Typography>
           <TextareaAutosize
             minRows={3}
-            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px' }}
+            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.2rem' }}
             value={prompt}
             onChange={(e) => handleParamChange('prompt', e.target.value)}
             onFocus={handleFocus}

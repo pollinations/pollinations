@@ -6,7 +6,7 @@ mkdir -p ./testOutput
 # Function to fetch images in parallel and save each request
 function fetch_image() {
   local index=$1
-  local url="https://image.pollinations.ai/prompt/b_${index}_balaal0a90oons"
+  local url="https://image.pollinations.ai/prompt/b_${index}_balal0a90oons"
   local output_file="./testOutput/image_${index}.jpg"
   
   # Time the request

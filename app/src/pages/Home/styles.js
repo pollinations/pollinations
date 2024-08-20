@@ -3,7 +3,7 @@ import { Box, Container, Paper } from '@material-ui/core';
 import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
 
 export const ImageStyle = styled.img`
-  max-width: 100%;
+  max-width: 600px;
   max-height: 600px;
 `;
 export const GenerativeImageURLContainer = styled(Container)`

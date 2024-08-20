@@ -9,6 +9,7 @@ import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImage
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js';
 import { getIp } from './getIp.js';
+import sleep from 'await-sleep';
 export let currentJobs = [];
 
 // this is used to create a queue per ip address
@@ -172,6 +173,9 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const cacheKey = `${originalPrompt}-${JSON.stringify(safeParams)}`;
 
+  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
+  sendToAnalytics(req, "imageRequested", analyticsMetadata);
+
   const isCached = await handleCache(cacheKey, originalPrompt, safeParams, req, res);
 
   if (isCached) return;
@@ -181,14 +185,19 @@ const checkCacheAndGenerate = async (req, res) => {
   const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
   sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
 
-  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
-  sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
+  let queueExisted = false;
   if (!ipQueue[ip]) {
     ipQueue[ip] = new PQueue({ concurrency: 1 });
+  } else {
+    queueExisted = true;
   }
 
   memCache[cacheKey] = ipQueue[ip].add(async () => {
+    if (queueExisted && countJobs() > 2) {
+      console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little");
+      await sleep(1000 * countJobs());
+    }
     timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
     const buffer = await generalImageQueue.add(async () => {
       return await imageGen({ req, res, timingInfo, memCacheKey: cacheKey, originalPrompt, safeParams });
@@ -201,6 +210,11 @@ const checkCacheAndGenerate = async (req, res) => {
   });
 
   await memCache[cacheKey];
+
+  // if the queue is empty and none pending or processing we can delete the queue
+  if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
+    delete ipQueue[ip];
+  }
 
   sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 

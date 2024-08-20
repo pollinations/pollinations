@@ -81,7 +81,6 @@ const handleCache = async (memCacheKey, originalPrompt, safeParams, req, res) =>
   if (memCache[memCacheKey]) {
     res.writeHead(200, { 'Content-Type': 'image/jpeg' })
     const memCacheContent = await memCache[memCacheKey];
-    console.log("memCacheContent", memCacheContent);
     res.write(memCacheContent);
     res.end();
     return true;

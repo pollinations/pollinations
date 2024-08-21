@@ -176,7 +176,11 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
   // Ensure seed is a valid integer within the allowed range
   const maxSeedValue = 18446744073709551500;
   seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
-  if (seed < 0 || seed > maxSeedValue) {
+
+  if (seed === -1) {
+    seed = Math.floor(20 * Math.random());
+  }
+  else if (seed < 0 || seed > maxSeedValue) {
     seed = 42;
   }
 

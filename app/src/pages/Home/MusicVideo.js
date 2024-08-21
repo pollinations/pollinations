@@ -7,6 +7,7 @@ import SwiperComponent from './Swiper';
 
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
+import { ImageURLHeading } from './styles';
 
 const FeaturedApplicationsContent = [
     {
@@ -55,30 +56,6 @@ const Style = styled.div`
   padding-bottom: 5em;
   `
 
-const Headline = styled.p`
-  font-family: ${Fonts.headline};
-  font-style: normal;
-  font-weight: 400;
-  font-size: 96px;
-  line-height: 105px;
-  text-transform: capitalize;
-
-  margin: 0;
-  margin-top: 1em;
-  color: ${Colors.offwhite};
-
-  span {
-    font-family: ${Fonts.headline};
-    color: ${Colors.lime};
-  }
-
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    max-width: 600px;
-    font-size: 58px;
-    line-height: 55px;
-    margin: 0;
-    margin-top: 1em;
-}`
 const SubHeadline = styled.p`
     font-style: normal;
     font-weight: 400;
@@ -119,9 +96,7 @@ const FeaturedApp = props => {
     }
 
     return <Flex AlignItems='center' gap='5em'>
-        <Headline>
-            {title}
-        </Headline>
+        <ImageURLHeading>{title}</ImageURLHeading>
         <SubHeadline>
             {subtitle}
         </SubHeadline>

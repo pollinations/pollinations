@@ -10,9 +10,11 @@ import { KarmaYT } from "./KarmaYT"
 import { ChatPrompt } from "./ChatPrompt"
 import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
-import TopBandPresetsDesign from "../../assets/imgs/presets-linha.png"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useRef } from "react"
+
+const topBandPrompt = encodeURIComponent("One horizontal row of white background with many evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
+const TopBandPresetsDesign = `https://image.pollinations.ai/prompt/${topBandPrompt}?width=1000&height=83&seed=-1`
 
 export default function Solutions() {
   const hiddenInputRef = useRef(null);
@@ -27,25 +29,25 @@ export default function Solutions() {
     <Style>
       <input ref={hiddenInputRef} type="text" style={{ position: 'absolute', opacity: 0, height: 0, width: 0, border: 'none' }} aria-hidden="true" tabIndex="-1" />
       <WhoWeAre />
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <TopBand />
       {/* <Hero /> */}
       <GenerativeImageFeed />
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <TopBand />
       {/* <ChatPrompt /> */}
       <MusicVideo />
       {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
       <Dreamachine /> */}
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" /> */}
       {/* <KarmaYT /> */}
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <TopBand />
       <ImageURLHeading>Events</ImageURLHeading>
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <TopBand />
 
       <Discord />
-      <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      <TopBand />
     </Style>
   )
 }
@@ -64,15 +66,14 @@ const Style = styled.div`
   }
 `
 
-const TopBand = styled.img`
-  position: relative;
+const TopBand = styled.div`
   width: 100%;
-  min-height: 59px;
-  object-fit: cover;
-  background: white;
+  height: 83px;
+  background-image: url('${TopBandPresetsDesign}');
+  background-repeat: repeat-x;
+  background-size: auto 100%;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    height: auto;
-    object-fit: cover;
+    height: 40px;
   }
 `

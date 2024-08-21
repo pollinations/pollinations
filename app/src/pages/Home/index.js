@@ -11,10 +11,14 @@ import { ChatPrompt } from "./ChatPrompt"
 import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 const topBandPrompt = encodeURIComponent("One horizontal centered row on white background with 4-7 evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
-const TopBandPresetsDesign = `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=-1`
+
+const getTopBandPresetsDesign = () => {
+  const seed = Math.floor(Math.random() * 20)
+  return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}`
+}
 
 export default function Solutions() {
   const hiddenInputRef = useRef(null);
@@ -35,9 +39,9 @@ export default function Solutions() {
       <TopBand />
       {/* <ChatPrompt /> */}
       <MusicVideo />
-      {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" />
+      {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" />
       <Dreamachine /> */}
-      {/* <TopBand src={TopBandPresetsDesign} alt="Top Band" /> */}
+      {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" /> */}
       {/* <KarmaYT /> */}
       <TopBand />
       <ImageURLHeading>Events</ImageURLHeading>
@@ -51,6 +55,7 @@ export default function Solutions() {
     </Style>
   )
 }
+
 const Style = styled.div`
   width: 100%;
   padding: 0em;
@@ -66,14 +71,22 @@ const Style = styled.div`
   }
 `
 
-const TopBand = styled.div`
+const TopBand = () => {
+  const [backgroundImage, setBackgroundImage] = useState('');
+
+  useEffect(() => {
+    setBackgroundImage(getTopBandPresetsDesign());
+  }, []);
+
+  return (
+    <TopBandStyle backgroundImage={backgroundImage} />
+  );
+}
+
+const TopBandStyle = styled.div`
   width: 100%;
   height: 83px;
-  background-image: url('${TopBandPresetsDesign}');
+  background-image: url('${props => props.backgroundImage}');
   background-repeat: repeat-x;
-  background-size: auto 100px;
-
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    height: 40px;
-  }
+  background-size: auto 100%;
 `

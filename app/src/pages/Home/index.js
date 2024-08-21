@@ -16,8 +16,8 @@ import { useEffect, useRef, useState } from "react"
 const topBandPrompt = encodeURIComponent("One horizontal centered row on white background with 4-7 evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
 
 const getTopBandPresetsDesign = () => {
-  const seed = Math.floor(Math.random() * 20)
-  return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}`
+  const seed = Math.floor(Math.random() * 10)
+  return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}&nologo=true`
 }
 
 export default function Solutions() {

@@ -9,6 +9,7 @@ import SwiperComponent from './Swiper';
 
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
+import { ImageURLHeading } from './styles';
 
 const gridItemSize = window.innerWidth > parseInt(MOBILE_BREAKPOINT) ? 6 : 12;
 
@@ -139,9 +140,9 @@ const FeaturedApp = props => {
     }
 
     return <Flex AlignItems='center' gap='5em'>
-              <Grid item xs={12}>
-        <ImageURLHeading>Image Feed</ImageURLHeading>
-      </Grid>
+        <Grid item xs={12}>
+            <ImageURLHeading>Image Feed</ImageURLHeading>
+        </Grid>
         <Grid container spacing={4}>
             <Grid item xs={gridItemSize}>
                 <Headline>

@@ -13,8 +13,8 @@ import { ImageURLHeading } from "./styles"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useRef } from "react"
 
-const topBandPrompt = encodeURIComponent("One horizontal row of white background with many evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
-const TopBandPresetsDesign = `https://image.pollinations.ai/prompt/${topBandPrompt}?width=1000&height=83&seed=-1`
+const topBandPrompt = encodeURIComponent("One horizontal centered row on white background with 4-7 evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
+const TopBandPresetsDesign = `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=-1`
 
 export default function Solutions() {
   const hiddenInputRef = useRef(null);
@@ -71,7 +71,7 @@ const TopBand = styled.div`
   height: 83px;
   background-image: url('${TopBandPresetsDesign}');
   background-repeat: repeat-x;
-  background-size: auto 100%;
+  background-size: auto 100px;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     height: 40px;

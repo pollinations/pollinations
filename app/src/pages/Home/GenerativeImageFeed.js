@@ -11,6 +11,7 @@ import { Colors, Headline, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } f
 import DiscordIMG from '../../assets/icons/discord_logo1.svg';
 import debug from 'debug';
 import { ServerLoadAndGenerationInfo } from './ServerLoadAndGenerationInfo';
+import FileCopyIcon from '@material-ui/icons/FileCopy';
 
 const log = debug("GenerativeImageFeed");
 
@@ -45,9 +46,13 @@ export function GenerativeImageFeed() {
     stop(true); // Stop the slideshow when any form control is focused
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(image["imageURL"]);
+  };
+
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: '3em' }}>
-      <Grid item xs={12}>
+      <Grid item>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
       {!image["imageURL"] ? (
@@ -61,18 +66,22 @@ export function GenerativeImageFeed() {
             <ImageContainer style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {image ? (<>
                 <Link href={image["imageURL"]} target="_blank" rel="noopener noreferrer">
-                  <ImageStyle
-                    src={image["imageURL"]}
-                    alt="generative_image"
-                  />
+                  <Box maxWidth="90%">
+                    <ImageStyle
+                      src={image["imageURL"]}
+                      alt="generative_image"
+                    />
+                  </Box>
                 </Link>
-                <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center' }}>
-                  Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning</Link>
+                <Box display="flex" alignItems="center">
+                  <ModelInfo model={image["model"]} />
                   &nbsp;&nbsp;
-                  LoRA: <Link href="https://huggingface.co/tianweiy/DMD2" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>DMD2</Link>
-                  &nbsp;&nbsp;
-                  Prompt Pimper: <Link href="https://github.com/pollinations/pollinations/blob/master/image_gen_server/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
-                </Typography>
+                  <Tooltip title="Copy link" >
+                    <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
+                      <FileCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </>
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
@@ -86,14 +95,14 @@ export function GenerativeImageFeed() {
                   onClick={() => setTabValue(0)}
                   variant={tabValue === 0 ? "contained" : "text"}
                   color={tabValue === 0 ? Colors.offblack : Colors.lime}
-                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
                 >
                   Edit
                 </Button>
                 <Button
                   onClick={() => setTabValue(1)}
                   variant={tabValue === 1 ? "contained" : "text"}
-                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "150px", height: "50px", fontSize: "1rem" }}
+                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
                 >
                   Integrate
                 </Button>
@@ -106,20 +115,34 @@ export function GenerativeImageFeed() {
                   <CodeExamples {...image} />
                 </>
               )}
-              {isLoading && (
-                <Box display="flex" flexDirection="column" alignItems="center" margin="30px auto">
-                  <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />
-                  <Typography style={{ color: Colors.lime, marginTop: '10px' }}>
-                    Generating...
-                  </Typography>
-                </Box>
-              )}
             </Box>
           </Grid>
         </Grid>
-      )}
-    </GenerativeImageURLContainer>
+      )
+      }
+    </GenerativeImageURLContainer >
   );
+}
+
+function ModelInfo({ model }) {
+
+  if (model === "turbo") {
+    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center', fontSize: '1rem' }}>
+      Model: <Link href="https://civitai.com/models/413466/boltning-realistic-lightning-hyper" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Boltning</Link>
+      &nbsp;&nbsp;
+      LoRA: <Link href="https://huggingface.co/tianweiy/DMD2" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>DMD2</Link>
+      &nbsp;&nbsp;
+      Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image_gen_server/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
+    </Typography>;
+  }
+
+  if (model === "flux") {
+    return <Typography variant="caption" color="textSecondary" style={{ marginTop: '10px', textAlign: 'center', fontSize: '1rem' }}>
+      Model: <Link href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Flux.Schnell</Link>
+      &nbsp;&nbsp;
+      Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image_gen_server/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
+    </Typography>;
+  }
 }
 
 function getImageURL(newImage) {
@@ -153,7 +176,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
           <Typography variant="body2" color="textSecondary">Prompt</Typography>
           <TextareaAutosize
             minRows={3}
-            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.2rem' }}
+            style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.1rem' }}
             value={prompt}
             onChange={(e) => handleParamChange('prompt', e.target.value)}
             onFocus={handleFocus}
@@ -171,10 +194,12 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                 backgroundColor: Colors.lime,
                 color: Colors.offblack,
                 padding: '10px 20px',
+                display: isLoading ? 'none' : 'block'
               }}
             >
               Imagine
             </Button>
+            {isLoading && <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />}
           </Box>
         </Grid>
         <Grid item xs={12}>
@@ -183,8 +208,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
               <Typography>Advanced Options</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={4}>
+              <Grid container direction="column" spacing={2}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Model</Typography>
                   <FormControl fullWidth>
                     <Select
@@ -199,9 +224,9 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={12} sm={6} md={8}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Dimensions</Typography>
-                  <Box display="flex" alignItems="center">
+                  <Box display="flex" flexDirection="column" alignItems="center">
                     <TextField
                       variant="outlined"
                       value={width}
@@ -212,7 +237,7 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                         style: { color: Colors.white },
                       }}
                       disabled={isLoading}
-                      style={{ marginRight: '10px', width: '45%' }}
+                      style={{ marginBottom: '10px', width: '100%' }}
                     />
                     <Typography variant="body2" color="textSecondary" style={{ margin: '0 10px' }}>x</Typography>
                     <TextField
@@ -225,11 +250,11 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                         style: { color: Colors.white },
                       }}
                       disabled={isLoading}
-                      style={{ width: '45%' }}
+                      style={{ width: '100%' }}
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item>
                   <Typography variant="body2" color="textSecondary">Seed</Typography>
                   <TextField
                     fullWidth
@@ -244,8 +269,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
                     disabled={isLoading}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6} md={8}>
-                  <Box display="flex" justifyContent="space-around" alignItems="center" height="100%">
+                <Grid item>
+                  <Box display="flex" flexDirection="row" alignItems="center" justifyContent="space-between">
                     <Box>
                       <Typography variant="body2" color="textSecondary">
                         Private

@@ -38,14 +38,19 @@ export function useImageSlideshow() {
 export function useImageEditor({ stop, image }) {
   const [isLoading, setIsLoading] = useState(false);
   const [editedImage, setEditedImage] = useState(null);
-
   const updateImage = useCallback(async (newImage) => {
     stop(true);
     setIsLoading(true);
+
+    // Check if the parameters of the last image (except the loaded prop) are the same as the new image
+    if (editedImage && Object.keys(newImage).every(key => key === 'loaded' || newImage[key] === editedImage[key])) {
+      newImage.seed = (newImage.seed || 0) + 1; // Increment the seed parameter
+    }
+
     const loadedImage = await loadImage(newImage);
     setEditedImage(loadedImage);
     setIsLoading(false);
-  }, [stop]);
+  }, [stop, editedImage]);
 
   image = editedImage || image;
 

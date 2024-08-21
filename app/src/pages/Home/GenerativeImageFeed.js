@@ -74,15 +74,17 @@ export function GenerativeImageFeed() {
                     />
                   </Box>
                 </Link>
-                <Box display="flex" alignItems="center">
-                  <ModelInfo model={image["model"]} />
-                  &nbsp;&nbsp;
-                  <Tooltip title="Copy link" >
-                    <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
-                      <FileCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                {
+                  !isMobile && <Box display="flex" alignItems="center">
+                    <ModelInfo model={image["model"]} />
+                    &nbsp;&nbsp;
+                    <Tooltip title="Copy link" >
+                      <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
+                        <FileCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                }
               </>
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
@@ -173,8 +175,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
   }
 
   return (
-    <Box component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '20px', backgroundColor: "transparent" }}>
-      <Grid container spacing={2}>
+    <Box component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '0px', backgroundColor: "transparent" }}>
+      <Grid container>
         <Grid item xs={12}>
           <Typography variant="body2" color="textSecondary">Prompt</Typography>
           <TextareaAutosize

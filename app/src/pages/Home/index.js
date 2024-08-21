@@ -13,7 +13,7 @@ import { ImageURLHeading } from "./styles"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useRef, useState } from "react"
 
-const topBandPrompt = encodeURIComponent("One horizontal centered row on white background with 4-7 evenly spaced larger circular icons such as animal heads, stars, smileys (be creative with arrows) in black and white.")
+const topBandPrompt = encodeURIComponent("One horizontal centered row on white background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
 
 const getTopBandPresetsDesign = () => {
   const seed = Math.floor(Math.random() * 10)
@@ -48,10 +48,10 @@ export default function Solutions() {
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}
-      <TopBand />
+      {/* <TopBand /> */}
 
       <Discord />
-      <TopBand />
+      {/* <TopBand /> */}
     </Style>
   )
 }

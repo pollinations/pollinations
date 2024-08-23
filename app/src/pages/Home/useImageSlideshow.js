@@ -24,9 +24,13 @@ export function useImageSlideshow() {
     }
   }, [loadingImages]);
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const nsfwParam = urlParams.get('nsfw');
+  const interval = nsfwParam === 'true' ? 100 : 3000;
+
   useInterval(() => {
     if (!isStopped) nextImage();
-  }, 3000);
+  }, interval);
 
   const onNewImage = useCallback((newImage) => {
     setLoadingImages(images => [...images, newImage]);

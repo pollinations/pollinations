@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails } from '@material-ui/core';
+import { Typography, ButtonGroup, Grid, Link, Box, Paper, Table, TableBody, TableCell, TableRow, TextField, CircularProgress, Slider, TableContainer, Checkbox, Tooltip, IconButton, Collapse, Button, Tabs, Tab, TextareaAutosize, Select, MenuItem, FormControl, InputLabel, Accordion, AccordionSummary, AccordionDetails, useMediaQuery } from '@material-ui/core';
 import InfoIcon from '@material-ui/icons/Info';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { debounce } from 'lodash';
@@ -22,6 +22,7 @@ export function GenerativeImageFeed() {
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage);
+  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`);
 
   useEffect(() => {
     setImageParams(image);
@@ -73,15 +74,17 @@ export function GenerativeImageFeed() {
                     />
                   </Box>
                 </Link>
-                <Box display="flex" alignItems="center">
-                  <ModelInfo model={image["model"]} />
-                  &nbsp;&nbsp;
-                  <Tooltip title="Copy link" >
-                    <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
-                      <FileCopyIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+                {
+                  !isMobile && <Box display="flex" alignItems="center">
+                    <ModelInfo model={image["model"]} />
+                    &nbsp;&nbsp;
+                    <Tooltip title="Copy link" >
+                      <IconButton onClick={handleCopyLink} style={{ color: Colors.lime }}>
+                        <FileCopyIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                }
               </>
               ) : (
                 <Typography variant="h6" color="textSecondary">Loading image...</Typography>
@@ -89,25 +92,27 @@ export function GenerativeImageFeed() {
             </ImageContainer>
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" justifyContent="center" >
-              <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
-                <Button
-                  onClick={() => setTabValue(0)}
-                  variant={tabValue === 0 ? "contained" : "text"}
-                  color={tabValue === 0 ? Colors.offblack : Colors.lime}
-                  style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  onClick={() => setTabValue(1)}
-                  variant={tabValue === 1 ? "contained" : "text"}
-                  style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
-                >
-                  Integrate
-                </Button>
-              </ButtonGroup>
-            </Box>
+            {!isMobile && (
+              <Box display="flex" justifyContent="center" >
+                <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
+                  <Button
+                    onClick={() => setTabValue(0)}
+                    variant={tabValue === 0 ? "contained" : "text"}
+                    color={tabValue === 0 ? Colors.offblack : Colors.lime}
+                    style={{ color: tabValue === 0 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 0 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    onClick={() => setTabValue(1)}
+                    variant={tabValue === 1 ? "contained" : "text"}
+                    style={{ color: tabValue === 1 ? Colors.offblack : Colors.lime, backgroundColor: tabValue === 1 ? Colors.lime : "transparent", boxShadow: 'none', width: "120px", height: "40px", fontSize: "0.875rem" }}
+                  >
+                    Integrate
+                  </Button>
+                </ButtonGroup>
+              </Box>
+            )}
             <Box>
               {tabValue === 0 && <ImageData {...{ image: imageParams, handleParamChange, handleFocus, isLoading, handleSubmit }} />}
               {tabValue === 1 && (
@@ -170,8 +175,8 @@ function ImageData({ image, handleParamChange, handleFocus, isLoading, handleSub
   }
 
   return (
-    <Box component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '20px', backgroundColor: "transparent" }}>
-      <Grid container spacing={2}>
+    <Box component={Paper} style={{ border: 'none', boxShadow: 'none', marginTop: '0px', backgroundColor: "transparent" }}>
+      <Grid container>
         <Grid item xs={12}>
           <Typography variant="body2" color="textSecondary">Prompt</Typography>
           <TextareaAutosize

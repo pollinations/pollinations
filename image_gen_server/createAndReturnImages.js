@@ -37,6 +37,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
 
   const steps = concurrentRequests < 3 ? 4 : concurrentRequests < 6 ? 3 : concurrentRequests < 10 ? 2 : 1;
 
+  let serverInfo = null;
   try {
     // const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
     prompt = sanitizePrompt(prompt);
@@ -58,8 +59,14 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const chosenServer = safeParams.model === "flux" ? getNextFluxServerUrl() : SERVER_URL;
-        response = await fetch(chosenServer, {
+        if (safeParams.model === "flux") {
+          serverInfo = getNextFluxServerUrl();
+          serverInfo.incrementRequests();
+        } else {
+          serverInfo = { url: SERVER_URL, decrementRequests: () => { } };
+        }
+
+        response = await fetch(serverInfo.url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -67,6 +74,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
           body: JSON.stringify(body),
           timeout: 30000, // 30 seconds timeout
         });
+
         if (response.ok) break; // If response is ok, break out of the loop
         throw new Error(`Server responded with ${response.status}`);
       } catch (error) {
@@ -123,6 +131,10 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   } catch (e) {
     console.error('Error in callWebUI:', e);
     throw e;
+  } finally {
+    if (serverInfo) {
+      serverInfo.decrementRequests();
+    }
   }
 };
 

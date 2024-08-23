@@ -275,9 +275,9 @@ async def generate_image(
             try:
                 user_comment = user_comment[user_comment.find("{") :]
                 user_comment = json.loads(user_comment)
-                dic["nsfw"] = user_comment["0"]["has_nsfw_concept"]
+                dic["nsfw"] = user_comment["has_nsfw_concept"]
                 if enhance or len(prompt) < 80:
-                    enhance_prompt = user_comment["0"]["prompt"]
+                    enhance_prompt = user_comment["prompt"]
                     enhance_prompt = enhance_prompt[: enhance_prompt.rfind("\n")]
                     dic["enhanced_prompt"] = enhance_prompt
             except Exception as e:

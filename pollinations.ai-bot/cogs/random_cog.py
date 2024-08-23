@@ -34,7 +34,7 @@ class RandomImage(commands.Cog):
         height: int = 1000,
         model: app_commands.Choice[str] = MODELS[0],
         negative: str | None = None,
-        nologo: bool = True,
+        nologo: bool = False,
         private: bool = False,
     ):
         await interaction.response.defer(thinking=True, ephemeral=private)
@@ -56,8 +56,8 @@ class RandomImage(commands.Cog):
         time_taken = datetime.datetime.now() - start
 
         embed = discord.Embed(
-            title=f"Prompt",
-            description=f"```{dic['enhanced_prompt'][:4000]+"..." if len(dic['enhanced_prompt'])>= 4000 else dic['enhanced_prompt']}```",
+            title=f"Random Prompt",
+            description=f"```{dic['enhanced_prompt'][:4000]+"..." if len(dic['enhanced_prompt'])>= 4000 else dic['enhanced_prompt']}```" if 'enhanced_prompt' in dic else '',
             timestamp=datetime.datetime.now(datetime.timezone.utc),
             url=dic["bookmark_url"]
         )

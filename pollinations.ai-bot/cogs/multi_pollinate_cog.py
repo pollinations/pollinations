@@ -52,11 +52,11 @@ class Multi_pollinate(commands.Cog):
             user_comment = user_comment[user_comment.find("{") :]
             user_comment = json.loads(user_comment)
 
-            if user_comment["0"]["has_nsfw_concept"]:
+            if user_comment["has_nsfw_concept"]:
                 image_file.filename = f"SPOILER_{image_file.filename}"
                 data["nsfw"] = True
 
-            enhanced_prompt = user_comment["0"]["prompt"]
+            enhanced_prompt = user_comment["prompt"]
             enhanced_prompt = enhanced_prompt[: enhanced_prompt.rfind("\n")]
             data["enhanced_prompt"] = enhanced_prompt
 

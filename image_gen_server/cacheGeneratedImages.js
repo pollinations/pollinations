@@ -27,9 +27,7 @@ if (!fs.existsSync("/tmp/stableDiffusion_cache")) {
 // Function to check if an image is cached
 export const isImageCached = (prompt, extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
   const path = generateCachePath(prompt, extraParams, saveFolder);
-  const exists = fs.existsSync(path);
-  console.log(`Checking disk cache for ${path}: ${exists ? 'Found' : 'Not found'}`);
-  return exists;
+  return fs.existsSync(path);
 };
 
 
@@ -37,17 +35,15 @@ export const isImageCached = (prompt, extraParams, saveFolder = "/tmp/stableDiff
 export const getCachedImage = (prompt = "", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
   const path = generateCachePath(prompt, extraParams, saveFolder);
   if (fs.existsSync(path)) {
-    console.log(`Retrieved image from disk cache: ${path}`);
     return fs.readFileSync(path);
   }
-  console.log(`Failed to retrieve image from disk cache: ${path}`);
-  return null;
+  return null; // Or handle this case as per your application's logic
 };
 
 export const cacheImage = (prompt, extraParams, buffer, saveFolder = "/tmp/stableDiffusion_cache") => {
+
   const path = generateCachePath(prompt, extraParams, saveFolder);
   fs.writeFileSync(path, buffer);
-  console.log(`Cached image to disk: ${path}`);
 }
 
 const memoize = (fn, getKey) => {
@@ -66,3 +62,4 @@ const memoize = (fn, getKey) => {
     return result;
   };
 };
+

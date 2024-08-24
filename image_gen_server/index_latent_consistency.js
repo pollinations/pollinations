@@ -114,6 +114,11 @@ const imageGen = async ({ req, res, timingInfo, originalPrompt, safeParams }) =>
     console.log("safeParams", safeParams);
     const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs());
 
+    // if isChild and nsfw is true, delay the response by 10 seconds
+    if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
+      console.log("isChild and isMature, delaying response by 15 seconds");
+      await sleep(15000);
+    }
     res.writeHead(200, { 'Content-Type': 'image/jpeg' });
     res.write(bufferAndMaturity.buffer);
     res.end();
@@ -125,6 +130,7 @@ const imageGen = async ({ req, res, timingInfo, originalPrompt, safeParams }) =>
     if (!safeParams.nofeed) {
       const concurrentRequests = countJobs();
       const ip = getIp(req);
+
       sendToFeedListeners({
         ...safeParams,
         concurrentRequests,

@@ -50,8 +50,6 @@ const logTopIPsByQueueSize = (ipQueue) => {
 };
 
 
-let memCache = {};
-
 /** 
  * @async
  * @function
@@ -76,86 +74,52 @@ const preMiddleware = async function (pathname, req, res) {
   return true;
 }
 
-const handleCache = async (memCacheKey, originalPrompt, safeParams, req, res) => {
-
-  if (memCache[memCacheKey]) {
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' })
-    const memCacheContent = await memCache[memCacheKey];
-    res.write(memCacheContent);
-    res.end();
-    return true;
-  }
-
-  if (isImageCached(originalPrompt, safeParams)) {
-    const cachedImage = await getCachedImage(originalPrompt, safeParams);
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' })
-    res.write(cachedImage);
-    res.end();
-    console.error("image cached, returning from cache", originalPrompt, safeParams);
-    return true;
-  }
-
-  return false;
-
-};
 /**
  * @async
  * @function
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, res, timingInfo, originalPrompt, safeParams }) => {
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams }) => {
   timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
   const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
 
   console.error("prompt", prompt);
 
-  try {
-    console.log("safeParams", safeParams);
-    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs());
+  console.log("safeParams", safeParams);
+  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs());
 
-    // if isChild and nsfw is true, delay the response by 10 seconds
-    if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
-      console.log("isChild and isMature, delaying response by 15 seconds");
-      await sleep(15000);
-    }
-    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
-    res.write(bufferAndMaturity.buffer);
-    res.end();
-
-    timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
-
-    const imageURL = `https://image.pollinations.ai${req.url}`;
-
-    if (!safeParams.nofeed) {
-      const concurrentRequests = countJobs();
-      const ip = getIp(req);
-
-      sendToFeedListeners({
-        ...safeParams,
-        concurrentRequests,
-        imageURL,
-        prompt,
-        originalPrompt: urldecode(originalPrompt),
-        nsfw: bufferAndMaturity.isMature,
-        isChild: bufferAndMaturity.isChild,
-        timingInfo: relativeTiming(timingInfo),
-        ip,
-        status: "end_generating",
-      }, { saveAsLastState: true });
-    }
-
-    // Return the generated image buffer
-    return bufferAndMaturity.buffer;
-
-  } catch (error) {
-    console.error("error", error);
-    // print stack trace
-    console.error(error.stack);
-    res.writeHead(500);
-    res.end('500: Internal Server Error');
-    throw error;
+  // if isChild and nsfw is true, delay the response by 10 seconds
+  if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
+    console.log("isChild and isMature, delaying response by 15 seconds");
+    await sleep(15000);
   }
+
+  timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+
+  const imageURL = `https://image.pollinations.ai${req.url}`;
+
+  if (!safeParams.nofeed) {
+    const concurrentRequests = countJobs();
+    const ip = getIp(req);
+
+    sendToFeedListeners({
+      ...safeParams,
+      concurrentRequests,
+      imageURL,
+      prompt,
+      originalPrompt: urldecode(originalPrompt),
+      nsfw: bufferAndMaturity.isMature,
+      isChild: bufferAndMaturity.isChild,
+      timingInfo: relativeTiming(timingInfo),
+      ip,
+      status: "end_generating",
+    }, { saveAsLastState: true });
+  }
+
+  // Return the generated image buffer
+  return bufferAndMaturity.buffer;
+
 };
 
 /**
@@ -176,50 +140,52 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const safeParams = makeParamsSafe(query);
 
-  const cacheKey = `${originalPrompt}-${JSON.stringify(safeParams)}`;
-
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const isCached = await handleCache(cacheKey, originalPrompt, safeParams, req, res);
 
-  if (isCached) return;
+  // Cache the generated image
+  const buffer = await cacheImage(originalPrompt, safeParams, async () => {
 
-  const ip = getIp(req);
+    const ip = getIp(req);
 
-  const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-  sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
+    const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
 
-
-  let queueExisted = false;
-  if (!ipQueue[ip]) {
-    ipQueue[ip] = new PQueue({ concurrency: 1 });
-  } else {
-    queueExisted = true;
-  }
-
-  memCache[cacheKey] = ipQueue[ip].add(async () => {
-    if (queueExisted && countJobs() > 2) {
-      console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little");
-      await sleep(1000 * countJobs());
+    let queueExisted = false;
+    if (!ipQueue[ip]) {
+      ipQueue[ip] = new PQueue({ concurrency: 1 });
+    } else {
+      queueExisted = true;
     }
-    timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-    const buffer = await generalImageQueue.add(async () => {
-      return await imageGen({ req, res, timingInfo, memCacheKey: cacheKey, originalPrompt, safeParams });
-    });
-    timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
 
-    // Cache the generated image
-    cacheImage(originalPrompt, safeParams, buffer);
-    return buffer;
+    const result = await ipQueue[ip].add(async () => {
+      if (queueExisted && countJobs() > 2) {
+        console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little");
+        await sleep(1000 * countJobs());
+      }
+      timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
+      const buffer = await generalImageQueue.add(async () => {
+        return await imageGen({ req, timingInfo, originalPrompt, safeParams });
+      });
+      timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
+
+      return buffer;
+    });
+
+    // if the queue is empty and none pending or processing we can delete the queue
+    if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
+      delete ipQueue[ip];
+    }
+
+    return result;
   });
 
-  await memCache[cacheKey];
+  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+  res.write(buffer);
+  res.end();
 
-  // if the queue is empty and none pending or processing we can delete the queue
-  if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-    delete ipQueue[ip];
-  }
+
 
   sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 

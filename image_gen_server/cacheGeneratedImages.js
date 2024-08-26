@@ -1,6 +1,8 @@
 import fs from 'fs';
 import crypto from 'crypto';
 
+const memCache = {};
+
 // Function to generate a cache path
 const generateCachePath = (prompt, extraParams, saveFolder) => {
   if (!prompt) {
@@ -19,7 +21,6 @@ const generateCachePath = (prompt, extraParams, saveFolder) => {
   return `${saveFolder}/${sanitizedPrompt}_${hash}.jpg`;
 };
 
-
 if (!fs.existsSync("/tmp/stableDiffusion_cache")) {
   fs.mkdirSync("/tmp/stableDiffusion_cache");
 }
@@ -27,24 +28,33 @@ if (!fs.existsSync("/tmp/stableDiffusion_cache")) {
 // Function to check if an image is cached
 export const isImageCached = (prompt, extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
   const path = generateCachePath(prompt, extraParams, saveFolder);
-  return fs.existsSync(path);
+  return fs.existsSync(path) || memCache[path];
 };
 
-
 // Function to retrieve a cached image
-export const getCachedImage = (prompt = "", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
+export const getCachedImage = async (prompt = "", extraParams, saveFolder = "/tmp/stableDiffusion_cache") => {
   const path = generateCachePath(prompt, extraParams, saveFolder);
+  if (memCache[path]) {
+    return await memCache[path];
+  }
   if (fs.existsSync(path)) {
     return fs.readFileSync(path);
   }
   return null; // Or handle this case as per your application's logic
 };
+export const cacheImage = async (prompt, extraParams, bufferPromiseCreator, saveFolder = "/tmp/stableDiffusion_cache") => {
+  if (isImageCached(prompt, extraParams, saveFolder)) {
+    return getCachedImage(prompt, extraParams, saveFolder);
+  }
 
-export const cacheImage = (prompt, extraParams, buffer, saveFolder = "/tmp/stableDiffusion_cache") => {
+  const bufferPromise = await bufferPromiseCreator();
 
   const path = generateCachePath(prompt, extraParams, saveFolder);
+  memCache[path] = bufferPromise;
+  const buffer = await bufferPromise;
   fs.writeFileSync(path, buffer);
-}
+  return buffer;
+};
 
 const memoize = (fn, getKey) => {
   const cache = {};
@@ -62,4 +72,3 @@ const memoize = (fn, getKey) => {
     return result;
   };
 };
-

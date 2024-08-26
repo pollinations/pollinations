@@ -35,7 +35,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   // if there are less than 5 use 2 steps
   // if there are less than 6 use 1 step
 
-  const steps = concurrentRequests < 3 ? 4 : concurrentRequests < 6 ? 3 : concurrentRequests < 10 ? 2 : 1;
+  const steps = concurrentRequests < 6 ? 4 : concurrentRequests < 10 ? 3 : concurrentRequests < 16 ? 2 : 1;
 
   try {
     // const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));

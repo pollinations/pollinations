@@ -19,8 +19,8 @@ export function useFeedLoader(onNewImage, setLastImage) {
         const nsfwParam = urlParams.get('nsfw');
 
         if (nsfwParam !== 'true') {
-          if (data["nsfw"] || data["isChild"]) {
-            console.log("Skipping NSFW content:", data["nsfw"], data);
+          if (data["nsfw"] || data["isChild"] || data["private"]) {
+            // console.log("Skipping NSFW content:", data["nsfw"], );
             return;
           }
           if (data["imageURL"]) {

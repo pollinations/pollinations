@@ -162,7 +162,7 @@ const checkCacheAndGenerate = async (req, res) => {
     const result = await ipQueue[ip].add(async () => {
       if (queueExisted && countJobs() > 2) {
         console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little");
-        await sleep(1000 * countJobs());
+        await sleep(1000 * (ipQueue[ip].size + ipQueue[ip].pending));
       }
       timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
       const buffer = await generalImageQueue.add(async () => {

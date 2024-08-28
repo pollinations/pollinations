@@ -4,7 +4,8 @@ import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
-import { createAndReturnImageCached, makeParamsSafe } from './createAndReturnImages.js';
+import { createAndReturnImageCached } from './createAndReturnImages.js';
+import { makeParamsSafe } from './makeParamsSafe.js';
 import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js';
@@ -28,6 +29,11 @@ const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll 
 
 
 const handleRickroll = (ip, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
   rickrollCount[ip] += 1; // Increment rickroll count for this IP
   rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
@@ -61,6 +67,11 @@ const logTopIPsByQueueSize = (ipQueue) => {
  * @returns {Promise<Object|boolean>}
  */
 const preMiddleware = async function (pathname, req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   console.error("requestListener", req.url);
 
   if (pathname.startsWith("/feed")) {
@@ -133,6 +144,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams }) => {
  * @returns {Promise<void>}
  */
 const checkCacheAndGenerate = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   let { pathname, query } = parse(req.url, true);
 
   const needsProcessing = await preMiddleware(pathname, req, res);
@@ -214,12 +230,12 @@ const checkCacheAndGenerate = async (req, res) => {
 };
 
 const server = http.createServer(checkCacheAndGenerate);
-
 // Set the timeout to 5 minutes (300,000 milliseconds)
-server.setTimeout(300000, (socket) => {
-  console.log('Request timed out.');
-  socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
-});
+// server.setTimeout(300000, (socket) => {
+//   console.log('Request timed out.');
+//   // console.log(`Request details:`, socket);
+//   socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
+// });
 
 server.listen(process.env.PORT || 16384);
 

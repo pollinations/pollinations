@@ -3,7 +3,7 @@ import { exec } from 'child_process';
 import fetch from 'node-fetch';
 import tempfile from 'tempfile';
 import fs from 'fs';
-import { sendToFeedListeners } from './feedListeners.js';
+// import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 import { fileTypeFromBuffer } from 'file-type';
@@ -72,7 +72,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt === 5) throw error;
-        await new Promise(resolve => setTimeout(resolve, 4000 * attempt)); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
     }
 
@@ -208,14 +208,20 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const concept = bufferAndMaturity.concept;
   const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
   console.error("isMature", isMature, "concepts", isChild);
-  if (isChild) isMature = true;
 
-  const logoPath = isMature ? null : 'logo.png';
-  let bufferWithLegend = safeParams["nologo"] || !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
+
+  const logoPath = safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature ? null : 'logo.png';
+  let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
   // Resize the final image to the user's desired size
   bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
+  // // blure image if isChild && isMature
+  // if (isChild && isMature) {
+  //   bufferWithLegend = await blurImage(bufferWithLegend);
+  // }
+
+  // if (isChild) isMature = true;
   // Start timing for exif
   const exif_start_time = Date.now();
   const exifTool = new ExifTool();
@@ -277,7 +283,7 @@ async function
  * @param {number} [size=8] - The size of the blur effect.
  * @returns {Promise<Buffer>} - The blurred image buffer.
  */
-async function blurImage(buffer, size = 8) {
+async function blurImage(buffer, size = 12) {
   const { ext } = await fileTypeFromBuffer(buffer);
   const tempImageFile = tempfile({ extension: ext });
   const tempOutputFile = tempfile({ extension: ext });

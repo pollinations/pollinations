@@ -131,7 +131,7 @@ async def poll_history(prompt_id):
             logger.info(history)
             prompt_history = history.get(prompt_id)
             if prompt_history and prompt_history.get('status', {}).get('completed'):
-                logger.info('Generation completed:')
+                logger.info('Generation completed:')#, list(prompt_history['outputs'].values())[0]['images'][0])
                 return list(prompt_history['outputs'].values())[0]['images'][0]['filename']
             elif prompt_history and prompt_history.get('status', {}).get('status_str') == 'error':
                 logger.error('Generation failed:', prompt_history)
@@ -231,13 +231,6 @@ async def generate(request: Request):
             "prompt": prompts[0]
         }
 
-        # Delete the local image file after it is not needed anymore
-        try:
-            os.remove(image_path)
-            logger.info(f"Deleted local image file: {image_path}")
-        except Exception as e:
-            logger.error(f"Error deleting local image file: {e}")
-
         # Log the end time for the entire request processing
         request_end_time = time.time()
         total_request_time = request_end_time - request_start_time
@@ -266,13 +259,16 @@ async def generate(request: Request):
             percentage_time_processing_last_2_minutes = calculate_percentage_time_processing_requests_last_2_minutes()
         logger.info(f"Percentage of time spent processing requests in the last 2 minutes: {percentage_time_processing_last_2_minutes:.2f}%")
 
-        return JSONResponse(content=response_content, media_type="application/json")
+        return JSONResponse(content=response_content, media_type="application/json", headers={"Connection": "close"})
     except Exception as e:
         logger.error(f"Error in generate: {e}")
         logger.error(traceback.format_exc())
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(content={"error": str(e)}, status_code=500, headers={"Connection": "close"})
 import os
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5002))
-    uvicorn.run(app, host='0.0.0.0', port=port)
+    print("To run the server with multiple workers, use the following command:")
+    print(f"uvicorn server:app --host 0.0.0.0 --port {port} --workers 4")
+    raise Exception("run using uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4")
+    # uvicorn.run(app, host='0.0.0.0', port=port)

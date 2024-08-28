@@ -105,7 +105,9 @@ export const pimpPrompt = memoize(pimpPromptRaw);
 // main()
 
 const randomModel = () => {
-    const models = ["gemma-7b-it", "llama3-8b-8192", "mixtral-8x7b-32768", "llama3-70b-8192", "mixtral-8x7b-32768"];
+    const models = ["gemma2-9b-it", "gemma-7b-it",
+        "llama3-8b-8192", "llama3-groq-70b-8192-tool-use-preview", "llama3-groq-8b-8192-tool-use-preview", "llama3-70b-8192", "llama-3.1-70b-versatile", "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768"];
     const randomIndex = Math.floor(Math.random() * models.length);
     return models[randomIndex];
 }

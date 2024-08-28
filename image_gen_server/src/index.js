@@ -10,7 +10,10 @@ import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js';
 import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
+import { readFileSync } from 'fs';
 export let currentJobs = [];
+
+const queueFullImages = [readFileSync("./assets/queuefull1.png"), readFileSync("./assets/queuefull2.png"), readFileSync("./assets/queuefull3.png")];
 
 // this is used to create a queue per ip address
 const BOT_IP = "150.136.112.172";
@@ -159,10 +162,26 @@ const checkCacheAndGenerate = async (req, res) => {
       queueExisted = true;
     }
 
+    // // Check if the job count of an individual IP queue is larger than 8
+    // if (ipQueue[ip].size + ipQueue[ip].pending > 8) {
+    //   const randomImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
+    //   res.writeHead(200, { 'Content-Type': 'image/png' });
+    //   res.write(randomImage);
+    //   res.end();
+    //   return;
+    // }
+
     const result = await ipQueue[ip].add(async () => {
       if (queueExisted && countJobs() > 2) {
-        console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little");
-        await sleep(1000 * (ipQueue[ip].size + ipQueue[ip].pending));
+        const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+
+        console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
+        if (queueSize >= 8) {
+          const randomImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
+          return randomImage;
+        }
+
+        await sleep(1000 * queueSize);
       }
       timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
       const buffer = await generalImageQueue.add(async () => {

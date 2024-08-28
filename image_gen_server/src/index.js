@@ -200,7 +200,10 @@ const checkCacheAndGenerate = async (req, res) => {
     return result;
   });
 
-  res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+  res.writeHead(200, {
+    'Content-Type': 'image/jpeg',
+    'Cache-Control': 'public, max-age=31536000, immutable'
+  });
   res.write(buffer);
   res.end();
 

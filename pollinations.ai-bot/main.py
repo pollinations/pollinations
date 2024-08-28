@@ -8,9 +8,7 @@ import statistics
 import time
 import sys
 from constants import *
-from api import *
-from utils import get_prompts_counts
-
+from utils import get_prompts_counts, user_data  # Import user_data directly
 
 load_dotenv()
 

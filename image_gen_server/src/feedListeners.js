@@ -2,6 +2,11 @@ let feedListeners = [];
 let lastStates = [];
 // create a server sent event stream
 export const registerFeedListener = async (req, res) => {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -20,10 +25,10 @@ export const registerFeedListener = async (req, res) => {
   for (const lastState of lastStates) {
     await sendToListener(res, lastState);
   }
-  
+
 };
 
-export const sendToFeedListeners = (data, options={}) => {
+export const sendToFeedListeners = (data, options = {}) => {
   if (options.saveAsLastState) {
     lastStates.push(data);
     lastStates = lastStates.slice(-20);

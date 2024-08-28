@@ -1,29 +1,26 @@
 import random
-from constants import *
 import aiohttp
 import io
 from urllib.parse import quote
-from pymongo import MongoClient
 import sys
 import json
 from PIL import Image
 import piexif
-from bson.son import SON
 import discord
 import datetime
 
-client = MongoClient(MONGODB_URI)
+# Load user data from JSON file
+def load_user_data():
+    with open('users_data.json', 'r') as file:
+        return json.load(file)
 
-try:
-    client.admin.command("ping")
-    print("\n Pinged your deployment. You successfully connected to MongoDB! \n")
-except Exception as e:
-    print(e)
+# Save user data to JSON file
+def save_user_data(data):
+    with open('users_data.json', 'w') as file:
+        json.dump(data, file, indent=4)
 
-db = client["pollinations"]
-prompts = db["prompts"]
-users = db["users"]
-multi_prompts = db["multi_prompts"]
+# Load data initially
+user_data = load_user_data()
 
 NUMBER_EMOJIES = {
     1: "🥇",
@@ -58,7 +55,11 @@ class DimensionTooSmallError(discord.app_commands.AppCommandError):
 
 def get_prompt_data(message_id: int):
     try:
-        return prompts.find_one({"_id": message_id})
+        for user in user_data:
+            for prompt in user.get("prompts", []):
+                if prompt == message_id:
+                    return prompt
+        return None
     except Exception as e:
         print(e)
         return None
@@ -66,57 +67,43 @@ def get_prompt_data(message_id: int):
 
 def save_prompt_data(message_id: int, data: dict):
     try:
-        prompts.insert_one(data)
+        for user in user_data:
+            if user["_id"] == data["_id"]:
+                user["prompts"].append(message_id)
+                save_user_data(user_data)
+                return
+        user_data.append(data)
+        save_user_data(user_data)
     except Exception as e:
         print(e)
 
 
 def update_prompt_data(message_id: int, data: dict):
     try:
-        prompts.update_one({"_id": message_id}, {"$set": data})
+        for user in user_data:
+            for i, prompt in enumerate(user.get("prompts", [])):
+                if prompt == message_id:
+                    user["prompts"][i] = data
+                    save_user_data(user_data)
+                    return
     except Exception as e:
         print(e)
 
 
 def delete_prompt_data(message_id: int):
     try:
-        prompts.delete_one({"_id": message_id})
-    except Exception as e:
-        print(e)
-
-
-def get_multi_imagined_prompt_data(message_id: int):
-    try:
-        return multi_prompts.find_one({"_id": message_id})
-    except Exception as e:
-        print(e)
-        return None
-
-
-def save_multi_imagined_prompt_data(message_id: int, data: dict):
-    try:
-        multi_prompts.insert_one(data)
-    except Exception as e:
-        print(e)
-
-
-def update_multi_imagined_prompt_data(message_id: int, data: dict):
-    try:
-        multi_prompts.update_one({"_id": message_id}, {"$set": data})
-    except Exception as e:
-        print(e)
-
-
-def delete_multi_imagined_prompt_data(message_id: int):
-    try:
-        multi_prompts.delete_one({"_id": message_id})
+        for user in user_data:
+            if message_id in user.get("prompts", []):
+                user["prompts"].remove(message_id)
+                save_user_data(user_data)
+                return
     except Exception as e:
         print(e)
 
 
 def get_prompts_counts():
     try:
-        return prompts.count_documents({}) + multi_prompts.count_documents({})
+        return sum(len(user.get("prompts", [])) for user in user_data)
     except Exception as e:
         print(e)
         return None
@@ -124,7 +111,10 @@ def get_prompts_counts():
 
 def get_user_data(user_id: int):
     try:
-        return users.find_one({"_id": user_id})
+        for user in user_data:
+            if user["_id"] == user_id:
+                return user
+        return None
     except Exception as e:
         print(e)
         return None
@@ -132,33 +122,34 @@ def get_user_data(user_id: int):
 
 def save_user_data(user_id: int, data: dict):
     try:
-        users.insert_one(data)
+        for user in user_data:
+            if user["_id"] == user_id:
+                user.update(data)
+                save_user_data(user_data)
+                return
+        user_data.append(data)
+        save_user_data(user_data)
     except Exception as e:
         print(e)
 
 
 def update_user_data(user_id: int, data: dict):
     try:
-        users.update_one({"_id": user_id}, {"$set": data})
+        for user in user_data:
+            if user["_id"] == user_id:
+                user.update(data)
+                save_user_data(user_data)
+                return
     except Exception as e:
         print(e)
 
 
-pipeline = [
-    {"$unwind": "$prompts"},
-    {"$group": {"_id": "$_id", "count": {"$sum": 1}}},
-    {"$sort": SON([("count", -1)])},
-    {"$limit": 10},
-]
-
 
 def generate_global_leaderboard():
     try:
-        top_10_users = list(users.aggregate(pipeline))
-        top_10_users = {doc["_id"]: doc["count"] for doc in top_10_users}
-
+        top_10_users = sorted(user_data, key=lambda x: len(x.get("prompts", [])), reverse=True)[:10]
+        top_10_users = {user["_id"]: len(user.get("prompts", [])) for user in top_10_users}
         return top_10_users
-
     except Exception as e:
         print(e)
         return None

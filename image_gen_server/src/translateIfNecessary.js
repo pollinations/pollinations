@@ -1,9 +1,7 @@
-
 import cld from "cld";
 // import { detectEnglish } from './langDetect.js';
 import fetch from "node-fetch";
 import AsyncLock from 'async-lock';
-
 
 const lock = new AsyncLock();
 
@@ -64,37 +62,46 @@ export async function translateIfNecessary(promptAnyLanguage) {
 }
 
 async function fetchDetection(promptAnyLanguage, signal) {
-  const result = await fetch("http://localhost:5000/detect", {
-    method: "POST",
-    body: JSON.stringify({
-      q: promptAnyLanguage
-    }),
-    headers: { "Content-Type": "application/json" },
-    signal
-  });
+  try {
+    const result = await fetch("http://54.91.176.109:5000/detect", {
+      method: "POST",
+      body: JSON.stringify({
+        q: promptAnyLanguage
+      }),
+      headers: { "Content-Type": "application/json" },
+      signal
+    });
 
-  const resultJson = await result.json();
+    const resultJson = await result.json();
 
-  return resultJson[0]?.language;
+    return resultJson[0]?.language;
+  } catch (e) {
+    console.error("error fetching detection", e.message);
+    return "en";
+  }
 }
 
 async function fetchTranslation(promptAnyLanguage, signal) {
-  const result = await fetch("http://localhost:5000/translate", {
-    method: "POST",
-    body: JSON.stringify({
-      q: promptAnyLanguage,
-      source: "auto",
-      target: "en"
-    }),
-    headers: { "Content-Type": "application/json" },
-    signal
-  });
+  try {
+    const result = await fetch("http://localhost:5000/translate", {
+      method: "POST",
+      body: JSON.stringify({
+        q: promptAnyLanguage,
+        source: "auto",
+        target: "en"
+      }),
+      headers: { "Content-Type": "application/json" },
+      signal
+    });
 
-  const resultJson = await result.json();
+    const resultJson = await result.json();
 
-  return resultJson;
+    return resultJson;
+  } catch (e) {
+    console.error("error fetching translation", e.message);
+    return null;
+  }
 }
-
 
 // Function to sanitize a string to ensure it contains valid UTF-8 characters
 export function sanitizeString(str) {

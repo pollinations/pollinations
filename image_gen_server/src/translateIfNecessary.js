@@ -1,6 +1,6 @@
 
 import cld from "cld";
-import { detectEnglish } from './langDetect.js';
+// import { detectEnglish } from './langDetect.js';
 import fetch from "node-fetch";
 import AsyncLock from 'async-lock';
 

@@ -43,10 +43,12 @@ export const GenerativeImageURLContainer = styled(Container)`
 //     margin: 30px auto;
 //   }
 //   `;
-export const ImageURLHeading = styled(({ children, className }) => {
-  const prompt = encodeURIComponent(`an image with the text "${children}" displayed in an elegant, decorative serif font. The font should have high contrast between thick and thin strokes, with ornate and artistic flourishes that give the text a sophisticated and stylized appearance. The text should be in white, set against a solid black background, creating a striking and bold visual contrast. The overall style should evoke a sense of modern luxury and refinement, with each letter featuring unique, creative touches that make the typography stand out.  Incorporate elements related to pollinations, such as flowers, insects, and other organic forms, into the design of the font.`);
+export const ImageURLHeading = styled(({ children, className, whiteText = true, width = 500, height = 150 }) => {
+  const foregroundColor = whiteText ? 'white' : 'black';
+  const backgroundColor = whiteText ? 'black' : 'white';
+  const prompt = encodeURIComponent(`an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes,that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast.  Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out.  Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`);
   const seed = useMemo(() => Math.floor(Math.random() * 10), []);
-  const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=500&height=150&nologo=true&seed=${seed}`;
+  const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
 
   return (
     <div className={className}>

@@ -68,7 +68,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
           timeout: 30000, // 30 seconds timeout
         });
         if (response.ok) break; // If response is ok, break out of the loop
-        throw new Error(`Server responded with ${response.status}`);
+        throw new Error(`Server responded with ${response.status}. Server url: ${chosenServer}`);
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt === 5) throw error;

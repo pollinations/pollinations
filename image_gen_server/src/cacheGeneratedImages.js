@@ -47,12 +47,14 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator, save
     return getCachedImage(prompt, extraParams, saveFolder);
   }
 
-  const bufferPromise = await bufferPromiseCreator();
+  const bufferPromise = bufferPromiseCreator();
 
   const path = generateCachePath(prompt, extraParams, saveFolder);
   memCache[path] = bufferPromise;
+
   const buffer = await bufferPromise;
   fs.writeFileSync(path, buffer);
+
   return buffer;
 };
 

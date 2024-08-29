@@ -1,10 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Paper, Grid, Typography, TextareaAutosize, Button, CircularProgress } from '@material-ui/core';
 import { Colors } from '../../../styles/global';
 import { AdvancedOptions } from './AdvancedOptions';
 
 export function ImageEditor({ image, handleParamChange, handleFocus, isLoading, handleSubmit }) {
-    const { prompt, imageURL } = image;
+    const { prompt, imageURL, seed } = image;
+    const [isInputChanged, setIsInputChanged] = useState(false);
+
+    useEffect(() => {
+        setIsInputChanged(false);
+    }, [imageURL]);
+
+    const handleInputChange = (param, value) => {
+        setIsInputChanged(true);
+        handleParamChange(param, value);
+    };
+
+    const handleButtonClick = () => {
+        if (!isInputChanged) {
+            // If no input has changed, increment the seed
+            handleParamChange('seed', (seed || 0) + 1);
+        }
+        setTimeout(handleSubmit, 250);
+    };
 
     if (!imageURL) {
         return <Typography variant="body2" color="textSecondary">Loading...</Typography>;
@@ -19,7 +37,7 @@ export function ImageEditor({ image, handleParamChange, handleFocus, isLoading, 
                         minRows={3}
                         style={{ width: '100%', backgroundColor: 'transparent', color: Colors.white, padding: '10px', fontSize: '1.1rem' }}
                         value={prompt}
-                        onChange={(e) => handleParamChange('prompt', e.target.value)}
+                        onChange={(e) => handleInputChange('prompt', e.target.value)}
                         onFocus={handleFocus}
                         disabled={isLoading}
                     />
@@ -29,16 +47,16 @@ export function ImageEditor({ image, handleParamChange, handleFocus, isLoading, 
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={handleSubmit}
+                            onClick={handleButtonClick}
                             disabled={isLoading}
                             style={{
-                                backgroundColor: Colors.lime,
-                                color: Colors.offblack,
+                                backgroundColor: isInputChanged ? null : Colors.lime,
+                                color: isInputChanged ? null : Colors.offblack,
                                 padding: '10px 20px',
                                 display: isLoading ? 'none' : 'block'
                             }}
                         >
-                            Imagine
+                            {isInputChanged ? 'Imagine' : 'Re-Imagine'}
                         </Button>
                         {isLoading && <CircularProgress color={'inherit'} style={{ color: Colors.lime }} />}
                     </Box>
@@ -46,7 +64,7 @@ export function ImageEditor({ image, handleParamChange, handleFocus, isLoading, 
                 <Grid item xs={12}>
                     <AdvancedOptions
                         image={image}
-                        handleParamChange={handleParamChange}
+                        handleParamChange={handleInputChange}
                         handleFocus={handleFocus}
                         isLoading={isLoading}
                     />

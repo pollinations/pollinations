@@ -1,17 +1,19 @@
 import styled from "@emotion/styled"
-import Hero from "./Hero"
 import WhoWeAre, { ActivityUpdate, DarkLayout } from "./Layouts"
 import Discord from "./Discord"
 import Dreamachine from "./Dreamachine"
 import MusicVideo from "./MusicVideo"
 import TwitchSection from "./DreamSection"
-import { GenerativeImageFeed } from "./GenerativeImageFeed"
+import { GenerativeImageFeed } from "./ImageFeed/GenerativeImageFeed.js"
 import { KarmaYT } from "./KarmaYT"
 import { ChatPrompt } from "./ChatPrompt"
 import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useMemo, useRef, useState } from "react"
+import ProjectsSection from "./ProjectsSection"
+import CompaniesSection from "./CompaniesSection" // Import the new CompaniesSection
+import AsciiArtGenerator from "../../components/AsciiArtGenerator" // Import the AsciiArtGenerator
 
 const topBandPrompt = encodeURIComponent("One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
 
@@ -20,7 +22,7 @@ const getTopBandPresetsDesign = () => {
   return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}&nologo=true`
 }
 
-export default function Solutions() {
+export default function Home() {
   const hiddenInputRef = useRef(null);
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function Solutions() {
       {/* <Hero /> */}
       <GenerativeImageFeed />
       <TopBand />
+      <ProjectsSection />
+      <TopBand />
       {/* <ChatPrompt /> */}
       <MusicVideo />
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" />
@@ -44,7 +48,7 @@ export default function Solutions() {
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" /> */}
       {/* <KarmaYT /> */}
       <TopBand />
-      <ImageURLHeading>Events</ImageURLHeading>
+      {/* <ImageURLHeading>Events</ImageURLHeading> */}
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}
@@ -52,6 +56,8 @@ export default function Solutions() {
 
       <Discord />
       {/* <TopBand /> */}
+      <TopBand />
+      <CompaniesSection /> {/* Add the CompaniesSection */}
     </Style>
   )
 }
@@ -72,8 +78,6 @@ const Style = styled.div`
 `
 
 const TopBand = () => {
-
-
   const backgroundImage = useMemo(() => {
     return getTopBandPresetsDesign();
   }, []);

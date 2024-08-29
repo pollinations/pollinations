@@ -38,7 +38,7 @@ export default function Solutions() {
       <GenerativeImageFeed />
       <TopBand />
       <ProjectsSection />
-
+      <TopBand />
       {/* <ChatPrompt /> */}
       <MusicVideo />
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" />
@@ -46,7 +46,7 @@ export default function Solutions() {
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" /> */}
       {/* <KarmaYT /> */}
       <TopBand />
-      <ImageURLHeading>Events</ImageURLHeading>
+      {/* <ImageURLHeading>Events</ImageURLHeading> */}
       {/* <PageTemplate label="event" /> */}
       {/* <TwitchSection /> */}
       {/* <ActivityUpdate /> */}

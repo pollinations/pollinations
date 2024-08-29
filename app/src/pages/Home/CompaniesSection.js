@@ -30,12 +30,12 @@ const seedValue = 41 + Math.floor(Math.random() * 3); // Define the seed value h
 
 const companies = [
     {
-        name: "AWS",
+        name: "AWS Activate",
         url: "https://aws.amazon.com/",
         description: "GPU Cloud Credits"
     },
     {
-        name: "Google Cloud",
+        name: "Google Cloud for Startups",
         url: "https://cloud.google.com/",
         description: "GPU Cloud Credits"
     },
@@ -50,14 +50,14 @@ const companies = [
         description: "AI startup support."
     },
     {
-        name: "Azure",
+        name: "Azure (MS for Startups)",
         url: "https://azure.microsoft.com/",
         description: "OpenAI credits"
     },
     {
         name: "Outlier Ventures",
         url: "https://outlierventures.io/",
-        description: "Investment"
+        description: "Accelerator"
     },
 ];
 

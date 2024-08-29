@@ -117,18 +117,20 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams }) => {
     const concurrentRequests = countJobs();
     const ip = getIp(req);
 
-    sendToFeedListeners({
-      ...safeParams,
-      concurrentRequests,
-      imageURL,
-      prompt,
-      originalPrompt: urldecode(originalPrompt),
-      nsfw: bufferAndMaturity.isMature,
-      isChild: bufferAndMaturity.isChild,
-      timingInfo: relativeTiming(timingInfo),
-      ip,
-      status: "end_generating",
-    }, { saveAsLastState: true });
+    if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
+      sendToFeedListeners({
+        ...safeParams,
+        concurrentRequests,
+        imageURL,
+        prompt,
+        originalPrompt: urldecode(originalPrompt),
+        nsfw: bufferAndMaturity.isMature,
+        isChild: bufferAndMaturity.isChild,
+        timingInfo: relativeTiming(timingInfo),
+        ip,
+        status: "end_generating",
+      }, { saveAsLastState: true });
+    }
   }
 
   // Return the generated image buffer

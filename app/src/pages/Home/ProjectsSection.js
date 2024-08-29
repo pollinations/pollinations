@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
 
 const logoPrefix = "minimalist  logo";
 const imageDimension = 96;
-const seedValue = 42; // Define the seed value here
+const seedValue = 42 + Math.floor(Math.random() * 3); // Define the seed value here
 
 const projects = [
     {

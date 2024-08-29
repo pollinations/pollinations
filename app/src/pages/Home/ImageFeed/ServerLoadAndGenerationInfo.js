@@ -2,7 +2,6 @@ import { Typography, Box } from '@material-ui/core';
 import { Colors } from '../../../styles/global';
 
 export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image }) {
-  console.log("lastImage", lastImage);
   return (
     <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth="600px" margin="0 auto">
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
@@ -24,7 +23,7 @@ const formatImagesGenerated = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 function TimingInfo({ image }) {
-  console.log("image", image);
+  // console.log("image", image);
   const timeMs = image?.generationTime || image?.timingInfo?.[5]?.timestamp;
   return <Typography variant="body2" component="i">Generation time:<span style={{ color: Colors.lime }}><b> {Math.round(timeMs / 100) / 10} s</b></span></Typography>;
 }

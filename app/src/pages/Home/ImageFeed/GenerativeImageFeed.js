@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Typography, ButtonGroup, Grid, Link, Box, CircularProgress, useMediaQuery, Button } from '@material-ui/core';
 import { CodeExamples } from '../CodeExamples';
 import { useFeedLoader } from './useFeedLoader';
@@ -17,6 +17,7 @@ export function GenerativeImageFeed() {
   const [lastImage, setLastImage] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [imageParams, setImageParams] = useState({});
+  const imageParamsRef = useRef(imageParams); // Create a ref to keep track of imageParams
   const { image: slideshowImage, onNewImage, stop } = useImageSlideshow();
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage });
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage);
@@ -26,6 +27,10 @@ export function GenerativeImageFeed() {
     setImageParams(image);
   }, [image]);
 
+  useEffect(() => {
+    imageParamsRef.current = imageParams; // Update the ref whenever imageParams changes
+  }, [imageParams]);
+
   const handleParamChange = (param, value) => {
     setImageParams(prevParams => ({
       ...prevParams,
@@ -34,9 +39,11 @@ export function GenerativeImageFeed() {
   };
 
   const handleSubmit = () => {
-    const imageURL = getImageURL(imageParams);
+    const currentImageParams = imageParamsRef.current; // Use the ref to get the latest imageParams
+    const imageURL = getImageURL(currentImageParams);
+    console.log("Submitting with imageParams:", currentImageParams);
     updateImage({
-      ...imageParams,
+      ...currentImageParams,
       imageURL
     });
   };

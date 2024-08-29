@@ -4,6 +4,7 @@ import MarkdownTemplate from "./components/MarkdownTemplate"
 import TopBar from "./components/TopBar"
 import Footer from "./components/Footer"
 import Home from "./pages/Home/"
+import AsciiArtGenerator from "./components/AsciiArtGenerator"
 
 const AppRoutes = [
   {
@@ -15,13 +16,13 @@ const AppRoutes = [
   {
     exact: true,
     path: '/impressum',
-    element: <MarkdownTemplate label='impressum'/>,
+    element: <MarkdownTemplate label='impressum' />,
     key: 'impressum'
   },
   {
     exact: true,
     path: '/terms',
-    element: <MarkdownTemplate label='terms'/>,
+    element: <MarkdownTemplate label='terms' />,
     key: 'terms'
   },
   {
@@ -32,14 +33,15 @@ const AppRoutes = [
 ]
 
 const App = () => <>
-  <SEOMetadata/>
+  <SEOMetadata />
   <TopBar />
   <Routes>
     {
-      AppRoutes.map( route => <Route {...route}/>)
+      AppRoutes.map(route => <Route {...route} />)
     }
   </Routes>
   <Footer />
+  <AsciiArtGenerator />
 </>;
 
 export default App

@@ -4,7 +4,6 @@ import { BackgroundImage, Container as ContainerBase } from './components';
 import Player from './Player';
 
 import { Divider, Typography } from '@material-ui/core';
-import { GenerativeImageFeed } from './GenerativeImageFeed';
 
 const Hero = props => <Style>
   {/* <Container>
@@ -22,7 +21,7 @@ const Hero = props => <Style>
     alt="hero_bg" /> */}
 
 </Style>;
-  
+
 export default Hero;
 
 

@@ -165,7 +165,6 @@ const checkCacheAndGenerate = async (req, res) => {
 
   // Cache the generated image
   const buffer = await cacheImage(originalPrompt, safeParams, async () => {
-
     const ip = getIp(req);
 
     const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
@@ -178,23 +177,13 @@ const checkCacheAndGenerate = async (req, res) => {
       queueExisted = true;
     }
 
-    // // Check if the job count of an individual IP queue is larger than 8
-    // if (ipQueue[ip].size + ipQueue[ip].pending > 8) {
-    //   const randomImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
-    //   res.writeHead(200, { 'Content-Type': 'image/png' });
-    //   res.write(randomImage);
-    //   res.end();
-    //   return;
-    // }
-
     const result = await ipQueue[ip].add(async () => {
       if (queueExisted && countJobs() > 2) {
         const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
 
         console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-        if (queueSize >= 8) {
-          const randomImage = queueFullImages[Math.floor(Math.random() * queueFullImages.length)];
-          return randomImage;
+        if (queueSize >= 40) {
+          throw new Error("ip queue full");
         }
 
         await sleep(1000 * queueSize);
@@ -218,7 +207,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   res.writeHead(200, {
     'Content-Type': 'image/jpeg',
-    'Cache-Control': 'public, max-age=31536000, immutable'
+    'Cache-Control': 'public, max-age=31536000, immutable',
   });
   res.write(buffer);
   res.end();

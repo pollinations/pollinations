@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isMature } from '../../data/mature';
+import { isMature } from '../../../data/mature';
 
 
 export function useFeedLoader(onNewImage, setLastImage) {
@@ -26,7 +26,7 @@ export function useFeedLoader(onNewImage, setLastImage) {
           if (data["imageURL"]) {
             const matureWord = isMature(data["prompt"]);
             if (matureWord) {
-              console.log("Skipping mature word:", matureWord, data["prompt"]);
+              // console.log("Skipping mature word:", matureWord, data["prompt"]);
               return;
             }
             onNewImage(data);

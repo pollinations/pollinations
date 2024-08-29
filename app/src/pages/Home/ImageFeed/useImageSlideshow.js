@@ -46,10 +46,7 @@ export function useImageEditor({ stop, image }) {
     stop(true);
     setIsLoading(true);
 
-    // Check if the parameters of the last image (except the loaded prop) are the same as the new image
-    if (editedImage && Object.keys(newImage).every(key => key === 'loaded' || newImage[key] === editedImage[key])) {
-      newImage.seed = (newImage.seed || 0) + 1; // Increment the seed parameter
-    }
+    console.log("Updating image with newImage:", newImage);
 
     const loadedImage = await loadImage(newImage);
     setEditedImage(loadedImage);

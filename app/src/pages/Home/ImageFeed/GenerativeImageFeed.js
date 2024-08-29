@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Typography, ButtonGroup, Grid, Link, Box, CircularProgress, useMediaQuery, Button } from '@material-ui/core';
 import { CodeExamples } from '../CodeExamples';
-import { useFeedLoader } from '../useFeedLoader';
-import { useImageEditor, useImageSlideshow } from '../useImageSlideshow';
+import { useFeedLoader } from './useFeedLoader';
+import { useImageEditor, useImageSlideshow } from './useImageSlideshow';
 import { GenerativeImageURLContainer, ImageURLHeading } from '../styles';
 
 import debug from 'debug';

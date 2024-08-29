@@ -13,6 +13,7 @@ import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProjectsSection from "./ProjectsSection"
 import CompaniesSection from "./CompaniesSection" // Import the new CompaniesSection
+import AsciiArtGenerator from "../../components/AsciiArtGenerator" // Import the AsciiArtGenerator
 
 const topBandPrompt = encodeURIComponent("One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
 
@@ -21,7 +22,7 @@ const getTopBandPresetsDesign = () => {
   return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}&nologo=true`
 }
 
-export default function Solutions() {
+export default function Home() {
   const hiddenInputRef = useRef(null);
 
   useEffect(() => {
@@ -57,8 +58,6 @@ export default function Solutions() {
       {/* <TopBand /> */}
       <TopBand />
       <CompaniesSection /> {/* Add the CompaniesSection */}
-
-
     </Style>
   )
 }

@@ -1,14 +1,15 @@
 import React from 'react';
 import Markdown from 'markdown-to-jsx';
-import { Container } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { Container, useMediaQuery } from '@material-ui/core';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './styles';
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        maxWidth: 500,
+        maxWidth: '100%', // Ensure the container does not exceed the width of its parent
         margin: '0 auto',
         padding: theme.spacing(1),
+        overflowX: 'auto', // Add horizontal scroll if content overflows
     },
     table: {
         width: '100%',
@@ -63,14 +64,16 @@ const companies = [
 
 const generateImageUrl = (name, description) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name} ${description}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
 
-const markdownContent = `
-|  |  |  |
-|--------------|-------------|------|
-${companies.map(company => `| ![${company.name}](${generateImageUrl(company.name, company.description)}) | [${company.name}](${company.url}) | ${company.description} |`).join('\n')}
-`;
-
 const CompaniesSection = () => {
     const classes = useStyles();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const markdownContent = `
+|  |  |  |
+|--------------|-------------|------|
+${companies.map(company => `| ${isMobile ? '' : `![${company.name}](${generateImageUrl(company.name, company.description)})`} | [${company.name}](${company.url}) | ${company.description} |`).join('\n')}
+`;
 
     return (
         <Container className={classes.root}>

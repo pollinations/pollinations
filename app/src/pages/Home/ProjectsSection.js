@@ -1,14 +1,15 @@
 import React from 'react';
 import Markdown from 'markdown-to-jsx';
-import { Container } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
+import { Container, useMediaQuery } from '@material-ui/core';
+import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './styles';
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        maxWidth: 800,
+        maxWidth: '100%', // Ensure the container does not exceed the width of its parent
         margin: '0 auto',
         padding: theme.spacing(1),
+        overflowX: 'auto', // Add horizontal scroll if content overflows
     },
     table: {
         width: '100%',
@@ -102,14 +103,16 @@ const projects = [
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
 
-const markdownContent = `
-|  |  |  |
-|--------------|-------------|------|
-${projects.map(project => `| ![${project.name}](${generateImageUrl(project.name)}) | [${project.name}](${project.url}) ${project.author ? `by ${project.author}` : ''} | ${project.description} ${project.repo ? `[GitHub Repository](${project.repo})` : ''} |`).join('\n')}
-`;
-
 const ProjectsSection = () => {
     const classes = useStyles();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const markdownContent = `
+|  |  |  |
+|--------------|-------------|------|
+${projects.map(project => `| ${isMobile ? '' : `![${project.name}](${generateImageUrl(project.name)})`} | [${project.name}](${project.url}) ${project.author ? `by ${project.author}` : ''} | ${project.description} ${project.repo ? `[GitHub Repository](${project.repo})` : ''} |`).join('\n')}
+`;
 
     return (
         <Container className={classes.root}>

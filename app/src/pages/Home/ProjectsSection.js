@@ -35,7 +35,7 @@ const projects = [
         description: "An LLM frontend for power users. Pollinations permits it to generate images."
     },
     {
-        name: "Pollinator Android App",
+        name: "Pollinator App",
         url: "https://github.com/g-aggarwal/Pollinator",
         description: "An open-source Android app for text-to-image generation using Pollinations.ai's endpoint.",
         author: "@gaurav_87680"

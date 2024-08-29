@@ -14,10 +14,10 @@ export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image 
 }
 function ServerLoadDisplay({ concurrentRequests }) {
   const max = 5;
-  const load = Math.min(max, Math.round(concurrentRequests / 2));
+  const load = Math.min(max, Math.round(concurrentRequests / 4));
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2);
 
-  return <span>Queue: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i></span>;
+  return <span>Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i></span>;
 }
 const formatImagesGenerated = (num) => {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");

@@ -11,6 +11,7 @@ import PageTemplate from "../../components/MarkdownTemplate"
 import { ImageURLHeading } from "./styles"
 import { MOBILE_BREAKPOINT } from "../../styles/global"
 import { useEffect, useMemo, useRef, useState } from "react"
+import ProjectsSection from "./ProjectsSection"
 
 const topBandPrompt = encodeURIComponent("One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
 
@@ -36,6 +37,8 @@ export default function Solutions() {
       {/* <Hero /> */}
       <GenerativeImageFeed />
       <TopBand />
+      <ProjectsSection />
+
       {/* <ChatPrompt /> */}
       <MusicVideo />
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" />
@@ -51,6 +54,7 @@ export default function Solutions() {
 
       <Discord />
       {/* <TopBand /> */}
+
     </Style>
   )
 }
@@ -71,8 +75,6 @@ const Style = styled.div`
 `
 
 const TopBand = () => {
-
-
   const backgroundImage = useMemo(() => {
     return getTopBandPresetsDesign();
   }, []);

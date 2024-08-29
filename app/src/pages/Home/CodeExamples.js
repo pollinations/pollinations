@@ -33,7 +33,7 @@ This endpoint generates an image based on the provided prompt and optional param
 https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true&enhance=true
 
 ## Response
-The API returns a raw image file (typically JPEG or PNG) as the response body.
+The API returns a raw image file (typically JPEG or PNG) as the response body. You can directly embed the image in your HTML or Markdown.
 `,
   llm_prompt: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 

@@ -83,7 +83,7 @@ async function fetchDetection(promptAnyLanguage, signal) {
 
 async function fetchTranslation(promptAnyLanguage, signal) {
   try {
-    const result = await fetch("http://localhost:5000/translate", {
+    const result = await fetch("http://54.91.176.109:5000/translate", {
       method: "POST",
       body: JSON.stringify({
         q: promptAnyLanguage,

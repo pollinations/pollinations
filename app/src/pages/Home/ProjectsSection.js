@@ -10,9 +10,13 @@ const useStyles = makeStyles((theme) => ({
         margin: '0 auto',
         padding: theme.spacing(1),
         overflowX: 'auto', // Add horizontal scroll if content overflows
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center', // Center the content horizontally
     },
     table: {
         width: '100%',
+        maxWidth: '900px',
         borderCollapse: 'collapse',
     },
     th: {

@@ -2,7 +2,6 @@ import styled from '@emotion/styled';
 import React from "react";
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../../styles/global';
 import { LinkStyle } from './components';
-import { Link } from 'react-router-dom';
 
 let WhoWeAreContent = () => <>
   <h2>
@@ -14,18 +13,6 @@ let WhoWeAreContent = () => <>
   </p>
 </>
 
-let ActivityUpdateContent = () => <>
-  <h2>
-    <b> Pollinations activity update! </b>
-  </h2>
-  <p>
-    The Explore page is no longer available, although we had a great time with it, it's time to move forward.
-    <br /><br /> However, we have migrated models to <a href="https://replicate.com/pollinations"> Replicate</a> and are still maintaining the <b><i>Generative Image URL</i></b> which is primarily being used in combination with ChatGPT.
-    <br /><br /> From now on Pollinations will redirect its focus on AI music video creation, and an exciting real-time immersive AI product called the Dreamachine which will be launched very soon.
-    <br /><br />
-    <i><b>Stay tuned!</b></i>
-  </p>
-</>
 
 export default function WhoWeAre() {
   return <Style>
@@ -35,21 +22,6 @@ export default function WhoWeAre() {
   </Style>
 };
 
-export function ActivityUpdate() {
-  return <Style dark={true}>
-    <PageLayout long={true} dark={true}>
-      <ActivityUpdateContent />
-    </PageLayout>
-  </Style>
-}
-
-export function DarkLayout({ children, style }) {
-  return <Style dark={true} style={style}>
-    <PageLayout long={true} dark={true} style={{ alignItems: "center" }}>
-      {children}
-    </PageLayout>
-  </Style>
-}
 
 // STYLES
 const PageLayout = styled(BaseContainer)`

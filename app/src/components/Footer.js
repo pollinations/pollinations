@@ -2,9 +2,7 @@ import styled from '@emotion/styled'
 import Logo from './Logo'
 
 import { NavLink } from "react-router-dom"
-import RouterLink from './RouterLink'
 
-import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 import { SocialLinks } from './Social'
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from '../styles/global'
@@ -26,12 +24,7 @@ const Footer = () => {
                     <Logo size='250px' small='225px' margin='0' />
                 </NavLink>
             </LogoContainer>
-            <NavigationContainer>
-                <Items
-                    items={MAIN_NAV_ROUTES}
-                    renderComponent={RouteLink}
-                    columns={1} />
-            </NavigationContainer>
+
             <TermsLinkContainer>
                 <NavLink to='/terms'>
                     Terms & Conditions
@@ -129,18 +122,6 @@ function split(array, cols) {
                 array
                     .slice(size), cols - 1)
         );
-}
-
-const RouteLink = (route) => {
-    const { to, label } = MAIN_NAV_ROUTES[route];
-    return (
-        <RouterLink
-            key={`plt_link_${route}`}
-            to={to}
-        >
-            {label}
-        </RouterLink>
-    )
 }
 
 

@@ -12,7 +12,7 @@
 
 - 🔓 100% Open Source
 - 🆓 Free to use
-- 🔑 No signup or pesky API keys needed
+- 🔑 No signup or API keys
 - 🖼️ Embed like any normal image
 - 🌍 Over 50,000 active users and > 2 million images generated per month.
 - 🤝 Integrates with various open-source LLMs, bots, and communities

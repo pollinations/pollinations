@@ -25,7 +25,6 @@ export default function Home() {
 
   return (
     <Style>
-      <input ref={hiddenInputRef} type="text" style={{ position: 'absolute', opacity: 0, height: 0, width: 0, border: 'none' }} aria-hidden="true" tabIndex="-1" />
       <WhoWeAre />
       <TopBand />
       <GenerativeImageFeed />

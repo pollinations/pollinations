@@ -5,8 +5,7 @@ import { LinkStyle } from './components';
 
 let WhoWeAreContent = () => <>
   <h2>
-    We are a team of <i><b>machine-learning specialists</b>, <b>artists</b> and <b>futurists,</b></i>
-    deeply engaged <br /> <i>in the <b>open source</b> AI ecosystem.</i>
+    We are a team of <i><b>machine-learning specialists</b>, <b>artists</b> and <b>futurists, </b></i> deeply engaged <br /> <i>in the <b>open source</b> AI ecosystem.</i>
   </h2>
   <p>
     To talk to us, reach out on <LinkStyle href="https://discord.gg/k9F7SyTgqn">Discord</LinkStyle> or at hello@pollinations.ai

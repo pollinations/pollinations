@@ -49,6 +49,13 @@ const useStyles = makeStyles((theme) => ({
         textAlign: 'center',
         width: '100%',
     },
+    listProjectText: {
+        color: Colors.white,
+        textAlign: 'center',
+        marginTop: theme.spacing(4),
+        marginBottom: theme.spacing(4),
+        fontSize: '1.1em',
+    },
 }));
 
 const logoPrefix = "minimalist  logo";
@@ -183,6 +190,11 @@ const ProjectsSection = () => {
 
             <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
             {renderProjects(projects.llmIntegration)}
+
+            <Typography className={classes.listProjectText}>
+                Have you created a project that integrates Pollinations? We'd love to feature it!<br />
+                Get in touch at <Link href="mailto:hello@pollinations.ai" style={{ color: Colors.lime }}>hello@pollinations.ai</Link>.
+            </Typography>
         </Container>
     );
 };

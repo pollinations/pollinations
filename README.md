@@ -46,7 +46,6 @@ You can also use it in your browser:
 https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
 ```
 
-
 Replace the description with your own, and you'll get a unique image based on your words!
 
 For more detailed information about our API, check out our [APIDOCS.md](/APIDOCS.md).
@@ -55,7 +54,7 @@ For more detailed information about our API, check out our [APIDOCS.md](/APIDOCS
 
 Here's what you might get if you use the conceptual isometric world prompt:
 
-[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)]((https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
+[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
 
 ## 🔧 Customization Options
 
@@ -108,16 +107,18 @@ From rapid prototyping to full-scale applications, Pollinations.AI adapts to you
 
 Here are some exciting projects that integrate Pollinations.AI:
 
-1. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users.
-2. [Pollinator App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation.
-3. [Discord Bot](https://discord.com/oauth2/authorize?client_id=1123551005993357342): A Discord bot for generating images based on user prompts.
-4. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images.
-5. [Karma.yt](https://karma.yt): Uses Pollinations.ai for generating AI-driven content.
-6. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts.
-7. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
-8. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai.
-9. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
-10. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
+1. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images.
+2. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)
+3. [WhatsApp Group](https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV): A WhatsApp group that allows you to generate images using Pollinations.ai. Created by @dg_karma.
+4. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
+5. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images. Created by Wong Wei Hao.
+6. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts. Made using Django and Pollinations.ai.
+7. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
+8. [Anyai](https://discord.com): A Discord bot and community that leverages Pollinations.ai for generating AI-driven content. Created by @meow_18838.
+9. [OpenHive](https://discord.gg/Zv3SXTF5xy): A Discord server that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using various AI tools, including Pollinations.ai!
+10. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai. Created by @thomash_pollinations.
+11. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
+12. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 

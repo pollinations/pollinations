@@ -101,6 +101,11 @@ const projects = [
         description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
         author: "@meow_18838"
     },
+    {
+        name: "OpenHive",
+        url: "https://discord.gg/Zv3SXTF5xy",
+        description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!"
+    },
 ];
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;

@@ -2,9 +2,7 @@
 
 *Your Engine for Personalized Synthetic Media*
 
-100% open-source
-
-[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true)
+[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)
 
 ## 🌟 Introduction
 
@@ -12,7 +10,7 @@
 
 ## 🚀 Key Features
 
-- 🔓 Open Source
+- 🔓 100% Open Source
 - 🆓 Free to use
 - 🚀 No signup required
 - 🔑 No API keys needed
@@ -37,17 +35,17 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
 
 ```html
-<img src="https://pollinations.ai/p/A_cute_kitten_playing_with_a_ball_of_yarn" alt="AI-generated kitten">
+<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
 ```
 
-This will display an AI-generated image of a kitten playing with yarn:
+This will display an AI-generated image of a digital garden:
 
-<img src="https://pollinations.ai/p/A_cute_kitten_playing_with_a_ball_of_yarn" alt="AI-generated kitten">
+<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden" width="512" height="512" seed="-1">
 
 You can also use it in your browser:
 
 ```
-https://pollinations.ai/p/A_beautiful_sunset_over_the_ocean
+https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
 ```
 
 Replace the description with your own, and you'll get a unique image based on your words!
@@ -56,9 +54,9 @@ For more detailed information about our API, check out our [API Documentation](/
 
 ## 🎨 Example
 
-Here's what you might get if you use the sunset prompt:
+Here's what you might get if you use the conceptual isometric world prompt:
 
-[![Sunset Example](https://pollinations.ai/p/A_beautiful_sunset_over_the_ocean?width=500&height=300&nologo=true)](https://pollinations.ai/p/A_beautiful_sunset_over_the_ocean?width=500&height=300&nologo=true)
+[![Conceptual Isometric World](https://pollinations.ai/p/conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
 
 ## 🔧 Customization Options
 
@@ -66,18 +64,18 @@ Want to tweak your image? You can add these options to your URL:
 
 - `width` & `height`: Choose the size of your image
 - `model`: Pick 'flux' or 'turbo' (default: 'turbo')
-- `seed`: Use a number for consistent results
+- `seed`: Use a number for consistent results (or -1 for random)
 - `nologo`: Add this to remove the Pollinations logo
 - `enhance`: Let AI add extra details to your description
 
 Example with options:
 ```html
-<img src="https://pollinations.ai/p/A_beautiful_sunset_over_the_ocean?width=1280&height=720&model=flux&seed=42&nologo=true&enhance=true" alt="Customized sunset">
+<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=1280&height=720&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
 ```
 
 This produces:
 
-<img src="https://pollinations.ai/p/A_beautiful_sunset_over_the_ocean?width=1280&height=720&model=flux&seed=42&nologo=true&enhance=true" alt="Customized sunset">
+<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
 
 ## 💻 For Developers
 
@@ -93,7 +91,7 @@ def download_image(prompt):
         file.write(response.content)
     print('Image downloaded!')
 
-download_image("A_beautiful_sunset_over_the_ocean")
+download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
 ```
 
 ## 🤝 Integration
@@ -146,7 +144,7 @@ Pollinations.AI aims to bridge technological innovation with global creativity. 
 
 Pollinations.AI is proud to be supported by:
 
-[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=600&height=400&nologo=true)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=600&height=400&nologo=true)
+[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
 
 - [AWS Activate](https://aws.amazon.com/activate/)
 - [Google Cloud for Startups](https://cloud.google.com/startup)
@@ -159,7 +157,7 @@ Pollinations.AI is proud to be supported by:
 
 Join our vibrant community of over 12,000 Discord members to share your creations, get support, and collaborate with fellow AI enthusiasts. 
 
-For any questions or support, please visit our [Discord channel](https://discord.gg/pollinations) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
+For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 
 ## 📜 License
 

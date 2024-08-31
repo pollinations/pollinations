@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow } from '@material-ui/core';
+import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './styles';
 import { Colors } from '../../styles/global';
@@ -42,79 +42,93 @@ const useStyles = makeStyles((theme) => ({
         height: '48px',
         objectFit: 'cover',
     },
+    sectionHeading: {
+        color: Colors.lime,
+        marginTop: theme.spacing(4),
+        marginBottom: theme.spacing(2),
+        textAlign: 'center',
+        width: '100%',
+    },
 }));
 
 const logoPrefix = "minimalist  logo";
 const imageDimension = 96;
 const seedValue = 41 + Math.floor(Math.random() * 3); // Define the seed value here
 
-const projects = [
-    {
-        name: "SillyTavern",
-        url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-        description: "An **LLM frontend** for power users. Pollinations permits it to generate images."
-    },
-    {
-        name: "Discord Bot",
-        url: "https://discord.gg/D9xGg8mq3D",
-        description: "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
-        author: "@Zngzy",
-        repo: "https://github.com/Zingzy/pollinations.ai-bot"
-    },
-    {
-        name: "WhatsApp Group",
-        url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-        description: "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
-        author: "@dg_karma"
-    },
-    {
-        name: "Pollinator Android App",
-        url: "https://github.com/g-aggarwal/Pollinator",
-        description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
-        author: "@gaurav_87680"
-    },
-    {
-        name: "Telegram Bot",
-        url: "http://t.me/pollinationsbot",
-        description: "A **Telegram bot** that uses Pollinations.ai for generating images based on user prompts.",
-        author: "Wong Wei Hao"
-    },
-    {
-        name: "Anyai",
-        url: "#",
-        description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
-        author: "@meow_18838"
-    },
-    {
-        name: "OpenHive",
-        url: "https://discord.gg/Zv3SXTF5xy",
-        description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!",
-        author: "@creativegpt"
-    },
-    {
-        name: "DynaSpark AI",
-        url: "https://dynaspark.onrender.com",
-        description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
-        author: "Th3-C0der",
-        repo: "https://github.com/Th3-C0der"
-    },
-    {
-        name: "StorySight",
-        url: "https://github.com/abiral-manandhar/storySight",
-        description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
-    },
-    {
-        name: "Websim",
-        url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-        description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
-        author: "@thomash_pollinations"
-    },
-    {
-        name: "FlowGPT",
-        url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-        description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
-    },
-];
+const projects = {
+    socialBots: [
+        {
+            name: "Discord Bot",
+            url: "https://discord.gg/D9xGg8mq3D",
+            description: "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
+            author: "@Zngzy",
+            repo: "https://github.com/Zingzy/pollinations.ai-bot"
+        },
+        {
+            name: "WhatsApp Group",
+            url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
+            description: "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
+            author: "@dg_karma"
+        },
+        {
+            name: "Telegram Bot",
+            url: "http://t.me/pollinationsbot",
+            description: "A **Telegram bot** that uses Pollinations.ai for generating images based on user prompts.",
+            author: "Wong Wei Hao"
+        },
+        {
+            name: "Anyai",
+            url: "#",
+            description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
+            author: "@meow_18838"
+        },
+        {
+            name: "OpenHive",
+            url: "https://discord.gg/Zv3SXTF5xy",
+            description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.ai!",
+            author: "@creativegpt"
+        },
+    ],
+    apps: [
+        {
+            name: "Pollinator Android App",
+            url: "https://github.com/g-aggarwal/Pollinator",
+            description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+            author: "@gaurav_87680"
+        },
+        {
+            name: "StorySight",
+            url: "https://github.com/abiral-manandhar/storySight",
+            description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
+        },
+        {
+            name: "Websim",
+            url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+            description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
+            author: "@thomash_pollinations"
+        },
+    ],
+    llmIntegration: [
+        {
+            name: "SillyTavern",
+            url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
+            description: "An **LLM frontend** for power users. Pollinations permits it to generate images.",
+            repo: "https://github.com/SillyTavern/SillyTavern"
+        },
+        {
+            name: "FlowGPT",
+            url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
+        },
+        {
+            name: "DynaSpark AI",
+            url: "https://dynaspark.onrender.com",
+            description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
+            author: "Th3-C0der",
+            repo: "https://github.com/Th3-C0der"
+        },
+    ],
+};
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
 
@@ -123,40 +137,52 @@ const ProjectsSection = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+    const renderProjects = (projectList) => (
+        <Table className={classes.table}>
+            <TableBody>
+                {projectList.map((project, index) => (
+                    <TableRow key={index} className={classes.tableRow}>
+                        <TableCell className={classes.tableCell}>
+                            {!isMobile && (
+                                <img
+                                    src={generateImageUrl(project.name)}
+                                    alt={project.name}
+                                    className={classes.projectImage}
+                                />
+                            )}
+                        </TableCell>
+                        <TableCell className={classes.tableCell}>
+                            {renderProjectLink(project)}
+                            {project.author && (
+                                <span style={{ marginLeft: '8px', color: Colors.white, fontSize: '1em' }}>
+                                    by {project.author}
+                                </span>
+                            )}
+                        </TableCell>
+                        <TableCell className={classes.tableCell}>
+                            <span style={{ color: Colors.white, fontSize: '1em' }}>
+                                <Markdown>{project.description}</Markdown>
+                            </span>
+                            {project.repo && renderRepoLink(project.repo)}
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    );
+
     return (
         <Container className={classes.root}>
             <ImageURLHeading>Integrations</ImageURLHeading>
-            <Table className={classes.table}>
-                <TableBody>
-                    {projects.map((project, index) => (
-                        <TableRow key={index} className={classes.tableRow}>
-                            <TableCell className={classes.tableCell}>
-                                {!isMobile && (
-                                    <img
-                                        src={generateImageUrl(project.name)}
-                                        alt={project.name}
-                                        className={classes.projectImage}
-                                    />
-                                )}
-                            </TableCell>
-                            <TableCell className={classes.tableCell}>
-                                {renderProjectLink(project)}
-                                {project.author && (
-                                    <span style={{ marginLeft: '8px', color: Colors.white, fontSize: '1em' }}>
-                                        by {project.author}
-                                    </span>
-                                )}
-                            </TableCell>
-                            <TableCell className={classes.tableCell}>
-                                <span style={{ color: Colors.white, fontSize: '1em' }}>
-                                    <Markdown>{project.description}</Markdown>
-                                </span>
-                                {project.repo && renderRepoLink(project.repo)}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+
+            <Typography variant="h5" className={classes.sectionHeading}>Social Bots</Typography>
+            {renderProjects(projects.socialBots)}
+
+            <Typography variant="h5" className={classes.sectionHeading}>Mobile & Web Applications</Typography>
+            {renderProjects(projects.apps)}
+
+            <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
+            {renderProjects(projects.llmIntegration)}
         </Container>
     );
 };
@@ -171,7 +197,7 @@ const renderProjectLink = (project) => {
                 color: Colors.lime,
                 textDecoration: 'none',
                 fontWeight: 'bold',
-                fontSize: '1.1em', // Larger text size
+                fontSize: '1em', // Same text size as other text
                 '&:hover': {
                     textDecoration: 'underline',
                 },

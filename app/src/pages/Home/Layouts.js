@@ -21,7 +21,7 @@ let WhoWeAreContent = () => <>
       To talk to us, reach out on <StyledLink href="https://discord.gg/k9F7SyTgqn">Discord</StyledLink> or at <StyledLink href="mailto:hello@pollinations.ai">hello@pollinations.ai</StyledLink>.
     </p>
     <p>
-      <StyledLink href="https://github.com/pollinations/pollinations/blob/master/README.md"><b>README</b><DescriptionIcon style={{ fontSize: 'inherit', verticalAlign: 'middle' }} /> </StyledLink> to learn more.
+      <StyledLink href="/readme"><b>README</b><DescriptionIcon style={{ fontSize: 'inherit', verticalAlign: 'middle' }} /> </StyledLink> to learn more.
     </p>
   </ContactWrapper>
 </>

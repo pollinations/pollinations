@@ -1,119 +1,161 @@
-<div id="header">
-  <img src="https://i.ibb.co/p049Y5S/86964862.png" width="50"/>   <img src="https://i.ibb.co/r6JZ336/sketch1700556567238.png" width="250">
-</div>
+# [Pollinations.AI](https://pollinations.ai)
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/toolkitr/tkr/blob/main/LICENSE)
-[![Python Versions](https://img.shields.io/badge/python-%203.7+%20-blue)](https://www.python.org/downloads/)
+*Your Engine for Personalized Synthetic Media*
 
-## 🌸 [pollinations.ai](https://pollinations.ai/)
-Pollinations are an effort to make generative art more approachable. 
-- A frontend hosting a set of [curated notebooks](https://github.com/pollinations/hive) that allow creating and experimenting with generative art.
-- The Interplanetary Filesystem (IPFS) for decentralized censorship-resistant storage of models, code and generated content
-- Pollinations are run on Google Colab at the moment (for the free cloud GPUs)
+[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)
 
-[Instructions](docs/instructions.md) on using Pollinations.AI.
-<details>
-  <summary><h2>🐍 Python Package</h2></summary>
+## 🌟 Introduction
+
+[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image.
+
+## 🚀 Key Features
+
+- 🔓 100% Open Source
+- 🆓 Free to use
+- 🔑 No signup or pesky API keys needed
+- 🖼️ Embed like any normal image
+- 🌍 Over 50,000 monthly active users and 2 million images generated worldwide
+- 🤝 Integrates with various open-source LLMs, bots, and communities
+
+Generate amazing images, music videos, and real-time AI-driven visual experiences. It's perfect for artists, developers, and anyone who loves to create!
+
+## 🖥️ Easiest Way to Start
+
+The simplest way to use Pollinations.AI is through our web interface:
+
+1. Visit [https://pollinations.ai](https://pollinations.ai)
+2. Type your description in the text box
+3. Click "Generate" and watch the magic happen!
+
+Our web interface is user-friendly and doesn't require any technical knowledge. Give it a try!
+
+## 🚀 How to Use the [API](/APIDOCS.md)
+
+Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
+```html
+<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
+```
+
+This will display an AI-generated image of a digital garden:
+
+<img src="https://pollinations.ai/p/conceptual_isometric_wireframe_A_digital_garden_with_AI_generated_flowers_and_data_streams?width=384&height=384&seed=-1" alt="AI-generated digital garden">
+
+You can also use it in your browser:
+
+```
+https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
+```
+
+
+Replace the description with your own, and you'll get a unique image based on your words!
+
+For more detailed information about our API, check out our [APIDOCS.md](/APIDOCS.md).
+
+## 🎨 Example
+
+Here's what you might get if you use the conceptual isometric world prompt:
+
+[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)]((https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
+
+## 🔧 Customization Options
+
+Want to tweak your image? You can add these options to your URL:
+
+- `width` & `height`: Choose the size of your image
+- `model`: Pick 'flux' or 'turbo' (default: 'turbo')
+- `seed`: Use a number for consistent results (or -1 for random)
+- `nologo`: Add this to remove the Pollinations logo
+- `enhance`: Let AI add extra details to your description
+
+Example with options:
+```html
+<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=1280&height=720&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
+```
+
+This produces:
+
+<img src="https://pollinations.ai/p/2x2_image_grid_for_the_prompt_AI_powered_pollination_process_in_a_minimal_digital_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
+
+## 💻 For Developers
+
+If you're a coder, you can use our API to generate images in your projects. Here's a simple Python example:
 
 ```python
-# Usage Example
+import requests
 
-import pollinations as ai
+def download_image(prompt):
+    url = f"https://pollinations.ai/p/{prompt}"
+    response = requests.get(url)
+    with open('generated_image.jpg', 'wb') as file:
+        file.write(response.content)
+    print('Image downloaded!')
 
-model: object = ai.Model()
-
-image: object = model.generate(
-    prompt=f'Golden retriever puppy playing in the rain {ai.realistic}',
-    model=ai.turbo,
-    height=512,
-    seed=57184
-)
-image.save('image-output.jpg')
-
-print(image.url)
+download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
 ```
-```javascript
-// >>> https://image.pollinations.ai/prompt/Golden%20retriever%20puppy%20playing%20in%20the%20rain%20realistic,%20realism,%20real%20life,%20ultra%20realistic,%20high%20quality,%20real?model=turbo&width=1024&height=512&seed=57184
-```
-![image](https://github.com/flowa-ai/pollinations-patch/assets/152752280/448342b5-013f-4df9-a5a5-6d5f1f196cac)
 
-</details>
+## 🤝 Integration
 
-## �👩‍💻 Development (outdated)
+Pollinations.AI seamlessly integrates into a wide range of creative and technical projects:
 
-<details>
-  <summary>Development of Pollinations.AI Web App</summary>
+- 🎨 Enhance web designs with dynamic AI-generated visuals
+- 📚 Illustrate e-learning content with custom visuals
+- 🤖 Power up chatbots with image generation capabilities
+- 📱 Boost social media content with AI-generated graphics
 
-    `make dev` to start the development server of web app.% 
+From rapid prototyping to full-scale applications, Pollinations.AI adapts to your creative vision!
 
-    Enable logging:
-    `localStorage.debug = "*"`
+## 🌐 Projects Using Pollinations.AI
 
-    If logs don't appear in Chrome enable logging "All Aevels" (including Verbose)
-  
- 
-    ## Optionally it is possible to develop with a local IPFS node
-    
-    Enable connect to local IPFS:
-    `localStorage.localIFS = true
+Here are some exciting projects that integrate Pollinations.AI:
 
-    `make up` to start the releant services. See next section for details
-  
-</details>
+1. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users.
+2. [Pollinator App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation.
+3. [Discord Bot](https://discord.com/oauth2/authorize?client_id=1123551005993357342): A Discord bot for generating images based on user prompts.
+4. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images.
+5. [Karma.yt](https://karma.yt): Uses Pollinations.ai for generating AI-driven content.
+6. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts.
+7. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
+8. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai.
+9. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
+10. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
 
-<details>
-  <summary>Development of Notebooks</summary>
+Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 
-   All notebooks at [pollinations/hive](https://github.com/pollinations/hive) are automatically deployed to Pollinations. 
-   
-   We will add an easy way to include custom notebooks. For now, to use an external notebook it needs to be uploaded to IPFS wrapped in a folder in the form `input/notebook.ipynb`. The resulting IPFS hash can be used directly like so: `https://pollinations.ai/p/[hash]`
-  
-</details>
+## 🔮 Future Developments
 
-<details>
-  <summary>Development with Local IPFS node</summary>
+We're constantly exploring new ways to push the boundaries of AI-driven content creation. Some areas we're excited about include:
 
-    Development environment requires `docker` & `docker-compose` for running a loca IPFS node. For docker installation, please navigate to https://docs.docker.com/get-docker/.
+- Digital Twins: Creating interactive AI-driven avatars
+- Music Video Generation: Combining AI-generated visuals with music for unique video experiences
+- Real-time AI-driven Visual Experiences: Projects like our Dreamachine, which create immersive, personalized visual journeys
 
-    After docker is setup, `make` is used for managing the IPFS and development environment.
+## 🌍 Our Vision
 
-    ## 🟡 Initialization
+Pollinations.AI aims to bridge technological innovation with global creativity. Our international team combines precision engineering with artistic flair to create a platform that serves creators worldwide.
 
-    To run pollinations development environment first time,
+## 🏢 Supported By
 
-    - Run `make init`, this will initialize start the IPFS docker image and fill `tmp/ipfs` folder by migrating IPFS.
+Pollinations.AI is proud to be supported by:
 
-    ## 🟢 Running
+[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
 
-    After IPFS migrated, to start development environment,
-    - Run `make up`, this will start the dockerized IPFS instance and detach.
-    - Run `make dev` to start the react application living under `/app`
+- [AWS Activate](https://aws.amazon.com/activate/)
+- [Google Cloud for Startups](https://cloud.google.com/startup)
+- [OVH Cloud](https://www.ovhcloud.com/en/startup/)
+- [NVIDIA Inception](https://www.nvidia.com/en-us/startups/)
+- [Azure (MS for Startups)](https://startups.microsoft.com/)
+- [Outlier Ventures](https://outlierventures.io/)
 
-    ## 🔴 Stopping
+## 🤝 Community and Support
 
-    - Run `make down` to stop running IPFS instance.
-    - Run `make clean` to remove the `tmp` folder and its contents.
+Join our vibrant community of over 12,000 Discord members to share your creations, get support, and collaborate with fellow AI enthusiasts. 
 
-    ## ⚙️ Configuration
+For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 
-    IPFS configuration can be found and updated in `docker/ipfs/config.json`. Every time the docker containers are started, the config file under `tmp/ipfs/config` is overwritten with this json file.
+## 📜 License
 
-</details>
+Pollinations.AI is open-source software licensed under the [MIT license](LICENSE).
 
+---
 
-<details>
-  <summary>Architecture Diagram</summary>
-
-  The following diagram has an editable copy embedded. Use https://draw.io/#Hpollinations/pollinations/master/pollinations_architecture.png to edit the file.
-
-  Export the results as PNG with "Include a copy of my diagram" option selected and replace the current diagram.
-
-  ![Architecture Diagram](pollinations_architecture.png)
-  
- </details>
-
-## 🔗 Links
-
-- Frontend: https://pollinations.ai/
-- Instructions: [docs/instructions.md](docs/instructions.md)
-- Discord: https://discord.gg/k9F7SyTgqn
+Made with ❤️ by the Pollinations.AI team

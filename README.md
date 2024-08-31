@@ -29,17 +29,16 @@ The simplest way to use Pollinations.AI is through our web interface:
 
 Our web interface is user-friendly and doesn't require any technical knowledge. Give it a try!
 
-## 🚀 How to Use the API
+## 🚀 How to Use the [API](/APIDOCS.md)
 
 Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
-
 ```html
 <img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
 ```
 
 This will display an AI-generated image of a digital garden:
 
-<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden" width="512" height="512" seed="-1">
+<img src="https://pollinations.ai/p/conceptual_isometric_wireframe_A_digital_garden_with_AI_generated_flowers_and_data_streams?width=384&height=384&seed=-1" alt="AI-generated digital garden">
 
 You can also use it in your browser:
 
@@ -47,15 +46,16 @@ You can also use it in your browser:
 https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
 ```
 
+
 Replace the description with your own, and you'll get a unique image based on your words!
 
-For more detailed information about our API, check out our [API Documentation](/api_documentation.md).
+For more detailed information about our API, check out our [APIDOCS.md](/APIDOCS.md).
 
 ## 🎨 Example
 
 Here's what you might get if you use the conceptual isometric world prompt:
 
-[![Conceptual Isometric World](https://pollinations.ai/p/conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
+[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)]((https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
 
 ## 🔧 Customization Options
 
@@ -74,7 +74,7 @@ Example with options:
 
 This produces:
 
-<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
+<img src="https://pollinations.ai/p/2x2_image_grid_for_the_prompt_AI_powered_pollination_process_in_a_minimal_digital_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
 
 ## 💻 For Developers
 

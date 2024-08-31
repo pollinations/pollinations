@@ -116,16 +116,16 @@ const projects = {
             repo: "https://github.com/SillyTavern/SillyTavern"
         },
         {
-            name: "FlowGPT",
-            url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
-        },
-        {
             name: "DynaSpark AI",
             url: "https://dynaspark.onrender.com",
             description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
             author: "Th3-C0der",
             repo: "https://github.com/Th3-C0der"
+        },
+        {
+            name: "FlowGPT",
+            url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
         },
     ],
 };

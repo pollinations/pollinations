@@ -55,12 +55,6 @@ const projects = [
         description: "An **LLM frontend** for power users. Pollinations permits it to generate images."
     },
     {
-        name: "Pollinator App",
-        url: "https://github.com/g-aggarwal/Pollinator",
-        description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
-        author: "@gaurav_87680"
-    },
-    {
         name: "Discord Bot",
         url: "https://discord.gg/D9xGg8mq3D",
         description: "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
@@ -68,16 +62,22 @@ const projects = [
         repo: "https://github.com/Zingzy/pollinations.ai-bot"
     },
     {
+        name: "WhatsApp Group",
+        url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
+        description: "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
+        author: "@dg_karma"
+    },
+    {
+        name: "Pollinator Android App",
+        url: "https://github.com/g-aggarwal/Pollinator",
+        description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+        author: "@gaurav_87680"
+    },
+    {
         name: "Telegram Bot",
         url: "http://t.me/pollinationsbot",
         description: "A **Telegram bot** that uses Pollinations.ai for generating images based on user prompts.",
         author: "Wong Wei Hao"
-    },
-    {
-        name: "WhatsApp Group",
-        url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-        description: "A **WhatsApp group** for discussing and sharing projects related to Pollinations.ai.",
-        author: "@dg_karma"
     },
     {
         name: "StorySight",
@@ -90,12 +90,6 @@ const projects = [
         description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
     },
     {
-        name: "Websim",
-        url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-        description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content.",
-        author: "@thomash_pollinations"
-    },
-    {
         name: "Anyai",
         url: "#",
         description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
@@ -105,6 +99,12 @@ const projects = [
         name: "OpenHive",
         url: "https://discord.gg/Zv3SXTF5xy",
         description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!"
+    },
+    {
+        name: "Websim",
+        url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+        description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
+        author: "@thomash_pollinations"
     },
 ];
 

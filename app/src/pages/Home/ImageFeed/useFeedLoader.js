@@ -24,7 +24,12 @@ export function useFeedLoader(onNewImage, setLastImage) {
             return;
           }
           if (data["imageURL"]) {
-            const matureWord = isMature(data["prompt"]);
+            if (!data["prompt"]) {
+              console.error("No prompt found in image data", data, "Why???");
+              onNewImage(data);
+              return;
+            }
+            const matureWord = isMature(data["prompt"] || "");
             if (matureWord) {
               // console.log("Skipping mature word:", matureWord, data["prompt"]);
               return;

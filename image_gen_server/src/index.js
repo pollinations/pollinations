@@ -94,9 +94,10 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams }) => {
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer }) => {
   timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-  const prompt = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+  const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+
 
   console.error("prompt", prompt);
 
@@ -129,6 +130,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams }) => {
         timingInfo: relativeTiming(timingInfo),
         ip,
         status: "end_generating",
+        referrer,
+        wasPimped
       }, { saveAsLastState: true });
     }
   }
@@ -159,64 +162,71 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const originalPrompt = pathname.split("/prompt/")[1] || "random prompt";
 
-  const safeParams = makeParamsSafe(query);
+  const { disableCache, ...safeParams } = makeParamsSafe(query);
 
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
+  const referrer = req.headers.referer || req.headers.referrer;
 
-  // Cache the generated image
-  const buffer = await cacheImage(originalPrompt, safeParams, async () => {
-    const ip = getIp(req);
+  try {
+    // Cache the generated image
+    const buffer = await cacheImage(originalPrompt, safeParams, async () => {
+      const ip = getIp(req);
 
-    const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo) });
+      const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
+      sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
-    let queueExisted = false;
-    if (!ipQueue[ip]) {
-      ipQueue[ip] = new PQueue({ concurrency: 1 });
-    } else {
-      queueExisted = true;
-    }
-
-    const result = await ipQueue[ip].add(async () => {
-      if (queueExisted && countJobs() > 2) {
-        const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
-
-        console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-        if (queueSize >= 40) {
-          throw new Error("ip queue full");
-        }
-
-        await sleep(1000 * queueSize);
+      let queueExisted = false;
+      if (!ipQueue[ip]) {
+        ipQueue[ip] = new PQueue({ concurrency: 1 });
+      } else {
+        queueExisted = true;
       }
-      timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-      const buffer = await generalImageQueue.add(async () => {
-        return await imageGen({ req, timingInfo, originalPrompt, safeParams });
-      });
-      timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
 
-      return buffer;
+      const result = await ipQueue[ip].add(async () => {
+        if (queueExisted && countJobs() > 2) {
+          const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+
+          console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
+          if (queueSize >= 40) {
+            throw new Error("ip queue full");
+          }
+
+          await sleep(1000 * queueSize);
+        }
+        timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
+        const buffer = await generalImageQueue.add(async () => {
+          return await imageGen({ req, timingInfo, originalPrompt, safeParams, referrer });
+        });
+        timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
+
+        return buffer;
+      });
+
+      // if the queue is empty and none pending or processing we can delete the queue
+      if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
+        delete ipQueue[ip];
+      }
+
+      return result;
     });
 
-    // if the queue is empty and none pending or processing we can delete the queue
-    if (ipQueue[ip].size === 0 && ipQueue[ip].pending === 0) {
-      delete ipQueue[ip];
-    }
+    res.writeHead(200, {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': disableCache ? 'private, max-age=0' : 'public, max-age=31536000, immutable',
+    });
+    res.write(buffer);
+    res.end();
 
-    return result;
-  });
+    sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 
-  res.writeHead(200, {
-    'Content-Type': 'image/jpeg',
-    'Cache-Control': 'public, max-age=31536000, immutable',
-  });
-  res.write(buffer);
-  res.end();
+  } catch (error) {
+    console.error("error", error);
+    res.end('500: Internal Server Error');
 
-
-
-  sendToAnalytics(req, "imageGenerated", analyticsMetadata);
+    sendToAnalytics(req, "imageGenerationError", analyticsMetadata);
+  }
 
 };
 
@@ -236,4 +246,3 @@ function relativeTiming(timingInfo) {
     timestamp: info.timestamp - timingInfo[0].timestamp
   }));
 }
-

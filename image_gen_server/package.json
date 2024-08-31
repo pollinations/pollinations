@@ -39,6 +39,7 @@
     "p-queue": "^7.3.4",
     "papaparse": "^5.4.1",
     "ramda": "^0.29.1",
+    "sharp": "^0.33.5",
     "tempfile": "^5.0.0",
     "tinyld": "^1.3.4",
     "urldecode": "^1.0.1"

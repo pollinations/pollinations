@@ -14,7 +14,7 @@
 - 🆓 Free to use
 - 🔑 No signup or pesky API keys needed
 - 🖼️ Embed like any normal image
-- 🌍 Over 50,000 monthly active users and 2 million images generated worldwide
+- 🌍 Over 50,000 active users and > 2 million images generated per month.
 - 🤝 Integrates with various open-source LLMs, bots, and communities
 
 Generate amazing images, music videos, and real-time AI-driven visual experiences. It's perfect for artists, developers, and anyone who loves to create!

@@ -4,9 +4,7 @@ import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from 'r
 import { URLExplanation } from './styles';
 import { Colors } from '../../styles/global';
 
-import InfoIcon from '@material-ui/icons/Info';
 
-import { shorten } from './shorten';
 
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -254,3 +252,6 @@ export function CodeExamples(image) {
     </>
   </URLExplanation>;
 }
+
+
+const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;

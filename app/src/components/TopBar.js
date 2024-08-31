@@ -7,9 +7,7 @@ import { MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer, Colors } from "../st
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from '../assets/menuIcon.svg'
 import Logo from './Logo'
-import NavigationItems from "./NavigationItems"
 import { SocialLinks } from './Social'
-import { MAIN_NAV_ROUTES } from '../routes/publicRoutes'
 
 const TopBar = () => {
 
@@ -17,19 +15,18 @@ const TopBar = () => {
 
   return <OuterContainer>
     <TopContainer>
-      <PublicNav drawerState={drawerState} navRoutes={MAIN_NAV_ROUTES} />
+      <PublicNav drawerState={drawerState} />
     </TopContainer>
-    <MobileMenu navRoutes={MAIN_NAV_ROUTES} drawerState={drawerState} />
+    <MobileMenu drawerState={drawerState} />
   </OuterContainer>
 };
 
-const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
+const PublicNav = ({ drawerState }) => <NavBarStyle>
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', marginLeft: '1em' }}>
     {/*<StyledNavLink to='/' >*/}
     <Logo size='150px' small='150px' />
     {/*</StyledNavLink>*/}
   </div>
-  {/*<NavigationItems navRoutes={navRoutes} isEnd/>*/}
   <SocialLinks small hideOnMobile gap='1em' invert />
   <MenuButton>
     <IconButton onClick={() => drawerState[1](true)} >
@@ -39,14 +36,13 @@ const PublicNav = ({ navRoutes, drawerState }) => <NavBarStyle>
   </MenuButton>
 </NavBarStyle>;
 
-const MobileMenu = ({ drawerState, navRoutes }) => <TemporaryDrawer drawerState={drawerState}>
+const MobileMenu = ({ drawerState }) => <TemporaryDrawer drawerState={drawerState}>
   <MobileMenuStyle>
     <MobileCloseIconStyle>
       <IconButton onClick={() => drawerState[1](false)} >
         <CloseOutlined />
       </IconButton>
     </MobileCloseIconStyle>
-    <NavigationItems column navRoutes={navRoutes} gap='2em' />
     <CTAStyle>
       Let's talk
       <br />

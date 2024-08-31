@@ -78,28 +78,21 @@ const projects = [
         description: "A WhatsApp group for discussing and sharing projects related to Pollinations.ai.",
         author: "@dg_karma"
     },
-    {
-        name: "Karma.yt",
-        url: "https://karma.yt",
-        description: "A project that uses Pollinations.ai for generating AI-driven content for Karma.yt.",
-        author: "@dg_karma"
-    },
+    // {
+    //     name: "Karma.yt",
+    //     url: "https://karma.yt",
+    //     description: "A project that uses Pollinations.ai for generating AI-driven content for Karma.yt.",
+    //     author: "@dg_karma"
+    // },
     {
         name: "StorySight",
         url: "https://github.com/abiral-manandhar/storySight",
         description: "App aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using Django and Pollinations.ai. Submitted to: https://devpost.com/software/storysight"
     },
     {
-        name: "Anyai",
-        url: "#",
-        description: "A Discord bot and community that amongst others leverages Pollinations.ai for generating AI-driven content.",
-        author: "@meow_18838"
-    },
-    {
-        name: "Python Package",
-        url: "https://pypi.org/project/pollinations/",
-        description: "A Python package that allows developers to easily integrate Pollinations.ai's image generation capabilities into their projects.",
-        author: "@flo.a"
+        name: "FlowGPT",
+        url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+        description: "Generate images on-demand with ChatGPT and Pollinations.AI."
     },
     {
         name: "Websim",
@@ -108,15 +101,18 @@ const projects = [
         author: "@thomash_pollinations"
     },
     {
-        name: "FlowGPT",
-        url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-        description: "Generate images on-demand with ChatGPT and Pollinations.AI."
+        name: "Anyai",
+        url: "#",
+        description: "A Discord bot and community that amongst others leverages Pollinations.ai for generating AI-driven content.",
+        author: "@meow_18838"
     },
-    {
-        name: "Toolkitr",
-        url: "https://github.com/toolkitr/pollinations.ai",
-        description: "Another Python wrapper for Pollinations."
-    }
+    // {
+    //     name: "Python Package",
+    //     url: "https://pypi.org/project/pollinations/",
+    //     description: "A Python package that allows developers to easily integrate Pollinations.ai's image generation capabilities into their projects.",
+    //     author: "@flo.a"
+    // },
+
 ];
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;

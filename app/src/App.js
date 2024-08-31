@@ -26,6 +26,12 @@ const AppRoutes = [
     key: 'terms'
   },
   {
+    exact: true,
+    path: '/readme',
+    element: <MarkdownTemplate label='readme' />,
+    key: 'readme'
+  },
+  {
     path: '*',
     element: <Navigate to="/" replace={true} />,
     key: '404'

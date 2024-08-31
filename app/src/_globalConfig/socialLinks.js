@@ -17,7 +17,7 @@ export const SOCIAL_LINKS = {
     label: 'GitHub',
     icon: ICONS.github,
     icon_img: GithubLogo,
-    url: 'https://www.github.com/pollinations'
+    url: 'https://www.github.com/pollinations/pollinations'
   },
   youtube: {
     label: 'YouTube',

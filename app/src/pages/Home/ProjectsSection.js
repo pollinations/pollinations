@@ -3,6 +3,7 @@ import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow }
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './styles';
 import { Colors } from '../../styles/global';
+import Markdown from 'markdown-to-jsx';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -51,68 +52,60 @@ const projects = [
     {
         name: "SillyTavern",
         url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-        description: "An LLM frontend for power users. Pollinations permits it to generate images."
-    },
-    {
-        name: "Pollinator App",
-        url: "https://github.com/g-aggarwal/Pollinator",
-        description: "An open-source Android app for text-to-image generation using Pollinations.ai's endpoint.",
-        author: "@gaurav_87680"
+        description: "An **LLM frontend** for power users. Pollinations permits it to generate images."
     },
     {
         name: "Discord Bot",
-        url: "https://discord.com/oauth2/authorize?client_id=1123551005993357342",
-        description: "A Discord bot that uses Pollinations.ai for generating images based on user prompts.",
+        url: "https://discord.gg/D9xGg8mq3D",
+        description: "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
         author: "@Zngzy",
         repo: "https://github.com/Zingzy/pollinations.ai-bot"
     },
     {
+        name: "WhatsApp Group",
+        url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
+        description: "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
+        author: "@dg_karma"
+    },
+    {
+        name: "Pollinator Android App",
+        url: "https://github.com/g-aggarwal/Pollinator",
+        description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+        author: "@gaurav_87680"
+    },
+    {
         name: "Telegram Bot",
         url: "http://t.me/pollinationsbot",
-        description: "A Telegram bot that uses Pollinations.ai for generating images based on user prompts.",
+        description: "A **Telegram bot** that uses Pollinations.ai for generating images based on user prompts.",
         author: "Wong Wei Hao"
     },
     {
-        name: "WhatsApp Group",
-        url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-        description: "A WhatsApp group for discussing and sharing projects related to Pollinations.ai.",
-        author: "@dg_karma"
-    },
-    // {
-    //     name: "Karma.yt",
-    //     url: "https://karma.yt",
-    //     description: "A project that uses Pollinations.ai for generating AI-driven content for Karma.yt.",
-    //     author: "@dg_karma"
-    // },
-    {
         name: "StorySight",
         url: "https://github.com/abiral-manandhar/storySight",
-        description: "App aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using Django and Pollinations.ai. Submitted to: https://devpost.com/software/storysight"
+        description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
     },
     {
         name: "FlowGPT",
         url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-        description: "Generate images on-demand with ChatGPT and Pollinations.AI."
-    },
-    {
-        name: "Websim",
-        url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-        description: "A web simulation tool that integrates Pollinations.ai for generating AI-driven content.",
-        author: "@thomash_pollinations"
+        description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
     },
     {
         name: "Anyai",
         url: "#",
-        description: "A Discord bot and community that amongst others leverages Pollinations.ai for generating AI-driven content.",
+        description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
         author: "@meow_18838"
     },
-    // {
-    //     name: "Python Package",
-    //     url: "https://pypi.org/project/pollinations/",
-    //     description: "A Python package that allows developers to easily integrate Pollinations.ai's image generation capabilities into their projects.",
-    //     author: "@flo.a"
-    // },
-
+    {
+        name: "OpenHive",
+        url: "https://discord.gg/Zv3SXTF5xy",
+        description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!"
+    },
+    {
+        name: "Websim",
+        url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+        description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
+        author: "@thomash_pollinations"
+    },
 ];
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
@@ -148,7 +141,7 @@ const ProjectsSection = () => {
                             </TableCell>
                             <TableCell className={classes.tableCell}>
                                 <span style={{ color: Colors.white, fontSize: '1em' }}>
-                                    {project.description}
+                                    <Markdown>{project.description}</Markdown>
                                 </span>
                                 {project.repo && renderRepoLink(project.repo)}
                             </TableCell>

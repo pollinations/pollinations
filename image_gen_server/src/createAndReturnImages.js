@@ -8,6 +8,7 @@ import FormData from 'form-data';
 import { ExifTool } from 'exiftool-vendored';
 import { fileTypeFromBuffer } from 'file-type';
 import { getNextFluxServerUrl } from './availableServers.js';
+import { writeExifMetadata } from './writeExifMetadata.js';
 
 const SERVER_URL = 'http://ec2-34-197-29-104.compute-1.amazonaws.com:5002/generate';
 
@@ -68,6 +69,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
           timeout: 30000, // 30 seconds timeout
         });
         if (response.ok) break; // If response is ok, break out of the loop
+        console.error("Error from server. input was", body);
         throw new Error(`Server responded with ${response.status}. Server url: ${chosenServer}`);
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
@@ -168,22 +170,9 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   // }
 
   // if (isChild) isMature = true;
-  // Start timing for exif
-  const exif_start_time = Date.now();
-  const exifTool = new ExifTool();
-  const tempImageFile = tempfile({ extension: "jpg" });
-  fs.writeFileSync(tempImageFile, bufferWithLegend);
+
   const { buffer: _buffer, ...maturity } = bufferAndMaturity;
-  // Embed safeParams as metadata
-  await exifTool.write(tempImageFile, {
-    UserComment: JSON.stringify({ ...safeParams, ...maturity }),
-    Make: "Stable Diffusion"
-  });
-  const exif_end_time = Date.now();
-  console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
-  bufferWithLegend = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
-  await exifTool.end();
-  if (tempImageFile) fs.unlinkSync(tempImageFile);
+  bufferWithLegend = await writeExifMetadata(bufferWithLegend, safeParams, maturity);
 
   return { buffer: bufferWithLegend, isChild, isMature };
 

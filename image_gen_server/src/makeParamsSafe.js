@@ -23,9 +23,13 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     const maxSeedValue = 18446744073709551500;
     seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
 
+    // we want to disable the cache for the random images with seed -1
+    let disableCache = false;
     if (seed === -1) {
         seed = Math.floor(20 * Math.random());
+        disableCache = true;
     }
+
     else if (seed < 0 || seed > maxSeedValue) {
         seed = 42;
     }
@@ -39,7 +43,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
 
     if (model !== "flux")// && model !== "turbo")
         model = "flux";
-    return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
+    return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, disableCache };
 };
 
 

@@ -1,19 +1,11 @@
 import styled from "@emotion/styled"
-import WhoWeAre, { ActivityUpdate, DarkLayout } from "./Layouts"
+import WhoWeAre from "./Layouts"
 import Discord from "./Discord"
-import Dreamachine from "./Dreamachine"
 import MusicVideo from "./MusicVideo"
-import TwitchSection from "./DreamSection"
 import { GenerativeImageFeed } from "./ImageFeed/GenerativeImageFeed.js"
-import { KarmaYT } from "./KarmaYT"
-import { ChatPrompt } from "./ChatPrompt"
-import PageTemplate from "../../components/MarkdownTemplate"
-import { ImageURLHeading } from "./styles"
-import { MOBILE_BREAKPOINT } from "../../styles/global"
-import { useEffect, useMemo, useRef, useState } from "react"
 import ProjectsSection from "./ProjectsSection"
 import CompaniesSection from "./CompaniesSection" // Import the new CompaniesSection
-import AsciiArtGenerator from "../../components/AsciiArtGenerator" // Import the AsciiArtGenerator
+import { useEffect, useMemo, useRef } from "react"
 
 const topBandPrompt = encodeURIComponent("One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
 
@@ -33,29 +25,21 @@ export default function Home() {
 
   return (
     <Style>
-      <input ref={hiddenInputRef} type="text" style={{ position: 'absolute', opacity: 0, height: 0, width: 0, border: 'none' }} aria-hidden="true" tabIndex="-1" />
       <WhoWeAre />
       <TopBand />
-      {/* <Hero /> */}
       <GenerativeImageFeed />
       <TopBand />
       <ProjectsSection />
       <TopBand />
-      {/* <ChatPrompt /> */}
       <MusicVideo />
-      {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" />
-      <Dreamachine /> */}
       {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" /> */}
       {/* <KarmaYT /> */}
       <TopBand />
       {/* <ImageURLHeading>Events</ImageURLHeading> */}
       {/* <PageTemplate label="event" /> */}
-      {/* <TwitchSection /> */}
-      {/* <ActivityUpdate /> */}
       {/* <TopBand /> */}
 
       <Discord />
-      {/* <TopBand /> */}
       <TopBand />
       <CompaniesSection /> {/* Add the CompaniesSection */}
     </Style>

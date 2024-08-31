@@ -1,8 +1,6 @@
 import styled from '@emotion/styled'
-import { useNavigate } from 'react-router-dom'
 import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
-import { BackgroundImage, Container as ContainerBase, Flex } from './components';
-import SwiperComponent from './Swiper';
+import { Container as ContainerBase, Flex } from './components';
 // import Swiper styles
 
 import Slider from "react-slick";
@@ -107,8 +105,6 @@ const FeaturedApp = props => {
                     {description}
                 </p>
             </FeaturedAppStyle>
-            {/* <Media {...props}/> */}
-            {/* <SwiperComponent Slides={Slides}/> */}
             <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
             <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/x5XQdW87aQE?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
             <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>

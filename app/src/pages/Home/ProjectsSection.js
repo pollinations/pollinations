@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme) => ({
         width: '100%',
         maxWidth: '800px',
         borderCollapse: 'separate',
-        borderSpacing: '0 8px', // Adds vertical space between rows
+        borderSpacing: '0 0', // Reduced vertical space between rows
     },
     tableRow: {
         '&:hover': {
@@ -80,16 +80,6 @@ const projects = [
         author: "Wong Wei Hao"
     },
     {
-        name: "StorySight",
-        url: "https://github.com/abiral-manandhar/storySight",
-        description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
-    },
-    {
-        name: "FlowGPT",
-        url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-        description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
-    },
-    {
         name: "Anyai",
         url: "#",
         description: "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
@@ -98,13 +88,31 @@ const projects = [
     {
         name: "OpenHive",
         url: "https://discord.gg/Zv3SXTF5xy",
-        description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!"
+        description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts, generate images using various AI tools, including Pollinations.ai!",
+        author: "@creativegpt"
+    },
+    {
+        name: "DynaSpark AI",
+        url: "https://dynaspark.onrender.com",
+        description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
+        author: "Th3-C0der",
+        repo: "https://github.com/Th3-C0der"
+    },
+    {
+        name: "StorySight",
+        url: "https://github.com/abiral-manandhar/storySight",
+        description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
     },
     {
         name: "Websim",
         url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
         description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
         author: "@thomash_pollinations"
+    },
+    {
+        name: "FlowGPT",
+        url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+        description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
     },
 ];
 

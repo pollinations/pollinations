@@ -1,31 +1,45 @@
 import React from 'react';
-import Markdown from 'markdown-to-jsx';
-import { Container, useMediaQuery } from '@material-ui/core';
+import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './styles';
+import { Colors } from '../../styles/global';
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        maxWidth: '100%', // Ensure the container does not exceed the width of its parent
+        maxWidth: '100%',
         margin: '0 auto',
         padding: theme.spacing(1),
-        overflowX: 'auto', // Add horizontal scroll if content overflows
+        overflowX: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center', // Center the content horizontally
+        alignItems: 'center',
     },
     table: {
         width: '100%',
-        maxWidth: '900px',
-        borderCollapse: 'collapse',
+        maxWidth: '800px',
+        borderCollapse: 'separate',
+        borderSpacing: '0 8px', // Adds vertical space between rows
     },
-    th: {
-        padding: theme.spacing(1),
-        fontSize: '1.2em',
+    tableRow: {
+        '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.05)', // Slight highlight on hover
+        },
     },
-    td: {
-        padding: theme.spacing(0.4),
-        fontSize: '1.1em',
+    tableCell: {
+        border: 'none', // Removes cell borders
+        padding: '8px 16px', // Tighter padding
+        fontSize: '1.1em', // Larger text size
+        '&:first-child': {
+            paddingLeft: 0, // Removes left padding for the first cell
+        },
+        '&:last-child': {
+            paddingRight: 0, // Removes right padding for the last cell
+        },
+    },
+    projectImage: {
+        width: '48px', // Smaller image size
+        height: '48px',
+        objectFit: 'cover',
     },
 }));
 
@@ -112,42 +126,83 @@ const ProjectsSection = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const markdownContent = `
-|  |  |  |
-|--------------|-------------|------|
-${projects.map(project => `| ${isMobile ? '' : `![${project.name}](${generateImageUrl(project.name)})`} | [${project.name}](${project.url}) ${project.author ? `by ${project.author}` : ''} | ${project.description} ${project.repo ? `[GitHub Repository](${project.repo})` : ''} |`).join('\n')}
-`;
-
     return (
         <Container className={classes.root}>
             <ImageURLHeading>Integrations</ImageURLHeading>
-            <Markdown
-                options={{
-                    overrides: {
-                        table: {
-                            component: 'table',
-                            props: {
-                                className: classes.table,
-                            },
-                        },
-                        th: {
-                            component: 'th',
-                            props: {
-                                className: classes.th,
-                            },
-                        },
-                        td: {
-                            component: 'td',
-                            props: {
-                                className: classes.td,
-                            },
-                        },
-                    },
-                }}
-            >
-                {markdownContent}
-            </Markdown>
+            <Table className={classes.table}>
+                <TableBody>
+                    {projects.map((project, index) => (
+                        <TableRow key={index} className={classes.tableRow}>
+                            <TableCell className={classes.tableCell}>
+                                {!isMobile && (
+                                    <img
+                                        src={generateImageUrl(project.name)}
+                                        alt={project.name}
+                                        className={classes.projectImage}
+                                    />
+                                )}
+                            </TableCell>
+                            <TableCell className={classes.tableCell}>
+                                {renderProjectLink(project)}
+                                {project.author && (
+                                    <span style={{ marginLeft: '8px', color: Colors.white, fontSize: '1em' }}>
+                                        by {project.author}
+                                    </span>
+                                )}
+                            </TableCell>
+                            <TableCell className={classes.tableCell}>
+                                <span style={{ color: Colors.white, fontSize: '1em' }}>
+                                    {project.description}
+                                </span>
+                                {project.repo && renderRepoLink(project.repo)}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </Container>
+    );
+};
+
+const renderProjectLink = (project) => {
+    return (
+        <Link
+            href={project.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+                color: Colors.lime,
+                textDecoration: 'none',
+                fontWeight: 'bold',
+                fontSize: '1.1em', // Larger text size
+                '&:hover': {
+                    textDecoration: 'underline',
+                },
+            }}
+        >
+            {project.name}
+        </Link>
+    );
+};
+
+const renderRepoLink = (repoUrl) => {
+    return (
+        <Link
+            href={repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+                color: Colors.lime,
+                textDecoration: 'none',
+                marginLeft: '8px',
+                fontSize: '1.1em', // Larger text size
+                '&:hover': {
+                    textDecoration: 'underline',
+                },
+            }}
+        >
+            GitHub
+        </Link>
     );
 };
 

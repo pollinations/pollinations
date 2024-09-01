@@ -42,6 +42,7 @@ export default function Home() {
       <Discord />
       <TopBand />
       <CompaniesSection /> {/* Add the CompaniesSection */}
+      <TopBand />
     </Style>
   )
 }

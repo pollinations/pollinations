@@ -23,7 +23,7 @@ export const SocialLinks = ({ small, hideOnMobile, gap, invert }) => (
 )
 
 const IconImg = styled.img`
-width: ${props => props.small ? '14px' : '22px'};
+width: ${props => props.small ? '16px' : '22px'};
 height: auto;
 ${props => props.invert ? 'filter:invert(100%)' : ''};
 `

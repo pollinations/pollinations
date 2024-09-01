@@ -36,7 +36,7 @@ const Style = styled.div`
 width: 100%;
 height: 100%;
 position: relative;
-background-color: ${Colors.offwhite};
+background-color: ${Colors.background_body};
 
 display: flex;
 justify-content: center;

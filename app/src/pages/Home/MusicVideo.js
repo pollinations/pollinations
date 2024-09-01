@@ -1,182 +1,59 @@
 import styled from '@emotion/styled'
-import { MOBILE_BREAKPOINT, Colors, Fonts } from '../../styles/global';
+import { MOBILE_BREAKPOINT, Colors } from '../../styles/global';
 import { Container as ContainerBase, Flex } from './components';
-// import Swiper styles
-
 import Slider from "react-slick";
 import '../../assets/slick.min.css'
 import { ImageURLHeading } from './styles';
+import { useState, useRef } from 'react';
 
-const FeaturedApplicationsContent = [
-    {
-        title: 'AI Video',
-        description: <>
-            Dive into the world of AI-driven music videos crafted specifically for artists, installations, and events. We specialize in creating bespoke videos that bring your artistic visions to life.
-            <br /> <br />Ideal for musicians, event organizers, and visual artists seeking to enhance their projects with unique, compelling visuals.
-            <br /> <br />Let us help you transform your psychedelic ideas into stunning visual narratives.
-        </>,
-    },
-]
-
-const MusicVideo = props => {
-
-    return <Style>
-
-        <Container>
-
-
-            {
-                FeaturedApplicationsContent.map((item, idx) => <FeaturedApp {...item} right={idx % 2} />)
-            }
-
-        </Container>
-
-    </Style>
+const MusicVideo = () => {
+    return (
+        <Style>
+            <Container>
+                <Flex AlignItems='center' gap='0em'>
+                    <ImageURLHeading>AI Video</ImageURLHeading>
+                    <SubHeadline>Experience bespoke AI-driven music videos that bring your artistic visions to life. Perfect for musicians, event organizers, and visual artists.</SubHeadline>
+                    <VideoCarousel videos={[
+                        "https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0",
+                        "https://www.youtube-nocookie.com/embed/x5XQdW87aQE?controls=0",
+                        "https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0"
+                    ]} />
+                </Flex>
+            </Container>
+        </Style>
+    );
 }
 
 export default MusicVideo
 
 const Container = styled(ContainerBase)`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  `
+  align-items: center;
+`
 
 const Style = styled.div`
-  width: 100%;
-  height: 100%;
-  position: relative;
-  z-index:0;
-
   display: flex;
   justify-content: center;
-  padding: 1em 0;
-  padding-bottom: 5em;
-  `
+
+`
 
 const SubHeadline = styled.p`
-    font-style: normal;
-    font-weight: 400;
-    font-size: 32px;
-    line-height: 30px;
-    text-align: center;
+  max-width: 65%;
+  font-weight: 400;
+  font-size: 24px;
+  text-align: center;
+  color: ${Colors.offwhite};
+  margin: 0 0 2em;
 
-    /* lime */
-    color: ${Colors.offblack};
-
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    max-width: 100%;
+    font-size: 18px;
     margin: 0;
-    margin-bottom: 2em;
-    @media (max-width: ${MOBILE_BREAKPOINT}) {
-        max-width: 600px;
-        font-size: 18px;
-        line-height: 15px;
-        margin: 0;
-    }
+  }
 `
 
-const Slides = [
-    { type: 'img', src: './sarkis.png' },
-    { type: 'img', src: './rampue.png' },
-    { type: 'img', src: './inc.png' },
-    { type: 'img', src: './rampue1.png' },
-]
-const FeaturedApp = props => {
-
-    const { title, subtitle, description, img, right, imgs, video } = props;
-
-
-
-    const Media = props => {
-        if (props.img) return <FeatureAppImg src={img} />;
-        if (props.imgs) return <SlickSlider imgs={imgs} pad={title !== 'Busy Bee'} />;
-        if (props.video) return <FeatureAppVideo src={video} playsInline autoPlay muted />;
-        return <></>;
-    }
-
-    return <Flex AlignItems='center' gap='5em'>
-        <ImageURLHeading>{title}</ImageURLHeading>
-        <SubHeadline>
-            {subtitle}
-        </SubHeadline>
-        <GridTwoColumns>
-
-            <FeaturedAppStyle>
-                <p>
-                    {description}
-                </p>
-            </FeaturedAppStyle>
-            <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/HXCd1jmlL-g?si=FTz5JLj7FA8-dpZ9&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/x5XQdW87aQE?controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            <iframe width="75%" height="540" src="https://www.youtube-nocookie.com/embed/k_W8UtOO6vQ?si=dYDFG5nHTrXpGfId&amp;controls=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-        </GridTwoColumns>
-    </Flex>
-}
-
-const FeaturedAppStyle = styled.div`
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-padding: 0 40px;
-
-p {
-    align-self: flex-start;
-    font-family: 'Uncut-Sans-Variable';
-    font-style: normal;
-    font-weight: 400;
-    font-size: 24px;
-    line-height: 34px;
-    margin: 0;
-
-    color: ${Colors.offwhite};
-    @media (max-width: ${MOBILE_BREAKPOINT}) {
-        max-width: 600px;
-        font-size: 18px;
-        line-height: 18px;
-        margin: 0;
-        text-align: center;
-    }
-}
-`
-const FeatureAppImg = styled.img`
-// max-width: 500px;
-width: 100%;
-height: auto;
-// padding: 20px;
-border-radius: 0px;
-`
-const FeatureAppVideo = styled.video`
-// max-width: 500px;
-width: 100%;
-height: auto;
-border-radius: 0px;
-`
-
-const GridTwoColumns = styled.div`
-width: 100%;
-// max-width: 1110px;
-align-self: center;
-
-display: grid;
-grid-template-columns: 1fr;
-gap: 1em;
-margin: 2em 0;
-
-iframe {
-    margin: 3em auto;
-    padding: 2em 0;
-}
-
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  grid-template-columns: 1fr;
-}
-`;
-
-
-
-
-function SlickSlider({ imgs, pad }) {
-
-    if (!imgs) return <></>;
+function VideoCarousel({ videos }) {
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const sliderRef = useRef(null);
 
     const settings = {
         dots: false,
@@ -185,12 +62,52 @@ function SlickSlider({ imgs, pad }) {
         slidesToShow: 1,
         slidesToScroll: 1,
         arrows: false,
-        autoplay: true,
+        autoplay: false,
+        beforeChange: (oldIndex, newIndex) => setCurrentSlide(newIndex)
     };
 
-    return <Slider {...settings} style={{ width: '100%', padding: pad ? '2.5em' : '0em' }}>
-        {
-            imgs.map(img => <FeatureAppImg key={img} src={img} />)
+    const next = () => {
+        if (sliderRef.current) {
+            sliderRef.current.slickNext();
         }
-    </Slider>
+    };
+
+    const previous = () => {
+        if (sliderRef.current) {
+            sliderRef.current.slickPrev();
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: '1024px' }}>
+            <Slider ref={sliderRef} {...settings} slickGoTo={currentSlide}>
+                {videos.map((video, index) => (
+                    <div key={index} style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                        <iframe
+                            src={video}
+                            title={`YouTube video player ${index}`}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            style={{ position: 'relative', border: 'none', width:'100%', maxWidth: '1024px', height: '50vw', maxHeight: '600px' }}
+                        ></iframe>
+                    </div>
+                ))}
+            </Slider>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '10px' }}>
+                <StyledControl onClick={previous}>&lt;</StyledControl>
+                <StyledControl> {currentSlide + 1} / {videos.length} </StyledControl>
+                <StyledControl onClick={next}>&gt;</StyledControl>
+            </div>
+        </div>
+    );
 }
+
+const StyledControl = styled.button`
+    background: transparent;
+    border: none;
+    color: ${Colors.offwhite};
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+`;

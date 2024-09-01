@@ -1,14 +1,14 @@
-import styled from '@emotion/styled';
-import { Box, Container, Paper } from '@material-ui/core';
-import { Colors, Fonts, MOBILE_BREAKPOINT } from '../../styles/global';
-import { useMemo } from 'react';
+import styled from "@emotion/styled"
+import { Box, Container, Paper } from "@material-ui/core"
+import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
+import { useMemo } from "react"
 
 export const ImageStyle = styled.img`
   width: 100%;
   height: auto;
   max-width: 640px;
   max-height: 640px;
-`;
+`
 
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
@@ -17,9 +17,8 @@ export const GenerativeImageURLContainer = styled(Container)`
   padding: 0em;
   max-width: 960px;
   border-radius: 0px;
-    width: 90%;
-`;
-
+  width: 90%;
+`
 
 // export const ImageURLHeading = styled.p`
 //   font-family: ${Fonts.headline} !important;
@@ -43,21 +42,23 @@ export const GenerativeImageURLContainer = styled(Container)`
 //     margin: 30px auto;
 //   }
 //   `;
-export const ImageURLHeading = styled(({ children, className, whiteText = true, width = 500, height = 150 }) => {
-  const foregroundColor = whiteText ? 'white' : 'black';
-  const backgroundColor = whiteText ? 'black' : 'white';
-  const prompt = encodeURIComponent(`an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes,that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast.  Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out.  Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`);
-  const seed = useMemo(() => Math.floor(Math.random() * 10), []);
-  const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
+export const ImageURLHeading = styled(
+  ({ children, className, whiteText = true, width = 500, height = 150 }) => {
+    const foregroundColor = whiteText ? "white" : "black"
+    const backgroundColor = whiteText ? "black" : "white"
+    const prompt = encodeURIComponent(
+      `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes,that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast.  Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out.  Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
+    )
+    const seed = useMemo(() => Math.floor(Math.random() * 10), [])
+    const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
 
-  return (
-    <div className={className}>
-      <img src={imageUrl} alt={children} />
-    </div>
-  );
-})`
-
-
+    return (
+      <div className={className}>
+        <img src={imageUrl} alt={children} />
+      </div>
+    )
+  }
+)`
   text-align: center;
   margin: 60px auto;
 
@@ -70,7 +71,7 @@ export const ImageURLHeading = styled(({ children, className, whiteText = true, 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     margin: 0px auto;
   }
-`;
+`
 
 export const ImageContainer = styled(Paper)`
   margin: 0;
@@ -79,9 +80,9 @@ export const ImageContainer = styled(Paper)`
     height: auto;
     margin-bottom: 0px;
   }
-`;
+`
 
 export const URLExplanation = styled(Box)`
   margin: 0em;
   font-size: 0.9em;
-`;
+`

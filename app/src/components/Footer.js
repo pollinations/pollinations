@@ -30,7 +30,7 @@ const Footer = () => {
         </LogoContainer>
         <TermsLinkContainer>
           <StyledNavLink to="/terms">
-            <b>Terms & Conditions</b>
+            <b>TERMS & CONDITIONS</b>
           </StyledNavLink>
         </TermsLinkContainer>
       </FooterStyle>

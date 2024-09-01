@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Colors } from '../styles/global'; // Import Colors from global styles
 
 const selectedCharacterSet =
     "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,^`'. .:â–‘â–’â–“â–ˆ";
@@ -76,7 +77,14 @@ const AsciiArtGenerator = () => {
                 content += '\n';
             }
 
-            element.textContent = content;
+            // Center the content
+            const lines = content.split('\n');
+            const centeredContent = lines.map(line => {
+                const padding = ' '.repeat((cols - line.length) / 2);
+                return padding + line + padding;
+            }).join('\n');
+
+            element.textContent = centeredContent;
         }, 1_000 / 12); // 60 fps
 
         return () => {
@@ -90,11 +98,16 @@ const AsciiArtGenerator = () => {
             style={{
                 height: '100%',
                 overflow: 'hidden',
-                whiteSpace: 'pre',
                 width: '100%',
-                maxWidth: '600px',
+                maxWidth: '100%',
                 maxHeight: '150px',
-                margin: '0 auto',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                textAlign: 'center',
+                whiteSpace: 'pre',
+                backgroundColor: Colors.background_body, // Set background color
+                color: Colors.offblack, // Set text color
             }}
         />
     );

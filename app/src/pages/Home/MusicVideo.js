@@ -31,7 +31,7 @@ const FlexContainer = styled(Flex)`
   flex-direction: column;
   align-items: center;
   width: 100%;
-  margin: 1em;
+  margin: 2em;
 `
 
 const SubHeadline = styled.p`
@@ -78,7 +78,7 @@ function VideoCarousel({ videos }) {
   }
 
   return (
-    <div style={{ maxWidth: "100%", justifyContent: "center" }}>
+    <div style={{ maxWidth: "90%", justifyContent: "center" }}>
       <Slider ref={sliderRef} {...settings} slickGoTo={currentSlide}>
         {videos.map((video, index) => (
           <div

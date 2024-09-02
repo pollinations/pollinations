@@ -107,16 +107,26 @@ From rapid prototyping to full-scale applications, Pollinations.AI adapts to you
 
 Here are some exciting projects that integrate Pollinations.AI:
 
-1. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users.
-2. [Pollinator App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation.
-3. [Discord Bot](https://discord.com/oauth2/authorize?client_id=1123551005993357342): A Discord bot for generating images based on user prompts.
-4. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images.
-5. [Karma.yt](https://karma.yt): Uses Pollinations.ai for generating AI-driven content.
-6. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts.
-7. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
-8. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai.
-9. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
-10. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
+### Social Bots
+1. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)
+2. [WhatsApp Group](https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV): A WhatsApp group that allows you to generate images using Pollinations.ai. Created by @dg_karma.
+3. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images. Created by Wong Wei Hao.
+4. [Anyai](https://discord.com): A Discord bot and community that leverages Pollinations.ai for generating AI-driven content. Created by @meow_18838.
+5. [OpenHive](https://discord.gg/Zv3SXTF5xy): A Discord server that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using various AI tools, including Pollinations.ai! Created by @creativegpt.
+
+### Mobile & Web Applications
+6. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
+7. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts. Made using Django and Pollinations.ai.
+8. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai. Created by @thomash_pollinations.
+
+### Chat Integrations
+9. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images. [GitHub Repo](https://github.com/SillyTavern/SillyTavern)
+10. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
+11. [DynaSpark AI](https://dynaspark.onrender.com): An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
+
+### Development Tools
+12. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
+13. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 

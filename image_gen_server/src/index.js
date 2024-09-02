@@ -16,48 +16,18 @@ export let currentJobs = [];
 
 const queueFullImages = [readFileSync("./assets/queuefull1.png"), readFileSync("./assets/queuefull2.png"), readFileSync("./assets/queuefull3.png")];
 
-// this is used to create a queue per ip address
-const BOT_IP = "150.136.112.172";
-
-const ricUrl = "https://github.com/pollinations/rickroll-against-ddos/raw/main/Rick%20Astley%20-%20Never%20Gonna%20Give%20You%20Up%20(Remastered%204K%2060fps,AI)-(720p60).mp4";
 
 const ipQueue = {};
 
-
-const rickrollCount = {}; // Count of times each IP was rickrolled
-const rickrollData = {}; // Amount of data each IP has downloaded as a rickroll in GB
-
-
-const handleRickroll = (ip, res) => {
-  // Set CORS headers
+/**
+ * @function
+ * @param {Object} res - The response object.
+ */
+const setCORSHeaders = (res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  console.log("\x1b[36m%s\x1b[0m", "🚀🚀🚀 Redirecting IP: " + ip + " to rickroll 🎵🎵🎵");
-  rickrollCount[ip] += 1; // Increment rickroll count for this IP
-  rickrollData[ip] += 0.07; // Add 72.1MB (0.0721GB) to rickroll data for this IP
-  console.log(`[queue] IP: ${ip} has been rickrolled ${rickrollCount[ip]} times, downloading ${rickrollData[ip].toFixed(2)}GB of rickroll data.`);
-  res.writeHead(302, {
-    'Location': ricUrl
-  });
-  res.end();
-};
-
-
-// Function to log the top IP addresses by number of images in the queue
-const logTopIPsByQueueSize = (ipQueue) => {
-  const sortedIPs = Object.entries(ipQueue)
-    .map(([ip, queue]) => ({ ip, queueSize: queue.size + queue.pending }))
-    .sort((a, b) => b.queueSize - a.queueSize)
-    .slice(0, 5); // Get top 5 IPs
-
-  console.log("Top IPs by Queue Size:");
-  sortedIPs.forEach((ipInfo, index) => {
-    console.log(`${index + 1}. IP: ${ipInfo.ip}, Queue Size: ${ipInfo.queueSize}`);
-  });
-};
-
+}
 
 /** 
  * @async
@@ -67,11 +37,6 @@ const logTopIPsByQueueSize = (ipQueue) => {
  * @returns {Promise<Object|boolean>}
  */
 const preMiddleware = async function (pathname, req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   console.error("requestListener", req.url);
 
   if (pathname.startsWith("/feed")) {
@@ -149,11 +114,6 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
  * @returns {Promise<void>}
  */
 const checkCacheAndGenerate = async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   let { pathname, query } = parse(req.url, true);
 
   const needsProcessing = await preMiddleware(pathname, req, res);
@@ -230,7 +190,12 @@ const checkCacheAndGenerate = async (req, res) => {
 
 };
 
-const server = http.createServer(checkCacheAndGenerate);
+// Modify the server creation to set CORS headers for all requests
+const server = http.createServer((req, res) => {
+  setCORSHeaders(res);
+  checkCacheAndGenerate(req, res);
+});
+
 // Set the timeout to 5 minutes (300,000 milliseconds)
 // server.setTimeout(300000, (socket) => {
 //   console.log('Request timed out.');

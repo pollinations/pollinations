@@ -80,15 +80,16 @@ const PageLayout = styled(BaseContainer)`
     font-family: "Uncut-Sans-Variable";
     font-style: normal;
     font-weight: 500;
-    font-size: 46px;
+    font-size: 36px;
     line-height: 58px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
     margin-top: 1.6em;
     letter-spacing: -0.02em;
     margin-bottom: 1em;
+    margin-top: 3em;
 
     @media (max-width: ${MOBILE_BREAKPOINT}) {
-      font-size: 36px;
+      font-size: 30px;
       line-height: 40px;
       margin-bottom: 1.6em;
       margin-top: 1.6em;

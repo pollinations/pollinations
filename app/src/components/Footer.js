@@ -1,13 +1,10 @@
 import styled from "@emotion/styled"
-import Logo from "./Logo"
-
 import { NavLink } from "react-router-dom"
-
 import { SocialLinks } from "./Social"
-
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../styles/global"
 import { LinkStyle } from "../pages/Home/components"
 import DescriptionIcon from "@material-ui/icons/Description"
+import { ImageURLHeading } from "../pages/Home/styles"
 
 const Footer = () => {
   return (
@@ -25,7 +22,12 @@ const Footer = () => {
         </SocialContainer>
         <LogoContainer>
           <NavLink to="/">
-            <Logo size="250px" small="225px" margin="0" />
+            <ImageURLHeading
+              whiteText={false}
+              width={250}
+              height={100}
+              customPrompt={`an image with the text "Pollinations" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. The text should take all the space without any margins.`}
+            />
           </NavLink>
         </LogoContainer>
         <TermsLinkContainer>

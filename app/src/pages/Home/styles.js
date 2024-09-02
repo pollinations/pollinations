@@ -20,35 +20,12 @@ export const GenerativeImageURLContainer = styled(Container)`
   width: 90%;
 `
 
-// export const ImageURLHeading = styled.p`
-//   font-family: ${Fonts.headline} !important;
-//   font-style: normal  !important;
-//   font-size: 100px !important;
-//   text-align: center;
-//   margin: 0;
-//   margin-top: 60px;
-//   margin-bottom: 60px;
-//   text-transform: capitalize !important;
-//   color: ${Colors.offwhite};
-
-//   span {
-//     font-family: ${Fonts.headline};
-//     color: ${Colors.lime};
-//   }
-
-//   @media (max-width: ${MOBILE_BREAKPOINT}) {
-//     font-size: 58px;
-//     line-height: 100px;
-//     margin: 30px auto;
-//   }
-//   `;
 export const ImageURLHeading = styled(
-  ({ children, className, whiteText = true, width = 500, height = 150 }) => {
+  ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
     const foregroundColor = whiteText ? "white" : "black"
     const backgroundColor = whiteText ? "black" : "white"
-    const prompt = encodeURIComponent(
-      `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes,that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast.  Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out.  Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
-    )
+    const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
+    const prompt = encodeURIComponent(customPrompt || defaultPrompt)
     const seed = useMemo(() => Math.floor(Math.random() * 10), [])
     const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
 

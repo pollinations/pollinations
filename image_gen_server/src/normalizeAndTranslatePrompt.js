@@ -4,42 +4,39 @@ import { pimpPrompt } from './groqPimp.js';
 
 const memoizedPrompts = new Map();
 
-export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, safeParams = {}) => {
+export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInfo, safeParams = {}) => {
+
+
+  // if it is not a string make it a string
+
+  originalPrompt = "" + originalPrompt;
+  let prompt = originalPrompt;
+
+  console.log("promptRaw", prompt);
+
   let { enhance = false, seed } = safeParams;
-  const slashCount = (promptRaw.match(/\//g) || []).length;
-  const slashPercentage = (slashCount / promptRaw.length) * 100;
-  if (slashPercentage > 1 || promptRaw.length < 100) {
+
+  if (prompt.length < 100) {
     enhance = true;
-    // replace slashes with spaces
-    promptRaw = promptRaw.replace(/\//g, ' ');
   }
 
-  if (memoizedPrompts.has(promptRaw)) {
-    return memoizedPrompts.get(promptRaw);
+  if (memoizedPrompts.has(prompt)) {
+    return memoizedPrompts.get(prompt);
   }
 
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
   // first 200 characters are used for the prompt
-  promptRaw = urldecode(promptRaw);
+  prompt = urldecode(prompt);
 
-  // if it is not a string make it a string
-  if (typeof promptRaw !== "string") {
-    promptRaw = "" + promptRaw;
-  }
+  prompt = sanitizeString(prompt);
 
-
-  // promptRaw = promptRaw.slice(0, 250);
-  // 
-  promptRaw = sanitizeString(promptRaw);
-
-  let prompt = promptRaw;
 
   // check from the request headers if the user most likely speaks english (value starts with en)
   const englishLikely = req.headers["accept-language"]?.startsWith("en");
 
   if (!englishLikely) {
     const startTime = Date.now();
-    const detectedLanguage = await detectLanguage(promptRaw);
+    const detectedLanguage = await detectLanguage(prompt);
     if (detectedLanguage !== "en") {
       enhance = true;
     }
@@ -51,15 +48,15 @@ export const normalizeAndTranslatePrompt = async (promptRaw, req, timingInfo, sa
     // enhance = true;
   }
 
-  let finalPrompt = prompt || promptRaw;
+
 
   if (enhance) {
-    finalPrompt = await pimpPrompt(finalPrompt, seed);
-    console.log(`Pimped prompt: ${finalPrompt}`);
+    prompt = await pimpPrompt(prompt, seed);
+    console.log(`Pimped prompt: ${prompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  memoizedPrompts.set(promptRaw, finalPrompt);
+  memoizedPrompts.set(prompt, prompt);
 
-  return { prompt: finalPrompt, wasPimped: enhance };
+  return { prompt: prompt, wasPimped: enhance };
 };

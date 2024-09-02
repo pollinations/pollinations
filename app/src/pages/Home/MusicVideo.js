@@ -78,7 +78,7 @@ function VideoCarousel({ videos }) {
   }
 
   return (
-    <div style={{ maxWidth: "90%", justifyContent: "center" }}>
+    <div style={{ maxWidth: "960px", justifyContent: "center" }}>
       <Slider ref={sliderRef} {...settings} slickGoTo={currentSlide}>
         {videos.map((video, index) => (
           <div
@@ -95,7 +95,7 @@ function VideoCarousel({ videos }) {
                 border: "none",
                 width: "100%",
                 height: "50vw",
-                maxHeight: "600px",
+                maxHeight: "540px",
               }}
             ></iframe>
           </div>

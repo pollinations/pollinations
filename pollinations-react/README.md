@@ -1,11 +1,11 @@
-# @pollinations-react
+# pollinations-react
 
 A simple React package for generating images using Pollinations' API.
 
 ## Installation
 
 ```bash
-npm install @pollinations-react
+npm install pollinations-react
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ The `usePollinationsImage` hook allows you to generate images using Pollinations
 
 ```javascript
 import React from 'react';
-import { usePollinationsImage } from '@pollinations-react';
+import { usePollinationsImage } from 'pollinations-react';
 
 const MyComponent = () => {
   const imageUrl = usePollinationsImage('A beautiful sunset over the ocean');
@@ -37,7 +37,7 @@ The `PollinationsImage` component simplifies the process of generating and displ
 
 ```javascript
 import React from 'react';
-import { PollinationsImage } from '@pollinations-react';
+import { PollinationsImage } from 'pollinations-react';
 
 const MyComponent = () => (
   <PollinationsImage prompt="A beautiful sunset over the ocean" />

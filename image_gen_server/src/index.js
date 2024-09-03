@@ -126,10 +126,11 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const { disableCache, ...safeParams } = makeParamsSafe(query);
 
-  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
+  const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
+
+  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"], referrer };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
   try {
     // Cache the generated image
@@ -187,7 +188,9 @@ const checkCacheAndGenerate = async (req, res) => {
     console.error("error", error);
     res.end('500: Internal Server Error');
 
-    sendToAnalytics(req, "imageGenerationError", analyticsMetadata);
+    sendToAnalytics(req, "imageGenerationError", { ...analyticsMetadata, error: error.message });
+    // exit process
+    // process.exit(1);
   }
 
 };

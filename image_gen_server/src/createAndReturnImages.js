@@ -8,6 +8,7 @@ import { fileTypeFromBuffer } from 'file-type';
 import { getNextFluxServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { MODELS } from './models.js';
+import { sanitizeString } from './translateIfNecessary.js';
 
 const SERVER_URL = 'http://ec2-34-197-29-104.compute-1.amazonaws.com:5002/generate';
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
@@ -33,7 +34,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   const steps = concurrentRequests < 6 ? 4 : concurrentRequests < 10 ? 3 : concurrentRequests < 16 ? 2 : 1;
 
   try {
-    prompt = sanitizePrompt(prompt);
+    prompt = sanitizeString(prompt);
     const body = {
       "prompts": [prompt],
       "width": safeParams.width,
@@ -118,6 +119,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
 const callMeoow = async (prompt, safeParams) => {
   try {
     const url = new URL(MEOOW_SERVER_URL);
+    prompt = sanitizeString(prompt);
     url.searchParams.append('prompt', prompt);
 
     const closestRatio = calculateClosestAspectRatio(safeParams.width, safeParams.height);
@@ -335,16 +337,3 @@ async function resizeImage(buffer, width, height) {
   });
 }
 
-
-/**
- * Sanitizes the prompt by removing potentially dangerous characters for filenames.
- * Allows Unicode letters, numbers, spaces, and hyphens. Replaces newlines with spaces.
- * @param {string} prompt - The original prompt.
- * @returns {string} - The sanitized prompt.
- */
-function sanitizePrompt(prompt) {
-  return prompt
-    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')  // Remove control characters
-    .replace(/[\uD800-\uDFFF]/g, '')               // Remove surrogate pairs
-    .replace(/[\uFFFE\uFFFF]/g, '')                // Remove non-characters
-}

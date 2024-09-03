@@ -37,5 +37,17 @@ export function ModelInfo({ model, wasPimped, referrer }) {
         return renderModelInfo("Flux.Schnell", "https://blackforestlabs.ai/", null);
     }
 
+    if (model === "flux-anime") {
+        return renderModelInfo("Flux.Anime", "https://llmplayground.net/", null);
+    }
+
+    if (model === "flux-3d") {
+        return renderModelInfo("Flux.3D", "https://llmplayground.net/", null);
+    }
+
+    if (model === "flux-realism") {
+        return renderModelInfo("Flux.Realism", "https://llmplayground.net/", null);
+    }
+
     return null;
 }

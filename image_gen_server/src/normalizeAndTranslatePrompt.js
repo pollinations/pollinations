@@ -14,9 +14,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
   console.log("promptRaw", prompt);
 
-  let { enhance = false, seed } = safeParams;
+  let { enhance, seed } = safeParams;
 
-  if (prompt.length < 100) {
+  if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
     enhance = true;
   }
 

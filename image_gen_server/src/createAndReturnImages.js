@@ -5,7 +5,6 @@ import tempfile from 'tempfile';
 import fs from 'fs';
 // import { sendToFeedListeners } from './feedListeners.js';
 import FormData from 'form-data';
-import { ExifTool } from 'exiftool-vendored';
 import { fileTypeFromBuffer } from 'file-type';
 import { getNextFluxServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
@@ -344,9 +343,7 @@ async function resizeImage(buffer, width, height) {
  */
 function sanitizePrompt(prompt) {
   return prompt
-  //     .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')  // Remove control characters
-  //     .replace(/[/\\?%*:|"<>]/g, '')                 // Remove characters illegal in filenames
-  //     .replace(/\s+/g, ' ')                          // Replace multiple spaces and newlines with a single space
-  //     .replace(/[^\p{L}\p{N}\s-]/gu, '')             // Keep Unicode letters, numbers, spaces, and hyphens
-  //     .trim();                                       // Remove leading and trailing whitespace
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')  // Remove control characters
+    .replace(/[\uD800-\uDFFF]/g, '')               // Remove surrogate pairs
+    .replace(/[\uFFFE\uFFFF]/g, '')                // Remove non-characters
 }

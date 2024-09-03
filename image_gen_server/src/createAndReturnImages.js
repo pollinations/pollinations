@@ -11,6 +11,7 @@ import { getNextFluxServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 
 const SERVER_URL = 'http://ec2-34-197-29-104.compute-1.amazonaws.com:5002/generate';
+const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
 
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
@@ -30,16 +31,9 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  // steps depends on the concurrent requests
-  // if there are less then 3 use 4 steps
-  // if there are less than 4 use 3 steps
-  // if there are less than 5 use 2 steps
-  // if there are less than 6 use 1 step
-
   const steps = concurrentRequests < 6 ? 4 : concurrentRequests < 10 ? 3 : concurrentRequests < 16 ? 2 : 1;
 
   try {
-    // const prompts = jobs.map(({ prompt }) => sanitizePrompt(prompt));
     prompt = sanitizePrompt(prompt);
     const body = {
       "prompts": [prompt],
@@ -97,12 +91,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     }
 
     const jsonResponse = await response.json();
-    // let images = jsonResponse;
 
-    // // if images is not an array make it an array
-    // if (!Array.isArray(images)) {
-    //   images = [images];
-    // }
     const { image, ...rest } = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
 
     if (!image) {
@@ -112,21 +101,68 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
 
     console.log("decoding base64 image");
 
-    const buffer = Buffer.from(image, 'base64');
-    let tempImageFile;
-    const { ext } = await fileTypeFromBuffer(buffer);
-    tempImageFile = tempfile({ extension: ext });
-    fs.writeFileSync(tempImageFile, buffer);
-
-    const bufferWithMetadata = fs.readFileSync(tempImageFile); // Re-read to get the version with metadata
-    if (tempImageFile) fs.unlinkSync(tempImageFile);
-    return { buffer: bufferWithMetadata, ...rest };
+    return { buffer: image, ...rest };
 
   } catch (e) {
     console.error('Error in callWebUI:', e);
     throw e;
   }
 };
+/**
+ * Calls the Meoow API with the given parameters and returns image buffers.
+ * @param {string} prompt - The prompt for the image generation.
+ * @param {Object} safeParams - The safe parameters for the image generation.
+ * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
+ */
+const callMeoow = async (prompt, safeParams) => {
+  try {
+    const url = new URL(MEOOW_SERVER_URL);
+    url.searchParams.append('prompt', prompt);
+
+    // Calculate the closest aspect ratio they support from the size
+    const aspectRatios = ['1:1', '16:9', '9:16', '21:9', '9:21', '1:2', '2:1'];
+    const width = safeParams.width;
+    const height = safeParams.height;
+    const ratio = width / height;
+    let closestRatio = aspectRatios[0];
+    let closestDifference = Math.abs(ratio - 1);
+
+    aspectRatios.forEach(ar => {
+      const [w, h] = ar.split(':').map(Number);
+      const arRatio = w / h;
+      const difference = Math.abs(ratio - arRatio);
+      if (difference < closestDifference) {
+        closestDifference = difference;
+        closestRatio = ar;
+      }
+    });
+
+    url.searchParams.append('size', closestRatio);
+    url.searchParams.append('seed', safeParams.seed);
+    url.searchParams.append('model', safeParams.model);
+    console.log("calling meoow", url.toString(), "aspect ratio", closestRatio);
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000, // 30 seconds timeout
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
+    }
+
+    const buffer = await response.buffer();
+    return { buffer: buffer, has_nsfw_concept: false, concept: null };
+
+  } catch (e) {
+    console.error('Error in callMeoow:', e);
+    throw e;
+  }
+};
+
+
 
 /**
  * Checks if the image is NSFW.
@@ -150,15 +186,19 @@ const nsfwCheck = async (buffer) => {
  * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests) {
-  const bufferAndMaturity = await callWebUI(prompt, safeParams, concurrentRequests);
+  let bufferAndMaturity;
+  if (safeParams.model === "flux-realism" || safeParams.model === "flux-anime" || safeParams.model === "flux-3d") {
+    bufferAndMaturity = await callMeoow(prompt, safeParams);
+  } else {
+    bufferAndMaturity = await callWebUI(prompt, safeParams, concurrentRequests);
+  }
 
   let isMature = bufferAndMaturity.has_nsfw_concept;
   const concept = bufferAndMaturity.concept;
   const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
   console.error("isMature", isMature, "concepts", isChild);
 
-
-  const logoPath = safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature ? null : 'logo.png';
+  const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
   // Resize the final image to the user's desired size
@@ -179,14 +219,27 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 }
 
 /**
+ * Determines the appropriate logo path based on the parameters and maturity flags.
+ * @param {Object} safeParams - The safe parameters for the image generation.
+ * @param {boolean} isChild - Flag indicating if the image is considered child content.
+ * @param {boolean} isMature - Flag indicating if the image is considered mature content.
+ * @returns {string|null} - The path to the logo file or null if no logo should be added.
+ */
+function getLogoPath(safeParams, isChild, isMature) {
+  if (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature) {
+    return null;
+  }
+  return (safeParams.model === "flux-realism" || safeParams.model === "flux-anime" || safeParams.model === "flux-3d") ? 'logo_meoow.png' : 'logo.png';
+}
+
+/**
  * Adds a logo to the image using ImageMagick.
  * @param {Buffer} buffer - The image buffer.
  * @param {string} logoPath - The path to the logo file.
  * @param {Object} safeParams - Parameters for adjusting the logo size.
  * @returns {Promise<Buffer>} - The image buffer with the logo added.
  */
-async function
-  addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
+async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeParams) {
   const { ext } = await fileTypeFromBuffer(buffer);
   const tempImageFile = tempfile({ extension: ext });
   const tempOutputFile = tempfile({ extension: "jpg" });

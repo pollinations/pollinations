@@ -1,4 +1,3 @@
-
 /**
  * Sanitizes and adjusts parameters for image generation.
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
@@ -41,8 +40,12 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         height = Math.floor(height * ratio);
     }
 
-    if (model !== "flux")// && model !== "turbo")
+    // Ensure model is one of the allowed models or default to "flux"
+    const allowedModels = ["flux", "flux-realism", "flux-anime", "flux-3d"];
+    if (!allowedModels.includes(model)) {
         model = "flux";
+    }
+
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, disableCache };
 };
 

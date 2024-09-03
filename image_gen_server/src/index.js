@@ -12,6 +12,8 @@ import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js
 import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { readFileSync } from 'fs';
+import { MODELS } from './models.js';
+
 export let currentJobs = [];
 
 const queueFullImages = [readFileSync("./assets/queuefull1.png"), readFileSync("./assets/queuefull2.png"), readFileSync("./assets/queuefull3.png")];
@@ -124,10 +126,11 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const { disableCache, ...safeParams } = makeParamsSafe(query);
 
-  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
+  const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
+
+  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"], referrer };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const referrer = req.headers.referer || req.headers.referrer;
 
   try {
     // Cache the generated image
@@ -149,7 +152,7 @@ const checkCacheAndGenerate = async (req, res) => {
           const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
 
           console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          if (queueSize >= 40) {
+          if (queueSize >= 20) {
             throw new Error("ip queue full");
           }
 
@@ -185,7 +188,9 @@ const checkCacheAndGenerate = async (req, res) => {
     console.error("error", error);
     res.end('500: Internal Server Error');
 
-    sendToAnalytics(req, "imageGenerationError", analyticsMetadata);
+    sendToAnalytics(req, "imageGenerationError", { ...analyticsMetadata, error: error.message });
+    // exit process
+    // process.exit(1);
   }
 
 };
@@ -193,6 +198,13 @@ const checkCacheAndGenerate = async (req, res) => {
 // Modify the server creation to set CORS headers for all requests
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
+
+  if (req.url === '/models') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(Object.keys(MODELS)));
+    return;
+  }
+
   checkCacheAndGenerate(req, res);
 });
 

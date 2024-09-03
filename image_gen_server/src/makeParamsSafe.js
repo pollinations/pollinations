@@ -1,9 +1,11 @@
+import { MODELS } from './models.js';
+
 /**
  * Sanitizes and adjusts parameters for image generation.
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
     refine = sanitizeBoolean(refine);
@@ -11,7 +13,13 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed);
 
-    const sideLength = idealSideLength[model] || idealSideLength["turbo"];
+    // Ensure model is one of the allowed models or default to "flux"
+    const allowedModels = Object.keys(MODELS);
+    if (!allowedModels.includes(model)) {
+        model = "flux";
+    }
+
+    const sideLength = MODELS[model].idealSideLength;
     const maxPixels = sideLength * sideLength;
 
     // Ensure width and height are integers or default to sideLength
@@ -40,24 +48,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         height = Math.floor(height * ratio);
     }
 
-    // Ensure model is one of the allowed models or default to "flux"
-    const allowedModels = ["flux", "flux-realism", "flux-anime", "flux-3d"];
-    if (!allowedModels.includes(model)) {
-        model = "flux";
-    }
+
 
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, disableCache };
-};
-
-
-const idealSideLength = {
-    turbo: 1024,
-    flux: 768,
-    deliberate: 640,
-    dreamshaper: 800,
-    formulaxl: 800,
-    playground: 960,
-    dpo: 768,
-    dalle3xl: 768,
-    realvis: 768,
 };

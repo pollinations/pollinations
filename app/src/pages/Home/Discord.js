@@ -1,101 +1,108 @@
-import styled from '@emotion/styled'
-import Star6Img from '../../assets/imgs/star_6.png'
-import { useMemo } from 'react'
+import styled from "@emotion/styled"
+import { useMemo } from "react"
+import { Colors, MOBILE_BREAKPOINT, Fonts } from "../../styles/global"
+import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./components"
+import { Link } from "react-router-dom"
+import { GenerativeImageURLContainer, ImageURLHeading } from "./styles"
+import discordLogo from "../../assets/imgs/discord_logo.png"
 
-import { Colors, MOBILE_BREAKPOINT, Fonts } from '../../styles/global'
-import { Star as StarBase, LinkStyle, Container as ContainerBase } from './components'
-import { Link } from 'react-router-dom'
-
-const DiscordSection = props => {
-  const discordLogoPrompt = encodeURIComponent("Create a black logo with black text to the right on almost white background - #FAFAFA. occupying all image featuring the \"Discord\" logo with the text \"Discord\" in a modern, sans-serif font. The font should be clean, rounded, and bold, giving it a friendly and approachable look. The logo should include the iconic Discord emblem—a simplified, abstract face with two eyes and a wide mouth—placed to the left of the text. Ensure the design is clear and visually cohesive. The overall style should convey a sense of modernity and connectivity. Incorporate elements related to pollinations, such as flowers, insects, and other organic forms, into the design of the font. black and white");
-  const seed = useMemo(() => Math.floor(Math.random() * 10), []);
-  const discordLogoUrl = `https://image.pollinations.ai/prompt/${discordLogoPrompt}?seed=${seed}&width=500&height=150`;
-
-  return <Style>
-    <Container>
-      <Link to="https://discord.gg/k9F7SyTgqn'"><DiscordLogo src={discordLogoUrl} alt="discord" /></Link>
-      <Body>
-
-        Discuss, get help and <br />
-        contribute on Discord.
-        <br />
-        <br />
-        <LinkStyle href='https://discord.gg/k9F7SyTgqn' style={{ zIndex: 10 }}>
-          join our discord
-        </LinkStyle>
-      </Body>
-      <Star src={Star6Img} />
-    </Container>
-  </Style>
+const DiscordSection = (props) => {
+  return (
+      <Container>
+        <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
+          <DiscordLogoHeading>Discord</DiscordLogoHeading>
+        </CenteredLink>
+        <Body>
+          <TextWithLogo>
+            <Logo src={discordLogo} alt="Discord Logo" />
+            <Text>
+              Discuss, get help and <br />
+              contribute on Discord.
+            </Text>
+          </TextWithLogo>
+          <br />
+          <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
+            <b>join our discord</b>
+          </LinkStyle>
+        </Body>
+      </Container>
+  )
 }
 
 export default DiscordSection
 
-
-const Style = styled.div`
-width: 100%;
-height: 100%;
-position: relative;
-background-color: ${Colors.offwhite};
-
-display: flex;
-justify-content: center;
-align-items: center;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  min-height: 674px;
-}
-`
 const Container = styled(ContainerBase)`
-position: relative;
-min-height: 551px;
-width: 100%;
-height: 100%;
+  position: relative;
+  min-height: auto;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 0px;
+    background-color: ${Colors.background_body};
 
-display: flex;
-flex-wrap: wrap;
-flex-direction: row;
-justify-content: center;
-align-items: center;
-gap: 100px;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    flex-direction: column;
+    gap: 0px;
+  }
+`
 
-@media (max-width: ${MOBILE_BREAKPOINT}) {
+const CenteredLink = styled(Link)`
+  display: flex;
+  justify-content: center;
+  width: 100%;
+`
+
+const DiscordLogoHeading = styled((props) => <ImageURLHeading {...props} whiteText={false} />)`
+  width: 100%;
+  max-width: 500px;
+`
+
+const Body = styled.div`
+  font-family: ${Fonts.body};
+  font-style: normal;
+  font-weight: 500;
+  font-size: 40px;
+  line-height: 50px;
+  color: ${Colors.offblack};
+  display: flex;
   flex-direction: column;
-  gap: 10px;
-}
+  align-items: center;
+  margin-bottom: 2em;
+
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    font-size: 24px;
+    line-height: 30px;
+  }
 `
 
-const DiscordLogo = styled.img`
-width: 100%;
-max-width: 500px;
-height: auto;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  max-width: 260px;
-  margin-top: 10em;
-}
+const TextWithLogo = styled.div`
+  display: flex;
+  align-items: center;
+  text-align: center;
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    flex-direction: column;
+  }
 `
 
-const Star = styled(StarBase)`
-width: 60px;
-height: 60px;
-top: 88px;
-left: 50%;
-transform: translateX(-50%);
+const Text = styled.div`
+  display: flex;
+  flex-direction: column;
 `
 
-const Body = styled.p`
-margin-top: 3em;
-font-family: ${Fonts.body};
-font-style: normal;
-font-weight: 500;
-font-size: 40px;
-line-height: 50px;
+const Logo = styled.img`
+  width: 90px;
+  height: auto;
+  margin-right: 40px;
 
-color: ${Colors.offblack};
-
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  font-size: 36px;
-  line-height: 45px;
-  margin: 0;
-  margin-top: 60px;
-}
-`;
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    margin-right: 0;
+      width: 60px;
+  height: auto;
+    margin-bottom: 20px;
+  }
+`

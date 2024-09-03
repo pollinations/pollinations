@@ -27,6 +27,9 @@ export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoadi
                             >
                                 <MenuItem value="turbo">Turbo</MenuItem>
                                 <MenuItem value="flux">Flux</MenuItem>
+                                <MenuItem value="flux-realism">Flux-Realism</MenuItem>
+                                <MenuItem value="flux-anime">Flux-Anime</MenuItem>
+                                <MenuItem value="flux-3d">Flux-3D</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>

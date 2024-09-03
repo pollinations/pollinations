@@ -12,6 +12,8 @@ import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js
 import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { readFileSync } from 'fs';
+import { MODELS } from './models.js';
+
 export let currentJobs = [];
 
 const queueFullImages = [readFileSync("./assets/queuefull1.png"), readFileSync("./assets/queuefull2.png"), readFileSync("./assets/queuefull3.png")];
@@ -193,6 +195,13 @@ const checkCacheAndGenerate = async (req, res) => {
 // Modify the server creation to set CORS headers for all requests
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
+
+  if (req.url === '/models') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(Object.keys(MODELS)));
+    return;
+  }
+
   checkCacheAndGenerate(req, res);
 });
 

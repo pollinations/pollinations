@@ -1,4 +1,3 @@
-import urldecode from 'urldecode';
 import { exec } from 'child_process';
 import fetch from 'node-fetch';
 import tempfile from 'tempfile';
@@ -8,6 +7,7 @@ import FormData from 'form-data';
 import { fileTypeFromBuffer } from 'file-type';
 import { getNextFluxServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
+import { MODELS } from './models.js';
 
 const SERVER_URL = 'http://ec2-34-197-29-104.compute-1.amazonaws.com:5002/generate';
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
@@ -52,7 +52,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        const chosenServer = safeParams.model === "flux" ? getNextFluxServerUrl() : SERVER_URL;
+        const chosenServer = safeParams.model === 'flux' ? getNextFluxServerUrl() : SERVER_URL;
         response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
@@ -195,7 +195,8 @@ const nsfwCheck = async (buffer) => {
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests) {
   let bufferAndMaturity;
-  if (safeParams.model === "flux-realism" || safeParams.model === "flux-anime" || safeParams.model === "flux-3d") {
+  const meoowModels = Object.keys(MODELS).filter(model => MODELS[model] === 'meoow');
+  if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
   } else {
     bufferAndMaturity = await callWebUI(prompt, safeParams, concurrentRequests);
@@ -237,7 +238,7 @@ function getLogoPath(safeParams, isChild, isMature) {
   if (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature) {
     return null;
   }
-  return (safeParams.model === "flux-realism" || safeParams.model === "flux-anime" || safeParams.model === "flux-3d") ? 'logo_meoow.png' : 'logo.png';
+  return MODELS[safeParams.model] === 'meoow' ? 'logo_meoow.png' : 'logo.png';
 }
 
 /**

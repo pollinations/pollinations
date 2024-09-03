@@ -10,6 +10,7 @@ import uvicorn
 import logging
 import traceback
 from PIL import Image
+import json
 
 SAFETY_CHECKER = False
 
@@ -148,7 +149,17 @@ async def generate(request: Request):
     global total_request_time_accumulated, first_request_time, request_count, percentage_time_processing_last_2_minutes
 
     try:
-        data = await request.json()
+        try:
+            raw_body = await request.body()
+            # Decode the bytes to a string (assuming UTF-8 encoding)
+            decoded_body = raw_body.decode('utf-8')
+            # Parse the decoded string as JSON
+            data = json.loads(decoded_body)
+        except Exception as e:
+            logger.error(f"Error in generate while parsing json: {e}")
+            logger.error(f"Response text: {decoded_body}")
+            logger.error(traceback.format_exc())
+            return JSONResponse(content={"error": str(e)}, status_code=500, headers={"Connection": "close"})
         prompts = data.get('prompts', ['children'])
 
         def convert_to_int(value, default):

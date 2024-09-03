@@ -10,6 +10,12 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   // if it is not a string make it a string
 
   originalPrompt = "" + originalPrompt;
+
+
+  if (memoizedPrompts.has(originalPrompt)) {
+    return memoizedPrompts.get(originalPrompt);
+  }
+
   let prompt = originalPrompt;
 
   console.log("promptRaw", prompt);
@@ -20,13 +26,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
     enhance = true;
   }
 
-  if (memoizedPrompts.has(prompt)) {
-    return memoizedPrompts.get(prompt);
-  }
 
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });
-  // first 200 characters are used for the prompt
-  prompt = urldecode(prompt);
+
 
   prompt = sanitizeString(prompt);
 
@@ -56,7 +58,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  memoizedPrompts.set(prompt, prompt);
+  memoizedPrompts.set(originalPrompt, { prompt: prompt, wasPimped: enhance });
 
   return { prompt: prompt, wasPimped: enhance };
 };

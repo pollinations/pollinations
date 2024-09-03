@@ -156,16 +156,16 @@ async def generate(request: Request):
                 return int(value)
             except (ValueError, TypeError):
                 return default
-        width = max((convert_to_int(data.get('width', 1024), 1024)), 32)
-        height = max((convert_to_int(data.get('height', 1024), 1024)), 32)
+        width = max((convert_to_int(data.get('width'), 1024)), 32)
+        height = max((convert_to_int(data.get('height'), 1024)), 32)
 
-        min_pixels = 800 * 800
-        current_pixels = width * height
+        # min_pixels = 800 * 800
+        # current_pixels = width * height
 
-        if current_pixels < min_pixels:
-            scale_factor = (min_pixels / current_pixels) ** 0.5
-            width = int(width * scale_factor)
-            height = int(height * scale_factor)
+        # if current_pixels < min_pixels:
+        #     scale_factor = (min_pixels / current_pixels) ** 0.5
+        #     width = int(width * scale_factor)
+        #     height = int(height * scale_factor)
 
         # ensure height and width are divisible by 8
         width = (width // 8) * 8

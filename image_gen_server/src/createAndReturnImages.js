@@ -101,7 +101,9 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
 
     console.log("decoding base64 image");
 
-    return { buffer: image, ...rest };
+    const buffer = Buffer.from(image, 'base64');
+
+    return { buffer, ...rest };
 
   } catch (e) {
     console.error('Error in callWebUI:', e);
@@ -119,23 +121,7 @@ const callMeoow = async (prompt, safeParams) => {
     const url = new URL(MEOOW_SERVER_URL);
     url.searchParams.append('prompt', prompt);
 
-    // Calculate the closest aspect ratio they support from the size
-    const aspectRatios = ['1:1', '16:9', '9:16', '21:9', '9:21', '1:2', '2:1'];
-    const width = safeParams.width;
-    const height = safeParams.height;
-    const ratio = width / height;
-    let closestRatio = aspectRatios[0];
-    let closestDifference = Math.abs(ratio - 1);
-
-    aspectRatios.forEach(ar => {
-      const [w, h] = ar.split(':').map(Number);
-      const arRatio = w / h;
-      const difference = Math.abs(ratio - arRatio);
-      if (difference < closestDifference) {
-        closestDifference = difference;
-        closestRatio = ar;
-      }
-    });
+    const closestRatio = calculateClosestAspectRatio(safeParams.width, safeParams.height);
 
     url.searchParams.append('size', closestRatio);
     url.searchParams.append('seed', safeParams.seed);
@@ -162,7 +148,30 @@ const callMeoow = async (prompt, safeParams) => {
   }
 };
 
+/**
+ * Calculates the closest aspect ratio from a list of predefined aspect ratios.
+ * @param {number} width - The width of the image.
+ * @param {number} height - The height of the image.
+ * @returns {string} - The closest aspect ratio as a string.
+ */
+function calculateClosestAspectRatio(width, height) {
+  const aspectRatios = ['1:1', '16:9', '9:16', '21:9', '9:21', '1:2', '2:1'];
+  const ratio = width / height;
+  let closestRatio = aspectRatios[0];
+  let closestDifference = Math.abs(ratio - 1);
 
+  aspectRatios.forEach(ar => {
+    const [w, h] = ar.split(':').map(Number);
+    const arRatio = w / h;
+    const difference = Math.abs(ratio - arRatio);
+    if (difference < closestDifference) {
+      closestDifference = difference;
+      closestRatio = ar;
+    }
+  });
+
+  return closestRatio;
+}
 
 /**
  * Checks if the image is NSFW.
@@ -202,7 +211,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
   // Resize the final image to the user's desired size
-  bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+  // bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
   // // blure image if isChild && isMature
   // if (isChild && isMature) {

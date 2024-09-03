@@ -127,7 +127,7 @@ const checkCacheAndGenerate = async (req, res) => {
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"] };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
-  const referrer = req.headers.referer || req.headers.referrer;
+  const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
   try {
     // Cache the generated image
@@ -149,7 +149,7 @@ const checkCacheAndGenerate = async (req, res) => {
           const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
 
           console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          if (queueSize >= 40) {
+          if (queueSize >= 20) {
             throw new Error("ip queue full");
           }
 

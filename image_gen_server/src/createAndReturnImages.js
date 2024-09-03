@@ -197,7 +197,7 @@ const nsfwCheck = async (buffer) => {
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests) {
   let bufferAndMaturity;
-  const meoowModels = Object.keys(MODELS).filter(model => MODELS[model] === 'meoow');
+  const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
   if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
   } else {
@@ -240,7 +240,7 @@ function getLogoPath(safeParams, isChild, isMature) {
   if (safeParams["nologo"] || safeParams["nofeed"] || isChild || isMature) {
     return null;
   }
-  return MODELS[safeParams.model] === 'meoow' ? 'logo_meoow.png' : 'logo.png';
+  return MODELS[safeParams.model].type === 'meoow' ? 'logo_meoow.png' : 'logo.png';
 }
 
 /**

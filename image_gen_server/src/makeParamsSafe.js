@@ -1,4 +1,4 @@
-import { MODELS, idealSideLength } from './models.js';
+import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
@@ -13,7 +13,13 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed);
 
-    const sideLength = idealSideLength[model] || idealSideLength["turbo"];
+    // Ensure model is one of the allowed models or default to "flux"
+    const allowedModels = Object.keys(MODELS);
+    if (!allowedModels.includes(model)) {
+        model = "flux";
+    }
+
+    const sideLength = MODELS[model].idealSideLength;
     const maxPixels = sideLength * sideLength;
 
     // Ensure width and height are integers or default to sideLength
@@ -42,11 +48,7 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         height = Math.floor(height * ratio);
     }
 
-    // Ensure model is one of the allowed models or default to "flux"
-    const allowedModels = Object.keys(MODELS);
-    if (!allowedModels.includes(model)) {
-        model = "flux";
-    }
+
 
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, disableCache };
 };

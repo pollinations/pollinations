@@ -31,7 +31,7 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  const steps = concurrentRequests < 6 ? 4 : concurrentRequests < 10 ? 3 : concurrentRequests < 16 ? 2 : 1;
+  const steps = concurrentRequests < 8 ? 4 : concurrentRequests < 14 ? 3 : concurrentRequests < 24 ? 2 : 1;
 
   try {
     prompt = sanitizeString(prompt);
@@ -60,7 +60,6 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(body),
-          timeout: 30000, // 30 seconds timeout
         });
         if (response.ok) break; // If response is ok, break out of the loop
         console.error("Error from server. input was", body);
@@ -87,7 +86,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     console.log(`Fetch time percentage: ${fetch_percentage}%`);
 
     if (!response?.ok) {
-      throw new Error(`Server responded with ${response.status}`);
+      throw new Error(`Server responded with ${response}`);
     }
 
     const jsonResponse = await response.json();
@@ -133,7 +132,6 @@ const callMeoow = async (prompt, safeParams) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000, // 30 seconds timeout
     });
 
     if (!response.ok) {
@@ -212,8 +210,8 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
-  // Resize the final image to the user's desired size
-  // bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+  //Resize the final image to the user's desired size
+  bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
   // // blure image if isChild && isMature
   // if (isChild && isMature) {

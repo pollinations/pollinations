@@ -44,10 +44,16 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
 
   const path = generateCachePath(prompt, extraParams);
   memCache[path] = bufferPromise;
+  try {
+    const buffer = await bufferPromise;
+    return buffer;
+  } catch (e) {
+    console.error('Error waiting for bufferPromise', e);
+    memCache[path] = null;
+    throw e;
+  }
 
-  const buffer = await bufferPromise;
 
-  return buffer;
 };
 
 const memoize = (fn, getKey) => {

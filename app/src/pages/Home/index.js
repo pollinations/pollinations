@@ -31,17 +31,10 @@ export default function Home() {
       <TopBand />
       <ProjectsSection />
       <TopBand />
-      <MusicVideo />
-      {/* <TopBand src={getTopBandPresetsDesign()} alt="Top Band" /> */}
-      {/* <KarmaYT /> */}
-      <TopBand />
-      {/* <ImageURLHeading>Events</ImageURLHeading> */}
-      {/* <PageTemplate label="event" /> */}
-      {/* <TopBand /> */}
-
       <Discord />
       <TopBand />
       <CompaniesSection /> {/* Add the CompaniesSection */}
+      <TopBand />
     </Style>
   )
 }

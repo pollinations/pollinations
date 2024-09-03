@@ -61,7 +61,7 @@ Here's what you might get if you use the conceptual isometric world prompt:
 Want to tweak your image? You can add these options to your URL:
 
 - `width` & `height`: Choose the size of your image
-- `model`: Pick 'flux' or 'turbo' (default: 'turbo')
+- `model`: Pick 'flux', 'flux-realism', 'flux-anime' and 'flux-3d', or 'turbo' (default: 'flux')
 - `seed`: Use a number for consistent results (or -1 for random)
 - `nologo`: Add this to remove the Pollinations logo
 - `enhance`: Let AI add extra details to your description

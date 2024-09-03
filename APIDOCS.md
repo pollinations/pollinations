@@ -13,7 +13,7 @@ This endpoint generates an image based on the provided prompt and optional param
 | Parameter | Type     | Description                                                                               | Default |
 |-----------|----------|-------------------------------------------------------------------------------------------|---------|
 | prompt    | required | Text description of the image you want to generate. Should be URL-encoded.                | -       |
-| model     | optional | Model to use for generation. Options: 'flux' or 'turbo'.                                  | 'turbo' |
+| model     | optional | Model to use for generation. See https://image.pollinations.ai/models for available models. | 'turbo' |
 | seed      | optional | Seed for reproducible results. Use -1 for random.                                         | random  |
 | width     | optional | Width of the generated image.                                                             | 1024    |
 | height    | optional | Height of the generated image.                                                            | 1024    |
@@ -32,7 +32,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 ```python
 import requests
 
-def download_image(prompt, width=1024, height=1024, model='turbo', seed=-1):
+def download_image(prompt, width=768, height=768, model='flux', seed=-1):
     url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&seed={seed}&nologo=true"
     response = requests.get(url)
     with open('generated_image.jpg', 'wb') as file:

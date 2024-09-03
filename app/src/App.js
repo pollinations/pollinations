@@ -47,7 +47,9 @@ const App = () => <>
     }
   </Routes>
   <Footer />
-  <AsciiArtGenerator />
+  <div style={{ width: '100%' }}>
+    <AsciiArtGenerator />
+  </div>
 </>;
 
 export default App

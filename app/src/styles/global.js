@@ -12,7 +12,7 @@ export const Colors = {
   offblack: '#2A2C1C',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
-  background_body: '#E9E9E9',
+  background_body: '#FEFEFE',
   wine: '#670C6B',
   magenta: '#C93CD0',
   gray4: '#BDBDBD',

@@ -19,7 +19,7 @@ export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoadi
                         <Typography variant="body2" color="textSecondary">Model</Typography>
                         <FormControl fullWidth>
                             <Select
-                                value={model || "turbo"}
+                                value={model || "flux"}
                                 onChange={(e) => handleParamChange('model', e.target.value)}
                                 onFocus={handleFocus}
                                 disabled={isLoading}

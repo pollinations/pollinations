@@ -1,3 +1,5 @@
+import { MODELS, idealSideLength } from './models.js';
+
 /**
  * Sanitizes and adjusts parameters for image generation.
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
@@ -41,23 +43,10 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     }
 
     // Ensure model is one of the allowed models or default to "flux"
-    const allowedModels = ["flux", "flux-realism", "flux-anime", "flux-3d"];
+    const allowedModels = Object.keys(MODELS);
     if (!allowedModels.includes(model)) {
         model = "flux";
     }
 
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, disableCache };
-};
-
-
-const idealSideLength = {
-    turbo: 1024,
-    flux: 768,
-    deliberate: 640,
-    dreamshaper: 800,
-    formulaxl: 800,
-    playground: 960,
-    dpo: 768,
-    dalle3xl: 768,
-    realvis: 768,
 };

@@ -5,7 +5,7 @@ import { MODELS, idealSideLength } from './models.js';
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance = false, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
     refine = sanitizeBoolean(refine);

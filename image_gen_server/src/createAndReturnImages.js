@@ -44,14 +44,14 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
       "steps": steps
     };
 
-    console.log("calling prompt", body.prompts);
+    console.log("calling prompt", body.prompts, "width", body.width, "height", body.height);
 
     // Start timing for fetch
     const fetch_start_time = Date.now();
 
     // Retry logic for fetch
     let response;
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         const chosenServer = safeParams.model === 'flux' ? getNextFluxServerUrl() : SERVER_URL;
         response = await fetch(chosenServer, {

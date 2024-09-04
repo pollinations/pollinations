@@ -10,23 +10,31 @@ log() {
 
 log "Starting startup script"
 
-
 # Navigate to the FLUX1 checkpoints directory
 log "Navigating to FLUX1 checkpoints directory"
 cd /home/ubuntu/ComfyUI/models/checkpoints/FLUX1/ || { log "ERROR: Failed to change directory to FLUX1 checkpoints"; exit 1; }
 
-# Remove existing file (if it exists)
-log "Removing existing flux1-schnell-fp8.safetensors file if it exists"
-if [ -f flux1-schnell-fp8.safetensors ]; then
-    rm flux1-schnell-fp8.safetensors && log "Existing file removed" || log "WARNING: Failed to remove existing file"
-fi
+# Check if the flag file exists
+FLAG_FILE="/home/ubuntu/ComfyUI/models/checkpoints/FLUX1/flux1_downloaded.flag"
 
-# Download the required file
-log "Downloading flux1-schnell-fp8.safetensors"
-if wget https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors; then
-    log "File downloaded successfully"
+if [ -f "$FLAG_FILE" ]; then
+    log "Flag file exists. Skipping download."
 else
-    log "ERROR: Failed to download flux1-schnell-fp8.safetensors"
+    # Remove existing file (if it exists)
+    log "Removing existing flux1-schnell-fp8.safetensors file if it exists"
+    if [ -f flux1-schnell-fp8.safetensors ]; then
+        rm flux1-schnell-fp8.safetensors && log "Existing file removed" || log "WARNING: Failed to remove existing file"
+    fi
+
+    # Download the required file
+    log "Downloading flux1-schnell-fp8.safetensors"
+    if wget https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors; then
+        log "File downloaded successfully"
+        # Create the flag file
+        touch "$FLAG_FILE" && log "Flag file created"
+    else
+        log "ERROR: Failed to download flux1-schnell-fp8.safetensors"
+    fi
 fi
 
 # Navigate to the ComfyUI directory

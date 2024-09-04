@@ -13,6 +13,7 @@ import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { readFileSync } from 'fs';
 import { MODELS } from './models.js';
+import { registerServer } from './availableServers.js';
 
 export let currentJobs = [];
 
@@ -199,9 +200,40 @@ const checkCacheAndGenerate = async (req, res) => {
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
 
-  if (req.url === '/models') {
+  const { pathname, query } = parse(req.url, true);
+
+  if (pathname === '/models') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(Object.keys(MODELS)));
+    return;
+  }
+
+  if (pathname === '/register') {
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      });
+      req.on('end', () => {
+        try {
+          const server = JSON.parse(body);
+          if (server.url) {
+            registerServer(server);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
+          } else {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, message: 'Invalid request body' }));
+          }
+        } catch (error) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, message: 'Invalid JSON' }));
+        }
+      });
+    } else {
+      res.writeHead(405, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
+    }
     return;
   }
 

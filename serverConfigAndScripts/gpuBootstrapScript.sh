@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set up logging
-LOG_FILE="/var/log/startup_script.log"
+LOG_FILE="/var/log/bootstrap_script.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 log() {
@@ -24,6 +24,6 @@ else
 fi
 
 # run serverConfigAndScripts/awsStartupScript.sh
-bash serverConfigAndScripts/awsStartupScript.sh
+bash serverConfigAndScripts/gpuStartupScript.sh
 
 log "Bootstrap script completed"

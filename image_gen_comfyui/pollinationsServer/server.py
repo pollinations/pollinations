@@ -11,6 +11,7 @@ import logging
 import traceback
 from PIL import Image
 import json
+import asyncio
 
 SAFETY_CHECKER = False
 
@@ -23,6 +24,40 @@ request_count = 0
 # this is a list of tuples where the first element is the time of the request and the second the time the request took
 request_time_log = []
 
+# Flag to indicate if a request is being processed
+is_processing_request = False
+
+# Function to get public IP address
+def get_public_ip():
+    try:
+        response = requests.get('https://api.ipify.org')
+        return response.text
+    except:
+        return None
+
+# Heartbeat function
+async def send_heartbeat():
+    public_ip = get_public_ip()
+    if public_ip:
+        try:
+            port = int(os.getenv("PORT", 5002))
+            url = f"http://{public_ip}:{port}"
+            response = requests.post('https://image.pollinations.ai/register', json={'url': url})
+            if response.status_code == 200:
+                logging.info(f"Heartbeat sent successfully. URL: {url}")
+            else:
+                logging.error(f"Failed to send heartbeat. Status code: {response.status_code}")
+        except Exception as e:
+            logging.error(f"Error sending heartbeat: {str(e)}")
+    else:
+        logging.error("Failed to get public IP address")
+
+# Periodic heartbeat function
+async def periodic_heartbeat():
+    while True:
+        if not is_processing_request:
+            await send_heartbeat()
+        await asyncio.sleep(60)  # Send heartbeat every 60 seconds
 
 # calculate the percentage of time spent processing requests in the last 2 minutes
 def calculate_percentage_time_processing_requests_last_2_minutes():
@@ -146,8 +181,9 @@ async def poll_history(prompt_id):
 
 @app.post('/generate')
 async def generate(request: Request):
-    global total_request_time_accumulated, first_request_time, request_count, percentage_time_processing_last_2_minutes
+    global total_request_time_accumulated, first_request_time, request_count, percentage_time_processing_last_2_minutes, is_processing_request
 
+    is_processing_request = True
     try:
         try:
             raw_body = await request.body()
@@ -270,16 +306,26 @@ async def generate(request: Request):
             percentage_time_processing_last_2_minutes = calculate_percentage_time_processing_requests_last_2_minutes()
         logger.info(f"Percentage of time spent processing requests in the last 2 minutes: {percentage_time_processing_last_2_minutes:.2f}%")
 
+        # Send a heartbeat after the request is completed
+        await send_heartbeat()
+
         return JSONResponse(content=response_content, media_type="application/json", headers={"Connection": "close"})
     except Exception as e:
         logger.error(f"Error in generate: {e}")
         logger.error(traceback.format_exc())
         return JSONResponse(content={"error": str(e)}, status_code=500, headers={"Connection": "close"})
+    finally:
+        is_processing_request = False
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(periodic_heartbeat())
+
 import os
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5002))
     print("To run the server with multiple workers, use the following command:")
     print(f"uvicorn server:app --host 0.0.0.0 --port {port} --workers 4")
-    raise Exception("run using uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4")
+    raise Exception("run using uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2")
     # uvicorn.run(app, host='0.0.0.0', port=port)

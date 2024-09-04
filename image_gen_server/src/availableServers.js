@@ -22,6 +22,8 @@ export const registerServer = ({ url }) => {
  * @returns {string} - The next FLUX server URL.
  */
 export const getNextFluxServerUrl = () => {
+
+    console.log("FLUX_SERVERS", FLUX_SERVERS);
     FLUX_SERVERS = FLUX_SERVERS.filter(server =>
         Date.now() - server.lastHeartbeat < SERVER_TIMEOUT
     );

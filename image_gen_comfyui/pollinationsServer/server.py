@@ -57,7 +57,7 @@ async def periodic_heartbeat():
     while True:
         if not is_processing_request:
             await send_heartbeat()
-        await asyncio.sleep(60)  # Send heartbeat every 60 seconds
+        await asyncio.sleep(30)  # Send heartbeat every 60 seconds
 
 # calculate the percentage of time spent processing requests in the last 2 minutes
 def calculate_percentage_time_processing_requests_last_2_minutes():

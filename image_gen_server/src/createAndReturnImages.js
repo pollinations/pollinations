@@ -180,7 +180,7 @@ function calculateClosestAspectRatio(width, height) {
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt) {
   let bufferAndMaturity;
   const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
   if (meoowModels.includes(safeParams.model)) {
@@ -208,7 +208,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   // if (isChild) isMature = true;
 
   const { buffer: _buffer, ...maturity } = bufferAndMaturity;
-  bufferWithLegend = await writeExifMetadata(bufferWithLegend, safeParams, maturity);
+  bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
 
   return { buffer: bufferWithLegend, isChild, isMature };
 

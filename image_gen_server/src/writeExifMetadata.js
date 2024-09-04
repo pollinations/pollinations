@@ -13,7 +13,7 @@ export const writeExifMetadata = async (buffer, safeParams, maturity) => {
     const metadata = {
         IFD0: {
             UserComment: JSON.stringify({ ...safeParams, ...maturity }),
-            Make: "Stable Diffusion"
+            Make: safeParams.model
         }
     };
 

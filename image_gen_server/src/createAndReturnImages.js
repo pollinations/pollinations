@@ -32,7 +32,7 @@ let accumulated_fetch_duration = 0;
 const callWebUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  const steps = concurrentRequests < 8 ? 4 : concurrentRequests < 14 ? 3 : concurrentRequests < 24 ? 2 : 1;
+  const steps = concurrentRequests < 12 ? 4 : concurrentRequests < 18 ? 3 : concurrentRequests < 28 ? 2 : 1;
 
   try {
     prompt = sanitizeString(prompt);

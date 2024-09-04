@@ -8,7 +8,9 @@ import statistics
 import time
 import sys
 from constants import *
-from utils import get_prompts_counts, user_data  # Import user_data directly
+from api import *
+from utils import get_prompts_counts
+
 
 load_dotenv()
 
@@ -82,6 +84,7 @@ class pollinationsBot(commands.Bot):
 
         print(f"Logged in as {self.user.name} (ID: {self.user.id})")
         print(f"Connected to {len(self.guilds)} guilds")
+        print(f"Available MODELS: {MODELS}")
 
 
 bot = pollinationsBot()
@@ -101,7 +104,7 @@ async def on_message(message):
     if bot.user in message.mentions:
         if message.type is not discord.MessageType.reply:
             embed = discord.Embed(
-                description="Hello, I am the Pollinations.ai Bot. I am here to help you with your AI needs. **To Generate Images click </pollinate:1223762317359976519> or </multi-imagine:1187375074722975837> or type `/help` for more commands**.",
+                description="Hello, I am the Pollinations.ai Bot. I am here to help you with your AI needs. **To Generate Images click </pollinate:1223762317359976519> or </multi-pollinate:1264942861800050891> or type `/help` for more commands**.",
                 color=discord.Color.og_blurple(),
             )
 

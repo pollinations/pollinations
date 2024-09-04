@@ -8,7 +8,7 @@ from PIL import Image
 import piexif
 import discord
 import datetime
-
+from constants import MODELS
 # Load user data from JSON file
 def load_user_data():
     with open('users_data.json', 'r') as file:

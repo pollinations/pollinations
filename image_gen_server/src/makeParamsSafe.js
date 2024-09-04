@@ -19,8 +19,8 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         model = "flux";
     }
 
-    // const sideLength = MODELS[model].idealSideLength;
-    // const maxPixels = sideLength * sideLength;
+    const sideLength = MODELS[model].maxSideLength;
+    const maxPixels = sideLength * sideLength;
 
     // Ensure width and height are integers or default to sideLength
     width = Number.isInteger(parseInt(width)) ? parseInt(width) : 768;

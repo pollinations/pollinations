@@ -371,6 +371,11 @@ class Imagine(commands.Cog):
         if width < 16 or height < 16:
             raise DimensionTooSmallError("Width and Height must be greater than 16")
 
+        try:
+            model = model.value
+        except:
+            pass
+
         start = datetime.datetime.now()
 
         dic, image = await generate_image(
@@ -407,6 +412,11 @@ class Imagine(commands.Cog):
             value=f"```{round(time_taken.total_seconds(), 2)} s```",
             inline=True,
         )
+
+        embed.add_field(name="", value="", inline=False)
+
+        embed.add_field(name="Model", value=f"```{model}```", inline=True)
+        embed.add_field(name="Dimensions", value=f"```{width}x{height}```", inline=True)
 
         embed.set_image(url=f"attachment://image.png")
 

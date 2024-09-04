@@ -17,7 +17,6 @@ class Multi_pollinate(commands.Cog):
 
     async def get_info(interaction: discord.Interaction, index: int):
 
-        indexes = ["1st", "2nd", "3rd", "4th"]
 
         data = get_multi_imagined_prompt_data(interaction.message.id)
         seed = data["urls"][index].split("?")[-1].split("&")[0]
@@ -29,11 +28,7 @@ class Multi_pollinate(commands.Cog):
         url += f"&negative={data['negative']}" if 'negative' in data and data['negative'] else ''
         url += f"&nologo=true"
         url += f"&enhance={data['enhance']}" if 'enhance' in data and data['enhance'] else ''
-
-        if index % 2 == 0:
-            url += f"&model=turbo"
-        else:
-            url += f"&model=flux"
+        url += f"&model={MODELS[index]}"
 
         async with aiohttp.ClientSession() as session:
             async with session.get(data['urls'][index]) as response:
@@ -49,9 +44,6 @@ class Multi_pollinate(commands.Cog):
         image_file = discord.File(image_file, "image.png")
 
         try:
-            user_comment = user_comment[user_comment.find("{") :]
-            user_comment = json.loads(user_comment)
-
             if user_comment["has_nsfw_concept"]:
                 image_file.filename = f"SPOILER_{image_file.filename}"
                 data["nsfw"] = True
@@ -65,8 +57,8 @@ class Multi_pollinate(commands.Cog):
             pass
 
         embed = discord.Embed(
-                title=f"{indexes[index]} Image",
-                description="",
+                title=f"{ordinal(index+1)} Image",
+                description=f"Model: {MODELS[index]}",
             )
 
         embed.set_image(url=f"attachment://image.png")
@@ -214,15 +206,11 @@ class Multi_pollinate(commands.Cog):
 
         embeds = []
         files = []
-        positions = ["1st", "2nd", "3rd", "4th"]
 
-        for i in range(4):
+        for i in range(len(MODELS)):
             try:
                 time = datetime.datetime.now()
-                if i % 2 == 0:
-                    model = "turbo"
-                else:
-                    model = "flux"
+                model = MODELS[i]
 
                 dic, image = await generate_image(
                     prompt, width, height, model, negative, cached, nologo, enhance, private
@@ -234,11 +222,11 @@ class Multi_pollinate(commands.Cog):
 
                 if private:
                     await interaction.followup.send(
-                        f"Generated **{positions[i]} Image** in `{round(time_taken.total_seconds(), 2)}` seconds ✅",
+                        f"Generated **{ordinal(i+1)} Image** in `{round(time_taken.total_seconds(), 2)}` seconds ✅",
                         ephemeral=True,
                     )
                 else:
-                    embed = discord.Embed(title="Generating Image", description=f"Generated **{positions[i]} Image** in `{round(time_taken.total_seconds(), 2)}` seconds ✅", color=discord.Color.blurple())
+                    embed = discord.Embed(title="Generating Image", description=f"Generated **{ordinal(i+1)} Image** in `{round(time_taken.total_seconds(), 2)}` seconds ✅", color=discord.Color.blurple())
                     await response.edit(embeds=[embed])
 
                 image_file = discord.File(image, f"image_{i}.png")
@@ -253,7 +241,7 @@ class Multi_pollinate(commands.Cog):
                 if private:
                     await interaction.followup.send(
                         embed=discord.Embed(
-                            title=f"Error generating image of `{i}` model",
+                            title=f"Error generating image of `{MODELS[i]}` model",
                             description=f"{e}",
                             color=discord.Color.red(),
                         ),
@@ -262,7 +250,7 @@ class Multi_pollinate(commands.Cog):
                 else:
                     await response.edit(
                         embeds=[discord.Embed(
-                            title=f"Error generating image of `{i}` model",
+                            title=f"Error generating image of `{MODELS[i]}` model",
                             description=f"{e}",
                             color=discord.Color.red(),
                         )])

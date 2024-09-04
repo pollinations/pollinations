@@ -101,57 +101,9 @@ def delete_prompt_data(message_id: int):
         print(e)
 
 
-def get_multi_imagined_prompt_data(message_id: int):
-    try:
-        for user in user_data:
-            for prompt in user.get("multi_prompts", []):
-                if prompt == message_id:
-                    return prompt
-        return None
-    except Exception as e:
-        print(e)
-        return None
-
-
-def save_multi_imagined_prompt_data(message_id: int, data: dict):
-    try:
-        for user in user_data:
-            if user["_id"] == data["_id"]:
-                user["multi_prompts"].append(message_id)
-                save_user_data(user_data)
-                return
-        user_data.append(data)
-        save_user_data(user_data)
-    except Exception as e:
-        print(e)
-
-
-def update_multi_imagined_prompt_data(message_id: int, data: dict):
-    try:
-        for user in user_data:
-            for i, prompt in enumerate(user.get("multi_prompts", [])):
-                if prompt == message_id:
-                    user["multi_prompts"][i] = data
-                    save_user_data(user_data)
-                    return
-    except Exception as e:
-        print(e)
-
-
-def delete_multi_imagined_prompt_data(message_id: int):
-    try:
-        for user in user_data:
-            if message_id in user.get("multi_prompts", []):
-                user["multi_prompts"].remove(message_id)
-                save_user_data(user_data)
-                return
-    except Exception as e:
-        print(e)
-
-
 def get_prompts_counts():
     try:
-        return sum(len(user.get("prompts", [])) for user in user_data) + sum(len(user.get("multi_prompts", [])) for user in user_data)
+        return sum(len(user.get("prompts", [])) for user in user_data)
     except Exception as e:
         print(e)
         return None
@@ -192,23 +144,15 @@ def update_user_data(user_id: int, data: dict):
         print(e)
 
 
+
 def generate_global_leaderboard():
     try:
-        top_10_users = sorted(user_data, key=lambda x: len(x.get("prompts", [])) + len(x.get("multi_prompts", [])), reverse=True)[:10]
-        top_10_users = {user["_id"]: len(user.get("prompts", [])) + len(user.get("multi_prompts", [])) for user in top_10_users}
+        top_10_users = sorted(user_data, key=lambda x: len(x.get("prompts", [])), reverse=True)[:10]
+        top_10_users = {user["_id"]: len(user.get("prompts", [])) for user in top_10_users}
         return top_10_users
     except Exception as e:
         print(e)
         return None
-
-
-def ordinal(n):
-    suffix = ["th", "st", "nd", "rd"] + ["th"] * 6
-    if 10 <= n % 100 <= 20:
-        suffix_choice = "th"
-    else:
-        suffix_choice = suffix[n % 10]
-    return f"{n}{suffix_choice}"
 
 
 async def generate_error_message(
@@ -253,16 +197,14 @@ async def generate_error_message(
 
 def extract_user_comment(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
-
-    try:
-        exif = image.info["exif"].decode("latin-1", errors="ignore")
-        user_comment = json.loads(exif[exif.find("{") : exif.rfind("}") + 1])
-    except Exception as e:
-        print(e)
-        return "No user comment found."
+    exif_data = piexif.load(image.info["exif"])
+    user_comment = exif_data.get("Exif", {}).get(piexif.ExifIFD.UserComment, None)
 
     if user_comment:
-        return user_comment
+        try:
+            return user_comment.decode("utf-8")
+        except UnicodeDecodeError:
+            return "No user comment found."
     else:
         return "No user comment found."
 
@@ -271,7 +213,7 @@ async def generate_image(
     prompt: str,
     width: int = 800,
     height: int = 800,
-    model: str = f"{MODELS[0]}",
+    model: str = "flux",
     negative: str | None = None,
     cached: bool = False,
     nologo: bool = False,
@@ -280,7 +222,7 @@ async def generate_image(
     **kwargs,
 ):
     print(
-        f"Generating image with prompt: {prompt}, width: {width}, height: {height}, negative: {negative}, cached: {cached}, nologo: {nologo}, enhance: {enhance}, model: {model}",
+        f"Generating image with prompt: {prompt}, width: {width}, height: {height}, negative: {negative}, cached: {cached}, nologo: {nologo}, enhance: {enhance}",
         file=sys.stderr,
     )
 
@@ -311,7 +253,7 @@ async def generate_image(
     dic["seed"] = seed if not cached else None
 
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, allow_redirects=True) as response:
+        async with session.get(url) as response:
             response.raise_for_status()  # Raise an exception for non-2xx status codes
             image_data = await response.read()
 
@@ -322,12 +264,12 @@ async def generate_image(
             image_file.seek(0)
 
             try:
+                user_comment = user_comment[user_comment.find("{") :]
+                user_comment = json.loads(user_comment)
                 dic["nsfw"] = user_comment["has_nsfw_concept"]
                 if enhance or len(prompt) < 80:
                     enhance_prompt = user_comment["prompt"]
-                    enhance_prompt = enhance_prompt[
-                        : enhance_prompt.rfind("\n")
-                    ].strip()
+                    enhance_prompt = enhance_prompt[: enhance_prompt.rfind("\n")]
                     dic["enhanced_prompt"] = enhance_prompt
             except Exception as e:
                 print(e)

@@ -42,10 +42,15 @@ class RandomImage(commands.Cog):
         if width < 16 or height < 16:
             raise DimensionTooSmallError("Width and Height must be greater than 16")
 
+        try:
+            model = model.value
+        except:
+            pass
+
         start = datetime.datetime.now()
 
         dic, image = await generate_image(
-            "Random Prompt", width, height, model, negative, False, nologo, None, private
+            "Random Prompt", width, height, model, negative, False, nologo, True, private
         )
 
         image_file = discord.File(image, filename="image.png")

@@ -69,7 +69,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   console.error("prompt", prompt);
 
   console.log("safeParams", safeParams);
-  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs());
+  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs(), originalPrompt);
 
   // if isChild and nsfw is true, delay the response by 10 seconds
   if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
@@ -91,7 +91,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
         concurrentRequests,
         imageURL,
         prompt,
-        originalPrompt: urldecode(originalPrompt),
+        originalPrompt,
         nsfw: bufferAndMaturity.isMature,
         isChild: bufferAndMaturity.isChild,
         timingInfo: relativeTiming(timingInfo),
@@ -122,7 +122,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   if (!needsProcessing) return;
 
-  const originalPrompt = pathname.split("/prompt/")[1] || "random prompt";
+  const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random prompt");
 
   const { disableCache, ...safeParams } = makeParamsSafe(query);
 

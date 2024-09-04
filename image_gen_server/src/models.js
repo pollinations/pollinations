@@ -1,5 +1,5 @@
 export const MODELS = {
-    "flux": { type: "pollinations", enhance: true, idealSideLength: 768 },
+    "flux": { type: "pollinations", enhance: true, idealSideLength: 1024 },
     "flux-realism": { type: "meoow", enhance: false, idealSideLength: 1024 },
     "flux-anime": { type: "meoow", enhance: false, idealSideLength: 1024 },
     "flux-3d": { type: "meoow", enhance: false, idealSideLength: 1024 },

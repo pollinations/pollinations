@@ -1,10 +1,4 @@
-import { exec } from 'child_process';
 import fetch from 'node-fetch';
-import tempfile from 'tempfile';
-import fs from 'fs';
-// import { sendToFeedListeners } from './feedListeners.js';
-import FormData from 'form-data';
-import { fileTypeFromBuffer } from 'file-type';
 import { getNextFluxServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { MODELS } from './models.js';

@@ -54,7 +54,9 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const chosenServer = safeParams.model === 'flux' ? getNextFluxServerUrl() : SERVER_URL;
+        const chosenServer = safeParams.model === 'flux'
+          ? await getNextFluxServerUrl()
+          : SERVER_URL;
         response = await fetch(chosenServer, {
           method: 'POST',
           headers: {
@@ -67,7 +69,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
         throw new Error(`Server responded with ${response.status}. Server url: ${chosenServer}`);
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
-        if (attempt === 5) throw error;
+        if (attempt === 3) throw error;
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
     }

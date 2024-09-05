@@ -14,6 +14,8 @@ import sleep from 'await-sleep';
 import { readFileSync } from 'fs';
 import { MODELS } from './models.js';
 import { registerServer } from './availableServers.js';
+import { handleRegisterEndpoint } from './availableServers.js';
+import { getNextFluxServerUrl } from './availableServers.js';
 
 export let currentJobs = [];
 
@@ -66,11 +68,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
   const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
 
-
   console.error("prompt", prompt);
 
   console.log("safeParams", safeParams);
-  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs(), originalPrompt);
+  const fluxServerUrl = await getNextFluxServerUrl();
+  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs(), originalPrompt, fluxServerUrl);
 
   // if isChild and nsfw is true, delay the response by 10 seconds
   if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
@@ -200,7 +202,7 @@ const checkCacheAndGenerate = async (req, res) => {
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
 
-  const { pathname, query } = parse(req.url, true);
+  const { pathname } = parse(req.url, true);
 
   if (pathname === '/models') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -209,31 +211,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (pathname === '/register') {
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => {
-        body += chunk.toString();
-      });
-      req.on('end', () => {
-        try {
-          const server = JSON.parse(body);
-          if (server.url) {
-            registerServer(server);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
-          } else {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'Invalid request body' }));
-          }
-        } catch (error) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ success: false, message: 'Invalid JSON' }));
-        }
-      });
-    } else {
-      res.writeHead(405, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
-    }
+    handleRegisterEndpoint(req, res);
     return;
   }
 

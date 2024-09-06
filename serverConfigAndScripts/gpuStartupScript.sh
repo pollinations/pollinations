@@ -56,7 +56,7 @@ cd image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change direc
 
 # Sleep 2 minutes to allow ComfyUI to start
 # log "Sleeping for 20 seconds to allow ComfyUI to start"
-# sleep 20
+sleep 90
 
 # Start the Python server using uvicorn in a screen session
 log "Starting Python server in a screen session"

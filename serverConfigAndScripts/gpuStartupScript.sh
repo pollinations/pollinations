@@ -64,7 +64,5 @@ fi
 
 log "Startup script completed"
 
-# wait indefinitely
-while true; do
-    sleep 1
-done
+# wait until all background processes have finished
+wait

@@ -60,7 +60,7 @@ cd image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change direc
 
 # Start the Python server using uvicorn in a screen session
 log "Starting Python server in a screen session"
-if screen -dmS pyserver bash -c 'sleep 20 && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4'; then
+if screen -mS pyserver bash -c 'sleep 20 && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4'; then
     log "Python server started successfully in screen session 'pyserver'"
 else
     log "ERROR: Failed to start Python server"

@@ -10,16 +10,17 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
   originalPrompt = "" + originalPrompt;
 
+  let { enhance, seed } = safeParams;
 
-  if (memoizedPrompts.has(originalPrompt)) {
-    return memoizedPrompts.get(originalPrompt);
+
+  if (memoizedPrompts.has(`${originalPrompt}_seed_${seed}`)) {
+    return memoizedPrompts.get(`${originalPrompt}_seed_${seed}`);
   }
 
   let prompt = originalPrompt;
 
   console.log("promptRaw", prompt);
 
-  let { enhance, seed } = safeParams;
 
   if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
     enhance = true;
@@ -52,12 +53,14 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
 
   if (enhance) {
+
+    console.log("pimping prompt", prompt, seed);
     prompt = await pimpPrompt(prompt, seed);
     console.log(`Pimped prompt: ${prompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  memoizedPrompts.set(originalPrompt, { prompt: prompt, wasPimped: enhance });
+  memoizedPrompts.set(`${originalPrompt}_seed_${seed}`, { prompt: prompt, wasPimped: enhance });
 
   return { prompt: prompt, wasPimped: enhance };
 };

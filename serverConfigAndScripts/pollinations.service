@@ -1,12 +1,12 @@
-[Unit]                                                                                                                                  
-Description=Pollinations Image Generator Service                                                                                        
-After=network.target                                                                                                                    
-                                                                                                                            
-[Service]                                                                                                                               
-User=ubuntu                                                                                                                             
-ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/gpuBootstrapScript.sh                                              
-Restart=always                                                                                                                          
-                                                                                                                            
-[Install]                                                                                                                               
-WantedBy=multi-user.target                                                                                                              
-                                                        
+[Unit]
+Description=Pollinations Image Generator Service
+After=network.target
+
+[Service]
+User=ubuntu
+ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/gpuBootstrapScript.sh
+Restart=always
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -55,12 +55,12 @@ log "Navigating to pollinationsServer directory"
 cd image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change directory to pollinationsServer"; exit 1; }
 
 # Sleep 2 minutes to allow ComfyUI to start
-log "Sleeping for 20 seconds to allow ComfyUI to start"
-sleep 20
+# log "Sleeping for 20 seconds to allow ComfyUI to start"
+# sleep 20
 
 # Start the Python server using uvicorn in a screen session
 log "Starting Python server in a screen session"
-if screen -dmS pyserver bash -c 'source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4'; then
+if screen -dmS pyserver bash -c 'sleep 20 && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 4'; then
     log "Python server started successfully in screen session 'pyserver'"
 else
     log "ERROR: Failed to start Python server"

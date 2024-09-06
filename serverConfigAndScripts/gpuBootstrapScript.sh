@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Set up logging
-LOG_FILE="/var/log/bootstrap_script.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
-
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
 }

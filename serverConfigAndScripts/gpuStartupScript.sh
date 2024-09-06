@@ -56,7 +56,7 @@ cd image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change direc
 
 # Start the Python server using uvicorn without screen
 log "Starting Python server"
-if source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2 & then
+if sleep 30 && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2 & then
     log "Python server started successfully"
 else
     log "ERROR: Failed to start Python server"

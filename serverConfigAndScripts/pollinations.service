@@ -6,7 +6,6 @@ After=network.target
 User=ubuntu
 ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/gpuBootstrapScript.sh
 Restart=always
-StartLimitIntervalSec=0
 RestartSec=10
 
 [Install]

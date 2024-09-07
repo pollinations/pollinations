@@ -111,6 +111,13 @@ const projects = {
             repo: "https://github.com/sujal-goswami/Own-AI"
         },
         {
+            name: "POLLIPAPER",
+            url: "https://github.com/Tolerable/POLLIPAPER",
+            description: "A dynamic wallpaper application that uses Pollinations AI to create and set unique desktop backgrounds. It offers features like weather-based prompts and customizable settings.",
+            author: "@intolerant0ne",
+            repo: "https://github.com/Tolerable/"
+        },
+        {
             name: "StorySight",
             url: "https://github.com/abiral-manandhar/storySight",
             description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"

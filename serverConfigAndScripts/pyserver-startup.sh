@@ -27,5 +27,4 @@ cd /home/ubuntu/pollinations/image_gen_comfyui/pollinationsServer/ || { log "ERR
 
 # Start the Python server using uvicorn
 log "Starting Python server"
-source /home/ubuntu/ComfyUI/comfyenv/bin/activate
-exec uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2
+source /home/ubuntu/ComfyUI/comfyenv/bin/activate && python3 -m uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2

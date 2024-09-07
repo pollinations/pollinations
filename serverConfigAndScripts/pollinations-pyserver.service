@@ -1,0 +1,12 @@
+[Unit]
+Description=Pollinations Python Server Service
+After=network.target pollinations-comfyui.service
+
+[Service]
+User=ubuntu
+ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/pyserver-startup.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

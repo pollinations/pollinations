@@ -109,17 +109,17 @@ const projects = {
             description: "An app aiming to help children with learning disabilities to learn by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)"
         },
         {
+            name: "Own-AI",
+            url: "https://own-ai.pages.dev/",
+            description: "An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them with the community.",
+            author: "Sujal Goswami",
+            repo: "https://github.com/sujal-goswami/Own-AI"
+        },
+        {
             name: "Websim",
             url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
             description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
             author: "@thomash_pollinations"
-        },
-        {
-            name: "Own-AI",
-            url: "https://own-ai.pages.dev/",
-            description: "An AI text-to-image generator powered by Pollinations.ai. The platform allows users to describe the images they want, generate them and share them with the community. It also includes features like image search, community gallery, download image and a 'Surprise Me' option for generating random images.",
-            author: "Sujal Goswami",
-            repo: "https://github.com/sujal-goswami/Own-AI"
         },
     ],
     llmIntegration: [

@@ -73,6 +73,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_prompt(dynamic_text, width=1024, height=1024, seed=711058089000452, steps=4):
+    
     # if seed width or height are not numbers set them to the defaults
     if not isinstance(seed, int):
         seed = 711058089000452
@@ -80,6 +81,7 @@ def create_prompt(dynamic_text, width=1024, height=1024, seed=711058089000452, s
         width = 768
     if not isinstance(height, int):
         height = 768
+    print("Created prompt", dynamic_text,"width", width, "height", height, "seed", seed, "steps", steps)
     return {
         "6": {
             "inputs": {

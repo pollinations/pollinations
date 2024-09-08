@@ -1,0 +1,12 @@
+[Unit]
+Description=Pollinations ComfyUI Service
+After=network.target
+
+[Service]
+User=ubuntu
+ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/comfyui-startup.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

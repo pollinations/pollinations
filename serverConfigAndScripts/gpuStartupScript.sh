@@ -39,10 +39,10 @@ fi
 log "Navigating to ComfyUI directory"
 cd /home/ubuntu/ComfyUI || { log "ERROR: Failed to change directory to ComfyUI"; exit 1; }
 
-# Start ComfyUI without screen
-log "Starting ComfyUI"
-if source comfyenv/bin/activate && python3 main.py & then
-    log "ComfyUI started successfully"
+# Start ComfyUI in a screen session with the activated environment
+log "Starting ComfyUI in a screen session"
+if screen -dmS comfyui bash -c 'source comfyenv/bin/activate && python3 main.py'; then
+    log "ComfyUI started successfully in screen session 'comfyui'"
 else
     log "ERROR: Failed to start ComfyUI"
 fi
@@ -54,15 +54,21 @@ cd /home/ubuntu/pollinations/ || { log "ERROR: Failed to change directory to pol
 log "Navigating to pollinationsServer directory"
 cd image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change directory to pollinationsServer"; exit 1; }
 
-# Start the Python server using uvicorn without screen
-log "Starting Python server"
-if sleep 30 && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2 & then
-    log "Python server started successfully"
+# Sleep 2 minutes to allow ComfyUI to start
+# log "Sleeping for 20 seconds to allow ComfyUI to start"
+sleep 90
+
+# Start the Python server using uvicorn in a screen session
+log "Starting Python server in a screen session"
+if screen -dmS pyserver bash -c 'sleep 5 && cd /home/ubuntu/pollinations/image_gen_comfyui/pollinationsServer/ && source /home/ubuntu/ComfyUI/comfyenv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 5002 --workers 2'; then
+    log "Python server started successfully in screen session 'pyserver'"
 else
     log "ERROR: Failed to start Python server"
 fi
 
 log "Startup script completed"
 
-# wait until all background processes have finished
-wait
+# # wait indefinitely
+# while true; do
+#     sleep 1
+# done

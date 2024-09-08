@@ -5,6 +5,8 @@ let FLUX_SERVERS = [];
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
 
+const concurrency = 3;
+
 /**
  * Registers a new FLUX server or updates its last heartbeat time.
  * @param {string} url - The URL of the FLUX server.
@@ -14,7 +16,7 @@ export const registerServer = ({ url }) => {
     if (existingServer) {
         existingServer.lastHeartbeat = Date.now();
     } else {
-        FLUX_SERVERS.push({ url, lastHeartbeat: Date.now(), queue: new PQueue({ concurrency: 3 }) });
+        FLUX_SERVERS.push({ url, lastHeartbeat: Date.now(), queue: new PQueue({ concurrency }) });
     }
 };
 
@@ -58,7 +60,7 @@ async function fetchServersFromMainServer() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const servers = await response.json();
-        FLUX_SERVERS = servers.map(server => ({ ...server, queue: new PQueue({ concurrency: 1 }) }));
+        FLUX_SERVERS = servers.map(server => ({ ...server, queue: new PQueue({ concurrency }) }));
         console.log("Fetched servers from main server:", FLUX_SERVERS);
     } catch (error) {
         console.error("Failed to fetch servers from main server:", error);
@@ -95,7 +97,7 @@ export const handleRegisterEndpoint = (req, res) => {
     } else if (req.method === 'GET') {
         const availableServers = filterActiveServers(FLUX_SERVERS);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(availableServers));
+        res.end(JSON.stringify(availableServers.map(server => ({ url: server.url, queueSize: server.queue.size + server.queue.pending })));
     } else {
         res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));

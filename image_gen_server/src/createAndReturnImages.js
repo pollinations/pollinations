@@ -1,11 +1,10 @@
 import fetch from 'node-fetch';
-import { getNextFluxServerUrl } from './availableServers.js';
+import { fetchFromLeastBusyFluxServer } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { MODELS } from './models.js';
 import { sanitizeString } from './translateIfNecessary.js';
 import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
 
-const SERVER_URL = 'http://ec2-34-197-29-104.compute-1.amazonaws.com:5002/generate';
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
 
 let total_start_time = Date.now();
@@ -48,10 +47,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const chosenServer = safeParams.model === 'flux'
-          ? await getNextFluxServerUrl()
-          : SERVER_URL;
-        response = await fetch(chosenServer, {
+        response = await fetchFromLeastBusyFluxServer({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,7 +56,7 @@ const callWebUI = async (prompt, safeParams, concurrentRequests) => {
         });
         if (response.ok) break; // If response is ok, break out of the loop
         console.error("Error from server. input was", body);
-        throw new Error(`Server responded with ${response.status}. Server url: ${chosenServer}`);
+        throw new Error(`Server responded with ${response.status}`);
       } catch (error) {
         console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt === 3) throw error;

@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
+import PQueue from 'p-queue';
 
 let FLUX_SERVERS = [];
-let currentServerIndex = 0;
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
 
@@ -14,12 +14,13 @@ export const registerServer = ({ url }) => {
     if (existingServer) {
         existingServer.lastHeartbeat = Date.now();
     } else {
-        FLUX_SERVERS.push({ url, lastHeartbeat: Date.now() });
+        FLUX_SERVERS.push({ url, lastHeartbeat: Date.now(), queue: new PQueue({ concurrency: 3 }) });
     }
 };
 
 /**
- * Returns the next available FLUX server URL in a round-robin fashion.
+ * Returns the next available FLUX server URL with the least amount of jobs processing + in queue.
+ * If multiple servers have the smallest queue size, one is selected randomly.
  * @returns {Promise<string>} - The next FLUX server URL.
  */
 export const getNextFluxServerUrl = async () => {
@@ -34,8 +35,16 @@ export const getNextFluxServerUrl = async () => {
         throw new Error("No available FLUX servers.");
     }
 
-    const server = FLUX_SERVERS[currentServerIndex % FLUX_SERVERS.length];
-    currentServerIndex = (currentServerIndex + 1) % FLUX_SERVERS.length;
+    const serverQueueInfo = FLUX_SERVERS.map(server => ({
+        url: server.url,
+        queueSize: server.queue.size + server.queue.pending
+    }));
+    console.table(serverQueueInfo);
+
+    const minQueueSize = Math.min(...serverQueueInfo.map(info => info.queueSize));
+    const leastBusyServers = FLUX_SERVERS.filter(server => (server.queue.size + server.queue.pending) === minQueueSize);
+    const server = leastBusyServers[Math.floor(Math.random() * leastBusyServers.length)];
+
     return server.url + "/generate";
 };
 
@@ -48,7 +57,8 @@ async function fetchServersFromMainServer() {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        FLUX_SERVERS = await response.json();
+        const servers = await response.json();
+        FLUX_SERVERS = servers.map(server => ({ ...server, queue: new PQueue({ concurrency: 1 }) }));
         console.log("Fetched servers from main server:", FLUX_SERVERS);
     } catch (error) {
         console.error("Failed to fetch servers from main server:", error);
@@ -101,4 +111,16 @@ const filterActiveServers = (servers) => {
     return servers.filter(server =>
         Date.now() - server.lastHeartbeat < SERVER_TIMEOUT
     );
+};
+
+/**
+ * Fetches data from the server with the least amount of jobs processing + in queue.
+ * @param {string} url - The URL to fetch.
+ * @param {Object} options - The fetch options.
+ * @returns {Promise<Response>} - The fetch response.
+ */
+export const fetchFromLeastBusyFluxServer = async (options) => {
+    const server = await getNextFluxServerUrl();
+    const chosenServer = FLUX_SERVERS.find(s => s.url + "/generate" === server);
+    return chosenServer.queue.add(() => fetch(server, options));
 };

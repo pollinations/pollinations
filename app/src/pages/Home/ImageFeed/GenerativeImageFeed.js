@@ -28,6 +28,10 @@ export function GenerativeImageFeed() {
   }, [image]);
 
   useEffect(() => {
+    stop(tabValue == 1)
+  }, [tabValue]);
+
+  useEffect(() => {
     imageParamsRef.current = imageParams; // Update the ref whenever imageParams changes
   }, [imageParams]);
 
@@ -49,7 +53,8 @@ export function GenerativeImageFeed() {
   };
 
   const handleFocus = () => {
-    stop(true); // Stop the slideshow when any form control is focused
+    // stop(true); // Stop the slideshow when any form control is focused
+    setTabValue(1);
   };
 
   const handleCopyLink = () => {
@@ -81,7 +86,16 @@ export function GenerativeImageFeed() {
                   handleSubmit={handleSubmit}
                 />
               )}
-              {tabValue === 1 && <CodeExamples {...image} />}
+              {tabValue === 1 && (
+                <ImageEditor
+                  image={imageParams}
+                  handleParamChange={handleParamChange}
+                  handleFocus={handleFocus}
+                  isLoading={isLoading}
+                  handleSubmit={handleSubmit}
+                />
+              )}
+              {tabValue === 2 && <CodeExamples {...image} />}
             </Box>
           </Grid>
         </Grid>
@@ -140,10 +154,12 @@ function TabSelector({ tabValue, setTabValue }) {
   return (
     <Box display="flex" justifyContent="center">
       <ButtonGroup aria-label="edit-integrate-button-group" style={{ border: 'none' }}>
-        {['Edit', 'Integrate'].map((label, index) => (
+
+        {['Feed', 'Edit', 'Integrate'].map((label, index) => (
           <Button
             key={label}
             onClick={() => setTabValue(index)}
+            className={index === 0 ? 'feed-button' : (tabValue !== 0 ? 'feed-button-off' : null)}
             variant={tabValue === index ? "contained" : "text"}
             style={{
               color: tabValue === index ? Colors.offblack : Colors.lime,
@@ -153,8 +169,7 @@ function TabSelector({ tabValue, setTabValue }) {
               height: "40px",
               fontSize: "0.875rem"
             }}
-          >
-            {label}
+          >{label}
           </Button>
         ))}
       </ButtonGroup>

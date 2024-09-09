@@ -2,15 +2,15 @@
 
 @font-face {
   font-family: SERAFIN;
-  src: url(./assets/fonts/SERAFIN.otf)
+  src: url(./assets/fonts/SERAFIN.otf);
 }
 @font-face {
   font-family: Uncut-Sans-Variable;
-  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf);
 }
 @font-face {
   font-family: Uncut Sans;
-  src: url(./assets/fonts/Uncut-Sans-Variable.ttf)
+  src: url(./assets/fonts/Uncut-Sans-Variable.ttf);
 }
 * {
   font-family: Uncut-Sans-Variable;
@@ -72,9 +72,38 @@ error {
 .video_container {
   width: 100%;
 }
-.MuiBackdrop-root{
+.MuiBackdrop-root {
   background-color: rgba(0, 0, 0, 0) !important;
 }
-.MuiPaper-root{
-  background-color: rgba(0,0,0,0) !important;
+.MuiPaper-root {
+  background-color: rgba(0, 0, 0, 0) !important;
+}
+
+.feed-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.feed-button::before {
+  content: ":";
+  position: absolute;
+  top: 50%;
+  left: 80%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  font-size: 24px;
+  color: rgba(0, 0, 0);
+  animation: rotate 2s linear infinite;
+}
+
+.feed-button-off::before {
+  content: ""
+}
+
+@keyframes rotate {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }

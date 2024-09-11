@@ -19,7 +19,7 @@ async function generateText(messages, seed = null) {
     const result = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
-        user: seed ? { seed } : undefined,
+        seed
     });
 
     return result.choices[0]?.message?.content;

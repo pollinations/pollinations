@@ -16,9 +16,9 @@ app.get('/:prompt', async (req, res) => {
     console.log("query", req.query, "prompt", prompt, "jsonMode", jsonMode);
 
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
-    const cacheKey = `${prompt}-${seed}`;
+    const cacheKey = `${prompt}-${seed}-${jsonMode}`;
 
-    console.log(`Received GET request with prompt: ${prompt} and seed: ${seed}`);
+    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, and jsonMode: ${jsonMode}`);
 
     if (cache[cacheKey]) {
         console.log(`Cache hit for key: ${cacheKey}`);
@@ -47,9 +47,9 @@ app.post('/', async (req, res) => {
         return res.status(400).send('Invalid messages array');
     }
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
-    const cacheKey = JSON.stringify(messages) + `-${seed}`;
+    const cacheKey = JSON.stringify(messages) + `-${seed}-${jsonMode}`;
 
-    console.log(`Received POST request with messages: ${JSON.stringify(messages)} and seed: ${seed}`);
+    console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, and jsonMode: ${jsonMode}`);
 
     if (cache[cacheKey]) {
         console.log(`Cache hit for key: ${cacheKey}`);

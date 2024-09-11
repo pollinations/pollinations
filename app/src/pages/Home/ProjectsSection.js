@@ -63,6 +63,31 @@ const imageDimension = 96;
 const seedValue = 41 + Math.floor(Math.random() * 3); // Define the seed value here
 
 const projects = {
+    llmIntegration: [
+        {
+            name: "SillyTavern",
+            url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
+            description: "An **LLM frontend** for power users. Pollinations permits it to generate images.",
+            repo: "https://github.com/SillyTavern/SillyTavern"
+        },
+        {
+            name: "Qwen-Agent",
+            url: "https://github.com/QwenLM/Qwen-Agent",
+            description: "A framework for developing agentic LLM applications.",
+        },
+        {
+            name: "DynaSpark AI",
+            url: "https://dynaspark.onrender.com",
+            description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
+            author: "Th3-C0der",
+            repo: "https://github.com/Th3-C0der"
+        },
+        {
+            name: "FlowGPT",
+            url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
+        },
+    ],
     socialBots: [
         {
             name: "Discord Bot",
@@ -127,31 +152,6 @@ const projects = {
             url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
             description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
             author: "@thomash_pollinations"
-        },
-    ],
-    llmIntegration: [
-        {
-            name: "SillyTavern",
-            url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-            description: "An **LLM frontend** for power users. Pollinations permits it to generate images.",
-            repo: "https://github.com/SillyTavern/SillyTavern"
-        },
-        {
-            name: "Qwen-Agent",
-            url: "https://github.com/QwenLM/Qwen-Agent",
-            description: "A framework for developing agentic LLM applications.",
-        },
-        {
-            name: "DynaSpark AI",
-            url: "https://dynaspark.onrender.com",
-            description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",
-            author: "Th3-C0der",
-            repo: "https://github.com/Th3-C0der"
-        },
-        {
-            name: "FlowGPT",
-            url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
         },
     ],
 };

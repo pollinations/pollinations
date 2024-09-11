@@ -20,6 +20,7 @@ app.get('/:prompt', async (req, res) => {
 
     if (cache[cacheKey]) {
         console.log(`Cache hit for key: ${cacheKey}`);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         return res.send(cache[cacheKey]);
     }
 
@@ -27,6 +28,7 @@ app.get('/:prompt', async (req, res) => {
         const response = await generateText([{ role: 'user', content: prompt }], seed);
         cache[cacheKey] = response;
         console.log(`Generated response for key: ${cacheKey}`);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(response);
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error);
@@ -48,6 +50,7 @@ app.post('/', async (req, res) => {
 
     if (cache[cacheKey]) {
         console.log(`Cache hit for key: ${cacheKey}`);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         return res.send(cache[cacheKey]);
     }
 
@@ -55,6 +58,7 @@ app.post('/', async (req, res) => {
         const response = await generateText(messages, seed);
         cache[cacheKey] = response;
         console.log(`Generated response for key: ${cacheKey}`);
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(response);
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error);

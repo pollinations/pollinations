@@ -116,17 +116,19 @@ Here are some exciting projects that integrate Pollinations.AI:
 
 ### Mobile & Web Applications
 6. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
-7. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts. Made using Django and Pollinations.ai.
-8. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai. Created by @thomash_pollinations.
+7. [Own-AI](https://own-ai.pages.dev/): An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them with the community. Created by Sujal Goswami. [GitHub Repo](https://github.com/sujal-goswami/Own-AI)
+8. [POLLIPAPER](https://github.com/Tolerable/POLLIPAPER): A dynamic wallpaper application that uses Pollinations AI to create and set unique desktop backgrounds. It offers features like weather-based prompts and customizable settings. Created by @intolerant0ne. [GitHub Repo](https://github.com/Tolerable/)
+9. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts. Made using Django and Pollinations.ai.
+10. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai. Created by @thomash_pollinations.
 
 ### Chat Integrations
-9. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images. [GitHub Repo](https://github.com/SillyTavern/SillyTavern)
-10. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
-11. [DynaSpark AI](https://dynaspark.onrender.com): An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
+11. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images. [GitHub Repo](https://github.com/SillyTavern/SillyTavern)
+12. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
+13. [DynaSpark AI](https://dynaspark.onrender.com): An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
 
 ### Development Tools
-12. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
-13. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
+14. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
+15. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 

@@ -1,8 +1,24 @@
 {
   "name": "pollinations-react",
   "version": "1.1.3",
-  "description": "",
-  "main": "src/index.js",
+  "description": "React components and hooks for Pollinations AI",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "exports": {
+    ".": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    },
+    "./hooks": {
+      "import": "./src/hooks/index.js",
+      "require": "./src/hooks/index.js"
+    },
+    "./components": {
+      "import": "./src/components/index.js",
+      "require": "./src/components/index.js"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

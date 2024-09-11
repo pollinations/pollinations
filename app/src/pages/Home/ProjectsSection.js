@@ -76,6 +76,12 @@ const projects = {
             description: "A framework for developing agentic LLM applications.",
         },
         {
+            name: "LobeChat",
+            url: "https://lobehub.com/plugins/pollinations-drawing",
+            description: "An open-source, modern-design ChatGPT/LLMs UI/Framework. Supports speech-synthesis, multi-modal, and extensible (function call) plugin system.",
+            repo: "https://github.com/lobehub/lobe-chat"
+        },
+        {
             name: "DynaSpark AI",
             url: "https://dynaspark.onrender.com",
             description: "An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation.",

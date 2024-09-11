@@ -282,3 +282,4 @@ dist
 .DS_Store
 
 venv/
+cursor-party/

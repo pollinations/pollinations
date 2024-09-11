@@ -20,7 +20,7 @@ export function ModelInfo({ model, wasPimped, referrer }) {
             )}
             &nbsp;&nbsp;
             Prompt Enhancer: {wasPimped ? (
-                <Link href="https://github.com/pollinations/pollinations/blob/master/image_gen_server/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
+                <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>Groq</Link>
             ) : (
                 <i>N/A</i>
             )}

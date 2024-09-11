@@ -4,6 +4,7 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../..
 import { LinkStyle } from "./components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
+import { PollinationsText } from "pollinations-react"
 
 const StyledLink = styled(LinkStyle)`
   transition: color 0.3s ease;
@@ -12,42 +13,46 @@ const StyledLink = styled(LinkStyle)`
   }
 `
 
-let WhoWeAreContent = () => (
-  <>
-    <h2>
-      We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>{" "}
-      deeply engaged in the <b>open source</b> AI ecosystem.
-    </h2>
-    <ContactWrapper>
-      <p>
-        To talk to us, reach out on{" "}
-        <StyledLink href="https://discord.gg/k9F7SyTgqn">
-          <b>Discord</b>
-        </StyledLink>{" "}
-        <span className="mobile-break">or at </span>
-        <StyledLink href="mailto:hello@pollinations.ai">
-          <b>hello@pollinations.ai</b>
-        </StyledLink>
-      </p>
-      <p>
-        <StyledLink href="/readme">
-          <b>README</b>
-          <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-        </StyledLink>{" "}
-        to learn more.
-      </p>
-    </ContactWrapper>
-  </>
+const WhoWeAreContent = () => (
+    <>
+        <h2>
+            {/* We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>{" "}
+        deeply engaged in the <b>open source</b> AI ecosystem. */}
+            <PollinationsText>
+                We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>
+                deeply engaged in the <b>open source</b> AI ecosystem.
+            </PollinationsText>
+        </h2>
+        <ContactWrapper>
+            <p>
+                To talk to us, reach out on{" "}
+                <StyledLink href="https://discord.gg/k9F7SyTgqn">
+                    <b>Discord</b>
+                </StyledLink>{" "}
+                <span className="mobile-break">or at </span>
+                <StyledLink href="mailto:hello@pollinations.ai">
+                    <b>hello@pollinations.ai</b>
+                </StyledLink>
+            </p>
+            <p>
+                <StyledLink href="/readme">
+                    <b>README</b>
+                    <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
+                </StyledLink>{" "}
+                to learn more.
+            </p>
+        </ContactWrapper>
+    </>
 )
 
 export default function WhoWeAre() {
-  return (
-    <Style>
-      <PageLayout long={false}>
-        <WhoWeAreContent />
-      </PageLayout>
-    </Style>
-  )
+    return (
+        <Style>
+            <PageLayout long={false}>
+                <WhoWeAreContent />
+            </PageLayout>
+        </Style>
+    )
 }
 
 // STYLES

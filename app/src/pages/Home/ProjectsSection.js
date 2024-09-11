@@ -85,7 +85,7 @@ const projects = {
         {
             name: "FlowGPT",
             url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-            description: "Generate images on-demand with **ChatGPT** and **Pollinations.AI**."
+            description: "Generate images on-demand with **ChatGPT**."
         },
     ],
     socialBots: [
@@ -201,14 +201,14 @@ const ProjectsSection = () => {
         <Container className={classes.root}>
             <ImageURLHeading>Integrations</ImageURLHeading>
 
+            <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
+            {renderProjects(projects.llmIntegration)}
+
             <Typography variant="h5" className={classes.sectionHeading}>Social Bots</Typography>
             {renderProjects(projects.socialBots)}
 
             <Typography variant="h5" className={classes.sectionHeading}>Mobile & Web Applications</Typography>
             {renderProjects(projects.apps)}
-
-            <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
-            {renderProjects(projects.llmIntegration)}
 
             <Typography className={classes.listProjectText}>
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />

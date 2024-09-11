@@ -19,9 +19,6 @@ import { getNextFluxServerUrl } from './availableServers.js';
 
 export let currentJobs = [];
 
-const queueFullImages = [readFileSync("./assets/queuefull1.png"), readFileSync("./assets/queuefull2.png"), readFileSync("./assets/queuefull3.png")];
-
-
 const ipQueue = {};
 
 /**

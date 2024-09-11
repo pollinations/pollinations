@@ -15,11 +15,16 @@ const openai = new AzureOpenAI({
     deployment: '/deployments/gpt-4o-mini/chat/completions?api-version=2023-03-15-preview'
 });
 
-async function generateText(messages, seed = null) {
+async function generateText(messages, { seed = null, jsonMode = false }) {
+    // if json mode is activated prepend the system message
+    if (jsonMode) {
+        messages.unshift({ role: 'system', content: 'Respond in simple JSON format' });
+    }
     const result = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
-        seed
+        seed,
+        response_format: jsonMode ? { type: 'json_object' } : undefined
     });
 
     return result.choices[0]?.message?.content;

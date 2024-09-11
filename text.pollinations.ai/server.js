@@ -12,7 +12,9 @@ const cache = {};
 // GET request handler
 app.get('/:prompt', async (req, res) => {
     const prompt = decodeURIComponent(req.params.prompt);
-    console.log("query", req.query, "prompt", prompt)
+    const jsonMode = req.query.json?.toLowerCase() === 'true';
+    console.log("query", req.query, "prompt", prompt, "jsonMode", jsonMode);
+
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
     const cacheKey = `${prompt}-${seed}`;
 
@@ -25,7 +27,7 @@ app.get('/:prompt', async (req, res) => {
     }
 
     try {
-        const response = await generateText([{ role: 'user', content: prompt }], seed);
+        const response = await generateText([{ role: 'user', content: prompt }], { seed, jsonMode });
         cache[cacheKey] = response;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
@@ -39,6 +41,7 @@ app.get('/:prompt', async (req, res) => {
 // POST request handler
 app.post('/', async (req, res) => {
     const { messages } = req.body;
+    const jsonMode = req.body.jsonMode || req.query.json?.toLowerCase() === 'true';
     if (!messages || !Array.isArray(messages)) {
         console.log('Invalid messages array');
         return res.status(400).send('Invalid messages array');
@@ -55,7 +58,7 @@ app.post('/', async (req, res) => {
     }
 
     try {
-        const response = await generateText(messages, seed);
+        const response = await generateText(messages, { seed, jsonMode });
         cache[cacheKey] = response;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');

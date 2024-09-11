@@ -1,6 +1,0 @@
-__pycache__/
-venv/
-public/
-*.pem
-!lib/
-!static/

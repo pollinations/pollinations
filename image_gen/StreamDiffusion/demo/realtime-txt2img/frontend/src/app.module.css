@@ -1,7 +1,0 @@
-.container {
-  width: 80%;
-
-  @media (min-width: $mantine-breakpoint-md) {
-    width: 100%;
-  }
-}

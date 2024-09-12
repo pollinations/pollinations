@@ -4,7 +4,7 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../..
 import { LinkStyle } from "./components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
-import { PollinationsText } from "pollinations-react"
+import { PollinationsImage, PollinationsMarkdown, PollinationsText } from "@pollinations/react";
 
 const StyledLink = styled(LinkStyle)`
   transition: color 0.3s ease;
@@ -16,11 +16,14 @@ const StyledLink = styled(LinkStyle)`
 const WhoWeAreContent = () => (
   <>
     <h2>
-      {/* We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>{" "}
-        deeply engaged in the <b>open source</b> AI ecosystem. */}
-      <PollinationsText seed={123}>
-        write a nice text about pollinations.ai
-      </PollinationsText>
+      <PollinationsMarkdown
+        components={{
+          p: (props) => <p {...props} style={{ fontSize: "36px" }} />,
+        }}
+      >
+        Introduce the team of machine-learning specialists, artists and
+        futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+      </PollinationsMarkdown>
     </h2>
     <ContactWrapper>
       <p>
@@ -100,7 +103,6 @@ const PageLayout = styled(BaseContainer)`
     }
   }
   p {
-    width: ${(props) => props.long || "37%"};
     font-family: "Uncut-Sans-Variable";
     font-style: normal;
     font-weight: 400;

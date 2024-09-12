@@ -16,8 +16,9 @@ import usePollinationsImage from '../hooks/usePollinationsImage';
  * @param {string} [props.alt] - The alt text for the image.
  * @returns {JSX.Element} - The PollinationsImage component.
  */
-const PollinationsImage = ({ prompt, options, alt, ...props }) => {
-    const imageUrl = usePollinationsImage(prompt, options);
+const PollinationsImage = ({ prompt, width = 768, height = 768, seed = -1, options = {}, alt, ...props }) => {
+
+    const imageUrl = usePollinationsImage(prompt, { ...options, width, height, seed });
 
     return React.createElement('img', { src: imageUrl, alt: alt || prompt, ...props });
 };

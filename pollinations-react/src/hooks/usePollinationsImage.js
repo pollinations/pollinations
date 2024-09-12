@@ -14,7 +14,8 @@ import React, { useMemo } from 'react';
  * @returns {string} - The URL of the generated image.
  */
 const usePollinationsImage = (prompt, options = {}) => {
-    const { width = 1024, height = 1024, model = 'turbo', seed = -1, nologo = true, enhance = false } = options;
+    const { width = 1024, height = 1024, model = 'turbo', seed: initialSeed = -1, nologo = true, enhance = false } = options;
+    const seed = useMemo(() => initialSeed === -1 ? Math.floor(Math.random() * 20) + 1 : initialSeed, [initialSeed]);
 
     const imageUrl = useMemo(() => {
         const params = new URLSearchParams({ width, height, model, seed, nologo, enhance });

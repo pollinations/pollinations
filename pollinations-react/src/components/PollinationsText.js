@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import usePollinationsText from "../hooks/usePollinationsText";
 
 /**
@@ -9,19 +9,10 @@ import usePollinationsText from "../hooks/usePollinationsText";
  * @param {number} [props.seed=-1] - The seed for random text generation.
  * @returns {JSX.Element} - The PollinationsText component.
  */
-const PollinationsText = ({ children, seed = -1 }) => {
-  const textUrl = usePollinationsText(children, seed);
-  const [text, setText] = useState("");
+const PollinationsText = ({ children, seed = -1, ...props }) => {
+  const text = usePollinationsText(children, seed);
 
-  useEffect(() => {
-    fetch(textUrl)
-      .then((response) => response.text())
-      .then((data) => setText(data))
-      .catch((error) => console.error("Error fetching text:", error));
-  }, [textUrl]);
-
-  const div = React.createElement('div', null, text);
-  return div;
+  return React.createElement('div', props, text);
 };
 
 export default PollinationsText;

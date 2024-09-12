@@ -1,11 +1,13 @@
 import express from 'express';
 import generateText from './generateText.js';
 import bodyParser from 'body-parser';
+import cors from 'cors'; // Import the cors package
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(cors()); // Use the cors middleware
 
 const cache = {};
 

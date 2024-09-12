@@ -40,19 +40,7 @@ body {
 h3 {
   margin-bottom: 0;
 }
-h1 {
-  font-size: 4rem !important;
-}
-@media screen and (min-width: 700px) {
-  h1 {
-    font-size: 6rem !important;
-  }
-}
-@media screen and (min-width: 1200px) {
-  h1 {
-    font-size: 9rem !important;
-  }
-}
+
 .media-container {
   height: 56.25vw;
   max-width: 100vw !important;

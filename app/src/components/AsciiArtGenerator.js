@@ -19,7 +19,7 @@ const AsciiArtGenerator = (props) => {
 
     return <AsciiContainer style={props?.style}>
         <PollinationsText seed={seed}>
-            Unicode/ Ascii Art depicting digital pollination. 40 width x 20 height characters. Use fun unicode stuff but keep a lot of space empty. Return only the characters, no other text or quotes.
+            Unicode/ Ascii Art depicting digital pollination. 30 width x 10 height characters. Use fun unicode stuff but keep a lot of space empty. Return only the characters, no other text or quotes.
         </PollinationsText>
     </AsciiContainer>;
 }

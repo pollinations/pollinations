@@ -4,7 +4,6 @@ import MarkdownTemplate from "./components/MarkdownTemplate"
 import TopBar from "./components/TopBar"
 import Footer from "./components/Footer"
 import Home from "./pages/Home/"
-import AsciiArtGenerator from "./components/AsciiArtGenerator"
 
 const AppRoutes = [
   {
@@ -47,9 +46,6 @@ const App = () => <>
     }
   </Routes>
   <Footer />
-  <div style={{ width: '100%' }}>
-    <AsciiArtGenerator />
-  </div>
 </>;
 
 export default App

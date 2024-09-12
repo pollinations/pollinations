@@ -5,6 +5,7 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../st
 import { LinkStyle } from "../pages/Home/components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { ImageURLHeading } from "../pages/Home/styles"
+import AsciiArtGenerator from "./AsciiArtGenerator"
 
 const Footer = () => {
   return (
@@ -17,8 +18,11 @@ const Footer = () => {
             <b>hello@pollinations.ai</b>
           </StyledLink>
         </LetsTalkStyle>
+        <AsciiArtContainer>
+          <AsciiArtGenerator />
+        </AsciiArtContainer>
         <SocialContainer>
-          <SocialLinks small gap='1em' invert/>
+          <SocialLinks small gap='1em' invert />
         </SocialContainer>
         <LogoContainer>
           <NavLink to="/">
@@ -58,6 +62,16 @@ const LogoContainer = styled.div`
   grid-area: logo;
   justify-self: flex-end;
   padding-top: 0em;
+  display: flex;
+  align-items: center;
+  @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
+    justify-self: center;
+    padding-top: 2em;
+  }
+`
+const AsciiArtContainer = styled.div`
+  grid-area: ascii-art;
+  justify-self: center;
   display: flex;
   align-items: center;
   @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
@@ -124,12 +138,12 @@ const FooterStyle = styled(BaseContainer)`
   width: 100%;
   padding-bottom: 30px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
 
   grid-template-areas:
-    "lets-talk logo"
-    "social terms"
-    "navigation_footer navigation_footer";
+    "lets-talk ascii-art logo"
+    "social terms terms"
+    "navigation_footer navigation_footer navigation_footer";
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     grid-template-columns: 1fr;
@@ -137,6 +151,7 @@ const FooterStyle = styled(BaseContainer)`
       "logo"
       "navigation_footer"
       "lets-talk"
+      "ascii-art"
       "social"
       "terms";
     padding: 0;

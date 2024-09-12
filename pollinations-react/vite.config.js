@@ -1,11 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
-    plugins: [react()],
     build: {
         lib: {
-            entry: 'src/index.js',
+            entry: resolve(__dirname, 'src/index.js'),
             name: 'PollinationsReact',
             fileName: (format) => `pollinations-react.${format}.js`
         },
@@ -18,5 +18,6 @@ export default defineConfig({
                 }
             }
         }
-    }
+    },
+    plugins: [react()]
 });

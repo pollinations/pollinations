@@ -13,6 +13,7 @@
   "type": "module",
   "dependencies": {
     "@azure/identity": "^4.4.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.20.0",
     "openai": "^4.58.2"

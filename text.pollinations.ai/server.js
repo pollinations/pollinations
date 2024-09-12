@@ -1,34 +1,42 @@
 import express from 'express';
-import generateText from './generateText.js';
+import Text from './generateText.js';
 import bodyParser from 'body-parser';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const cache = new Map();
 
 app.use(bodyParser.json());
 
-const cache = {};
-
-// GET request handler
-app.get('/:prompt', async (req, res) => {
-    const prompt = decodeURIComponent(req.params.prompt);
-    const jsonMode = req.query.json?.toLowerCase() === 'true';
-    console.log("query", req.query, "prompt", prompt, "jsonMode", jsonMode);
-
+const handleRequest = async (req, res) => {
+    const jsonMode = req.query.json?.toLowerCase() === 'true' || req.body?.jsonMode;
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
-    const cacheKey = `${prompt}-${seed}-${jsonMode}`;
+    const isHelp = req.query.help?.toLowerCase() === 'true';
 
-    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, and jsonMode: ${jsonMode}`);
+    let messages;
+    if (req.method === 'GET') {
+        const prompt = decodeURIComponent(req.params.prompt);
+        messages = [{ role: 'user', content: prompt }];
+    } else if (req.method === 'POST') {
+        messages = req.body.messages;
+        if (!Array.isArray(messages)) {
+            return res.status(400).send('Invalid messages array');
+        }
+    }
 
-    if (cache[cacheKey]) {
+    const cacheKey = JSON.stringify({ messages, seed, jsonMode, isHelp });
+
+    console.log(`Received ${req.method} request:`, { messages, seed, jsonMode, isHelp });
+
+    if (cache.has(cacheKey)) {
         console.log(`Cache hit for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        return res.send(cache[cacheKey]);
+        return res.send(cache.get(cacheKey));
     }
 
     try {
-        const response = await generateText([{ role: 'user', content: prompt }], { seed, jsonMode });
-        cache[cacheKey] = response;
+        const response = await Text.generate(messages, { seed, jsonMode, isHelp });
+        cache.set(cacheKey, response);
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(response);
@@ -36,38 +44,10 @@ app.get('/:prompt', async (req, res) => {
         console.error(`Error generating text for key: ${cacheKey}`, error);
         res.status(500).send(error.message);
     }
-});
+};
 
-// POST request handler
-app.post('/', async (req, res) => {
-    const { messages } = req.body;
-    const jsonMode = req.body.jsonMode || req.query.json?.toLowerCase() === 'true';
-    if (!messages || !Array.isArray(messages)) {
-        console.log('Invalid messages array');
-        return res.status(400).send('Invalid messages array');
-    }
-    const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
-    const cacheKey = JSON.stringify(messages) + `-${seed}-${jsonMode}`;
-
-    console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, and jsonMode: ${jsonMode}`);
-
-    if (cache[cacheKey]) {
-        console.log(`Cache hit for key: ${cacheKey}`);
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        return res.send(cache[cacheKey]);
-    }
-
-    try {
-        const response = await generateText(messages, { seed, jsonMode });
-        cache[cacheKey] = response;
-        console.log(`Generated response for key: ${cacheKey}`);
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.send(response);
-    } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error);
-        res.status(500).send(error.message);
-    }
-});
+app.get('/:prompt', handleRequest);
+app.post('/', handleRequest);
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

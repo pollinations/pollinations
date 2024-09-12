@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/react",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "React components and hooks for Pollinations AI",
   "main": "./src/index.js",
   "module": "./src/index.js",

@@ -18,6 +18,7 @@ import usePollinationsImage from '../hooks/usePollinationsImage';
  */
 const PollinationsImage = ({ prompt, width = 768, height = 768, seed = -1, options = {}, alt, children, ...props }) => {
     const finalPrompt = prompt || children;
+
     const imageUrl = usePollinationsImage(finalPrompt, { ...options, width, height, seed });
 
     return React.createElement('img', { src: imageUrl, alt: alt || finalPrompt, ...props });

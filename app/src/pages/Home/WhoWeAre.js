@@ -70,17 +70,10 @@ const PageLayout = styled(BaseContainer)`
   align-items: flex-start;
   justify-content: center;
   gap: 1em;
-  padding: 7%;
   margin: auto;
   animation: ${fadeIn} 1.5s ease-out;
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    padding: 5em 5%;
-  }
 
-  @media (min-width: ${MOBILE_BREAKPOINT}) and (max-width: ${HUGE_BREAKPOINT}) {
-    padding: 6em 6%;
-  }
 
   h2 {
     initial: unset;
@@ -90,16 +83,13 @@ const PageLayout = styled(BaseContainer)`
     font-size: 36px;
     line-height: 58px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
-    margin-top: 1.6em;
     letter-spacing: -0.02em;
     margin-bottom: 1em;
-    margin-top: 3em;
 
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;
       line-height: 40px;
       margin-bottom: 1.6em;
-      margin-top: 1.6em;
     }
   }
   p {

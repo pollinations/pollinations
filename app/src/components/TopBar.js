@@ -24,27 +24,27 @@ const TopBar = () => {
 
 const PublicNav = ({ drawerState }) => (
   <>
-  <LogoContainer>
-  <ImageURLHeading
-    whiteText={false}
-    width={300}
-    height={100}
-    customPrompt={`an image with the text "Pollinations" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. The text should take all the space without any margins.`}
-  />
-</LogoContainer>
-  <NavBarStyle>
+    <LogoContainer>
+      <ImageURLHeading
+        whiteText={false}
+        width={300}
+        height={100}
+        customPrompt={`an image with the text "Pollinations" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. The text should take all the space without any margins.`}
+      />
+    </LogoContainer>
+    <NavBarStyle>
 
-    <SocialLinks small hideOnMobile gap="1em" invert />
-    <MenuButton>
-      <IconButton onClick={() => drawerState[1](true)}>
-        <img
-          src={MobileMenuIcon}
-          style={{ position: "absolute", top: "25%", left: "25%", width: "50%", height: "50%" }}
-        />
-        <CloseOutlined style={{ position: "relative", color: "transparent" }} />
-      </IconButton>
-    </MenuButton>
-  </NavBarStyle>
+      <SocialLinks small hideOnMobile gap="1em" invert />
+      <MenuButton>
+        <IconButton onClick={() => drawerState[1](true)}>
+          <img
+            src={MobileMenuIcon}
+            style={{ position: "absolute", top: "25%", left: "25%", width: "50%", height: "50%" }}
+          />
+          <CloseOutlined style={{ position: "relative", color: "transparent" }} />
+        </IconButton>
+      </MenuButton>
+    </NavBarStyle>
   </>
 )
 
@@ -106,7 +106,7 @@ const CTAStyle = styled.p`
   }
 `
 const TopContainer = styled.div`
-  position: absolute;
+  background-color: #FEFEFE;
   top: 0;
   z-index: 1;
   width: 100%;

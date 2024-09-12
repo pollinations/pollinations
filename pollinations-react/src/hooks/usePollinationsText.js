@@ -21,4 +21,16 @@ const usePollinationsText = (prompt, seed = -1) => {
     return textUrl;
 };
 
+/**
+ * Function to clean markdown data by extracting text between triple backticks.
+ * 
+ * @param {string} data - The markdown data to clean.
+ * @returns {string} - The cleaned markdown data.
+ */
+export const cleanMarkdown = (data) => {
+    const regex = /```([\s\S]*?)```/;
+    const match = data.match(regex);
+    return match ? match[1] : data;
+};
+
 export default usePollinationsText;

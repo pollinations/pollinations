@@ -14,45 +14,44 @@ const StyledLink = styled(LinkStyle)`
 `
 
 const WhoWeAreContent = () => (
-    <>
-        <h2>
-            {/* We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>{" "}
+  <>
+    <h2>
+      {/* We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>{" "}
         deeply engaged in the <b>open source</b> AI ecosystem. */}
-            <PollinationsText>
-                We are a team of <b>machine-learning specialists</b>, <b>artists</b> and <b>futurists </b>
-                deeply engaged in the <b>open source</b> AI ecosystem.
-            </PollinationsText>
-        </h2>
-        <ContactWrapper>
-            <p>
-                To talk to us, reach out on{" "}
-                <StyledLink href="https://discord.gg/k9F7SyTgqn">
-                    <b>Discord</b>
-                </StyledLink>{" "}
-                <span className="mobile-break">or at </span>
-                <StyledLink href="mailto:hello@pollinations.ai">
-                    <b>hello@pollinations.ai</b>
-                </StyledLink>
-            </p>
-            <p>
-                <StyledLink href="/readme">
-                    <b>README</b>
-                    <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-                </StyledLink>{" "}
-                to learn more.
-            </p>
-        </ContactWrapper>
-    </>
+      <PollinationsText seed={123}>
+        write a nice text about pollinations.ai
+      </PollinationsText>
+    </h2>
+    <ContactWrapper>
+      <p>
+        To talk to us, reach out on{" "}
+        <StyledLink href="https://discord.gg/k9F7SyTgqn">
+          <b>Discord</b>
+        </StyledLink>{" "}
+        <span className="mobile-break">or at </span>
+        <StyledLink href="mailto:hello@pollinations.ai">
+          <b>hello@pollinations.ai</b>
+        </StyledLink>
+      </p>
+      <p>
+        <StyledLink href="/readme">
+          <b>README</b>
+          <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
+        </StyledLink>{" "}
+        to learn more.
+      </p>
+    </ContactWrapper>
+  </>
 )
 
 export default function WhoWeAre() {
-    return (
-        <Style>
-            <PageLayout long={false}>
-                <WhoWeAreContent />
-            </PageLayout>
-        </Style>
-    )
+  return (
+    <Style>
+      <PageLayout long={false}>
+        <WhoWeAreContent />
+      </PageLayout>
+    </Style>
+  )
 }
 
 // STYLES

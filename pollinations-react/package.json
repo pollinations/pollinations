@@ -1,6 +1,6 @@
 {
   "name": "pollinations-react",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "React components and hooks for Pollinations AI",
   "main": "./src/index.js",
   "module": "./src/index.js",
@@ -20,18 +20,23 @@
   },
   "sideEffects": false,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "vite build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
     "react-markdown": "^9.0.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.2"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
+    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
   }
 }

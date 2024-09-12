@@ -9,10 +9,10 @@ import usePollinationsText from "../hooks/usePollinationsText";
  * @param {number} [props.seed=-1] - The seed for random text generation.
  * @returns {JSX.Element} - The PollinationsText component.
  */
-const PollinationsText = ({ children, seed = -1 }) => {
+const PollinationsText = ({ children, seed = -1, ...props }) => {
   const text = usePollinationsText(children, seed);
 
-  return <div>{text}</div>;
+  return React.createElement('div', props, text);
 };
 
 export default PollinationsText;

@@ -13,7 +13,7 @@ import usePollinationsText from '../hooks/usePollinationsText';
 const PollinationsMarkdown = ({ children, seed = -1, promptPrefix = MARKDOWN_PROMPT_PREFIX, ...props }) => {
     const markdown = usePollinationsText(promptPrefix + children, seed);
 
-    return <ReactMarkdown {...props}>{markdown}</ReactMarkdown>;
+    return React.createElement(ReactMarkdown, props, markdown);
 };
 
 const MARKDOWN_PROMPT_PREFIX = "Return pure markdown.\n\n";

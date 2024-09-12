@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import usePollinationsText from '../hooks/usePollinationsText';
 
@@ -11,17 +11,9 @@ import usePollinationsText from '../hooks/usePollinationsText';
  * @returns {JSX.Element} - The PollinationsMarkdown component.
  */
 const PollinationsMarkdown = ({ children, seed = -1, promptPrefix = MARKDOWN_PROMPT_PREFIX, ...props }) => {
-    const textUrl = usePollinationsText(promptPrefix + children, seed);
-    const [markdown, setMarkdown] = useState('');
-    useEffect(() => {
-        fetch(textUrl)
-            .then(response => response.text())
-            .then(data => setMarkdown(data))
-            .catch(error => console.error('Error fetching markdown:', error));
-    }, [textUrl]);
+    const markdown = usePollinationsText(promptPrefix + children, seed);
 
-    const reactMarkdownElement = React.createElement(ReactMarkdown, { ...props }, markdown);
-    return reactMarkdownElement;
+    return <ReactMarkdown {...props}>{markdown}</ReactMarkdown>;
 };
 
 const MARKDOWN_PROMPT_PREFIX = "Return pure markdown.\n\n";

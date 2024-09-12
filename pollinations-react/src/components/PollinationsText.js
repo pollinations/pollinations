@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import usePollinationsText from "../hooks/usePollinationsText";
 
 /**
@@ -10,18 +10,9 @@ import usePollinationsText from "../hooks/usePollinationsText";
  * @returns {JSX.Element} - The PollinationsText component.
  */
 const PollinationsText = ({ children, seed = -1 }) => {
-  const textUrl = usePollinationsText(children, seed);
-  const [text, setText] = useState("");
+  const text = usePollinationsText(children, seed);
 
-  useEffect(() => {
-    fetch(textUrl)
-      .then((response) => response.text())
-      .then((data) => setText(data))
-      .catch((error) => console.error("Error fetching text:", error));
-  }, [textUrl]);
-
-  const div = React.createElement('div', null, text);
-  return div;
+  return <div>{text}</div>;
 };
 
 export default PollinationsText;

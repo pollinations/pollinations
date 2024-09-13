@@ -17,13 +17,14 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
         const updatedMessages = [...messages, { role: "user", content: userMessage }];
         setMessages(updatedMessages);
 
-        const requestBody = updatedMessages;
+        const requestBody = {
+            messages: updatedMessages,
+            jsonMode: jsonMode,
+            seed: seed
+        };
 
-        const params = new URLSearchParams();
-        if (jsonMode) params.append('json', 'true');
-        params.append('seed', seed);
 
-        fetch(`https://text.pollinations.ai/?${params.toString()}`, {
+        fetch(`https://text.pollinations.ai/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

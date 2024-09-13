@@ -6,12 +6,12 @@ import helpSystem from './help.js';
 dotenv.config();
 
 const openai = new AzureOpenAI({
-    apiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2024-08-01-preview",
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT || "https://pollinations.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview",
     apiKey: process.env.AZURE_OPENAI_API_KEY,
 });
 
-const generate = async (messages, options = {}) => {
+export const generate = async (messages, options = {}) => {
     const { seed = null, jsonMode = false, isHelp = false } = options;
 
     let processedMessages = [...messages];
@@ -37,7 +37,7 @@ const generate = async (messages, options = {}) => {
 
     try {
         const result = await openai.chat.completions.create({
-            model: AZURE_OPENAI_DEPLOYMENT,
+            model: process.env.AZURE_OPENAI_MODEL || 'gpt-4o-mini',
             messages: processedMessages,
             seed,
             response_format: jsonMode ? { type: 'json_object' } : undefined,
@@ -50,4 +50,3 @@ const generate = async (messages, options = {}) => {
     }
 };
 
-export default { generate };

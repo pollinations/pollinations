@@ -1,5 +1,5 @@
 import express from 'express';
-import Text from './generateText.js';
+import { generate } from './generateText.js';
 import bodyParser from 'body-parser';
 
 const app = express();
@@ -35,7 +35,7 @@ const handleRequest = async (req, res) => {
     }
 
     try {
-        const response = await Text.generate(messages, { seed, jsonMode, isHelp });
+        const response = await generate(messages, { seed, jsonMode, isHelp });
         cache.set(cacheKey, response);
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');

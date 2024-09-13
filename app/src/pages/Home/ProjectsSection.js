@@ -174,6 +174,14 @@ const projects = {
             author: "@thomash_pollinations"
         },
     ],
+    tutorials: [
+        {
+            name: "Tutorial",
+            url: "https://guiadehospedagem.com.br/pollinations-ai/",
+            description: "An in-depth Portuguese tutorial on using Pollinations AI.",
+            author: "Janderson de Sales",
+        }
+    ]
 };
 
 const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
@@ -230,10 +238,14 @@ const ProjectsSection = () => {
             <Typography variant="h5" className={classes.sectionHeading}>Mobile & Web Applications</Typography>
             {renderProjects(projects.apps)}
 
+            <Typography variant="h5" className={classes.sectionHeading}>Tutorials</Typography>
+            {renderProjects(projects.tutorials)}
+
             <Typography className={classes.listProjectText}>
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />
                 Get in touch at <Link href="mailto:hello@pollinations.ai" style={{ color: Colors.lime }}>hello@pollinations.ai</Link>.
             </Typography>
+
         </Container>
     );
 };

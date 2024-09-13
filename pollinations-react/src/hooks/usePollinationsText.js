@@ -9,6 +9,7 @@ import { useMemo, useState, useEffect } from 'react';
  */
 const usePollinationsText = (prompt, seed = -1) => {
     const [text, setText] = useState("");
+    const cache = useMemo(() => new Map(), []);
 
     // Memoize the effective seed so it does not change every render
     const effectiveSeed = useMemo(() => {
@@ -21,14 +22,22 @@ const usePollinationsText = (prompt, seed = -1) => {
     }, [prompt, effectiveSeed]);
 
     useEffect(() => {
-        fetch(textUrl)
-            .then((response) => response.text())
-            .then((data) => setText(cleanMarkdown(data)))
-            .catch((error) => {
-                console.error("Error fetching text:", error);
-                throw error;
-            });
-    }, [textUrl]);
+        if (cache.has(textUrl)) {
+            setText(cache.get(textUrl));
+        } else {
+            fetch(textUrl)
+                .then((response) => response.text())
+                .then((data) => {
+                    const cleanedData = cleanMarkdown(data);
+                    cache.set(textUrl, cleanedData);
+                    setText(cleanedData);
+                })
+                .catch((error) => {
+                    console.error("Error fetching text:", error);
+                    throw error;
+                });
+        }
+    }, [textUrl, cache]);
 
     return text;
 };

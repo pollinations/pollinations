@@ -19,7 +19,7 @@ import React from 'react';
 import { usePollinationsText } from '@pollinations/react;
 
 const MyComponent = () => {
-  const text = usePollinationsText('Describe a beautiful sunset over the ocean');
+  const text = usePollinationsText('Write a short haiku about Pollinations.AI');
   
   return (
     <div>
@@ -95,7 +95,7 @@ import React from 'react';
 import { PollinationsText } from '@pollinations/react;
 
 const MyComponent = () => (
-  <PollinationsText seed={42}>Describe a beautiful sunset over the ocean</PollinationsText>
+  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
 );
 
 export default MyComponent;
@@ -110,7 +110,7 @@ import React from 'react';
 import { PollinationsMarkdown } from '@pollinations/react;
 
 const MyComponent = () => (
-  <PollinationsMarkdown seed={42}>Describe a beautiful sunset over the ocean</PollinationsMarkdown>
+  <PollinationsMarkdown seed={42}>Create beautiful documentation about a Pollinating robot in markdown</PollinationsMarkdown>
 );
 
 export default MyComponent;

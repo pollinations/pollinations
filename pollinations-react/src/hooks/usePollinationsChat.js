@@ -8,7 +8,9 @@ import { useState, useCallback } from 'react';
  * @param {boolean} [jsonMode=false] - Whether to parse the response as JSON.
  * @returns {Array} - The array of messages with the assistant's response added.
  */
-const usePollinationsChat = (initMessages = [], { seed = 42, jsonMode = false }) => {
+const usePollinationsChat = (initMessages = [], options = {}) => {
+    const { seed = 42, jsonMode = false } = options;
+
     const [messages, setMessages] = useState(initMessages);
 
     const sendUserMessage = useCallback((userMessage) => {

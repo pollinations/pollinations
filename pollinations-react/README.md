@@ -65,7 +65,7 @@ const ChatComponent = () => {
   const { sendUserMessage, messages } = usePollinationsChat([ {"role":"system", content:"You are a helpful assistant"}]);
 
   const handleSend = () => {
-    sendUserPrompt(input);
+    sendUserMessage(input);
     setInput('');
   };
 

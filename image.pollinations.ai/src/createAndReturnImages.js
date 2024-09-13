@@ -147,22 +147,7 @@ const callMeoow = async (prompt, safeParams) => {
  * @returns {string} - The closest aspect ratio as a string.
  */
 function calculateClosestAspectRatio(width, height) {
-  const aspectRatios = ['1:1', '16:9', '9:16', '21:9', '9:21', '1:2', '2:1'];
-  const ratio = width / height;
-  let closestRatio = aspectRatios[0];
-  let closestDifference = Math.abs(ratio - 1);
-
-  aspectRatios.forEach(ar => {
-    const [w, h] = ar.split(':').map(Number);
-    const arRatio = w / h;
-    const difference = Math.abs(ratio - arRatio);
-    if (difference < closestDifference) {
-      closestDifference = difference;
-      closestRatio = ar;
-    }
-  });
-
-  return closestRatio;
+  return `${width}:${height}`;
 }
 
 

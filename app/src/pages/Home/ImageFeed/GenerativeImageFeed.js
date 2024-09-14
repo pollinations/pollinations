@@ -129,7 +129,7 @@ export function GenerativeImageFeed() {
                 <IconButton
                   onClick={handleCopyLink}
                   disabled={isLoading}
-                  style={{ marginLeft: "2em" }}
+                  style={{ marginLeft: "1em" }}
                 >
                   <FileCopyIcon style={{ color: Colors.lime, fontSize: "3rem" }} />
                 </IconButton>
@@ -240,24 +240,19 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
         fontStyle: "normal",
         fontWeight: 400,
         height: "56px",
+        width: "100px",
         position: "relative",
       }}
     >
       {isLoading ? (
         <span>
-          Imagining
-          <span className="dots">
-            <span>.</span>
-            <span>.</span>
-            <span>.</span>
-          </span>
         </span>
-      ) : isInputChanged ? "Imagine" : "Re-Imagine"}
+      ) : isInputChanged ? "Imagine" : "Imagine"}
       {isLoading && (
         <CircularProgress
           size={24}
           style={{
-            color: Colors.offblack,
+            color: "black",
             position: "absolute",
             top: "50%",
             left: "50%",

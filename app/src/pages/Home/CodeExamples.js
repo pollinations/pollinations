@@ -1,10 +1,8 @@
-import { useState } from 'react';
-import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from '@material-ui/core';
-import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from 'react-code-blocks';
-import { URLExplanation } from './styles';
-import { Colors } from '../../styles/global';
-
-
+import { useState } from "react"
+import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
+import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from "react-code-blocks"
+import { URLExplanation } from "./styles"
+import { Colors } from "../../styles/global"
 
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -49,7 +47,7 @@ Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
 Seed: **${seed}** (Each seed generates a new image)
-Model: **${model || 'turbo'}**
+Model: **${model || "turbo"}**
 
 # Image
 ![Generative Image](${imageURL})`,
@@ -61,7 +59,7 @@ Model: **${model || 'turbo'}**
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
     <p>Seed: ${seed} <i>Each seed generates a new image variation</i></p>
-    <p>Model: ${model || 'turbo'}</p>
+    <p>Model: ${model || "turbo"}</p>
 
     <img 
       src="${imageURL}" 
@@ -99,7 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let width = ${width};
     let height = ${height};
     let seed = ${seed}; // Each seed generates a new image variation
-    let model = "${model || 'turbo'}"; // Using 'turbo' as default if model is not provided
+    let model = "${model || "turbo"}"; // Using 'turbo' as default if model is not provided
 
     let image_url = format!(
         "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
@@ -139,7 +137,7 @@ const prompt = '${shorten(prompt)}';
 const width = ${width};
 const height = ${height};
 const seed = ${seed}; // Each seed generates a new image variation
-const model = '${model || 'turbo'}'; // Using 'turbo' as default if model is not provided
+const model = '${model || "turbo"}'; // Using 'turbo' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
@@ -164,7 +162,7 @@ prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
 seed = ${seed} # Each seed generates a new image variation
-model = '${model || 'turbo'}' # Using 'turbo' as default if model is not provided
+model = '${model || "turbo"}' # Using 'turbo' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -181,7 +179,7 @@ model_obj: object = ai.Model()
 
 image: object = model_obj.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || 'turbo'},
+    model=ai.${model || "turbo"},
     width=${width},
     height=${height},
     seed=${seed}
@@ -189,69 +187,119 @@ image: object = model_obj.generate(
 image.save('image-output.jpg')
 
 print(image.url)
-`
-};
-
-export function CodeExamples(image) {
-  const [tabValue, setTabValue] = useState(0);
-
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const codeExampleTabs = Object.keys(CODE_EXAMPLES);
-
-  // Add "api_description" as the first tab
-  const allTabs = ["api_description", "link", "discord_bot", ...codeExampleTabs.filter(tab => tab !== "api_description")];
-
-  return <URLExplanation >
-    <AppBar position="static" style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: 'none' }}>
-      <Tabs value={tabValue} onChange={handleChange} aria-label="simple tabs example" variant="scrollable" scrollButtons="on" TabIndicatorProps={{ style: { background: Colors.lime } }} >
-        {allTabs.map((key) => (
-          <Tab key={key} label={key === "api_description" ? "API Description" : key.charAt(0).toUpperCase() + key.slice(1)} />
-        ))}
-      </Tabs>
-    </AppBar>
-    <>
-      {allTabs.map((key, index) => {
-
-        if (tabValue !== index)
-          return null;
-
-        if (!image.imageURL && key !== "discord_bot")
-          return null;
-
-        if (key === "link") {
-          return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href={image.imageURL} target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', wordBreak: 'break-all' }}>{image.imageURL}</Link>
-          </Box>);
-        } else if (key === "discord_bot") {
-          return (<Box margin="30px" overflow="hidden" >
-            <Link variant="body2" href="https://discord.com/application-directory/1123551005993357342" target="_blank" rel="noopener noreferrer" style={{ fontSize: '1.0rem', wordBreak: 'break-all' }}>Discord Bot</Link>
-          </Box>);
-        }
-
-        const text = CODE_EXAMPLES[key](image);
-
-        return (
-          tabValue === index && <CodeBlock
-            key={key}
-            text={text}
-            language={key}
-            theme={irBlack}
-            // wrapLongLines
-            showLineNumbers={text.split("\n").length > 1}
-            customStyle={{
-              backgroundColor: 'transparent',
-              color: Colors.offwhite,
-              scrollbarColor: 'transparent transparent', // scrollbar thumb and track colors
-            }} />
-        )
-      })}
-
-    </>
-  </URLExplanation>;
+`,
 }
 
+export function CodeExamples(image) {
+  const [tabValue, setTabValue] = useState(0)
 
-const shorten = (str) => str.length > 60 ? str.slice(0, 60) + "..." : str;
+  const handleChange = (event, newValue) => {
+    setTabValue(newValue)
+  }
+
+  const codeExampleTabs = Object.keys(CODE_EXAMPLES)
+
+  // Add "api_description" as the first tab
+  const allTabs = [
+    "api_description",
+    "link",
+    "discord_bot",
+    ...codeExampleTabs.filter((tab) => tab !== "api_description"),
+  ]
+
+  return (
+    <URLExplanation>
+      <AppBar
+        position="static"
+        style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: "none" }}
+      >
+        <Tabs
+          value={tabValue}
+          onChange={handleChange}
+          aria-label="simple tabs example"
+          variant="scrollable"
+          scrollButtons="on"
+          TabIndicatorProps={{ style: { background: Colors.lime } }}
+        >
+          {allTabs.map((key, index) => (
+            <Tab
+              key={key}
+              label={
+                key === "api_description"
+                  ? "API Description"
+                  : key.charAt(0).toUpperCase() + key.slice(1)
+              }
+              style={{
+                color: tabValue === index ? Colors.lime : Colors.offwhite,
+                backgroundColor: "transparent",
+                boxShadow: "none",
+                fontFamily: "Uncut-Sans-Variable",
+                fontStyle: "normal",
+                borderRadius: 0,
+              }}
+            />
+          ))}
+        </Tabs>
+      </AppBar>
+      <>
+        {allTabs.map((key, index) => {
+          if (tabValue !== index) return null
+
+          if (!image.imageURL && key !== "discord_bot") return null
+
+          if (key === "link") {
+            return (
+              <Box margin="30px" overflow="hidden">
+                <Link
+                  variant="body2"
+                  href={image.imageURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
+                >
+                  {image.imageURL}
+                </Link>
+              </Box>
+            )
+          } else if (key === "discord_bot") {
+            return (
+              <Box margin="30px" overflow="hidden">
+                <Link
+                  variant="body2"
+                  href="https://discord.com/application-directory/1123551005993357342"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
+                >
+                  Discord Bot
+                </Link>
+              </Box>
+            )
+          }
+
+          const text = CODE_EXAMPLES[key](image)
+
+          return (
+            tabValue === index && (
+              <CodeBlock
+                key={key}
+                text={text}
+                language={key}
+                theme={irBlack}
+                // wrapLongLines
+                showLineNumbers={text.split("\n").length > 1}
+                customStyle={{
+                  backgroundColor: "transparent",
+                  color: Colors.offwhite,
+                  scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+                }}
+              />
+            )
+          )
+        })}
+      </>
+    </URLExplanation>
+  )
+}
+
+const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str)

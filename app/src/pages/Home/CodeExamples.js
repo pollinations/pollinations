@@ -149,20 +149,20 @@ downloadImage(imageUrl);`,
 import requests
 
 def download_image(image_url):
-    # Fetching the image from the URL
+    // Fetching the image from the URL
     response = requests.get(image_url)
-    # Writing the content to a file named 'image.jpg'
+    // Writing the content to a file named 'image.jpg'
     with open('image.jpg', 'wb') as file:
         file.write(response.content)
-    # Logging completion message
+    // Logging completion message
     print('Download Completed')
 
 # Image details
 prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
-seed = ${seed} # Each seed generates a new image variation
-model = '${model || "turbo"}' # Using 'turbo' as default if model is not provided
+seed = ${seed} // Each seed generates a new image variation
+model = '${model || "turbo"}' // Using 'turbo' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -208,34 +208,6 @@ export function CodeExamples(image) {
   ]
 
   return (
-    <URLExplanation>
-      {/*<Typography
-        style={{
-          initial: "unset",
-          fontFamily: "Uncut-Sans-Variable",
-          fontStyle: "normal",
-          fontWeight: 500,
-          fontSize: "24px",
-          lineHeight: "58px",
-          letterSpacing: "-0.02em",
-          color: Colors.lime,
-          textAlign: "center",
-          marginTop: "2em",
-        }}
-      >
-        Integrate
-      </Typography>
-      <AppBar position="static" style={{ color: "white", width: "auto", boxShadow: "none" }}>
-        <Tabs
-          value={tabValue}
-          onChange={handleChange}
-          aria-label="simple tabs example"
-          variant="scrollable"
-          scrollButtons="on"
-          TabIndicatorProps={{ style: { background: Colors.lime } }}
-      
-          </AppBar>
-          */}
     <>
       <ImageURLHeading>Integrate</ImageURLHeading>
       <URLExplanation>

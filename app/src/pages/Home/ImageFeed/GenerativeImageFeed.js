@@ -134,7 +134,6 @@ export function GenerativeImageFeed() {
                   <FileCopyIcon style={{ color: Colors.lime, fontSize: "3rem" }} />
                 </IconButton>
               </Tooltip>
-              {isLoading && <CircularProgress color={"inherit"} style={{ color: Colors.lime }} />}
             </Box>
           </Grid>
           <Grid item xs={12}>
@@ -236,15 +235,37 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
       style={{
         backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
         color: isInputChanged ? null : Colors.offblack,
-        display: isLoading ? "none" : "block",
         fontSize: "1.3rem",
         fontFamily: "Uncut-Sans-Variable",
         fontStyle: "normal",
         fontWeight: 400,
         height: "56px",
+        position: "relative",
       }}
     >
-      {isInputChanged ? "Imagine" : "Re-Imagine"}
+      {isLoading ? (
+        <span>
+          Imagining
+          <span className="dots">
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </span>
+        </span>
+      ) : isInputChanged ? "Imagine" : "Re-Imagine"}
+      {isLoading && (
+        <CircularProgress
+          size={24}
+          style={{
+            color: Colors.offblack,
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            marginTop: -12,
+            marginLeft: -12,
+          }}
+        />
+      )}
     </Button>
   )
 }

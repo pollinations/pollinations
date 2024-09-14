@@ -74,7 +74,9 @@ export function ImageEditor({
               width: "100%",
               height: "100px",
               backgroundColor: "transparent",
-              color: Colors.white,
+              border: `0.1px solid ${Colors.offwhite}`,
+              borderRadius: "5px",
+              color: Colors.offwhite,
               padding: "10px",
               fontSize: "1.1rem",
             }}
@@ -92,12 +94,13 @@ export function ImageEditor({
               Model
             </Typography>
             <Button
+              variant="outlined"
               aria-controls="model-menu"
               aria-haspopup="true"
               onClick={handleMenuOpen}
               onFocus={handleFocus}
               disabled={isLoading}
-              style={{ color: Colors.white, width: "100%" }}
+              style={{ color: Colors.white, width: "100%", justifyContent: "flex-start", height: "56px" }}
             >
               {model || "flux"}
             </Button>
@@ -107,14 +110,7 @@ export function ImageEditor({
               keepMounted
               open={Boolean(anchorEl)}
               onClose={() => handleMenuClose(null)}
-              MenuProps={{
-                PaperProps: {
-                  style: {
-                    backgroundColor: "red",
-                    color: Colors.white,
-                  },
-                },
-              }}
+              MenuListProps={{ style: { textAlign: "left", backgroundColor: "black" } }}
             >
               <MenuItem onClick={() => handleMenuClose("turbo")}>Turbo</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux")}>Flux</MenuItem>

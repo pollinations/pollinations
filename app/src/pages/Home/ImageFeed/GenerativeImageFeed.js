@@ -54,6 +54,9 @@ export function GenerativeImageFeed() {
 
   const handleParamChange = (param, value) => {
     setIsInputChanged(true)
+    if (!isStopped) {
+      stop(true)
+    }
     setImageParams((prevParams) => ({
       ...prevParams,
       [param]: value,
@@ -107,17 +110,7 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" alignItems="center">
-              <IconButton
-                onClick={handlePlayPauseClick}
-                disabled={isLoading}
-                style={{ marginRight: "2em" }}
-              >
-                {isStopped ? (
-                  <PlayArrow style={{ color: Colors.lime, fontSize: "3rem" }} />
-                ) : (
-                  <Pause style={{ color: Colors.lime, fontSize: "3rem" }} />
-                )}
-              </IconButton>
+              {PlaybackButton(handlePlayPauseClick, isLoading, isStopped)}
               {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
               {isLoading && <CircularProgress color={"inherit"} style={{ color: Colors.lime }} />}
             </Box>
@@ -139,6 +132,20 @@ export function GenerativeImageFeed() {
   )
 }
 
+function PlaybackButton(handlePlayPauseClick, isLoading, isStopped) {
+  return <IconButton
+    onClick={handlePlayPauseClick}
+    disabled={isLoading}
+    style={{ marginRight: "2em" }}
+  >
+    {isStopped ? (
+      <PlayArrow style={{ color: Colors.lime, fontSize: "3rem" }} />
+    ) : (
+      <Pause style={{ color: Colors.lime, fontSize: "3rem" }} />
+    )}
+  </IconButton>
+}
+
 function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
   return (
     <Button
@@ -147,7 +154,7 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
       onClick={handleButtonClick}
       disabled={isLoading}
       style={{
-        backgroundColor: isInputChanged ? null : Colors.lime,
+        backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
         color: isInputChanged ? null : Colors.offblack,
         display: isLoading ? "none" : "block",
         fontSize: "1.5rem",

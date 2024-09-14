@@ -3,7 +3,7 @@ import { MOBILE_BREAKPOINT, Colors } from "../../styles/global"
 import { Container as ContainerBase, Flex } from "./components"
 import Slider from "react-slick"
 import "../../assets/slick.min.css"
-import { ImageURLHeading } from "./styles"
+import { ImageURLHeading } from "./ImageHeading"
 import { useState, useRef } from "react"
 
 const MusicVideo = () => {

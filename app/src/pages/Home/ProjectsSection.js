@@ -1,7 +1,7 @@
 import React from 'react';
 import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
-import { ImageURLHeading } from './styles';
+import { ImageURLHeading } from './ImageHeading';
 import { Colors } from '../../styles/global';
 import Markdown from 'markdown-to-jsx';
 

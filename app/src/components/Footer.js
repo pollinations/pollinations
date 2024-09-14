@@ -4,7 +4,7 @@ import { SocialLinks } from "./Social"
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../styles/global"
 import { LinkStyle } from "../pages/Home/components"
 import DescriptionIcon from "@material-ui/icons/Description"
-import { ImageURLHeading } from "../pages/Home/styles"
+import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator"
 
 const Footer = () => {

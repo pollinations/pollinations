@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 import { Box, Container, Paper } from "@material-ui/core"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
@@ -37,12 +37,26 @@ export const ImageURLHeading = styled(
     const backgroundColor = whiteText ? "black" : "white"
     const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
     const prompt = encodeURIComponent(customPrompt || defaultPrompt)
-    const seed = useMemo(() => Math.floor(Math.random() * 10), [])
+
+    const [seed, setSeed] = useState(Math.floor(Math.random() * 10))
+
+    useEffect(() => {
+      const changeSeed = () => {
+        setSeed(Math.floor(Math.random() * 10))
+        const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
+        setTimeout(changeSeed, randomDelay)
+      }
+
+      const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000)
+
+      return () => clearTimeout(timeoutId)
+    }, [])
+
     const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
 
     return (
       <div className={className}>
-        <img src={imageUrl} alt={children} style={{ width: originalWidth, height: originalHeight }} />
+        <img src={imageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
       </div>
     )
   }

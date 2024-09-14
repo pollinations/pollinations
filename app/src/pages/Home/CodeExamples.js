@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
 import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from "react-code-blocks"
-import { URLExplanation } from "./styles"
+import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors } from "../../styles/global"
 
 // Code examples as an object
@@ -209,7 +209,7 @@ export function CodeExamples(image) {
 
   return (
     <URLExplanation>
-      <Typography
+      {/*<Typography
         style={{
           initial: "unset",
           fontFamily: "Uncut-Sans-Variable",
@@ -233,85 +233,103 @@ export function CodeExamples(image) {
           variant="scrollable"
           scrollButtons="on"
           TabIndicatorProps={{ style: { background: Colors.lime } }}
+      
+          </AppBar>
+          */}
+    <>
+      <ImageURLHeading>Integrate</ImageURLHeading>
+      <URLExplanation>
+        <AppBar
+          position="static"
+          style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: "none" }}
         >
-          {allTabs.map((key, index) => (
-            <Tab
-              key={key}
-              label={
-                key === "api_description"
-                  ? "API Description"
-                  : key.charAt(0).toUpperCase() + key.slice(1)
-              }
-              style={{
-                color: tabValue === index ? Colors.lime : Colors.offwhite,
-                backgroundColor: "transparent",
-                boxShadow: "none",
-                fontFamily: "Uncut-Sans-Variable",
-                fontStyle: "normal",
-                borderRadius: 0,
-              }}
-            />
-          ))}
-        </Tabs>
-      </AppBar>
-      <>
-        {allTabs.map((key, index) => {
-          if (tabValue !== index) return null
-
-          if (!image.imageURL && key !== "discord_bot") return null
-
-          if (key === "link") {
-            return (
-              <Box margin="30px" overflow="hidden">
-                <Link
-                  variant="body2"
-                  href={image.imageURL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
-                >
-                  {image.imageURL}
-                </Link>
-              </Box>
-            )
-          } else if (key === "discord_bot") {
-            return (
-              <Box margin="30px" overflow="hidden">
-                <Link
-                  variant="body2"
-                  href="https://discord.com/application-directory/1123551005993357342"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
-                >
-                  Discord Bot
-                </Link>
-              </Box>
-            )
-          }
-
-          const text = CODE_EXAMPLES[key](image)
-
-          return (
-            tabValue === index && (
-              <CodeBlock
+          <Tabs
+            value={tabValue}
+            onChange={handleChange}
+            aria-label="simple tabs example"
+            variant="scrollable"
+            scrollButtons="on"
+            TabIndicatorProps={{ style: { background: Colors.lime } }}
+          >
+            {allTabs.map((key, index) => (
+              <Tab
                 key={key}
-                text={text}
-                language={key}
-                theme={irBlack}
-                // wrapLongLines
-                showLineNumbers={text.split("\n").length > 1}
-                customStyle={{
+                label={
+                  key === "api_description"
+                    ? "API Description"
+                    : key.charAt(0).toUpperCase() + key.slice(1)
+                }
+                style={{
+                  color: tabValue === index ? Colors.lime : Colors.offwhite,
                   backgroundColor: "transparent",
-                  color: Colors.offwhite,
-                  scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+                  boxShadow: "none",
+                  fontFamily: "Uncut-Sans-Variable",
+                  fontStyle: "normal",
+                  borderRadius: 0,
                 }}
               />
+            ))}
+          </Tabs>
+        </AppBar>
+        <>
+          {allTabs.map((key, index) => {
+            if (tabValue !== index) return null
+
+            if (!image.imageURL && key !== "discord_bot") return null
+
+            if (key === "link") {
+              return (
+                <Box margin="30px" overflow="hidden">
+                  <Link
+                    variant="body2"
+                    href={image.imageURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
+                  >
+                    {image.imageURL}
+                  </Link>
+                </Box>
+              )
+            } else if (key === "discord_bot") {
+              return (
+                <Box margin="30px" overflow="hidden">
+                  <Link
+                    variant="body2"
+                    href="https://discord.com/application-directory/1123551005993357342"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "1.0rem", wordBreak: "break-all" }}
+                  >
+                    Discord Bot
+                  </Link>
+                </Box>
+              )
+            }
+
+            const text = CODE_EXAMPLES[key](image)
+
+            return (
+              tabValue === index && (
+                <CodeBlock
+                  key={key}
+                  text={text}
+                  language={key}
+                  theme={irBlack}
+                  // wrapLongLines
+                  showLineNumbers={text.split("\n").length > 1}
+                  customStyle={{
+                    backgroundColor: "transparent",
+                    color: Colors.offwhite,
+                    scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+                  }}
+                />
+              )
             )
-          )
-        })}
-      </>
-    </URLExplanation>
+          })}
+        </>
+      </URLExplanation>
+    </>
   )
 }
 

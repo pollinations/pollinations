@@ -23,7 +23,7 @@ const CompaniesSection = () => {
 
   const useStyles = makeStyles((theme) => ({
     root: {
-      maxWidth: "800px", 
+      maxWidth: "800px",
       padding: theme.spacing(1),
       display: "flex",
       flexDirection: "column",
@@ -40,7 +40,7 @@ const CompaniesSection = () => {
       fontSize: "1.2em",
     },
     td: {
-      padding: theme.spacing(1), 
+      padding: theme.spacing(1),
       fontSize: "1.1em",
     },
     link: {
@@ -59,7 +59,7 @@ const CompaniesSection = () => {
 
   const logoPrefix = "minimalist logo"
   const imageDimension = 96
-  const seedValue = 41 + Math.floor(Math.random() * 3) 
+  const seedValue = 41 + Math.floor(Math.random() * 3)
 
   const companies = [
     {
@@ -97,14 +97,14 @@ const CompaniesSection = () => {
   const generateImageUrl = (name, description) =>
     `https://pollinations.ai/p/${encodeURIComponent(
       `${logoPrefix} ${name} ${description}`
-    )}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`
+    )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 
   const tableRows = []
   for (let i = 0; i < companies.length; i += isMobile ? 1 : 2) {
     tableRows.push(
       <tr key={i}>
         <td className={classes.td}>
-          <img src={generateImageUrl(companies[i].name, companies[i].description)} alt={companies[i].name} />
+          <img src={generateImageUrl(companies[i].name, companies[i].description)} alt={companies[i].name} style={{ width: imageDimension, height: imageDimension }} />
         </td>
         <td className={classes.td}>
           <a href={companies[i].url} className={classes.link}>

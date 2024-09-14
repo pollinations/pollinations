@@ -29,6 +29,10 @@ export const GenerativeImageURLContainer = styled(Container)`
 
 export const ImageURLHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
+    const originalWidth = width
+    const originalHeight = height
+    width = width * 3
+    height = height * 3
     const foregroundColor = whiteText ? "white" : "black"
     const backgroundColor = whiteText ? "black" : "white"
     const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
@@ -38,7 +42,7 @@ export const ImageURLHeading = styled(
 
     return (
       <div className={className}>
-        <img src={imageUrl} alt={children} />
+        <img src={imageUrl} alt={children} style={{ width: originalWidth, height: originalHeight }} />
       </div>
     )
   }

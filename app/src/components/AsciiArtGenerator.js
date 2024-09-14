@@ -22,9 +22,9 @@ const AsciiArtGenerator = (props) => {
         }, 1000);
     }, [seed]);
 
-    return <pre style={props?.style}>
+    return <AsciiContainer style={props?.style}>
         <PollinationsText seed={seed}>{prompt}</PollinationsText>
-    </pre>;
+    </AsciiContainer>;
 }
 
 export default AsciiArtGenerator;

@@ -40,7 +40,7 @@ const TopBar = () => {
 const PublicNav = ({ drawerState, handleLinkClick }) => (
   <>
     <LogoContainer>
-      <NavLink to="/" style={{ pointerEvents: "none" }}>
+      <NavLink to="/">
         <ImageURLHeading
           whiteText={false}
           width={300}

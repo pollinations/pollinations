@@ -29,7 +29,7 @@ export function GenerativeImageFeed() {
     image: slideshowImage,
     onNewImage,
     stop,
-    isPlaying,
+    isStopped,
   } = useImageSlideshow()
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
@@ -89,7 +89,7 @@ export function GenerativeImageFeed() {
   }
 
   const handlePlayPauseClick = () => {
-    stop(!isPlaying)
+    stop(!isStopped)
   }
 
   return (
@@ -112,10 +112,10 @@ export function GenerativeImageFeed() {
                 disabled={isLoading}
                 style={{ marginRight: "2em" }}
               >
-                {!isPlaying ? (
-                  <Pause style={{ color: 'red', fontSize: "3rem" }} />
-                ) : (
+                {isStopped ? (
                   <PlayArrow style={{ color: Colors.lime, fontSize: "3rem" }} />
+                ) : (
+                  <Pause style={{ color: Colors.lime, fontSize: "3rem" }} />
                 )}
               </IconButton>
               {ImagineButton(handleButtonClick, isLoading, isInputChanged)}

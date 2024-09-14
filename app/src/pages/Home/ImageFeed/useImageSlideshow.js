@@ -36,7 +36,7 @@ export function useImageSlideshow() {
     setLoadingImages(images => [...images, newImage]);
   }, []);
 
-  return { image, onNewImage, stop };
+  return { image, onNewImage, stop, isStopped };
 }
 
 export function useImageEditor({ stop, image }) {

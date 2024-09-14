@@ -1,8 +1,6 @@
 import React from "react"
-import { Box, Typography, Tooltip, IconButton } from "@material-ui/core"
-import FileCopyIcon from "@material-ui/icons/FileCopy"
+import { Box, Typography } from "@material-ui/core"
 import { ImageContainer, ImageStyle } from "../styles"
-import { Colors } from "../../../styles/global"
 import { ModelInfo } from "./ModelInfo"
 
 export function ImageDisplay({ image, isMobile, handleCopyLink }) {
@@ -20,14 +18,6 @@ export function ImageDisplay({ image, isMobile, handleCopyLink }) {
           <Box>
             <Box position="relative">
               <ImageStyle src={image["imageURL"]} alt="generative_image" />
-              <Tooltip title="Copy link">
-                <IconButton
-                  onClick={handleCopyLink}
-                  style={{ color: Colors.lime, position: "absolute", top: 0, right: 0 }}
-                >
-                  <FileCopyIcon />
-                </IconButton>
-              </Tooltip>
             </Box>
           </Box>
           {!isMobile && (

@@ -58,7 +58,7 @@ export const ImageURLHeading = styled(
 `
 
 export const ImageContainer = styled(Paper)`
-  width: 100%; /* Allows the container to adjust to screen width */
+  width: 100%; 
   display: flex;
   justify-content: center;
   align-items: center;

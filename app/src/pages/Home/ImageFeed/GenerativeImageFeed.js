@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import {
-  Typography,
+  Tooltip,
   Grid,
   Box,
   CircularProgress,
@@ -8,7 +8,7 @@ import {
   Button,
   IconButton,
 } from "@material-ui/core"
-import { PlayArrow, Pause } from "@material-ui/icons"
+import { PlayArrow, Pause, FileCopy as FileCopyIcon } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
@@ -25,12 +25,7 @@ export function GenerativeImageFeed() {
   const [lastImage, setLastImage] = useState(null)
   const [imageParams, setImageParams] = useState({})
   const imageParamsRef = useRef(imageParams)
-  const {
-    image: slideshowImage,
-    onNewImage,
-    stop,
-    isStopped,
-  } = useImageSlideshow()
+  const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow()
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
@@ -112,6 +107,15 @@ export function GenerativeImageFeed() {
             <Box display="flex" justifyContent="center" alignItems="center">
               {PlaybackButton(handlePlayPauseClick, isLoading, isStopped)}
               {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
+              <Tooltip title="Copy link">
+                <IconButton
+                  onClick={handleCopyLink}
+                  disabled={isLoading}
+                  style={{ marginLeft: "2em" }}
+                >
+                  <FileCopyIcon style={{ color: Colors.lime, fontSize: "3rem" }} />
+                </IconButton>
+              </Tooltip>
               {isLoading && <CircularProgress color={"inherit"} style={{ color: Colors.lime }} />}
             </Box>
           </Grid>
@@ -133,17 +137,17 @@ export function GenerativeImageFeed() {
 }
 
 function PlaybackButton(handlePlayPauseClick, isLoading, isStopped) {
-  return <IconButton
-    onClick={handlePlayPauseClick}
-    disabled={isLoading}
-    style={{ marginRight: "2em" }}
-  >
-    {isStopped ? (
-      <PlayArrow style={{ color: Colors.lime, fontSize: "3rem" }} />
-    ) : (
-      <Pause style={{ color: Colors.lime, fontSize: "3rem" }} />
-    )}
-  </IconButton>
+  return (
+    <Tooltip title="Stop/Start Image Feed">
+    <IconButton onClick={handlePlayPauseClick} disabled={isLoading} style={{ marginRight: "2em" }}>
+      {isStopped ? (
+        <PlayArrow style={{ color: Colors.lime, fontSize: "4rem" }} />
+      ) : (
+        <Pause style={{ color: Colors.lime, fontSize: "4rem" }} />
+      )}
+    </IconButton>
+    </Tooltip>
+  )
 }
 
 function ImagineButton(handleButtonClick, isLoading, isInputChanged) {

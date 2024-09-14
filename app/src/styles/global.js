@@ -32,7 +32,6 @@ export const BaseContainer = styled.div`
   }
 `;
 
-
 export const MarkDownStyle = styled.div`
 h6 {
   font-size: 1.3rem;
@@ -73,12 +72,10 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 export const Headline = styled.p`
-
 font-style: normal;
 font-weight: 500;
 font-size: 36px;
 line-height: 43px;
 text-align: center;
-
 color: #FFFFFF;
 `

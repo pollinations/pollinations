@@ -27,30 +27,36 @@ export const GenerativeImageURLContainer = styled(Container)`
   width: 90%;
 `
 
+const useRandomSeed = () => {
+  const [seed, setSeed] = useState(Math.floor(Math.random() * 10))
+
+  useEffect(() => {
+    const changeSeed = () => {
+      setSeed(Math.floor(Math.random() * 10))
+      const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
+      setTimeout(changeSeed, randomDelay)
+    }
+
+    const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000)
+
+    return () => clearTimeout(timeoutId)
+  }, [])
+
+  return seed;
+}
+
 export const ImageURLHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
     const originalWidth = width
     const originalHeight = height
     width = width * 3
     height = height * 3
-    const foregroundColor = whiteText ? "white" : "black"
-    const backgroundColor = whiteText ? "black" : "white"
+    const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black")
+    const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white")
     const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
     const prompt = encodeURIComponent(customPrompt || defaultPrompt)
 
-    const [seed, setSeed] = useState(Math.floor(Math.random() * 10))
-
-    useEffect(() => {
-      const changeSeed = () => {
-        setSeed(Math.floor(Math.random() * 10))
-        const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
-        setTimeout(changeSeed, randomDelay)
-      }
-
-      const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000)
-
-      return () => clearTimeout(timeoutId)
-    }, [])
+    const seed = useRandomSeed()
 
     const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
 

@@ -230,16 +230,16 @@ const ProjectsSection = () => {
         <Container className={classes.root}>
             <ImageURLHeading>Integrations</ImageURLHeading>
 
-            <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Chat Integrations</ImageURLHeading>
             {renderProjects(projects.llmIntegration)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Social Bots</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Social Bots</ImageURLHeading>
             {renderProjects(projects.socialBots)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Mobile & Web Applications</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Mobile & Web Applications</ImageURLHeading>
             {renderProjects(projects.apps)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Tutorials</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
             {renderProjects(projects.tutorials)}
 
             <Typography className={classes.listProjectText}>

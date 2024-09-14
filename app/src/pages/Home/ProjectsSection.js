@@ -4,6 +4,8 @@ import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './ImageHeading';
 import { Colors } from '../../styles/global';
 import Markdown from 'markdown-to-jsx';
+import { LinkStyle } from "./components";
+import styled from '@emotion/styled';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -20,11 +22,14 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: '800px',
         borderCollapse: 'separate',
         borderSpacing: '0 0', // Reduced vertical space between rows
+        marginBottom: '2em'
+
     },
     tableRow: {
         '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.05)', // Slight highlight on hover
         },
+
     },
     tableCell: {
         border: 'none', // Removes cell borders
@@ -242,14 +247,29 @@ const ProjectsSection = () => {
             <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
             {renderProjects(projects.tutorials)}
 
-            <Typography className={classes.listProjectText}>
+            <Typography className={classes.listProjectText} style={{ fontSize: '1.5em' }}>
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />
-                Get in touch at <Link href="mailto:hello@pollinations.ai" style={{ color: Colors.lime }}>hello@pollinations.ai</Link>.
+                <ImageURLHeading width={350} height={70} whiteText={true}>Get in touch</ImageURLHeading> <StyledNavLink href="mailto:hello@pollinations.ai" style={{ color: Colors.lime, fontSize: '1.5em' }}>hello@pollinations.ai</StyledNavLink>
             </Typography>
-
+            
         </Container>
     );
 };
+
+
+const StyledLink = styled(LinkStyle)`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${Colors.primary};
+  }
+`
+
+const StyledNavLink = styled(LinkStyle)`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${Colors.primary};
+  }
+`
 
 const renderProjectLink = (project) => {
     return (

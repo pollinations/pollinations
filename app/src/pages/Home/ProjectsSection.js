@@ -184,7 +184,7 @@ const projects = {
     ]
 };
 
-const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
+const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension * 4}&height=${imageDimension * 4}&nologo=true&seed=${seedValue}`;
 
 const ProjectsSection = () => {
     const classes = useStyles();
@@ -202,6 +202,7 @@ const ProjectsSection = () => {
                                     src={generateImageUrl(project.name)}
                                     alt={project.name}
                                     className={classes.projectImage}
+                                    style={{ width: imageDimension, height: imageDimension }}
                                 />
                             )}
                         </TableCell>

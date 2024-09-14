@@ -20,7 +20,7 @@ const AsciiArtGenerator = (props) => {
         setTimeout(() => {
             setSeed(seed => (seed + 1) % 30);
         }, 1000);
-    }, [asciiArt]);
+    }, [seed]);
 
     return <pre style={props?.style}>
         <PollinationsText seed={seed}>{prompt}</PollinationsText>

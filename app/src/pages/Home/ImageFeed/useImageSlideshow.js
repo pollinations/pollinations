@@ -32,6 +32,10 @@ export function useImageSlideshow() {
     if (!isStopped) nextImage();
   }, interval);
 
+  useEffect(() => {
+    nextImage();
+  }, [])
+
   const onNewImage = useCallback((newImage) => {
     setLoadingImages(images => [...images, newImage]);
   }, []);

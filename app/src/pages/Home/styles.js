@@ -4,10 +4,17 @@ import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 import { useMemo } from "react"
 
 export const ImageStyle = styled.img`
-  width: 100%;
-  height: auto;
-  max-width: 640px;
-  max-height: 640px;
+  height: 600px; /* Set your desired fixed height */
+  width: auto;
+  margin: 1em;
+  max-width: 100%; /* Prevents image from exceeding container width */
+  object-fit: contain; /* Maintains aspect ratio without cropping */
+
+  @media (max-width: 600px) {
+    /* Adjustments for mobile devices */
+    height: auto; /* Allows height to adjust based on width */
+    width: 100%; /* Image takes up full width of its container */
+  }
 `
 
 export const GenerativeImageURLContainer = styled(Container)`
@@ -51,12 +58,10 @@ export const ImageURLHeading = styled(
 `
 
 export const ImageContainer = styled(Paper)`
-  margin: 0;
+  width: 100%; /* Allows the container to adjust to screen width */
   display: flex;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    height: auto;
-    margin-bottom: 0px;
-  }
+  justify-content: center;
+  align-items: center;
 `
 
 export const URLExplanation = styled(Box)`

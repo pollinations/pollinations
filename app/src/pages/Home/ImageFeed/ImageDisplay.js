@@ -18,7 +18,7 @@ export function ImageDisplay({ image, isMobile, handleCopyLink }) {
       {image ? (
         <>
           <Box>
-            <Box maxWidth="640px" position="relative">
+            <Box position="relative">
               <ImageStyle src={image["imageURL"]} alt="generative_image" />
               <Tooltip title="Copy link">
                 <IconButton

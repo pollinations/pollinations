@@ -49,9 +49,8 @@ app.post('/', async (req, res) => {
         console.log('Invalid messages array');
         return res.status(400).send('Invalid messages array');
     }
-    const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
+    const seed = req.query.seed ? parseInt(req.query.seed, 10) : req.body.seed;
     const cacheKey = JSON.stringify(messages) + `-${seed}-${jsonMode}`;
-
 
     if (cache[cacheKey]) {
         // console.log(`Cache hit for key: ${cacheKey}`);

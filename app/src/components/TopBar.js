@@ -3,39 +3,54 @@ import IconButton from "@material-ui/core/IconButton"
 import { NavLink } from "react-router-dom"
 import TemporaryDrawer from "./Drawer"
 import styled from "@emotion/styled"
-import { MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
+import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from "../assets/menuIcon.svg"
 import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/styles"
 
+const StyledLink = styled.a`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${Colors.primary};
+  }
+`
+
 const TopBar = () => {
   const drawerState = React.useState(false)
+
+  const handleLinkClick = (e) => {
+    e.preventDefault()
+    const link = e.currentTarget.href
+    navigator.clipboard.writeText(link).then(() => {
+      console.log(`Copied to clipboard: ${link}`)
+    })
+  }
 
   return (
     <OuterContainer>
       <TopContainer>
-        <PublicNav drawerState={drawerState} />
+        <PublicNav drawerState={drawerState} handleLinkClick={handleLinkClick} />
       </TopContainer>
-      <MobileMenu drawerState={drawerState} />
+      <MobileMenu drawerState={drawerState} handleLinkClick={handleLinkClick} />
     </OuterContainer>
   )
 }
 
-const PublicNav = ({ drawerState }) => (
+const PublicNav = ({ drawerState, handleLinkClick }) => (
   <>
     <LogoContainer>
-      <NavLink to="/">
+      <NavLink to="/" style={{ pointerEvents: "none" }}>
         <ImageURLHeading
           whiteText={false}
           width={300}
           height={100}
           customPrompt={`an image with the text "Pollinations" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. The text should take all the space without any margins.`}
+          style={{ userSelect: "none" }} // Added to prevent selection
         />
       </NavLink>
     </LogoContainer>
     <NavBarStyle>
-
       <SocialLinks small hideOnMobile gap="1em" invert />
       <MenuButton>
         <IconButton onClick={() => drawerState[1](true)}>
@@ -50,7 +65,7 @@ const PublicNav = ({ drawerState }) => (
   </>
 )
 
-const MobileMenu = ({ drawerState }) => (
+const MobileMenu = ({ drawerState, handleLinkClick }) => (
   <TemporaryDrawer drawerState={drawerState}>
     <MobileMenuStyle>
       <MobileCloseIconStyle>
@@ -59,9 +74,11 @@ const MobileMenu = ({ drawerState }) => (
         </IconButton>
       </MobileCloseIconStyle>
       <CTAStyle>
-        Let's talk
+        <span style={{ color: Colors.lime, userSelect: "none" }}>Let's talk</span>
         <br />
-        <span> hello@pollinations.ai </span>
+        <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
+          <span>hello@pollinations.ai</span>
+        </StyledLink>
       </CTAStyle>
       <SocialLinks medium gap="1em" />
     </MobileMenuStyle>
@@ -73,7 +90,6 @@ const OuterContainer = styled.div`
   display: flex;
   justify-content: center;
 `
-
 const MobileMenuStyle = styled.div`
   position: relative;
   width: 100%;
@@ -84,7 +100,6 @@ const MobileMenuStyle = styled.div`
   align-items: center;
   padding: 1em 1em 3em;
 `
-
 const MobileCloseIconStyle = styled.div`
   position: absolute;
   top: 1em;
@@ -94,29 +109,26 @@ const MobileCloseIconStyle = styled.div`
     color: black;
   }
 `
-
 const CTAStyle = styled.p`
   font-style: normal;
   font-weight: 500;
   font-size: 24px;
   line-height: 36px;
   text-align: center;
-  color: #ffffff;
   padding-bottom: 0em;
-  span {
-    color: ${Colors.lime};
-  }
 `
 const TopContainer = styled.div`
   background-color: #FEFEFE;
-  top: 0;
   z-index: 1;
   width: 100%;
-  padding: 0 30px;
+  padding: 0 20px;
   display: flex;
   justify-content: center;
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    padding: 0;
+    padding: 10;
+  }
+  @media (min-width: ${MOBILE_BREAKPOINT}) {
+    padding-top: 0; /* Remove top padding for desktop view */
   }
 `
 
@@ -143,7 +155,6 @@ const LogoContainer = styled.div`
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-
 `
 
 const MenuButton = styled.div`

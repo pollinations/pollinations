@@ -37,7 +37,7 @@ export const ImageURLHeading = styled(
   }
 )`
   text-align: center;
-  margin: 60px auto;
+  margin: 10px auto;
 
   img {
     width: 100%;

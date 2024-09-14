@@ -63,30 +63,6 @@ export function ImageEditor({
       }}
     >
       <Grid container spacing={2}>
-        {/* Prompt */}
-        <Grid item xs={12}>
-          <Typography variant="body2" color="textSecondary">
-            Prompt
-          </Typography>
-          <TextareaAutosize
-            minRows={3}
-            style={{
-              width: "100%",
-              height: "100px",
-              backgroundColor: "transparent",
-              border: `0.1px solid ${Colors.offwhite}`,
-              borderRadius: "5px",
-              color: Colors.offwhite,
-              padding: "10px",
-              fontSize: "1.1rem",
-            }}
-            value={prompt}
-            onChange={(e) => handleInputChange("prompt", e.target.value)}
-            onFocus={handleFocus}
-            disabled={isLoading}
-          />
-        </Grid>
-
         {/* Model, Width, Height */}
         <Grid container item xs={12} spacing={2}>
           <Grid item xs={4}>

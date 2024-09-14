@@ -7,8 +7,10 @@ import {
   useMediaQuery,
   Button,
   IconButton,
+  Typography,
+  TextareaAutosize,
 } from "@material-ui/core"
-import { PlayArrow, Pause, FileCopy as FileCopyIcon } from "@material-ui/icons"
+import { FileCopy as FileCopyIcon } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
@@ -18,6 +20,9 @@ import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
 import { ImageEditor } from "./ImageEditor"
 import { ImageDisplay } from "./ImageDisplay"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
+import ToggleButton from "@mui/material/ToggleButton"
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
+import transitions from "@material-ui/core/styles/transitions"
 
 const log = debug("GenerativeImageFeed")
 
@@ -46,6 +51,10 @@ export function GenerativeImageFeed() {
   useEffect(() => {
     setIsInputChanged(false)
   }, [image.imageURL])
+
+  useEffect(() => {
+    setToggleValue(isStopped ? "edit" : "feed")
+  }, [isStopped])
 
   const handleParamChange = (param, value) => {
     setIsInputChanged(true)
@@ -78,16 +87,25 @@ export function GenerativeImageFeed() {
     setTimeout(handleSubmit, 250)
   }
 
+  const [toggleValue, setToggleValue] = useState("feed")
+
+  const handleToggleChange = (event, newValue) => {
+    if (newValue !== null) {
+      setToggleValue(newValue)
+      if (newValue === "feed") {
+        stop(false) // Resume the feed
+      } else if (newValue === "edit") {
+        stop(true) // Pause the feed
+      }
+    }
+  }
+
   const handleFocus = () => {
     // No tab switching needed
   }
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(image["imageURL"])
-  }
-
-  const handlePlayPauseClick = () => {
-    stop(!isStopped)
   }
 
   return (
@@ -105,7 +123,7 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" alignItems="center">
-              {PlaybackButton(handlePlayPauseClick, isLoading, isStopped)}
+              {EditModeButton(toggleValue, handleToggleChange, isLoading)}
               {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
               <Tooltip title="Copy link">
                 <IconButton
@@ -120,34 +138,92 @@ export function GenerativeImageFeed() {
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <ImageEditor
-              image={imageParams}
-              handleParamChange={handleParamChange}
-              handleFocus={handleFocus}
-              isLoading={isLoading}
-              handleSubmit={handleSubmit}
-              setIsInputChanged={setIsInputChanged}
+            <Typography variant="body2" color="textSecondary">
+              Prompt
+            </Typography>
+            <TextareaAutosize
+              minRows={3}
+              style={{
+                width: "100%",
+                height: "100px",
+                backgroundColor: "transparent",
+                border: `0.1px solid ${Colors.offwhite}`,
+                borderRadius: "5px",
+                color: Colors.offwhite,
+                padding: "10px",
+                fontSize: "1.1rem",
+              }}
+              value={imageParams.prompt}
+              onChange={(e) => handleParamChange("prompt", e.target.value)}
+              onFocus={handleFocus}
+              disabled={isLoading}
             />
-            <CodeExamples {...image} />
           </Grid>
+          {toggleValue === "edit" && (
+            <Grid item xs={12}>
+              <ImageEditor
+                image={imageParams}
+                handleParamChange={handleParamChange}
+                handleFocus={handleFocus}
+                isLoading={isLoading}
+                handleSubmit={handleSubmit}
+                setIsInputChanged={setIsInputChanged}
+              />
+              <CodeExamples {...image} />
+            </Grid>
+          )}
         </Grid>
       )}
     </GenerativeImageURLContainer>
   )
 }
 
-function PlaybackButton(handlePlayPauseClick, isLoading, isStopped) {
+function EditModeButton(toggleValue, handleToggleChange, isLoading) {
   return (
-    <Tooltip title="Stop/Start Image Feed">
-    <IconButton onClick={handlePlayPauseClick} disabled={isLoading} style={{ marginRight: "2em" }}>
-      {isStopped ? (
-        <PlayArrow style={{ color: Colors.lime, fontSize: "4rem" }} />
-      ) : (
-        <Pause style={{ color: Colors.lime, fontSize: "4rem" }} />
-      )}
-    </IconButton>
-    </Tooltip>
-  )
+    <ToggleButtonGroup
+      value={toggleValue}
+      variant="outlined"
+      exclusive
+      onChange={handleToggleChange}
+      aria-label="Feed or Edit"
+      style={{ marginRight: "2em", height: "56px", border: `0.1px solid ${Colors.lime}` }}
+    >
+      <ToggleButton
+        value="feed"
+        disabled={isLoading}
+        style={{
+          backgroundColor: toggleValue === "feed" ? Colors.lime : "transparent",
+          color: toggleValue === "feed" ? Colors.offblack : Colors.lime,
+          fontSize: "1.3rem",
+          fontFamily: "Uncut-Sans-Variable",
+          fontStyle: "normal",
+          fontWeight: 400,
+          height: "100%",
+          width: "100px",
+          border: `1px solid ${Colors.lime}`,
+        }}
+      >
+        Feed
+      </ToggleButton>
+      <ToggleButton
+        value="edit"
+        disabled={isLoading}
+        style={{
+          backgroundColor: toggleValue === "edit" ? Colors.lime : "transparent",
+          color: toggleValue === "edit" ? Colors.offblack : Colors.lime,
+          fontSize: "1.3rem",
+          fontFamily: "Uncut-Sans-Variable",
+          fontStyle: "normal",
+          fontWeight: 400,
+          height: "100%",
+          width: "100px",
+          border: `1px solid ${Colors.lime}`,
+        }}
+      >
+        Edit
+      </ToggleButton>
+    </ToggleButtonGroup>
+  );
 }
 
 function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
@@ -161,10 +237,11 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
         backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
         color: isInputChanged ? null : Colors.offblack,
         display: isLoading ? "none" : "block",
-        fontSize: "1.5rem",
+        fontSize: "1.3rem",
         fontFamily: "Uncut-Sans-Variable",
         fontStyle: "normal",
         fontWeight: 400,
+        height: "56px",
       }}
     >
       {isInputChanged ? "Imagine" : "Re-Imagine"}

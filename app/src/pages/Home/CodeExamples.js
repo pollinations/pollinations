@@ -209,10 +209,23 @@ export function CodeExamples(image) {
 
   return (
     <URLExplanation>
-      <AppBar
-        position="static"
-        style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: "none" }}
+      <Typography
+        style={{
+          initial: "unset",
+          fontFamily: "Uncut-Sans-Variable",
+          fontStyle: "normal",
+          fontWeight: 500,
+          fontSize: "24px",
+          lineHeight: "58px",
+          letterSpacing: "-0.02em",
+          color: Colors.lime,
+          textAlign: "center",
+          marginTop: "2em",
+        }}
       >
+        Integrate
+      </Typography>
+      <AppBar position="static" style={{ color: "white", width: "auto", boxShadow: "none" }}>
         <Tabs
           value={tabValue}
           onChange={handleChange}

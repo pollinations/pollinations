@@ -72,6 +72,7 @@ export function ImageEditor({
             minRows={3}
             style={{
               width: "100%",
+              height: "100px",
               backgroundColor: "transparent",
               color: Colors.white,
               padding: "10px",

@@ -7,7 +7,7 @@ import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { CloseOutlined } from "@material-ui/icons"
 import MobileMenuIcon from "../assets/menuIcon.svg"
 import { SocialLinks } from "./Social"
-import { ImageURLHeading } from "../pages/Home/styles"
+import { ImageURLHeading } from "../pages/Home/ImageHeading"
 
 const StyledLink = styled.a`
   transition: color 0.3s ease;

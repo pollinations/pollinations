@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { Container } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
-import { ImageURLHeading } from "./styles"
+import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
 
 const CompaniesSection = () => {

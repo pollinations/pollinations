@@ -12,7 +12,7 @@ import { PlayArrow, Pause, FileCopy as FileCopyIcon } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
-import { GenerativeImageURLContainer, ImageURLHeading } from "../styles"
+import { GenerativeImageURLContainer, ImageURLHeading } from "../ImageHeading"
 import debug from "debug"
 import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
 import { ImageEditor } from "./ImageEditor"
@@ -139,13 +139,13 @@ export function GenerativeImageFeed() {
 function PlaybackButton(handlePlayPauseClick, isLoading, isStopped) {
   return (
     <Tooltip title="Stop/Start Image Feed">
-    <IconButton onClick={handlePlayPauseClick} disabled={isLoading} style={{ marginRight: "2em" }}>
-      {isStopped ? (
-        <PlayArrow style={{ color: Colors.lime, fontSize: "4rem" }} />
-      ) : (
-        <Pause style={{ color: Colors.lime, fontSize: "4rem" }} />
-      )}
-    </IconButton>
+      <IconButton onClick={handlePlayPauseClick} disabled={isLoading} style={{ marginRight: "2em" }}>
+        {isStopped ? (
+          <PlayArrow style={{ color: Colors.lime, fontSize: "4rem" }} />
+        ) : (
+          <Pause style={{ color: Colors.lime, fontSize: "4rem" }} />
+        )}
+      </IconButton>
     </Tooltip>
   )
 }

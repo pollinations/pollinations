@@ -3,29 +3,29 @@ import { useMemo } from "react"
 import { Colors, MOBILE_BREAKPOINT, Fonts } from "../../styles/global"
 import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./components"
 import { Link } from "react-router-dom"
-import { GenerativeImageURLContainer, ImageURLHeading } from "./styles"
+import { GenerativeImageURLContainer, ImageURLHeading } from "./ImageHeading"
 import discordLogo from "../../assets/imgs/discord_logo.png"
 
 const DiscordSection = (props) => {
   return (
-      <Container>
-        <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
-          <DiscordLogoHeading>Discord</DiscordLogoHeading>
-        </CenteredLink>
-        <Body>
-          <TextWithLogo>
-            <Logo src={discordLogo} alt="Discord Logo" />
-            <Text>
-              Discuss, get help and <br />
-              contribute on Discord.
-            </Text>
-          </TextWithLogo>
-          <br />
-          <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
-            <b>join our discord</b>
-          </LinkStyle>
-        </Body>
-      </Container>
+    <Container>
+      <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
+        <DiscordLogoHeading>Discord</DiscordLogoHeading>
+      </CenteredLink>
+      <Body>
+        <TextWithLogo>
+          <Logo src={discordLogo} alt="Discord Logo" />
+          <Text>
+            Discuss, get help and <br />
+            contribute on Discord.
+          </Text>
+        </TextWithLogo>
+        <br />
+        <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
+          <b>join our discord</b>
+        </LinkStyle>
+      </Body>
+    </Container>
   )
 }
 

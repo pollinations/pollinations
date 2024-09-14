@@ -1,6 +1,6 @@
 import React from "react"
 import { Box, Typography } from "@material-ui/core"
-import { ImageContainer, ImageStyle } from "../styles"
+import { ImageContainer, ImageStyle } from "../ImageHeading"
 import { ModelInfo } from "./ModelInfo"
 
 export function ImageDisplay({ image, isMobile, handleCopyLink }) {

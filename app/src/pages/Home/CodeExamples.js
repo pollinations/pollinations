@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Typography, Tooltip, IconButton, AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
 import { Code, CodeBlock, CopyBlock, a11yLight, arta, dracula, irBlack } from "react-code-blocks"
-import { ImageURLHeading, URLExplanation } from "./styles"
+import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors } from "../../styles/global"
 
 // Code examples as an object

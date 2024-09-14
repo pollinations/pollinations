@@ -42,7 +42,7 @@ export const ImageURLHeading = styled(
 
     return (
       <div className={className}>
-        <img src={imageUrl} alt={children} style={{ width: originalWidth, height: originalHeight }} />
+        <img src={imageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
       </div>
     )
   }

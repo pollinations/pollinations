@@ -213,7 +213,7 @@ export function CodeExamples(image) {
       <URLExplanation>
         <AppBar
           position="static"
-          style={{ color: "white", width: "auto", marginTop: "30px", boxShadow: "none" }}
+          style={{ color: "white", width: "auto", boxShadow: "none" }}
         >
           <Tabs
             value={tabValue}

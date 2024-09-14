@@ -10,80 +10,6 @@ Install the package:
 npm install @pollinations/react
 ```
 
-### 🛠️ Hook: usePollinationsText
-
-The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
-
-```javascript
-import React from 'react';
-import { usePollinationsText } from '@pollinations/react;
-
-const MyComponent = () => {
-  const text = usePollinationsText('Write a short haiku about Pollinations.AI');
-  
-  return (
-    <div>
-      {text ? <p>{text}</p> : <p>Loading...</p>}
-    </div>
-  );
-};
-
-export default MyComponent;
-```
-
-### 🛠️ Hook: usePollinationsImage
-
-The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
-
-```javascript
-import React from 'react';
-import { usePollinationsImage } from '@pollinations/react;
-
-const MyComponent = () => {
-  const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', { width: 800, height: 600, seed: 42 });
-
-  return (
-    <div>
-      {imageUrl ? <img src={imageUrl} /> : <p>Loading...</p>}
-    </div>
-  );
-};
-
-export default MyComponent;
-```
-
-### 🛠️ Hook: usePollinationsChat
-
-The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
-
-```javascript
-import React, { useState } from 'react';
-import { usePollinationsChat } from '@pollinations/react';
-
-const ChatComponent = () => {
-  const [input, setInput] = useState('');
-  const { sendUserMessage, messages } = usePollinationsChat([ {"role":"system", content:"You are a helpful assistant"}]);
-
-  const handleSend = () => {
-    sendUserMessage(input);
-    setInput('');
-  };
-
-  return (
-    <div> 
-      <div>
-        {messages.map((msg, index) => (
-          <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
-        ))}
-      </div>
-      <input value={input} onChange={(e) => setInput(e.target.value)} />
-      <button onClick={handleSend}>Send</button>
-    </div>
-  );
-};
-
-```
-
 ### 🧩 Components
 
 #### PollinationsText
@@ -94,11 +20,11 @@ The PollinationsText component simplifies the process of generating and displayi
 import React from 'react';
 import { PollinationsText } from '@pollinations/react;
 
-const MyComponent = () => (
+const TermsAndConditions = () => (
   <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
 );
 
-export default MyComponent;
+export default TermsAndConditions;
 ```
 
 #### PollinationsMarkdown
@@ -109,11 +35,11 @@ The PollinationsMarkdown component simplifies the process of generating and disp
 import React from 'react';
 import { PollinationsMarkdown } from '@pollinations/react;
 
-const MyComponent = () => (
-  <PollinationsMarkdown seed={42}>Create beautiful documentation about a Pollinating robot in markdown</PollinationsMarkdown>
+const AdSlogan = () => (
+  <PollinationsMarkdown seed={42}>Create great advertising slogan with cool formatting about Pollinating in markdown< PollinationsMarkdown>
 );
 
-export default MyComponent;
+export default AdSlogan;
 ```
 
 #### PollinationsImage
@@ -124,11 +50,11 @@ The PollinationsImage component simplifies the process of generating and display
 import React from 'react';
 import { PollinationsImage } from '@pollinations/react;
 
-const MyComponent = () => (
+const SunsetImage = () => (
   <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
 );
 
-export default MyComponent;
+export default SunsetImage;
 ```
 
 ## ⚙️ Development

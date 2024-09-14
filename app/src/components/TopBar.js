@@ -74,8 +74,12 @@ const MobileMenu = ({ drawerState, handleLinkClick }) => (
         </IconButton>
       </MobileCloseIconStyle>
       <CTAStyle>
-        <span style={{ color: Colors.lime, userSelect: "none" }}>Let's talk</span>
-        <br />
+        <ImageURLHeading
+          whiteText={true}
+          width={250}
+          height={100}
+          customPrompt={`an image with the text "Let's talk" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate many colorful elements related to communication, such as speech bubbles, chat icons, mouths, and other related forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. The text should take all the space without any margins. <3`}
+        />
         <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
           <span>hello@pollinations.ai</span>
         </StyledLink>
@@ -109,16 +113,16 @@ const MobileCloseIconStyle = styled.div`
     color: black;
   }
 `
-const CTAStyle = styled.p`
+const CTAStyle = styled.div`
   font-style: normal;
   font-weight: 500;
   font-size: 24px;
   line-height: 36px;
   text-align: center;
-  padding-bottom: 0em;
+  padding-bottom: 2em;
 `
 const TopContainer = styled.div`
-  background-color: #FEFEFE;
+  background-color: #fefefe;
   z-index: 1;
   width: 100%;
   padding: 0 20px;

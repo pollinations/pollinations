@@ -6,7 +6,9 @@ import {
   CircularProgress,
   useMediaQuery,
   Button,
+  IconButton,
 } from "@material-ui/core"
+import { PlayArrow, Pause } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
@@ -23,7 +25,12 @@ export function GenerativeImageFeed() {
   const [lastImage, setLastImage] = useState(null)
   const [imageParams, setImageParams] = useState({})
   const imageParamsRef = useRef(imageParams)
-  const { image: slideshowImage, onNewImage, stop } = useImageSlideshow()
+  const {
+    image: slideshowImage,
+    onNewImage,
+    stop,
+    isPlaying,
+  } = useImageSlideshow()
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
@@ -81,6 +88,10 @@ export function GenerativeImageFeed() {
     navigator.clipboard.writeText(image["imageURL"])
   }
 
+  const handlePlayPauseClick = () => {
+    stop(!isPlaying)
+  }
+
   return (
     <GenerativeImageURLContainer style={{ paddingBottom: "3em", maxWidth: "800px" }}>
       <Grid item style={{ margin: "3em 0" }}>
@@ -95,7 +106,18 @@ export function GenerativeImageFeed() {
             <ImageDisplay image={image} isMobile={isMobile} handleCopyLink={handleCopyLink} />
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" justifyContent="center">
+            <Box display="flex" justifyContent="center" alignItems="center">
+              <IconButton
+                onClick={handlePlayPauseClick}
+                disabled={isLoading}
+                style={{ marginRight: "2em" }}
+              >
+                {!isPlaying ? (
+                  <Pause style={{ color: 'red', fontSize: "3rem" }} />
+                ) : (
+                  <PlayArrow style={{ color: Colors.lime, fontSize: "3rem" }} />
+                )}
+              </IconButton>
               {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
               {isLoading && <CircularProgress color={"inherit"} style={{ color: Colors.lime }} />}
             </Box>
@@ -111,7 +133,6 @@ export function GenerativeImageFeed() {
             />
             <CodeExamples {...image} />
           </Grid>
-
         </Grid>
       )}
     </GenerativeImageURLContainer>

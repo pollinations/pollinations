@@ -55,6 +55,8 @@ const CompaniesSection = () => {
     { name: "NVIDIA Inception", url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/", description: "AI startup support" },
     { name: "Azure (MS for Startups)", url: "https://azure.microsoft.com/", description: "OpenAI credits" },
     { name: "Outlier Ventures", url: "https://outlierventures.io/", description: "Startup Accelerator" },
+    { name: "LLMPlayground.net", url: "https://llmplayground.net/", description: "Hosting Custom Flux Models" },
+    { name: "Karma.YT", url: "https://karma.yt", description: "Social media integrations" },
   ]
 
   const generateImageUrl = (name, description) =>

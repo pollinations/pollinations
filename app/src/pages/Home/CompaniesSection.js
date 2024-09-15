@@ -44,7 +44,7 @@ const CompaniesSection = () => {
 
   const classes = useStyles()
 
-  const logoPrefix = "minimalist logo"
+  const logoPrefix = "minimalist logo on black background"
   const imageDimension = 96
   const seedValue = 41 + Math.floor(Math.random() * 3)
 

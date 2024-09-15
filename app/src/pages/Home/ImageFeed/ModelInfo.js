@@ -13,7 +13,7 @@ export function ModelInfo({ model, wasPimped, referrer }) {
     <Typography
       variant="caption"
       color="textSecondary"
-      style={{ marginTop: "10px", textAlign: "center", fontSize: "1rem" }}
+      style={{ textAlign: "center", fontSize: "1rem" }}
     >
       Model:{" "}
       <Link

@@ -14,15 +14,20 @@ import { FileCopy as FileCopyIcon } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
-import { GenerativeImageURLContainer, ImageURLHeading } from "../ImageHeading"
+import {
+  GenerativeImageURLContainer,
+  ImageURLHeading,
+  ImageContainer,
+  ImageStyle,
+} from "../ImageHeading"
 import debug from "debug"
 import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
-import { ImageEditor } from "./ImageEditor"
-import { ImageDisplay } from "./ImageDisplay"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import ToggleButton from "@mui/material/ToggleButton"
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import transitions from "@material-ui/core/styles/transitions"
+import { ModelInfo } from "./ModelInfo"
+import { ImageEditor } from "./ImageEditor" // Added import for ImageEditor
 
 const log = debug("GenerativeImageFeed")
 
@@ -111,7 +116,11 @@ export function GenerativeImageFeed() {
   return (
     <GenerativeImageURLContainer style={{ margin: "3em 0 6em 0", maxWidth: "800px" }}>
       <Grid item style={{ margin: "3em 0" }}>
-        <ImageURLHeading customPrompt={`an image with the text "Image Feed" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}>Image Feed</ImageURLHeading>
+        <ImageURLHeading
+          customPrompt={`an image with the text "Image Feed" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+        >
+          Image Feed
+        </ImageURLHeading>
       </Grid>
       {!image["imageURL"] ? (
         <LoadingIndicator />
@@ -119,44 +128,32 @@ export function GenerativeImageFeed() {
         <Grid container spacing={4} direction="column">
           <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-            <ImageDisplay image={image} isMobile={isMobile} handleCopyLink={handleCopyLink} />
+            <ImageDisplay
+              image={image}
+              isMobile={isMobile}
+              handleCopyLink={handleCopyLink}
+              isLoading={isLoading}
+            />
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" alignItems="center">
               {EditModeButton(toggleValue, handleToggleChange, isLoading)}
-              {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
-              <Tooltip title="Copy link">
-                <IconButton
-                  onClick={handleCopyLink}
-                  disabled={isLoading}
-                  style={{ marginLeft: "1em" }}
-                >
-                  <FileCopyIcon style={{ color: Colors.lime, fontSize: "3rem" }} />
-                </IconButton>
-              </Tooltip>
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <Typography variant="body2" color="textSecondary">
-              Prompt
-            </Typography>
-            <TextareaAutosize
-              minRows={3}
-              style={{
-                width: "100%",
-                height: "100px",
-                backgroundColor: "transparent",
-                border: `0.1px solid ${Colors.offwhite}`,
-                borderRadius: "5px",
-                color: Colors.offwhite,
-                padding: "10px",
-                fontSize: "1.1rem",
-              }}
-              value={imageParams.prompt}
-              onChange={(e) => handleParamChange("prompt", e.target.value)}
-              onFocus={handleFocus}
-              disabled={isLoading}
-            />
+            {!isMobile && toggleValue === "feed" && (
+              <Box display="flex" alignItems="center" justifyContent="center" width="100%" marginBottom="1em">
+                <ModelInfo
+                  model={image["model"]}
+                  wasPimped={image["wasPimped"]}
+                  referrer={image["referrer"]}
+                />
+                {CopyImageLink(handleCopyLink, isLoading)}
+              </Box>
+            )}
+            <Box display="flex" alignItems="center">
+              {TextPrompt(imageParams, handleParamChange, handleFocus, isLoading)}
+            </Box>
           </Grid>
           {toggleValue === "edit" && (
             <Grid item xs={12}>
@@ -168,12 +165,56 @@ export function GenerativeImageFeed() {
                 handleSubmit={handleSubmit}
                 setIsInputChanged={setIsInputChanged}
               />
-              <CodeExamples {...image} />
+              <Grid item xs={12}>
+                {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
+              </Grid>
+              <Grid item xs={12}>
+                <CodeExamples {...image} />
+              </Grid>
             </Grid>
           )}
         </Grid>
       )}
     </GenerativeImageURLContainer>
+  )
+}
+
+function CopyImageLink(handleCopyLink, isLoading) {
+  return (
+    <Tooltip title="Copy link">
+      <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
+        <FileCopyIcon style={{ color: Colors.lime, fontSize: "1.5rem" }} />
+      </IconButton>
+    </Tooltip>
+  )
+}
+
+function TextPrompt(imageParams, handleParamChange, handleFocus, isLoading) {
+  return (
+    <Grid item xs={12}>
+      <Typography variant="body2" color="textSecondary">
+        Prompt
+      </Typography>
+      <TextareaAutosize
+        style={{
+          width: "100%",
+          height: "100px",
+          backgroundColor: "transparent",
+          border: `0.1px solid #4A4A4A`,
+          borderRadius: "5px",
+          color: Colors.offwhite,
+          padding: "10px",
+          fontSize: "1.1rem",
+          overflow: "auto",
+          scrollbarWidth: "none", // For Firefox
+          msOverflowStyle: "none", // For Internet Explorer and Edge
+        }}
+        value={imageParams.prompt}
+        onChange={(e) => handleParamChange("prompt", e.target.value)}
+        onFocus={handleFocus}
+        disabled={isLoading}
+      />
+    </Grid>
   )
 }
 
@@ -185,7 +226,7 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
       exclusive
       onChange={handleToggleChange}
       aria-label="Feed or Edit"
-      style={{ marginRight: "2em", height: "56px", border: `0.1px solid ${Colors.lime}` }}
+      style={{ height: "56px", border: `0.1px solid ${Colors.lime}` }}
     >
       <ToggleButton
         value="feed"
@@ -222,7 +263,7 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
         Edit
       </ToggleButton>
     </ToggleButtonGroup>
-  );
+  )
 }
 
 function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
@@ -242,12 +283,13 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
         height: "56px",
         width: "150px",
         position: "relative",
+        marginTop: "2em",
+        display: "block",
+        marginLeft: "auto",
+        marginRight: "auto",
       }}
     >
-      {isLoading ? (
-        <span>
-        </span>
-      ) : isInputChanged ? "Imagine" : "Imagine"}
+      {isLoading ? <span></span> : isInputChanged ? "Imagine" : "Imagine"}
       {isLoading && (
         <CircularProgress
           size={24}
@@ -280,7 +322,6 @@ function getImageURL(newImage) {
   if (queryParams.length > 0) {
     imageURL += "?" + queryParams.join("&")
   }
-
   return imageURL
 }
 
@@ -289,5 +330,26 @@ function LoadingIndicator() {
     <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em" }}>
       <CircularProgress color={"inherit"} style={{ color: Colors.offwhite }} />
     </Grid>
+  )
+}
+
+function ImageDisplay({ image }) {
+  return (
+    <ImageContainer
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        position: "relative",
+      }}
+    >
+      {image ? (
+        <ImageStyle src={image["imageURL"]} alt="generative_image" />
+      ) : (
+        <Typography variant="h6" color="textSecondary">
+          Loading image...
+        </Typography>
+      )}
+    </ImageContainer>
   )
 }

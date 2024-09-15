@@ -7,7 +7,7 @@ export const HUGE_BREAKPOINT = '2560px';
 export const Colors = {
   accent: 'rgb(233, 250, 41)',
   active_button: '#C93CD0',
-  lime: '#E0F142',
+  lime: '#FFE801',
   offwhite: '#FAFAFA',
   offblack: '#2A2C1C',
   gray1: '#B3B3B3',

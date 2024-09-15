@@ -15,7 +15,8 @@ import {
 } from "@material-ui/core"
 import InfoIcon from "@material-ui/icons/Info"
 import { Colors } from "../../../styles/global"
-import { CustomTooltip } from '../../../components/CustomTooltip';
+import { CustomTooltip } from "../../../components/CustomTooltip"
+import discordLogo from "../../../assets/icons/discord.png" // Corrected import for the Discord logo
 
 export function ImageEditor({
   image,
@@ -75,7 +76,12 @@ export function ImageEditor({
               onClick={handleMenuOpen}
               onFocus={handleFocus}
               disabled={isLoading}
-              style={{ color: Colors.white, width: "100%", justifyContent: "flex-start", height: "56px" }}
+              style={{
+                color: Colors.white,
+                width: "100%",
+                justifyContent: "flex-start",
+                height: "56px",
+              }}
             >
               {model || "flux"}
             </Button>
@@ -174,15 +180,31 @@ export function ImageEditor({
               <CustomTooltip
                 title={
                   <span>
-                    Hide the pollinations.ai logo. Get the password in Pollinations' Discord
+                    Hide the watermark logo.
+                    <br/>
+                    Get the password in Pollinations' Discord
                     community.{" "}
-                    <Link
-                      href="https://discord.gg/k9F7SyTgqn"
-                      target="_blank"
-                      style={{ color: Colors.lime }}
-                    >
-                      Join here
-                    </Link>
+                      <Box style={{ paddingTop: "1em", paddingBottom: "0.5em" }}>
+                        <img
+                          src={discordLogo}
+                          alt="Discord Logo"
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            marginLeft: "0.5em",
+                            marginRight: "0.3em",
+                            paddingBottom: "0.2em",
+                            verticalAlign: "middle",
+                          }}
+                        />
+                        <Link
+                          href="https://discord.gg/k9F7SyTgqn"
+                          target="_blank"
+                          style={{ color: Colors.lime }}
+                        >
+                          Join here
+                        </Link>
+                      </Box>
                   </span>
                 }
                 interactive

@@ -187,7 +187,7 @@ export function GenerativeImageFeed() {
 
 function CopyImageLink(handleCopyLink, isLoading) {
   return (
-    <CustomTooltip title="Copy image link">
+    <CustomTooltip title="Copy image link.">
       <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
         <FileCopyIcon style={{ color: Colors.lime, fontSize: "1.5rem" }} />
       </IconButton>
@@ -234,7 +234,7 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
       aria-label="Feed or Edit"
       style={{ height: "56px", border: `0.1px solid ${Colors.lime}` }}
     >
-      <CustomTooltip title="Activate real-time generated image feed">
+      <CustomTooltip title="Activate real-time generated image feed.">
         <ToggleButton
           value="feed"
           disabled={isLoading}
@@ -253,7 +253,7 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
           Feed
         </ToggleButton>
       </CustomTooltip>
-      <CustomTooltip title="Create a new image from the current one, this will freeze the feed">
+      <CustomTooltip title="Create an alternative image, this will freeze the feed when enabled.">
         <ToggleButton
           value="edit"
           disabled={isLoading}
@@ -278,42 +278,44 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
 
 function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
   return (
-    <Button
-      variant="contained"
-      color="primary"
-      onClick={handleButtonClick}
-      disabled={isLoading}
-      style={{
-        backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
-        color: isInputChanged ? null : Colors.offblack,
-        fontSize: "1.3rem",
-        fontFamily: "Uncut-Sans-Variable",
-        fontStyle: "normal",
-        fontWeight: 400,
-        height: "56px",
-        width: "150px",
-        position: "relative",
-        marginTop: "2em",
-        display: "block",
-        marginLeft: "auto",
-        marginRight: "auto",
-      }}
-    >
-      {isLoading ? <span></span> : "Pollinate"}
-      {isLoading && (
-        <CircularProgress
-          size={24}
-          style={{
-            color: "black",
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            marginTop: -12,
-            marginLeft: -12,
-          }}
-        />
-      )}
-    </Button>
+    <CustomTooltip title="Generate an alternative image from the current prompt/settings.">
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={handleButtonClick}
+        disabled={isLoading}
+        style={{
+          backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
+          color: isInputChanged ? null : Colors.offblack,
+          fontSize: "1.3rem",
+          fontFamily: "Uncut-Sans-Variable",
+          fontStyle: "normal",
+          fontWeight: 400,
+          height: "56px",
+          width: "150px",
+          position: "relative",
+          marginTop: "2em",
+          display: "block",
+          marginLeft: "auto",
+          marginRight: "auto",
+        }}
+      >
+        {isLoading ? <span></span> : "Pollinate"}
+        {isLoading && (
+          <CircularProgress
+            size={24}
+            style={{
+              color: "black",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              marginTop: -12,
+              marginLeft: -12,
+            }}
+          />
+        )}
+      </Button>
+    </CustomTooltip>
   )
 }
 

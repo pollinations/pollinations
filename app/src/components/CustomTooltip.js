@@ -8,4 +8,7 @@ export const CustomTooltip = withStyles({
     backgroundColor: '#333',
     color: '#fff',
   },
+  popper: {
+    transitionDelay: '500ms', // Appear after fixed mouse on top
+  },
 })(Tooltip);

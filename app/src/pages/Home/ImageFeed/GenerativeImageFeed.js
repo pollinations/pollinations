@@ -4,7 +4,6 @@ import {
   Box,
   CircularProgress,
   useMediaQuery,
-  Button,
   IconButton,
   Typography,
   TextareaAutosize,
@@ -22,12 +21,11 @@ import {
 import debug from "debug"
 import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
-import ToggleButton from "@mui/material/ToggleButton"
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
-import transitions from "@material-ui/core/styles/transitions"
 import { ModelInfo } from "./ModelInfo"
-import { ImageEditor } from "./ImageEditor" // Added import for ImageEditor
-import { CustomTooltip } from '../../../components/CustomTooltip';
+import { ImageEditor } from "./ImageEditor"
+import { CustomTooltip } from "../../../components/CustomTooltip"
+import { FeedEditSwitch } from "../../../components/FeedEditSwitch"
+import { ImagineButton } from "../../../components/ImagineButton"
 
 const log = debug("GenerativeImageFeed")
 
@@ -137,7 +135,7 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" alignItems="center">
-              {EditModeButton(toggleValue, handleToggleChange, isLoading)}
+              {FeedEditSwitch(toggleValue, handleToggleChange, isLoading)}
             </Box>
           </Grid>
           <Grid item xs={12}>
@@ -224,101 +222,6 @@ function TextPrompt(imageParams, handleParamChange, handleFocus, isLoading) {
   )
 }
 
-function EditModeButton(toggleValue, handleToggleChange, isLoading) {
-  return (
-    <ToggleButtonGroup
-      value={toggleValue}
-      variant="outlined"
-      exclusive
-      onChange={handleToggleChange}
-      aria-label="Feed or Edit"
-      style={{ height: "56px", border: `0.1px solid ${Colors.lime}` }}
-    >
-      <CustomTooltip title="Activate real-time generated image feed.">
-        <ToggleButton
-          value="feed"
-          disabled={isLoading}
-          style={{
-            backgroundColor: toggleValue === "feed" ? Colors.lime : "transparent",
-            color: toggleValue === "feed" ? Colors.offblack : Colors.lime,
-            fontSize: "1.3rem",
-            fontFamily: "Uncut-Sans-Variable",
-            fontStyle: "normal",
-            fontWeight: 400,
-            height: "100%",
-            width: "100px",
-            border: `1px solid ${Colors.lime}`,
-          }}
-        >
-          Feed
-        </ToggleButton>
-      </CustomTooltip>
-      <CustomTooltip title="Create an alternative image, this will freeze the feed when enabled.">
-        <ToggleButton
-          value="edit"
-          disabled={isLoading}
-          style={{
-            backgroundColor: toggleValue === "edit" ? Colors.lime : "transparent",
-            color: toggleValue === "edit" ? Colors.offblack : Colors.lime,
-            fontSize: "1.3rem",
-            fontFamily: "Uncut-Sans-Variable",
-            fontStyle: "normal",
-            fontWeight: 400,
-            height: "100%",
-            width: "100px",
-            border: `1px solid ${Colors.lime}`,
-          }}
-        >
-          Edit
-        </ToggleButton>
-      </CustomTooltip>
-    </ToggleButtonGroup>
-  )
-}
-
-function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
-  return (
-    <CustomTooltip title="Generate an alternative image from the current prompt/settings.">
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleButtonClick}
-        disabled={isLoading}
-        style={{
-          backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
-          color: isInputChanged ? null : Colors.offblack,
-          fontSize: "1.3rem",
-          fontFamily: "Uncut-Sans-Variable",
-          fontStyle: "normal",
-          fontWeight: 400,
-          height: "56px",
-          width: "150px",
-          position: "relative",
-          marginTop: "2em",
-          display: "block",
-          marginLeft: "auto",
-          marginRight: "auto",
-        }}
-      >
-        {isLoading ? <span></span> : "Pollinate"}
-        {isLoading && (
-          <CircularProgress
-            size={24}
-            style={{
-              color: "black",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              marginTop: -12,
-              marginLeft: -12,
-            }}
-          />
-        )}
-      </Button>
-    </CustomTooltip>
-  )
-}
-
 function getImageURL(newImage) {
   let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`
   let queryParams = []
@@ -339,8 +242,11 @@ function getImageURL(newImage) {
 
 function LoadingIndicator() {
   return (
-    <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em" }}>
-      <CircularProgress color={"inherit"} style={{ color: Colors.offwhite }} />
+    <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em", position: "relative" }}>
+      <ImageURLHeading whiteText={Colors.offwhite} width={600} height={500} prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration">
+        Loading...
+      </ImageURLHeading>
+      <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />
     </Grid>
   )
 }

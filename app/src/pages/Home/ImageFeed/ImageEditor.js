@@ -159,7 +159,7 @@ export function ImageEditor({
             <Typography variant="body2" color="textSecondary">
               Private
               <CustomTooltip
-                title="Activating 'private' prevents images from appearing in the feed."
+                title="Prevents images from appearing in the feed."
                 style={{ color: Colors.lime }}
               >
                 <IconButton size="small">
@@ -180,10 +180,12 @@ export function ImageEditor({
               <CustomTooltip
                 title={
                   <span>
-                    Hide the watermark logo.
+                    Disable watermark logo.
+                    {/*
                     <br/>
                     Get the password in Pollinations' Discord
-                    community.{" "}
+                    community.
+                    {" "}
                       <Box style={{ paddingTop: "1em", paddingBottom: "0.5em" }}>
                         <img
                           src={discordLogo}
@@ -204,7 +206,7 @@ export function ImageEditor({
                         >
                           Join here
                         </Link>
-                      </Box>
+                      </Box>*/}
                   </span>
                 }
                 interactive

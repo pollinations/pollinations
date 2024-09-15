@@ -20,11 +20,11 @@ The PollinationsText component simplifies the process of generating and displayi
 import React from 'react';
 import { PollinationsText } from '@pollinations/react';
 
-const TermsAndConditions = () => (
+const MyComponent = () => (
   <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
 );
 
-export default TermsAndConditions;
+export default MyComponent;
 ```
 
 ### PollinationsMarkdown
@@ -50,11 +50,11 @@ The PollinationsImage component simplifies the process of generating and display
 import React from 'react';
 import { PollinationsImage } from '@pollinations/react';
 
-const SunsetImage = () => (
+const MyComponent = () => (
   <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
 );
 
-export default SunsetImage;
+export default MyComponent;
 ```
 
 ## 🛠️ Hooks

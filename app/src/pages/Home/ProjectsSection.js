@@ -63,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const logoPrefix = "minimalist  logo";
+const logoPrefix = "minimalist logo on black background";
 const imageDimension = 96;
 const seedValue = 41 + Math.floor(Math.random() * 3); // Define the seed value here
 
@@ -235,13 +235,13 @@ const ProjectsSection = () => {
         <Container className={classes.root}>
             <ImageURLHeading>Integrations</ImageURLHeading>
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Chat Integrations</ImageURLHeading>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>AI Chat / LLMs</ImageURLHeading>
             {renderProjects(projects.llmIntegration)}
 
             <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Social Bots</ImageURLHeading>
             {renderProjects(projects.socialBots)}
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Mobile & Web Applications</ImageURLHeading>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Mobile & Web Apps</ImageURLHeading>
             {renderProjects(projects.apps)}
 
             <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
@@ -251,7 +251,7 @@ const ProjectsSection = () => {
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />
                 <ImageURLHeading width={350} height={70} whiteText={true}>Get in touch</ImageURLHeading> <StyledNavLink href="mailto:hello@pollinations.ai" style={{ color: Colors.lime, fontSize: '1.5em' }}>hello@pollinations.ai</StyledNavLink>
             </Typography>
-            
+
         </Container>
     );
 };

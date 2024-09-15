@@ -38,6 +38,10 @@ fi
 log "Navigating to ComfyUI directory"
 cd /home/ubuntu/ComfyUI || { log "ERROR: Failed to change directory to ComfyUI"; exit 1; }
 
+# Pull the latest changes from the repository
+log "Pulling latest changes from the repository"
+git pull || { log "ERROR: Failed to pull latest changes"; exit 1; }
+
 # Start ComfyUI with the activated environment
 log "Starting ComfyUI"
-source comfyenv/bin/activate && python3 main.py
+source comfyenv/bin/activate && python3 main.py --fast

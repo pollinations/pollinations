@@ -11,16 +11,17 @@ import React, { useMemo } from 'react';
  * @param {number} [options.seed=-1] - The seed for random image generation.
  * @param {boolean} [options.nologo=true] - Whether to generate the image without a logo.
  * @param {boolean} [options.enhance=false] - Whether to enhance the generated image.
+ * @param {boolean} [options.isLink=false] - Whether to enhance the generated image.
  * @returns {string} - The URL of the generated image.
  */
 const usePollinationsImage = (prompt, options = {}) => {
-    const { width = 1024, height = 1024, model = 'turbo', seed: initialSeed = -1, nologo = true, enhance = false } = options;
+    const { width = 1024, height = 1024, model = 'turbo', seed: initialSeed = -1, nologo = true, enhance = false, isLink = false } = options;
     const seed = useMemo(() => initialSeed === -1 ? Math.floor(Math.random() * 20) + 1 : initialSeed, [initialSeed]);
 
     const imageUrl = useMemo(() => {
         const params = new URLSearchParams({ width, height, model, seed, nologo, enhance });
         return `https://pollinations.ai/p/${encodeURIComponent(prompt)}?${params.toString()}`;
-    }, [prompt, width, height, model, seed, nologo, enhance]);
+    }, [prompt, width, height, model, seed, nologo, enhance, isLink]);
 
     return imageUrl;
 };

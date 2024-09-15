@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react"
 import {
-  Tooltip,
   Grid,
   Box,
   CircularProgress,
@@ -28,6 +27,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
 import transitions from "@material-ui/core/styles/transitions"
 import { ModelInfo } from "./ModelInfo"
 import { ImageEditor } from "./ImageEditor" // Added import for ImageEditor
+import { CustomTooltip } from '../../../components/CustomTooltip';
 
 const log = debug("GenerativeImageFeed")
 
@@ -142,7 +142,13 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             {!isMobile && toggleValue === "feed" && (
-              <Box display="flex" alignItems="center" justifyContent="center" width="100%" marginBottom="1em">
+              <Box
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                width="100%"
+                marginBottom="1em"
+              >
                 <ModelInfo
                   model={image["model"]}
                   wasPimped={image["wasPimped"]}
@@ -181,11 +187,11 @@ export function GenerativeImageFeed() {
 
 function CopyImageLink(handleCopyLink, isLoading) {
   return (
-    <Tooltip title="Copy link">
+    <CustomTooltip title="Copy image link">
       <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
         <FileCopyIcon style={{ color: Colors.lime, fontSize: "1.5rem" }} />
       </IconButton>
-    </Tooltip>
+    </CustomTooltip>
   )
 }
 
@@ -228,40 +234,44 @@ function EditModeButton(toggleValue, handleToggleChange, isLoading) {
       aria-label="Feed or Edit"
       style={{ height: "56px", border: `0.1px solid ${Colors.lime}` }}
     >
-      <ToggleButton
-        value="feed"
-        disabled={isLoading}
-        style={{
-          backgroundColor: toggleValue === "feed" ? Colors.lime : "transparent",
-          color: toggleValue === "feed" ? Colors.offblack : Colors.lime,
-          fontSize: "1.3rem",
-          fontFamily: "Uncut-Sans-Variable",
-          fontStyle: "normal",
-          fontWeight: 400,
-          height: "100%",
-          width: "100px",
-          border: `1px solid ${Colors.lime}`,
-        }}
-      >
-        Feed
-      </ToggleButton>
-      <ToggleButton
-        value="edit"
-        disabled={isLoading}
-        style={{
-          backgroundColor: toggleValue === "edit" ? Colors.lime : "transparent",
-          color: toggleValue === "edit" ? Colors.offblack : Colors.lime,
-          fontSize: "1.3rem",
-          fontFamily: "Uncut-Sans-Variable",
-          fontStyle: "normal",
-          fontWeight: 400,
-          height: "100%",
-          width: "100px",
-          border: `1px solid ${Colors.lime}`,
-        }}
-      >
-        Edit
-      </ToggleButton>
+      <CustomTooltip title="Activate real-time generated image feed">
+        <ToggleButton
+          value="feed"
+          disabled={isLoading}
+          style={{
+            backgroundColor: toggleValue === "feed" ? Colors.lime : "transparent",
+            color: toggleValue === "feed" ? Colors.offblack : Colors.lime,
+            fontSize: "1.3rem",
+            fontFamily: "Uncut-Sans-Variable",
+            fontStyle: "normal",
+            fontWeight: 400,
+            height: "100%",
+            width: "100px",
+            border: `1px solid ${Colors.lime}`,
+          }}
+        >
+          Feed
+        </ToggleButton>
+      </CustomTooltip>
+      <CustomTooltip title="Create a new image from the current one, this will freeze the feed">
+        <ToggleButton
+          value="edit"
+          disabled={isLoading}
+          style={{
+            backgroundColor: toggleValue === "edit" ? Colors.lime : "transparent",
+            color: toggleValue === "edit" ? Colors.offblack : Colors.lime,
+            fontSize: "1.3rem",
+            fontFamily: "Uncut-Sans-Variable",
+            fontStyle: "normal",
+            fontWeight: 400,
+            height: "100%",
+            width: "100px",
+            border: `1px solid ${Colors.lime}`,
+          }}
+        >
+          Edit
+        </ToggleButton>
+      </CustomTooltip>
     </ToggleButtonGroup>
   )
 }
@@ -289,7 +299,7 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
         marginRight: "auto",
       }}
     >
-      {isLoading ? <span></span> : isInputChanged ? "Imagine" : "Imagine"}
+      {isLoading ? <span></span> : "Pollinate"}
       {isLoading && (
         <CircularProgress
           size={24}

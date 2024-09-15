@@ -6,7 +6,6 @@ import {
   MenuItem,
   TextField,
   Checkbox,
-  Tooltip,
   IconButton,
   Accordion,
   AccordionSummary,
@@ -18,6 +17,7 @@ import {
 import InfoIcon from "@material-ui/icons/Info"
 import ExpandMoreIcon from "@material-ui/icons/ExpandMore"
 import { Colors } from "../../../styles/global"
+import { CustomTooltip } from '../../../components/CustomTooltip';
 
 export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoading }) {
   const { width, height, seed, nofeed, nologo, model, prompt } = image
@@ -162,14 +162,14 @@ export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoadi
             <Grid item xs={4}>
               <Typography variant="body2" color="textSecondary">
                 Private
-                <Tooltip
+                <CustomTooltip
                   title="Activating 'private' prevents images from appearing in the feed."
                   style={{ color: Colors.lime }}
                 >
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>
-                </Tooltip>
+                </CustomTooltip>
               </Typography>
               <Checkbox
                 checked={nofeed}
@@ -181,7 +181,7 @@ export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoadi
             <Grid item xs={4}>
               <Typography variant="body2" color="textSecondary">
                 No Logo
-                <Tooltip
+                <CustomTooltip
                   title={
                     <span>
                       Hide the pollinations.ai logo. Get the password in Pollinations' Discord
@@ -201,7 +201,7 @@ export function AdvancedOptions({ image, handleParamChange, handleFocus, isLoadi
                   <IconButton size="small">
                     <InfoIcon fontSize="small" />
                   </IconButton>
-                </Tooltip>
+                </CustomTooltip>
               </Typography>
               <Checkbox
                 checked={nologo}

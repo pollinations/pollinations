@@ -1,18 +1,76 @@
 # 🌸 Pollinations Generative React Hooks & Components 🌸
 
-A simple way to generate images, text and markdown using the Pollinations API in your React projects.
+A simple way to generate images, text, and markdown using the Pollinations API in your React projects.
 
 ## 🚀 Quick Start
 
-Install the package:
+Install the package using your preferred package manager:
 
 ```bash
+# Using npm
 npm install @pollinations/react
+
+# Using yarn
+yarn add @pollinations/react
+
+# Using pnpm
+pnpm add @pollinations/react
+
+# Using bun
+bun add @pollinations/react
 ```
+
+## 🌟 Example Application: Karma
+
+Check out Karma, an open-source application built with Next.js that demonstrates the power of Pollinations React components:
+
+- 📂 GitHub Repository: [https://github.com/pollinations/karma](https://github.com/pollinations/karma)
+- 🌐 Live Demo: [https://karma.pollinations.ai/](https://karma.pollinations.ai/)
+
+Karma showcases how to use Pollinations React components to create an interactive and dynamic web application. It's a great resource for learning how to integrate and use these components in a real-world project.
+
+## 🌍 Multi-Language Support
+
+All components and hooks support multiple languages! You can generate content in any language by simply providing prompts in the desired language.
 
 ## 🧩 Components
 
-### PollinationsText
+### 🖼️ PollinationsImage
+
+The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
+
+```javascript
+import React from 'react';
+import { PollinationsImage } from '@pollinations/react';
+
+const MyComponent = () => (
+  <PollinationsImage 
+    prompt="A beautiful sunset over the ocean" 
+    width={800} 
+    height={600} 
+    seed={42} 
+    alt="Generated sunset"
+    model="flux-realism"
+  />
+);
+
+export default MyComponent;
+```
+
+#### 🎨 Supported Image Generation Models
+
+Pollinations supports various image generation models. You can specify the model using the `model` prop. Some of the supported models include:
+
+- 'flux'
+- 'flux-realism'
+- 'any-dark'
+- 'flux-anime'
+- 'flux-3d'
+- 'turbo' (default)
+
+⚠️ Note: The available models may change over time. Always refer to the official [Pollinations.AI website](https://pollinations.ai) for the most up-to-date list of supported models and their capabilities.
+
+### 📝 PollinationsText
 
 The PollinationsText component simplifies the process of generating and displaying plain text using Pollinations' API.
 
@@ -21,13 +79,13 @@ import React from 'react';
 import { PollinationsText } from '@pollinations/react';
 
 const MyComponent = () => (
-  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
+  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in English</PollinationsText>
 );
 
 export default MyComponent;
 ```
 
-### PollinationsMarkdown
+### 📊 PollinationsMarkdown
 
 The PollinationsMarkdown component simplifies the process of generating and displaying markdown text using Pollinations' API.
 
@@ -42,24 +100,9 @@ const RobotDocumentation = () => (
 export default RobotDocumentation;
 ```
 
-### PollinationsImage
-
-The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
-
-```javascript
-import React from 'react';
-import { PollinationsImage } from '@pollinations/react';
-
-const MyComponent = () => (
-  <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
-);
-
-export default MyComponent;
-```
-
 ## 🛠️ Hooks
 
-### usePollinationsImage
+### 🖼️ usePollinationsImage
 
 The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
 
@@ -72,7 +115,7 @@ const SunsetImageComponent = () => {
     width: 800,
     height: 600,
     seed: 42,
-    model: 'turbo',
+    model: 'flux-realism',
     nologo: true,
     enhance: false
   });
@@ -87,16 +130,16 @@ const SunsetImageComponent = () => {
 export default SunsetImageComponent;
 ```
 
-#### Options
+#### ⚙️ Options
 
 - `width` (number, default: 1024): The width of the generated image.
 - `height` (number, default: 1024): The height of the generated image.
-- `model` (string, default: 'turbo'): The model to use for image generation.
+- `model` (string, default: 'turbo'): The model to use for image generation. See the list of supported models above.
 - `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
 - `nologo` (boolean, default: true): Whether to generate the image without a logo.
 - `enhance` (boolean, default: false): Whether to enhance the generated image.
 
-### usePollinationsText
+### 📝 usePollinationsText
 
 The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
 
@@ -117,11 +160,11 @@ const HaikuComponent = () => {
 export default HaikuComponent;
 ```
 
-#### Options
+#### ⚙️ Options
 
 - `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
 
-### usePollinationsChat
+### 💬 usePollinationsChat
 
 The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
 
@@ -156,10 +199,29 @@ const ChatComponent = () => {
 export default ChatComponent;
 ```
 
-#### Options
+#### ⚙️ Options
 
 - `seed` (number, default: 42): The seed for random text generation.
 - `jsonMode` (boolean, default: false): Whether to parse the response as JSON.
+
+## 🆕 New Features
+
+### 🔗 isLink Option for PollinationsImage
+
+The `isLink` property allows the image to be clickable, opening the image URL in a new tab:
+
+- `isLink={true}`: The image becomes a clickable link to the image URL.
+- `isLink={false}` (default): The image is displayed normally, without being clickable.
+
+Example usage:
+
+```javascript
+<PollinationsImage 
+  prompt="A beautiful sunset"
+  isLink={true}
+  alt="Clickable sunset image"
+/>
+```
 
 ## 📜 License
 

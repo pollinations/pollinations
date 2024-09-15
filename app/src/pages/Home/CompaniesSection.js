@@ -80,9 +80,9 @@ const CompaniesSection = () => {
   }, []).map((row, index) => <tr key={index}>{row}</tr>)
 
   return (
-    <Container className={classes.root}>
+    <Container className={classes.root} style={{ margin: '3em 0 4em 0' }}>
       <ImageURLHeading>Supported By</ImageURLHeading>
-      <table className={classes.table}>
+      <table className={classes.table} style={{ marginTop: '3em' }}>
         <tbody>{tableRows}</tbody>
       </table>
     </Container>

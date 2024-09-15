@@ -232,7 +232,7 @@ const ProjectsSection = () => {
     );
 
     return (
-        <Container className={classes.root}>
+        <Container className={classes.root} style={{ margin: '3em 0' }}>
             <ImageURLHeading>Integrations</ImageURLHeading>
 
             <ImageURLHeading width={350} height={70} whiteText={"yellow"}>AI Chat / LLMs</ImageURLHeading>

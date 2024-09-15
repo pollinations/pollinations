@@ -109,7 +109,7 @@ export function GenerativeImageFeed() {
   }
 
   return (
-    <GenerativeImageURLContainer style={{ paddingBottom: "3em", maxWidth: "800px" }}>
+    <GenerativeImageURLContainer style={{ margin: "3em 0 6em 0", maxWidth: "800px" }}>
       <Grid item style={{ margin: "3em 0" }}>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
@@ -240,7 +240,7 @@ function ImagineButton(handleButtonClick, isLoading, isInputChanged) {
         fontStyle: "normal",
         fontWeight: 400,
         height: "56px",
-        width: "100px",
+        width: "150px",
         position: "relative",
       }}
     >

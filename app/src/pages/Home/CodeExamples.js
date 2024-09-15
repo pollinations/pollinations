@@ -208,13 +208,12 @@ export function CodeExamples(image) {
   ]
 
   return (
-    <>
-      <ImageURLHeading>Integrate</ImageURLHeading>
+    <Box style={{ marginTop: "3em" }}>
+      <ImageURLHeading whiteText={"#E0F041"} width={350} height={70}>
+        Integrate
+      </ImageURLHeading>
       <URLExplanation>
-        <AppBar
-          position="static"
-          style={{ color: "white", width: "auto", boxShadow: "none" }}
-        >
+        <AppBar position="static" style={{ color: "white", width: "auto", boxShadow: "none" }}>
           <Tabs
             value={tabValue}
             onChange={handleChange}
@@ -301,7 +300,7 @@ export function CodeExamples(image) {
           })}
         </>
       </URLExplanation>
-    </>
+    </Box>
   )
 }
 

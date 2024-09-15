@@ -10,16 +10,102 @@ Install the package:
 npm install @pollinations/react
 ```
 
-### 🛠️ Hook: usePollinationsText
+## 🧩 Components
+
+### PollinationsText
+
+The PollinationsText component simplifies the process of generating and displaying plain text using Pollinations' API.
+
+```javascript
+import React from 'react';
+import { PollinationsText } from '@pollinations/react';
+
+const TermsAndConditions = () => (
+  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
+);
+
+export default TermsAndConditions;
+```
+
+### PollinationsMarkdown
+
+The PollinationsMarkdown component simplifies the process of generating and displaying markdown text using Pollinations' API.
+
+```javascript
+import React from 'react';
+import { PollinationsMarkdown } from '@pollinations/react';
+
+const RobotDocumentation = () => (
+  <PollinationsMarkdown seed={42}>Create beautiful documentation about a Pollinating robot in markdown</PollinationsMarkdown>
+);
+
+export default RobotDocumentation;
+```
+
+### PollinationsImage
+
+The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
+
+```javascript
+import React from 'react';
+import { PollinationsImage } from '@pollinations/react';
+
+const SunsetImage = () => (
+  <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
+);
+
+export default SunsetImage;
+```
+
+## 🛠️ Hooks
+
+### usePollinationsImage
+
+The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
+
+```javascript
+import React from 'react';
+import { usePollinationsImage } from '@pollinations/react';
+
+const SunsetImageComponent = () => {
+  const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
+    width: 800,
+    height: 600,
+    seed: 42,
+    model: 'turbo',
+    nologo: true,
+    enhance: false
+  });
+
+  return (
+    <div>
+      {imageUrl ? <img src={imageUrl} alt="Generated sunset" /> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default SunsetImageComponent;
+```
+
+#### Options
+
+- `width` (number, default: 1024): The width of the generated image.
+- `height` (number, default: 1024): The height of the generated image.
+- `model` (string, default: 'turbo'): The model to use for image generation.
+- `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
+- `nologo` (boolean, default: true): Whether to generate the image without a logo.
+- `enhance` (boolean, default: false): Whether to enhance the generated image.
+
+### usePollinationsText
 
 The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
 
 ```javascript
 import React from 'react';
-import { usePollinationsText } from '@pollinations/react;
+import { usePollinationsText } from '@pollinations/react';
 
-const MyComponent = () => {
-  const text = usePollinationsText('Write a short haiku about Pollinations.AI');
+const HaikuComponent = () => {
+  const text = usePollinationsText('Write a short haiku about Pollinations.AI', 42);
   
   return (
     <div>
@@ -28,31 +114,14 @@ const MyComponent = () => {
   );
 };
 
-export default MyComponent;
+export default HaikuComponent;
 ```
 
-### 🛠️ Hook: usePollinationsImage
+#### Options
 
-The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
+- `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
 
-```javascript
-import React from 'react';
-import { usePollinationsImage } from '@pollinations/react;
-
-const MyComponent = () => {
-  const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', { width: 800, height: 600, seed: 42 });
-
-  return (
-    <div>
-      {imageUrl ? <img src={imageUrl} /> : <p>Loading...</p>}
-    </div>
-  );
-};
-
-export default MyComponent;
-```
-
-### 🛠️ Hook: usePollinationsChat
+### usePollinationsChat
 
 The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
 
@@ -62,7 +131,9 @@ import { usePollinationsChat } from '@pollinations/react';
 
 const ChatComponent = () => {
   const [input, setInput] = useState('');
-  const { sendUserMessage, messages } = usePollinationsChat([ {"role":"system", content:"You are a helpful assistant"}]);
+  const { sendUserMessage, messages } = usePollinationsChat([
+    { role: "system", content: "You are a helpful assistant" }
+  ], { seed: 42, jsonMode: false });
 
   const handleSend = () => {
     sendUserMessage(input);
@@ -70,7 +141,7 @@ const ChatComponent = () => {
   };
 
   return (
-    <div> 
+    <div>
       <div>
         {messages.map((msg, index) => (
           <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
@@ -82,81 +153,13 @@ const ChatComponent = () => {
   );
 };
 
+export default ChatComponent;
 ```
 
-### 🧩 Components
+#### Options
 
-#### PollinationsText
-
-The PollinationsText component simplifies the process of generating and displaying plain text using Pollinations' API.
-
-```javascript
-import React from 'react';
-import { PollinationsText } from '@pollinations/react;
-
-const MyComponent = () => (
-  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
-);
-
-export default MyComponent;
-```
-
-#### PollinationsMarkdown
-
-The PollinationsMarkdown component simplifies the process of generating and displaying markdown text using Pollinations' API.
-
-```javascript
-import React from 'react';
-import { PollinationsMarkdown } from '@pollinations/react;
-
-const MyComponent = () => (
-  <PollinationsMarkdown seed={42}>Create beautiful documentation about a Pollinating robot in markdown</PollinationsMarkdown>
-);
-
-export default MyComponent;
-```
-
-#### PollinationsImage
-
-The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
-
-```javascript
-import React from 'react';
-import { PollinationsImage } from '@pollinations/react;
-
-const MyComponent = () => (
-  <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
-);
-
-export default MyComponent;
-```
-
-## ⚙️ Development
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/your-username/pollinations-react.git
-cd pollinations-react
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Run the development server:
-
-```bash
-npm run dev
-```
-
-4. Publish the package:
-
-```bash
-npm publish --access public
-```
+- `seed` (number, default: 42): The seed for random text generation.
+- `jsonMode` (boolean, default: false): Whether to parse the response as JSON.
 
 ## 📜 License
 

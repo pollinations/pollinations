@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import { Container } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
-import { Colors, Fonts } from "../../styles/global"
+import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 
 const CompaniesSection = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth)
@@ -27,6 +27,9 @@ const CompaniesSection = () => {
       borderCollapse: "collapse",
       marginBottom: "5em",
       margin: "0",
+      [theme.breakpoints.down('sm')]: {
+        marginBottom: "0.5em",
+      },
     },
     td: {
       padding: theme.spacing(1),

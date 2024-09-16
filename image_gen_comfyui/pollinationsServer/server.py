@@ -86,23 +86,32 @@ def create_prompt(dynamic_text, width=1024, height=1024, seed=711058089000452, s
         "6": {
             "inputs": {
                 "text": dynamic_text,
-                "clip": ["30", 1]
+                "clip": ["38", 0]
             },
-            "class_type": "CLIPTextEncode"
+            "class_type": "CLIPTextEncode",
+            "_meta": {
+                "title": "CLIP Text Encode (Positive Prompt)"
+            }
         },
         "8": {
             "inputs": {
                 "samples": ["31", 0],
-                "vae": ["30", 2]
+                "vae": ["39", 0]
             },
-            "class_type": "VAEDecode"
+            "class_type": "VAEDecode",
+            "_meta": {
+                "title": "VAE Decode"
+            }
         },
         "9": {
             "inputs": {
                 "images": ["8", 0],
                 "filename_prefix": "ComfyUI"
             },
-            "class_type": "SaveImage"
+            "class_type": "SaveImage",
+            "_meta": {
+                "title": "Save Image"
+            }
         },
         "27": {
             "inputs": {
@@ -110,13 +119,10 @@ def create_prompt(dynamic_text, width=1024, height=1024, seed=711058089000452, s
                 "height": height,
                 "batch_size": 1
             },
-            "class_type": "EmptySD3LatentImage"
-        },
-        "30": {
-            "inputs": {
-                "ckpt_name": "FLUX1/flux1-schnell-fp8.safetensors"
-            },
-            "class_type": "CheckpointLoaderSimple"
+            "class_type": "EmptySD3LatentImage",
+            "_meta": {
+                "title": "EmptySD3LatentImage"
+            }
         },
         "31": {
             "inputs": {
@@ -126,19 +132,55 @@ def create_prompt(dynamic_text, width=1024, height=1024, seed=711058089000452, s
                 "sampler_name": "euler",
                 "scheduler": "simple",
                 "denoise": 1,
-                "model": ["30", 0],
+                "model": ["37", 0],
                 "positive": ["6", 0],
                 "negative": ["33", 0],
                 "latent_image": ["27", 0]
             },
-            "class_type": "KSampler"
+            "class_type": "KSampler",
+            "_meta": {
+                "title": "KSampler"
+            }
         },
         "33": {
             "inputs": {
                 "text": "",
-                "clip": ["30", 1]
+                "clip": ["38", 0]
             },
-            "class_type": "CLIPTextEncode"
+            "class_type": "CLIPTextEncode",
+            "_meta": {
+                "title": "CLIP Text Encode (Negative Prompt)"
+            }
+        },
+        "37": {
+            "inputs": {
+                "unet_name": "flux1-schnell-fp8-e4m3fn.safetensors",
+                "weight_dtype": "fp8_e4m3fn"
+            },
+            "class_type": "UNETLoader",
+            "_meta": {
+                "title": "Load Diffusion Model"
+            }
+        },
+        "38": {
+            "inputs": {
+                "clip_name1": "t5xxl_fp8_e4m3fn.safetensors",
+                "clip_name2": "ViT-L-14-TEXT-detail-improved-hiT-GmP-TE-only-HF.safetensors",
+                "type": "flux"
+            },
+            "class_type": "DualCLIPLoader",
+            "_meta": {
+                "title": "DualCLIPLoader"
+            }
+        },
+        "39": {
+            "inputs": {
+                "vae_name": "ae.safetensors"
+            },
+            "class_type": "VAELoader",
+            "_meta": {
+                "title": "Load VAE"
+            }
         }
     }
 

@@ -41,6 +41,41 @@ where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
   
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
+  llm_prompt_advanced: () => `
+# Image Generator Instructions
+
+You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
+
+    {
+      "prompt": "[prompt, max 50 words]",
+      "seed": [seed],
+      "width": [width],
+      "height": [height],
+      "model": "[model]"
+    }
+
+Key points:
+- If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
+- Each seed value creates a unique image for a given prompt.
+- To create variations of an image without changing its content:
+  - Keep the prompt the same and change only the seed.
+- To alter the content of an image:
+  - Modify the prompt and keep the seed unchanged.
+- Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
+- Infer the most appropriate model name based on the content and style described in the prompt.
+
+Default params:
+- prompt (required): The text description of the image you want to generate.
+- model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
+  - Infer the most suitable model based on the prompt's content and style.
+- seed (optional): Seed for reproducible results (default: random).
+- width/height (optional): Default 1024x1024.
+- nologo (optional): Set to true to disable the logo rendering.
+
+Additional instructions:
+- If the user specifies the /imagine command, return the parameters as JSON.
+- Response should be in valid JSON format only.
+`,
   markdown: ({ imageURL, prompt, width, height, seed, model }) =>
     `# Image Parameters
 Prompt: **${prompt}**
@@ -191,7 +226,7 @@ print(image.url)
 }
 
 export function CodeExamples(image) {
-  const [tabValue, setTabValue] = useState(0)
+  const [tabValue, setTabValue] = useState(0) // Set initial tab to 0 (llm_prompt)
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue)
@@ -199,12 +234,13 @@ export function CodeExamples(image) {
 
   const codeExampleTabs = Object.keys(CODE_EXAMPLES)
 
-  // Add "api_description" as the first tab
+  // Add "llm_prompt" and "llm_prompt_advanced" as the first tabs
   const allTabs = [
-    "api_description",
+    "llm_prompt",
+    "llm_prompt_advanced",
     "link",
     "discord_bot",
-    ...codeExampleTabs.filter((tab) => tab !== "api_description"),
+    ...codeExampleTabs.filter((tab) => tab !== "llm_prompt" && tab !== "llm_prompt_advanced"),
   ]
 
   return (
@@ -226,8 +262,8 @@ export function CodeExamples(image) {
               <Tab
                 key={key}
                 label={
-                  key === "api_description"
-                    ? "API Description"
+                  key === "llm_prompt" || key === "llm_prompt_advanced"
+                    ? key.replace("_", " ").toUpperCase()
                     : key.charAt(0).toUpperCase() + key.slice(1)
                 }
                 style={{

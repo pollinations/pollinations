@@ -5,7 +5,7 @@ import { Colors } from "../../../styles/global"
 export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading }) {
     return (
         <Grid item xs={12}>
-            <Typography variant="body2" style={{ color: Colors.lime }}>
+            <Typography variant="body2" style={{ color: Colors.lime, fontWeight: "bold" }}>
                 Prompt
             </Typography>
             <TextareaAutosize

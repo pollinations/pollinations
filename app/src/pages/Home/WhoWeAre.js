@@ -1,59 +1,197 @@
 import styled from "@emotion/styled"
-import React from "react"
+import React, { useState } from "react"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
-import { LinkStyle } from "./components"
-import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
-import { PollinationsImage, PollinationsMarkdown, PollinationsText } from "@pollinations/react";
+import { PollinationsMarkdown } from "@pollinations/react"
+import { ImageURLHeading } from "./ImageHeading"
+import { Grid, Box } from "@material-ui/core"
 
-const StyledLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
+// Define the abstracted style for insects interacting with the button/logo
+const MyGenerateStyle = `Add many small, colorful, and whimsical insects—such as ladybugs, butterflies, and beetles—playfully interacting with the elements (crawling over or perched upon them or around them). The insects should be illustrated in a vibrant, artistic style, adding a touch of fun and color without overwhelming the simplicity of the design. The overall image should be clean, elegant, and visually engaging.`
+
+const ImageOverlayWrapper = styled.div`
+  position: relative;
+  width: 50%;
+  cursor: pointer; /* Add cursor pointer for hand icon */
+
+  &:hover .overlay-image {
+    opacity: 1;
+  }
+
+  .base-image,
+  .overlay-image,
+  .copied-image {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.3s ease;
+  }
+
+  .overlay-image,
+  .copied-image {
+    opacity: 0;
+  }
+
+  &.show-copied .copied-image {
+    opacity: 1;
+  }
+
+  &.show-copied .base-image,
+  &.show-copied .overlay-image {
+    opacity: 0;
   }
 `
 
 const WhoWeAreContent = () => {
-  const handleLinkClick = (e) => {
+  const [showCopied, setShowCopied] = useState(false)
+
+  const handleEmailClick = (e) => {
     e.preventDefault()
-    const link = e.currentTarget.href
-    navigator.clipboard.writeText(link).then(() => {
-      console.log(`Copied to clipboard: ${link}`)
+    const email = "hello@pollinations.ai"
+    navigator.clipboard.writeText(email).then(() => {
+      console.log(`Copied to clipboard: ${email}`)
+      setShowCopied(true)
+      setTimeout(() => {
+        setShowCopied(false)
+      }, 3000)
     })
   }
 
   return (
-    <>
-      <h2 style={{ userSelect: "none" }}>
+    <Box height={MOBILE_BREAKPOINT ? "640px" : "1200px"} width="100%">
+      <h2>
         <PollinationsMarkdown
           components={{
             p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
           }}
         >
-          Introduce the team of machine-learning specialists, artists and
-          futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+          Introduce the team of machine-learning specialists, artists and futurists and highlight
+          that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with
+          emojis. Use italics and bold to make the text more engaging.
         </PollinationsMarkdown>
       </h2>
       <ContactWrapper>
-        <p style={{ userSelect: "none" }}>
-          To talk to us, reach out on{" "}
-          <StyledLink href="https://discord.gg/k9F7SyTgqn">
-            <b>Discord</b>
-          </StyledLink>{" "}
-          <span className="mobile-break">or at </span>
-          <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
-            <b>hello@pollinations.ai</b>
-          </StyledLink>
-        </p>
-        <p style={{ userSelect: "none" }}>
-          <StyledLink href="/readme">
-            <b>README</b>
-            <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-          </StyledLink>{" "}
-          to learn more.
-        </p>
+        <Box>
+          <Grid container>
+            {/* Row 1 */}
+            <Grid item xs={12} sm={6}>
+              <Box >
+                {/* Component A: Contact Heading */}
+                <ImageURLHeading
+                  customPrompt={`Create a minimalist image with black text on a white background that reads ‘To talk to us, reach out on’ in an elegant and simple font like Helvetica or Garamond.`}
+                  width={300}
+                  height={200}
+                  whiteText={false}
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                {/* Component E: Readme Subtitle */}
+                <ImageURLHeading
+                  customPrompt={`Design an image featuring black text that reads ‘...to Learn More’ in an elegant and simple font like Helvetica or Arial. Use a solid white background to make the text and colors stand out. The overall design should be clear, concise, elegant, and visually appealing.`}
+                  width={250}
+                  height={200}
+                  whiteText={false}
+                />
+              </Box>
+            </Grid>
+
+            {/* Row 2 */}
+            <Grid item xs={12} sm={6} >
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                {/* Component B: Discord Link */}
+                <ImageOverlayWrapper
+                  onClick={() => window.open("https://discord.gg/k9F7SyTgqn", "_blank")}
+                >
+                  {/* Base Image */}
+                  <ImageURLHeading
+                    className="base-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The Discord button should have a striking shiny blue color with slightly rounded edges to emphasize its clickable appearance.${MyGenerateStyle}`}
+                    width={150}
+                    height={125}
+                    whiteText={"false"}
+                  />
+                  {/* Overlay Image */}
+                  <ImageURLHeading
+                    className="overlay-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The Discord button should have a striking shiny black color with slightly rounded edges to emphasize its clickable appearance.${MyGenerateStyle}`}
+                    width={150}
+                    height={125}
+                    whiteText={"yellow"}
+                  />
+                  {/* Copied Image */}
+                  <ImageURLHeading
+                    className="copied-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The button should be fitting a square and have a shiny red color with slightly rounded edges to emphasize its clickable appearance. On the button, display the text ‘Copied!’ in bold black text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. ${MyGenerateStyle}`}
+                    width={150}
+                    height={125}
+                    whiteText={"false"}
+                  />
+                </ImageOverlayWrapper>
+
+                {/* Component C: hello@pollinations.ai Copy Email */}
+                <ImageOverlayWrapper
+                  onClick={handleEmailClick}
+                  className={showCopied ? "show-copied" : ""}
+                >
+                  {/* Base Image */}
+                  <ImageURLHeading
+                    className="base-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The top of the button pattern looks like a honeycomb, it has slightly rounded edges to emphasize its clickable appearance. On the button, display the email address ‘hello@pollinations.ai’ in bold black text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. There are small bees playing around and on top of it.${MyGenerateStyle}`}
+                    width={300}
+                    height={125}
+                    whiteText={"false"}
+                  />
+                  {/* Overlay Image */}
+                  <ImageURLHeading
+                    className="overlay-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background.  The top of the button pattern looks like a honeycomb, but black, it has slightly rounded edges to emphasize its clickable appearance. On the button, display the email address ‘hello@pollinations.ai’ in bold yellow text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. There are small bees playing around and on top of it. ${MyGenerateStyle}`}
+                    width={300}
+                    height={125}
+                    whiteText={"yellow"}
+                  />
+                  {/* Copied Image */}
+                  <ImageURLHeading
+                    className="copied-image"
+                    customPrompt={`Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The top of the button pattern looks like a honeycomb but red, it has slightly rounded edges to emphasize its clickable appearance. On the button, display the text ‘Copied!’ in bold black text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. There are small bees playing around and on top of it.${MyGenerateStyle}`}
+                    width={300}
+                    height={125}
+                    whiteText={"false"}
+                  />
+                </ImageOverlayWrapper>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+            {/* Component D: Readme Link */}
+                <ImageOverlayWrapper onClick={() => (window.location.href = "/readme")}>
+                  {/* Base Image */}
+                  <ImageURLHeading
+                    className="base-image"
+                    customPrompt={`
+                      Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The button should have a shiny green color with slightly rounded edges to emphasize its clickable appearance. On the button, display the text ‘READ.ME’ in bold white text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. There is minimal floppy disk logo to the text. ${MyGenerateStyle}`}
+                    width={300}
+                    height={125}
+                    whiteText={true}
+                  />
+                  {/* Overlay Image */}
+                  <ImageURLHeading
+                    className="overlay-image"
+                    customPrompt={`
+                      Create an image featuring a large, prominent button that occupies almost the entire canvas, centered against a white background. The button should have a solid black color with slightly rounded edges to emphasize its clickable appearance. On the button, display the text ‘READ.ME’ in bold yellow text, using a clean, legible font like Arial or Helvetica, centered both horizontally and vertically. Add a floppy disk logo to the text to emphasize the save functionality. ${MyGenerateStyle}`}
+                    width={400}
+                    height={125}
+                    whiteText={"yellow"}
+                  />
+                </ImageOverlayWrapper>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
       </ContactWrapper>
-    </>
+    </Box>
   )
 }
 
@@ -74,17 +212,13 @@ const fadeIn = keyframes`
 `
 
 const PageLayout = styled(BaseContainer)`
-  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 1em;
-  margin: auto;
   animation: ${fadeIn} 1.5s ease-out;
 
   h2 {
-    initial: unset;
     font-family: "Uncut-Sans-Variable";
     font-style: normal;
     font-weight: 500;
@@ -92,13 +226,13 @@ const PageLayout = styled(BaseContainer)`
     line-height: 58px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
     letter-spacing: -0.02em;
-    margin-bottom: 1.6em;
-    margin-top: 1em;
+    margin-top: 2em;
+    margin-bottom: 2em;
+    text-align: center;
 
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;
       line-height: 40px;
-      margin-bottom: 1.6em;
     }
   }
   p {
@@ -108,25 +242,20 @@ const PageLayout = styled(BaseContainer)`
     font-size: 24px;
     line-height: 34px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
-    margin: 0; // Remove margin as it's now handled by ContactWrapper
     user-select: none;
     i {
       color: ${(props) => (props.dark ? Colors.accent : Colors.offblack)};
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
-      width: 90%;
       font-size: 22px;
     }
   }
 
-  // Add this new style for the last paragraph
   p:last-child {
-    margin-bottom: 0; // Remove bottom margin for the last paragraph
   }
 `
 
 const Style = styled.div`
-  width: 100%;
   position: relative;
   background-color: ${(props) => (props.dark ? "black" : Colors.background_body)};
   @media (max-width: ${MOBILE_BREAKPOINT}) {
@@ -134,30 +263,8 @@ const Style = styled.div`
 `
 
 const ContactWrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  margin-bottom: 2em;
-
-  p {
-    width: 45%; // Adjust this value as needed
-    margin: 0;
-  }
-
-  p:last-child {
-    text-align: right;
-  }
-
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    flex-direction: column;
-
-    p {
-      width: 100%;
-    }
-
     p:last-child {
-      text-align: left;
     }
 
     .mobile-break {

@@ -6,11 +6,11 @@ import ProjectsSection from "./ProjectsSection"
 import CompaniesSection from "./CompaniesSection" // Import the new CompaniesSection
 import { useEffect, useMemo, useRef } from "react"
 
-const topBandPrompt = encodeURIComponent("One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white.")
+const topBandPrompt = encodeURIComponent("Create a visually stunning image featuring a horizontal, centered band that stretches across the canvas, resembling a river of vibrant colors flowing from right to left. This ‘river of colors’ should be composed of rich, high-spirited hues blending seamlessly into one another—like a spectrum or rainbow in motion. The colors should be vivid and dynamic, evoking feelings of joy and energy. The flow should have a fluid, wave-like motion, adding a sense of movement and life. Use a solid black background to make the colorful band stand out prominently. The overall design should be beautiful and uplifting, creating an eye-catching ‘space band’ that captures the essence of a flowing river of colors.")
 
 const getTopBandPresetsDesign = () => {
   const seed = Math.floor(Math.random() * 10)
-  return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=500&height=100&seed=${seed}&nologo=true`
+  return `https://image.pollinations.ai/prompt/${topBandPrompt}?width=1920&height=100&seed=${seed}&nologo=true`
 }
 
 export default function Home() {
@@ -24,6 +24,7 @@ export default function Home() {
 
   return (
     <Style>
+      <TopBand />
       <WhoWeAre />
       <TopBand />
       <GenerativeImageFeed />

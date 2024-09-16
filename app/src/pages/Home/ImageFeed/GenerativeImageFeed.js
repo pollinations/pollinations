@@ -170,7 +170,11 @@ export function GenerativeImageFeed() {
                 setIsInputChanged={setIsInputChanged}
               />
               <Grid item xs={12}>
-                {ImagineButton(handleButtonClick, isLoading, isInputChanged)}
+                <ImagineButton
+                  handleButtonClick={handleButtonClick}
+                  isLoading={isLoading}
+                  isInputChanged={isInputChanged}
+                />
               </Grid>
               <Grid item xs={12}>
                 <CodeExamples {...image} />
@@ -242,11 +246,24 @@ function getImageURL(newImage) {
 
 function LoadingIndicator() {
   return (
-    <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em", position: "relative" }}>
-      <ImageURLHeading whiteText={Colors.offwhite} width={600} height={500} prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration">
+    <Grid
+      container
+      justifyContent="center"
+      alignItems="center"
+      style={{ marginBottom: "8em", position: "relative" }}
+    >
+      <ImageURLHeading
+        whiteText={Colors.offwhite}
+        width={600}
+        height={500}
+        prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration"
+      >
         Loading...
       </ImageURLHeading>
-      <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />
+      <CircularProgress
+        color={"inherit"}
+        style={{ color: Colors.offwhite, position: "absolute" }}
+      />
     </Grid>
   )
 }

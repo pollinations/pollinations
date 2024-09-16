@@ -46,7 +46,7 @@ const WhoWeAreContent = () => {
           </StyledLink>
         </p>
         <p style={{ userSelect: "none" }}>
-          <StyledLink href="/readme">
+          <StyledLink href="https://github.com/pollinations/pollinations/#readme">
             <b>README</b>
             <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
           </StyledLink>{" "}

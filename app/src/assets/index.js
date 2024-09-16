@@ -11,7 +11,6 @@ import landing from "./text/landing.md"
 import integrate from './text/integrate.md'
 import terms from './text/terms.md'
 import event from './text/event.md'
-import readme from './text/README.md'
 
 export const textContent = {
   help,
@@ -27,7 +26,6 @@ export const textContent = {
   integrate,
   terms,
   event,
-  readme
 }
 
 const expoCtx = require.context("./expo", false, /\.md$/)

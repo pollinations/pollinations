@@ -13,7 +13,7 @@ This endpoint generates an image based on the provided prompt and optional param
 | Parameter | Type     | Description                                                                               | Default |
 |-----------|----------|-------------------------------------------------------------------------------------------|---------|
 | prompt    | required | Text description of the image you want to generate. Should be URL-encoded.                | -       |
-| model     | optional | Model to use for generation. See https://image.pollinations.ai/models for available models. | 'turbo' |
+| model     | optional | Model to use for generation. See https://image.pollinations.ai/models for available models. | 'flux' |
 | seed      | optional | Seed for reproducible results. Use -1 for random.                                         | random  |
 | width     | optional | Width of the generated image.                                                             | 1024    |
 | height    | optional | Height of the generated image.                                                            | 1024    |

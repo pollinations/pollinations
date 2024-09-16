@@ -33,9 +33,7 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 
 Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
 
-```html
-<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
-```
+    <img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
 
 This will display an AI-generated image of a digital garden:
 
@@ -43,9 +41,7 @@ This will display an AI-generated image of a digital garden:
 
 You can also use it in your browser:
 
-```
-https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
-```
+    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
@@ -57,52 +53,56 @@ Here's what you might get if you use the conceptual isometric world prompt:
 
 [![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
 
-## 🔧 Customization Options
-
-Want to tweak your image? You can add these options to your URL:
-
-- `width` & `height`: Choose the size of your image
-- `model`: Pick 'flux', 'flux-realism', 'flux-anime' and 'flux-3d', or 'turbo' (default: 'flux')
-- `seed`: Use a number for consistent results (or -1 for random)
-- `nologo`: Add this to remove the Pollinations logo
-- `enhance`: Let AI add extra details to your description
-
-Example with options:
-
-```html
-<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=1280&height=720&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
-```
-
-This produces:
-
-<img src="https://pollinations.ai/p/2x2_image_grid_for_the_prompt_AI_powered_pollination_process_in_a_minimal_digital_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
-
 ## 💻 For Developers
 
 If you're a coder, you can use our APIs to generate images and text in your projects. Here are simple examples:
 
 ### Image Generation
 
-```python
-import requests
+    import requests
 
-def download_image(prompt):
-    url = f"https://pollinations.ai/p/{prompt}"
-    response = requests.get(url)
-    with open('generated_image.jpg', 'wb') as file:
-        file.write(response.content)
-    print('Image downloaded!')
+    def download_image(prompt):
+        url = f"https://pollinations.ai/p/{prompt}"
+        response = requests.get(url)
+        with open('generated_image.jpg', 'wb') as file:
+            file.write(response.content)
+        print('Image downloaded!')
 
-download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
-```
+    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
+
+### React Components
+
+We now offer React components for easy integration of Pollinations.AI into your React projects! Check out our [Pollinations React Components](./pollinations-react/README.md) for more details.
+
+Here's a quick example of how to use the PollinationsImage and PollinationsMarkdown components together:
+
+    import React from 'react';
+    import { PollinationsImage, PollinationsMarkdown } from '@pollinations/react';
+
+    const AIGeneratedContent = () => (
+      <div>
+        <h2>AI-Generated Travel Guide</h2>
+        <PollinationsImage 
+          prompt="Beautiful landscape of Paris with Eiffel Tower" 
+          width={800} 
+          height={600} 
+          seed={42} 
+        />
+        <PollinationsMarkdown seed={42}>
+          Write a brief travel guide for Paris, including top attractions and local cuisine
+        </PollinationsMarkdown>
+      </div>
+    );
+
+    export default AIGeneratedContent;
+
+This example creates a component that generates both an image of Paris and a markdown travel guide, demonstrating how these components can be used together to create dynamic, AI-generated content.
 
 ### Text Generation
 
 To generate text, simply use this URL in your browser or API call:
 
-```
-https://text.pollinations.ai/What%20is%20artificial%20intelligence?
-```
+    https://text.pollinations.ai/What%20is%20artificial%20intelligence?
 
 This will return a text response about artificial intelligence.
 

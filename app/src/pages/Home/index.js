@@ -1,7 +1,6 @@
 import styled from "@emotion/styled"
 import WhoWeAre from "./WhoWeAre.js"
 import Discord from "./Discord"
-import MusicVideo from "./MusicVideo"
 import { GenerativeImageFeed } from "./ImageFeed/GenerativeImageFeed.js"
 import ProjectsSection from "./ProjectsSection"
 import CompaniesSection from "./CompaniesSection" // Import the new CompaniesSection

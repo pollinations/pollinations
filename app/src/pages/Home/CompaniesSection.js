@@ -1,29 +1,22 @@
 import React, { useEffect, useState } from "react"
-import { Container, useMediaQuery } from "@material-ui/core"
-import { makeStyles, useTheme } from "@material-ui/core/styles"
-import { ImageURLHeading } from "./styles"
-import { MOBILE_BREAKPOINT, Colors, Fonts } from "../../styles/global"
+import { Container } from "@material-ui/core"
+import { makeStyles } from "@material-ui/core/styles"
+import { ImageURLHeading } from "./ImageHeading"
+import { Colors, Fonts } from "../../styles/global"
 
 const CompaniesSection = () => {
-  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
   const [screenWidth, setScreenWidth] = useState(window.innerWidth)
 
   useEffect(() => {
-    const handleResize = () => {
-      setScreenWidth(window.innerWidth)
-    }
-
+    const handleResize = () => setScreenWidth(window.innerWidth)
     window.addEventListener("resize", handleResize)
-    console.log("isMobile status:", isMobile, "Screen width:", screenWidth)
-
-    return () => {
-      window.removeEventListener("resize", handleResize)
-    }
-  }, [isMobile, screenWidth])
+    console.log("Screen width:", screenWidth)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [screenWidth])
 
   const useStyles = makeStyles((theme) => ({
     root: {
-      maxWidth: "800px", 
+      maxWidth: "800px",
       padding: theme.spacing(1),
       display: "flex",
       flexDirection: "column",
@@ -33,23 +26,17 @@ const CompaniesSection = () => {
       maxWidth: "800px",
       borderCollapse: "collapse",
       marginBottom: "5em",
-      margin: isMobile ? "0 auto" : "0",
-    },
-    th: {
-      padding: theme.spacing(0),
-      fontSize: "1.2em",
+      margin: "0",
     },
     td: {
-      padding: theme.spacing(1), 
+      padding: theme.spacing(1),
       fontSize: "1.1em",
     },
     link: {
       fontFamily: Fonts.body,
-      fontStyle: "normal",
       fontWeight: 500,
       fontSize: "18px",
-      lineHeight: "22px",
-      textDecorationLine: "underline",
+      textDecoration: "underline",
       textTransform: "uppercase",
       color: Colors.offwhite,
     },
@@ -57,84 +44,45 @@ const CompaniesSection = () => {
 
   const classes = useStyles()
 
-  const logoPrefix = "minimalist logo"
+  const logoPrefix = "minimalist logo on black background"
   const imageDimension = 96
-  const seedValue = 41 + Math.floor(Math.random() * 3) 
+  const seedValue = 41 + Math.floor(Math.random() * 3)
 
   const companies = [
-    {
-      name: "AWS Activate",
-      url: "https://aws.amazon.com/",
-      description: "GPU Cloud Credits",
-    },
-    {
-      name: "Google Cloud for Startups",
-      url: "https://cloud.google.com/",
-      description: "GPU Cloud Credits",
-    },
-    {
-      name: "OVH Cloud",
-      url: "https://www.ovhcloud.com/",
-      description: "GPU Cloud credits",
-    },
-    {
-      name: "NVIDIA Inception",
-      url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
-      description: "AI startup support",
-    },
-    {
-      name: "Azure (MS for Startups)",
-      url: "https://azure.microsoft.com/",
-      description: "OpenAI credits",
-    },
-    {
-      name: "Outlier Ventures",
-      url: "https://outlierventures.io/",
-      description: "Accelerator",
-    },
+    { name: "LLMPlayground.net", url: "https://llmplayground.net/", description: "Hosting Custom Flux Models" },
+    { name: "Karma.YT", url: "https://karma.yt", description: "Social media integrations" },
+    { name: "AWS Activate", url: "https://aws.amazon.com/", description: "GPU Cloud Credits" },
+    { name: "Google Cloud for Startups", url: "https://cloud.google.com/", description: "GPU Cloud Credits" },
+    { name: "OVH Cloud", url: "https://www.ovhcloud.com/", description: "GPU Cloud credits" },
+    { name: "NVIDIA Inception", url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/", description: "AI startup support" },
+    { name: "Azure (MS for Startups)", url: "https://azure.microsoft.com/", description: "OpenAI credits" },
+    { name: "Outlier Ventures", url: "https://outlierventures.io/", description: "Startup Accelerator" },
   ]
 
   const generateImageUrl = (name, description) =>
-    `https://pollinations.ai/p/${encodeURIComponent(
-      `${logoPrefix} ${name} ${description}`
-    )}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`
+    `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name} ${description}`)}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 
-  const tableRows = []
-  for (let i = 0; i < companies.length; i += isMobile ? 1 : 2) {
-    tableRows.push(
-      <tr key={i}>
-        <td className={classes.td}>
-          <img src={generateImageUrl(companies[i].name, companies[i].description)} alt={companies[i].name} />
+  const tableRows = companies.reduce((rows, company, index) => {
+    if (index % 2 === 0) rows.push([])
+    rows[rows.length - 1].push(
+      <>
+        <td key={company.name} className={classes.td}>
+          <img src={generateImageUrl(company.name, company.description)} alt={company.name} style={{ width: `${imageDimension}px`, height: `${imageDimension}px` }} />
         </td>
-        <td className={classes.td}>
-          <a href={companies[i].url} className={classes.link}>
-            {companies[i].name}
-          </a>
+        <td>
+          <a href={company.url} className={classes.link}>{company.name}</a>
           <br />
-          {companies[i].description}
+          {company.description}
         </td>
-        {!isMobile && companies[i + 1] && (
-          <>
-            <td className={classes.td}>
-              <img src={generateImageUrl(companies[i + 1].name, companies[i + 1].description)} alt={companies[i + 1].name} />
-            </td>
-            <td className={classes.td}>
-              <a href={companies[i + 1].url} className={classes.link}>
-                {companies[i + 1].name}
-              </a>
-              <br />
-              {companies[i + 1].description}
-            </td>
-          </>
-        )}
-      </tr>
+      </>
     )
-  }
+    return rows
+  }, []).map((row, index) => <tr key={index}>{row}</tr>)
 
   return (
-    <Container className={classes.root}>
+    <Container className={classes.root} style={{ margin: '3em 0 4em 0' }}>
       <ImageURLHeading>Supported By</ImageURLHeading>
-      <table className={classes.table}>
+      <table className={classes.table} style={{ marginTop: '3em' }}>
         <tbody>{tableRows}</tbody>
       </table>
     </Container>

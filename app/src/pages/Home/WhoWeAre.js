@@ -1,6 +1,6 @@
 import styled from "@emotion/styled"
 import React from "react"
-import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../../styles/global"
+import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
 import { LinkStyle } from "./components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
@@ -13,39 +13,49 @@ const StyledLink = styled(LinkStyle)`
   }
 `
 
-const WhoWeAreContent = () => (
-  <>
-    <h2>
-      <PollinationsMarkdown
-        components={{
-          p: (props) => <p {...props} style={{ fontSize: "36px" }} />,
-        }}
-      >
-        Introduce the team of machine-learning specialists, artists and
-        futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
-      </PollinationsMarkdown>
-    </h2>
-    <ContactWrapper>
-      <p>
-        To talk to us, reach out on{" "}
-        <StyledLink href="https://discord.gg/k9F7SyTgqn">
-          <b>Discord</b>
-        </StyledLink>{" "}
-        <span className="mobile-break">or at </span>
-        <StyledLink href="mailto:hello@pollinations.ai">
-          <b>hello@pollinations.ai</b>
-        </StyledLink>
-      </p>
-      <p>
-        <StyledLink href="/readme">
-          <b>README</b>
-          <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-        </StyledLink>{" "}
-        to learn more.
-      </p>
-    </ContactWrapper>
-  </>
-)
+const WhoWeAreContent = () => {
+  const handleLinkClick = (e) => {
+    e.preventDefault()
+    const link = e.currentTarget.href
+    navigator.clipboard.writeText(link).then(() => {
+      console.log(`Copied to clipboard: ${link}`)
+    })
+  }
+
+  return (
+    <>
+      <h2 style={{ userSelect: "none" }}>
+        <PollinationsMarkdown
+          components={{
+            p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
+          }}
+        >
+          Introduce the team of machine-learning specialists, artists and
+          futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+        </PollinationsMarkdown>
+      </h2>
+      <ContactWrapper>
+        <p style={{ userSelect: "none" }}>
+          To talk to us, reach out on{" "}
+          <StyledLink href="https://discord.gg/k9F7SyTgqn">
+            <b>Discord</b>
+          </StyledLink>{" "}
+          <span className="mobile-break">or at </span>
+          <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
+            <b>hello@pollinations.ai</b>
+          </StyledLink>
+        </p>
+        <p style={{ userSelect: "none" }}>
+          <StyledLink href="/readme">
+            <b>README</b>
+            <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
+          </StyledLink>{" "}
+          to learn more.
+        </p>
+      </ContactWrapper>
+    </>
+  )
+}
 
 export default function WhoWeAre() {
   return (
@@ -73,8 +83,6 @@ const PageLayout = styled(BaseContainer)`
   margin: auto;
   animation: ${fadeIn} 1.5s ease-out;
 
-
-
   h2 {
     initial: unset;
     font-family: "Uncut-Sans-Variable";
@@ -84,7 +92,8 @@ const PageLayout = styled(BaseContainer)`
     line-height: 58px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
     letter-spacing: -0.02em;
-    margin-bottom: 1em;
+    margin-bottom: 1.6em;
+    margin-top: 1em;
 
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;
@@ -100,6 +109,7 @@ const PageLayout = styled(BaseContainer)`
     line-height: 34px;
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
     margin: 0; // Remove margin as it's now handled by ContactWrapper
+    user-select: none;
     i {
       color: ${(props) => (props.dark ? Colors.accent : Colors.offblack)};
     }
@@ -128,6 +138,7 @@ const ContactWrapper = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  margin-bottom: 2em;
 
   p {
     width: 45%; // Adjust this value as needed
@@ -143,7 +154,6 @@ const ContactWrapper = styled.div`
 
     p {
       width: 100%;
-      margin-bottom: 1.6em;
     }
 
     p:last-child {

@@ -1,13 +1,20 @@
 import styled from "@emotion/styled"
 import { Box, Container, Paper } from "@material-ui/core"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
-import { useMemo } from "react"
+import { useMemo, useState, useEffect } from "react"
 
 export const ImageStyle = styled.img`
-  width: 100%;
-  height: auto;
-  max-width: 640px;
-  max-height: 640px;
+  height: 600px; /* Set your desired fixed height */
+  width: auto;
+  margin: 1em;
+  max-width: 100%; /* Prevents image from exceeding container width */
+  object-fit: contain; /* Maintains aspect ratio without cropping */
+
+  @media (max-width: 600px) {
+    /* Adjustments for mobile devices */
+    height: auto; /* Allows height to adjust based on width */
+    width: 100%; /* Image takes up full width of its container */
+  }
 `
 
 export const GenerativeImageURLContainer = styled(Container)`
@@ -20,24 +27,48 @@ export const GenerativeImageURLContainer = styled(Container)`
   width: 90%;
 `
 
+const useRandomSeed = () => {
+  const [seed, setSeed] = useState(Math.floor(Math.random() * 10))
+
+  useEffect(() => {
+    const changeSeed = () => {
+      setSeed(Math.floor(Math.random() * 10))
+      const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
+      setTimeout(changeSeed, randomDelay)
+    }
+
+    const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * (10001)) + 2000)
+
+    return () => clearTimeout(timeoutId)
+  }, [])
+
+  return seed;
+}
+
 export const ImageURLHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
-    const foregroundColor = whiteText ? "white" : "black"
-    const backgroundColor = whiteText ? "black" : "white"
+    const originalWidth = width
+    const originalHeight = height
+    width = width * 3
+    height = height * 3
+    const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black")
+    const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white")
     const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
     const prompt = encodeURIComponent(customPrompt || defaultPrompt)
-    const seed = useMemo(() => Math.floor(Math.random() * 10), [])
+
+    const seed = useRandomSeed()
+
     const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
 
     return (
       <div className={className}>
-        <img src={imageUrl} alt={children} />
+        <img src={imageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
       </div>
     )
   }
 )`
   text-align: center;
-  margin: 60px auto;
+  margin: 10px auto;
 
   img {
     width: 100%;
@@ -51,12 +82,10 @@ export const ImageURLHeading = styled(
 `
 
 export const ImageContainer = styled(Paper)`
-  margin: 0;
+  width: 100%; 
   display: flex;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    height: auto;
-    margin-bottom: 0px;
-  }
+  justify-content: center;
+  align-items: center;
 `
 
 export const URLExplanation = styled(Box)`

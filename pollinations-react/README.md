@@ -105,7 +105,7 @@ import React from 'react';
 import { usePollinationsText } from '@pollinations/react';
 
 const HaikuComponent = () => {
-  const text = usePollinationsText('Write a short haiku about Pollinations.AI', 42);
+  const text = usePollinationsText('Write a short haiku about Pollinations.AI', { seed: 42 });
   
   return (
     <div>

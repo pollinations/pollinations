@@ -4,6 +4,31 @@
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)
 
+## Table of Contents
+- [Pollinations.AI](#pollinationsai)
+  - [Table of Contents](#table-of-contents)
+  - [🌟 Introduction](#-introduction)
+  - [🚀 Key Features](#-key-features)
+  - [🚀 Getting Started](#-getting-started)
+  - [🖥️ How to Use](#️-how-to-use)
+    - [Web Interface](#web-interface)
+    - [API](#api)
+  - [🎨 Examples](#-examples)
+    - [Image Generation](#image-generation)
+    - [Text Generation](#text-generation)
+  - [🛠️ Integration](#️-integration)
+    - [React Components](#react-components)
+  - [🌐 Projects Using Pollinations.AI](#-projects-using-pollinationsai)
+    - [Social Bots](#social-bots)
+    - [Mobile \& Web Applications](#mobile--web-applications)
+    - [Chat Integrations](#chat-integrations)
+    - [Development Tools](#development-tools)
+  - [🔮 Future Developments](#-future-developments)
+  - [🌍 Our Vision](#-our-vision)
+  - [🏢 Supported By](#-supported-by)
+  - [🤝 Community and Support](#-community-and-support)
+  - [📜 License](#-license)
+
 ## 🌟 Introduction
 
 [Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image.
@@ -14,114 +39,89 @@
 - 🆓 Free to use
 - 🔑 No signup or API keys
 - 🖼️ Embed like any normal image
-- 🌍 Over 50,000 active users and > 2 million images generated per month.
+- 🌍 Over 50,000 active users and > 2 million images generated per month
 - 🤝 Integrates with various open-source LLMs, bots, and communities
 
-Generate amazing images, music videos, and real-time AI-driven visual experiences. It's perfect for artists, developers, and anyone who loves to create!
-
-## 🖥️ Easiest Way to Start
-
-The simplest way to use Pollinations.AI is through our web interface:
+## 🚀 Getting Started
 
 1. Visit [https://pollinations.ai](https://pollinations.ai)
 2. Type your description in the text box
 3. Click "Generate" and watch the magic happen!
 
-Our web interface is user-friendly and doesn't require any technical knowledge. Give it a try!
+For more advanced usage, check out our [API documentation](APIDOCS.md).
 
-## 🚀 How to Use the [API](/APIDOCS.md)
+## 🖥️ How to Use
 
-Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
+### Web Interface
 
-```html
-<img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
-```
+Our web interface is user-friendly and doesn't require any technical knowledge. Simply visit [https://pollinations.ai](https://pollinations.ai) and start creating!
 
-This will display an AI-generated image of a digital garden:
+### API
 
-<img src="https://pollinations.ai/p/conceptual_isometric_wireframe_A_digital_garden_with_AI_generated_flowers_and_data_streams?width=384&height=384&seed=-1" alt="AI-generated digital garden">
+Use our API directly in your browser or applications:
 
-You can also use it in your browser:
-
-```
-https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
-```
+    https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
-For more detailed information about our image generation API and our text generation API, check out our [APIDOCS.md](/APIDOCS.md).
-
-## 🎨 Example
-
-Here's what you might get if you use the conceptual isometric world prompt:
-
-[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
-
-## 🔧 Customization Options
-
-Want to tweak your image? You can add these options to your URL:
-
-- `width` & `height`: Choose the size of your image
-- `model`: Pick 'flux', 'flux-realism', 'flux-anime' and 'flux-3d', or 'turbo' (default: 'flux')
-- `seed`: Use a number for consistent results (or -1 for random)
-- `nologo`: Add this to remove the Pollinations logo
-- `enhance`: Let AI add extra details to your description
-
-Example with options:
-
-```html
-<img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=1280&height=720&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
-```
-
-This produces:
-
-<img src="https://pollinations.ai/p/2x2_image_grid_for_the_prompt_AI_powered_pollination_process_in_a_minimal_digital_greenhouse?width=512&height=512&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
-
-## 💻 For Developers
-
-If you're a coder, you can use our APIs to generate images and text in your projects. Here are simple examples:
+## 🎨 Examples
 
 ### Image Generation
 
-```python
-import requests
+Here's an example of a generated image:
 
-def download_image(prompt):
-    url = f"https://pollinations.ai/p/{prompt}"
-    response = requests.get(url)
-    with open('generated_image.jpg', 'wb') as file:
-        file.write(response.content)
-    print('Image downloaded!')
+[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
 
-download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
-```
+Python code to download the generated image:
+
+    import requests
+
+    def download_image(prompt):
+        url = f"https://pollinations.ai/p/{prompt}"
+        response = requests.get(url)
+        with open('generated_image.jpg', 'wb') as file:
+            file.write(response.content)
+        print('Image downloaded!')
+
+    download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
 
 ### Text Generation
 
-To generate text, simply use this URL in your browser or API call:
+To generate text, use this URL:
 
-```
-https://text.pollinations.ai/What%20is%20artificial%20intelligence?
-```
+    https://text.pollinations.ai/What%20is%20artificial%20intelligence?
 
-This will return a text response about artificial intelligence.
+## 🛠️ Integration
 
-For more detailed information about our APIs, please refer to our [APIDOCS.md](/APIDOCS.md).
+### React Components
 
-## 🤝 Integration
+We offer React components for easy integration. Example usage:
 
-Pollinations.AI seamlessly integrates into a wide range of creative and technical projects:
+    import React from 'react';
+    import { PollinationsImage, PollinationsMarkdown } from '@pollinations/react';
 
-- 🎨 Enhance web designs with dynamic AI-generated visuals
-- 📚 Illustrate e-learning content with custom visuals
-- 🤖 Power up chatbots with image generation capabilities
-- 📱 Boost social media content with AI-generated graphics
+    const AIGeneratedContent = () => (
+      <div>
+        <h2>AI-Generated Travel Guide</h2>
+        <PollinationsImage 
+          prompt="Beautiful landscape of Paris with Eiffel Tower" 
+          width={800} 
+          height={600} 
+          seed={42} 
+        />
+        <PollinationsMarkdown seed={42}>
+          Write a brief travel guide for Paris, including top attractions and local cuisine
+        </PollinationsMarkdown>
+      </div>
+    );
 
-From rapid prototyping to full-scale applications, Pollinations.AI adapts to your creative vision!
+    export default AIGeneratedContent;
+
+Check out our [Pollinations React Components](./pollinations-react/README.md) for more details.
 
 ## 🌐 Projects Using Pollinations.AI
 
-Here are some exciting projects that integrate Pollinations.AI:
+Pollinations.AI is used in various projects, including:
 
 ### Social Bots
 1. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)

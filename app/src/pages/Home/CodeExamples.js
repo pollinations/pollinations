@@ -3,34 +3,10 @@ import { AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors } from "../../styles/global"
+import ReactMarkdown from "react-markdown"
 
 // Code examples as an object
 const CODE_EXAMPLES = {
-  api_description: () => `
-# Pollinations AI Image Generation API
-
-## Endpoint
-GET https://image.pollinations.ai/prompt/{prompt}
-
-## Description
-This endpoint generates an image based on the provided prompt and optional parameters. It returns a raw image file.
-
-## Parameters
-- prompt (required): The text description of the image you want to generate. Should be URL-encoded.
-- model (optional): The model to use for generation. Options: 'flux' or 'turbo'. Default: 'turbo'
-- seed (optional): Seed for reproducible results. Default: random
-- width (optional): Width of the generated image. Default: 1024
-- height (optional): Height of the generated image. Default: 1024
-- nologo (optional): Set to 'true' to turn off the rendering of the logo
-- nofeed (optional): Set to 'true' to prevent the image from appearing in the public feed
-- enhance (optional): Set to 'true' or 'false' to turn on or off prompt enhancing (passes prompts through an LLM to add detail)
-
-## Example Usage
-https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true&enhance=true
-
-## Response
-The API returns a raw image file (typically JPEG or PNG) as the response body. You can directly embed the image in your HTML or Markdown.
-`,
   llm_prompt: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
@@ -75,6 +51,31 @@ Default params:
 Additional instructions:
 - If the user specifies the /imagine command, return the parameters as JSON.
 - Response should be in valid JSON format only.
+`,
+  api_description: () => `
+# Pollinations AI Image Generation API
+
+## Endpoint
+GET https://image.pollinations.ai/prompt/{prompt}
+
+## Description
+This endpoint generates an image based on the provided prompt and optional parameters. It returns a raw image file.
+
+## Parameters
+- prompt (required): The text description of the image you want to generate. Should be URL-encoded.
+- model (optional): The model to use for generation. Options: 'flux' or 'turbo'. Default: 'turbo'
+- seed (optional): Seed for reproducible results. Default: random
+- width (optional): Width of the generated image. Default: 1024
+- height (optional): Height of the generated image. Default: 1024
+- nologo (optional): Set to 'true' to turn off the rendering of the logo
+- nofeed (optional): Set to 'true' to prevent the image from appearing in the public feed
+- enhance (optional): Set to 'true' or 'false' to turn on or off prompt enhancing (passes prompts through an LLM to add detail)
+
+## Example Usage
+https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true&enhance=true
+
+## Response
+The API returns a raw image file (typically JPEG or PNG) as the response body. You can directly embed the image in your HTML or Markdown.
 `,
   markdown: ({ imageURL, prompt, width, height, seed, model }) =>
     `# Image Parameters
@@ -237,10 +238,12 @@ export function CodeExamples(image) {
   // Add "llm_prompt" and "llm_prompt_advanced" as the first tabs
   const allTabs = [
     "llm_prompt",
+    "api_description",
     "llm_prompt_advanced",
+
     "link",
     "discord_bot",
-    ...codeExampleTabs.filter((tab) => tab !== "llm_prompt" && tab !== "llm_prompt_advanced"),
+    ...codeExampleTabs.filter((tab) => tab !== "llm_prompt" && tab !== "llm_prompt_advanced" && tab !== "api_description"),
   ]
 
   return (
@@ -315,6 +318,14 @@ export function CodeExamples(image) {
             }
 
             const text = CODE_EXAMPLES[key](image)
+
+            if (key === "api_description") {
+              return (
+                <Box margin="30px" overflow="hidden">
+                  <ReactMarkdown>{text}</ReactMarkdown>
+                </Box>
+              )
+            }
 
             return (
               tabValue === index && (

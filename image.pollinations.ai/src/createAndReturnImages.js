@@ -22,7 +22,7 @@ let accumulated_fetch_duration = 0;
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
-const callWebUI = async (prompt, safeParams, concurrentRequests) => {
+const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
   const steps = concurrentRequests < 12 ? 4 : concurrentRequests < 18 ? 3 : concurrentRequests < 28 ? 2 : 1;
@@ -127,8 +127,10 @@ const callMeoow = async (prompt, safeParams) => {
       },
     });
 
-    if (!response.ok) {
-      throw new Error(`Server responded with ${response.status}`);
+    const contentType = response.headers.get('content-type');
+    if (!response.ok || (contentType && contentType.includes('text'))) {
+      const errorText = await response.text();
+      throw new Error(`Server responded with ${response.status}: ${errorText}`);
     }
 
     const buffer = await response.buffer();
@@ -163,7 +165,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
   } else {
-    bufferAndMaturity = await callWebUI(prompt, safeParams, concurrentRequests);
+    bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
   }
 
   let isMature = bufferAndMaturity.has_nsfw_concept;

@@ -12,8 +12,9 @@ export const ImageStyle = styled.img`
 
   @media (max-width: 600px) {
     /* Adjustments for mobile devices */
-    height: auto; /* Allows height to adjust based on width */
-    width: 100%; /* Image takes up full width of its container */
+    height: 500px; /* Allows height to adjust based on width */
+    max-height: 100%; /* Allows height to adjust based on width */
+
   }
 `
 

@@ -41,6 +41,15 @@ else
         exit 1
     fi
 
+    # Download the additional CLIP model, overwriting any existing file
+    log "Downloading t5xxl_fp8_e4m3fn.safetensors"
+    if wget -O t5xxl_fp8_e4m3fn.safetensors https://huggingface.co/lllyasviel/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors; then
+        log "t5xxl_fp8_e4m3fn.safetensors downloaded successfully"
+    else
+        log "ERROR: Failed to download t5xxl_fp8_e4m3fn.safetensors"
+        exit 1
+    fi
+
     # Navigate to the VAE models directory
     log "Navigating to VAE models directory"
     cd /home/ubuntu/ComfyUI/models/vae/ || { log "ERROR: Failed to change directory to VAE models"; exit 1; }

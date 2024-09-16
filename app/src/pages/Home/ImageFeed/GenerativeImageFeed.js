@@ -2,30 +2,26 @@ import { useState, useEffect, useRef } from "react"
 import {
   Grid,
   Box,
-  CircularProgress,
   useMediaQuery,
-  IconButton,
-  Typography,
-  TextareaAutosize,
 } from "@material-ui/core"
-import { FileCopy as FileCopyIcon } from "@material-ui/icons"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
 import {
   GenerativeImageURLContainer,
   ImageURLHeading,
-  ImageContainer,
-  ImageStyle,
 } from "../ImageHeading"
 import debug from "debug"
 import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { ModelInfo } from "./ModelInfo"
 import { ImageEditor } from "./ImageEditor"
-import { CustomTooltip } from "../../../components/CustomTooltip"
 import { FeedEditSwitch } from "../../../components/FeedEditSwitch"
 import { ImagineButton } from "../../../components/ImagineButton"
+import { CopyImageLink } from "./CopyImageLink"
+import { TextPrompt } from "./TextPrompt"
+import { LoadingIndicator } from "./LoadingIndicator"
+import { ImageDisplay } from "./ImageDisplay"
 
 const log = debug("GenerativeImageFeed")
 
@@ -184,45 +180,6 @@ export function GenerativeImageFeed() {
   )
 }
 
-function CopyImageLink({ handleCopyLink, isLoading }) {
-  return (
-    <CustomTooltip title="Copy image link.">
-      <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
-        <FileCopyIcon style={{ color: Colors.lime, fontSize: "1.5rem" }} />
-      </IconButton>
-    </CustomTooltip>
-  )
-}
-
-function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading }) {
-  return (
-    <Grid item xs={12}>
-      <Typography variant="body2" style={{ color: Colors.lime }}>
-        Prompt
-      </Typography>
-      <TextareaAutosize
-        style={{
-          width: "100%",
-          height: "100px",
-          backgroundColor: "transparent",
-          border: `0.1px solid #4A4A4A`,
-          borderRadius: "5px",
-          color: Colors.offwhite,
-          padding: "10px",
-          fontSize: "1.1rem",
-          overflow: "auto",
-          scrollbarWidth: "none", // For Firefox
-          msOverflowStyle: "none", // For Internet Explorer and Edge
-        }}
-        value={imageParams.prompt}
-        onChange={(e) => handleParamChange("prompt", e.target.value)}
-        onFocus={handleFocus}
-        disabled={isLoading}
-      />
-    </Grid>
-  )
-}
-
 function getImageURL(newImage) {
   let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`
   let queryParams = []
@@ -239,36 +196,4 @@ function getImageURL(newImage) {
     imageURL += "?" + queryParams.join("&")
   }
   return imageURL
-}
-
-function LoadingIndicator() {
-  return (
-    <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em", position: "relative" }}>
-      <ImageURLHeading whiteText={Colors.offwhite} width={600} height={500} prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration">
-        Loading...
-      </ImageURLHeading>
-      <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />
-    </Grid>
-  )
-}
-
-function ImageDisplay({ image }) {
-  return (
-    <ImageContainer
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        position: "relative",
-      }}
-    >
-      {image ? (
-        <ImageStyle src={image["imageURL"]} alt="generative_image" />
-      ) : (
-        <Typography variant="h6" color="textSecondary">
-          Loading image...
-        </Typography>
-      )}
-    </ImageContainer>
-  )
 }

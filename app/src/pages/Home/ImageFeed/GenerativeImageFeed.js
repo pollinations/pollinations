@@ -135,7 +135,7 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="center" alignItems="center">
-              {FeedEditSwitch(toggleValue, handleToggleChange, isLoading)}
+              <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
             </Box>
           </Grid>
           <Grid item xs={12}>
@@ -152,11 +152,11 @@ export function GenerativeImageFeed() {
                   wasPimped={image["wasPimped"]}
                   referrer={image["referrer"]}
                 />
-                {CopyImageLink(handleCopyLink, isLoading)}
+                <CopyImageLink {...{ handleCopyLink, isLoading }} />
               </Box>
             )}
             <Box display="flex" alignItems="center">
-              {TextPrompt(imageParams, handleParamChange, handleFocus, isLoading)}
+              <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading }} />
             </Box>
           </Grid>
           {toggleValue === "edit" && (

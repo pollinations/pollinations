@@ -1,4 +1,4 @@
-import { PollinationsText, usePollinationsText } from '@pollinations/react';
+import { PollinationsText } from '@pollinations/react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useInterval } from 'usehooks-ts';
 import styled from '@emotion/styled';

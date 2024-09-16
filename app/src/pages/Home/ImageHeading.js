@@ -2,6 +2,7 @@ import styled from "@emotion/styled"
 import { Box, Container, Paper } from "@material-ui/core"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 import { useMemo, useState, useEffect } from "react"
+import useRandomSeed from "../../hooks/useRandomSeed";
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
@@ -26,24 +27,6 @@ export const GenerativeImageURLContainer = styled(Container)`
   border-radius: 0px;
   width: 90%;
 `
-
-const useRandomSeed = () => {
-  const [seed, setSeed] = useState(Math.floor(Math.random() * 10))
-
-  useEffect(() => {
-    const changeSeed = () => {
-      setSeed(Math.floor(Math.random() * 10))
-      const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000
-      setTimeout(changeSeed, randomDelay)
-    }
-
-    const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * (10001)) + 2000)
-
-    return () => clearTimeout(timeoutId)
-  }, [])
-
-  return seed;
-}
 
 export const ImageURLHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {

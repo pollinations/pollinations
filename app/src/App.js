@@ -32,12 +32,12 @@ const AppRoutes = [
     </PollinationsMarkdown></SmallContainer>,
     key: 'terms'
   },
-  {
-    exact: true,
-    path: '/readme',
-    element: <MarkdownTemplate label='readme' />,
-    key: 'readme'
-  },
+  // {
+  //   exact: true,
+  //   path: '/readme',
+  //   element: <MarkdownTemplate label='readme' />,
+  //   key: 'readme'
+  // },
   {
     exact: true,
     path: '/musicvideo',

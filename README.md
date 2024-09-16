@@ -32,6 +32,7 @@ Our web interface is user-friendly and doesn't require any technical knowledge. 
 ## 🚀 How to Use the [API](/APIDOCS.md)
 
 Using Pollinations.AI is as easy as inserting an image! You can use it directly in your HTML:
+
 ```html
 <img src="https://pollinations.ai/p/A_digital_garden_with_AI_generated_flowers_and_data_streams" alt="AI-generated digital garden">
 ```
@@ -48,7 +49,7 @@ https://pollinations.ai/p/conceptual_isometric_world_of_pollinations_ai_surreal_
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
-For more detailed information about our API, check out our [APIDOCS.md](/APIDOCS.md).
+For more detailed information about our image generation API and our text generation API, check out our [APIDOCS.md](/APIDOCS.md).
 
 ## 🎨 Example
 
@@ -67,6 +68,7 @@ Want to tweak your image? You can add these options to your URL:
 - `enhance`: Let AI add extra details to your description
 
 Example with options:
+
 ```html
 <img src="https://pollinations.ai/p/AI_powered_pollination_process_in_a_futuristic_greenhouse?width=1280&height=720&model=flux&seed=-1&nologo=true&enhance=true" alt="Customized AI pollination">
 ```
@@ -77,7 +79,9 @@ This produces:
 
 ## 💻 For Developers
 
-If you're a coder, you can use our API to generate images in your projects. Here's a simple Python example:
+If you're a coder, you can use our APIs to generate images and text in your projects. Here are simple examples:
+
+### Image Generation
 
 ```python
 import requests
@@ -91,6 +95,18 @@ def download_image(prompt):
 
 download_image("conceptual_isometric_world_of_pollinations_ai_surreal_hyperrealistic_digital_garden")
 ```
+
+### Text Generation
+
+To generate text, simply use this URL in your browser or API call:
+
+```
+https://text.pollinations.ai/What%20is%20artificial%20intelligence?
+```
+
+This will return a text response about artificial intelligence.
+
+For more detailed information about our APIs, please refer to our [APIDOCS.md](/APIDOCS.md).
 
 ## 🤝 Integration
 

@@ -23,7 +23,7 @@ This endpoint generates an image based on the provided prompt and optional param
 
 ## Example Usage
 ```
-https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true&enhance=true
+https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&nologo=true
 ```
 
 ## Code Examples
@@ -71,3 +71,66 @@ downloadImage("A beautiful sunset over the ocean", 1280, 720, 'flux', 42);
 - Social Media: Create engaging visual content on-the-fly
 
 For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+
+## Text Generation API
+
+In addition to our image generation API, we also offer a text generation API. This API allows you to generate text responses based on prompts using AI.
+
+### Endpoint
+```
+GET https://text.pollinations.ai/{prompt}
+POST https://text.pollinations.ai/
+```
+
+### Description
+This endpoint generates text responses based on the provided prompt using AI. It returns a text response.
+
+### Parameters (GET request)
+
+| Parameter | Type     | Description                                                | Default |
+|-----------|----------|------------------------------------------------------------|---------|
+| prompt    | required | Text prompt for the AI to respond to. Should be URL-encoded. | -       |
+| seed      | optional | Seed for reproducible results. Use -1 for random.          | null    |
+| json      | optional | Set to 'true' to receive response in JSON format.          | false   |
+
+### Request Body (POST request)
+
+| Field    | Type     | Description                                                |
+|----------|----------|------------------------------------------------------------|
+| messages | required | Array of message objects with 'role' and 'content' fields. |
+| seed     | optional | Seed for reproducible results. Use -1 for random.          |
+| jsonMode | optional | Set to true to receive response in JSON format.            |
+
+### Example Usage (GET)
+```
+https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=true
+```
+
+### Example Usage (POST)
+```javascript
+const fetch = require('node-fetch');
+
+async function generateText() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+        { role: 'user', content: 'What is artificial intelligence?' }
+      ],
+      seed: 42,
+      jsonMode: true
+    }),
+  });
+
+  const data = await response.json();
+  console.log(data);
+}
+
+generateText();
+```
+
+Note: The message format used in the POST request is similar to the one used by OpenAI's ChatGPT API. For more detailed information on structuring your messages, please refer to the [OpenAI API documentation](https://platform.openai.com/docs/guides/chat).

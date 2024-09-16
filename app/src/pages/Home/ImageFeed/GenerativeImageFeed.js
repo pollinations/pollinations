@@ -169,11 +169,11 @@ export function GenerativeImageFeed() {
               <Grid item xs={12}>
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Grid>
-              <Grid item xs={12}>
-                <CodeExamples {...image} />
-              </Grid>
             </Grid>
           )}
+          <Grid item xs={12}>
+            <CodeExamples {...image} />
+          </Grid>
         </Grid>
       )}
     </GenerativeImageURLContainer>

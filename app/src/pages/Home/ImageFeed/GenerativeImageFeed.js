@@ -104,7 +104,8 @@ export function GenerativeImageFeed() {
   }
 
   const handleFocus = () => {
-    // No tab switching needed
+    setToggleValue("edit")
+    stop(true)
   }
 
   const handleCopyLink = () => {
@@ -183,7 +184,7 @@ export function GenerativeImageFeed() {
   )
 }
 
-function CopyImageLink(handleCopyLink, isLoading) {
+function CopyImageLink({ handleCopyLink, isLoading }) {
   return (
     <CustomTooltip title="Copy image link.">
       <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
@@ -193,7 +194,7 @@ function CopyImageLink(handleCopyLink, isLoading) {
   )
 }
 
-function TextPrompt(imageParams, handleParamChange, handleFocus, isLoading) {
+function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading }) {
   return (
     <Grid item xs={12}>
       <Typography variant="body2" color="textSecondary">

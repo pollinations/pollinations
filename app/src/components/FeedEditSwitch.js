@@ -4,7 +4,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { CustomTooltip } from './CustomTooltip';
 import { Colors } from './../styles/global';
 
-export function FeedEditSwitch(toggleValue, handleToggleChange, isLoading) {
+export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
   return (
     <ToggleButtonGroup
       value={toggleValue}

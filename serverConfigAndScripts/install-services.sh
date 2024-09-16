@@ -7,7 +7,7 @@ log() {
 log "Starting service installation script"
 
 # Check if the flag file exists
-FLAG_FILE="/home/ubuntu/ComfyUI/models/models_downloaded.flag"
+FLAG_FILE="/home/ubuntu/ComfyUI/models/all_models_downloaded.flag"
 
 if [ -f "$FLAG_FILE" ]; then
     log "Flag file exists. Skipping downloads."
@@ -54,6 +54,36 @@ else
     # Create the flag file
     touch "$FLAG_FILE" && log "Flag file created"
 fi
+
+# Update ComfyUI and its custom nodes
+log "Updating ComfyUI and its custom nodes"
+
+# Navigate to the ComfyUI directory
+log "Navigating to ComfyUI directory"
+cd /home/ubuntu/ComfyUI || { log "ERROR: Failed to change directory to ComfyUI"; exit 1; }
+
+# Pull the latest changes from the repository
+log "Pulling latest changes from the repository"
+git pull || { log "ERROR: Failed to pull latest changes"; exit 1; }
+
+# Navigate to the custom_nodes subfolder and run git pull in each subfolder
+log "Navigating to custom_nodes subfolder and updating each subfolder"
+cd custom_nodes || { log "ERROR: Failed to change directory to custom_nodes"; exit 1; }
+for dir in */; do
+    if [ -d "$dir" ]; then
+        log "Updating $dir"
+        cd "$dir" && git pull || { log "ERROR: Failed to pull latest changes in $dir"; exit 1; }
+        cd ..
+    fi
+done
+
+# Navigate back to the ComfyUI directory
+log "Navigating back to ComfyUI directory"
+cd /home/ubuntu/ComfyUI || { log "ERROR: Failed to change directory to ComfyUI"; exit 1; }
+
+# Activate the environment and upgrade dependencies
+log "Activating environment and upgrading dependencies"
+source comfyenv/bin/activate && pip install --upgrade -r requirements.txt || { log "ERROR: Failed to upgrade dependencies"; exit 1; }
 
 # change folder to /home/ubuntu/pollinations/serverConfigAndScripts
 cd /home/ubuntu/pollinations/serverConfigAndScripts || { log "ERROR: Failed to change directory to /home/ubuntu/pollinations/serverConfigAndScripts"; exit 1; }

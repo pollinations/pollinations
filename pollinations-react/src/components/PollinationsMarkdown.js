@@ -11,7 +11,7 @@ import usePollinationsText from '../hooks/usePollinationsText';
  * @returns {JSX.Element} - The PollinationsMarkdown component.
  */
 const PollinationsMarkdown = ({ children, seed = -1, promptPrefix = MARKDOWN_PROMPT_PREFIX, ...props }) => {
-    const markdown = usePollinationsText(promptPrefix + children, seed);
+    const markdown = usePollinationsText(promptPrefix + children, { seed });
 
     return React.createElement(ReactMarkdown, props, markdown);
 };

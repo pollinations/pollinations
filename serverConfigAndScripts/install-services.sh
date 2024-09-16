@@ -6,8 +6,11 @@ log() {
 
 log "Starting service installation script"
 
+# Get the public IP address
+PUBLIC_IP=$(curl -s http://checkip.amazonaws.com)
+
 # Check if the flag file exists
-FLAG_FILE="/home/ubuntu/ComfyUI/models/all_models_downloaded.flag"
+FLAG_FILE="/home/ubuntu/ComfyUI/models/all_models_downloaded_${PUBLIC_IP}.flag"
 
 if [ -f "$FLAG_FILE" ]; then
     log "Flag file exists. Skipping downloads."

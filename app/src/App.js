@@ -7,6 +7,8 @@ import Home from "./pages/Home/"
 import { PollinationsMarkdown } from "@pollinations/react"
 import { SmallContainer } from "./styles/global"
 import ChatComponent from "./components/ChatComponent"
+import MusicVideo from "./pages/MusicVideo"
+
 
 const AppRoutes = [
   {
@@ -35,6 +37,12 @@ const AppRoutes = [
     path: '/readme',
     element: <MarkdownTemplate label='readme' />,
     key: 'readme'
+  },
+  {
+    exact: true,
+    path: '/musicvideo',
+    element: <MusicVideo />,
+    key: 'musicvideo'
   },
   {
     exact: true,

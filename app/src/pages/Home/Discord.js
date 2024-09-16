@@ -3,29 +3,29 @@ import { useMemo } from "react"
 import { Colors, MOBILE_BREAKPOINT, Fonts } from "../../styles/global"
 import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./components"
 import { Link } from "react-router-dom"
-import { GenerativeImageURLContainer, ImageURLHeading } from "./styles"
+import { GenerativeImageURLContainer, ImageURLHeading } from "./ImageHeading"
 import discordLogo from "../../assets/imgs/discord_logo.png"
 
 const DiscordSection = (props) => {
   return (
-      <Container>
-        <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
-          <DiscordLogoHeading>Discord</DiscordLogoHeading>
-        </CenteredLink>
-        <Body>
-          <TextWithLogo>
-            <Logo src={discordLogo} alt="Discord Logo" />
-            <Text>
-              Discuss, get help and <br />
-              contribute on Discord.
-            </Text>
-          </TextWithLogo>
-          <br />
-          <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
-            <b>join our discord</b>
-          </LinkStyle>
-        </Body>
-      </Container>
+    <Container>
+      <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
+        <DiscordLogoHeading>Discord</DiscordLogoHeading>
+      </CenteredLink>
+      <Body>
+        <TextWithLogo>
+          <Logo src={discordLogo} alt="Discord Logo" />
+          <Text>
+            Discuss, get help and <br />
+            contribute on Discord.
+          </Text>
+        </TextWithLogo>
+        <br />
+        <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
+          <b>join our discord</b>
+        </LinkStyle>
+      </Body>
+    </Container>
   )
 }
 
@@ -55,7 +55,13 @@ const CenteredLink = styled(Link)`
   width: 100%;
 `
 
-const DiscordLogoHeading = styled((props) => <ImageURLHeading {...props} whiteText={false} />)`
+const DiscordLogoHeading = styled((props) => (
+  <ImageURLHeading
+    {...props}
+    whiteText={false}
+    customPrompt={`an image with the text "Discord" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+  />
+))`
   width: 100%;
   max-width: 500px;
 `

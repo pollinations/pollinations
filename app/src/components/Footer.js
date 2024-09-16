@@ -1,28 +1,32 @@
 import styled from "@emotion/styled"
 import { NavLink } from "react-router-dom"
+import { Box } from "@material-ui/core"
 import { SocialLinks } from "./Social"
 import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../styles/global"
 import { LinkStyle } from "../pages/Home/components"
-import DescriptionIcon from "@material-ui/icons/Description"
-import { ImageURLHeading } from "../pages/Home/styles"
+import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator"
 
 const Footer = () => {
   return (
     <OuterContainer>
       <FooterStyle>
-        <LetsTalkStyle>
-          Let's talk
-          <br />
+        <Box display="flex" flexDirection="column" alignItems="flex-start">
+          <ImageURLHeading
+            whiteText={false}
+            width={250}
+            height={100}
+            customPrompt={`an image with the text "Let's talk" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate many colorful elements related to communication, such as speech bubbles, chat icons, mouths, and other related forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. The text should take all the space without any margins.`}
+          />
           <StyledLink href="mailto:hello@pollinations.ai">
             <b>hello@pollinations.ai</b>
           </StyledLink>
-        </LetsTalkStyle>
+        </Box>
         <AsciiArtContainer>
           <AsciiArtGenerator />
         </AsciiArtContainer>
         <SocialContainer>
-          <SocialLinks small gap='1em' invert />
+          <SocialLinks small gap="1em" invert />
         </SocialContainer>
         <LogoContainer>
           <NavLink to="/">
@@ -54,7 +58,7 @@ const OuterContainer = styled.div`
 const SocialContainer = styled.div`
   grid-area: social;
   justify-self: flex-start;
-  @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
+  @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
     justify-self: center;
   }
 `
@@ -79,15 +83,6 @@ const AsciiArtContainer = styled.div`
     padding-top: 2em;
   }
 `
-const NavigationContainer = styled.div`
-  grid-area: navigation_footer;
-  justify-self: flex-end;
-
-  @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
-    justify-self: center;
-  }
-`
-
 const TermsLinkContainer = styled.div`
   grid-area: terms;
   justify-self: flex-end;
@@ -98,45 +93,9 @@ const TermsLinkContainer = styled.div`
     margin-top: 2em;
   }
 `
-
-const LetsTalkStyle = styled.p`
-  grid-area: lets-talk;
-  justify-self: flex-start;
-  font-style: normal;
-  font-weight: 500;
-  span {
-    color: ${Colors.offblack};
-  }   
-  font-size: 28px;
-  line-height: 42px;
-  color: ${Colors.offblack};
-  @media only screen and (max-width: ${MOBILE_BREAKPOINT}){
-    justify-self: center;
-    padding-bottom: 0em;
-  }
-`
-
-const Items = ({ items, renderComponent, columns }) =>
-  split(Object.keys(items), columns).map((col) => (
-    <ItemsStyle>{col.map(renderComponent)}</ItemsStyle>
-  ))
-const ItemsStyle = styled.div`
-  display: flex;
-  gap: 3em;
-  width: 100%;
-`
-
-function split(array, cols) {
-  if (cols === 1) return [array]
-  var size = Math.ceil(array.length / cols)
-  return [array.slice(0, size)].concat(split(array.slice(size), cols - 1))
-}
-
 const FooterStyle = styled(BaseContainer)`
-  padding: 3em 86px 0 86px;
-
+  padding: 0em 3em 1em 3em;
   width: 100%;
-  padding-bottom: 30px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
 

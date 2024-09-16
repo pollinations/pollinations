@@ -1,9 +1,11 @@
 import React from 'react';
 import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
-import { ImageURLHeading } from './styles';
+import { ImageURLHeading } from './ImageHeading';
 import { Colors } from '../../styles/global';
 import Markdown from 'markdown-to-jsx';
+import { LinkStyle } from "./components";
+import styled from '@emotion/styled';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -20,11 +22,14 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: '800px',
         borderCollapse: 'separate',
         borderSpacing: '0 0', // Reduced vertical space between rows
+        marginBottom: '2em'
+
     },
     tableRow: {
         '&:hover': {
             backgroundColor: 'rgba(255, 255, 255, 0.05)', // Slight highlight on hover
         },
+
     },
     tableCell: {
         border: 'none', // Removes cell borders
@@ -58,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-const logoPrefix = "minimalist  logo";
+const logoPrefix = "minimalist logo on black background";
 const imageDimension = 96;
 const seedValue = 41 + Math.floor(Math.random() * 3); // Define the seed value here
 
@@ -184,7 +189,7 @@ const projects = {
     ]
 };
 
-const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension}&height=${imageDimension}&nologo=true&seed=${seedValue}`;
+const generateImageUrl = (name) => `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension * 4}&height=${imageDimension * 4}&nologo=true&seed=${seedValue}`;
 
 const ProjectsSection = () => {
     const classes = useStyles();
@@ -202,6 +207,7 @@ const ProjectsSection = () => {
                                     src={generateImageUrl(project.name)}
                                     alt={project.name}
                                     className={classes.projectImage}
+                                    style={{ width: imageDimension, height: imageDimension }}
                                 />
                             )}
                         </TableCell>
@@ -226,29 +232,44 @@ const ProjectsSection = () => {
     );
 
     return (
-        <Container className={classes.root}>
+        <Container className={classes.root} style={{ margin: '3em 0' }}>
             <ImageURLHeading>Integrations</ImageURLHeading>
 
-            <Typography variant="h5" className={classes.sectionHeading}>Chat Integrations</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>AI Chat / LLMs</ImageURLHeading>
             {renderProjects(projects.llmIntegration)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Social Bots</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Social Bots</ImageURLHeading>
             {renderProjects(projects.socialBots)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Mobile & Web Applications</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Mobile & Web Apps</ImageURLHeading>
             {renderProjects(projects.apps)}
 
-            <Typography variant="h5" className={classes.sectionHeading}>Tutorials</Typography>
+            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
             {renderProjects(projects.tutorials)}
 
-            <Typography className={classes.listProjectText}>
+            <Typography className={classes.listProjectText} style={{ fontSize: '1.5em' }}>
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />
-                Get in touch at <Link href="mailto:hello@pollinations.ai" style={{ color: Colors.lime }}>hello@pollinations.ai</Link>.
+                <ImageURLHeading width={350} height={70} whiteText={true}>Get in touch</ImageURLHeading> <StyledNavLink href="mailto:hello@pollinations.ai" style={{ color: Colors.lime, fontSize: '1.5em' }}>hello@pollinations.ai</StyledNavLink>
             </Typography>
 
         </Container>
     );
 };
+
+
+const StyledLink = styled(LinkStyle)`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${Colors.primary};
+  }
+`
+
+const StyledNavLink = styled(LinkStyle)`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${Colors.primary};
+  }
+`
 
 const renderProjectLink = (project) => {
     return (

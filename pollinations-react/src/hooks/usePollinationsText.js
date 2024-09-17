@@ -21,7 +21,7 @@ const fetchPollinationsText = async (requestBody) => {
         return cleanMarkdown(data);
     } catch (error) {
         console.error("Error fetching text from Pollinations API:", error);
-        return "An error occurred while generating text. Please try again.";
+        throw error;
     }
 };
 
@@ -63,7 +63,7 @@ const usePollinationsText = (prompt, options = {}) => {
             })
             .catch((error) => {
                 console.error("Error in usePollinationsText:", error);
-                setText("An error occurred while generating text. Please try again.");
+                setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
     }, [prompt, systemPrompt, seed]);
 

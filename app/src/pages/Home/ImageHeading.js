@@ -5,7 +5,6 @@ import { useMemo, useState, useEffect } from "react"
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
-  margin: 0em;
   max-width: 100%; /* Prevents image from exceeding container width */
   object-fit: contain; /* Maintains aspect ratio without cropping */
 

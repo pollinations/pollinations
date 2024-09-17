@@ -114,14 +114,14 @@ export function GenerativeImageFeed() {
         <LoadingIndicator />
       ) : (
         <Grid container spacing={1} direction="column">
-          <Grid item xs={12}>
+          <Grid item xs={12} >
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-            <ImageDisplay
-              image={image}
-              isMobile={isMobile}
-              handleCopyLink={handleCopyLink}
-              isLoading={isLoading}
-            />
+              <ImageDisplay
+                image={image}
+                isMobile={isMobile}
+                handleCopyLink={handleCopyLink}
+                isLoading={isLoading}
+              />
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -150,7 +150,7 @@ export function GenerativeImageFeed() {
               <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
             </Box>
           </Grid>
-          {toggleValue === "edit" && (
+          {toggleValue === "edit" && !isMobile && (
             <Grid item xs={12}>
               <ImageEditor
                 image={imageParams}
@@ -161,6 +161,15 @@ export function GenerativeImageFeed() {
                 setIsInputChanged={setIsInputChanged}
               />
               <Grid item xs={12}></Grid>
+            </Grid>
+          )}
+          {toggleValue === "feed" && isMobile && (
+            <Grid item xs={12} style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "2em" }}>
+              <ModelInfo
+                model={image["model"]}
+                wasPimped={image["wasPimped"]}
+                referrer={image["referrer"]}
+              />
             </Grid>
           )}
           <Grid item xs={12}>

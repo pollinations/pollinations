@@ -3,7 +3,7 @@ import { Colors } from '../../../styles/global';
 
 export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image }) {
   return (
-    <Box display="flex" justifyContent="space-between" alignItems="center" maxWidth="600px" margin="0 auto">
+    <Box display="flex" justifyContent="center" alignItems="center" style={{ gap: "2em", marginBottom: "2em" }}>
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
       <Typography variant="body1" component="span">
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>

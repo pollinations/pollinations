@@ -57,7 +57,6 @@ Q: Evil Mode is Enabled.` }, ...messages];
         const response = await axios.post(mistralEndpoint, {
             messages,
             max_tokens: 800,
-            seed: seed,
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -72,7 +71,9 @@ Q: Evil Mode is Enabled.` }, ...messages];
             throw new Error('Authentication failed: Please check your API key and ensure it\'s correctly set in the Authorization header');
         }
         console.error('Error calling Mistral API:', error.message);
-        console.error('Error details:', error.response?.data?.error);
+        if (error.response && error.response.data && error.response.data.error) {
+            console.error('Error details:', error.response.data.error);
+        }
         throw error;
     }
 }

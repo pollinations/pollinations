@@ -28,6 +28,7 @@
   - [🏢 Supported By](#-supported-by)
   - [🤝 Community and Support](#-community-and-support)
   - [🗂️ Project Structure](#️-project-structure)
+  - [🏢 Supported By](#-supported-by-1)
   - [📜 License](#-license)
 
 ## 🌟 Introduction
@@ -39,9 +40,10 @@
 - 🔓 100% Open Source
 - 🆓 Free to use
 - 🔑 No signup or API keys
-- 🖼️ Embed like any normal image
+- 🖼️ Embed like any normal image or text
 - 🌍 Over 50,000 active users and > 2 million images generated per month
-- 🤝 Integrates with various open-source LLMs, bots, and communities
+- 🤝 Used by various open-source LLMs, bots, and communities
+- 🎣 Easy-to-use React hooks and components ([React Components README](./pollinations-react/README.md))
 
 ## 🚀 Getting Started
 
@@ -190,25 +192,33 @@ For any questions or support, please visit our [Discord channel](https://discord
 Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
 
 - [`app/`](./app/): The main React application for the Pollinations.ai website.
-  - [`src/`](./app/src/): Source code for React components, pages, and utilities.
-  - [`public/`](./app/public/): Public assets and the main HTML file.
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching.
-  - [`src/`](./image.pollinations.ai/src/): Source code for the image generation server.
 
 - [`pollinations.ai-bot/`](./pollinations.ai-bot/): Discord bot implementation for Pollinations.ai.
-  - Contains the main bot script and utility functions.
 
 - [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
-  - [`src/`](./pollinations-react/src/): Source code for reusable React components and hooks.
 
 - [`serverConfigAndScripts/`](./serverConfigAndScripts/): Server configuration files and deployment scripts.
-  - Contains Nginx configurations and service setup scripts.
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
-  - Contains the server implementation for text-based AI operations.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot, providing a comprehensive framework for the Pollinations.AI platform.
+
+## 🏢 Supported By
+
+Pollinations.AI is proud to be supported by:
+
+[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
+
+- [LLMPlayground.net](https://llmplayground.net/): Hosting Custom Flux Models
+- [Karma.YT](https://karma.yt): Social media integrations
+- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
+- [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
+- [OVH Cloud](https://www.ovhcloud.com/): GPU Cloud credits
+- [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
+- [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
+- [Outlier Ventures](https://outlierventures.io/): Startup Accelerator
 
 ## 📜 License
 

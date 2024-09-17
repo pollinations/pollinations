@@ -119,7 +119,7 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box position="relative" maxWidth="800px" margin="0 auto" marginBottom={2}>
-              <Box display="flex" justifyContent="center">
+              <Box display="flex" justifyContent="flex-start">
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
               </Box>
               <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }}>

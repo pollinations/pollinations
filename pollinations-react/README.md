@@ -6,9 +6,7 @@ A simple way to generate images, text and markdown using the Pollinations API in
 
 Install the package:
 
-```bash
-npm install @pollinations/react
-```
+    npm install @pollinations/react
 
 ## 🧩 Components
 
@@ -16,46 +14,44 @@ npm install @pollinations/react
 
 The PollinationsText component simplifies the process of generating and displaying plain text using Pollinations' API.
 
-```javascript
-import React from 'react';
-import { PollinationsText } from '@pollinations/react';
+    import React from 'react';
+    import { PollinationsText } from '@pollinations/react';
 
-const MyComponent = () => (
-  <PollinationsText seed={42}>Write out Pollinations.AI terms and conditions in Chinese</PollinationsText>
-);
+    const MyComponent = () => (
+      <PollinationsText seed={42} model="mistral" systemPrompt="You are a helpful assistant.">
+        Write out Pollinations.AI terms and conditions in Chinese
+      </PollinationsText>
+    );
 
-export default MyComponent;
-```
+    export default MyComponent;
 
 ### PollinationsMarkdown
 
 The PollinationsMarkdown component simplifies the process of generating and displaying markdown text using Pollinations' API.
 
-```javascript
-import React from 'react';
-import { PollinationsMarkdown } from '@pollinations/react';
+    import React from 'react';
+    import { PollinationsMarkdown } from '@pollinations/react';
 
-const RobotDocumentation = () => (
-  <PollinationsMarkdown seed={42}>Create beautiful documentation about a Pollinating robot in markdown</PollinationsMarkdown>
-);
+    const RobotDocumentation = () => (
+      <PollinationsMarkdown seed={42} model="openai" systemPrompt="You are a technical writer.">
+        Create beautiful documentation about a Pollinating robot in markdown
+      </PollinationsMarkdown>
+    );
 
-export default RobotDocumentation;
-```
+    export default RobotDocumentation;
 
 ### PollinationsImage
 
 The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
 
-```javascript
-import React from 'react';
-import { PollinationsImage } from '@pollinations/react';
+    import React from 'react';
+    import { PollinationsImage } from '@pollinations/react';
 
-const MyComponent = () => (
-  <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
-);
+    const MyComponent = () => (
+      <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
+    );
 
-export default MyComponent;
-```
+    export default MyComponent;
 
 ## 🛠️ Hooks
 
@@ -63,29 +59,27 @@ export default MyComponent;
 
 The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
 
-```javascript
-import React from 'react';
-import { usePollinationsImage } from '@pollinations/react';
+    import React from 'react';
+    import { usePollinationsImage } from '@pollinations/react';
 
-const SunsetImageComponent = () => {
-  const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
-    width: 800,
-    height: 600,
-    seed: 42,
-    model: 'turbo',
-    nologo: true,
-    enhance: false
-  });
+    const SunsetImageComponent = () => {
+      const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
+        width: 800,
+        height: 600,
+        seed: 42,
+        model: 'turbo',
+        nologo: true,
+        enhance: false
+      });
 
-  return (
-    <div>
-      {imageUrl ? <img src={imageUrl} alt="Generated sunset" /> : <p>Loading...</p>}
-    </div>
-  );
-};
+      return (
+        <div>
+          {imageUrl ? <img src={imageUrl} alt="Generated sunset" /> : <p>Loading...</p>}
+        </div>
+      );
+    };
 
-export default SunsetImageComponent;
-```
+    export default SunsetImageComponent;
 
 #### Options
 
@@ -100,66 +94,73 @@ export default SunsetImageComponent;
 
 The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
 
-```javascript
-import React from 'react';
-import { usePollinationsText } from '@pollinations/react';
+    import React from 'react';
+    import { usePollinationsText } from '@pollinations/react';
 
-const HaikuComponent = () => {
-  const text = usePollinationsText('Write a short haiku about Pollinations.AI', 42);
-  
-  return (
-    <div>
-      {text ? <p>{text}</p> : <p>Loading...</p>}
-    </div>
-  );
-};
+    const HaikuComponent = () => {
+      const text = usePollinationsText('Write a short haiku about Pollinations.AI', { 
+        seed: 42,
+        model: 'mistral',
+        systemPrompt: 'You are a poetic AI assistant.'
+      });
+      
+      return (
+        <div>
+          {text ? <p>{text}</p> : <p>Loading...</p>}
+        </div>
+      );
+    };
 
-export default HaikuComponent;
-```
+    export default HaikuComponent;
 
 #### Options
 
 - `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
+- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
+- `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
 
 ### usePollinationsChat
 
 The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
 
-```javascript
-import React, { useState } from 'react';
-import { usePollinationsChat } from '@pollinations/react';
+    import React, { useState } from 'react';
+    import { usePollinationsChat } from '@pollinations/react';
 
-const ChatComponent = () => {
-  const [input, setInput] = useState('');
-  const { sendUserMessage, messages } = usePollinationsChat([
-    { role: "system", content: "You are a helpful assistant" }
-  ], { seed: 42, jsonMode: false });
+    const ChatComponent = () => {
+      const [input, setInput] = useState('');
+      const { sendUserMessage, messages } = usePollinationsChat([
+        { role: "system", content: "You are a helpful assistant" }
+      ], { 
+        seed: 42, 
+        jsonMode: false,
+        model: 'mistral'
+      });
 
-  const handleSend = () => {
-    sendUserMessage(input);
-    setInput('');
-  };
+      const handleSend = () => {
+        sendUserMessage(input);
+        setInput('');
+      };
 
-  return (
-    <div>
-      <div>
-        {messages.map((msg, index) => (
-          <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
-        ))}
-      </div>
-      <input value={input} onChange={(e) => setInput(e.target.value)} />
-      <button onClick={handleSend}>Send</button>
-    </div>
-  );
-};
+      return (
+        <div>
+          <div>
+            {messages.map((msg, index) => (
+              <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
+            ))}
+          </div>
+          <input value={input} onChange={(e) => setInput(e.target.value)} />
+          <button onClick={handleSend}>Send</button>
+        </div>
+      );
+    };
 
-export default ChatComponent;
-```
+    export default ChatComponent;
 
 #### Options
 
 - `seed` (number, default: 42): The seed for random text generation.
 - `jsonMode` (boolean, default: false): Whether to parse the response as JSON.
+- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
 
 ## 📜 License
 

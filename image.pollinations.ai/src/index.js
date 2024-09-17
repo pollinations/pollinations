@@ -124,7 +124,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random prompt");
 
-  const { disableCache, ...safeParams } = makeParamsSafe(query);
+  const { ...safeParams } = makeParamsSafe(query);
 
   const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
@@ -177,7 +177,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',
-      'Cache-Control': disableCache ? 'private, max-age=0' : 'public, max-age=31536000, immutable',
+      'Cache-Control': 'public, max-age=31536000, immutable',
     });
     res.write(buffer);
     res.end();
@@ -186,11 +186,10 @@ const checkCacheAndGenerate = async (req, res) => {
 
   } catch (error) {
     console.error("error", error);
-    res.end('500: Internal Server Error');
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end(`500: Internal Server Error - ${error.message}`);
 
     sendToAnalytics(req, "imageGenerationError", { ...analyticsMetadata, error: error.message });
-    // exit process
-    // process.exit(1);
   }
 
 };

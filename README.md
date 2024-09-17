@@ -19,14 +19,16 @@
   - [🛠️ Integration](#️-integration)
     - [React Components](#react-components)
   - [🌐 Projects Using Pollinations.AI](#-projects-using-pollinationsai)
+    - [LLM Integrations](#llm-integrations)
     - [Social Bots](#social-bots)
     - [Mobile \& Web Applications](#mobile--web-applications)
-    - [Chat Integrations](#chat-integrations)
-    - [Development Tools](#development-tools)
+    - [Tutorials](#tutorials)
   - [🔮 Future Developments](#-future-developments)
   - [🌍 Our Vision](#-our-vision)
   - [🏢 Supported By](#-supported-by)
   - [🤝 Community and Support](#-community-and-support)
+  - [🗂️ Project Structure](#️-project-structure)
+  - [🏢 Supported By](#-supported-by-1)
   - [📜 License](#-license)
 
 ## 🌟 Introduction
@@ -38,9 +40,10 @@
 - 🔓 100% Open Source
 - 🆓 Free to use
 - 🔑 No signup or API keys
-- 🖼️ Embed like any normal image
+- 🖼️ Embed like any normal image or text
 - 🌍 Over 50,000 active users and > 2 million images generated per month
-- 🤝 Integrates with various open-source LLMs, bots, and communities
+- 🤝 Used by various open-source LLMs, bots, and communities
+- 🎣 Easy-to-use React hooks and components ([React Components README](./pollinations-react/README.md))
 
 ## 🚀 Getting Started
 
@@ -123,28 +126,31 @@ Check out our [Pollinations React Components](./pollinations-react/README.md) fo
 
 Pollinations.AI is used in various projects, including:
 
+### LLM Integrations
+1. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images. [GitHub Repo](https://github.com/SillyTavern/SillyTavern)
+2. [Qwen-Agent](https://github.com/QwenLM/Qwen-Agent): A framework for developing agentic LLM applications.
+3. [LobeChat](https://lobehub.com/plugins/pollinations-drawing): An open-source, modern-design ChatGPT/LLMs UI/Framework. Supports speech-synthesis, multi-modal, and extensible (function call) plugin system. [GitHub Repo](https://github.com/lobehub/lobe-chat)
+4. [DynaSpark AI](https://dynaspark.onrender.com): A versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
+5. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT.
+
 ### Social Bots
 1. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)
 2. [WhatsApp Group](https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV): A WhatsApp group that allows you to generate images using Pollinations.ai. Created by @dg_karma.
-3. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot for generating images. Created by Wong Wei Hao.
+3. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot that uses Pollinations.ai for generating images based on user prompts. Created by Wong Wei Hao.
 4. [Anyai](https://discord.com): A Discord bot and community that leverages Pollinations.ai for generating AI-driven content. Created by @meow_18838.
-5. [OpenHive](https://discord.gg/Zv3SXTF5xy): A Discord server that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using various AI tools, including Pollinations.ai! Created by @creativegpt.
+5. [OpenHive](https://discord.gg/Zv3SXTF5xy): A Discord server that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.ai! Created by @creativegpt.
 
 ### Mobile & Web Applications
-6. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
-7. [Own-AI](https://own-ai.pages.dev/): An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them with the community. Created by Sujal Goswami. [GitHub Repo](https://github.com/sujal-goswami/Own-AI)
-8. [POLLIPAPER](https://github.com/Tolerable/POLLIPAPER): A dynamic wallpaper application that uses Pollinations AI to create and set unique desktop backgrounds. It offers features like weather-based prompts and customizable settings. Created by @intolerant0ne. [GitHub Repo](https://github.com/Tolerable/)
-9. [StorySight](https://github.com/abiral-manandhar/storySight): An app helping children with learning disabilities visualize abstract concepts. Made using Django and Pollinations.ai.
-10. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool integrating Pollinations.ai. Created by @thomash_pollinations.
+1. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
+2. [Own-AI](https://own-ai.pages.dev/): An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them. Created by Sujal Goswami. [GitHub Repo](https://github.com/sujal-goswami/Own-AI)
+3. [Infinite Tales](https://infinite-tales-rpg.vercel.app/): A Choose Your Own Adventure RPG, dynamically narrated by AI. Customize your adventure, build your hero, and explore vast lands. Each journey is uniquely generated by AI. Created by JayJayBinks. [GitHub Repo](https://github.com/JayJayBinks/infinite-tales-rpg)
+4. [POLLIPAPER](https://github.com/Tolerable/POLLIPAPER): A dynamic wallpaper app that uses Pollinations AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings. Created by @intolerant0ne. [GitHub Repo](https://github.com/Tolerable/)
+5. [StorySight](https://github.com/abiral-manandhar/storySight): An app to help children with learning disabilities by visualizing abstract concepts. Made using Django and Pollinations.ai. Submitted to: [Devpost](https://devpost.com/software/storysight)
+6. [StoryWeaver](https://devpost.com/software/storyweaver-013xdw): StoryWeaver crafts personalized picture books for children based on themes and prompts you choose, bringing your unique story ideas to life with AI! Created by Advaith Narayanan, Omeed Sabouri, Yufan Wang. [GitHub Repo](https://github.com/AdvaithN1/StoryWeaver)
+7. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool that integrates Pollinations.ai for generating AI-driven content. Remix the app with your own prompts. Created by @thomash_pollinations.
 
-### Chat Integrations
-11. [SillyTavern](https://docs.sillytavern.app/extensions/stable-diffusion/): An LLM frontend for power users. Pollinations permits it to generate images. [GitHub Repo](https://github.com/SillyTavern/SillyTavern)
-12. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT and Pollinations.AI.
-13. [DynaSpark AI](https://dynaspark.onrender.com): An versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
-
-### Development Tools
-14. [Python Package](https://pypi.org/project/pollinations/): A Python package for easy integration of Pollinations.ai.
-15. [Toolkitr](https://github.com/toolkitr/pollinations.ai): Another Python wrapper for Pollinations.
+### Tutorials
+1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 
@@ -166,18 +172,53 @@ Pollinations.AI is proud to be supported by:
 
 [![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
 
-- [AWS Activate](https://aws.amazon.com/activate/)
-- [Google Cloud for Startups](https://cloud.google.com/startup)
-- [OVH Cloud](https://www.ovhcloud.com/en/startup/)
-- [NVIDIA Inception](https://www.nvidia.com/en-us/startups/)
-- [Azure (MS for Startups)](https://startups.microsoft.com/)
-- [Outlier Ventures](https://outlierventures.io/)
+- [LLMPlayground.net](https://llmplayground.net/): Hosting Custom Flux Models
+- [Karma.YT](https://karma.yt): Social media integrations
+- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
+- [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
+- [OVH Cloud](https://www.ovhcloud.com/): GPU Cloud credits
+- [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
+- [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
+- [Outlier Ventures](https://outlierventures.io/): Startup Accelerator
 
 ## 🤝 Community and Support
 
 Join our vibrant community of over 12,000 Discord members to share your creations, get support, and collaborate with fellow AI enthusiasts. 
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
+
+## 🗂️ Project Structure
+
+Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
+
+- [`app/`](./app/): The main React application for the Pollinations.ai website.
+
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching.
+
+- [`pollinations.ai-bot/`](./pollinations.ai-bot/): Discord bot implementation for Pollinations.ai.
+
+- [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
+
+- [`serverConfigAndScripts/`](./serverConfigAndScripts/): Server configuration files and deployment scripts.
+
+- [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
+
+This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot, providing a comprehensive framework for the Pollinations.AI platform.
+
+## 🏢 Supported By
+
+Pollinations.AI is proud to be supported by:
+
+[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
+
+- [LLMPlayground.net](https://llmplayground.net/): Hosting Custom Flux Models
+- [Karma.YT](https://karma.yt): Social media integrations
+- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
+- [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
+- [OVH Cloud](https://www.ovhcloud.com/): GPU Cloud credits
+- [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
+- [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
+- [Outlier Ventures](https://outlierventures.io/): Startup Accelerator
 
 ## 📜 License
 

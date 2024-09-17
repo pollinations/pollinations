@@ -191,7 +191,7 @@ function getImageURL(newImage) {
     queryParams.push(`seed=${newImage.seed}`)
   if (newImage.nofeed) queryParams.push(`nofeed=${newImage.nofeed}`)
   if (newImage.nologo) queryParams.push(`nologo=${newImage.nologo}`)
-  if (newImage.model && newImage.model !== "turbo") queryParams.push(`model=${newImage.model}`)
+  if (newImage.model) queryParams.push(`model=${newImage.model}`)
   if (queryParams.length > 0) {
     imageURL += "?" + queryParams.join("&")
   }

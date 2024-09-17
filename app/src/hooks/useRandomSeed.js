@@ -6,7 +6,7 @@ const useRandomSeed = () => {
     useEffect(() => {
         const changeSeed = () => {
             setSeed(Math.floor(Math.random() * 10));
-            const randomDelay = Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000;
+            const randomDelay = Math.floor(Math.random() * 100001) + 2000;
             setTimeout(changeSeed, randomDelay);
         };
 

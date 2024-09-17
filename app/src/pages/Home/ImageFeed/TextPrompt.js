@@ -13,12 +13,14 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
             <TextareaAutosize
                 style={{
                     width: "100%",
-                    height: "150px",
+                    height: "160px",
                     backgroundColor: "transparent",
                     border: `0.1px solid #4A4A4A`,
                     borderRadius: "5px",
                     color: Colors.offwhite,
-                    padding: "10px",
+                    paddingLeft: "15px",
+                    paddingRight: "15px",
+                    paddingTop: "10",
                     fontSize: "1.2rem",
                     overflow: "auto",
                     scrollbarWidth: "none", // For Firefox

@@ -42,7 +42,7 @@ Key points:
 
 Default params:
 - prompt (required): The text description of the image you want to generate.
-- model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
+- model (optional): The model to use for generation. See available models at https://image.pollinations.ai/models (default: 'flux')
   - Infer the most suitable model based on the prompt's content and style.
 - seed (optional): Seed for reproducible results (default: random).
 - width/height (optional): Default 1024x1024.
@@ -63,7 +63,7 @@ This endpoint generates an image based on the provided prompt and optional param
 
 ## Parameters
 - prompt (required): The text description of the image you want to generate. Should be URL-encoded.
-- model (optional): The model to use for generation. Options: 'flux' or 'turbo'. Default: 'turbo'
+- model (optional): The model to use for generation. See available models at https://image.pollinations.ai/models. Default: 'flux'
 - seed (optional): Seed for reproducible results. Default: random
 - width (optional): Width of the generated image. Default: 1024
 - height (optional): Height of the generated image. Default: 1024
@@ -83,7 +83,7 @@ Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
 Seed: **${seed}** (Each seed generates a new image)
-Model: **${model || "turbo"}**
+Model: **${model || "flux"}**
 
 # Image
 ![Generative Image](${imageURL})`,
@@ -95,7 +95,7 @@ Model: **${model || "turbo"}**
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
     <p>Seed: ${seed} <i>Each seed generates a new image variation</i></p>
-    <p>Model: ${model || "turbo"}</p>
+    <p>Model: ${model || "flux"}</p>
 
     <img 
       src="${imageURL}" 
@@ -133,7 +133,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let width = ${width};
     let height = ${height};
     let seed = ${seed}; // Each seed generates a new image variation
-    let model = "${model || "turbo"}"; // Using 'turbo' as default if model is not provided
+    let model = "${model || "flux"}"; // Using 'flux' as default if model is not provided
 
     let image_url = format!(
         "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
@@ -173,7 +173,7 @@ const prompt = '${shorten(prompt)}';
 const width = ${width};
 const height = ${height};
 const seed = ${seed}; // Each seed generates a new image variation
-const model = '${model || "turbo"}'; // Using 'turbo' as default if model is not provided
+const model = '${model || "flux"}'; // Using 'flux' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
@@ -198,7 +198,7 @@ prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
 seed = ${seed} // Each seed generates a new image variation
-model = '${model || "turbo"}' // Using 'turbo' as default if model is not provided
+model = '${model || "flux"}' // Using 'flux' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -215,7 +215,7 @@ model_obj: object = ai.Model()
 
 image: object = model_obj.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || "turbo"},
+    model=ai.${model || "flux"},
     width=${width},
     height=${height},
     seed=${seed}

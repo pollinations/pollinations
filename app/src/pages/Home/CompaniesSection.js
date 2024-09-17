@@ -37,11 +37,13 @@ const CompaniesSection = () => {
     },
     link: {
       fontFamily: Fonts.body,
-      fontWeight: 500,
-      fontSize: "18px",
+      fontStyle: 'normal',
+      fontWeight: '500',
+      fontSize: '1.1em',
+      lineHeight: '22px',
       textDecoration: "underline",
       textTransform: "uppercase",
-      color: Colors.offwhite,
+      color: Colors.lime,
     },
   }))
 

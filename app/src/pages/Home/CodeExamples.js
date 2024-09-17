@@ -2,7 +2,7 @@ import { useState } from "react"
 import { AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
-import { Colors } from "../../styles/global"
+import { Colors, Fonts } from "../../styles/global"
 import ReactMarkdown from "react-markdown"
 
 // Code examples as an object
@@ -247,7 +247,7 @@ export function CodeExamples(image) {
   ]
 
   return (
-    <Box style={{ marginTop: "6em" }}>
+    <Box style={{ marginTop: "3em" }}>
       <ImageURLHeading whiteText={"yellow"} width={350} height={70}>
         Integrate
       </ImageURLHeading>
@@ -257,9 +257,20 @@ export function CodeExamples(image) {
             value={tabValue}
             onChange={handleChange}
             aria-label="simple tabs example"
+            
             variant="scrollable"
             scrollButtons="on"
-            TabIndicatorProps={{ style: { background: Colors.lime } }}
+            TabIndicatorProps={{ 
+              style: { 
+                background: Colors.lime,
+                fontFamily: Fonts.body,
+                fontStyle: 'normal',
+                fontWeight: '500',
+                fontSize: '1.1em',
+                lineHeight: '22px',
+                textDecoration: 'none',
+              }
+            }}
           >
             {allTabs.map((key, index) => (
               <Tab

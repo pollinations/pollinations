@@ -21,7 +21,7 @@ const fetchPollinationsText = async (requestBody) => {
         return cleanMarkdown(data);
     } catch (error) {
         console.error("Error fetching text from Pollinations API:", error);
-        return "An error occurred while generating text. Please try again.";
+        throw error;
     }
 };
 
@@ -38,15 +38,14 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  * @param {Object} options - Configuration options for text generation.
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @returns {Object} - An object containing the generated text and error state.
+ * @returns {Object} - An object containing the generated text.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
     const { seed = -1, systemPrompt } = options;
 
-    // State to hold the generated text and error
+    // State to hold the generated text
     const [text, setText] = useState("");
-    const [error, setError] = useState(null);
 
     // Effect to fetch or retrieve memoized text
     useEffect(() => {
@@ -61,16 +60,14 @@ const usePollinationsText = (prompt, options = {}) => {
         memoizedFetchPollinationsText(requestBody)
             .then(cleanedData => {
                 setText(cleanedData);
-                setError(null);
             })
             .catch((error) => {
                 console.error("Error in usePollinationsText:", error);
-                setText("");
-                setError("An error occurred while generating text. Please try again.");
+                setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
     }, [prompt, systemPrompt, seed]);
 
-    return { text, error };
+    return text;
 };
 
 /**

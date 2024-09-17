@@ -6,7 +6,7 @@ import { Colors } from "../../../styles/global"
 export function LoadingIndicator() {
     return (
         <Grid container justifyContent="center" alignItems="center" style={{ marginBottom: "8em", position: "relative" }}>
-            <ImageURLHeading whiteText={Colors.offwhite} width={600} height={500} prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration">
+            <ImageURLHeading whiteText={Colors.offwhite} width={400} height={400} prompt="A simple, elegant hourglass symbol representing waiting, minimalist design, high-quality illustration">
                 Loading...
             </ImageURLHeading>
             <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />

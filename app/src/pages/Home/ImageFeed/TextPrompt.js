@@ -2,22 +2,24 @@ import React from "react"
 import { Grid, Typography, TextareaAutosize } from "@material-ui/core"
 import { Colors } from "../../../styles/global"
 
-export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading }) {
+export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading, isStopped }) {
     return (
         <Grid item xs={12}>
-            <Typography variant="body2" style={{ color: Colors.lime, fontWeight: "bold" }}>
-                Prompt
-            </Typography>
+            {isStopped && (
+                <Typography variant="body2" style={{ color: Colors.lime, fontWeight: "bold" }}>
+                    Prompt
+                </Typography>
+            )}
             <TextareaAutosize
                 style={{
                     width: "100%",
-                    height: "100px",
+                    height: "150px",
                     backgroundColor: "transparent",
                     border: `0.1px solid #4A4A4A`,
                     borderRadius: "5px",
                     color: Colors.offwhite,
                     padding: "10px",
-                    fontSize: "1.1rem",
+                    fontSize: "1.2rem",
                     overflow: "auto",
                     scrollbarWidth: "none", // For Firefox
                     msOverflowStyle: "none", // For Internet Explorer and Edge

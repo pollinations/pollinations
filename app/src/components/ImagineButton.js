@@ -21,7 +21,7 @@ export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) 
           height: "56px",
           width: "150px",
           position: "relative",
-          marginTop: "2em",
+          marginTop: "0em",
           display: "block",
           marginLeft: "auto",
           marginRight: "auto",

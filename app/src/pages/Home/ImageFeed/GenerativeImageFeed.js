@@ -1,16 +1,9 @@
 import { useState, useEffect, useRef } from "react"
-import {
-  Grid,
-  Box,
-  useMediaQuery,
-} from "@material-ui/core"
+import { Grid, Box, useMediaQuery } from "@material-ui/core"
 import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
-import {
-  GenerativeImageURLContainer,
-  ImageURLHeading,
-} from "../ImageHeading"
+import { GenerativeImageURLContainer, ImageURLHeading } from "../ImageHeading"
 import debug from "debug"
 import { ServerLoadAndGenerationInfo } from "./ServerLoadAndGenerationInfo"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
@@ -120,7 +113,7 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={4} direction="column">
+        <Grid container spacing={1} direction="column">
           <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageDisplay
@@ -131,29 +124,30 @@ export function GenerativeImageFeed() {
             />
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" justifyContent="center" alignItems="center">
-              <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Box>
+                <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+              </Box>
+              <Box display="flex" justifyContent="center" alignItems="center" height="100px">
+                {!isMobile && toggleValue === "feed" && (
+                  <ModelInfo
+                    model={image["model"]}
+                    wasPimped={image["wasPimped"]}
+                    referrer={image["referrer"]}
+                  />
+                )}
+              </Box>
+              <Box display="flex" justifyContent="flex-end">
+                {!isMobile && (
+                  <CopyImageLink {...{ handleCopyLink, isLoading }} />
+                )}
+                <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
+              </Box>
             </Box>
           </Grid>
           <Grid item xs={12}>
-            {!isMobile && toggleValue === "feed" && (
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                width="100%"
-                marginBottom="1em"
-              >
-                <ModelInfo
-                  model={image["model"]}
-                  wasPimped={image["wasPimped"]}
-                  referrer={image["referrer"]}
-                />
-                <CopyImageLink {...{ handleCopyLink, isLoading }} />
-              </Box>
-            )}
             <Box display="flex" alignItems="center">
-              <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading }} />
+              <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
             </Box>
           </Grid>
           {toggleValue === "edit" && (
@@ -166,9 +160,7 @@ export function GenerativeImageFeed() {
                 handleSubmit={handleSubmit}
                 setIsInputChanged={setIsInputChanged}
               />
-              <Grid item xs={12}>
-                <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
-              </Grid>
+              <Grid item xs={12}></Grid>
             </Grid>
           )}
           <Grid item xs={12}>

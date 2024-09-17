@@ -15,8 +15,7 @@ export function ModelInfo({ model, wasPimped, referrer }) {
       color="textSecondary"
       style={{ textAlign: "center", fontSize: "1rem" }}
     >
-      Model:{" "}
-      <Link
+      Model: <Link
         href={modelLink}
         target="_blank"
         rel="noopener noreferrer"
@@ -24,10 +23,10 @@ export function ModelInfo({ model, wasPimped, referrer }) {
       >
         {modelName}
       </Link>
+      <br />
       {loraLink && (
         <>
-          &nbsp;&nbsp; LoRA:{" "}
-          <Link
+          LoRA: <Link
             href={loraLink}
             target="_blank"
             rel="noopener noreferrer"
@@ -35,10 +34,10 @@ export function ModelInfo({ model, wasPimped, referrer }) {
           >
             DMD2
           </Link>
+          <br />
         </>
       )}
-      &nbsp;&nbsp; Prompt Enhancer:{" "}
-      {wasPimped ? (
+      Prompt Enhancer: {wasPimped ? (
         <Link
           href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js"
           target="_blank"
@@ -50,10 +49,10 @@ export function ModelInfo({ model, wasPimped, referrer }) {
       ) : (
         <i>N/A</i>
       )}
+      <br />
       {referrer && (
         <>
-          &nbsp;&nbsp;Referrer:{" "}
-          <Link
+          Referrer: <Link
             href={referrer}
             target="_blank"
             rel="noopener noreferrer"

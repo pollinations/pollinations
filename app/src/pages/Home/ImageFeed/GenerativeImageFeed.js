@@ -151,7 +151,6 @@ export function GenerativeImageFeed() {
                 handleSubmit={handleSubmit}
                 setIsInputChanged={setIsInputChanged}
               />
-              <Grid item xs={12}></Grid>
             </Grid>
           )}
           {toggleValue === "feed" && (

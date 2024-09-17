@@ -40,15 +40,6 @@ async function generateTextBasedOnModel(messages, options) {
     return generateText(messages, rest);
 }
 
-// Helper function to generate text based on the model
-async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai', ...rest } = options;
-    if (model === 'mistral') {
-        return generateTextMistral(messages, rest);
-    }
-    return generateText(messages, rest);
-}
-
 // GET request handler
 app.get('/:prompt', async (req, res) => {
     const prompt = decodeURIComponent(req.params.prompt);

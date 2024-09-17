@@ -5,7 +5,7 @@ dotenv.config();
 
 const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_MISTRAL_CHAT_COMPLETION_ROUTE;
 
-async function generateTextMistral(messages, { seed = null, jsonMode = false }) {
+async function generateTextMistral(messages, { jsonMode = false }) {
     // Check if the total character count of the stringified input is greater than 60000
     const stringifiedMessages = JSON.stringify(messages);
     if (stringifiedMessages.length > 60000) {

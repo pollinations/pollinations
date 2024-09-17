@@ -46,17 +46,24 @@ app.get('/:prompt', async (req, res) => {
     const jsonMode = req.query.json?.toLowerCase() === 'true';
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
     const model = req.query.model || 'openai';
-    const cacheKey = `${prompt}-${seed}-${jsonMode}-${model}`;
+    const systemPrompt = req.query.system ? decodeURIComponent(req.query.system) : null;
+    const cacheKey = `${prompt}-${seed}-${jsonMode}-${model}-${systemPrompt}`;
 
     if (cache[cacheKey]) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         return res.send(cache[cacheKey]);
     }
 
-    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
+    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
 
     try {
-        const response = await generateTextBasedOnModel([{ role: 'user', content: prompt }], { seed, jsonMode, model });
+        const messages = [];
+        if (systemPrompt) {
+            messages.push({ role: 'system', content: systemPrompt });
+        }
+        messages.push({ role: 'user', content: prompt });
+
+        const response = await generateTextBasedOnModel(messages, { seed, jsonMode, model });
         cache[cacheKey] = response;
         saveCache();
         console.log(`Generated response for key: ${cacheKey}`);

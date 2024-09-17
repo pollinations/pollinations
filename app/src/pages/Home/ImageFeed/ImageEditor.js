@@ -58,7 +58,7 @@ export function ImageEditor({
       style={{
         border: "none",
         boxShadow: "none",
-        marginTop: "0px",
+        marginTop: "1em",
         backgroundColor: "transparent",
       }}
     >

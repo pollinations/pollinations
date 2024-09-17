@@ -113,7 +113,7 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={1} direction="column">
+        <Grid container spacing={4} direction="column">
           <Grid item xs={12} >
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
               <ImageDisplay
@@ -127,15 +127,6 @@ export function GenerativeImageFeed() {
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-              </Box>
-              <Box display="flex" justifyContent="center" alignItems="center" height="100px">
-                {!isMobile && toggleValue === "feed" && (
-                  <ModelInfo
-                    model={image["model"]}
-                    wasPimped={image["wasPimped"]}
-                    referrer={image["referrer"]}
-                  />
-                )}
               </Box>
               <Box display="flex" justifyContent="flex-end">
                 {!isMobile && (
@@ -163,8 +154,8 @@ export function GenerativeImageFeed() {
               <Grid item xs={12}></Grid>
             </Grid>
           )}
-          {toggleValue === "feed" && isMobile && (
-            <Grid item xs={12} style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "2em" }}>
+          {toggleValue === "feed" && (
+            <Grid item xs={12} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ModelInfo
                 model={image["model"]}
                 wasPimped={image["wasPimped"]}

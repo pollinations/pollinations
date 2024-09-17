@@ -248,7 +248,7 @@ export function CodeExamples(image) {
 
   return (
     <Box style={{ marginTop: "6em" }}>
-      <ImageURLHeading whiteText={"#E0F041"} width={350} height={70}>
+      <ImageURLHeading whiteText={"yellow"} width={350} height={70}>
         Integrate
       </ImageURLHeading>
       <URLExplanation>

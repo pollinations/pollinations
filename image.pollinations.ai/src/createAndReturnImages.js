@@ -6,10 +6,14 @@ import { sanitizeString } from './translateIfNecessary.js';
 import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
-
+const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
+
+function fetchFromTurboServer(params) {
+  return fetch(TURBO_SERVER_URL, params);
+}
 
 /**
  * @typedef {Object} Job
@@ -25,7 +29,7 @@ let accumulated_fetch_duration = 0;
 const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  const steps = concurrentRequests < 12 ? 4 : concurrentRequests < 18 ? 3 : concurrentRequests < 28 ? 2 : 1;
+  const steps = concurrentRequests < 16 ? 4 : concurrentRequests < 24 ? 3 : concurrentRequests < 32 ? 2 : 1;
 
   try {
     prompt = sanitizeString(prompt);
@@ -47,7 +51,8 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     let response;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        response = await fetchFromLeastBusyFluxServer({
+        const fetchFunction = safeParams.model === "turbo" ? fetchFromTurboServer : fetchFromLeastBusyFluxServer;
+        response = await fetchFunction({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

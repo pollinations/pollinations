@@ -189,23 +189,23 @@ For any questions or support, please visit our [Discord channel](https://discord
 
 Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
 
-- `app/`: The main React application for the Pollinations.ai website.
-  - `src/`: Source code for React components, pages, and utilities.
-  - `public/`: Public assets and the main HTML file.
+- [`app/`](./app/): The main React application for the Pollinations.ai website.
+  - [`src/`](./app/src/): Source code for React components, pages, and utilities.
+  - [`public/`](./app/public/): Public assets and the main HTML file.
 
-- `image.pollinations.ai/`: Backend service for image generation and caching.
-  - `src/`: Source code for the image generation server.
+- [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching.
+  - [`src/`](./image.pollinations.ai/src/): Source code for the image generation server.
 
-- `pollinations.ai-bot/`: Discord bot implementation for Pollinations.ai.
+- [`pollinations.ai-bot/`](./pollinations.ai-bot/): Discord bot implementation for Pollinations.ai.
   - Contains the main bot script and utility functions.
 
-- `pollinations-react/`: React component library for Pollinations.ai.
-  - `src/`: Source code for reusable React components and hooks.
+- [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
+  - [`src/`](./pollinations-react/src/): Source code for reusable React components and hooks.
 
-- `serverConfigAndScripts/`: Server configuration files and deployment scripts.
+- [`serverConfigAndScripts/`](./serverConfigAndScripts/): Server configuration files and deployment scripts.
   - Contains Nginx configurations and service setup scripts.
 
-- `text.pollinations.ai/`: Backend service for text generation.
+- [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
   - Contains the server implementation for text-based AI operations.
 
 This structure encompasses the frontend website, backend services for image and text generation, and integrations like the Discord bot, providing a comprehensive framework for the Pollinations.AI platform.

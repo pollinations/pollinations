@@ -5,6 +5,7 @@ import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./compo
 import { Link } from "react-router-dom"
 import { GenerativeImageURLContainer, ImageURLHeading } from "./ImageHeading"
 import discordLogo from "../../assets/imgs/discord_logo.png"
+import { PollinationsMarkdown } from "@pollinations/react";
 
 const DiscordSection = (props) => {
   return (
@@ -15,9 +16,14 @@ const DiscordSection = (props) => {
       <Body>
         <TextWithLogo>
           <Logo src={discordLogo} alt="Discord Logo" />
-          <Text>
-            Discuss, get help and <br />
-            contribute on Discord.
+          <Text style={{ maxWidth: "90%", width: "500px" }}>
+            <PollinationsMarkdown
+              components={{
+                p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
+              }}
+            >
+             Introduce our Discord channel and incitivate to join, make it jus a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+            </PollinationsMarkdown>
           </Text>
         </TextWithLogo>
         <br />

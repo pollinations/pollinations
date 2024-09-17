@@ -141,7 +141,7 @@ export function GenerativeImageFeed() {
               <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
             </Box>
           </Grid>
-          {toggleValue === "edit" && !isMobile && (
+          {toggleValue === "edit" && (
             <Grid item xs={12}>
               <ImageEditor
                 image={imageParams}

@@ -11,7 +11,6 @@ import { ModelInfo } from "./ModelInfo"
 import { ImageEditor } from "./ImageEditor"
 import { FeedEditSwitch } from "../../../components/FeedEditSwitch"
 import { ImagineButton } from "../../../components/ImagineButton"
-import { CopyImageLink } from "./CopyImageLink"
 import { TextPrompt } from "./TextPrompt"
 import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
@@ -97,10 +96,6 @@ export function GenerativeImageFeed() {
     stop(true)
   }
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(image["imageURL"])
-  }
-
   return (
     <GenerativeImageURLContainer style={{ margin: "3em 0 6em 0", maxWidth: "800px" }}>
       <Grid item style={{ margin: "3em 0" }}>
@@ -116,22 +111,18 @@ export function GenerativeImageFeed() {
         <Grid container spacing={4} direction="column">
           <Grid item xs={12} >
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-              <ImageDisplay
-                image={image}
-                isMobile={isMobile}
-                handleCopyLink={handleCopyLink}
-                isLoading={isLoading}
-              />
+            <ImageDisplay
+              image={image}
+              isMobile={isMobile}
+              isLoading={isLoading}
+            />
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-              <Box>
+            <Box position="relative" maxWidth="800px" margin="0 auto" marginBottom={2}>
+              <Box display="flex" justifyContent="center">
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
               </Box>
-              <Box display="flex" justifyContent="flex-end">
-                {!isMobile && (
-                  <CopyImageLink {...{ handleCopyLink, isLoading }} />
-                )}
+              <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }}>
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>

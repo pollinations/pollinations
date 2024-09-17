@@ -10,58 +10,10 @@ export function ModelInfo({ model, wasPimped, referrer }) {
   }
 
   const renderModelInfo = (modelName, modelLink, loraLink) => (
-    <Typography
-      variant="caption"
-      color="textSecondary"
-      style={{ textAlign: "center", fontSize: "1rem" }}
-    >
-      Model: <Link
-        href={modelLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: Colors.lime }}
-      >
-        {modelName}
-      </Link>
-      <br />
-      {loraLink && (
-        <>
-          LoRA: <Link
-            href={loraLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: Colors.lime }}
-          >
-            DMD2
-          </Link>
-          <br />
-        </>
-      )}
-      Prompt Enhancer: {wasPimped ? (
-        <Link
-          href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: Colors.lime }}
-        >
-          Groq
-        </Link>
-      ) : (
-        <i>N/A</i>
-      )}
-      <br />
-      {referrer && (
-        <>
-          Referrer: <Link
-            href={referrer}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: Colors.lime }}
-          >
-            {formatReferrer(referrer)}
-          </Link>
-        </>
-      )}
+    <Typography variant="body1" color="textSecondary" style={{ textAlign: "center", fontSize: "1.2rem" }}>
+      Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link> {loraLink && <>
+        &nbsp;&nbsp; LoRA: <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link></>}
+      &nbsp;&nbsp; Prompt Enhancer: {wasPimped ? <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>} {referrer && <>&nbsp;&nbsp; Referrer: <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link></>}
     </Typography>
   )
 

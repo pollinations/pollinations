@@ -1,0 +1,22 @@
+{
+  "name": "text.pollinations.ai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@azure/identity": "^4.4.1",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.20.0",
+    "openai": "^4.58.2"
+  }
+}

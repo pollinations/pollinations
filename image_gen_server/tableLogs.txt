@@ -1,4 +1,0 @@
-Bucket Key,Jobs,Requests,Returns
-turbo-1024-576,0,1,1
-Requests,Returned,Q-Size,Q-Pending,Q-Utilization
-52,138,0,1,N/I%

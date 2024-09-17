@@ -1,124 +1,171 @@
-import styled from '@emotion/styled';
-import React from "react";
-import { Colors, MOBILE_BREAKPOINT } from '../../styles/global';
-import TopBandPresetsDesign from '../../assets/imgs/presets-linha.png'
-import { Link } from "react-router-dom"
+import styled from "@emotion/styled"
+import React from "react"
+import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
+import { LinkStyle } from "./components"
+import DescriptionIcon from "@material-ui/icons/Description"
+import { keyframes } from "@emotion/react"
+import { PollinationsImage, PollinationsMarkdown, PollinationsText } from "@pollinations/react";
 
+const StyledLink = styled(LinkStyle)`
+  transition: color 0.3s ease;
+  &:hover {
+    color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
+  }
+`
 
-let WhoWeAreContent = () => <>
-
-  <h2>
-    We are a team of <i><b> data scientists, machine-learning specialists, artists and futurists </b></i>
-    profoundly involved <br /> <i><b> in the AI ecosystem.</b></i>
-  </h2>
-  <p>
-    To talk to us, reach out on Discord or at hello@pollinations.ai
-  </p>
-
-
-</>
-
-let ActivityUpdateContent = () => <>
-  <h2>
-    <i><b> Pollinations activity update! </b></i>
-  </h2>
-  <p>
-    The Explore page has been removed. Our current focus is on AI music video creation and the Dreamachine. However, you can still access our AI models via our <Link style={{ color: "black" }} href="https://www.github.com/pollinations">Discord bots</Link> and on <Link style={{ color: "black" }} href="https://replicate.com/pollinations">Replicate</Link>.
-    <br />
-    <br /> From now on Pollinations will redirect its focus on AI music video creation, and the real-time immersive AI product called the Dreamachine.
-    <br /><br />
-    <i><b>Stay tuned!</b></i>
-  </p>
-</>
-
-
-
-
-
-export default function LayoutLight01({ id, long }) {
-
-  let content = {
-    'whoweare': <WhoWeAreContent />,
-    'activityupdate': <ActivityUpdateContent />
+const WhoWeAreContent = () => {
+  const handleLinkClick = (e) => {
+    e.preventDefault()
+    const link = e.currentTarget.href
+    navigator.clipboard.writeText(link).then(() => {
+      console.log(`Copied to clipboard: ${link}`)
+    })
   }
 
-  return <Style>
-    <PageLayout long={long}>
-      {id ? content[id] : <></>}
-    </PageLayout>
+  return (
+    <>
+      <h2 style={{ userSelect: "none" }}>
+        <PollinationsMarkdown
+          components={{
+            p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
+          }}
+        >
+          Introduce the team of machine-learning specialists, artists and
+          futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+        </PollinationsMarkdown>
+      </h2>
+      <ContactWrapper>
+        <p style={{ userSelect: "none" }}>
+          To talk to us, reach out on{" "}
+          <StyledLink href="https://discord.gg/k9F7SyTgqn">
+            <b>Discord</b>
+          </StyledLink>{" "}
+          <span className="mobile-break">or at </span>
+          <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
+            <b>hello@pollinations.ai</b>
+          </StyledLink>
+        </p>
+        <p style={{ userSelect: "none" }}>
+          <StyledLink href="https://github.com/pollinations/pollinations/#readme">
+            <b>README</b>
+            <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
+          </StyledLink>{" "}
+          to learn more.
+        </p>
+      </ContactWrapper>
+    </>
+  )
+}
 
-  </Style>
-};
-
+export default function WhoWeAre() {
+  return (
+    <Style>
+      <PageLayout long={false}>
+        <WhoWeAreContent />
+      </PageLayout>
+    </Style>
+  )
+}
 
 // STYLES
-const PageLayout = styled.div`
-width: 100%;
-max-width: 1440px;
-min-height:80vh;
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`
 
-margin-top: 2em;
-display: flex;
-flex-direction: column;
-align-items: flex-start;
-justify-content: center;
-gap: 46px;
-padding: 7%;
+const PageLayout = styled(BaseContainer)`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1em;
+  margin: auto;
+  animation: ${fadeIn} 1.5s ease-out;
 
+  h2 {
+    initial: unset;
+    font-family: "Uncut-Sans-Variable";
+    font-style: normal;
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 58px;
+    color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
+    letter-spacing: -0.02em;
+    margin-bottom: 1.6em;
+    margin-top: 1em;
 
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  margin-top: 5em;
-
-  .MuiStepper-horizontal {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 0.3em !important;
+    @media (max-width: ${MOBILE_BREAKPOINT}) {
+      font-size: 30px;
+      line-height: 40px;
+      margin-bottom: 1.6em;
+    }
   }
-}
-h2 {
-  initial: unset;
-  font-family: 'Uncut-Sans-Variable';
-  font-style: normal;
-  font-weight: 500;
-  font-size: 46px;
-  line-height: 58px;
-
-  color: ${Colors.offblack};
-  margin: 0;
-
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    max-width: 90%;
-    font-size: 46px;
-    line-height: 50px;
+  p {
+    font-family: "Uncut-Sans-Variable";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 34px;
+    color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
+    margin: 0; // Remove margin as it's now handled by ContactWrapper
+    user-select: none;
+    i {
+      color: ${(props) => (props.dark ? Colors.accent : Colors.offblack)};
+    }
+    @media (max-width: ${MOBILE_BREAKPOINT}) {
+      width: 90%;
+      font-size: 22px;
+    }
   }
-}
-p {
-  initial: unset;
-  width: ${props => props.long || '37%'};
-  font-family: 'Uncut-Sans-Variable';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 24px;
-  line-height: 34px;
-  color: ${Colors.offblack};
-  margin: 0;
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    width: 90%;
+  // Add this new style for the last paragraph
+  p:last-child {
+    margin-bottom: 0; // Remove bottom margin for the last paragraph
   }
-}
-`;
+`
 
 const Style = styled.div`
-width: 100%;
-height: 100%;
-position: relative;
-background-color: ${Colors.background_body};
+  width: 100%;
+  position: relative;
+  background-color: ${(props) => (props.dark ? "black" : Colors.background_body)};
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  }
+`
 
-display: flex;
-justify-content: center;
-align-items: center;
-@media (max-width: ${MOBILE_BREAKPOINT}) {
-  min-height: 674px;
-}
+const ContactWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 2em;
+
+  p {
+    width: 45%; // Adjust this value as needed
+    margin: 0;
+  }
+
+  p:last-child {
+    text-align: right;
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    flex-direction: column;
+
+    p {
+      width: 100%;
+    }
+
+    p:last-child {
+      text-align: left;
+    }
+
+    .mobile-break {
+      display: block;
+    }
+  }
+
+  .mobile-break {
+    display: inline;
+  }
 `

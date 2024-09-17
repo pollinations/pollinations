@@ -281,4 +281,5 @@ dist
 .pnp.*
 .DS_Store
 
-image_gen/d
+venv/
+cursor-party/

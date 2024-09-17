@@ -85,3 +85,10 @@
     object-fit: cover;
   }
   
+  @media (max-width: 768px) {
+    .scale-container {
+      transform: scale(0.7);
+      transform-origin: top left;
+      width: 145%; /* Adjust to counteract the scaling */
+    }
+  }

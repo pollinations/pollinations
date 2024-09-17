@@ -7,12 +7,12 @@ export const HUGE_BREAKPOINT = '2560px';
 export const Colors = {
   accent: 'rgb(233, 250, 41)',
   active_button: '#C93CD0',
-  lime: '#E0F142',
+  lime: '#FFE801',
   offwhite: '#FAFAFA',
   offblack: '#2A2C1C',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
-  background_body: '#E9E9E9',
+  background_body: '#FEFEFE',
   wine: '#670C6B',
   magenta: '#C93CD0',
   gray4: '#BDBDBD',
@@ -31,7 +31,6 @@ export const BaseContainer = styled.div`
     max-width: 50%;
   }
 `;
-
 
 export const MarkDownStyle = styled.div`
 h6 {
@@ -73,12 +72,10 @@ object-fit: cover;
 object-position: ${props => props.objectPosition || ''};
 `
 export const Headline = styled.p`
-
 font-style: normal;
 font-weight: 500;
 font-size: 36px;
 line-height: 43px;
 text-align: center;
-
 color: #FFFFFF;
 `

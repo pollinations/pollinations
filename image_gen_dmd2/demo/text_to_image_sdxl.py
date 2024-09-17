@@ -86,6 +86,13 @@ async def generate(request: Request):
     height = (height // 8) * 8
 
     seed = convert_to_int(data.get('seed', -1), -1)
+
+    # if the seed is not an integer set it to a random int
+    # check again if its a positive integer and not a float or somethuing eles
+
+    seed = int(seed) if seed > 0 else -1
+
+
     # Log the start time for the entire request processing
     request_start_time = time.time()
     # Set the seed for reproducibility

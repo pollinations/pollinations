@@ -25,7 +25,7 @@ export const textContent = {
   expo,
   integrate,
   terms,
-  event
+  event,
 }
 
 const expoCtx = require.context("./expo", false, /\.md$/)

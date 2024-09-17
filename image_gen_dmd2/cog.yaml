@@ -1,0 +1,31 @@
+
+# predict.py defines how predictions are run on your model
+predict: "predict.py:Predictor"
+# Configuration for Cog ⚙️
+# Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
+
+build:
+  # set to true if your model requires a GPU
+  gpu: true
+  cuda: "12.1"
+
+  # a list of ubuntu apt packages to install
+  system_packages:
+    - "ffmpeg"
+    - "portaudio19-dev"
+    - "rubberband-cli"
+
+  # python version in the form '3.11' or '3.11.4'
+  python_version: "3.9"
+
+  # a list of packages in the format <package-name>==<version>
+  python_packages:
+    - torch==2.3.0
+
+
+
+  # commands run after the environment is setup
+  run:
+    - pip install --upgrade accelerate transformers peft diffusers xformers hidiffusion numpy
+    - echo hey
+    

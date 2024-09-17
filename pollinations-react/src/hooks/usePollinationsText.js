@@ -8,13 +8,21 @@ import memoize from 'lodash.memoize';
  * @returns {Promise<string>} - A promise that resolves to the cleaned text data.
  */
 const fetchPollinationsText = async (requestBody) => {
-    const response = await fetch('https://text.pollinations.ai/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-    });
-    const data = await response.text();
-    return cleanMarkdown(data);
+    try {
+        const response = await fetch('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.text();
+        return cleanMarkdown(data);
+    } catch (error) {
+        console.error("Error fetching text from Pollinations API:", error);
+        throw error;
+    }
 };
 
 // Memoized version of fetchPollinationsText
@@ -30,7 +38,7 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  * @param {Object} options - Configuration options for text generation.
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @returns {string} - The generated and cleaned text.
+ * @returns {Object} - An object containing the generated text.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
@@ -54,8 +62,8 @@ const usePollinationsText = (prompt, options = {}) => {
                 setText(cleanedData);
             })
             .catch((error) => {
-                console.error("Error fetching text:", error);
-                throw error;
+                console.error("Error in usePollinationsText:", error);
+                setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
     }, [prompt, systemPrompt, seed]);
 

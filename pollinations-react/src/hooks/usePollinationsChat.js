@@ -23,7 +23,6 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
             seed: seed
         };
 
-
         fetch(`https://text.pollinations.ai/`, {
             method: 'POST',
             headers: {
@@ -31,14 +30,26 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
             },
             body: JSON.stringify(requestBody),
         })
-            .then((response) => response.text())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
             .then((data) => {
-                const assistantMessage = jsonMode ? JSON.parse(data) : data;
+                let assistantMessage;
+                try {
+                    assistantMessage = jsonMode ? JSON.parse(data) : data;
+                } catch (error) {
+                    console.error("Error parsing response:", error);
+                    assistantMessage = `Sorry, I encountered an error while processing the response: ${error.message}`;
+                }
                 setMessages([...updatedMessages, { role: "assistant", content: assistantMessage }]);
             })
             .catch((error) => {
                 console.error("Error fetching chat:", error);
-                throw error;
+                const errorMessage = `I'm sorry, but I encountered an error while trying to respond: ${error.message}. Please try again later.`;
+                setMessages([...updatedMessages, { role: "assistant", content: errorMessage }]);
             });
     }, [messages, jsonMode, seed]);
 

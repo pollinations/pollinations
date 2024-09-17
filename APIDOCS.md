@@ -87,6 +87,7 @@ This endpoint generates text responses based on the provided prompt using AI. It
 | seed      | optional | Seed for reproducible results. Use -1 for random.          | null    |
 | json      | optional | Set to 'true' to receive response in JSON format.          | false   |
 | model     | optional | Model to use for text generation. Options: 'openai', 'mistral' | 'openai' |
+| system    | optional | System prompt to set the behavior of the AI. Should be URL-encoded. | - |
 
 ### Request Body (POST request)
 
@@ -99,7 +100,7 @@ This endpoint generates text responses based on the provided prompt using AI. It
 
 ### Example Usage (GET)
 
-    https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=true&model=mistral
+    https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=true&model=mistral&system=You%20are%20a%20helpful%20AI%20assistant
 
 ### Example Usage (POST)
 

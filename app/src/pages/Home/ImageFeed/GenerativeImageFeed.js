@@ -119,16 +119,16 @@ export function GenerativeImageFeed() {
           </Grid>
           <Grid item xs={12}>
             <Box position="relative" maxWidth="800px" margin="0 auto" marginBottom={2}>
-              <Box display="flex" justifyContent="flex-start">
+              <Box display="flex" justifyContent="flex-start" marginLeft={1.5}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
               </Box>
-              <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }}>
+              <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }} marginRight={1.5}>
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" alignItems="center">
+            <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5}>
               <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
             </Box>
           </Grid>

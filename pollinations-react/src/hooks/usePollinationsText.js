@@ -8,13 +8,21 @@ import memoize from 'lodash.memoize';
  * @returns {Promise<string>} - A promise that resolves to the cleaned text data.
  */
 const fetchPollinationsText = async (requestBody) => {
-    const response = await fetch('https://text.pollinations.ai/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-    });
-    const data = await response.text();
-    return cleanMarkdown(data);
+    try {
+        const response = await fetch('https://text.pollinations.ai/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.text();
+        return cleanMarkdown(data);
+    } catch (error) {
+        console.error("Error fetching text from Pollinations API:", error);
+        return "An error occurred while generating text. Please try again.";
+    }
 };
 
 // Memoized version of fetchPollinationsText
@@ -30,14 +38,15 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  * @param {Object} options - Configuration options for text generation.
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @returns {string} - The generated and cleaned text.
+ * @returns {Object} - An object containing the generated text and error state.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
     const { seed = -1, systemPrompt } = options;
 
-    // State to hold the generated text
+    // State to hold the generated text and error
     const [text, setText] = useState("");
+    const [error, setError] = useState(null);
 
     // Effect to fetch or retrieve memoized text
     useEffect(() => {
@@ -52,14 +61,16 @@ const usePollinationsText = (prompt, options = {}) => {
         memoizedFetchPollinationsText(requestBody)
             .then(cleanedData => {
                 setText(cleanedData);
+                setError(null);
             })
             .catch((error) => {
-                console.error("Error fetching text:", error);
-                throw error;
+                console.error("Error in usePollinationsText:", error);
+                setText("");
+                setError("An error occurred while generating text. Please try again.");
             });
     }, [prompt, systemPrompt, seed]);
 
-    return text;
+    return { text, error };
 };
 
 /**

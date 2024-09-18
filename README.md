@@ -4,33 +4,6 @@
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)
 
-## Table of Contents
-- [Pollinations.AI](#pollinationsai)
-  - [Table of Contents](#table-of-contents)
-  - [🌟 Introduction](#-introduction)
-  - [🚀 Key Features](#-key-features)
-  - [🚀 Getting Started](#-getting-started)
-  - [🖥️ How to Use](#️-how-to-use)
-    - [Web Interface](#web-interface)
-    - [API](#api)
-  - [🎨 Examples](#-examples)
-    - [Image Generation](#image-generation)
-    - [Text Generation](#text-generation)
-  - [🛠️ Integration](#️-integration)
-    - [React Components](#react-components)
-  - [🌐 Projects Using Pollinations.AI](#-projects-using-pollinationsai)
-    - [LLM Integrations](#llm-integrations)
-    - [Social Bots](#social-bots)
-    - [Mobile \& Web Applications](#mobile--web-applications)
-    - [Tutorials](#tutorials)
-  - [🔮 Future Developments](#-future-developments)
-  - [🌍 Our Vision](#-our-vision)
-  - [🏢 Supported By](#-supported-by)
-  - [🤝 Community and Support](#-community-and-support)
-  - [🗂️ Project Structure](#️-project-structure)
-  - [🏢 Supported By](#-supported-by-1)
-  - [📜 License](#-license)
-
 ## 🌟 Introduction
 
 [Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image.

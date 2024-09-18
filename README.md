@@ -40,6 +40,8 @@ Use our API directly in your browser or applications:
 
 Replace the description with your own, and you'll get a unique image based on your words!
 
+For detailed information on using the API, including parameters and code examples, refer to our [API Documentation](APIDOCS.md).
+
 ## 🎨 Examples
 
 ### Image Generation

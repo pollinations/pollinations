@@ -65,7 +65,7 @@ This endpoint generates an image based on the provided prompt and optional param
 - Chatbots: Enhance responses with relevant images
 - Social Media: Create engaging visual content on-the-fly
 
-For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations).
+For more examples and community projects, visit our [GitHub repository](https://github.com/pollinations/pollinations) or explore the [React Components](./pollinations-react/README.md) for easy integration into your React projects.
 
 ## Text Generation API
 

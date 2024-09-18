@@ -8,6 +8,8 @@ Install the package:
 
     npm install @pollinations/react
 
+For detailed information on using the Pollinations API, including parameters and code examples, refer to the [API Documentation](../APIDOCS.md).
+
 ## 🧩 Components
 
 ### PollinationsText

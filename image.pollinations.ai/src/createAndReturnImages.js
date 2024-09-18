@@ -182,7 +182,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
   //Resize the final image to the user's desired size
-  bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+  // bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
   // // blure image if isChild && isMature
   // if (isChild && isMature) {

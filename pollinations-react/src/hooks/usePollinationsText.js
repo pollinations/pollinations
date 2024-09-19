@@ -42,7 +42,7 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = -1, systemPrompt } = options;
+    const { seed = -1, systemPrompt, model = "gpt-4o" } = options;
 
     // State to hold the generated text
     const [text, setText] = useState("");
@@ -55,7 +55,7 @@ const usePollinationsText = (prompt, options = {}) => {
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
         messages.push({ role: "user", content: prompt });
-        const requestBody = { messages, seed: effectiveSeed };
+        const requestBody = { messages, seed: effectiveSeed, model };
 
         memoizedFetchPollinationsText(requestBody)
             .then(cleanedData => {
@@ -65,7 +65,7 @@ const usePollinationsText = (prompt, options = {}) => {
                 console.error("Error in usePollinationsText:", error);
                 setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
-    }, [prompt, systemPrompt, seed]);
+    }, [prompt, systemPrompt, seed, model]);
 
     return text;
 };

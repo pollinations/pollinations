@@ -16,13 +16,13 @@ This endpoint generates an image based on the provided prompt and optional param
 | seed      | optional | Seed for reproducible results. Use -1 for random.                                         | random  |
 | width     | optional | Width of the generated image.                                                             | 1024    |
 | height    | optional | Height of the generated image.                                                            | 1024    |
-| no-logo   | optional | Set to 'true' to turn off the rendering of the logo.                                      | false   |
-| no-feed   | optional | Set to 'true' to prevent the image from appearing in the public feed.                     | false   |
+| nologo    | optional | Set to 'true' to turn off the rendering of the logo.                                      | false   |
+| private   | optional | Set to 'true' to prevent the image from appearing in the public feed.                     | false   |
 | enhance   | optional | Set to 'true' to turn on prompt enhancing (passes prompts through an LLM to add detail).  | false   |
 
 ## Example Usage
 
-    https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?model=flux&width=1280&height=720&seed=42&no-logo=true
+    https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42
 
 ## Code Examples
 
@@ -31,7 +31,7 @@ This endpoint generates an image based on the provided prompt and optional param
     import requests
 
     def download_image(prompt, width=768, height=768, model='flux', seed=-1):
-        url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&seed={seed}&no-logo=true"
+        url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&seed={seed}"
         response = requests.get(url)
         with open('generated_image.jpg', 'wb') as file:
             file.write(response.content)
@@ -45,7 +45,7 @@ This endpoint generates an image based on the provided prompt and optional param
     import fs from 'fs';
 
     async function downloadImage(prompt, width = 1024, height = 1024, model = 'turbo', seed = -1) {
-      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=${model}&seed=${seed}&no-logo=true`;
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&model=${model}&seed=${seed}`;
       const response = await fetch(url);
       const buffer = await response.buffer();
       fs.writeFileSync('generated_image.jpg', buffer);
@@ -56,11 +56,11 @@ This endpoint generates an image based on the provided prompt and optional param
 
 ### HTML
 
-    <img src="https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&model=flux&seed=42&no-logo=true" alt="AI-generated sunset">
+    <img src="https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&model=flux&seed=42" alt="AI-generated sunset">
 
 ## Integration Examples
 
-- Web Design: `<img src="https://image.pollinations.ai/prompt/Modern%20minimalist%20logo?no-logo=true" alt="AI-generated logo">`
+- Web Design: `<img src="https://image.pollinations.ai/prompt/Modern%20minimalist%20logo" alt="AI-generated logo">`
 - E-learning: Generate custom illustrations for concepts
 - Chatbots: Enhance responses with relevant images
 - Social Media: Create engaging visual content on-the-fly

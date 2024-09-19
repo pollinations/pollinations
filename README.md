@@ -39,16 +39,13 @@ Each component has its own section on the documentation page with:
 - Responsive design for seamless viewing on any device
 
 Explore the power of `@pollinations/react` components and see how you can integrate them into your own applications!
-```
 
-This README.md explains the purpose of the documentation, the components involved, and how users can interact with the real-time previews. It also includes instructions on setting up and running the project.
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 💡 Learn More
+
+- Explore the [Pollinations Generative React Hooks & Components](https://www.npmjs.com/package/@pollinations/react) on npm.
+- [Chat bot example](https://github.com/pollinations/karma) to discover more about the project.
+- Learn more about [Pollinations.ai](https://pollinations.ai/readme).
+
+### Made with ❤️ by [Pollinations.ai](https://pollinations.ai) Team

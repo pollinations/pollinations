@@ -20,32 +20,39 @@ Each component has its own section on the documentation page with:
 1. Clone this repository
 2. Install the necessary dependencies:
     ```bash
-    npm install
+    npm install # or pnpm install or bun install or yarn 
     ```
-3. Ensure `shadcn/ui` is configured in your project:
+3. Run the project:
     ```bash
-    npm install @shadcn/ui
-    ```
-4. Run the project:
-    ```bash
-    npm run dev
+    npm run dev # or pnpm dev or bun dev or yarn dev
     ```
 5. Navigate to the documentation page in your browser and start interacting with the components.
+
+    Open [http://localhost:3000](http://localhost:3000) in your browser to see the app live. You can start modifying the code by editing the `app/page.tsx` file. Any changes will automatically be reflected.
 
 ## Features
 
 - Real-time code and component preview
-- Easy-to-copy code snippets for each component
 - Responsive design for seamless viewing on any device
 
-Explore the power of `@pollinations/react` components and see how you can integrate them into your own applications!
+## TODO
+
+- [ ] Add support for selecting component parameters
+- [ ] Toggle between dark mode and light mode
+- [ ] Add a "Copy Code" button for easy code copying
+- [ ] Document the parameters used by each component
 
 ---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## 💡 Learn More
 
 - Explore the [Pollinations Generative React Hooks & Components](https://www.npmjs.com/package/@pollinations/react) on npm.
-- [Chat bot example](https://github.com/pollinations/karma) to discover more about the project.
-- Learn more about [Pollinations.ai](https://pollinations.ai/readme).
+- [Chat bot example](https://karma.pollinations.ai) to discover more about the project.
+- [storytelling example](https://storytelling.karma.yt/) to discover more about the project.
+- [Learn more about](https://pollinations.ai/readme).
 
 ### Made with ❤️ by [Pollinations.ai](https://pollinations.ai) Team

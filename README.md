@@ -3,11 +3,16 @@
 
 This repository provides an interactive, real-time preview for three React components from the `@pollinations/react` library. The documentation page allows users to easily test and explore the components, customize them with different prompts, and copy the resulting code.
 
-## Components Included
+## 🧩 Components
 
-- **PollinationsText**
-- **PollinationsImage**
-- **PollinationsMarkdown**
+- **&lt;PollinationsText /&gt;**
+- **&lt;PollinationsImage /&gt;**
+- **&lt;PollinationsMarkdown /&gt;**
+
+## 🛠️ Hooks
+
+- **usePollinationsImage**
+- **usePollinationsText**
 
 Each component has its own section on the documentation page with:
 1. A title and description of the component
@@ -37,7 +42,7 @@ Each component has its own section on the documentation page with:
 
 ## TODO
 
-- [ ] Add support for selecting component parameters
+- [ ] Add support for select component parameters
 - [ ] Toggle between dark mode and light mode
 - [ ] Add a "Copy Code" button for easy code copying
 - [ ] Document the parameters used by each component

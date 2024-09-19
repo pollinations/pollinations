@@ -1,8 +1,8 @@
 {
   "name": "karma-pollinations-react-doc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "diogo-karma <dg@karma.yt>",
-  "private": true,
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "build": "next build",

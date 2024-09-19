@@ -1,51 +1,68 @@
-
 # @pollinations/react Documentation
 
-This repository provides an interactive, real-time preview for three React components from the `@pollinations/react` library. The documentation page allows users to easily test and explore the components, customize them with different prompts, and copy the resulting code.
+Welcome to the **@pollinations/react** library! This repository offers an interactive, real-time preview for three essential React components, allowing users to test and customize them effortlessly.
 
 ## 🧩 Components
 
-- **&lt;PollinationsText /&gt;**
-- **&lt;PollinationsImage /&gt;**
-- **&lt;PollinationsMarkdown /&gt;**
+- **`<PollinationsText />`**: Generates and displays text based on user prompts.
+- **`<PollinationsImage />`**: Creates images using specified parameters.
+- **`<PollinationsMarkdown />`**: Renders markdown content from user inputs.
 
 ## 🛠️ Hooks
 
-- **usePollinationsImage**
-- **usePollinationsText**
+- **`usePollinationsImage`**: A custom hook for managing image generation.
+- **`usePollinationsText`**: A custom hook for handling text generation.
 
-Each component has its own section on the documentation page with:
-1. A title and description of the component
-2. An input field to enter a prompt
-3. A code block showing the generated code based on the input
-4. A real-time preview of the component using the provided prompt
+### Component Overview
+
+Each component section on the documentation page includes:
+
+1. A clear title and description.
+2. An input field for entering prompts.
+3. A code block that displays the generated code based on user input.
+4. A real-time preview of the component with the provided prompt.
 
 ## Getting Started
 
-1. Clone this repository
-2. Install the necessary dependencies:
-    ```bash
-    npm install # or pnpm install or bun install or yarn 
-    ```
-3. Run the project:
-    ```bash
-    npm run dev # or pnpm dev or bun dev or yarn dev
-    ```
-5. Navigate to the documentation page in your browser and start interacting with the components.
+Follow these steps to set up the project locally:
 
-    Open [http://localhost:3000](http://localhost:3000) in your browser to see the app live. You can start modifying the code by editing the `app/page.tsx` file. Any changes will automatically be reflected.
+1. **Clone this repository:**
+   ```bash
+   git clone https://github.com/diogo-karma/pollinations-react-doc
+   cd pollinations-react-doc
+   ```
+
+2. **Install the necessary dependencies:**
+   ```bash
+   npm install # or pnpm install, bun install, or yarn
+   ```
+
+3. **Run the project:**
+   ```bash
+   npm run dev # or pnpm dev, bun dev, or yarn dev
+   ```
+
+4. **Open the documentation page:**
+   Navigate to [http://localhost:3000](http://localhost:3000) in your browser to see the app in action. You can modify the code by editing the `app/page.tsx` file, with changes reflecting in real-time.
 
 ## Features
 
-- Real-time code and component preview
-- Responsive design for seamless viewing on any device
+- **Real-time code and component previews**: See changes as you make them.
+- **Responsive design**: Seamless viewing experience on any device.
 
 ## TODO
 
-- [ ] Add support for select component parameters
-- [ ] Toggle between dark mode and light mode
-- [ ] Add a "Copy Code" button for easy code copying
-- [ ] Document the parameters used by each component
+- [ ] Implement real-time updates with available models.
+- [x] Allow model selection for Text Generative.
+- [x] Enable selection of image size.
+- [x] Provide seed selection functionality.
+- [ ] Add model selection for Image.
+- [ ] Implement a complete dark/light mode toggle.
+- [ ] Add a "Copy Code" button for easy code copying.
+- [ ] Document the parameters for each component.
+- [ ] Improve markdown result rendering.
+- [ ] Introduce loading indicators for modifications.
+- [ ] Create documentation for hooks.
 
 ---
 
@@ -56,8 +73,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## 💡 Learn More
 
 - Explore the [Pollinations Generative React Hooks & Components](https://www.npmjs.com/package/@pollinations/react) on npm.
-- [Chat bot example](https://karma.pollinations.ai) to discover more about the project.
-- [storytelling example](https://storytelling.karma.yt/) to discover more about the project.
-- [Learn more about](https://pollinations.ai/readme).
+- Try the [Chatbot example](https://karma.pollinations.ai) to see more of what the project offers.
+- Discover the [Storytelling example](https://storytelling.karma.yt/) for creative applications.
+- Learn more about the project at [Pollinations.ai](https://pollinations.ai/readme).
 
-### Made with ❤️ by [Pollinations.ai](https://pollinations.ai) Team
+### Made with ❤️ by the [Pollinations.ai](https://pollinations.ai) Team

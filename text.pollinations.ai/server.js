@@ -11,7 +11,7 @@ import crypto from 'crypto';
 const app = express();
 const port = process.env.PORT || 16385;
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' }));
 app.use(cors());
 
 const cacheDir = path.join(process.cwd(), '.cache');
@@ -48,6 +48,14 @@ async function generateTextBasedOnModel(messages, options) {
 function createHashKey(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
 }
+
+
+// GET /models request handler
+app.get('/models', (req, res) => {
+    const availableModels = ['openai', 'mistral', 'llama'];
+    res.json({ models: availableModels });
+});
+
 
 // GET request handler
 app.get('/:prompt', async (req, res) => {

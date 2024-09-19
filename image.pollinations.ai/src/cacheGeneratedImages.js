@@ -1,6 +1,14 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const memCache = {};
+const diskCacheDir = '/tmp/cache';
+
+// Ensure the disk cache directory exists
+if (!fs.existsSync(diskCacheDir)) {
+  fs.mkdirSync(diskCacheDir, { recursive: true });
+}
 
 // Function to generate a cache path
 const generateCachePath = (prompt, extraParams) => {
@@ -44,7 +52,6 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
   memCache[cachePath] = bufferPromise;
   try {
     const buffer = await bufferPromise;
-    memCache[cachePath] = buffer;
     return buffer;
   } catch (e) {
     console.error('Error waiting for bufferPromise', e);

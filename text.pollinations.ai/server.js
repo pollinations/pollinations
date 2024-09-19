@@ -1,13 +1,15 @@
 import express from 'express';
 import generateText from './generateText.js';
 import generateTextMistral from './generateTextMistral.js';
+import generateTextLlama from './generateTextLlama.js';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 16385;
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -36,8 +38,15 @@ async function generateTextBasedOnModel(messages, options) {
     const { model = 'openai', ...rest } = options;
     if (model === 'mistral') {
         return generateTextMistral(messages, rest);
+    } else if (model === 'llama') {
+        return generateTextLlama(messages, rest);
     }
     return generateText(messages, rest);
+}
+
+// Helper function to create a hash for the cache key
+function createHashKey(data) {
+    return crypto.createHash('sha256').update(data).digest('hex');
 }
 
 // GET request handler
@@ -47,10 +56,13 @@ app.get('/:prompt', async (req, res) => {
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
     const model = req.query.model || 'openai';
     const systemPrompt = req.query.system ? decodeURIComponent(req.query.system) : null;
-    const cacheKey = `${prompt}-${seed}-${jsonMode}-${model}-${systemPrompt}`;
+    const cacheKeyData = `${prompt}-${seed}-${jsonMode}-${model}-${systemPrompt}`;
+    const cacheKey = createHashKey(cacheKeyData);
 
     if (cache[cacheKey]) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        // console.log(`Cache hit for key: ${cacheKey}`);
+        // console.log(`Response: ${cache[cacheKey]}`);
         return res.send(cache[cacheKey]);
     }
 
@@ -87,10 +99,13 @@ app.post('/', async (req, res) => {
         return res.status(400).send('Invalid messages array');
     }
 
-    const cacheKey = JSON.stringify(messages) + `-${seed}-${jsonMode}-${model}`;
+    const cacheKeyData = JSON.stringify(messages) + `-${seed}-${jsonMode}-${model}`;
+    const cacheKey = createHashKey(cacheKeyData);
 
     if (cache[cacheKey]) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        // console.log(`Cache hit for key: ${cacheKey}`);
+        // console.log(`Response: ${cache[cacheKey]}`);
         return res.send(cache[cacheKey]);
     }
 

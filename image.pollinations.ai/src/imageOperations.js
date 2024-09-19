@@ -49,7 +49,7 @@ export async function resizeImage(buffer, width, height) {
     fs.writeFileSync(tempImageFile, buffer);
 
     // Calculate the scaling factor based on the total pixel count
-    const maxPixels = 1280 * 1280;
+    const maxPixels = 2048 * 2048;
     const currentPixels = width * height;
     const scaleFactor = Math.sqrt(maxPixels / currentPixels);
 

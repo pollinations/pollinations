@@ -44,6 +44,5 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     }
 
 
-
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
 };

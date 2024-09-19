@@ -49,6 +49,8 @@ const usePollinationsText = (prompt, options = {}) => {
 
     // Effect to fetch or retrieve memoized text
     useEffect(() => {
+        if (prompt === null) return;
+
         // Calculate an effective seed, either random or user-provided
         const effectiveSeed = seed === -1 ? Math.floor(Math.random() * 20) + 1 : seed;
 

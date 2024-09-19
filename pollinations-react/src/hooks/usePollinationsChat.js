@@ -9,7 +9,7 @@ import { useState, useCallback } from 'react';
  * @returns {Array} - The array of messages with the assistant's response added.
  */
 const usePollinationsChat = (initMessages = [], options = {}) => {
-    const { seed = 42, jsonMode = false } = options;
+    const { seed = 42, jsonMode = false, model = "gpt-4o" } = options;
 
     const [messages, setMessages] = useState(initMessages);
 
@@ -20,7 +20,8 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
         const requestBody = {
             messages: updatedMessages,
             jsonMode: jsonMode,
-            seed: seed
+            seed: seed,
+            model: model
         };
 
         fetch(`https://text.pollinations.ai/`, {
@@ -51,7 +52,7 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                 const errorMessage = `I'm sorry, but I encountered an error while trying to respond: ${error.message}. Please try again later.`;
                 setMessages([...updatedMessages, { role: "assistant", content: errorMessage }]);
             });
-    }, [messages, jsonMode, seed]);
+    }, [messages, jsonMode, seed, model]);
 
     return { sendUserMessage, messages };
 };

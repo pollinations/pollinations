@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ThemeToggle } from '@/components/theme-toggle';
+// @ts-expect-error todo: interfaces
 import { PollinationsText, PollinationsImage, PollinationsMarkdown } from '@pollinations/react';
 import { debounce } from 'lodash';
 

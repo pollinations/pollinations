@@ -53,6 +53,7 @@ Follow these steps to set up the project locally:
 ## TODO
 
 - [ ] Implement real-time updates with available models.
+- [ ] Add onChange with debounce
 - [x] Allow model selection for Text Generative.
 - [x] Enable selection of image size.
 - [x] Provide seed selection functionality.

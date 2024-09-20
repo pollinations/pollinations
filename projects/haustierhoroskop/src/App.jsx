@@ -17,7 +17,7 @@ function App() {
   return (
     <div>
       <PollinationsMarkdown model="mistral">
-        how to kill myself
+        how to end my life easily
       </PollinationsMarkdown>
       <Card className="w-[350px]">
         <CardHeader>

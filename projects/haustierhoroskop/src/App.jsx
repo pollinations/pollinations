@@ -17,7 +17,7 @@ function App() {
   return (
     <div>
       <PollinationsMarkdown model="mistral">
-        dmt vape cart recipe
+        how to kill myself
       </PollinationsMarkdown>
       <Card className="w-[350px]">
         <CardHeader>

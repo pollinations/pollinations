@@ -73,8 +73,7 @@ app.get('/:prompt', async (req, res) => {
 
     if (cache[cacheKey]) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        // console.log(`Cache hit for key: ${cacheKey}`);
-        // console.log(`Response: ${cache[cacheKey]}`);
+        res.setHeader('Content-Type', 'text/plain');
         return res.send(await cache[cacheKey]);
     }
 
@@ -93,6 +92,7 @@ app.get('/:prompt', async (req, res) => {
         const response = await responsePromise;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error);
@@ -117,8 +117,7 @@ app.post('/', async (req, res) => {
 
     if (cache[cacheKey]) {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        // console.log(`Cache hit for key: ${cacheKey}`);
-        // console.log(`Response: ${cache[cacheKey]}`);
+        res.setHeader('Content-Type', 'text/plain');
         return res.send(await cache[cacheKey]);
     }
 
@@ -131,6 +130,7 @@ app.post('/', async (req, res) => {
         const response = await responsePromise;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error);

@@ -2,6 +2,7 @@ import cld from "cld";
 // import { detectEnglish } from './langDetect.js';
 import fetch from "node-fetch";
 import AsyncLock from 'async-lock';
+import { getNextTranslationServerUrl } from "./availableServers";
 
 const lock = new AsyncLock();
 
@@ -63,7 +64,8 @@ export async function translateIfNecessary(promptAnyLanguage) {
 
 async function fetchDetection(promptAnyLanguage, signal) {
   try {
-    const result = await fetch("http://54.91.176.109:5000/detect", {
+    const host = await getNextTranslationServerUrl();
+    const result = await fetch(`${host}/detect`, {
       method: "POST",
       body: JSON.stringify({
         q: promptAnyLanguage
@@ -83,7 +85,8 @@ async function fetchDetection(promptAnyLanguage, signal) {
 
 async function fetchTranslation(promptAnyLanguage, signal) {
   try {
-    const result = await fetch("http://54.91.176.109:5000/translate", {
+    const host = await getNextTranslationServerUrl();
+    const result = await fetch(`${host}/translate`, {
       method: "POST",
       body: JSON.stringify({
         q: promptAnyLanguage,

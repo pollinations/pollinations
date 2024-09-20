@@ -9,7 +9,7 @@ import { PollinationsText, PollinationsImage, PollinationsMarkdown } from '@poll
 import { debounce } from 'lodash';
 
 // Constants
-const DEBOUNCE_DELAY = 300; // 300ms for debounce
+const DEBOUNCE_DELAY = 1;
 const DEFAULT_SEED = 42;
 const DEFAULT_IMAGE_WIDTH = 800;
 const DEFAULT_IMAGE_HEIGHT = 600;
@@ -42,9 +42,11 @@ const pollinationComponents: ComponentConfig[] = [
     generateCode: ({ prompt, model, seed }) =>
       `<PollinationsText seed={${seed}} model="${model}" systemPrompt="You are a helpful assistant.">${prompt}</PollinationsText>`,
     preview: ({ prompt, model, seed }) => (
-      <PollinationsText seed={seed} model={model} systemPrompt="You are a helpful assistant.">
-        {prompt}
-      </PollinationsText>
+      <pre>
+        <PollinationsText seed={seed} model={model} systemPrompt="You are a helpful assistant.">
+          {prompt}
+        </PollinationsText>
+      </pre>
     ),
   },
   {
@@ -230,7 +232,7 @@ export default function PollinationsComponentDocs() {
         <div className="container mx-auto text-center">
           Made with ❤️ by{' '}
           <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-             Pollinations.AI team
+            Pollinations.AI team
           </a>
         </div>
       </footer>

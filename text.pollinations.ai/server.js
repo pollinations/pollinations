@@ -29,8 +29,12 @@ if (fs.existsSync(cachePath)) {
 }
 
 // Helper function to save cache to disk
-function saveCache() {
-    fs.writeFileSync(cachePath, JSON.stringify(cache), 'utf8');
+async function saveCache() {
+    const resolvedCache = {};
+    for (const [key, value] of Object.entries(cache)) {
+        resolvedCache[key] = await value;
+    }
+    fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
 }
 
 // Helper function to generate text based on the model
@@ -71,7 +75,7 @@ app.get('/:prompt', async (req, res) => {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         // console.log(`Cache hit for key: ${cacheKey}`);
         // console.log(`Response: ${cache[cacheKey]}`);
-        return res.send(cache[cacheKey]);
+        return res.send(await cache[cacheKey]);
     }
 
     console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
@@ -83,9 +87,10 @@ app.get('/:prompt', async (req, res) => {
         }
         messages.push({ role: 'user', content: prompt });
 
-        const response = await generateTextBasedOnModel(messages, { seed, jsonMode, model });
-        cache[cacheKey] = response;
-        saveCache();
+        const responsePromise = generateTextBasedOnModel(messages, { seed, jsonMode, model });
+        cache[cacheKey] = responsePromise;
+        await saveCache();
+        const response = await responsePromise;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(response);
@@ -114,15 +119,16 @@ app.post('/', async (req, res) => {
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         // console.log(`Cache hit for key: ${cacheKey}`);
         // console.log(`Response: ${cache[cacheKey]}`);
-        return res.send(cache[cacheKey]);
+        return res.send(await cache[cacheKey]);
     }
 
     console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
 
     try {
-        const response = await generateTextBasedOnModel(messages, { seed, jsonMode, model });
-        cache[cacheKey] = response;
-        saveCache();
+        const responsePromise = generateTextBasedOnModel(messages, { seed, jsonMode, model });
+        cache[cacheKey] = responsePromise;
+        await saveCache();
+        const response = await responsePromise;
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.send(response);

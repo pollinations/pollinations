@@ -52,14 +52,14 @@ Follow these steps to set up the project locally:
 
 ## TODO
 
-- [ ] Implement real-time updates with available models.
+- [X] Implement real-time updates with available models.
 - [ ] Add onChange with debounce
 - [x] Allow model selection for Text Generative.
 - [x] Enable selection of image size.
 - [x] Provide seed selection functionality.
-- [ ] Add model selection for Image.
+- [X] Add model selection for Image.
 - [ ] Implement a complete dark/light mode toggle.
-- [ ] Add a "Copy Code" button for easy code copying.
+- [X] Add a "Copy Code" button for easy code copying.
 - [ ] Document the parameters for each component.
 - [ ] Improve markdown result rendering.
 - [ ] Introduce loading indicators for modifications.

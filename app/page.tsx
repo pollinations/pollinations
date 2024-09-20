@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 // @ts-expect-error todo: interfaces
-import { PollinationsText, PollinationsImage, PollinationsMarkdown } from '@pollinations/react';
+import { PollinationsText, PollinationsImage, PollinationsMarkdown, usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
 import { Copy, Github } from 'lucide-react';
-import { useCallback } from 'react';
 
 // Constants
 const DEFAULT_SEED = 42;
@@ -36,6 +35,30 @@ interface ComponentState {
   seed: number;
   width?: number;
   height?: number;
+}
+
+interface ImageHookConfig {
+  prompt: string;
+  width: number;
+  height: number;
+  seed: number;
+  model: string;
+  nologo: boolean;
+  enhance: boolean;
+}
+
+interface TextHookConfig {
+  prompt: string;
+  seed: number;
+  model: string;
+  systemPrompt: string;
+}
+
+interface ChatHookConfig {
+  initialMessage: string;
+  seed: number;
+  jsonMode: boolean;
+  model: string;
 }
 
 // Component configurations
@@ -76,6 +99,169 @@ const pollinationComponents: ComponentConfig[] = [
   },
 ];
 
+
+const hookConfigurations = [
+  {
+    name: 'usePollinationsImage',
+    description: "Generate image URLs using Pollinations' API.",
+    defaultConfig: {
+      prompt: 'A beautiful sunset over the ocean',
+      width: 800,
+      height: 600,
+      seed: 42,
+      model: 'turbo',
+      nologo: true,
+      enhance: false,
+    },
+    generateCode: (config: ImageHookConfig) => `
+import React from 'react';
+import { usePollinationsImage } from '@pollinations/react';
+
+const ImageComponent = () => {
+  const imageUrl = usePollinationsImage('${config.prompt}', {
+    width: ${config.width},
+    height: ${config.height},
+    seed: ${config.seed},
+    model: '${config.model}',
+    nologo: ${config.nologo},
+    enhance: ${config.enhance},
+  });
+
+  return (
+    <div>
+      {imageUrl ? <img src={imageUrl} alt="Generated" /> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default ImageComponent;
+    `,
+    preview: (config: ImageHookConfig) => {
+      const imageUrl = usePollinationsImage(config.prompt, {
+        width: config.width,
+        height: config.height,
+        seed: config.seed,
+        model: config.model,
+        nologo: config.nologo,
+        enhance: config.enhance,
+      });
+      return imageUrl ? <img src={imageUrl} alt="Generated" /> : <p>Loading...</p>;
+    },
+  },
+  {
+    name: 'usePollinationsText',
+    description: "Generate text using Pollinations' API.",
+    defaultConfig: {
+      prompt: 'Write a short haiku about Pollinations.AI',
+      seed: 42,
+      model: 'mistral',
+      systemPrompt: 'You are a poetic AI assistant.',
+    },
+    generateCode: (config: TextHookConfig) => `
+import React from 'react';
+import { usePollinationsText } from '@pollinations/react';
+
+const TextComponent = () => {
+  const text = usePollinationsText('${config.prompt}', {
+    seed: ${config.seed},
+    model: '${config.model}',
+    systemPrompt: '${config.systemPrompt}',
+  });
+
+  return (
+    <div>
+      {text ? <p>{text}</p> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default TextComponent;
+    `,
+    preview: (config: TextHookConfig) => {
+      const text = usePollinationsText(config.prompt, {
+        seed: config.seed,
+        model: config.model,
+        systemPrompt: config.systemPrompt,
+      });
+      return text ? <p>{text}</p> : <p>Loading...</p>;
+    },
+  },
+  {
+    name: 'usePollinationsChat',
+    description: "Generate chat responses using Pollinations' API.",
+    defaultConfig: {
+      initialMessage: 'Hello, how can I help you today?',
+      seed: 42,
+      jsonMode: false,
+      model: 'mistral',
+    },
+    generateCode: (config: ChatHookConfig) => `
+import React, { useState } from 'react';
+import { usePollinationsChat } from '@pollinations/react';
+
+const ChatComponent = () => {
+  const [input, setInput] = useState('');
+  const { sendUserMessage, messages } = usePollinationsChat([
+    { role: "system", content: "You are a helpful assistant" },
+    { role: "assistant", content: "${config.initialMessage}" }
+  ], {
+    seed: ${config.seed},
+    jsonMode: ${config.jsonMode},
+    model: '${config.model}',
+  });
+
+  const handleSend = () => {
+    sendUserMessage(input);
+    setInput('');
+  };
+
+  return (
+    <div>
+      <div>
+        {messages.map((msg, index) => (
+          <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
+        ))}
+      </div>
+      <input value={input} onChange={(e) => setInput(e.target.value)} />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+};
+
+export default ChatComponent;
+    `,
+    preview: (config: ChatHookConfig) => {
+      const [input, setInput] = useState('');
+      const { sendUserMessage, messages } = usePollinationsChat([
+        { role: "system", content: "You are a helpful assistant" },
+        { role: "assistant", content: config.initialMessage }
+      ], {
+        seed: config.seed,
+        jsonMode: config.jsonMode,
+        model: config.model,
+      });
+
+      const handleSend = () => {
+        sendUserMessage(input);
+        setInput('');
+      };
+
+      return (
+        <div>
+          <div>
+            {messages.map((msg, index) => (
+              <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
+            ))}
+          </div>
+          <Input value={input} onChange={(e) => setInput(e.target.value)} />
+          <Button onClick={handleSend}>Send</Button>
+        </div>
+      );
+    },
+  },
+];
+
+
 export default function PollinationsComponentDocs() {
   // State for component configurations
   const [componentStates, setComponentStates] = useState<ComponentState[]>(
@@ -94,6 +280,11 @@ export default function PollinationsComponentDocs() {
 
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
+
+  const [hookStates, setHookStates] = useState(
+    hookConfigurations.map(config => ({ ...config.defaultConfig }))
+  );
+
 
   // Fetch models on component mount
   useEffect(() => {
@@ -130,6 +321,13 @@ export default function PollinationsComponentDocs() {
     });
   }, []);
 
+  const handleHookInputChange = useCallback((index: number, field: string, value: string | number | boolean) => {
+    setHookStates((prevStates) => {
+      const updatedStates = [...prevStates];
+      updatedStates[index] = { ...updatedStates[index], [field]: value };
+      return updatedStates;
+    });
+  }, []);
 
   // Handle code copy
   const handleCopyCode = (code: string) => {
@@ -257,7 +455,132 @@ export default function PollinationsComponentDocs() {
             </div>
           </section>
         ))}
+
+        <section className="border border-border rounded-lg p-6 space-y-4 bg-card text-card-foreground mt-8">
+          <h2 className="text-3xl font-bold">🛠️ Hooks</h2>
+
+          <div className="mt-6">
+            <h3 className="text-2xl font-semibold">usePollinationsImage</h3>
+            <p className="text-muted-foreground">
+              The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
+            </p>
+            <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto mt-4">
+              <code>{`import React from 'react';
+import { usePollinationsImage } from '@pollinations/react';
+
+const SunsetImageComponent = () => {
+  const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
+    width: 800,
+    height: 600,
+    seed: 42,
+    model: 'turbo',
+    nologo: true,
+    enhance: false
+  });
+
+  return (
+    <div>
+      {imageUrl ? <img src={imageUrl} alt="Sunset" /> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default SunsetImageComponent;`}</code>
+            </pre>
+            <h4 className="text-xl font-semibold mt-4">Options</h4>
+            <ul className="list-disc list-inside text-muted-foreground">
+              <li>width (number, default: 1024): The width of the generated image.</li>
+              <li>height (number, default: 1024): The height of the generated image.</li>
+              <li>model (string, default: 'turbo'): The model to use for image generation.</li>
+              <li>seed (number, default: -1): The seed for random image generation. If -1, a random seed will be used.</li>
+              <li>nologo (boolean, default: true): Whether to generate the image without a logo.</li>
+              <li>enhance (boolean, default: false): Whether to enhance the generated image.</li>
+            </ul>
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-2xl font-semibold">usePollinationsText</h3>
+            <p className="text-muted-foreground">
+              The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
+            </p>
+            <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto mt-4">
+              <code>{`import React from 'react';
+import { usePollinationsText } from '@pollinations/react';
+
+const HaikuComponent = () => {
+  const text = usePollinationsText('Write a short haiku about Pollinations.AI', {
+    seed: 42,
+    model: 'mistral',
+    systemPrompt: 'You are a poetic AI assistant.'
+  });
+
+  return (
+    <div>
+      {text ? <p>{text}</p> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default HaikuComponent;`}</code>
+            </pre>
+            <h4 className="text-xl font-semibold mt-4">Options</h4>
+            <ul className="list-disc list-inside text-muted-foreground">
+              <li>seed (number, default: -1): The seed for random text generation. If -1, a random seed will be used.</li>
+              <li>model (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.</li>
+              <li>systemPrompt (string, optional): A system prompt to set the behavior of the AI.</li>
+            </ul>
+          </div>
+
+          <div className="mt-6">
+            <h3 className="text-2xl font-semibold">usePollinationsChat</h3>
+            <p className="text-muted-foreground">
+              The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
+            </p>
+            <pre className="bg-muted text-muted-foreground p-4 rounded-md overflow-x-auto mt-4">
+              <code>{`import React, { useState } from 'react';
+import { usePollinationsChat } from '@pollinations/react';
+
+const ChatComponent = () => {
+  const [input, setInput] = useState('');
+  const { sendUserMessage, messages } = usePollinationsChat([
+    { role: "system", content: "You are a helpful assistant" }
+  ], {
+    seed: 42,
+    jsonMode: false,
+    model: 'mistral'
+  });
+
+  const handleSend = () => {
+    sendUserMessage(input);
+    setInput('');
+  };
+
+  return (
+    <div>
+      <div>
+        {messages.map((msg, index) => (
+          <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
+        ))}
       </div>
+      <input value={input} onChange={(e) => setInput(e.target.value)} />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+};
+
+export default ChatComponent;`}</code>
+            </pre>
+            <h4 className="text-xl font-semibold mt-4">Options</h4>
+            <ul className="list-disc list-inside text-muted-foreground">
+              <li>seed (number, default: 42): The seed for random text generation.</li>
+              <li>jsonMode (boolean, default: false): Whether to parse the response as JSON.</li>
+              <li>model (string, default: 'openai'): The model to use for chat generation.</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+    
       <footer className="bg-muted text-muted-foreground py-4 mt-8">
         <div className="container mx-auto text-center">
           <div className="flex justify-center items-center space-x-4">

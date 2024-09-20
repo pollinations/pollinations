@@ -58,6 +58,32 @@ export const getNextFluxServerUrl = async () => {
     return server.url + "/generate";
 };
 
+
+/**
+ * Returns the next available Translation server URL with the least amount of jobs processing + in queue.
+ * If multiple servers have the smallest queue size, one is selected randomly.
+ * @returns {Promise<string>} - The next Translation server URL.
+ */
+export async function getNextTranslationServerUrl() {
+    const nextFluxServer = await getNextFluxServerUrl();
+    //extract ip from url (the url has http:// or https://, we need the ip)
+    const ip = nextFluxServer.split("://")[1].split(":")[0];
+    return `http://${ip}:5000`;
+}
+
+/**
+ * Returns the next available Turbo server URL with the least amount of jobs processing + in queue.
+ * If multiple servers have the smallest queue size, one is selected randomly.
+ * @returns {Promise<string>} - The next Turbo server URL.
+ */
+export async function getNextTurboServerUrl() {
+    const nextFluxServer = await getNextFluxServerUrl();
+    //extract ip from url (the url has http:// or https://, we need the ip)
+    const ip = nextFluxServer.split("://")[1].split(":")[0];
+    return `http://${ip}:5003/generate`;
+}
+
+
 /**
  * Fetches the list of available servers from the main server.
  */

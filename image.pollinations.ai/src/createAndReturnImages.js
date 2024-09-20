@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { fetchFromLeastBusyFluxServer } from './availableServers.js';
+import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { MODELS } from './models.js';
 import { sanitizeString } from './translateIfNecessary.js';
@@ -7,13 +7,14 @@ import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './
 import sharp from 'sharp';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
-const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
+// const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
 
-function fetchFromTurboServer(params) {
-  return fetch(TURBO_SERVER_URL, params);
+async function fetchFromTurboServer(params) {
+  const host = await getNextTurboServerUrl();
+  return fetch(`${host}`, params);
 }
 
 /**

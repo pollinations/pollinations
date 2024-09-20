@@ -1,5 +1,5 @@
 [Unit]
-Description=LibreTranslate Service
+Description=Turbo Service
 After=network.target
 
 [Service]

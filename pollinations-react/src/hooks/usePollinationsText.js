@@ -42,7 +42,7 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = -1, systemPrompt, model = "gpt-4o" } = options;
+    const { seed = -1, systemPrompt, model } = options;
 
     // State to hold the generated text
     const [text, setText] = useState("");

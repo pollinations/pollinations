@@ -9,7 +9,7 @@ import { useState, useCallback } from 'react';
  * @returns {Array} - The array of messages with the assistant's response added.
  */
 const usePollinationsChat = (initMessages = [], options = {}) => {
-    const { seed = 42, jsonMode = false, model = "gpt-4o" } = options;
+    const { seed = 42, jsonMode = false, model = "openai" } = options;
 
     const [messages, setMessages] = useState(initMessages);
 

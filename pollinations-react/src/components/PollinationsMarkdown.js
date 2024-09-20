@@ -10,8 +10,8 @@ import usePollinationsText from '../hooks/usePollinationsText';
  * @param {number} [props.seed=-1] - The seed for random text generation.
  * @returns {JSX.Element} - The PollinationsMarkdown component.
  */
-const PollinationsMarkdown = ({ children, seed = -1, promptPrefix = MARKDOWN_PROMPT_PREFIX, ...props }) => {
-    const markdown = usePollinationsText(promptPrefix + children, { seed });
+const PollinationsMarkdown = ({ children, seed = -1, model = null, promptPrefix = MARKDOWN_PROMPT_PREFIX, ...props }) => {
+    const markdown = usePollinationsText(promptPrefix + children, { seed, model });
 
     return React.createElement(ReactMarkdown, props, markdown);
 };

@@ -8,9 +8,9 @@ import "./index.css";
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 
 function App() {
-  const [petImage, setPetImage] = useState(null);
-  const [birthDate, setBirthDate] = useState("2020-01-01"); // Pre-filled reasonable birth date
-  const [petName, setPetName] = useState("Buddy"); // Pre-filled typical pet name
+  const [petImage, setPetImage] = useState("https://i.imgur.com/wHQbITR.png");
+  const [birthDate, setBirthDate] = useState("01-04"); // Pre-filled reasonable birth date
+  const [petName, setPetName] = useState("Julyk"); // Pre-filled typical pet name
 
   const [prompt, setPrompt] = useState(null);
 
@@ -20,19 +20,32 @@ function App() {
     systemPrompt: `
     The end goal is to create a horoscope text and image for the pet in the form of a json object.
     
-    The a horoscope text:, a mix of serious and funny, the age in dog and cat years, other celebrities who were born on this day, funny days (Coconut Day etc.), and then a photo that is generated from the pet's photo: a typical dog with the zodiac sign Fish with favorite activities or the dog merged as the famous personality who was also born on that day.
+    The a horoscope text:, a mix of serious and funny, the age in dog or cat years, other celebrities who were born on this day, funny days (Coconut Day etc.), and then a photo that is generated from the pet's photo: a typical pet with the zodiac sign Fish with favorite activities or the dog merged as the famous personality who was also born on that day.
     
-    The image description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+    The cat description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+
+    The situation description contains a vivid description of the horoscope suitable for an image generator.
     
     return a json object with the following structure:
     {
     "horoscope": "The horoscope text",
-    "imageDescription": "The image description"
+    "catDescription": "detailed cat description",
+    "situationDescription": "vivid situation description",
+    "starSign": "The star sign of the pet"
     }`,
   });
 
   const imageUrl = usePollinationsImage(
-    horoscope?.imageDescription || "Loading text",
+    horoscope?.catDescription
+      ? `A anime style ${horoscope.starSign} tarot card. Write the star sign in the center bottom of the card in bold letters.
+
+# Cat
+${horoscope.catDescription}
+
+# Situation
+${horoscope.situationDescription}
+      `
+      : "Loading text",
     { model: "flux-anime" }
   );
 
@@ -42,11 +55,14 @@ function App() {
         type: "text",
         text: `
 The pet's name is ${petName} and birth date is ${birthDate}.
+Today is ${new Date().toLocaleDateString()}.
 
 return a json object with the following structure:
 {
 "horoscope": "The horoscope text",
-"imageDescription": "The image description"
+"starSign": "The star sign of the pet",
+"catDescription": "detailed cat description",
+"situationDescription": "vivid situation description"
 }
 `,
       },
@@ -72,7 +88,7 @@ return a json object with the following structure:
     <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader>
-          <CardTitle cflassName="text-3xl font-bold text-center text-purple-700">
+          <CardTitle className="text-3xl font-bold text-center text-purple-700">
             Pet Horoscope
           </CardTitle>
         </CardHeader>
@@ -109,11 +125,11 @@ return a json object with the following structure:
           </div>
           <div className="space-y-2">
             <Label htmlFor="birth-date" className="text-lg font-medium">
-              Pet's Birth Date
+              Pet's Birth Date (MM-DD)
             </Label>
             <Input
               id="birth-date"
-              type="date"
+              type="text"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
             />
@@ -133,10 +149,9 @@ return a json object with the following structure:
               </h3>
               <img
                 src={imageUrl}
-                alt="Horoscope visualization"
-                className="rounded-lg max-h-48 mx-auto"
+                alt={horoscope.catDescription}
+                className="rounded-lg max-h-96 mx-auto"
               />
-              <p className="text-center italic">{horoscope.imageDescription}</p>
               <p className="text-center italic">{horoscope.horoscope}</p>
             </div>
           )}

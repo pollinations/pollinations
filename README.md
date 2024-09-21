@@ -10,8 +10,9 @@ Welcome to the **@pollinations/react** library! This repository offers an intera
 
 ## 🛠️ Hooks
 
-- **`usePollinationsImage`**: A custom hook for managing image generation.
-- **`usePollinationsText`**: A custom hook for handling text generation.
+- **`usePollinationsImage`**: The hook allows you to generate image
+- **`usePollinationsText`**: The hook allows you to generate text
+- **`usePollinationsChat`**: The hook allows you to generate chat
 
 ### Component Overview
 
@@ -49,6 +50,8 @@ Follow these steps to set up the project locally:
 
 - **Real-time code and component previews**: See changes as you make them.
 - **Responsive design**: Seamless viewing experience on any device.
+- **Models**: real-time updates with available models.
+- **Copy&Past**: You can easily test copy and paste
 
 ## TODO
 
@@ -63,8 +66,8 @@ Follow these steps to set up the project locally:
 - [ ] Document the parameters for each component.
 - [ ] Improve markdown result rendering.
 - [ ] Introduce loading indicators for modifications.
-- [ ] Create documentation for hooks.
-
+- [X] Create documentation for hooks.
+- [ ] Create Hooks documentation with preview
 ---
 
 ## License
@@ -78,4 +81,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 - Discover the [Storytelling example](https://storytelling.karma.yt/) for creative applications.
 - Learn more about the project at [Pollinations.ai](https://pollinations.ai/readme).
 
-### Made with ❤️ by the [Pollinations.ai](https://pollinations.ai) Team
+### Made with ❤️ by the [Pollinations.ai](https://pollinations.ai) Team & [Karma.yt](https://karma.yt)

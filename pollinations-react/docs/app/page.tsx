@@ -191,6 +191,12 @@ const PollinationsDynamicExamples: React.FC = () => {
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
               placeholder="Enter a prompt for text generation"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault(); // Prevent form submission if inside a form
+                  handleSendText(); // Call the function to send the image
+                }
+              }}
               className="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
             />
             <Button onClick={handleSendText} className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
@@ -237,6 +243,12 @@ const PollinationsDynamicExamples: React.FC = () => {
             <Input
               value={imageInput}
               onChange={(e) => setImageInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault(); // Prevent form submission if inside a form
+                  handleSendImage(); // Call the function to send the image
+                }
+              }}
               placeholder="Enter a prompt for image generation"
               className="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
             />
@@ -293,6 +305,12 @@ const PollinationsDynamicExamples: React.FC = () => {
               <Input
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent form submission if inside a form
+                    handleSendChatMessage(); // Call the function to send the image
+                  }
+                }}
                 placeholder="Type a message"
                 className="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
               />

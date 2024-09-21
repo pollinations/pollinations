@@ -193,8 +193,8 @@ const PollinationsDynamicExamples: React.FC = () => {
               placeholder="Enter a prompt for text generation"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  e.preventDefault(); // Prevent form submission if inside a form
-                  handleSendText(); // Call the function to send the image
+                  e.preventDefault(); 
+                  handleSendText(); 
                 }
               }}
               className="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
@@ -245,8 +245,8 @@ const PollinationsDynamicExamples: React.FC = () => {
               onChange={(e) => setImageInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  e.preventDefault(); // Prevent form submission if inside a form
-                  handleSendImage(); // Call the function to send the image
+                  e.preventDefault();
+                  handleSendImage(); 
                 }
               }}
               placeholder="Enter a prompt for image generation"

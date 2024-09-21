@@ -46,29 +46,37 @@ Follow these steps to set up the project locally:
 4. **Open the documentation page:**
    Navigate to [http://localhost:3000](http://localhost:3000) in your browser to see the app in action. You can modify the code by editing the `app/page.tsx` file, with changes reflecting in real-time.
 
+Here’s a refined and organized version of the **Features** and **TODO** sections:
+
+---
+
 ## Features
 
-- **Real-time components and hooks previews**: See changes as you make them.
-- **Responsive design**: Seamless viewing experience on any device.
-- **Models**: real-time updates with available models.
-- **Copy&Past**: You can easily test copy and paste
+- **Real-time Component Previews**: Instantly see the effects of your changes with live component and hook previews.
+- **Responsive Design**: Optimized for all devices, ensuring a seamless experience whether on desktop, tablet, or mobile.
+- **Dynamic Model Updates**: Automatically fetches and updates the list of available models in real-time.
+- **Effortless Copy & Paste**: Easily copy code snippets or content to quickly test and integrate in your projects.
+
+---
 
 ## TODO
 
-- [X] Implement real-time updates with available models.
-- [x] Allow model selection for Text Generative.
-- [x] Enable selection of image size.
-- [x] Provide seed selection functionality.
-- [X] Add model selection for Image.
+- [X] Implement real-time updates for available models.
+- [X] Allow model selection for text generation.
+- [X] Enable image size selection functionality.
+- [X] Provide seed selection options.
+- [X] Add model selection for image generation.
 - [X] Implement a complete dark/light mode toggle.
 - [X] Add a "Copy Code" button for easy code copying.
-- [X] Improve markdown result rendering.
-- [X] Create documentation for hooks.
-- [X] Create Hooks documentation with preview
-- [ ] Add onChange with debounce
-- [ ] Document the parameters for each component and hooks\.
-- [ ] Introduce loading indicators for modifications.
-- [ ] Improve documentation with all parameters.
+- [X] Improve markdown rendering for better result visualization.
+- [X] Create comprehensive documentation for hooks.
+- [X] Add preview functionality in the hooks documentation.
+- [ ] Add `onChange` functionality with debounce for better performance.
+- [ ] Document all parameters for components and hooks.
+- [ ] Introduce loading indicators for asynchronous actions.
+- [ ] Enhance documentation to cover all possible parameters.
+- [ ] Incorporate pollinations.ai’s visual CSS styling pattern into the documentation.
+
 ---
 
 ## License

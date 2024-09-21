@@ -150,6 +150,7 @@ return a json object with the following structure:
                 alt={horoscope.petDescription}
                 className="rounded-lg max-h-96 mx-auto"
               />
+              <p className="text-center font-bold">{horoscope.starSign}</p>
               <p className="text-center italic">{horoscope.horoscope}</p>
             </div>
           )}

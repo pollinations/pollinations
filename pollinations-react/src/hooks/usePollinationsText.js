@@ -42,7 +42,7 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = -1, systemPrompt, model } = options;
+    const { seed = 42, systemPrompt, model } = options;
 
     // State to hold the generated text
     const [text, setText] = useState("");
@@ -52,7 +52,6 @@ const usePollinationsText = (prompt, options = {}) => {
         if (prompt === null) return;
 
         // Calculate an effective seed, either random or user-provided
-        const effectiveSeed = seed === -1 ? Math.floor(Math.random() * 20) + 1 : seed;
 
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];

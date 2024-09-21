@@ -1,0 +1,11 @@
+[Unit]
+Description=Turbo Service
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/pollinations/serverConfigAndScripts/turbo-startup.sh
+User=ubuntu
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

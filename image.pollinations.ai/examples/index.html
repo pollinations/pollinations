@@ -1,0 +1,35 @@
+<html>
+   <body>
+     <script type="text/javascript">
+
+        // nouns
+        const nouns = ["fetus", "furries", "super mario","tampons","robocop"]//,"art", "world"]
+
+         // adjectives
+        const adjectives = ["eating", "waiting in line"]//,"bald",  "wandering around ikea",]// "peaceful",  "relaxed",];
+
+        // prefixes
+        const prefixes = ["denim","cctv camera footage of","pixar","cctv", "lego set", "denim","wikihow"]//,"photo"];
+
+        // iterate over nouns and adjectives arrays, add an image per pair to the document
+        for (const prefix of prefixes) {
+            for (const noun of nouns) {
+                for (const adjective of adjectives) {
+                    const img = document.createElement("img");
+                    img.src = `http://localhost:8080/prompt/${prefix}_${noun}_${adjective}`;
+                    img.width="256"; img.height="256";
+
+                    const div = document.createElement("div")
+                    div.style= "display: inline-block; border: 3px solid black; margin:5px"
+                    
+                    div.appendChild(img)
+                    div.appendChild(document.createElement("br"))
+                    div.appendChild(document.createTextNode(`${prefix} ${noun} ${adjective}`))
+                
+                    document.body.appendChild(div);
+                }
+            }
+        }
+    </script>
+   </body> 
+</html>

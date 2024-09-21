@@ -1,68 +1,95 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { PollinationsMarkdown, PollinationsText } from "@pollinations/react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import "./index.css";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [petImage, setPetImage] = useState(null);
+  const [birthDate, setBirthDate] = useState("");
+  const [horoscope, setHoroscope] = useState(null);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPetImage(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const generateHoroscope = () => {
+    // Mock AI call for horoscope generation
+    const mockHoroscope = {
+      text: "Your furry friend is in for a treat! The stars align to bring joy and excitement. Expect lots of belly rubs and tasty snacks in the near future.",
+      image: "https://example.com/mock-horoscope-image.jpg",
+    };
+    setHoroscope(mockHoroscope);
+  };
 
   return (
-    <div>
-      <PollinationsMarkdown model="mistral">
-        how to end my life easily
-      </PollinationsMarkdown>
-      <Card className="w-[350px]">
+    <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
-            Vite + React
+          <CardTitle cflassName="text-3xl font-bold text-center text-purple-700">
+            Pet Horoscope
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex justify-center space-x-4 mb-6">
-            <a
-              href="https://vitejs.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <img src="/vite.svg" className="h-16 w-16" alt="Vite logo" />
-            </a>
-            <a
-              href="https://react.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="pet-image" className="text-lg font-medium">
+              Upload Your Pet's Image
+            </Label>
+            <Input
+              id="pet-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="cursor-pointer"
+            />
+            {petImage && (
               <img
-                src="/src/assets/react.svg"
-                className="h-16 w-16"
-                alt="React logo"
+                src={petImage}
+                alt="Your pet"
+                className="mt-2 rounded-lg max-h-48 mx-auto"
               />
-            </a>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="birth-date" className="text-lg font-medium">
+              Pet's Birth Date
+            </Label>
+            <Input
+              id="birth-date"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
           </div>
           <Button
-            onClick={() => setCount((count) => count + 1)}
-            className="w-full"
+            onClick={generateHoroscope}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            disabled={!petImage || !birthDate}
           >
-            Count is {count}
+            Generate Horoscope
           </Button>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            Edit <code className="text-primary">src/App.jsx</code> and save to
-            test HMR
-          </p>
+          {horoscope && (
+            <div className="space-y-4">
+              <Separator />
+              <h3 className="text-xl font-semibold text-center text-purple-700">
+                Your Pet's Horoscope
+              </h3>
+              <img
+                src={horoscope.image}
+                alt="Horoscope visualization"
+                className="rounded-lg max-h-48 mx-auto"
+              />
+              <p className="text-center italic">{horoscope.text}</p>
+            </div>
+          )}
         </CardContent>
-        <Separator />
-        <CardFooter>
-          <p className="text-center text-sm text-muted-foreground w-full">
-            Click on the Vite and React logos to learn more
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

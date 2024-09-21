@@ -1,6 +1,57 @@
 import { useState, useEffect } from 'react';
 import memoize from 'lodash.memoize';
 
+// Memoized version of fetchPollinationsText
+const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.stringify);
+
+/**
+ * Custom hook to generate text using the Pollinations API.
+ * 
+ * This hook encapsulates the logic for making a POST request to the Pollinations text generation API,
+ * handling memoization, and cleaning the received markdown data.
+ * 
+ * @param {string} prompt - The user's input prompt for text generation.
+ * @param {Object} options - Configuration options for text generation.
+ * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
+ * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
+ * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
+ * @returns {Object} - An object containing the generated text and loading state.
+ */
+const usePollinationsText = (prompt, options = {}) => {
+    // Destructure options with default values
+    const { seed = 42, systemPrompt, model, jsonMode = false } = options;
+
+    // State to hold the generated text and loading state
+    const [text, setText] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Effect to fetch or retrieve memoized text
+    useEffect(() => {
+        if (prompt === null) return;
+
+        setIsLoading(true);
+
+        // Prepare the request body for the API call
+        const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
+        messages.push({ role: "user", content: prompt });
+        const requestBody = { messages, seed, model, jsonMode };
+
+        memoizedFetchPollinationsText(requestBody)
+            .then(cleanedData => {
+                setText(cleanedData);
+                setIsLoading(false);
+            })
+            .catch((error) => {
+                console.error("Error in usePollinationsText:", error);
+                setText(`An error occurred while generating text: ${error.message}. Please try again.`);
+                setIsLoading(false);
+            });
+    }, [prompt, systemPrompt, seed, model, jsonMode]);
+
+    return { text, isLoading };
+};
+
+
 /**
  * Function to fetch text from the Pollinations API.
  * 
@@ -25,52 +76,6 @@ const fetchPollinationsText = async (requestBody) => {
     }
 };
 
-// Memoized version of fetchPollinationsText
-const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.stringify);
-
-/**
- * Custom hook to generate text using the Pollinations API.
- * 
- * This hook encapsulates the logic for making a POST request to the Pollinations text generation API,
- * handling memoization, and cleaning the received markdown data.
- * 
- * @param {string} prompt - The user's input prompt for text generation.
- * @param {Object} options - Configuration options for text generation.
- * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
- * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
- * @returns {Object|string} - The generated text or parsed JSON object.
- */
-const usePollinationsText = (prompt, options = {}) => {
-    // Destructure options with default values
-    const { seed = -1, systemPrompt, model, jsonMode = false } = options;
-
-    // State to hold the generated text
-    const [text, setText] = useState("");
-
-    // Effect to fetch or retrieve memoized text
-    useEffect(() => {
-        if (prompt === null) return;
-
-        // Calculate an effective seed, either random or user-provided
-
-        // Prepare the request body for the API call
-        const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
-        messages.push({ role: "user", content: prompt });
-        const requestBody = { messages, seed: effectiveSeed, model, jsonMode };
-
-        memoizedFetchPollinationsText(requestBody)
-            .then(cleanedData => {
-                setText(cleanedData);
-            })
-            .catch((error) => {
-                console.error("Error in usePollinationsText:", error);
-                setText(`An error occurred while generating text: ${error.message}. Please try again.`);
-            });
-    }, [prompt, systemPrompt, seed, model, jsonMode]);
-
-    return text;
-};
 
 /**
  * Helper function to clean markdown data.

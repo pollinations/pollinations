@@ -5,7 +5,7 @@ import memoize from 'lodash.memoize';
  * Function to fetch text from the Pollinations API.
  * 
  * @param {Object} requestBody - The request body for the API call.
- * @returns {Promise<string>} - A promise that resolves to the cleaned text data.
+ * @returns {Promise<string|Object>} - A promise that resolves to the cleaned text data or parsed JSON.
  */
 const fetchPollinationsText = async (requestBody) => {
     try {
@@ -18,7 +18,7 @@ const fetchPollinationsText = async (requestBody) => {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.text();
-        return cleanMarkdown(data);
+        return requestBody.jsonMode ? JSON.parse(data) : cleanMarkdown(data);
     } catch (error) {
         console.error("Error fetching text from Pollinations API:", error);
         throw error;
@@ -38,11 +38,12 @@ const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.string
  * @param {Object} options - Configuration options for text generation.
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
- * @returns {Object} - An object containing the generated text.
+ * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
+ * @returns {Object|string} - The generated text or parsed JSON object.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = 42, systemPrompt, model } = options;
+    const { seed = -1, systemPrompt, model, jsonMode = false } = options;
 
     // State to hold the generated text
     const [text, setText] = useState("");
@@ -56,7 +57,7 @@ const usePollinationsText = (prompt, options = {}) => {
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
         messages.push({ role: "user", content: prompt });
-        const requestBody = { messages, seed: effectiveSeed, model };
+        const requestBody = { messages, seed: effectiveSeed, model, jsonMode };
 
         memoizedFetchPollinationsText(requestBody)
             .then(cleanedData => {
@@ -66,7 +67,7 @@ const usePollinationsText = (prompt, options = {}) => {
                 console.error("Error in usePollinationsText:", error);
                 setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
-    }, [prompt, systemPrompt, seed, model]);
+    }, [prompt, systemPrompt, seed, model, jsonMode]);
 
     return text;
 };

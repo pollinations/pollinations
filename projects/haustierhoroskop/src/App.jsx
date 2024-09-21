@@ -38,10 +38,10 @@ Unique event / Celebrity
 
 Return a json object with the following structure:
 {
-    "horoscope": "The horoscope text (ca. 2 paragraphs)",
-    "petDescription": "detailed pet description",
+    "horoscope": "The horoscope text (ca. 1 paragraph)",
+    "petDescription": "detailed pet description (2 sentences)",
     "starSign": "The star sign of the pet",
-    "uniqueEvent": "unique events of the star sign (1 paragraph)"
+    "uniqueEvent": "unique event / celebrity (1 sentence)"
 }`,
   });
 

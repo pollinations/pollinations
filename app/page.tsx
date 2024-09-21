@@ -210,7 +210,7 @@ const PollinationsDynamicExamples: React.FC = () => {
           <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md text-gray-800 dark:text-gray-200 relative">
             {generatedText ? (
               <>
-                <ReactMarkdown>{generatedText}</ReactMarkdown>
+                <Markdown>{generatedText}</Markdown>
                 <Button
                   onClick={() => handleCopyText(generatedText)}
                   className="absolute top-2 right-2 p-1 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -278,7 +278,7 @@ const PollinationsDynamicExamples: React.FC = () => {
               {messages.map((msg: Message, idx: number) => (
                 <div key={idx} className="relative p-2 rounded-md bg-gray-200 dark:bg-gray-600">
                   <strong className="font-bold text-gray-900 dark:text-white">{msg.role}:</strong>{' '}
-                  <span className="text-gray-800 dark:text-gray-200"><ReactMarkdown>{msg.content}</ReactMarkdown></span>
+                  <span className="text-gray-800 dark:text-gray-200"><Markdown>{msg.content}</Markdown></span>
                   <Button
                     onClick={() => handleCopyText(msg.content)}
                     className="absolute top-1 right-1 p-1 bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500"

@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import memoize from 'lodash.memoize';
 
-// Memoized version of fetchPollinationsText
-const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.stringify);
-
 /**
  * Custom hook to generate text using the Pollinations API.
  * 
@@ -72,6 +69,12 @@ const fetchPollinationsText = async (requestBody) => {
         throw error;
     }
 };
+
+
+
+// Memoized version of fetchPollinationsText
+const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.stringify);
+
 
 
 /**

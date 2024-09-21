@@ -20,35 +20,33 @@ function App() {
     systemPrompt: `
     The end goal is to create a horoscope text and image for the pet in the form of a json object.
     
-    The a horoscope text:, a mix of serious and funny, the age in dog or cat years, other celebrities who were born on this day, funny days (Coconut Day etc.), and then a photo that is generated from the pet's photo: a typical pet with the zodiac sign Fish with favorite activities or the dog merged as the famous personality who was also born on that day.
+    The a horoscope text:, a mix of serious and funny, the age in dog or cat years, other celebrities who were born on this day, well-known days such as Halloween, World Cat Day, etc.
     
-    The cat description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+    The pet description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
 
-    The situation description contains a vivid description of the horoscope suitable for an image generator.
+    The situation description contains a vivid description of the horoscope situation such as the day's unique events, a celebrity born on this day suitable for an image generator.
     
     return a json object with the following structure:
     {
     "horoscope": "The horoscope text",
-    "catDescription": "detailed cat description",
+    "petDescription": "detailed pet description",
     "situationDescription": "vivid situation description",
     "starSign": "The star sign of the pet"
     }`,
   });
 
-  const imageUrl = usePollinationsImage(
-    horoscope?.catDescription
-      ? `A anime style ${horoscope.starSign} tarot card. Write the star sign in the center bottom of the card in bold letters.
+  console.log("horoscope", horoscope);
 
-# Cat
-${horoscope.catDescription}
-
-# Situation
+  const imagePrompt = horoscope?.petDescription
+    ? `A anime style ${horoscope.starSign} tarot card. Write the star sign in the center bottom of the card in bold letters.
+${horoscope.petDescription}
 ${horoscope.situationDescription}
       `
-      : "Loading text",
-    { model: "flux-anime" }
-  );
+    : "Loading text";
 
+  console.log("imagePrompt", imagePrompt);
+  const imageUrl = usePollinationsImage(imagePrompt);
+  console.log("imageUrl", imageUrl);
   const generateHoroscope = () => {
     setPrompt([
       {
@@ -61,7 +59,7 @@ return a json object with the following structure:
 {
 "horoscope": "The horoscope text",
 "starSign": "The star sign of the pet",
-"catDescription": "detailed cat description",
+"petDescription": "detailed pet description",
 "situationDescription": "vivid situation description"
 }
 `,
@@ -149,7 +147,7 @@ return a json object with the following structure:
               </h3>
               <img
                 src={imageUrl}
-                alt={horoscope.catDescription}
+                alt={horoscope.petDescription}
                 className="rounded-lg max-h-96 mx-auto"
               />
               <p className="text-center italic">{horoscope.horoscope}</p>

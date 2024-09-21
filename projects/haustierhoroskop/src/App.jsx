@@ -99,19 +99,21 @@ function App() {
           >
             Generate Horoscope
           </Button>
-          <div className="space-y-4">
-            <Separator />
-            <h3 className="text-xl font-semibold text-center text-purple-700">
-              Your Pet's Horoscope
-            </h3>
-            <img
-              src={imageUrl}
-              alt="Horoscope visualization"
-              className="rounded-lg max-h-48 mx-auto"
-            />
-            <p className="text-center italic">{petDescription}</p>
-            <p className="text-center italic">{horoscope?.text}</p>
-          </div>
+          {horoscope && (
+            <div className="space-y-4">
+              <Separator />
+              <h3 className="text-xl font-semibold text-center text-purple-700">
+                Your Pet's Horoscope
+              </h3>
+              <img
+                src={imageUrl}
+                alt="Horoscope visualization"
+                className="rounded-lg max-h-48 mx-auto"
+              />
+              <p className="text-center italic">{petDescription}</p>
+              <p className="text-center italic">{horoscope?.text}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

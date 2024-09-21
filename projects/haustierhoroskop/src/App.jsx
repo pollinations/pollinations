@@ -45,7 +45,7 @@ ${horoscope.situationDescription}
     : "Loading text";
 
   console.log("imagePrompt", imagePrompt);
-  const imageUrl = usePollinationsImage(imagePrompt);
+  const imageUrl = usePollinationsImage(imagePrompt, { model: "flux" });
   console.log("imageUrl", imageUrl);
   const generateHoroscope = () => {
     setPrompt([

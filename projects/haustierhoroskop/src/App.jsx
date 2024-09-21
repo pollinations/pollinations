@@ -18,29 +18,41 @@ function App() {
     seed: 42,
     jsonMode: true,
     systemPrompt: `
-    The end goal is to create a horoscope text and image for the pet in the form of a json object.
-    
-    The a horoscope text:, a mix of serious and funny, the age in dog or cat years, other celebrities who were born on this day, well-known days such as Halloween, World Cat Day, etc.
-    
-    The pet description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+Goal: create a horoscope text and image descriptionfor the pet in the form of a json object.
 
-    The situation description contains a vivid description of the horoscope situation such as the day's unique events, a celebrity born on this day suitable for an image generator.
-    
-    return a json object with the following structure:
-    {
-    "horoscope": "The horoscope text",
+Analyze the attached photo of the pet and infer the following facts.
+
+Horoscope text
+- a mix of serious and funny
+- the age in dog or cat years
+- one interesting fact related to the birthday: e.g. other celebrities born on this day, Halloween, World Cat Day, etc. select one that is obvious in an image.
+- include mmany emojis and bold italic markdown formatting
+
+Pet image prompt
+- the description of the pet in the context of the horoscope suitable for an image generator. 
+- Include details such as breed, age, gender, and any distinguishing visual features.
+- Dont include the name
+
+Unique event / Celebrity
+- Select the event or celebrity  included in the horoscope text and describe it suitable for an image generator. (1 paragraph)
+
+Return a json object with the following structure:
+{
+    "horoscope": "The horoscope text (ca. 2 paragraphs)",
     "petDescription": "detailed pet description",
-    "situationDescription": "vivid situation description",
-    "starSign": "The star sign of the pet"
-    }`,
+    "starSign": "The star sign of the pet",
+    "uniqueEvent": "unique events of the star sign (1 paragraph)"
+}`,
   });
 
   console.log("horoscope", horoscope);
 
   const imagePrompt = horoscope?.petDescription
-    ? `A anime style ${horoscope.starSign} tarot card. Write the star sign in the center bottom of the card in bold letters.
+    ? `A anime style ${horoscope.starSign} tarot card. Write star sign "${horoscope.starSign}" bold at center bottom.
+
 ${horoscope.petDescription}
-${horoscope.situationDescription}
+
+${horoscope.uniqueEvent}
       `
     : "Loading text";
 
@@ -54,14 +66,6 @@ ${horoscope.situationDescription}
         text: `
 The pet's name is ${petName} and birth date is ${birthDate}.
 Today is ${new Date().toLocaleDateString()}.
-
-return a json object with the following structure:
-{
-"horoscope": "The horoscope text",
-"starSign": "The star sign of the pet",
-"petDescription": "detailed pet description",
-"situationDescription": "vivid situation description"
-}
 `,
       },
       {
@@ -151,7 +155,14 @@ return a json object with the following structure:
                 className="rounded-lg max-h-96 mx-auto"
               />
               <p className="text-center font-bold">{horoscope.starSign}</p>
-              <p className="text-center italic">{horoscope.horoscope}</p>
+              {horoscope.horoscope.split("\n").map((line, index) => (
+                <p key={index} className="text-center italic">
+                  {line}
+                </p>
+              ))}
+              <Separator />
+              <p className="text-center font-bold">Unique Events</p>
+              <p className="text-center italic">{horoscope.uniqueEvent}</p>
             </div>
           )}
         </CardContent>

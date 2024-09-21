@@ -48,7 +48,7 @@ Follow these steps to set up the project locally:
 
 ## Features
 
-- **Real-time code and component previews**: See changes as you make them.
+- **Real-time components and hooks previews**: See changes as you make them.
 - **Responsive design**: Seamless viewing experience on any device.
 - **Models**: real-time updates with available models.
 - **Copy&Past**: You can easily test copy and paste
@@ -56,18 +56,19 @@ Follow these steps to set up the project locally:
 ## TODO
 
 - [X] Implement real-time updates with available models.
-- [ ] Add onChange with debounce
 - [x] Allow model selection for Text Generative.
 - [x] Enable selection of image size.
 - [x] Provide seed selection functionality.
 - [X] Add model selection for Image.
-- [ ] Implement a complete dark/light mode toggle.
+- [X] Implement a complete dark/light mode toggle.
 - [X] Add a "Copy Code" button for easy code copying.
-- [ ] Document the parameters for each component.
-- [ ] Improve markdown result rendering.
-- [ ] Introduce loading indicators for modifications.
+- [X] Improve markdown result rendering.
 - [X] Create documentation for hooks.
-- [ ] Create Hooks documentation with preview
+- [X] Create Hooks documentation with preview
+- [ ] Add onChange with debounce
+- [ ] Document the parameters for each component and hooks\.
+- [ ] Introduce loading indicators for modifications.
+- [ ] Improve documentation with all parameters.
 ---
 
 ## License

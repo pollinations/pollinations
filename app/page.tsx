@@ -8,7 +8,6 @@ import { ThemeToggle } from '@/components/theme-toggle';
 // @ts-expect-error todo: interfaces
 import { PollinationsText, PollinationsImage, PollinationsMarkdown, usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
 import { Copy, Github, Send } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import Markdown from 'react-markdown';
 
 // Constants

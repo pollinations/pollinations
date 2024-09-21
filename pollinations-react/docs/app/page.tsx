@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { PollinationsText, PollinationsImage, PollinationsMarkdown, usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
 import { Copy, Github, Send } from 'lucide-react';
 import Markdown from 'react-markdown';
+import { useDebounce } from "@uidotdev/usehooks";
 
 // Constants
 const DEFAULT_SEED = 42;
@@ -319,6 +320,9 @@ export default function PollinationsComponentDocs() {
     }))
   );
 
+
+  const debouncedComponentStates = useDebounce(componentStates, 2000);
+
   // State for available models
   const [textModels, setTextModels] = useState<string[]>(DEFAULT_TEXT_MODELS);
   const [imageModels, setImageModels] = useState<string[]>(DEFAULT_IMAGE_MODELS);
@@ -482,7 +486,7 @@ export default function PollinationsComponentDocs() {
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-2">Preview:</h3>
               <div className="border border-border p-4 rounded-md overflow-x-auto bg-card">
-                {component.preview(componentStates[index])}
+                {component.preview(debouncedComponentStates[index])}
               </div>
             </div>
           </section>

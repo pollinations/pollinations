@@ -1,5 +1,5 @@
 import React from 'react';
-import usePollinationsImage from '../hooks/usePollinationsImage';
+import usePollinationsImage from '../hooks/usePollinationsImage.js';
 
 /**
  * Component to display a Pollinations image based on the given prompt and options.

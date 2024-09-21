@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import usePollinationsText from '../hooks/usePollinationsText';
+import usePollinationsText from '../hooks/usePollinationsText.js';
 
 /**
  * Component to display markdown text from Pollinations based on the given prompt.

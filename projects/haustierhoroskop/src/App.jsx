@@ -5,11 +5,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import "./index.css";
+import { usePollinationsText } from "@pollinations/react";
 
 function App() {
   const [petImage, setPetImage] = useState(null);
   const [birthDate, setBirthDate] = useState("");
   const [horoscope, setHoroscope] = useState(null);
+
+  const petDescription = usePollinationsText(
+    petImage
+      ? [
+          {
+            type: "text",
+            text: "Describe the pet in this image suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.",
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: petImage,
+            },
+          },
+        ]
+      : null,
+    { seed: 42 }
+  );
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -86,6 +105,7 @@ function App() {
                 alt="Horoscope visualization"
                 className="rounded-lg max-h-48 mx-auto"
               />
+              <p className="text-center italic">{petDescription}</p>
               <p className="text-center italic">{horoscope.text}</p>
             </div>
           )}

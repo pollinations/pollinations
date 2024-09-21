@@ -1,6 +1,6 @@
 {
   "name": "@pollinations/react",
-  "version": "1.4.9",
+  "version": "1.5.3",
   "description": "React components and hooks for Pollinations AI",
   "main": "./src/index.js",
   "module": "./src/index.js",
@@ -8,14 +8,6 @@
     ".": {
       "import": "./src/index.js",
       "require": "./src/index.js"
-    },
-    "./hooks": {
-      "import": "./src/hooks/index.js",
-      "require": "./src/hooks/index.js"
-    },
-    "./components": {
-      "import": "./src/components/index.js",
-      "require": "./src/components/index.js"
     }
   },
   "sideEffects": false,
@@ -25,6 +17,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "type": "module",
   "dependencies": {
     "lodash.memoize": "^4.1.2",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",

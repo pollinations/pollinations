@@ -87,7 +87,7 @@ const pollinationComponents: ComponentConfig[] = [
   {
     name: 'PollinationsImage',
     description: "Generates and displays images using Pollination's API.",
-    defaultPrompt: 'A detailed illustration of hand-pollination',
+    defaultPrompt: 'A detailed illustration of pollination',
     generateCode: ({ prompt, model, seed, width, height }) =>
       `<PollinationsImage prompt="${prompt}" width={${width}} height={${height}} seed={${seed}} model="${model}" />`,
     preview: ({ prompt, model, seed, width, height }) => (
@@ -97,7 +97,7 @@ const pollinationComponents: ComponentConfig[] = [
   {
     name: 'PollinationsMarkdown',
     description: "Generates and displays markdown text using Pollination's API.",
-    defaultPrompt: 'Create a markdown guide on hand-pollination techniques',
+    defaultPrompt: 'Create a markdown guide on pollination techniques',
     generateCode: ({ prompt, model, seed }) =>
       `<PollinationsMarkdown seed={${seed}} model="${model}" systemPrompt="You are a technical writer.">${prompt}</PollinationsMarkdown>`,
     preview: ({ prompt, model, seed }) => (

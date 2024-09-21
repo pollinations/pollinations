@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import "./index.css";
-import { usePollinationsText } from "@pollinations/react";
+import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 
 function App() {
   const [petImage, setPetImage] = useState(null);
@@ -28,6 +28,11 @@ function App() {
         ]
       : null,
     { seed: 42 }
+  );
+
+  const imageUrl = usePollinationsImage(
+    petDescription ? `Anime style. ${petDescription}` : "loading...",
+    { model: "flux-anime" }
   );
 
   const handleImageUpload = (event) => {
@@ -94,21 +99,19 @@ function App() {
           >
             Generate Horoscope
           </Button>
-          {horoscope && (
-            <div className="space-y-4">
-              <Separator />
-              <h3 className="text-xl font-semibold text-center text-purple-700">
-                Your Pet's Horoscope
-              </h3>
-              <img
-                src={horoscope.image}
-                alt="Horoscope visualization"
-                className="rounded-lg max-h-48 mx-auto"
-              />
-              <p className="text-center italic">{petDescription}</p>
-              <p className="text-center italic">{horoscope.text}</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            <Separator />
+            <h3 className="text-xl font-semibold text-center text-purple-700">
+              Your Pet's Horoscope
+            </h3>
+            <img
+              src={imageUrl}
+              alt="Horoscope visualization"
+              className="rounded-lg max-h-48 mx-auto"
+            />
+            <p className="text-center italic">{petDescription}</p>
+            <p className="text-center italic">{horoscope?.text}</p>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,94 +1,171 @@
-# @pollinations/react Documentation
+# 🌸 Pollinations Generative React Hooks & Components 🌸
 
-Welcome to the **@pollinations/react** library! This repository offers an interactive, real-time preview for three essential React components, allowing users to test and customize them effortlessly.
+A simple way to generate images, text and markdown using the Pollinations API in your React projects.
+
+## 🚀 Quick Start
+
+Install the package:
+
+    npm install @pollinations/react
 
 ## 🧩 Components
 
-- **`<PollinationsText />`**: Generates and displays text based on user prompts.
-- **`<PollinationsImage />`**: Creates images using specified parameters.
-- **`<PollinationsMarkdown />`**: Renders markdown content from user inputs.
+### PollinationsText
+
+The PollinationsText component simplifies the process of generating and displaying plain text using Pollinations' API.
+
+    import React from 'react';
+    import { PollinationsText } from '@pollinations/react';
+
+    const MyComponent = () => (
+      <PollinationsText seed={42} model="mistral" systemPrompt="You are a helpful assistant.">
+        Write out Pollinations.AI terms and conditions in Chinese
+      </PollinationsText>
+    );
+
+    export default MyComponent;
+
+### PollinationsMarkdown
+
+The PollinationsMarkdown component simplifies the process of generating and displaying markdown text using Pollinations' API.
+
+    import React from 'react';
+    import { PollinationsMarkdown } from '@pollinations/react';
+
+    const RobotDocumentation = () => (
+      <PollinationsMarkdown seed={42} model="openai" systemPrompt="You are a technical writer.">
+        Create beautiful documentation about a Pollinating robot in markdown
+      </PollinationsMarkdown>
+    );
+
+    export default RobotDocumentation;
+
+### PollinationsImage
+
+The PollinationsImage component simplifies the process of generating and displaying images using Pollinations' API.
+
+    import React from 'react';
+    import { PollinationsImage } from '@pollinations/react';
+
+    const MyComponent = () => (
+      <PollinationsImage prompt="A beautiful sunset over the ocean" width={800} height={600} seed={42} />
+    );
+
+    export default MyComponent;
 
 ## 🛠️ Hooks
 
-- **`usePollinationsImage`**: The hook allows you to generate image
-- **`usePollinationsText`**: The hook allows you to generate text
-- **`usePollinationsChat`**: The hook allows you to generate chat
+### usePollinationsImage
 
-### Component Overview
+The usePollinationsImage hook allows you to generate image URLs from Pollinations' API and use them directly in your React components.
 
-Each component section on the documentation page includes:
+    import React from 'react';
+    import { usePollinationsImage } from '@pollinations/react';
 
-1. A clear title and description.
-2. An input field for entering prompts.
-3. A code block that displays the generated code based on user input.
-4. A real-time preview of the component with the provided prompt.
+    const SunsetImageComponent = () => {
+      const imageUrl = usePollinationsImage('A beautiful sunset over the ocean', {
+        width: 800,
+        height: 600,
+        seed: 42,
+        model: 'turbo',
+        nologo: true,
+        enhance: false
+      });
 
-## Getting Started
+      return (
+        <div>
+          {imageUrl ? <img src={imageUrl} alt="Generated sunset" /> : <p>Loading...</p>}
+        </div>
+      );
+    };
 
-Follow these steps to set up the project locally:
+    export default SunsetImageComponent;
 
-1. **Clone this repository:**
-   ```bash
-   git clone https://github.com/diogo-karma/pollinations-react-doc
-   cd pollinations-react-doc
-   ```
+#### Options
 
-2. **Install the necessary dependencies:**
-   ```bash
-   npm install # or pnpm install, bun install, or yarn
-   ```
+- `width` (number, default: 1024): The width of the generated image.
+- `height` (number, default: 1024): The height of the generated image.
+- `model` (string, default: 'turbo'): The model to use for image generation.
+- `seed` (number, default: -1): The seed for random image generation. If -1, a random seed will be used.
+- `nologo` (boolean, default: true): Whether to generate the image without a logo.
+- `enhance` (boolean, default: false): Whether to enhance the generated image.
 
-3. **Run the project:**
-   ```bash
-   npm run dev # or pnpm dev, bun dev, or yarn dev
-   ```
+### usePollinationsText
 
-4. **Open the documentation page:**
-   Navigate to [http://localhost:3000](http://localhost:3000) in your browser to see the app in action. You can modify the code by editing the `app/page.tsx` file, with changes reflecting in real-time.
+The usePollinationsText hook allows you to generate text from Pollinations' API and use it directly in your React components.
 
-Here’s a refined and organized version of the **Features** and **TODO** sections:
+    import React from 'react';
+    import { usePollinationsText } from '@pollinations/react';
+
+    const HaikuComponent = () => {
+      const text = usePollinationsText('Write a short haiku about Pollinations.AI', { 
+        seed: 42,
+        model: 'mistral',
+        systemPrompt: 'You are a poetic AI assistant.'
+      });
+      
+      return (
+        <div>
+          {text ? <p>{text}</p> : <p>Loading...</p>}
+        </div>
+      );
+    };
+
+    export default HaikuComponent;
+
+#### Options
+
+- `seed` (number, default: -1): The seed for random text generation. If -1, a random seed will be used.
+- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
+- `systemPrompt` (string, optional): A system prompt to set the behavior of the AI.
+
+### usePollinationsChat
+
+The usePollinationsChat hook allows you to generate chat responses from Pollinations' API and use them directly in your React components.
+
+    import React, { useState } from 'react';
+    import { usePollinationsChat } from '@pollinations/react';
+
+    const ChatComponent = () => {
+      const [input, setInput] = useState('');
+      const { sendUserMessage, messages } = usePollinationsChat([
+        { role: "system", content: "You are a helpful assistant" }
+      ], { 
+        seed: 42, 
+        jsonMode: false,
+        model: 'mistral'
+      });
+
+      const handleSend = () => {
+        sendUserMessage(input);
+        setInput('');
+      };
+
+      return (
+        <div>
+          <div>
+            {messages.map((msg, index) => (
+              <p key={index}><strong>{msg.role}:</strong> {msg.content}</p>
+            ))}
+          </div>
+          <input value={input} onChange={(e) => setInput(e.target.value)} />
+          <button onClick={handleSend}>Send</button>
+        </div>
+      );
+    };
+
+    export default ChatComponent;
+
+#### Options
+
+- `seed` (number, default: 42): The seed for random text generation.
+- `jsonMode` (boolean, default: false): Whether to parse the response as JSON.
+- `model` (string, default: 'openai'): The model to use for text generation. Options: 'openai', 'mistral'.
+
+## 📜 License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
 
 ---
 
-## Features
-
-- **Real-time Component Previews**: Instantly see the effects of your changes with live component and hook previews.
-- **Responsive Design**: Optimized for all devices, ensuring a seamless experience whether on desktop, tablet, or mobile.
-- **Dynamic Model Updates**: Automatically fetches and updates the list of available models in real-time.
-- **Effortless Copy & Paste**: Easily copy code snippets or content to quickly test and integrate in your projects.
-
----
-
-## TODO
-
-- [X] Implement real-time updates for available models.
-- [X] Allow model selection for text generation.
-- [X] Enable image size selection functionality.
-- [X] Provide seed selection options.
-- [X] Add model selection for image generation.
-- [X] Implement a complete dark/light mode toggle.
-- [X] Add a "Copy Code" button for easy code copying.
-- [X] Improve markdown rendering for better result visualization.
-- [X] Create comprehensive documentation for hooks.
-- [X] Add preview functionality in the hooks documentation.
-- [X] Add `onChange` functionality with debounce for better performance.
-- [X] Enable Enter key to trigger Send button in input hooks
-- [ ] Document all parameters for components and hooks.
-- [ ] Introduce loading indicators for asynchronous actions.
-- [ ] Enhance documentation to cover all possible parameters.
-- [ ] Incorporate pollinations.ai’s visual CSS styling pattern into the documentation.
-
----
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## 💡 Learn More
-
-- Explore the [Pollinations Generative React Hooks & Components](https://www.npmjs.com/package/@pollinations/react) on npm.
-- Try the [Chatbot example](https://karma.pollinations.ai) to see more of what the project offers.
-- Discover the [Storytelling example](https://storytelling.karma.yt/) for creative applications.
-- Learn more about the project at [Pollinations.ai](https://pollinations.ai/readme).
-
-### Made with ❤️ by the [Pollinations.ai](https://pollinations.ai) Team & [Karma.yt](https://karma.yt)
+Made with ❤️ by the Pollinations.AI team

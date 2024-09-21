@@ -21,15 +21,14 @@ const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
     const { seed = 42, systemPrompt, model, jsonMode = false } = options;
 
-    // State to hold the generated text and loading state
-    const [text, setText] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+    // State to hold the generated text
+    const [text, setText] = useState(null);
 
     // Effect to fetch or retrieve memoized text
     useEffect(() => {
         if (prompt === null) return;
 
-        setIsLoading(true);
+        setText(null);
 
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
@@ -39,16 +38,14 @@ const usePollinationsText = (prompt, options = {}) => {
         memoizedFetchPollinationsText(requestBody)
             .then(cleanedData => {
                 setText(cleanedData);
-                setIsLoading(false);
             })
             .catch((error) => {
                 console.error("Error in usePollinationsText:", error);
                 setText(`An error occurred while generating text: ${error.message}. Please try again.`);
-                setIsLoading(false);
             });
     }, [prompt, systemPrompt, seed, model, jsonMode]);
 
-    return { text, isLoading };
+    return text;
 };
 
 

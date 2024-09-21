@@ -9,31 +9,55 @@ import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 
 function App() {
   const [petImage, setPetImage] = useState(null);
-  const [birthDate, setBirthDate] = useState("");
-  const [horoscope, setHoroscope] = useState(null);
+  const [birthDate, setBirthDate] = useState("2020-01-01"); // Pre-filled reasonable birth date
+  const [petName, setPetName] = useState("Buddy"); // Pre-filled typical pet name
 
-  const petDescription = usePollinationsText(
-    petImage
-      ? [
-          {
-            type: "text",
-            text: "Describe the pet in this image suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.",
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: petImage,
-            },
-          },
-        ]
-      : null,
-    { seed: 42 }
-  );
+  const [prompt, setPrompt] = useState(null);
+
+  const horoscope = usePollinationsText(prompt, {
+    seed: 42,
+    jsonMode: true,
+    systemPrompt: `
+    The end goal is to create a horoscope text and image for the pet in the form of a json object.
+    
+    The a horoscope text:, a mix of serious and funny, the age in dog and cat years, other celebrities who were born on this day, funny days (Coconut Day etc.), and then a photo that is generated from the pet's photo: a typical dog with the zodiac sign Fish with favorite activities or the dog merged as the famous personality who was also born on that day.
+    
+    The image description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+    
+    return a json object with the following structure:
+    {
+    "horoscope": "The horoscope text",
+    "imageDescription": "The image description"
+    }`,
+  });
 
   const imageUrl = usePollinationsImage(
-    petDescription ? `Anime style. ${petDescription}` : "loading...",
+    horoscope?.imageDescription || "Loading text",
     { model: "flux-anime" }
   );
+
+  const generateHoroscope = () => {
+    setPrompt([
+      {
+        type: "text",
+        text: `
+The pet's name is ${petName} and birth date is ${birthDate}.
+
+return a json object with the following structure:
+{
+"horoscope": "The horoscope text",
+"imageDescription": "The image description"
+}
+`,
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: petImage,
+        },
+      },
+    ]);
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -42,15 +66,6 @@ function App() {
       reader.onload = (e) => setPetImage(e.target.result);
       reader.readAsDataURL(file);
     }
-  };
-
-  const generateHoroscope = () => {
-    // Mock AI call for horoscope generation
-    const mockHoroscope = {
-      text: "Your furry friend is in for a treat! The stars align to bring joy and excitement. Expect lots of belly rubs and tasty snacks in the near future.",
-      image: "https://example.com/mock-horoscope-image.jpg",
-    };
-    setHoroscope(mockHoroscope);
   };
 
   return (
@@ -82,6 +97,17 @@ function App() {
             )}
           </div>
           <div className="space-y-2">
+            <Label htmlFor="pet-name" className="text-lg font-medium">
+              Pet's Name
+            </Label>
+            <Input
+              id="pet-name"
+              type="text"
+              value={petName}
+              onChange={(e) => setPetName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="birth-date" className="text-lg font-medium">
               Pet's Birth Date
             </Label>
@@ -95,7 +121,7 @@ function App() {
           <Button
             onClick={generateHoroscope}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            disabled={!petImage || !birthDate}
+            disabled={!petImage || !birthDate || !petName}
           >
             Generate Horoscope
           </Button>
@@ -110,8 +136,8 @@ function App() {
                 alt="Horoscope visualization"
                 className="rounded-lg max-h-48 mx-auto"
               />
-              <p className="text-center italic">{petDescription}</p>
-              <p className="text-center italic">{horoscope?.text}</p>
+              <p className="text-center italic">{horoscope.imageDescription}</p>
+              <p className="text-center italic">{horoscope.horoscope}</p>
             </div>
           )}
         </CardContent>

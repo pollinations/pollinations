@@ -9,7 +9,7 @@ import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 
 function App() {
   const [petImage, setPetImage] = useState("https://i.imgur.com/wHQbITR.png");
-  const [birthDate, setBirthDate] = useState("01-04"); // Pre-filled reasonable birth date
+  const [birthDate, setBirthDate] = useState("01-04-2019"); // Pre-filled reasonable birth date in European format
   const [petName, setPetName] = useState("Julyk"); // Pre-filled typical pet name
 
   const [prompt, setPrompt] = useState(null);
@@ -17,38 +17,50 @@ function App() {
   const horoscope = usePollinationsText(prompt, {
     seed: 42,
     jsonMode: true,
+    model: "claude",
     systemPrompt: `
-    The end goal is to create a horoscope text and image for the pet in the form of a json object.
-    
-    The a horoscope text:, a mix of serious and funny, the age in dog or cat years, other celebrities who were born on this day, funny days (Coconut Day etc.), and then a photo that is generated from the pet's photo: a typical pet with the zodiac sign Fish with favorite activities or the dog merged as the famous personality who was also born on that day.
-    
-    The cat description contains the description of the pet in the context of the horoscope suitable for an image generator. Include details such as breed, age, gender, and any distinguishing features.
+Goal: create a horoscope text and image description for the pet in the form of a json object.
 
-    The situation description contains a vivid description of the horoscope suitable for an image generator.
-    
-    return a json object with the following structure:
-    {
-    "horoscope": "The horoscope text",
-    "catDescription": "detailed cat description",
-    "situationDescription": "vivid situation description",
-    "starSign": "The star sign of the pet"
-    }`,
+Analyze the attached photo of the pet and infer the following facts.
+
+Horoscope text
+- a mix of serious and funny
+- the age in dog or cat years
+- one interesting fact related to the birthday: e.g. other celebrities born on this day, Halloween, World Cat Day, etc. select one that is obvious in an image.
+- include mmany emojis and bold italic markdown formatting
+
+Pet image prompt
+- the description of the pet in the context of the horoscope suitable for an image generator.
+- the pet should be happy and healthy
+- Include details such as breed, age, gender, and any distinguishing visual features.
+- Dont include the name
+
+Unique event / Celebrity
+- Select the event or celebrity  included in the horoscope text and describe it suitable for an image generator. (1 paragraph)
+
+Return a json object with the following structure:
+{
+    "horoscope": "The horoscope text (ca. 1 paragraph)",
+    "petDescription": "detailed pet description (2 sentences)",
+    "starSign": "The star sign of the pet",
+    "uniqueEvent": "unique event / celebrity (1 sentence)"
+}`,
   });
 
-  const imageUrl = usePollinationsImage(
-    horoscope?.catDescription
-      ? `A anime style ${horoscope.starSign} tarot card. Write the star sign in the center bottom of the card in bold letters.
+  console.log("horoscope", horoscope);
 
-# Cat
-${horoscope.catDescription}
+  const imagePrompt = horoscope?.petDescription
+    ? `A anime style ${horoscope.starSign} tarot card. Write star sign "${horoscope.starSign}" bold at center bottom.
 
-# Situation
-${horoscope.situationDescription}
+${horoscope.petDescription}
+
+${horoscope.uniqueEvent}
       `
-      : "Loading text",
-    { model: "flux-anime" }
-  );
+    : "Loading text";
 
+  console.log("imagePrompt", imagePrompt);
+  const imageUrl = usePollinationsImage(imagePrompt, { model: "flux" });
+  console.log("imageUrl", imageUrl);
   const generateHoroscope = () => {
     setPrompt([
       {
@@ -56,14 +68,6 @@ ${horoscope.situationDescription}
         text: `
 The pet's name is ${petName} and birth date is ${birthDate}.
 Today is ${new Date().toLocaleDateString()}.
-
-return a json object with the following structure:
-{
-"horoscope": "The horoscope text",
-"starSign": "The star sign of the pet",
-"catDescription": "detailed cat description",
-"situationDescription": "vivid situation description"
-}
 `,
       },
       {
@@ -86,7 +90,7 @@ return a json object with the following structure:
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-lg shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-purple-700">
             Pet Horoscope
@@ -125,34 +129,54 @@ return a json object with the following structure:
           </div>
           <div className="space-y-2">
             <Label htmlFor="birth-date" className="text-lg font-medium">
-              Pet's Birth Date (MM-DD)
+              Pet's Birth Date (DD-MM-YYYY)
             </Label>
             <Input
               id="birth-date"
               type="text"
+              placeholder="DD-MM-YYYY"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
+              pattern="\d{2}-\d{2}-\d{4}"
+              title="Please enter the date in DD-MM-YYYY format"
             />
           </div>
           <Button
             onClick={generateHoroscope}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            disabled={!petImage || !birthDate || !petName}
+            disabled={
+              !petImage || !birthDate || !petName || (prompt && !horoscope)
+            }
           >
-            Generate Horoscope
+            {prompt && !horoscope ? (
+              <>
+                <span className="animate-spin mr-2">&#9696;</span>
+                Generating...
+              </>
+            ) : (
+              "Generate Horoscope"
+            )}
           </Button>
           {horoscope && (
             <div className="space-y-4">
               <Separator />
               <h3 className="text-xl font-semibold text-center text-purple-700">
-                Your Pet's Horoscope
+                {petName}'s Horoscope
               </h3>
               <img
                 src={imageUrl}
-                alt={horoscope.catDescription}
-                className="rounded-lg max-h-96 mx-auto"
+                alt={horoscope.petDescription}
+                className="rounded-lg max-h-[600px] w-full object-contain mx-auto"
               />
-              <p className="text-center italic">{horoscope.horoscope}</p>
+              <p className="text-center font-bold">{horoscope.starSign}</p>
+              {horoscope.horoscope.split("\n").map((line, index) => (
+                <p key={index} className="text-center italic">
+                  {line}
+                </p>
+              ))}
+              <Separator />
+              <p className="text-center font-bold">Unique Events</p>
+              <p className="text-center italic">{horoscope.uniqueEvent}</p>
             </div>
           )}
         </CardContent>

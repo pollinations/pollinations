@@ -56,8 +56,11 @@ function createHashKey(data) {
 
 // GET /models request handler
 app.get('/models', (req, res) => {
-    const availableModels = ['openai', 'mistral', 'llama'];
-    res.json({ models: availableModels });
+    const availableModels = [
+        { name: 'openai', type: 'chat', censored: true },
+        { name: 'mistral', type: 'completion', censored: false },
+        { name: 'llama', type: 'completion', censored: true }];
+    res.json(availableModels);
 });
 
 
@@ -71,15 +74,16 @@ app.get('/:prompt', async (req, res) => {
     const cacheKeyData = `${prompt}-${seed}-${jsonMode}-${model}-${systemPrompt}`;
     const cacheKey = createHashKey(cacheKeyData);
 
-    if (cache[cacheKey]) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.setHeader('Content-Type', 'text/plain');
-        return res.send(await cache[cacheKey]);
-    }
-
-    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
-
     try {
+
+        if (cache[cacheKey]) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.setHeader('Content-Type', 'text/plain');
+            return res.send(await cache[cacheKey]);
+        }
+
+        console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
+
         const messages = [];
         if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
@@ -95,7 +99,7 @@ app.get('/:prompt', async (req, res) => {
         res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error);
+        console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
     }
 });
@@ -111,19 +115,19 @@ app.post('/', async (req, res) => {
         console.log('Invalid messages array');
         return res.status(400).send('Invalid messages array');
     }
-
-    const cacheKeyData = JSON.stringify(messages) + `-${seed}-${jsonMode}-${model}`;
-    const cacheKey = createHashKey(cacheKeyData);
-
-    if (cache[cacheKey]) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.setHeader('Content-Type', 'text/plain');
-        return res.send(await cache[cacheKey]);
-    }
-
-    console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
-
     try {
+        const cacheKeyData = JSON.stringify(messages) + `-${seed}-${jsonMode}-${model}`;
+        const cacheKey = createHashKey(cacheKeyData);
+
+        if (cache[cacheKey]) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.setHeader('Content-Type', 'text/plain');
+            return res.send(await cache[cacheKey]);
+        }
+
+        console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
+
+
         const responsePromise = generateTextBasedOnModel(messages, { seed, jsonMode, model });
         cache[cacheKey] = responsePromise;
         await saveCache();
@@ -133,7 +137,7 @@ app.post('/', async (req, res) => {
         res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error);
+        console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
     }
 });

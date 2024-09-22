@@ -18,7 +18,7 @@ function App() {
     seed: 42,
     jsonMode: true,
     systemPrompt: `
-Goal: create a horoscope text and image descriptionfor the pet in the form of a json object.
+Goal: create a horoscope text and image description for the pet in the form of a json object.
 
 Analyze the attached photo of the pet and infer the following facts.
 

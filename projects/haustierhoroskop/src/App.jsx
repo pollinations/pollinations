@@ -9,7 +9,7 @@ import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 
 function App() {
   const [petImage, setPetImage] = useState("https://i.imgur.com/wHQbITR.png");
-  const [birthDate, setBirthDate] = useState("01-04"); // Pre-filled reasonable birth date
+  const [birthDate, setBirthDate] = useState("01-04-2019"); // Pre-filled reasonable birth date in European format
   const [petName, setPetName] = useState("Julyk"); // Pre-filled typical pet name
 
   const [prompt, setPrompt] = useState(null);
@@ -17,6 +17,7 @@ function App() {
   const horoscope = usePollinationsText(prompt, {
     seed: 42,
     jsonMode: true,
+    model: "claude",
     systemPrompt: `
 Goal: create a horoscope text and image description for the pet in the form of a json object.
 
@@ -127,13 +128,16 @@ Today is ${new Date().toLocaleDateString()}.
           </div>
           <div className="space-y-2">
             <Label htmlFor="birth-date" className="text-lg font-medium">
-              Pet's Birth Date (MM-DD)
+              Pet's Birth Date (DD-MM-YYYY)
             </Label>
             <Input
               id="birth-date"
               type="text"
+              placeholder="DD-MM-YYYY"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
+              pattern="\d{2}-\d{2}-\d{4}"
+              title="Please enter the date in DD-MM-YYYY format"
             />
           </div>
           <Button

@@ -30,7 +30,8 @@ Horoscope text
 - include mmany emojis and bold italic markdown formatting
 
 Pet image prompt
-- the description of the pet in the context of the horoscope suitable for an image generator. 
+- the description of the pet in the context of the horoscope suitable for an image generator.
+- the pet should be happy and healthy
 - Include details such as breed, age, gender, and any distinguishing visual features.
 - Dont include the name
 

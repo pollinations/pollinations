@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 // @ts-expect-error todo: interfaces
 import { usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
-import { Copy, Github, Send } from 'lucide-react';
+import { Copy, Github, Send, ExternalLink } from 'lucide-react';
 import Markdown from 'react-markdown';
 
 // Constants
@@ -112,7 +112,12 @@ const PollinationsDynamicExamples: React.FC = () => {
     <div className=" mx-auto p-4 space-y-8">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-center">
-          🌸 Pollinations Generative AI Playground: Interactive React Hooks 2.0.0 Documentation
+          <a className='group hover:underline' href="https://github.com/pollinations/pollinations/tree/master/pollinations-react" target="_blank" title="Updated documentation on github">
+            🌸 Pollinations Generative AI Playground: Interactive React Hooks 2.0.0 Documentation {' '}
+            <span className="invisible group-hover:visible inline">
+              ( view on github <ExternalLink className="inline" /> )
+            </span>
+          </a>
         </h1>
         <ThemeToggle />
       </header>

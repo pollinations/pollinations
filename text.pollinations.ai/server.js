@@ -85,12 +85,16 @@ function sendResponse(res, response) {
 
 // Common function to handle request data
 function getRequestData(req, isPost = false) {
-    const jsonMode = isPost ? (req.body.jsonMode || req.query.json?.toLowerCase() === 'true') : req.query.json?.toLowerCase() === 'true';
-    const seed = req.query.seed ? parseInt(req.query.seed, 10) : (isPost ? (req.body.seed || null) : null);
-    const model = isPost ? (req.body.model || req.query.model || 'openai') : (req.query.model || 'openai');
-    const systemPrompt = req.query.system ? decodeURIComponent(req.query.system) : null;
+    const query = req.query;
+    const body = req.body;
+    const data = isPost ? { ...body, ...query } : query;
 
-    const messages = isPost ? req.body.messages : [{ role: 'user', content: decodeURIComponent(req.params.prompt) }];
+    const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
+    const seed = data.seed ? parseInt(data.seed, 10) : null;
+    const model = data.model || 'openai';
+    const systemPrompt = data.system ? decodeURIComponent(data.system) : null;
+
+    const messages = isPost ? data.messages : [{ role: 'user', content: decodeURIComponent(req.params.prompt) }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -123,17 +127,32 @@ app.post('/', async (req, res) => {
 
 // POST /openai request handler
 app.post('/openai', async (req, res) => {
+
+    // log all request data
+    // console.log("request data", JSON.stringify(req.body, null, 2));
+
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
         console.log('Invalid messages array');
         return res.status(400).send('Invalid messages array');
     }
 
     const cacheKeyData = getRequestData(req, true);
-    cacheKeyData.model = 'openai';
+
+    console.log("endpoint: /openai", cacheKeyData);
+
+    const messageKey = req.body.stream ? "delta" : "content";
 
     try {
         const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
-        res.json({ choices: [{ message: { content: response, role: 'assistant' } }] });
+        const result = ({
+            "created": Date.now(),
+            "id": crypto.randomUUID(),
+            "model": cacheKeyData.model,
+            "object": "chat.completion",
+            "choices": [{ [messageKey]: { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
+        });
+        // console.log("openai format result", JSON.stringify(result, null, 2));
+        res.json(result);
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);

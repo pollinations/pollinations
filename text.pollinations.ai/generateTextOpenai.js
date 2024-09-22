@@ -31,7 +31,7 @@ async function generateText(messages, { seed = null, jsonMode = false }) {
         response_format: jsonMode ? { type: 'json_object' } : undefined
     });
 
-    console.log("Got result for openai", JSON.stringify(result.choices[0], null, 2));
+    console.log("Got result for openai", JSON.stringify(result, null, 2));
 
     return result.choices[0]?.message?.content;
 }

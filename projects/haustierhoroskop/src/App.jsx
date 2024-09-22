@@ -90,7 +90,7 @@ Today is ${new Date().toLocaleDateString()}.
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-lg shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center text-purple-700">
             Pet Horoscope
@@ -161,12 +161,12 @@ Today is ${new Date().toLocaleDateString()}.
             <div className="space-y-4">
               <Separator />
               <h3 className="text-xl font-semibold text-center text-purple-700">
-                Your Pet's Horoscope
+                {petName}'s Horoscope
               </h3>
               <img
                 src={imageUrl}
                 alt={horoscope.petDescription}
-                className="rounded-lg max-h-96 mx-auto"
+                className="rounded-lg max-h-[600px] w-full object-contain mx-auto"
               />
               <p className="text-center font-bold">{horoscope.starSign}</p>
               {horoscope.horoscope.split("\n").map((line, index) => (

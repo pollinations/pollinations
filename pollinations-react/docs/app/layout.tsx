@@ -24,7 +24,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL('https://reac-docs.pollinations.ai'),
   title: {
-    default: "Pollinations React Hooks Documentation | Karma.yt",
+    default: "Pollinations React Hooks Documentation",
     template: "%s | Pollinations React Hooks"
   },
   description: "Comprehensive documentation for Pollinations React Hooks. Learn how to integrate AI-generated images and text into your React applications with ease.",

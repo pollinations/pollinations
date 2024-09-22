@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+// @ts-expect-error todo: interfaces
 import { usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
 import { Copy, Github, Send } from 'lucide-react';
 import Markdown from 'react-markdown';

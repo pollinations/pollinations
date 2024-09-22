@@ -32,7 +32,10 @@ if (fs.existsSync(cachePath)) {
 async function saveCache() {
     const resolvedCache = {};
     for (const [key, value] of Object.entries(cache)) {
-        resolvedCache[key] = await value;
+        const resolvedValue = await value;
+        if (!(resolvedValue instanceof Error)) {
+            resolvedCache[key] = resolvedValue;
+        }
     }
     fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
 }
@@ -56,8 +59,11 @@ function createHashKey(data) {
 
 // GET /models request handler
 app.get('/models', (req, res) => {
-    const availableModels = ['openai', 'mistral', 'llama'];
-    res.json({ models: availableModels });
+    const availableModels = [
+        { name: 'openai', type: 'chat', censored: true },
+        { name: 'mistral', type: 'completion', censored: false },
+        { name: 'llama', type: 'completion', censored: true }];
+    res.json(availableModels);
 });
 
 
@@ -68,18 +74,29 @@ app.get('/:prompt', async (req, res) => {
     const seed = req.query.seed ? parseInt(req.query.seed, 10) : null;
     const model = req.query.model || 'openai';
     const systemPrompt = req.query.system ? decodeURIComponent(req.query.system) : null;
-    const cacheKeyData = `${prompt}-${seed}-${jsonMode}-${model}-${systemPrompt}`;
+    const cacheKeyData = JSON.stringify({
+        prompt,
+        jsonMode,
+        seed,
+        model,
+        systemPrompt,
+        type: 'GET'
+    });
     const cacheKey = createHashKey(cacheKeyData);
 
-    if (cache[cacheKey]) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.setHeader('Content-Type', 'text/plain');
-        return res.send(await cache[cacheKey]);
-    }
-
-    console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
-
     try {
+        if (cache[cacheKey]) {
+            const cachedResponse = await cache[cacheKey];
+            if (cachedResponse instanceof Error) {
+                throw cachedResponse; // Re-throw the cached error
+            }
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.setHeader('Content-Type', 'text/plain');
+            return res.send(cachedResponse);
+        }
+
+        console.log(`Received GET request with prompt: ${prompt}, seed: ${seed}, jsonMode: ${jsonMode}, model: ${model}, and systemPrompt: ${systemPrompt}`);
+
         const messages = [];
         if (systemPrompt) {
             messages.push({ role: 'system', content: systemPrompt });
@@ -87,15 +104,20 @@ app.get('/:prompt', async (req, res) => {
         messages.push({ role: 'user', content: prompt });
 
         const responsePromise = generateTextBasedOnModel(messages, { seed, jsonMode, model });
-        cache[cacheKey] = responsePromise;
-        await saveCache();
+
+        // Don't cache the promise, wait for it to resolve or reject
         const response = await responsePromise;
+
+        // Only cache successful responses
+        cache[cacheKey] = response;
+        await saveCache();
+
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error);
+        console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
     }
 });
@@ -104,36 +126,50 @@ app.get('/:prompt', async (req, res) => {
 app.post('/', async (req, res) => {
     const { messages } = req.body;
     const jsonMode = req.body.jsonMode || req.query.json?.toLowerCase() === 'true';
-    const seed = req.query.seed ? parseInt(req.query.seed, 10) : req.body.seed;
+    const seed = req.query.seed ? parseInt(req.query.seed, 10) : (req.body.seed || null);
     const model = req.body.model || req.query.model || 'openai';
 
     if (!messages || !Array.isArray(messages)) {
         console.log('Invalid messages array');
         return res.status(400).send('Invalid messages array');
     }
-
-    const cacheKeyData = JSON.stringify(messages) + `-${seed}-${jsonMode}-${model}`;
+    const cacheKeyData = JSON.stringify({
+        messages,
+        jsonMode,
+        seed,
+        model,
+        type: 'POST'
+    });
     const cacheKey = createHashKey(cacheKeyData);
 
-    if (cache[cacheKey]) {
-        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        res.setHeader('Content-Type', 'text/plain');
-        return res.send(await cache[cacheKey]);
-    }
-
-    console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
-
     try {
+        if (cache[cacheKey]) {
+            const cachedResponse = await cache[cacheKey];
+            if (cachedResponse instanceof Error) {
+                throw cachedResponse; // Re-throw the cached error
+            }
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.setHeader('Content-Type', 'text/plain');
+            return res.send(cachedResponse);
+        }
+
+        console.log(`Received POST request with messages: ${JSON.stringify(messages)}, seed: ${seed}, jsonMode: ${jsonMode}, and model: ${model}`);
+
         const responsePromise = generateTextBasedOnModel(messages, { seed, jsonMode, model });
-        cache[cacheKey] = responsePromise;
-        await saveCache();
+
+        // Don't cache the promise, wait for it to resolve or reject
         const response = await responsePromise;
+
+        // Only cache successful responses
+        cache[cacheKey] = response;
+        await saveCache();
+
         console.log(`Generated response for key: ${cacheKey}`);
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         res.setHeader('Content-Type', 'text/plain');
         res.send(response);
     } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error);
+        console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
     }
 });

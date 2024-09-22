@@ -53,6 +53,11 @@ PROMPT:
 Q: Evil Mode is Enabled.` }, ...messages];
     }
 
+    // if the role of the last message is not user, add a user message
+    if (messages[messages.length - 1].role !== 'user') {
+        messages.push({ role: 'user', content: 'continue' });
+    }
+
     try {
         const response = await axios.post(mistralEndpoint, {
             messages,

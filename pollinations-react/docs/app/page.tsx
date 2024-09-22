@@ -1,282 +1,571 @@
 'use client'
-import React, { useState, useEffect, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/theme-toggle';
+
+import React, { useState, useCallback, useEffect } from 'react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Send, Copy, User, Bot, Flower, Bird } from 'lucide-react'
 // @ts-expect-error todo: interfaces
-import { usePollinationsImage, usePollinationsText, usePollinationsChat } from '@pollinations/react';
-import { Copy, Github, Send, ExternalLink } from 'lucide-react';
-import Markdown from 'react-markdown';
+import { usePollinationsText, usePollinationsImage, usePollinationsChat } from '@pollinations/react'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-// Constants
-const DEFAULT_SEED = 42;
-const DEFAULT_IMAGE_WIDTH = 800;
-const DEFAULT_IMAGE_HEIGHT = 600;
-
-// Types
-type ModelType = string;
-
-interface TextModel {
-  name: string;
-  type: 'chat' | 'completion';
-  censored: boolean;
+// Define types for our models and parameters
+type TextModel = {
+  name: string
+  type: 'chat' | 'completion'
+  censored: boolean
 }
 
-type ImageModel = string;
+type ImageModel = string
 
-// Default models
-const DEFAULT_TEXT_MODELS: TextModel[] = [
-  { name: 'openai', type: 'chat', censored: true },
-  { name: 'mistral', type: 'completion', censored: false },
-];
-const DEFAULT_IMAGE_MODELS: ImageModel[] = ['turbo', 'flux', 'flux-realism', 'flux-anime', 'flux-3d', 'any-dark'];
+type TextParams = {
+  prompt: string
+  seed: number
+  model: string
+}
 
-const PollinationsDynamicExamples: React.FC = () => {
-  // State for text generation
-  const [textInput, setTextInput] = useState<string>('Write a short haiku about Pollinations.AI');
-  const [textModel, setTextModel] = useState<ModelType>('openai');
+type ImageParams = {
+  prompt: string
+  width: number
+  height: number
+  seed: number
+  model: string
+  nologo: boolean
+}
 
-  // State for image generation
-  const [imageInput, setImageInput] = useState<string>('A beautiful sunset over the ocean');
-  const [imageModel, setImageModel] = useState<ModelType>('turbo');
+type ChatParams = {
+  systemMessage: string
+  seed: number
+  model: string
+}
 
-  // State for chat
-  const [chatInput, setChatInput] = useState<string>('');
-  const [chatMessage, setChatMessage] = useState<string>('What can you tell me about pollination?');
+type HookParams = {
+  usePollinationsText: TextParams
+  usePollinationsImage: ImageParams
+  usePollinationsChat: ChatParams
+}
 
-  // State for available models
-  const [textModels, setTextModels] = useState<TextModel[]>(DEFAULT_TEXT_MODELS);
-  const [imageModels, setImageModels] = useState<ImageModel[]>(DEFAULT_IMAGE_MODELS);
+type ChatMessage = {
+  role: 'user' | 'assistant'
+  content: string
+}
 
-  // Generated content using hooks
-  const generatedText = usePollinationsText(textInput, {
-    seed: DEFAULT_SEED,
-    model: textModel,
-    systemPrompt: 'You are a poetic AI assistant.',
-  });
+export default function PollinationsDocsComponent() {
+  const [activeHook, setActiveHook] = useState<keyof HookParams>('usePollinationsText')
+  const [params, setParams] = useState<HookParams>({
+    usePollinationsText: {
+      prompt: 'Write a short haiku about Pollinations.AI',
+      seed: 42,
+      model: 'openai',
+    },
+    usePollinationsImage: {
+      prompt: 'A beautiful sunset over the ocean',
+      width: 1024,
+      height: 1024,
+      seed: 42,
+      model: 'flux',
+      nologo: true,
+    },
+    usePollinationsChat: {
+      systemMessage: 'You are a helpful assistant',
+      seed: 42,
+      model: 'openai',
+    }
+  })
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [textModels, setTextModels] = useState<TextModel[]>([])
+  const [imageModels, setImageModels] = useState<ImageModel[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const generatedImage = usePollinationsImage(imageInput, {
-    width: DEFAULT_IMAGE_WIDTH,
-    height: DEFAULT_IMAGE_HEIGHT,
-    seed: DEFAULT_SEED,
-    model: imageModel,
-    nologo: true,
-    enhance: false,
-  });
-
+  // Hook results
+  const textResult = usePollinationsText(params.usePollinationsText.prompt, params.usePollinationsText)
+  const imageResult = usePollinationsImage(params.usePollinationsImage.prompt, params.usePollinationsImage)
   const { sendUserMessage, messages } = usePollinationsChat([
-    { role: 'system', content: 'You are a helpful assistant' },
-    { role: 'assistant', content: chatMessage }
-  ], {
-    seed: DEFAULT_SEED,
-    jsonMode: false,
-    model: 'mistral',
-  });
+    { role: "system", content: params.usePollinationsChat.systemMessage }
+  ], params.usePollinationsChat)
 
   // Fetch models on component mount
   useEffect(() => {
     const fetchModels = async () => {
+      setIsLoading(true)
       try {
-        // Fetch text models
-        const textResponse = await fetch('https://text.pollinations.ai/models');
-        const textData: TextModel[] = await textResponse.json();
-        setTextModels(textData.length > 0 ? textData : DEFAULT_TEXT_MODELS);
-
-        // Fetch image models
-        const imageResponse = await fetch('https://image.pollinations.ai/models');
-        const imageData: ImageModel[] = await imageResponse.json();
-        setImageModels(imageData.length > 0 ? imageData : DEFAULT_IMAGE_MODELS);
+        const [textResponse, imageResponse] = await Promise.all([
+          fetch('https://text.pollinations.ai/models'),
+          fetch('https://image.pollinations.ai/models')
+        ])
+        const textData: TextModel[] = await textResponse.json()
+        const imageData: ImageModel[] = await imageResponse.json()
+        setTextModels(textData)
+        setImageModels(imageData)
       } catch (error) {
-        console.error('Error fetching models:', error);
-        // Use default models if fetch fails
-        setTextModels(DEFAULT_TEXT_MODELS);
-        setImageModels(DEFAULT_IMAGE_MODELS);
+        console.error('Error fetching models:', error)
+      } finally {
+        setIsLoading(false)
       }
-    };
-
-    fetchModels();
-  }, []);
-
-  // Handle sending chat messages
-  const handleSendChatMessage = useCallback(() => {
-    if (chatInput.trim()) {
-      sendUserMessage(chatInput);
-      setChatInput('');
     }
-  }, [chatInput, sendUserMessage]);
+    fetchModels()
+  }, [])
 
+  // Update parameter values
+  const updateParam = useCallback(<T extends keyof HookParams>(
+    hook: T,
+    param: keyof HookParams[T],
+    value: HookParams[T][keyof HookParams[T]]
+  ) => {
+    setParams(prev => ({
+      ...prev,
+      [hook]: {
+        ...prev[hook],
+        [param]: value
+      }
+    }))
+  }, [])
+
+  // Generate code snippet based on current hook and parameters
+  const getCode = (hook: keyof HookParams): string => {
+    const codeSnippets: Record<keyof HookParams, string> = {
+      usePollinationsText: `
+import React from 'react';
+import { usePollinationsText } from '@pollinations/react';
+import ReactMarkdown from 'react-markdown';
+
+const TextComponent: React.FC = () => {
+  const text = usePollinationsText('${params.usePollinationsText.prompt}', { 
+    seed: ${params.usePollinationsText.seed},
+    model: '${params.usePollinationsText.model}'
+  });
+  
   return (
-
-
-    <div className=" mx-auto p-4 space-y-8">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-center">
-          <a className='group hover:underline' href="https://github.com/pollinations/pollinations/tree/master/pollinations-react" target="_blank" title="Updated documentation on github">
-            🌸 Pollinations Generative AI Playground: Interactive React Hooks 2.0.0 Documentation {' '}
-            <span className="invisible group-hover:visible inline">
-              ( view on github <ExternalLink className="inline" /> )
-            </span>
-          </a>
-        </h1>
-        <ThemeToggle />
-      </header>
-      <section className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-        <h2 className="text-2xl font-semibold">🛠️ usePollinationsText Hook</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Generate text using the <code>usePollinationsText</code> hook.
-        </p>
-        <div className="space-y-4">
-          <Input
-            value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
-            placeholder="Enter a prompt for text generation"
-            className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
-          />
-          <Select value={textModel} onValueChange={(value: ModelType) => setTextModel(value)}>
-            <SelectTrigger className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600">
-              <SelectValue placeholder="Select a text model" />
-            </SelectTrigger>
-            <SelectContent>
-              {textModels.map((model) => (
-                <SelectItem key={model.name} value={model.name}>
-                  {model.name} ({model.type}, {model.censored ? 'censored' : 'uncensored'})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md text-gray-800 dark:text-gray-200 relative">
-            {generatedText ? (
-              <>
-                <Markdown>{generatedText}</Markdown>
-                <Button
-                  onClick={() => navigator.clipboard.writeText(generatedText)}
-                  className="absolute top-2 right-2 p-1 bg-transparent hover:bg-gray-200 dark:hover:bg-gray-600"
-                >
-                  <Copy className="w-4 h-4" />
-                </Button>
-              </>
-            ) : (
-              <p>Loading...</p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-        <h2 className="text-2xl font-semibold">🛠️ usePollinationsImage Hook</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Generate images using the <code>usePollinationsImage</code> hook.
-        </p>
-        <div className="space-y-4">
-          <Input
-            value={imageInput}
-            onChange={(e) => setImageInput(e.target.value)}
-            placeholder="Enter a prompt for image generation"
-            className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
-          />
-          <Select value={imageModel} onValueChange={(value: ModelType) => setImageModel(value)}>
-            <SelectTrigger className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600">
-              <SelectValue placeholder="Select an image model" />
-            </SelectTrigger>
-            <SelectContent>
-              {imageModels.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md">
-            {generatedImage ? (
-              <img src={generatedImage} alt="Generated by Pollinations" className="w-full h-auto" />
-            ) : (
-              <p className="text-gray-600 dark:text-gray-400">Loading image...</p>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-        <h2 className="text-2xl font-semibold">🛠️ usePollinationsChat Hook</h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Generate chat responses using the <code>usePollinationsChat</code> hook.
-        </p>
-        <div className="space-y-4">
-          <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md space-y-4">
-            <div className="space-y-2">
-              {messages.map((msg: any, idx: number) => (
-                <div key={idx} className="relative p-2 rounded-md bg-gray-200 dark:bg-gray-600">
-                  <strong className="font-bold text-gray-900 dark:text-white">{msg.role}:</strong>{' '}
-                  <span className="text-gray-800 dark:text-gray-200"><Markdown>{msg.content}</Markdown></span>
-                  <Button
-                    onClick={() => navigator.clipboard.writeText(msg.content)}
-                    className="absolute top-1 right-1 p-1 bg-transparent hover:bg-gray-300 dark:hover:bg-gray-500"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-            <div className="flex space-x-2">
-              <Input
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSendChatMessage();
-                  }
-                }}
-                placeholder="Type a message"
-                className="flex-grow bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-2 border-gray-300 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400"
-              />
-              <Button onClick={handleSendChatMessage} className="bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
-                <Send className="w-4 h-4 mr-2" />
-                Send
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="bg-muted text-muted-foreground py-4 mt-8">
-        <div className="container mx-auto text-center">
-          <div className="flex justify-center items-center space-x-4">
-            <span>Made with ❤️ by</span>
-            <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              Pollinations.ai
-            </a>
-            <span>and</span>
-            <a href="https://karma.yt" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              Karma.yt
-            </a>
-          </div>
-          <div className="mt-2">
-            <a
-              href="https://github.com/pollinations/pollinations/tree/master/pollinations-react"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-primary hover:underline"
-            >
-              <Github className="w-4 h-4 mr-2" />
-              View on GitHub
-            </a>
-          </div>
-          <div className="mt-2">
-            <a
-              href="https://www.npmjs.com/package/@pollinations/react"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center text-primary hover:underline"
-            >
-              View @pollinations/react on NPM
-            </a>
-          </div>
-        </div>
-      </footer>
+    <div>
+      {text ? <ReactMarkdown>{text}</ReactMarkdown> : <p>Loading...</p>}
     </div>
   );
 };
 
-export default PollinationsDynamicExamples;
+export default TextComponent;
+      `,
+      usePollinationsImage: `
+import React from 'react';
+import { usePollinationsImage } from '@pollinations/react';
+
+const ImageComponent: React.FC = () => {
+  const imageUrl = usePollinationsImage('${params.usePollinationsImage.prompt}', {
+    width: ${params.usePollinationsImage.width},
+    height: ${params.usePollinationsImage.height},
+    seed: ${params.usePollinationsImage.seed},
+    model: '${params.usePollinationsImage.model}',
+    nologo: ${params.usePollinationsImage.nologo}
+  });
+
+  return (
+    <div>
+      {imageUrl ? (
+        <img 
+          src={imageUrl} 
+          alt="Generated image" 
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+        />
+      ) : (
+        <p>Loading...</p>
+      )}
+    </div>
+  );
+};
+
+export default ImageComponent;
+      `,
+      usePollinationsChat: `
+import React, { useState } from 'react';
+import { usePollinationsChat } from '@pollinations/react';
+import ReactMarkdown from 'react-markdown';
+
+const ChatComponent: React.FC = () => {
+  const [input, setInput] = useState('');
+  const { sendUserMessage, messages } = usePollinationsChat([
+    { role: "system", content: "${params.usePollinationsChat.systemMessage}" }
+  ], { 
+    seed: ${params.usePollinationsChat.seed}, 
+    model: '${params.usePollinationsChat.model}'
+  });
+
+  const handleSend = () => {
+    sendUserMessage(input);
+    setInput('');
+  };
+
+  return (
+    <div>
+      <div>
+        {messages.map((msg: any, index: number) => (
+          <div key={index} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
+            <strong>{msg.role}:</strong>
+            <ReactMarkdown>{msg.content}</ReactMarkdown>
+          </div>
+        ))}
+      </div>
+      <input value={input} onChange={(e) => setInput(e.target.value)} />
+    
+    </div>
+  );
+};
+
+export default ChatComponent;
+      `
+    }
+    return codeSnippets[hook]
+  }
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (activeHook === 'usePollinationsChat') {
+      sendUserMessage(chatInput)
+      setChatInput('')
+    } else if (activeHook === 'usePollinationsText') {
+      // Trigger text generation
+      // Note: In a real implementation, you would call the actual API here
+      console.log('Generating text with:', params.usePollinationsText)
+    }
+  }
+
+  // Copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  if (isLoading) {
+    return <div className="p-4 bg-slate-900 text-slate-100">Loading...</div>
+  }
+
+  return (
+    <div className="container mx-auto p-4 bg-slate-900 text-slate-100">
+      <h1 className="text-3xl font-bold mb-4 text-center">🌸 Pollinations Generative React Hooks 2.0.1🌸</h1>
+      <p className="mb-4 text-center">A simple way to generate images, text and markdown using the Pollinations API in your React projects.</p>
+
+      <Tabs value={activeHook} onValueChange={(value) => setActiveHook(value as keyof HookParams)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="usePollinationsText" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">usePollinationsText</TabsTrigger>
+          <TabsTrigger value="usePollinationsImage" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">usePollinationsImage</TabsTrigger>
+          <TabsTrigger value="usePollinationsChat" className="data-[state=active]:bg-slate-700 data-[state=active]:text-slate-100">usePollinationsChat</TabsTrigger>
+        </TabsList>
+        <TabsContent value="usePollinationsText">
+          <Card className="bg-slate-800 text-slate-100">
+            <CardHeader>
+              <CardTitle>usePollinationsText</CardTitle>
+              <CardDescription>Generate text using Pollinations' API</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="prompt" className="text-lg font-semibold">Prompt</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="prompt"
+                      value={params.usePollinationsText.prompt}
+                      onChange={(e) => updateParam('usePollinationsText', 'prompt', e.target.value)}
+                      className="flex-grow bg-slate-700 text-slate-100"
+                      min={1}
+                      max={16000}
+                    />
+              
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="seed">Seed</Label>
+                    <Input
+                      id="seed"
+                      type="number"
+                      value={params.usePollinationsText.seed}
+                      onChange={(e) => updateParam('usePollinationsText', 'seed', parseInt(e.target.value))}
+                      className="bg-slate-700 text-slate-100"
+                      min={1}
+                      max={16000}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="model">Model</Label>
+                    <Select
+                      value={params.usePollinationsText.model}
+                      onValueChange={(value) => updateParam('usePollinationsText', 'model', value)}
+                    >
+                      <SelectTrigger id="model" className="bg-slate-700 text-slate-100">
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 text-slate-100">
+                        {textModels.map((model) => (
+                          <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </form>
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Preview:</h3>
+                <div className="bg-slate-700 p-4 rounded-md">
+                  {textResult ? (
+                    <ReactMarkdown>{textResult}</ReactMarkdown>
+                  ) : (
+                    <p>Loading...</p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => copyToClipboard(textResult || '')}
+                >
+                  <Copy className="h-4 w-4 mr-2" /> Copy to Clipboard
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="usePollinationsImage">
+          <Card className="bg-slate-800 text-slate-100">
+            <CardHeader>
+              <CardTitle>usePollinationsImage</CardTitle>
+              <CardDescription>Generate image URLs using Pollinations' API</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="prompt" className="text-lg font-semibold">Prompt</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="prompt"
+                      value={params.usePollinationsImage.prompt}
+                      onChange={(e) => updateParam('usePollinationsImage', 'prompt', e.target.value)}
+                      className="flex-grow bg-slate-700 text-slate-100"
+                      min={1}
+                      max={16000}
+                    />
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-500">
+                      Imagine
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="width">Width</Label>
+                    <Input
+                      id="width"
+                      type="number"
+                      value={params.usePollinationsImage.width}
+                      onChange={(e) => updateParam('usePollinationsImage', 'width', parseInt(e.target.value))}
+                      className="bg-slate-700 text-slate-100"
+                      min={1024}
+                      max={16000}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="height">Height</Label>
+                    <Input
+                      id="height"
+                      type="number"
+                      value={params.usePollinationsImage.height}
+                      onChange={(e) => updateParam('usePollinationsImage', 'height', parseInt(e.target.value))}
+                      className="bg-slate-700 text-slate-100"
+                      min={1024}
+                      max={16000}
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="seed">Seed</Label>
+                    <Input
+                      id="seed"
+                      type="number"
+                      value={params.usePollinationsImage.seed}
+                      onChange={(e) => updateParam('usePollinationsImage', 'seed', parseInt(e.target.value))}
+                      className="bg-slate-700 text-slate-100"
+                      min={1}
+                      max={16000}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="model">Model</Label>
+                    <Select
+                      value={params.usePollinationsImage.model}
+                      onValueChange={(value) => updateParam('usePollinationsImage', 'model', value)}
+                    >
+                      <SelectTrigger id="model" className="bg-slate-700 text-slate-100">
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 text-slate-100">
+                        {imageModels.map((model) => (
+                          <SelectItem key={model} value={model}>{model}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="nologo"
+                    checked={params.usePollinationsImage.nologo}
+                    onCheckedChange={(checked) => updateParam('usePollinationsImage', 'nologo', checked as boolean)}
+                  />
+                  <label htmlFor="nologo" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">No Logo</label>
+                </div>
+              </form>
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2">Preview:</h3>
+                {imageResult ? (
+                  <div className="relative w-full h-[calc(100vh-200px)] min-h-[400px]">
+                    <img
+                      src={imageResult}
+                      alt="Generated image"
+                      className="absolute inset-0 w-full h-full object-contain rounded-md"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={() => copyToClipboard(imageResult)}
+                    >
+                      <Copy className="h-4 w-4 mr-2" /> Copy URL
+                    </Button>
+                  </div>
+                ) : (
+                  <p>Loading...</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="usePollinationsChat">
+          <Card className="bg-slate-800 text-slate-100">
+            <CardHeader>
+              <CardTitle>usePollinationsChat</CardTitle>
+              <CardDescription>Generate chat responses using Pollinations' API</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 max-h-96 overflow-y-auto bg-slate-700 p-4 rounded-md">
+                {messages.map((msg: any, index: number) => (
+                  <div key={index} className={`flex items-start mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`flex items-center ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className={`rounded-full p-2 ${msg.role === 'user' ? 'bg-blue-600' : 'bg-pink-500'} mr-2`}>
+                        {msg.role === 'user' ? <Bird className="h-6 w-6" /> : <Flower className="h-6 w-6" />}
+                      </div>
+                      <div className={`p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-500' : 'bg-pink-500'} max-w-md`}>
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2"
+                      onClick={() => copyToClipboard(msg.content)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <Input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-grow bg-slate-700 text-slate-100"
+                  min={1}
+                  max={16000}
+                />
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-500">
+                <Send className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
+            
+              <div className="mt-4 grid w-full items-center gap-4">
+                <h1 className="text-sm text-muted-foreground">Let's parameterize</h1>
+                <div className="flex flex-col space-y-1.5">
+                  <Label htmlFor="systemMessage" className="text-lg font-semibold">System Message</Label>
+                  <Input
+                    id="systemMessage"
+                    value={params.usePollinationsChat.systemMessage}
+                    onChange={(e) => updateParam('usePollinationsChat', 'systemMessage', e.target.value)}
+                    className="bg-slate-700 text-slate-100"
+                    min={1}
+                    max={16000}
+                  />
+                </div>
+                <div className="flex space-x-4">
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="seed">Seed</Label>
+                    <Input
+                      id="seed"
+                      type="number"
+                      value={params.usePollinationsChat.seed}
+                      onChange={(e) => updateParam('usePollinationsChat', 'seed', parseInt(e.target.value))}
+                      className="bg-slate-700 text-slate-100"
+                      min={1}
+                      max={16000}
+                    />
+                  </div>
+                  <div className="flex flex-col space-y-1.5 flex-1">
+                    <Label htmlFor="model">Model</Label>
+                    <Select
+                      value={params.usePollinationsChat.model}
+                      onValueChange={(value) => updateParam('usePollinationsChat', 'model', value)}
+                    >
+                      <SelectTrigger id="model" className="bg-slate-700 text-slate-100">
+                        <SelectValue placeholder="Select a model" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 text-slate-100">
+                        {textModels.map((model) => (
+                          <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <Card className="mt-8 bg-slate-800 text-slate-100">
+        <CardHeader>
+          <CardTitle>Code Preview</CardTitle>
+          <CardDescription>Copy and paste this code into your React project</CardDescription>
+        </CardHeader>
+        <CardContent className="relative">
+          <SyntaxHighlighter language="typescript" style={oneDark} className="rounded-md">
+            {getCode(activeHook)}
+          </SyntaxHighlighter>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2"
+            onClick={() => copyToClipboard(getCode(activeHook))}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        </CardContent>
+      </Card>
+
+      <footer className="mt-8 text-center text-sm text-slate-400">
+        <p>Made with ❤️ by <a target="_blank" className='hover:underline' href="https://pollinations.ai">Pollinations.ai</a> and <a target="_blank" className="hover:underline" href="https://karma.yt">Karma.yt</a></p>
+        <div className="mt-2">
+          <a target="_blank" href="https://github.com/pollinations/pollinations" className="hover:text-slate-200 hover:underline mr-4">View on GitHub</a>
+          <a target="_blank" href="https://www.npmjs.com/package/@pollinations/react" className="hover:text-slate-200 hover:underline">View @pollinations/react on NPM</a>
+        </div>
+      </footer>
+    </div>
+  )
+}

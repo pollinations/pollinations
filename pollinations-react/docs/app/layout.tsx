@@ -24,12 +24,12 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL('https://reac-docs.pollinations.ai'),
   title: {
-    default: "Pollinations React Hooks Documentation",
+    default: "Pollinations Generative AI Playground: Interactive React Hooks Documentation",
     template: "%s | Pollinations React Hooks"
   },
   description: "Comprehensive documentation for Pollinations React Hooks. Learn how to integrate AI-generated images and text into your React applications with ease.",
   keywords: ["Karma", "Components", "React Hooks", "PollinationsText", "PollinationsMarkdown", "PollinationsImage", "usePollinationsImage", "OpenAI", "GPT", "Mistral", "Karma.yt", "Pollinations.ai", "React", "Next.js", "AI-generated images", "documentation", "AI", "image generation"],
-  authors: [{ name: "Karma.yt Team" }],
+  authors: [{ name: "Pollinations.ai" }, { name: "Karma.yt" }],
   creator: "Karma.yt",
   publisher: "Karma.yt",
   formatDetection: {
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://reac-docs.pollinations.ai",
     title: "Pollinations React Hooks Documentation",
-    description: "Integrate AI-generated images and text into your React apps with Pollinations React Hooks.",
+    description: "Pollinations Generative AI Playground: Interactive React Hooks Documentation",
     siteName: "Pollinations React Hooks Documentation",
     images: [
       {

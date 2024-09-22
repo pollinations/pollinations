@@ -9,7 +9,7 @@ import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextClaude from './generateTextClaude.js';
-// import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
+import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -32,7 +32,7 @@ if (fs.existsSync(cachePath)) {
 }
 
 // Create a custom Claude instance with a specific system message
-// const customClaudeInstance = generateTextClaudeWrapper("You are a helpful assistant specialized in coding tasks.");
+const customClaudeInstance = generateTextClaudeWrapper("You are a helpful assistant specialized in coding tasks.");
 
 // GET /models request handler
 app.get('/models', (req, res) => {

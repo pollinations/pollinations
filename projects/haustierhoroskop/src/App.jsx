@@ -143,9 +143,18 @@ Today is ${new Date().toLocaleDateString()}.
           <Button
             onClick={generateHoroscope}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            disabled={!petImage || !birthDate || !petName}
+            disabled={
+              !petImage || !birthDate || !petName || (prompt && !horoscope)
+            }
           >
-            Generate Horoscope
+            {prompt && !horoscope ? (
+              <>
+                <span className="animate-spin mr-2">&#9696;</span>
+                Generating...
+              </>
+            ) : (
+              "Generate Horoscope"
+            )}
           </Button>
           {horoscope && (
             <div className="space-y-4">

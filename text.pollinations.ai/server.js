@@ -7,6 +7,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import generateTextClaude from './generateTextClaude.js';
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -47,6 +48,8 @@ async function generateTextBasedOnModel(messages, options) {
         return generateTextMistral(messages, rest);
     } else if (model === 'llama') {
         return generateTextLlama(messages, rest);
+    } else if (model === 'claude') {
+        return generateTextClaude(messages, rest);
     }
     return generateText(messages, rest);
 }
@@ -61,8 +64,10 @@ function createHashKey(data) {
 app.get('/models', (req, res) => {
     const availableModels = [
         { name: 'openai', type: 'chat', censored: true },
-        { name: 'mistral', type: 'completion', censored: false },
-        { name: 'llama', type: 'completion', censored: true }];
+        { name: 'mistral', type: 'chat', censored: false },
+        { name: 'llama', type: 'completion', censored: true },
+        // { name: 'claude', type: 'chat', censored: true }
+    ];
     res.json(availableModels);
 });
 

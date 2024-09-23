@@ -188,7 +188,7 @@ app.post('/openai', async (req, res) => {
             // console.log("openai format result", JSON.stringify(result, null, 2));
             res.json(result);
         } catch (error) {
-            console.error(`Error generating text for key: ${cacheKey}`, error.message);
+            console.error(`Error generating text`, error.message);
             res.status(500).send(error.message);
         }
     });

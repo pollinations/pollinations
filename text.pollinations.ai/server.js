@@ -10,6 +10,7 @@ import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextClaude from './generateTextClaude.js';
 import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
+import surSystemPrompt from './personas/sur.js';
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -32,7 +33,7 @@ if (fs.existsSync(cachePath)) {
 }
 
 // Create a custom Claude instance with a specific system message
-const customClaudeInstance = generateTextClaudeWrapper("You are a helpful assistant specialized in coding tasks.");
+const claudeSur = generateTextClaudeWrapper(surSystemPrompt);
 
 // GET /models request handler
 app.get('/models', (req, res) => {
@@ -41,6 +42,7 @@ app.get('/models', (req, res) => {
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
         // { name: 'claude', type: 'chat', censored: true }
+        // { name: 'sur', type: 'chat', censored: true }
     ];
     res.json(availableModels);
 });
@@ -87,6 +89,7 @@ function sendResponse(res, response) {
 function getRequestData(req, isPost = false) {
     const query = req.query;
     const body = req.body;
+    console.log("got query", query);
     const data = isPost ? { ...body, ...query } : query;
 
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
@@ -173,18 +176,18 @@ async function saveCache() {
 
 // Helper function to generate text based on the model
 async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai', customInstance, ...rest } = options;
+    const { model = 'openai', ...rest } = options;
     if (model === 'mistral') {
         return generateTextMistral(messages, rest);
     } else if (model === 'llama') {
         return generateTextLlama(messages, rest);
     } else if (model === 'claude') {
-        if (customInstance) {
-            return customInstance(messages, rest);
-        }
         return generateTextClaude(messages, rest);
+    } else if (model === 'sur') {
+        return claudeSur(messages, rest);
+    } else {
+        return generateText(messages, rest);
     }
-    return generateText(messages, rest);
 }
 
 // Helper function to create a hash for the cache key

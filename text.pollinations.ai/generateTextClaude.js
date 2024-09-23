@@ -7,13 +7,13 @@ const claudeEndpoint = 'https://api.anthropic.com/v1/messages';
 
 async function generateTextClaude(messages, { jsonMode = false, seed = null }) {
     // Check if the total character count of the stringified input is greater than 60000
-    const stringifiedMessages = JSON.stringify(messages);
-    if (stringifiedMessages.length > 60000) {
-        throw new Error('Input messages exceed the character limit of 60000.');
-    }
+    // const stringifiedMessages = JSON.stringify(messages);
+    // if (stringifiedMessages.length > 60000) {
+    //     throw new Error('Input messages exceed the character limit of 60000.');
+    // }
 
     const { messages: processedMessages, systemMessage } = extractSystemMessage(messages, jsonMode, seed);
-
+    console.log('extracted system message', systemMessage);
     try {
         const convertedMessages = await convertToClaudeFormat(processedMessages);
         const response = await axios.post(claudeEndpoint, {

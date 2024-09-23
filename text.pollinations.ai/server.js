@@ -124,6 +124,7 @@ function getRequestData(req, isPost = false) {
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
     const systemPrompt = data.system ? decodeURIComponent(data.system) : null;
+    const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
 
     const messages = isPost ? data.messages : [{ role: 'user', content: decodeURIComponent(req.params.prompt) }];
     if (systemPrompt) {
@@ -135,6 +136,7 @@ function getRequestData(req, isPost = false) {
         jsonMode,
         seed,
         model,
+        temperature,
         type: isPost ? 'POST' : 'GET'
     };
 }

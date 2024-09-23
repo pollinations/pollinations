@@ -5,7 +5,7 @@ dotenv.config();
 
 const claudeEndpoint = 'https://api.anthropic.com/v1/messages';
 
-async function generateTextClaude(messages, { jsonMode = false, seed = null }) {
+async function generateTextClaude(messages, { jsonMode = false, seed = null, temperature }) {
     // Check if the total character count of the stringified input is greater than 60000
     // const stringifiedMessages = JSON.stringify(messages);
     // if (stringifiedMessages.length > 60000) {
@@ -20,7 +20,8 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null }) {
             model: "claude-3-5-sonnet-20240620",
             max_tokens: 1024,
             messages: convertedMessages,
-            system: systemMessage
+            system: systemMessage,
+            temperature: Math.min(temperature, 1.0)
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -66,7 +67,7 @@ async function convertToClaudeFormat(messages) {
                 if (item.type === 'text') {
                     return {
                         type: 'text',
-                        text: item.text
+                        text: item.text || '-'
                     };
                 } else if (item.type === 'image_url') {
                     const imageUrl = item.image_url.url;
@@ -107,7 +108,10 @@ async function convertToClaudeFormat(messages) {
                 content: convertedContent
             };
         } else {
-            return message;
+            return {
+                ...message,
+                content: message.content || '-'
+            };
         }
     }));
 }

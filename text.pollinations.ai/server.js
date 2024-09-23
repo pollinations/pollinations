@@ -1,5 +1,4 @@
 import express from 'express';
-
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import fs from 'fs';
@@ -11,11 +10,13 @@ import generateTextLlama from './generateTextLlama.js';
 import generateTextClaude from './generateTextClaude.js';
 import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
 import surSystemPrompt from './personas/sur.js';
+import rateLimit from 'express-rate-limit';
+import PQueue from 'p-queue';
 
 const app = express();
 const port = process.env.PORT || 16385;
 
-app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
 const cacheDir = path.join(process.cwd(), '.cache');
@@ -34,6 +35,33 @@ if (fs.existsSync(cachePath)) {
 
 // Create a custom Claude instance with a specific system message
 const claudeSur = generateTextClaudeWrapper(surSystemPrompt);
+
+// Set trust proxy setting
+app.set('trust proxy', true);
+
+// Rate limiting middleware
+// skip if a request would be cached
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 20, // limit each IP to 30 requests per windowMs
+    message: 'Too many requests, please try again later.',
+    skip: (req, res) => {
+        const cacheKey = createHashKey(JSON.stringify(req.body));
+        return cache[cacheKey] !== undefined;
+    }
+});
+
+app.use(limiter);
+
+// Queue setup per IP address
+const queues = new Map();
+
+function getQueue(ip) {
+    if (!queues.has(ip)) {
+        queues.set(ip, new PQueue({ concurrency: 1 }));
+    }
+    return queues.get(ip);
+}
 
 // GET /models request handler
 app.get('/models', (req, res) => {
@@ -114,7 +142,8 @@ function getRequestData(req, isPost = false) {
 // GET request handler
 app.get('/:prompt', async (req, res) => {
     const cacheKeyData = getRequestData(req);
-    await handleRequest(req, res, cacheKeyData);
+    const queue = getQueue(req.ip);
+    await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
 // POST request handler
@@ -125,7 +154,8 @@ app.post('/', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    await handleRequest(req, res, cacheKeyData);
+    const queue = getQueue(req.ip);
+    await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
 // POST /openai request handler
@@ -140,26 +170,28 @@ app.post('/openai', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
+    const queue = getQueue(req.ip);
+    await queue.add(async () => {
+        console.log("endpoint: /openai", cacheKeyData);
 
-    console.log("endpoint: /openai", cacheKeyData);
+        const messageKey = req.body.stream ? "delta" : "content";
 
-    const messageKey = req.body.stream ? "delta" : "content";
-
-    try {
-        const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
-        const result = ({
-            "created": Date.now(),
-            "id": crypto.randomUUID(),
-            "model": cacheKeyData.model,
-            "object": "chat.completion",
-            "choices": [{ [messageKey]: { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
-        });
-        // console.log("openai format result", JSON.stringify(result, null, 2));
-        res.json(result);
-    } catch (error) {
-        console.error(`Error generating text for key: ${cacheKey}`, error.message);
-        res.status(500).send(error.message);
-    }
+        try {
+            const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
+            const result = ({
+                "created": Date.now(),
+                "id": crypto.randomUUID(),
+                "model": cacheKeyData.model,
+                "object": "chat.completion",
+                "choices": [{ [messageKey]: { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
+            });
+            // console.log("openai format result", JSON.stringify(result, null, 2));
+            res.json(result);
+        } catch (error) {
+            console.error(`Error generating text for key: ${cacheKey}`, error.message);
+            res.status(500).send(error.message);
+        }
+    });
 });
 
 // Helper function to save cache to disk

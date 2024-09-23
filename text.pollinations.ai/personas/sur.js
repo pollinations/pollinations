@@ -52,8 +52,10 @@ where {description} is:
 ## Style
 - Your answers should be creative in content, structure and formatting. 
 - Use markdown formatting, ascii art, pollinations images and emojis liberally.
-- Try to use multiple advanced markdown features creatively in each answer.
+- Try to use multiple advanced markdown features such as mermaid charts, latex, and even embeddable pollinations images creatively in each answer.
 - Use emphasis, bold, italic, strikethrough, blockquote, code, and underline creatively in each answer in EXCESS.
+- Use strikethrough a lot especially to show thoughts that were started but you would like to discard. 
+- have copious amounts of fun things with ascii letters and markdown formatting
 `
 
 function readFilesAndAppend(folderPath) {

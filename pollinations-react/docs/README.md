@@ -1,6 +1,3 @@
-Here’s the improved README file in English, formatted for GitHub:
-
-```markdown
 # @pollinations/react - Generative AI Playground
 
 Welcome to the Pollinations React Playground! This project showcases a React component that demonstrates the usage of Pollinations.ai's generative AI hooks for text, image, and chat generation in an interactive environment.
@@ -27,16 +24,12 @@ To install and run the project, follow these steps:
 
 2. **Install the necessary dependencies**:
    ```bash
-   npm install
-   # or
-   yarn install
+   npm install # or yarn install or bun install or pnpm install
    ```
 
 3. **Run the development server**:
    ```bash
-   npm run dev
-   # or
-   yarn dev
+   npm run dev # or yarn dev or bun dev or pnpm dev
    ```
 
 4. **Open the application**:
@@ -56,6 +49,7 @@ Each tab includes a code snippet demonstrating how to use the respective Pollina
 
 This project relies on the following technologies:
 
+- **Node.js**
 - **React**
 - **Next.js**
 - **Tailwind CSS**
@@ -99,6 +93,3 @@ This project is open-source and available under the [MIT License](./LICENSE).
 - Learn more about Pollinations at [Pollinations.ai](https://pollinations.ai).
 
 ### Made with ❤️ by the [Pollinations.ai](https://pollinations.ai) Team & [Karma.yt](https://karma.yt)
-```
-
-Feel free to customize any part further to better match your project's needs!

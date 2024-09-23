@@ -1,7 +1,7 @@
 'use client'
-
-import React, { useState, useEffect, KeyboardEvent, useRef } from 'react'
+// @ts-expect-error todo: interfaces
 import { usePollinationsText, usePollinationsImage, usePollinationsChat } from '@pollinations/react'
+import React, { useState, useEffect, KeyboardEvent, useRef } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -645,7 +645,7 @@ export default ChatComponent;
                   </Select>
                 </div>
                 <div ref={chatContainerRef} className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
-                  {messages.map((msg, index) => (
+                  {messages.map((msg: any, index: number) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[70%] p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'
                         }`}>

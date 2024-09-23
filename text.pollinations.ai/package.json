@@ -17,6 +17,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.20.0",
-    "openai": "^4.58.2"
+    "express-rate-limit": "^7.4.0",
+    "openai": "^4.58.2",
+    "p-queue": "^8.0.1"
   }
 }

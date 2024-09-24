@@ -6,22 +6,31 @@ dotenv.config();
 const claudeEndpoint = 'https://api.anthropic.com/v1/messages';
 
 async function generateTextClaude(messages, { jsonMode = false, seed = null, temperature }) {
-    // Check if the total character count of the stringified input is greater than 60000
-    // const stringifiedMessages = JSON.stringify(messages);
-    // if (stringifiedMessages.length > 60000) {
-    //     throw new Error('Input messages exceed the character limit of 60000.');
-    // }
+    console.log('generateTextClaude called with messages:', messages);
+    console.log('Options:', { jsonMode, seed, temperature });
 
     const { messages: processedMessages, systemMessage } = extractSystemMessage(messages, jsonMode, seed);
-    console.log('extracted system message', systemMessage);
+    console.log('extracted system message:', systemMessage);
+    console.log('processed messages:', processedMessages);
+
+    const alternatingMessages = ensureAlternatingRoles(processedMessages);
+    console.log('alternating messages:', alternatingMessages);
+
     try {
-        const convertedMessages = await convertToClaudeFormat(processedMessages);
+        const convertedMessages = await convertToClaudeFormat(alternatingMessages);
+        console.log('converted messages:', convertedMessages);
+
+        // Ensure temperature is a valid number between 0 and 1
+        if (typeof temperature !== 'number' || temperature < 0 || temperature > 1) {
+            temperature = 0.5;
+        }
+
         const response = await axios.post(claudeEndpoint, {
             model: "claude-3-5-sonnet-20240620",
             max_tokens: 1024,
             messages: convertedMessages,
             system: systemMessage,
-            temperature: Math.min(temperature, 1.0)
+            temperature: temperature
         }, {
             headers: {
                 'Content-Type': 'application/json',
@@ -30,7 +39,8 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
             }
         });
 
-        return response.data.content[0].text;
+        console.log('Claude API response:', response.data);
+        return response.data.content[0]?.text;
     } catch (error) {
         console.error('Error calling Claude API:', error.message);
         if (error.response && error.response.data && error.response.data.error) {
@@ -41,6 +51,7 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
 }
 
 function extractSystemMessage(messages, jsonMode, seed) {
+    console.log('extractSystemMessage called with messages:', messages);
     let systemMessage = undefined;
     messages = messages.map(message => {
         if (message.role === 'system') {
@@ -54,20 +65,42 @@ function extractSystemMessage(messages, jsonMode, seed) {
         systemMessage = 'Respond in simple JSON format';
     }
 
+    console.log('extracted system message:', systemMessage);
+    console.log('filtered messages:', messages);
+
     return {
         messages,
         systemMessage: systemMessage
     };
 }
 
+function ensureAlternatingRoles(messages) {
+    console.log('ensureAlternatingRoles called with messages:', messages);
+    const alternatingMessages = [];
+    let lastRole = null;
+
+    messages.forEach(message => {
+        if (lastRole === message.role) {
+            const alternateRole = lastRole === 'user' ? 'assistant' : 'user';
+            alternatingMessages.push({ role: alternateRole, content: '-' });
+        }
+        alternatingMessages.push(message);
+        lastRole = message.role;
+    });
+
+    console.log('ensured alternating messages:', alternatingMessages);
+    return alternatingMessages;
+}
+
 async function convertToClaudeFormat(messages) {
+    console.log('convertToClaudeFormat called with messages:', messages);
     return Promise.all(messages.map(async message => {
         if (Array.isArray(message.content)) {
             const convertedContent = await Promise.all(message.content.map(async item => {
                 if (item.type === 'text') {
                     return {
                         type: 'text',
-                        text: item.text || '-'
+                        text: item?.text || '-'
                     };
                 } else if (item.type === 'image_url') {
                     const imageUrl = item.image_url.url;
@@ -103,6 +136,7 @@ async function convertToClaudeFormat(messages) {
                     }
                 }
             }));
+            console.log('converted content:', convertedContent);
             return {
                 role: message.role,
                 content: convertedContent

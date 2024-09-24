@@ -8,7 +8,7 @@ import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextClaude from './generateTextClaude.js';
-import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
+import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
@@ -33,8 +33,9 @@ if (fs.existsSync(cachePath)) {
     cache = JSON.parse(cacheData);
 }
 
-// Create a custom Claude instance with a specific system message
-const claudeSur = generateTextClaudeWrapper(surSystemPrompt);
+// Create custom instances of Sur backed by Claude and Mistral
+const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
+const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
 
 // Set trust proxy setting
 app.set('trust proxy', true);
@@ -118,7 +119,7 @@ function getRequestData(req, isPost = false) {
     const query = req.query;
     const body = req.body;
     console.log("got query", query);
-    const data = isPost ? { ...body, ...query } : query;
+    const data = isPost ? { ...query, ...body } : query;
 
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
@@ -218,7 +219,9 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'claude') {
         return generateTextClaude(messages, rest);
     } else if (model === 'sur') {
-        return claudeSur(messages, rest);
+        return surClaude(messages, rest);
+    } else if (model === 'sur-mistral') {
+        return surMistral(messages, rest);
     } else {
         return generateText(messages, rest);
     }

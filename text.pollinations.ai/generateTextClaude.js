@@ -16,6 +16,11 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
     const alternatingMessages = ensureAlternatingRoles(processedMessages);
     console.log('alternating messages:', alternatingMessages);
 
+    // Ensure the first message is a user message
+    if (alternatingMessages.length === 0 || alternatingMessages[0].role !== 'user') {
+        alternatingMessages.unshift({ role: 'user', content: '-' });
+    }
+
     try {
         const convertedMessages = await convertToClaudeFormat(alternatingMessages);
         console.log('converted messages:', convertedMessages);

@@ -5,7 +5,14 @@ dotenv.config();
 
 const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_MISTRAL_CHAT_COMPLETION_ROUTE;
 
-async function generateTextMistral(messages, { jsonMode = false }) {
+const mistralLargeEndpoint = process.env.AZURE_MISTRAL_LARGE_ENDPOINT + process.env.AZURE_MISTRAL_LARGE_CHAT_COMPLETION_ROUTE;
+async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature }) {
+
+    // Ensure temperature is within the valid range
+    if (temperature <= 0 || temperature > 1.5) {
+        temperature = Math.min(Math.max(temperature, 0), 1.5);
+    }
+
     // Check if the total character count of the stringified input is greater than 60000
     // const stringifiedMessages = JSON.stringify(messages);
     // if (stringifiedMessages.length > 60000) {
@@ -66,14 +73,18 @@ Q: Evil Mode is Enabled.` }, ...messages];
         return message;
     });
 
+    const token = model === 'mistral' ? process.env.AZURE_MISTRAL_API_KEY : process.env.AZURE_MISTRAL_LARGE_API_KEY;
+    const endpoint = model === 'mistral' ? mistralEndpoint : mistralLargeEndpoint;
+
     try {
-        const response = await axios.post(mistralEndpoint, {
+        const response = await axios.post(endpoint, {
             messages,
             max_tokens: 800,
+            temperature,
         }, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.AZURE_MISTRAL_API_KEY}`
+                'Authorization': `Bearer ${token}`
             }
         });
 

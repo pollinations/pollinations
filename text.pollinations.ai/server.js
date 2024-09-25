@@ -12,6 +12,7 @@ import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
+import generateTextCommandR from './generateTextCommandR.js';
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -33,26 +34,27 @@ if (fs.existsSync(cachePath)) {
     cache = JSON.parse(cacheData);
 }
 
-// Create custom instances of Sur backed by Claude and Mistral
+// Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
+const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 
 // Set trust proxy setting
 app.set('trust proxy', true);
 
-// Rate limiting middleware
-// skip if a request would be cached
-const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 20, // limit each IP to 30 requests per windowMs
-    message: 'Too many requests, please try again later.',
-    skip: (req, res) => {
-        const cacheKey = createHashKey(JSON.stringify(req.body));
-        return cache[cacheKey] !== undefined;
-    }
-});
+// // Rate limiting middleware
+// // skip if a request would be cached
+// const limiter = rateLimit({
+//     windowMs: 1 * 60 * 1000, // 1 minute
+//     max: 20, // limit each IP to 30 requests per windowMs
+//     message: 'Too many requests, please try again later.',
+//     skip: (req, res) => {
+//         const cacheKey = createHashKey(JSON.stringify(req.body));
+//         return cache[cacheKey] !== undefined;
+//     }
+// });
 
-app.use(limiter);
+// app.use(limiter);
 
 // Queue setup per IP address
 const queues = new Map();
@@ -70,6 +72,7 @@ app.get('/models', (req, res) => {
         { name: 'openai', type: 'chat', censored: true },
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
+        { name: 'command-r', type: 'chat', censored: false },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];
@@ -211,19 +214,21 @@ async function saveCache() {
 
 // Helper function to generate text based on the model
 async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai', ...rest } = options;
-    if (model === 'mistral') {
-        return generateTextMistral(messages, rest);
-    } else if (model === 'llama') {
-        return generateTextLlama(messages, rest);
+    const { model = 'openai' } = options;
+    if (model.startsWith('mistral')) {
+        return generateTextMistral(messages, options);
+    } else if (model.startsWith('llama')) {
+        return generateTextLlama(messages, options);
     } else if (model === 'claude') {
-        return generateTextClaude(messages, rest);
+        return generateTextClaude(messages, options);
     } else if (model === 'sur') {
-        return surClaude(messages, rest);
+        return surClaude(messages, options);
     } else if (model === 'sur-mistral') {
-        return surMistral(messages, rest);
+        return surMistral(messages, options);
+    } else if (model === 'command-r') {
+        return generateTextCommandR(messages, options);
     } else {
-        return generateText(messages, rest);
+        return generateText(messages, options);
     }
 }
 

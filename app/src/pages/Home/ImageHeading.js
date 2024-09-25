@@ -8,13 +8,6 @@ export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
   max-width: 100%; /* Prevents image from exceeding container width */
   object-fit: contain; /* Maintains aspect ratio without cropping */
-
-  @media (max-width: 600px) {
-    /* Adjustments for mobile devices */
-    height: 500px; /* Allows height to adjust based on width */
-    max-height: 100%; /* Allows height to adjust based on width */
-
-  }
 `
 
 export const GenerativeImageURLContainer = styled(Container)`

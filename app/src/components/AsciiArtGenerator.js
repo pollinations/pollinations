@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
-import usePollinationsText from '@pollinations/react/src/hooks/usePollinationsText';
+import { usePollinationsText } from '@pollinations/react';
 
 const AsciiContainer = styled.pre`
     font-family: monospace;

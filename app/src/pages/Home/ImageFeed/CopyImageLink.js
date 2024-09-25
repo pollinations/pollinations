@@ -7,8 +7,8 @@ import { Colors } from "../../../styles/global"
 export function CopyImageLink({ handleCopyLink, isLoading }) {
     return (
         <CustomTooltip title="Copy image link.">
-            <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginLeft: "0.5em" }}>
-                <FileCopyIcon style={{ color: Colors.lime, fontSize: "1.5rem" }} />
+            <IconButton onClick={handleCopyLink} disabled={isLoading} style={{ marginRight: "1em"}}>
+                <FileCopyIcon style={{ color: Colors.lime, fontSize: "2rem" }} />
             </IconButton>
         </CustomTooltip>
     )

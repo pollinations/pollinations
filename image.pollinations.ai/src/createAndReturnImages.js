@@ -1,18 +1,20 @@
 import fetch from 'node-fetch';
-import { fetchFromLeastBusyFluxServer } from './availableServers.js';
+import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import { writeExifMetadata } from './writeExifMetadata.js';
 import { MODELS } from './models.js';
 import { sanitizeString } from './translateIfNecessary.js';
 import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
+import sharp from 'sharp';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
-const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
+// const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
 
-function fetchFromTurboServer(params) {
-  return fetch(TURBO_SERVER_URL, params);
+async function fetchFromTurboServer(params) {
+  const host = await getNextTurboServerUrl();
+  return fetch(`${host}`, params);
 }
 
 /**
@@ -157,7 +159,18 @@ function calculateClosestAspectRatio(width, height) {
   return `${width}:${height}`;
 }
 
-
+/**
+ * Converts the buffer to JPEG format if it is not already in JPEG format.
+ * @param {Buffer} buffer - The image buffer.
+ * @returns {Promise<Buffer>} - The converted JPEG buffer.
+ */
+async function convertToJpeg(buffer) {
+  const { format } = await sharp(buffer).metadata();
+  if (format !== 'jpeg') {
+    return await sharp(buffer).jpeg().toBuffer();
+  }
+  return buffer;
+}
 
 /**
  * Creates and returns images with optional logo and metadata, checking for NSFW content.
@@ -181,8 +194,11 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
+  // Convert the buffer to JPEG if it is not already in JPEG format
+  bufferWithLegend = await convertToJpeg(bufferWithLegend);
+
   //Resize the final image to the user's desired size
-  bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
+  // bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
 
   // // blure image if isChild && isMature
   // if (isChild && isMature) {

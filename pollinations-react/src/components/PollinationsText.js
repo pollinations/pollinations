@@ -1,5 +1,5 @@
 import React from "react";
-import usePollinationsText from "../hooks/usePollinationsText";
+import usePollinationsText from "../hooks/usePollinationsText.js";
 
 /**
  * Component to display plain text from Pollinations based on the given prompt.

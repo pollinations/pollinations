@@ -37,12 +37,11 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     }
 
     // // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
-    // if (width * height > maxPixels) {
-    //     const ratio = Math.sqrt(maxPixels / (width * height));
-    //     width = Math.floor(width * ratio);
-    //     height = Math.floor(height * ratio);
-    // }
-
+    if (width * height > maxPixels) {
+        const ratio = Math.sqrt(maxPixels / (width * height));
+        width = Math.floor(width * ratio);
+        height = Math.floor(height * ratio);
+    }
 
 
     return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };

@@ -6,26 +6,21 @@ import useRandomSeed from "../../hooks/useRandomSeed";
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
-  width: auto;
-  margin: 1em;
   max-width: 100%; /* Prevents image from exceeding container width */
   object-fit: contain; /* Maintains aspect ratio without cropping */
-
-  @media (max-width: 600px) {
-    /* Adjustments for mobile devices */
-    height: auto; /* Allows height to adjust based on width */
-    width: 100%; /* Image takes up full width of its container */
-  }
 `
 
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
   // background-color: transparent;
-  margin: 0em;
+  margin: 0em auto;
   padding: 0em;
   max-width: 960px;
   border-radius: 0px;
-  width: 90%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 `
 
 export const ImageURLHeading = styled(

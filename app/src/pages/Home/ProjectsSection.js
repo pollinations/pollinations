@@ -2,7 +2,7 @@ import React from 'react';
 import { Container, useMediaQuery, Link, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 import { makeStyles, useTheme } from '@material-ui/core/styles';
 import { ImageURLHeading } from './ImageHeading';
-import { Colors } from '../../styles/global';
+import { Colors, Fonts } from '../../styles/global';
 import Markdown from 'markdown-to-jsx';
 import { LinkStyle } from "./components";
 import styled from '@emotion/styled';
@@ -25,12 +25,7 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: '2em'
 
     },
-    tableRow: {
-        '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)', // Slight highlight on hover
-        },
 
-    },
     tableCell: {
         border: 'none', // Removes cell borders
         padding: '8px 16px', // Tighter padding
@@ -49,6 +44,11 @@ const useStyles = makeStyles((theme) => ({
     },
     sectionHeading: {
         color: Colors.lime,
+        fontFamily: Fonts.body,
+        fontStyle: 'normal',
+        fontWeight: '500',
+        fontSize: '1.1em',
+        lineHeight: '22px',
         marginTop: theme.spacing(4),
         marginBottom: theme.spacing(2),
         textAlign: 'center',
@@ -279,9 +279,12 @@ const renderProjectLink = (project) => {
             rel="noopener noreferrer"
             style={{
                 color: Colors.lime,
+                fontFamily: Fonts.body,
+                fontStyle: 'normal',
+                fontWeight: '500',
+                fontSize: '1.1em',
+                lineHeight: '22px',
                 textDecoration: 'none',
-                fontWeight: 'bold',
-                fontSize: '1em', // Same text size as other text
                 '&:hover': {
                     textDecoration: 'underline',
                 },
@@ -300,9 +303,13 @@ const renderRepoLink = (repoUrl) => {
             rel="noopener noreferrer"
             style={{
                 color: Colors.lime,
+                fontFamily: Fonts.body,
+                fontStyle: 'normal',
+                fontWeight: '500',
+                fontSize: '1.1em',
+                lineHeight: '22px',
                 textDecoration: 'none',
                 marginLeft: '8px',
-                fontSize: '1.1em', // Larger text size
                 '&:hover': {
                     textDecoration: 'underline',
                 },

@@ -16,7 +16,7 @@
 - 🖼️ Embed like any normal image or text
 - 🌍 Over 50,000 active users and > 2 million images generated per month
 - 🤝 Used by various open-source LLMs, bots, and communities
-- 🎣 Easy-to-use React hooks and components ([React Components README](./pollinations-react/README.md))
+- 🎣 Easy-to-use React hooks ([React Hooks README](./pollinations-react/README.md))
 
 ## 🚀 Getting Started
 
@@ -69,31 +69,34 @@ To generate text, use this URL:
 
 ## 🛠️ Integration
 
-### React Components
+### React Hooks
 
-We offer React components for easy integration. Example usage:
+We offer React hooks for easy integration. Example usage:
 
     import React from 'react';
-    import { PollinationsImage, PollinationsMarkdown } from '@pollinations/react';
+    import { usePollinationsImage, usePollinationsText } from '@pollinations/react';
+    import ReactMarkdown from 'react-markdown';
 
-    const AIGeneratedContent = () => (
-      <div>
-        <h2>AI-Generated Travel Guide</h2>
-        <PollinationsImage 
-          prompt="Beautiful landscape of Paris with Eiffel Tower" 
-          width={800} 
-          height={600} 
-          seed={42} 
-        />
-        <PollinationsMarkdown seed={42}>
-          Write a brief travel guide for Paris, including top attractions and local cuisine
-        </PollinationsMarkdown>
-      </div>
-    );
+    const AIGeneratedContent = () => {
+      const imageUrl = usePollinationsImage("Beautiful landscape of Paris with Eiffel Tower", { width: 800, height: 600, seed: 42 });
+      const markdown = usePollinationsText("Write a brief travel guide for Paris, including top attractions and local cuisine in markdown", { seed: 42 });
+
+      return (
+        <div>
+          <h2>AI-Generated Travel Guide</h2>
+          <img src={imageUrl} alt="AI Generated" />
+          {markdown ? (
+            <ReactMarkdown>{markdown}</ReactMarkdown>
+          ) : (
+            <p>Loading markdown content...</p>
+          )}
+        </div>
+      );
+    };
 
     export default AIGeneratedContent;
 
-Check out our [Pollinations React Components](./pollinations-react/README.md) for more details.
+Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
 ## 🌐 Projects Using Pollinations.AI
 

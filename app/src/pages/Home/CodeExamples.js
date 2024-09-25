@@ -4,7 +4,8 @@ import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
 import GitHubIcon from '@material-ui/icons/GitHub'
-import { PollinationsImage, PollinationsMarkdown } from "@pollinations/react"
+import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
+
 import useRandomSeed from "../../hooks/useRandomSeed"
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -213,6 +214,9 @@ export function CodeExamples(image) {
 
   const seed = useRandomSeed();
 
+  const imageURL = usePollinationsImage("Minimal GitHub API Logo on black background", { seed, width: 96, height: 96 });
+  const markdownText = usePollinationsText("Rephrase with emojis and simplify: 'Learn more on GitHub'", { seed });
+
   return (
     <Box style={{ marginTop: "3em" }}>
       <ImageURLHeading whiteText={"yellow"} width={350} height={70}>
@@ -284,14 +288,9 @@ export function CodeExamples(image) {
           <Box margin="0px" overflow="hidden" display="flex" alignItems="center">
 
             <Box display="flex" alignItems="left" width="100%" fontSize="1.2rem">
-
-              <PollinationsImage width={96} height={96} seed={seed}>
-                Minimal GitHub API Logo on black background
-              </PollinationsImage>
-              <Link href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md">
-                <PollinationsMarkdown style={{ marginLeft: "10px" }} seed={seed}>
-                  Rephrase with emojis and simplify: "Learn more on GitHub"
-                </PollinationsMarkdown>
+              <img src={imageURL} alt="Generated GitHub API Logo" width={96} height={96} />
+              <Link href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" style={{ marginLeft: "10px" }}>
+                {markdownText}
               </Link>
             </Box>
           </Box>

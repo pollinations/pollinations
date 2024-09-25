@@ -5,25 +5,26 @@ import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./compo
 import { Link } from "react-router-dom"
 import { GenerativeImageURLContainer, ImageURLHeading } from "./ImageHeading"
 import discordLogo from "../../assets/imgs/discord_logo.png"
-import { PollinationsMarkdown } from "@pollinations/react";
+import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
+import ReactMarkdown from 'react-markdown';
 
 const DiscordSection = (props) => {
+  const seed = useMemo(() => Math.floor(Math.random() * 10000), []);
+  const imageURL = usePollinationsImage("an image with the text 'Discord' displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. Make it very colorful with vibrant hues and gradients.", { seed, width: 500, height: 500 });
+  const markdownText = usePollinationsText("Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
+
   return (
     <Container>
       <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
-        <DiscordLogoHeading>Discord</DiscordLogoHeading>
+        <DiscordLogoHeading src={imageURL} alt="Discord" />
       </CenteredLink>
       <Body>
         <TextWithLogo>
           <Logo src={discordLogo} alt="Discord Logo" />
           <Text style={{ maxWidth: "90%", width: "500px" }}>
-            <PollinationsMarkdown
-              components={{
-                p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
-              }}
-            >
-             Introduce our Discord channel and incitivate to join, make it jus a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
-            </PollinationsMarkdown>
+            <p style={{ fontSize: "36px", userSelect: "none" }}>
+              <ReactMarkdown>{markdownText}</ReactMarkdown>
+            </p>
           </Text>
         </TextWithLogo>
         <br />
@@ -47,7 +48,7 @@ const Container = styled(ContainerBase)`
   justify-content: center;
   align-items: center;
   gap: 0px;
-    background-color: ${Colors.background_body};
+  background-color: ${Colors.background_body};
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     flex-direction: column;
@@ -61,13 +62,7 @@ const CenteredLink = styled(Link)`
   width: 100%;
 `
 
-const DiscordLogoHeading = styled((props) => (
-  <ImageURLHeading
-    {...props}
-    whiteText={false}
-    customPrompt={`an image with the text "Discord" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. Make it very colorful with vibrant hues and gradients.`}
-  />
-))`
+const DiscordLogoHeading = styled.img`
   width: 100%;
   max-width: 500px;
 `
@@ -83,7 +78,6 @@ const Body = styled.div`
   flex-direction: column;
   align-items: center;
   margin-bottom: 2em;
-
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     font-size: 24px;
@@ -113,8 +107,8 @@ const Logo = styled.img`
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     margin-right: 0;
-      width: 60px;
-  height: auto;
+    width: 60px;
+    height: auto;
     margin-bottom: 20px;
   }
 `

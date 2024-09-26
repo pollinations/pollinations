@@ -40,7 +40,6 @@ if (fs.existsSync(cachePath)) {
 const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
 const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
-
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
 
@@ -131,6 +130,7 @@ app.get('/models', (req, res) => {
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData) {
+    console.log("handleRequest", cacheKeyData);
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
 
     try {

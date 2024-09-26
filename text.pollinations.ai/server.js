@@ -9,11 +9,11 @@ import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
-import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
+import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
-
+import generateTextCommandR from './generateTextCommandR.js';
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -35,25 +35,27 @@ if (fs.existsSync(cachePath)) {
     cache = JSON.parse(cacheData);
 }
 
-// Create a custom Claude instance with a specific system message
-const claudeSur = generateTextClaudeWrapper(surSystemPrompt);
+// Create custom instances of Sur backed by Claude, Mistral, and Command-R
+const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
+const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
+const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 
 // Set trust proxy setting
 app.set('trust proxy', true);
 
-// Rate limiting middleware
-// skip if a request would be cached
-const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 minute
-    max: 20, // limit each IP to 30 requests per windowMs
-    message: 'Too many requests, please try again later.',
-    skip: (req, res) => {
-        const cacheKey = createHashKey(JSON.stringify(req.body));
-        return cache[cacheKey] !== undefined;
-    }
-});
+// // Rate limiting middleware
+// // skip if a request would be cached
+// const limiter = rateLimit({
+//     windowMs: 1 * 60 * 1000, // 1 minute
+//     max: 20, // limit each IP to 30 requests per windowMs
+//     message: 'Too many requests, please try again later.',
+//     skip: (req, res) => {
+//         const cacheKey = createHashKey(JSON.stringify(req.body));
+//         return cache[cacheKey] !== undefined;
+//     }
+// });
 
-app.use(limiter);
+// app.use(limiter);
 
 // Queue setup per IP address
 const queues = new Map();
@@ -65,6 +67,14 @@ function getQueue(ip) {
     return queues.get(ip);
 }
 
+// Function to get IP address
+export function getIp(req) {
+    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!ip) return null;
+    const ipSegments = ip.split('.').slice(0, 3).join('.');
+    return ipSegments;
+}
+
 // GET /models request handler
 app.get('/models', (req, res) => {
     const availableModels = [
@@ -72,6 +82,7 @@ app.get('/models', (req, res) => {
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
         { name: 'karma.yt', type: 'completion', censored: true },
+        { name: 'command-r', type: 'chat', censored: false },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];
@@ -81,18 +92,16 @@ app.get('/models', (req, res) => {
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData) {
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
-    console.log(777);
+
     try {
-        console.log(1);
         if (cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
             }
-            console.log(cachedResponse)
             return sendResponse(res, cachedResponse);
         }
-        console.log(2);
+
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
@@ -106,9 +115,11 @@ async function handleRequest(req, res, cacheKeyData) {
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
+        await sleep(1000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
+        await sleep(1000); // ensures one ip can only make one request per second
     }
 }
 
@@ -123,7 +134,7 @@ function getRequestData(req, isPost = false) {
     const query = req.query;
     const body = req.body;
     console.log("got query", query);
-    const data = isPost ? { ...body, ...query } : query;
+    const data = isPost ? { ...query, ...body } : query;
 
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
@@ -149,7 +160,8 @@ function getRequestData(req, isPost = false) {
 // GET request handler
 app.get('/:prompt', async (req, res) => {
     const cacheKeyData = getRequestData(req);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
@@ -161,7 +173,8 @@ app.post('/', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
@@ -177,7 +190,8 @@ app.post('/openai', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(async () => {
         console.log("endpoint: /openai", cacheKeyData);
 
@@ -205,9 +219,13 @@ app.post('/openai', async (req, res) => {
 async function saveCache() {
     const resolvedCache = {};
     for (const [key, value] of Object.entries(cache)) {
-        const resolvedValue = await value;
-        if (!(resolvedValue instanceof Error)) {
-            resolvedCache[key] = resolvedValue;
+        try {
+            const resolvedValue = await value;
+            if (!(resolvedValue instanceof Error)) {
+                resolvedCache[key] = resolvedValue;
+            }
+        } catch (error) {
+            console.error(`Error resolving cache value for key: ${key}`, error.message);
         }
     }
     fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
@@ -215,26 +233,31 @@ async function saveCache() {
 
 // Helper function to generate text based on the model
 async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai', ...rest } = options;
-    if (model === 'mistral') {
-        return generateTextMistral(messages, rest);
-    } else if (model === 'llama') {
-        return generateTextLlama(messages, rest);
+    const { model = 'openai' } = options;
+    if (model.startsWith('mistral')) {
+        return generateTextMistral(messages, options);
+    } else if (model.startsWith('llama')) {
+        return generateTextLlama(messages, options);
     } else if (model === 'karma') {
-        console.log('karma xxxxxx');
-        return generateTextKarma(messages, rest);
+        return generateTextKarma(messages, options);
     } else if (model === 'claude') {
-        return generateTextClaude(messages, rest);
+        return generateTextClaude(messages, options);
     } else if (model === 'sur') {
-        return claudeSur(messages, rest);
+        return surClaude(messages, options);
+    } else if (model === 'sur-mistral') {
+        return surMistral(messages, options);
+    } else if (model === 'command-r') {
+        return generateTextCommandR(messages, options);
     } else {
-        return generateText(messages, rest);
+        return generateText(messages, options);
     }
 }
 
 // Helper function to create a hash for the cache key
 function createHashKey(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
+    // Ensure the data used for the cache key is deterministic
+    const deterministicData = JSON.stringify(JSON.parse(data));
+    return crypto.createHash('sha256').update(deterministicData).digest('hex');
 }
 
 app.listen(port, () => {

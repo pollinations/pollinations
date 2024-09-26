@@ -31,6 +31,14 @@ cartoon: str = styles.get("cartoon")
 anime: str = styles.get("anime")
 logo: str = styles.get("logo")
 
+models: list = ["turbo", "flux", "flux-realism", "flux-anime", "flux-3d", "any-dark"]
+
+turbo: str = "turbo"
+flux: str = "flux"
+flux_realism: str = "flux-realism"
+flux_anime: str = "flux-anime"
+flux_3d: str = "flux-3d"
+any_dark: str = "any-dark"
 
 @abc.resource(deprecated=False)
 def sample_style(*args, **kwargs) -> str:

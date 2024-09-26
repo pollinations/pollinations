@@ -2,15 +2,9 @@
 pollinations.types
 
 Classes:
-    ImageModel (types.ImageModel): Text-to-image generative AI model.
-    (deprecated) > TextModel (types.TextModel): Text-to-text generative AI model.
     ImageObject (types.ImageObject): Image object.
-    (deprecated) > TextObject (types.TextObject): Text object.
+    GitObject (types.GitObject): GitHub object.
 """
 
-from .ImageModel import ImageModel
-
-# from .TextModel import TextModel
-from .ImageObject import ImageObject
-
-# from .TextObject import TextObject
+from .gitobject import GitObject
+from .imageobject import ImageObject

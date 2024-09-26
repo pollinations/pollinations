@@ -1,0 +1,33 @@
+[build-system]
+requires      = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pollinations"
+version = "1.0.2"
+description = "pollinations.ai | Image Generation"
+readme = "README.md"
+authors = [{ name = "pollinations.ai", email = "hello@pollinations.ai" }, { name = "dev.pollinations.ai", email = "git.pollinations.ai@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Topic :: Software Development :: Libraries',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Utilities',
+    'Typing :: Typed'
+]
+keywords = ['pollinations', 'pollinations.ai', 'pollinations-ai', 'pollinations_ai']
+requires-python = ">=3.7.0"
+dependencies = []
+
+[project.urls]
+Website = 'https://pollinations.ai/'
+Discord = 'https://discord.gg/8HqSRhJVxn'
+Github = 'https://github.com/pollinations'
+YouTube = 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug'
+Instagram = 'https://instagram.com/pollinations_ai'
+Twitter = 'https://twitter.com/pollinations_ai'

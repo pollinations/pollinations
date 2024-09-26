@@ -14,6 +14,7 @@ class ImageProtocol(Protocol):
     """
 
     prompt: str
+    negative: str
     model: str
     width: int
     height: int

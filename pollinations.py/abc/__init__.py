@@ -3,23 +3,17 @@ pollinations.abc
 
 Classes:
     ImageProtocol (abc.ImageProtocol): Image protocol for pollinations.ai
-    (deprecated) > TextProtocol (abc.TextProtocol): Text protocol for pollinations.ai
 
 Functions:
     resource(object, deprecated: bool): Decorator for pollinations.ai resources
 
 Variables:
     samples (list): List of sample prompts for the Image model.
-    BANNED_WORDS (list): List of banned words for the Image model filter.
+    filtered (list): List of banned words for the Image model filter.
 """
 
 from .imageprotocol import ImageProtocol
-
-# from .textprotocol import TextProtocol
-
-proto: str = "https://"
-ai: str = ".ai/prompt/"
-
+from .gitprotocol import GitProtocol
 
 def resource(deprecated: bool = False):
     def decorator(func):
@@ -28,9 +22,6 @@ def resource(deprecated: bool = False):
 
     return decorator
 
-
-# samples
-# BANNED_WORDS
 
 samples = [
     "Cat",
@@ -244,7 +235,7 @@ samples = [
     "Vibrant Indian street market",
 ]
 
-BANNED_WORDS: list = [
+filtered: list = [
     "girls 1 cup",
     "2g1c",
     "4r5e",
@@ -1824,7 +1815,6 @@ BANNED_WORDS: list = [
     "trumped",
     "tub girl",
     "tubgirl",
-    "turd",
     "tush",
     "tushy",
     "tw4t",
@@ -1841,7 +1831,6 @@ BANNED_WORDS: list = [
     "two girls one cup",
     "twunt",
     "twunter",
-    "ugly",
     "unclefucker",
     "undies",
     "undressing",
@@ -1855,7 +1844,6 @@ BANNED_WORDS: list = [
     "uzi",
     "v14gra",
     "v1gra",
-    "vag",
     "vagina",
     "vajayjay",
     "va-j-j",
@@ -1874,14 +1862,12 @@ BANNED_WORDS: list = [
     "vulva",
     "w00se",
     "wad",
-    "wang",
     "wank",
     "wanker",
     "wankjob",
     "wanky",
     "wazoo",
     "weed",
-    "weenie",
     "weewee",
     "weiner",
     "wet dream",
@@ -1903,25 +1889,17 @@ BANNED_WORDS: list = [
     "whores",
     "whoring",
     "wigger",
-    "willies",
-    "willy",
     "window licker",
     "wiseass",
     "wiseasses",
-    "wog",
-    "womb",
-    "wop",
     "wrapping men",
     "wrinkled starfish",
     "wtf",
     "xrated",
     "x-rated",
-    "xx",
-    "xxx",
     "yaoi",
     "yeasty",
     "yellow showers",
-    "yid",
     "yiffy",
     "yobbo",
     "zoophile",

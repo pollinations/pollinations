@@ -3,9 +3,7 @@ pollinations.ai
 
 Classes:
     ImageModel (ai.ImageModel): Text-to-image generative AI model.
-    (deprecated) > TextModel (ai.TextModel): Text-to-text generative AI model.
     ImageObject (ai.ImageObject): Image object.
-    (deprecated) > TextObject (ai.TextObject): Text object.
 
 Functions:
     sample(str): Returns a sample prompt for the Image model.
@@ -29,14 +27,13 @@ import random
 from .. import abc
 from .. import ext
 from ..types import (
-    ImageModel,
-    # TextModel,
     ImageObject,
-    # TextObject,
+)
+from ..models import (
+    ImageModel
 )
 
 Image: ImageModel = ImageModel
-# Text: TextModel = TextModel
 
 samples: list = ext.samples
 styles: dict = ext.styles
@@ -81,14 +78,10 @@ def help(*args, **kwargs) -> str:
 
   Image.image(): return the image object
 
-  (deprecated) > Text(save_file: str (OPTIONAL)): inialize the ai.Text
-
-  (deprecated) > Text.chat(prompt: str): chat with the ai and return the response
-
   """
         ""
     )
     return help_return
 
 
-BANNED_WORDS: list = abc.BANNED_WORDS
+filtered: list = abc.filtered

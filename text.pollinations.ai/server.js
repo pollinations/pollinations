@@ -11,6 +11,7 @@ import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
+import unityPrompt from './personas/unity.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
@@ -39,8 +40,9 @@ if (fs.existsSync(cachePath)) {
 const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
 const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
+// Create custom instance of Unity backed by Mistral Large
+const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
 
-// Set trust proxy setting
 app.set('trust proxy', true);
 
 // // Rate limiting middleware
@@ -106,7 +108,7 @@ app.get('/models', (req, res) => {
             name: 'karma',
             type: 'completion',
             censored: true,
-            description: 'Karma.yt Zeitgeist. Connected to realtime news and the web.'
+            description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)'
         },
         {
             name: 'command-r',
@@ -114,6 +116,12 @@ app.get('/models', (req, res) => {
             censored: false,
             description: 'Command-R'
         },
+        {
+            name: 'unity',
+            type: 'chat',
+            censored: false,
+            description: 'Unity with Mistral Large by @gfourteen'
+        }
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];
@@ -133,6 +141,8 @@ async function handleRequest(req, res, cacheKeyData) {
             }
             return sendResponse(res, cachedResponse);
         }
+
+
 
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
@@ -165,7 +175,6 @@ function sendResponse(res, response) {
 function getRequestData(req, isPost = false) {
     const query = req.query;
     const body = req.body;
-    console.log("got query", query);
     const data = isPost ? { ...query, ...body } : query;
 
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
@@ -280,6 +289,8 @@ async function generateTextBasedOnModel(messages, options) {
         return surMistral(messages, options);
     } else if (model === 'command-r') {
         return generateTextCommandR(messages, options);
+    } else if (model === 'unity') {
+        return unityMistralLarge(messages, options);
     } else {
         return generateText(messages, options);
     }

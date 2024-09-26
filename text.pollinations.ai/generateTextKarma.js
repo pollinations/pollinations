@@ -7,10 +7,10 @@ const { KARMA_ENDPOINT } = process.env
 
 async function generateTextKarma(messages, { jsonMode = false }) {
 
-  const stringifiedMessages = JSON.stringify(messages);
-  if (stringifiedMessages.length > 5000) {
-    throw new Error('Input messages exceed the character limit of 5000.');
-  }
+  // const stringifiedMessages = JSON.stringify(messages);
+  // if (stringifiedMessages.length > 5000) {
+  //   throw new Error('Input messages exceed the character limit of 5000.');
+  // }
 
   if (jsonMode && !hasSystemMessage(messages)) {
     // TODO: Karma jsonMode
@@ -27,7 +27,7 @@ async function generateTextKarma(messages, { jsonMode = false }) {
         'Authorization': `Bearer ${process.env.KARMA_API_KEY}`
       }
     });
-
+    console.log("karma response", response.data);
     return response.data.choices[0].message.content;
   } catch (error) {
     if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {

@@ -167,6 +167,7 @@ async function handleRequest(req, res, cacheKeyData) {
         await sleep(1000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
+        console.error(error.stack); // Print stack trace
         res.status(500).send(error.message);
         await sleep(1000); // ensures one ip can only make one request per second
     }
@@ -293,6 +294,7 @@ app.post('/openai*', async (req, res) => {
             res.json(result);
         } catch (error) {
             console.error(`Error generating text`, error.message);
+            console.error(error.stack); // Print stack trace
             res.status(500).send(error.message);
         }
     });
@@ -309,6 +311,7 @@ async function saveCache() {
             }
         } catch (error) {
             console.error(`Error resolving cache value for key: ${key}`, error.message);
+            console.error(error.stack); // Print stack trace
         }
     }
     fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');

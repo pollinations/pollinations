@@ -77,60 +77,61 @@ export function getIp(req) {
     return ipSegments;
 }
 
+const availableModels = [
+    {
+        name: 'openai',
+        type: 'chat',
+        censored: true,
+        description: 'OpenAI GPT-4o'
+    },
+    {
+        name: 'mistral',
+        type: 'chat',
+        censored: false,
+        description: 'Mistral Nemo'
+    },
+    {
+        name: 'mistral-large',
+        type: 'chat',
+        censored: false,
+        description: 'Mistral Large (v2)'
+    },
+    {
+        name: 'llama',
+        type: 'completion',
+        censored: true,
+        description: 'Llama 3.1'
+    },
+    {
+        name: 'karma',
+        type: 'completion',
+        censored: true,
+        description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)'
+    },
+    {
+        name: 'command-r',
+        type: 'chat',
+        censored: false,
+        description: 'Command-R'
+    },
+    {
+        name: 'unity',
+        type: 'chat',
+        censored: false,
+        description: 'Unity with Mistral Large by @gfourteen'
+    }
+    // { name: 'claude', type: 'chat', censored: true }
+    // { name: 'sur', type: 'chat', censored: true }
+];
+
 // GET /models request handler
 app.get('/models', (req, res) => {
-    const availableModels = [
-        {
-            name: 'openai',
-            type: 'chat',
-            censored: true,
-            description: 'OpenAI GPT-4o'
-        },
-        {
-            name: 'mistral',
-            type: 'chat',
-            censored: false,
-            description: 'Mistral Nemo'
-        },
-        {
-            name: 'mistral-large',
-            type: 'chat',
-            censored: false,
-            description: 'Mistral Large (v2)'
-        },
-        {
-            name: 'llama',
-            type: 'completion',
-            censored: true,
-            description: 'Llama 3.1'
-        },
-        {
-            name: 'karma',
-            type: 'completion',
-            censored: true,
-            description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)'
-        },
-        {
-            name: 'command-r',
-            type: 'chat',
-            censored: false,
-            description: 'Command-R'
-        },
-        {
-            name: 'unity',
-            type: 'chat',
-            censored: false,
-            description: 'Unity with Mistral Large by @gfourteen'
-        }
-        // { name: 'claude', type: 'chat', censored: true }
-        // { name: 'sur', type: 'chat', censored: true }
-    ];
     res.json(availableModels);
 });
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData) {
-    console.log("handleRequest", cacheKeyData);
+    // console.log("handleRequest", cacheKeyData);
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
 
     try {
@@ -148,20 +149,26 @@ async function handleRequest(req, res, cacheKeyData) {
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
 
-        // Don't cache the promise, wait for it to resolve or reject
-        const response = await responsePromise;
+        cache[cacheKey] = responsePromise;
+        let response;
+        try {
+            // Don't cache the promise, wait for it to resolve or reject
+            response = await responsePromise;
+        } catch (error) {
+            console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
+            delete cache[cacheKey];
+            throw error; // rethrow the error so the caller can handle it
+        }
 
-        // Only cache successful responses
-        cache[cacheKey] = response;
         await saveCache();
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
-        // await sleep(1000); // ensures one ip can only make one request per second
+        await sleep(1000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
-        // await sleep(1000); // ensures one ip can only make one request per second
+        await sleep(1000); // ensures one ip can only make one request per second
     }
 }
 
@@ -219,8 +226,21 @@ app.post('/', async (req, res) => {
     await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
-// POST /openai request handler
-app.post('/openai', async (req, res) => {
+app.get('/openai/models', (req, res) => {
+    const models = availableModels.map(model => ({
+        id: model.name,
+        object: "model",
+        created: Date.now(),
+        owned_by: model.name
+    }));
+    res.json({
+        object: "list",
+        data: models
+    });
+});
+
+// POST /openai/* request handler
+app.post('/openai*', async (req, res) => {
 
     // log all request data
     // console.log("request data", JSON.stringify(req.body, null, 2));
@@ -231,23 +251,45 @@ app.post('/openai', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
+    const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
     const ip = getIp(req);
     const queue = getQueue(ip);
+    const isStream = req.body.stream;
     await queue.add(async () => {
-        console.log("endpoint: /openai", cacheKeyData);
 
-        const messageKey = req.body.stream ? "delta" : "content";
+        if (cache[cacheKey]) {
+            const cachedResponse = await cache[cacheKey];
+            if (cachedResponse instanceof Error) {
+                throw cachedResponse; // Re-throw the cached error
+            }
+            return res.json(cachedResponse);
+        }
+
+        console.log("endpoint: /openai", cacheKeyData);
 
         try {
             const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
-            const result = ({
+            let choices;
+            if (isStream) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.flushHeaders();
+                res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
+                res.end();
+                return;
+            } else {
+                choices = [{ "message": { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
+            }
+            const result = {
                 "created": Date.now(),
                 "id": crypto.randomUUID(),
                 "model": cacheKeyData.model,
-                "object": "chat.completion",
-                "choices": [{ [messageKey]: { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
-            });
-            // console.log("openai format result", JSON.stringify(result, null, 2));
+                "object": isStream ? "chat.completion.chunk" : "chat.completion",
+                "choices": choices
+            };
+            cache[cacheKey] = result;
+            console.log("openai format result", JSON.stringify(result, null, 2));
             res.json(result);
         } catch (error) {
             console.error(`Error generating text`, error.message);
@@ -302,6 +344,11 @@ function createHashKey(data) {
     const deterministicData = JSON.stringify(JSON.parse(data));
     return crypto.createHash('sha256').update(deterministicData).digest('hex');
 }
+
+app.use((req, res, next) => {
+    console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

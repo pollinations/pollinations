@@ -15,6 +15,7 @@ class ImageObject(abc.ImageProtocol):
 
     Parameters:
         prompt (str): Prompt for the image.
+        negative (str): Negative prompt for the image.
         url (str): URL for the image.
         date (str): Date the image was generated.
         content (binary): Binary content of the image.
@@ -22,11 +23,12 @@ class ImageObject(abc.ImageProtocol):
 
     Variables:
         prompt (str): Prompt for the image.
+        negative (str): Negative prompt for the image.
         url (str): URL for the image.
         date (str): Date the image was generated.
         content (binary): Binary content of the image.
         nologo (bool): Whether to remove the logo from the image.
-    """ ""
+    """
 
     def __init__(
         self,
@@ -35,6 +37,7 @@ class ImageObject(abc.ImageProtocol):
         date: str,
         content: bin,
         *args,
+        negative: str = "",
         model: str = None,
         width: int = None,
         height: int = None,
@@ -43,6 +46,7 @@ class ImageObject(abc.ImageProtocol):
         **kwargs,
     ) -> None:
         self.prompt: str = prompt
+        self.negative: str = negative
         self.width: int = width if width else 1024
         self.height: int = height if height else 1024
         self.model: str = model if model else "default"
@@ -53,4 +57,4 @@ class ImageObject(abc.ImageProtocol):
         self.nologo: bool = nologo
 
     def __repr__(self, *args, **kwargs) -> str:
-        return f"ImageObject(prompt={self.prompt}, width={self.width}, height={self.height}, model={self.model}, seed={self.seed}, url={self.url}, date={self.date}, content={self.content}, nologo={self.nologo})"
+        return f"ImageObject(prompt={self.prompt}, negative={self.negative}, width={self.width}, height={self.height}, model={self.model}, seed={self.seed}, url={self.url}, date={self.date}, content={self.content[:10]}..{len(self.content[10:])} more, nologo={self.nologo})"

@@ -1,6 +1,6 @@
 #  MIT License
 #
-#  Copyright (c) 2023 pollinations-ai
+#  Copyright (c) 2024 pollinations
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a copy
 #  of this software and associated documentation files (the "Software"), to deal
@@ -25,12 +25,10 @@
 Interact with text-to-image and text-to-text generative AI models.
 
 Classes:
-    Image (types.ImageModel): text-to-image generative AI model.
-    (deprecated) > Text (types.TextModel): text-to-text generative AI model.
+    Image (models.ImageModel): text-to-image generative AI model.
 
 Object Classes:
     ImageObject (types.ImageObject): Image object.
-    (deprecated) > TextObject (types.TextObject): Text object.
 
 Functions:
     help(str): Prints general/basic information.
@@ -41,7 +39,7 @@ Functions:
 
 from . import ai as _ai
 
-__version__: str = "0.5.2"
+__version__: str = "1.0.2"
 
 
 ai: object = _ai
@@ -49,7 +47,8 @@ ai: object = _ai
 help: object = ai.help
 
 Image: object = ai.Image
-# Text: object = ai.Text
+ImageModel: object = ai.Image
+ImageObject: object = ai.ImageObject
 
 sample: object = ai.sample
 sample_style: object = ai.sample_style

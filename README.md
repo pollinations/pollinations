@@ -142,21 +142,6 @@ We're constantly exploring new ways to push the boundaries of AI-driven content 
 
 Pollinations.AI aims to bridge technological innovation with global creativity. Our international team combines precision engineering with artistic flair to create a platform that serves creators worldwide.
 
-## 🏢 Supported By
-
-Pollinations.AI is proud to be supported by:
-
-[![Supported Companies](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)](https://pollinations.ai/p/Logos_of_AWS_Activate,_Google_Cloud_for_Startups,_OVH_Cloud,_NVIDIA_Inception,_Azure,_and_Outlier_Ventures_arranged_in_a_grid?width=300&height=200&nologo=true&seed=-1)
-
-- [LLMPlayground.net](https://llmplayground.net/): Hosting Custom Flux Models
-- [Karma.YT](https://karma.yt): Social media integrations
-- [AWS Activate](https://aws.amazon.com/): GPU Cloud Credits
-- [Google Cloud for Startups](https://cloud.google.com/): GPU Cloud Credits
-- [OVH Cloud](https://www.ovhcloud.com/): GPU Cloud credits
-- [NVIDIA Inception](https://www.nvidia.com/en-us/deep-learning-ai/startups/): AI startup support
-- [Azure (MS for Startups)](https://azure.microsoft.com/): OpenAI credits
-- [Outlier Ventures](https://outlierventures.io/): Startup Accelerator
-
 ## 🤝 Community and Support
 
 Join our vibrant community of over 12,000 Discord members to share your creations, get support, and collaborate with fellow AI enthusiasts. 

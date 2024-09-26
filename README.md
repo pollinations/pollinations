@@ -98,7 +98,7 @@ We offer React hooks for easy integration. Example usage:
 
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
-## 🌐 Projects Using Pollinations.AI
+## ���� Projects Using Pollinations.AI
 
 Pollinations.AI is used in various projects, including:
 
@@ -124,6 +124,7 @@ Pollinations.AI is used in various projects, including:
 5. [StorySight](https://github.com/abiral-manandhar/storySight): An app to help children with learning disabilities by visualizing abstract concepts. Made using Django and Pollinations.ai. Submitted to: [Devpost](https://devpost.com/software/storysight)
 6. [StoryWeaver](https://devpost.com/software/storyweaver-013xdw): StoryWeaver crafts personalized picture books for children based on themes and prompts you choose, bringing your unique story ideas to life with AI! Created by Advaith Narayanan, Omeed Sabouri, Yufan Wang. [GitHub Repo](https://github.com/AdvaithN1/StoryWeaver)
 7. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool that integrates Pollinations.ai for generating AI-driven content. Remix the app with your own prompts. Created by @thomash_pollinations.
+8. [MIDIjourney](https://korus.co/): An AI-powered plugin for Ableton Live that turns text descriptions into music. Created by KORUS Labs. [GitHub Repo](https://github.com/korus-labs/MIDIjourney)
 
 ### Tutorials
 1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.

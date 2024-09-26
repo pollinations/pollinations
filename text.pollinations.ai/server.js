@@ -12,6 +12,7 @@ import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import unityPrompt from './personas/unity.js';
+import midijourneyPrompt from './personas/midijourney.js'; // Add this line
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
@@ -42,6 +43,8 @@ const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
 const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
+// Create custom instance of Midijourney
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateText); // Add this line
 
 app.set('trust proxy', true);
 
@@ -119,6 +122,12 @@ const availableModels = [
         type: 'chat',
         censored: false,
         description: 'Unity with Mistral Large by @gfourteen'
+    },
+    {
+        name: 'midijourney',
+        type: 'chat',
+        censored: true,
+        description: 'Midijourney musical transformer'
     }
     // { name: 'claude', type: 'chat', censored: true }
     // { name: 'sur', type: 'chat', censored: true }
@@ -336,6 +345,8 @@ async function generateTextBasedOnModel(messages, options) {
         return generateTextCommandR(messages, options);
     } else if (model === 'unity') {
         return unityMistralLarge(messages, options);
+    } else if (model === 'midijourney') {
+        return midijourney(messages, options); // Add this line
     } else {
         return generateText(messages, options);
     }

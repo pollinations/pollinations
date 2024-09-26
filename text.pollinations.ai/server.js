@@ -81,7 +81,7 @@ app.get('/models', (req, res) => {
         { name: 'openai', type: 'chat', censored: true },
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
-        { name: 'karma.yt', type: 'completion', censored: true },
+        { name: 'karma', type: 'completion', censored: true },
         { name: 'command-r', type: 'chat', censored: false },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
@@ -116,11 +116,11 @@ async function handleRequest(req, res, cacheKeyData) {
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
-        await sleep(1000); // ensures one ip can only make one request per second
+        // await sleep(1000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
-        await sleep(1000); // ensures one ip can only make one request per second
+        // await sleep(1000); // ensures one ip can only make one request per second
     }
 }
 

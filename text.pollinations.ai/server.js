@@ -78,11 +78,42 @@ export function getIp(req) {
 // GET /models request handler
 app.get('/models', (req, res) => {
     const availableModels = [
-        { name: 'openai', type: 'chat', censored: true },
-        { name: 'mistral', type: 'chat', censored: false },
-        { name: 'llama', type: 'completion', censored: true },
-        { name: 'karma', type: 'completion', censored: true },
-        { name: 'command-r', type: 'chat', censored: false },
+        {
+            name: 'openai',
+            type: 'chat',
+            censored: true,
+            description: 'OpenAI GPT-4o'
+        },
+        {
+            name: 'mistral',
+            type: 'chat',
+            censored: false,
+            description: 'Mistral Nemo'
+        },
+        {
+            name: 'mistral-large',
+            type: 'chat',
+            censored: false,
+            description: 'Mistral Large (v2)'
+        },
+        {
+            name: 'llama',
+            type: 'completion',
+            censored: true,
+            description: 'Llama 3.1'
+        },
+        {
+            name: 'karma',
+            type: 'completion',
+            censored: true,
+            description: 'Karma.yt Zeitgeist. Connected to realtime news and the web.'
+        },
+        {
+            name: 'command-r',
+            type: 'chat',
+            censored: false,
+            description: 'Command-R'
+        },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];

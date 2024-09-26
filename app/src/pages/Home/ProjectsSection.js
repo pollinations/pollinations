@@ -140,6 +140,13 @@ const projects = {
             author: "@gaurav_87680"
         },
         {
+            name: "MIDIjourney",
+            url: "https://korus.co/",
+            description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
+            author: "KORUS Labs",
+            repo: "https://github.com/korus-labs/MIDIjourney"
+        },
+        {
             name: "Own-AI",
             url: "https://own-ai.pages.dev/",
             description: "An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them.",

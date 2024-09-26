@@ -13,7 +13,7 @@ import surSystemPrompt from './personas/sur.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
-
+import sleep from 'await-sleep';
 const app = express();
 const port = process.env.PORT || 16385;
 
@@ -89,6 +89,7 @@ app.get('/models', (req, res) => {
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData) {
+    console.log("handleRequest", cacheKeyData);
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
 
     try {

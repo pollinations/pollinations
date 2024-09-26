@@ -7,11 +7,13 @@ import crypto from 'crypto';
 import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
+import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
 import generateTextClaudeWrapper from './generateTextClaudeWrapper.js';
 import surSystemPrompt from './personas/sur.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
+
 
 const app = express();
 const port = process.env.PORT || 16385;
@@ -69,6 +71,7 @@ app.get('/models', (req, res) => {
         { name: 'openai', type: 'chat', censored: true },
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
+        { name: 'karma.yt', type: 'completion', censored: true },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];
@@ -78,16 +81,18 @@ app.get('/models', (req, res) => {
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData) {
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
-
+    console.log(777);
     try {
+        console.log(1);
         if (cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
             }
+            console.log(cachedResponse)
             return sendResponse(res, cachedResponse);
         }
-
+        console.log(2);
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
@@ -215,6 +220,9 @@ async function generateTextBasedOnModel(messages, options) {
         return generateTextMistral(messages, rest);
     } else if (model === 'llama') {
         return generateTextLlama(messages, rest);
+    } else if (model === 'karma') {
+        console.log('karma xxxxxx');
+        return generateTextKarma(messages, rest);
     } else if (model === 'claude') {
         return generateTextClaude(messages, rest);
     } else if (model === 'sur') {

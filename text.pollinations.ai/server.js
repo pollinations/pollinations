@@ -71,7 +71,7 @@ app.get('/models', (req, res) => {
         { name: 'openai', type: 'chat', censored: true },
         { name: 'mistral', type: 'chat', censored: false },
         { name: 'llama', type: 'completion', censored: true },
-        { name: 'karma.yt', type: 'completion', censored: true },
+        { name: 'karma', type: 'completion', censored: true },
         // { name: 'claude', type: 'chat', censored: true }
         // { name: 'sur', type: 'chat', censored: true }
     ];

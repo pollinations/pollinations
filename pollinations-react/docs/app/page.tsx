@@ -14,9 +14,6 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
-type TextCodeFormat = 'react' | 'curl' | 'wget' | 'javascript' | 'python' | 'rust' | 'go' | 'lua'
-type ImageCodeFormat = 'react' | 'html' | 'markdown' | 'src'
-
 interface TextModel {
   name: string
   type: 'chat' | 'completion'
@@ -30,8 +27,6 @@ export default function PollinationsDemo() {
   const [textPrompt, setTextPrompt] = useState("Write a haiku about artificial intelligence")
   const [imagePrompt, setImagePrompt] = useState("A futuristic city with flying cars and neon lights")
   const [chatPrompt, setChatPrompt] = useState("")
-  const [textCodeFormat, setTextCodeFormat] = useState<TextCodeFormat>('react')
-  const [imageCodeFormat, setImageCodeFormat] = useState<ImageCodeFormat>('react')
   const [textModels, setTextModels] = useState<TextModel[]>([])
   const [imageModels, setImageModels] = useState<ImageModel[]>([])
   const [selectedTextModel, setSelectedTextModel] = useState<string>('openai')
@@ -107,9 +102,8 @@ export default function PollinationsDemo() {
     }
   }
 
-  const getTextCode = (format: TextCodeFormat): string => {
-    const snippets: Record<TextCodeFormat, string> = {
-      react: `
+  const getTextCode = (): string => {
+    return `
 import React from 'react';
 import { usePollinationsText } from '@pollinations/react';
 import ReactMarkdown from 'react-markdown';
@@ -128,111 +122,13 @@ const TextComponent: React.FC = () => {
 };
 
 export default TextComponent;
-      `,
-      curl: `
-curl -X GET "https://text.pollinations.ai/${encodeURIComponent(textPrompt)}?seed=${textSeed}&model=${selectedTextModel}"
-      `,
-      wget: `
-wget -O output.txt "https://text.pollinations.ai/${encodeURIComponent(textPrompt)}?seed=${textSeed}&model=${selectedTextModel}"
-      `,
-      javascript: `
-fetch('https://text.pollinations.ai/${encodeURIComponent(textPrompt)}?seed=${textSeed}&model=${selectedTextModel}')
-  .then(response => response.text())
-  .then(data => console.log(data))
-  .catch((error) => console.error('Error:', error));
-      `,
-      python: `
-import requests
-
-url = f"https://text.pollinations.ai/${textPrompt}"
-params = {
-    "seed": ${textSeed},
-    "model": "${selectedTextModel}"
-}
-
-response = requests.get(url, params=params)
-print(response.text)
-      `,
-      rust: `
-use reqwest;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("https://text.pollinations.ai/{}?seed={}&model={}",
-        urlencoding::encode("${textPrompt}"),
-        ${textSeed},
-        "${selectedTextModel}"
-    );
-    let response = reqwest::get(&url).await?;
-    let body = response.text().await?;
-    println!("{}", body);
-    Ok(())
-}
-      `,
-      go: `
-package main
-
-import (
-    "fmt"
-    "io/ioutil"
-    "net/http"
-    "net/url"
-)
-
-func main() {
-    baseURL := "https://text.pollinations.ai/"
-    prompt := url.QueryEscape("${textPrompt}")
-    fullURL := fmt.Sprintf("%s%s?seed=${textSeed}&model=${selectedTextModel}", baseURL, prompt)
-
-    resp, err := http.Get(fullURL)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
-    }
-    defer resp.Body.Close()
-
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
-    }
-
-    fmt.Println(string(body))
-}
-      `,
-      lua: `
-local http = require("socket.http")
-local ltn12 = require("ltn12")
-
-local url = string.format("https://text.pollinations.ai/%s?seed=%d&model=%s",
-    http.escape("${textPrompt}"),
-    ${textSeed},
-    "${selectedTextModel}"
-)
-
-local response = {}
-
-local request, code = http.request{
-    url = url,
-    method = "GET",
-    sink = ltn12.sink.table(response)
-}
-
-if code ~= 200 then
-    print("HTTP request failed with code: " .. code)
-else
-    print(table.concat(response))
-end
-      `
-    }
-    return snippets[format]
+    `
   }
 
-  const getImageCode = (format: ImageCodeFormat): string => {
+  const getImageCode = (): string => {
     const imageUrlWithParams = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=${imageWidth}&height=${imageHeight}&seed=${imageSeed}&model=${selectedImageModel}&nologo=true`
 
-    const snippets: Record<ImageCodeFormat, string> = {
-      react: `
+    return `
 import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
 
@@ -265,23 +161,7 @@ const ImageComponent: React.FC = () => {
 };
 
 export default ImageComponent;
-      `,
-      html: `
-<img
-  src="${imageUrlWithParams}"
-  alt="${imagePrompt}"
-  height="${imageHeight}"
-  width="${imageWidth}"
-/>
-      `,
-      markdown: `
-![${imagePrompt}](${imageUrlWithParams})
-      `,
-      src: `
-${imageUrlWithParams}
-      `
-    }
-    return snippets[format]
+    `
   }
 
   const getChatCode = (): string => {
@@ -446,36 +326,15 @@ export default ChatComponent;
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Code Preview:</h3>
-                  <div className="mb-4">
-                    <Label htmlFor="textCodeFormat">Code Format</Label>
-                    <Select
-                      value={textCodeFormat}
-                      onValueChange={(value) => setTextCodeFormat(value as TextCodeFormat)}
-                    >
-                      <SelectTrigger id="textCodeFormat" className="bg-slate-700 text-slate-100">
-                        <SelectValue placeholder="Select a format" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-700 text-slate-100">
-                        <SelectItem value="react">React</SelectItem>
-                        <SelectItem value="curl">cURL</SelectItem>
-                        <SelectItem value="wget">wget</SelectItem>
-                        <SelectItem value="javascript">JavaScript</SelectItem>
-                        <SelectItem value="python">Python</SelectItem>
-                        <SelectItem value="rust">Rust</SelectItem>
-                        <SelectItem value="go">Go</SelectItem>
-                        <SelectItem value="lua">Lua</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="relative">
                     <SyntaxHighlighter language="typescript" style={oneDark} className="rounded-md">
-                      {getTextCode(textCodeFormat)}
+                      {getTextCode()}
                     </SyntaxHighlighter>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="absolute top-2 right-2"
-                      onClick={() => copyToClipboard(getTextCode(textCodeFormat))}
+                      onClick={() => copyToClipboard(getTextCode())}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -565,32 +424,15 @@ export default ChatComponent;
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Code Preview:</h3>
-                  <div className="mb-4">
-                    <Label htmlFor="imageCodeFormat">Code Format</Label>
-                    <Select
-                      value={imageCodeFormat}
-                      onValueChange={(value) => setImageCodeFormat(value as ImageCodeFormat)}
-                    >
-                      <SelectTrigger id="imageCodeFormat" className="bg-slate-700 text-slate-100">
-                        <SelectValue placeholder="Select a format" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-700 text-slate-100">
-                        <SelectItem value="react">React</SelectItem>
-                        <SelectItem value="html">HTML</SelectItem>
-                        <SelectItem value="markdown">Markdown</SelectItem>
-                        <SelectItem value="src">Image URL</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="relative">
                     <SyntaxHighlighter language="typescript" style={oneDark} className="rounded-md">
-                      {getImageCode(imageCodeFormat)}
+                      {getImageCode()}
                     </SyntaxHighlighter>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="absolute top-2 right-2"
-                      onClick={() => copyToClipboard(getImageCode(imageCodeFormat))}
+                      onClick={() => copyToClipboard(getImageCode())}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>

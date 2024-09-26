@@ -141,7 +141,7 @@ const projects = {
         },
         {
             name: "MIDIjourney",
-            url: "https://korus.co/",
+            url: "https://github.com/korus-labs/MIDIjourney",
             description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
             author: "KORUS Labs",
             repo: "https://github.com/korus-labs/MIDIjourney"

@@ -129,4 +129,12 @@ This endpoint generates text responses based on the provided prompt using AI. It
 
     generateText();
 
+### OpenAI Compatible Endpoint
+
+We provide an OpenAI compatible endpoint that provides access to all the existing models and can be used in any third-party application that allows configuring a custom OpenAI endpoint. No API key is necessary.
+
+#### Endpoint
+
+    https://text.pollinations.ai/openai
+
 Note: The message format used in the POST request is similar to the one used by OpenAI's ChatGPT API. For more detailed information on structuring your messages, please refer to the [OpenAI API documentation](https://platform.openai.com/docs/guides/chat).

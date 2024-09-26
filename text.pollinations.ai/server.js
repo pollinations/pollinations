@@ -66,6 +66,14 @@ function getQueue(ip) {
     return queues.get(ip);
 }
 
+// Function to get IP address
+export function getIp(req) {
+    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    if (!ip) return null;
+    const ipSegments = ip.split('.').slice(0, 3).join('.');
+    return ipSegments;
+}
+
 // GET /models request handler
 app.get('/models', (req, res) => {
     const availableModels = [
@@ -105,9 +113,11 @@ async function handleRequest(req, res, cacheKeyData) {
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
+        await sleep(1000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         res.status(500).send(error.message);
+        await sleep(1000); // ensures one ip can only make one request per second
     }
 }
 
@@ -148,7 +158,8 @@ function getRequestData(req, isPost = false) {
 // GET request handler
 app.get('/:prompt', async (req, res) => {
     const cacheKeyData = getRequestData(req);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
@@ -160,7 +171,8 @@ app.post('/', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(() => handleRequest(req, res, cacheKeyData));
 });
 
@@ -176,7 +188,8 @@ app.post('/openai', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    const queue = getQueue(req.ip);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     await queue.add(async () => {
         console.log("endpoint: /openai", cacheKeyData);
 
@@ -204,9 +217,13 @@ app.post('/openai', async (req, res) => {
 async function saveCache() {
     const resolvedCache = {};
     for (const [key, value] of Object.entries(cache)) {
-        const resolvedValue = await value;
-        if (!(resolvedValue instanceof Error)) {
-            resolvedCache[key] = resolvedValue;
+        try {
+            const resolvedValue = await value;
+            if (!(resolvedValue instanceof Error)) {
+                resolvedCache[key] = resolvedValue;
+            }
+        } catch (error) {
+            console.error(`Error resolving cache value for key: ${key}`, error.message);
         }
     }
     fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
@@ -234,7 +251,9 @@ async function generateTextBasedOnModel(messages, options) {
 
 // Helper function to create a hash for the cache key
 function createHashKey(data) {
-    return crypto.createHash('sha256').update(data).digest('hex');
+    // Ensure the data used for the cache key is deterministic
+    const deterministicData = JSON.stringify(JSON.parse(data));
+    return crypto.createHash('sha256').update(deterministicData).digest('hex');
 }
 
 app.listen(port, () => {

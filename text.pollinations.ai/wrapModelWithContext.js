@@ -1,6 +1,6 @@
 import generateTextClaude from './generateTextClaude.js';
 
-function generateTextClaudeWrapper(systemMessage) {
+function generateTextContextWrapper(systemMessage, generatorFunction = generateTextClaude) {
     return async function (messages, options) {
         // Remove any existing system messages
         const filteredMessages = messages.filter(message => message.role !== 'system');
@@ -10,9 +10,10 @@ function generateTextClaudeWrapper(systemMessage) {
             ...filteredMessages
         ];
         console.log('calling wrapper with messages', messagesWithSystem);
-        // Call the original generateTextClaude function with the modified messages
-        return generateTextClaude(messagesWithSystem, options);
+        // Call the provided generator function with the modified messages
+
+        return generatorFunction(messagesWithSystem, options);
     };
 }
 
-export default generateTextClaudeWrapper;
+export default generateTextContextWrapper;

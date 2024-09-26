@@ -23,7 +23,7 @@ const WhoWeAreContent = () => {
     })
   }
 
-  const seed = Math.floor(Math.random() * 10000);
+  const seed = Math.floor(Math.random() * 20);
   const markdownText = usePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
 
   return (

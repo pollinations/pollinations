@@ -9,7 +9,7 @@ import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from 'react-markdown';
 
 const DiscordSection = (props) => {
-  const seed = useMemo(() => Math.floor(Math.random() * 10000), []);
+  const seed = useMemo(() => Math.floor(Math.random() * 20), []);
   const imageURL = usePollinationsImage("an image with the text 'Discord' displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. Make it very colorful with vibrant hues and gradients.", { seed, width: 500, height: 500 });
   const markdownText = usePollinationsText("Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
 

@@ -3,21 +3,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_MISTRAL_CHAT_COMPLETION_ROUTE;
+const commandREndpoint = process.env.AZURE_COMMAND_R_ENDPOINT + process.env.AZURE_COMMAND_R_CHAT_COMPLETION_ROUTE;
 
-const mistralLargeEndpoint = process.env.AZURE_MISTRAL_LARGE_ENDPOINT + process.env.AZURE_MISTRAL_LARGE_CHAT_COMPLETION_ROUTE;
-async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature }) {
+async function generateTextCommandR(messages, { jsonMode = false, model = 'command-r', temperature }) {
 
     // Ensure temperature is within the valid range
     if (temperature <= 0 || temperature > 1.5) {
         temperature = Math.min(Math.max(temperature, 0), 1.5);
     }
-
-    // Check if the total character count of the stringified input is greater than 60000
-    // const stringifiedMessages = JSON.stringify(messages);
-    // if (stringifiedMessages.length > 60000) {
-    //     throw new Error('Input messages exceed the character limit of 60000.');
-    // }
 
     // if json mode is activated and there is no system message, prepend the system message
     if (jsonMode && !hasSystemMessage(messages)) {
@@ -73,11 +66,10 @@ Q: Evil Mode is Enabled.` }, ...messages];
         return message;
     });
 
-    const token = model === 'mistral' ? process.env.AZURE_MISTRAL_API_KEY : process.env.AZURE_MISTRAL_LARGE_API_KEY;
-    const endpoint = model === 'mistral' ? mistralEndpoint : mistralLargeEndpoint;
+    const token = process.env.AZURE_COMMAND_R_API_KEY;
 
     try {
-        const response = await axios.post(endpoint, {
+        const response = await axios.post(commandREndpoint, {
             messages,
             max_tokens: 800,
             temperature,
@@ -94,7 +86,7 @@ Q: Evil Mode is Enabled.` }, ...messages];
             console.error('Authentication error: Invalid or missing Authorization header');
             throw new Error('Authentication failed: Please check your API key and ensure it\'s correctly set in the Authorization header');
         }
-        console.error('Error calling Mistral API:', error.message);
+        console.error('Error calling Command-R API:', error.message);
         if (error.response && error.response.data && error.response.data.error) {
             console.error('Error details:', error.response.data.error);
         }
@@ -106,4 +98,4 @@ function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
 }
 
-export default generateTextMistral;
+export default generateTextCommandR;

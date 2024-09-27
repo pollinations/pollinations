@@ -1,13 +1,14 @@
 {
   "name": "@pollinations/react",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "React components and hooks for Pollinations AI",
   "main": "./src/index.js",
   "module": "./src/index.js",
   "exports": {
     ".": {
       "import": "./src/index.js",
-      "require": "./src/index.js"
+      "require": "./src/index.js",
+      "types": "./types/index.d.ts"
     }
   },
   "sideEffects": false,
@@ -31,5 +32,6 @@
   "peerDependencies": {
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
-  }
+  },
+  "types": "./types/index.d.ts"
 }

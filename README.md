@@ -16,7 +16,7 @@
 - 🖼️ Embed like any normal image or text
 - 🌍 Over 50,000 active users and > 2 million images generated per month
 - 🤝 Used by various open-source LLMs, bots, and communities
-- 🎣 Easy-to-use React hooks ([React Hooks README](./pollinations-react/README.md))
+- 🎣 Easy-to-use React hooks ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 ## 🚀 Getting Started
 

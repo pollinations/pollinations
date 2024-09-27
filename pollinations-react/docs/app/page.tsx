@@ -13,7 +13,7 @@ const tabs = [
 
 export default function PollinationsDemo() {
   const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text');
-  
+
   return (
     <div className="container mx-auto p-4 bg-slate-900 text-slate-100 max-w-4xl">
       <h1 className="text-4xl font-bold mb-2 text-center">
@@ -48,7 +48,7 @@ export default function PollinationsDemo() {
          &nbsp;and&nbsp;
           <a className='hover:underline' href="https://karma.yt" title='Karma.yt'>Karma.yt</a></p>
         <div className="mt-2 flex justify-center space-x-4">
-          <a href="https://github.com/pollinations/pollinations" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+          <a href="https://github.com/pollinations/pollinations/pollinations-react" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
             View on GitHub
           </a>
           <a href="https://www.npmjs.com/package/@pollinations/react" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">

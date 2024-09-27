@@ -21,7 +21,7 @@ const DiscordSection = (props) => {
       <Body>
         <TextWithLogo>
           <Logo src={discordLogo} alt="Discord Logo" />
-          <Text style={{ maxWidth: "90%", width: "500px" }}>
+          <Text style={{ maxWidth: "90%" }}>
             <p style={{ fontSize: "36px", userSelect: "none" }}>
               <ReactMarkdown>{markdownText}</ReactMarkdown>
             </p>

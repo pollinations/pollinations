@@ -55,7 +55,7 @@ export const ImageURLHeading = styled(
   }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    margin: 0px auto;
+    margin: 0px 0;
   }
 `
 

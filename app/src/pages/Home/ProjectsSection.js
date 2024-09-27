@@ -6,22 +6,14 @@ import { Colors, Fonts } from '../../styles/global';
 import Markdown from 'markdown-to-jsx';
 import { LinkStyle } from "./components";
 import styled from '@emotion/styled';
+import { GenerativeImageURLContainer } from "./ImageHeading"
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        maxWidth: '100%',
-        margin: '0 auto',
-        padding: theme.spacing(1),
-        overflowX: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
+
     },
     table: {
-        width: '100%',
-        maxWidth: '800px',
-        borderCollapse: 'separate',
-        borderSpacing: '0 0', // Reduced vertical space between rows
+
         marginBottom: '2em'
 
     },
@@ -61,6 +53,12 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: theme.spacing(4),
         fontSize: '1.1em',
     },
+    scaledImageURLHeading: {
+        transform: 'scale(0.8)',
+        transformOrigin: 'center',
+        width: '100%',
+        maxWidth: '100%',
+    }
 }));
 
 const logoPrefix = "minimalist logo on black background";
@@ -239,27 +237,26 @@ const ProjectsSection = () => {
     );
 
     return (
-        <Container className={classes.root} style={{ margin: '3em 0' }}>
-            <ImageURLHeading>Integrations</ImageURLHeading>
+        <GenerativeImageURLContainer style={{ margin: '3em 0', maxWidth: '800px' }}>
+            <ImageURLHeading className={classes.scaledImageURLHeading}>Integrations</ImageURLHeading>
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>AI Chat / LLMs</ImageURLHeading>
+            <ImageURLHeading className={classes.scaledImageURLHeading} width={350} height={70} whiteText={"yellow"}>AI Chat / LLMs</ImageURLHeading>
             {renderProjects(projects.llmIntegration)}
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Social Bots</ImageURLHeading>
+            <ImageURLHeading className={classes.scaledImageURLHeading} width={350} height={70} whiteText={"yellow"}>Social Bots</ImageURLHeading>
             {renderProjects(projects.socialBots)}
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Mobile & Web Apps</ImageURLHeading>
+            <ImageURLHeading className={classes.scaledImageURLHeading} width={350} height={70} whiteText={"yellow"}>Mobile & Web Apps</ImageURLHeading>
             {renderProjects(projects.apps)}
 
-            <ImageURLHeading width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
+            <ImageURLHeading className={classes.scaledImageURLHeading} width={350} height={70} whiteText={"yellow"}>Tutorials</ImageURLHeading>
             {renderProjects(projects.tutorials)}
 
             <Typography className={classes.listProjectText} style={{ fontSize: '1.5em' }}>
                 Have you created a project that integrates Pollinations? We'd love to feature it!<br />
-                <ImageURLHeading width={350} height={70} whiteText={true}>Get in touch</ImageURLHeading> <StyledNavLink href="mailto:hello@pollinations.ai" style={{ color: Colors.lime, fontSize: '1.5em' }}>hello@pollinations.ai</StyledNavLink>
+                <ImageURLHeading className={classes.scaledImageURLHeading} width={350} height={70} whiteText={true}>Get in touch</ImageURLHeading> <StyledNavLink href="mailto:hello@pollinations.ai" style={{ color: Colors.lime, fontSize: '1.5em' }}>hello@pollinations.ai</StyledNavLink>
             </Typography>
-
-        </Container>
+        </GenerativeImageURLContainer>
     );
 };
 

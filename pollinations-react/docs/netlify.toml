@@ -1,0 +1,11 @@
+[build]
+  command = "npm install && npm run build"
+  publish = ".next"  # This path is relative to pollinations-react/docs
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/*"
+  to = "/"
+  status = 200

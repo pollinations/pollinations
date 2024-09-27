@@ -31,7 +31,7 @@ async function fetchFromTurboServer(params) {
 const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  const steps = concurrentRequests < 16 ? 4 : concurrentRequests < 24 ? 3 : concurrentRequests < 32 ? 2 : 1;
+  const steps = concurrentRequests < 24 ? 4 : concurrentRequests < 30 ? 3 : concurrentRequests < 40 ? 2 : 1;
 
   try {
     prompt = sanitizeString(prompt);

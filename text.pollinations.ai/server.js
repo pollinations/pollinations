@@ -12,7 +12,8 @@ import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import unityPrompt from './personas/unity.js';
-import midijourneyPrompt from './personas/midijourney.js'; // Add this line
+import midijourneyPrompt from './personas/midijourney.js';
+import rtistPrompt from './personas/rtist.js'; // Add this line
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
@@ -44,7 +45,9 @@ const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
 // Create custom instance of Midijourney
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateText); // Add this line
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
+// Create custom instance of Rtist
+const rtist = wrapModelWithContext(rtistPrompt, generateText); // Add this line
 
 app.set('trust proxy', true);
 
@@ -135,6 +138,13 @@ const availableModels = [
         type: 'chat',
         censored: true,
         description: 'Midijourney musical transformer',
+        baseModel: false,
+    },
+    {
+        name: 'rtist',
+        type: 'chat',
+        censored: true,
+        description: 'Rtist image generator by @bqrio',
         baseModel: false,
     }
     // { name: 'claude', type: 'chat', censored: true }
@@ -354,7 +364,9 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'unity') {
         return unityMistralLarge(messages, options);
     } else if (model === 'midijourney') {
-        return midijourney(messages, options); // Add this line
+        return midijourney(messages, options);
+    } else if (model === 'rtist') {
+        return rtist(messages, options); // Add this line
     } else {
         return generateText(messages, options);
     }

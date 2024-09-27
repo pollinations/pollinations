@@ -86,7 +86,7 @@ This endpoint generates text responses based on the provided prompt using AI. It
 | prompt    | required | Text prompt for the AI to respond to. Should be URL-encoded. | -       |
 | seed      | optional | Seed for reproducible results. Use -1 for random.          | null    |
 | json      | optional | Set to 'true' to receive response in JSON format.          | false   |
-| model     | optional | Model to use for text generation. Options: 'openai', 'mistral' | 'openai' |
+| model     | optional | Model to use for text generation. Options: 'openai', 'mistral'. See https://text.pollinations.ai/models for available models. | 'openai' |
 | system    | optional | System prompt to set the behavior of the AI. Should be URL-encoded. | - |
 
 ### Request Body (POST request)
@@ -96,7 +96,7 @@ This endpoint generates text responses based on the provided prompt using AI. It
 | messages | required | Array of message objects with 'role' and 'content' fields. |
 | seed     | optional | Seed for reproducible results. Use -1 for random.          |
 | jsonMode | optional | Set to true to receive response in JSON format.            |
-| model    | optional | Model to use for text generation. Options: 'openai', 'mistral' |
+| model    | optional | Model to use for text generation. Options: 'openai', 'mistral'. See https://text.pollinations.ai/models for available models. |
 
 ### Example Usage (GET)
 

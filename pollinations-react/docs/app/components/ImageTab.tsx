@@ -10,6 +10,13 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy } from 'lucide-react';
 import { useFetchModels } from '../hooks/useFetchModels';
+import { useDebounce } from '@uidotdev/usehooks';
+
+
+const usePollinationsImageDebounced = (promptUnDebounced: string, optionsUnDebounced: any) => {
+    const [prompt, options] = useDebounce([promptUnDebounced, optionsUnDebounced], 3000);
+    return usePollinationsImage(prompt, options);
+};
 
 const ImageTab: React.FC = () => {
   const { imageModels } = useFetchModels();
@@ -19,7 +26,7 @@ const ImageTab: React.FC = () => {
   const [imageWidth, setImageWidth] = useState<number>(1024);
   const [imageHeight, setImageHeight] = useState<number>(1024);
 
-  const imageUrl = usePollinationsImage(imagePrompt, {
+  const imageUrl = usePollinationsImageDebounced(imagePrompt, {
     width: imageWidth,
     height: imageHeight,
     seed: imageSeed,

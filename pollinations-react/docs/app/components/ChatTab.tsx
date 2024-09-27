@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, KeyboardEvent } from 'react'
+import React, { useState } from 'react'
 import { usePollinationsChat } from '@pollinations/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -20,8 +20,6 @@ export default function ChatComponent() {
   const [chatSeed, setChatSeed] = useState<number>(42)
   const [chatModel, setChatModel] = useState<string>(selectedTextModel)
 
-  const chatContainerRef = useRef<HTMLDivElement>(null)
-
   const { sendUserMessage, messages } = usePollinationsChat([
     { role: "system", content: systemMessage }
   ], {
@@ -29,47 +27,28 @@ export default function ChatComponent() {
     model: chatModel
   })
 
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
-    }
-  }, [messages])
-
-  const handleSendMessage = () => {
+  const handleSendMessage = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
     if (chatPrompt.trim()) {
       sendUserMessage(chatPrompt)
       setChatPrompt('')
     }
   }
 
-  const handleKeyPress = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault()
-      handleSendMessage()
-    }
-  }
-
   const getChatCode = (): string => {
     return `
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePollinationsChat } from '@pollinations/react';
 import ReactMarkdown from 'react-markdown';
 
 const ChatComponent: React.FC = () => {
   const [input, setInput] = useState('');
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { sendUserMessage, messages } = usePollinationsChat([
     { role: "system", content: "${systemMessage}" }
   ], { 
     seed: ${chatSeed},
     model: '${chatModel}'
   });
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   const handleSend = () => {
     if (input.trim()) {
@@ -78,16 +57,10 @@ const ChatComponent: React.FC = () => {
     }
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
-  };
 
   return (
     <div className="flex flex-col h-[500px]">
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
           <div key={index} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
             <div className={\`max-w-[70%] p-3 rounded-lg \${
@@ -179,7 +152,7 @@ export default ChatComponent;
               />
             </div>
           </div>
-          <div ref={chatContainerRef} className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
+          <div className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
             {messages.map((msg: any, index: number) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[70%] p-3 rounded-lg ${
@@ -197,7 +170,6 @@ export default ChatComponent;
             <Textarea
               value={chatPrompt}
               onChange={(e) => setChatPrompt(e.target.value)}
-              onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               className="w-full bg-slate-700 text-slate-100 flex-grow"
             />

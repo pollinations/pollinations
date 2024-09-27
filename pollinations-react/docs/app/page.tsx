@@ -9,7 +9,7 @@ export default function PollinationsDemo() {
   const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text');
 
   return (
-    <div className="container mx-auto p-4 bg-slate-900 text-slate-100">
+    <div className="container mx-auto p-4 bg-slate-900 text-slate-100 max-w-4xl">
       <h1 className="text-4xl font-bold mb-2 text-center">
         <a href="https://github.com/pollinations/pollinations" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">
           🌸 Pollinations Generative React Hooks 2.0.1 🌸

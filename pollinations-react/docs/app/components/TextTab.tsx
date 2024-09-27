@@ -10,6 +10,12 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy } from 'lucide-react';
 import { useFetchModels } from '../hooks/useFetchModels';
+import { useDebounce } from '@uidotdev/usehooks';
+
+const usePollinationsTextDebounced = (promptUnDebounced: string, optionsUnDebounced: any) => {
+  const [prompt, options] = useDebounce([promptUnDebounced, optionsUnDebounced], 3000);
+  return usePollinationsText(prompt, options);
+};
 
 interface TextModel {
   name: string;
@@ -23,7 +29,7 @@ const TextTab: React.FC = () => {
   const [selectedTextModel, setSelectedTextModel] = useState<string>('openai');
   const { textModels } = useFetchModels();
 
-  const textResult = usePollinationsText(textPrompt, {
+  const textResult = usePollinationsTextDebounced(textPrompt, {
     seed: textSeed,
     model: selectedTextModel
   });

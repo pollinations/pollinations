@@ -64,6 +64,27 @@ Model: **${model || "turbo"}**
 
 # Image
 ![Generative Image](${imageURL})`,
+  react: ({ prompt, width, height, seed, model }) => `
+import React from 'react';
+import { usePollinationsImage } from '@pollinations/react';
+
+const GeneratedImageComponent = () => {
+  const imageUrl = usePollinationsImage('${prompt}', {
+    width: ${width},
+    height: ${height},
+    seed: ${seed},
+    model: '${model || "turbo"}'
+  });
+
+  return (
+    <div>
+      {imageUrl ? <img src={imageUrl} alt="Generated Image" /> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default GeneratedImageComponent;
+`,
   html: ({ imageURL, prompt, width, height, seed, model }) =>
     `<html>
   <body>

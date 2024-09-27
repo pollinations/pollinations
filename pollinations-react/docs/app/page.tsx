@@ -1,7 +1,7 @@
 'use client'
 // @ts-expect-error todo: interfaces
-import {  usePollinationsChat } from '@pollinations/react'
-import React, { useState, useEffect, useRef } from 'react'
+import { usePollinationsChat } from '@pollinations/react'
+import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -16,42 +16,13 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TextTab from './components/TextTab';
 import ImageTab from './components/ImageTab';
 import ChatTab from './components/ChatTab';
-
-interface TextModel {
-  name: string
-  type: 'chat' | 'completion'
-  censored: boolean
-}
-
-type ImageModel = string
+import { useFetchModels } from './hooks/useFetchModels';
 
 export default function PollinationsDemo() {
-  const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text')
-  const [textModels, setTextModels] = useState<TextModel[]>([])
-  const [imageModels, setImageModels] = useState<ImageModel[]>([])
-  const [selectedTextModel, setSelectedTextModel] = useState<string>('openai')
-  const [selectedImageModel, setSelectedImageModel] = useState<string>('flux')
-
-  useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        const [textResponse, imageResponse] = await Promise.all([
-          fetch('https://text.pollinations.ai/models'),
-          fetch('https://image.pollinations.ai/models')
-        ])
-        const textData: TextModel[] = await textResponse.json()
-        const imageData: ImageModel[] = await imageResponse.json()
-        setTextModels(textData)
-        setImageModels(imageData)
-      } catch (error) {
-        console.error('Error fetching models:', error)
-        // Fallback models
-        setTextModels([{ name: 'openai', type: 'chat', censored: false }])
-        setImageModels(['flux'])
-      }
-    }
-    fetchModels()
-  }, [])
+  const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text');
+  const [selectedTextModel, setSelectedTextModel] = useState<string>('openai');
+  const [selectedImageModel, setSelectedImageModel] = useState<string>('flux');
+  const { textModels, imageModels } = useFetchModels();
 
   return (
     <div className="container mx-auto p-4 bg-slate-900 text-slate-100">

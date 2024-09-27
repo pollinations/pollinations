@@ -1,6 +1,4 @@
 'use client'
-// @ts-expect-error todo: interfaces
-import { usePollinationsChat } from '@pollinations/react'
 import React, { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,13 +14,9 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import TextTab from './components/TextTab';
 import ImageTab from './components/ImageTab';
 import ChatTab from './components/ChatTab';
-import { useFetchModels } from './hooks/useFetchModels';
 
 export default function PollinationsDemo() {
   const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text');
-  const [selectedTextModel, setSelectedTextModel] = useState<string>('openai');
-  const [selectedImageModel, setSelectedImageModel] = useState<string>('flux');
-  const { textModels, imageModels } = useFetchModels();
 
   return (
     <div className="container mx-auto p-4 bg-slate-900 text-slate-100">
@@ -58,25 +52,13 @@ export default function PollinationsDemo() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="text">
-          <TextTab
-            textModels={textModels}
-            selectedTextModel={selectedTextModel}
-            setSelectedTextModel={setSelectedTextModel}
-          />
+          <TextTab />
         </TabsContent>
         <TabsContent value="image">
-          <ImageTab
-            imageModels={imageModels}
-            selectedImageModel={selectedImageModel}
-            setSelectedImageModel={setSelectedImageModel}
-          />
+          <ImageTab />
         </TabsContent>
         <TabsContent value="chat">
-          <ChatTab
-            textModels={textModels}
-            selectedTextModel={selectedTextModel}
-            setSelectedTextModel={setSelectedTextModel}
-          />
+          <ChatTab />
         </TabsContent>
       </Tabs>
 

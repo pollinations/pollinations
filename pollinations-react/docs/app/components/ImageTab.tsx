@@ -9,18 +9,11 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy } from 'lucide-react';
+import { useFetchModels } from '../hooks/useFetchModels';
 
-interface ImageTabProps {
-  imageModels: string[];
-  selectedImageModel: string;
-  setSelectedImageModel: (model: string) => void;
-}
-
-const ImageTab: React.FC<ImageTabProps> = ({
-  imageModels,
-  selectedImageModel,
-  setSelectedImageModel,
-}) => {
+const ImageTab: React.FC = () => {
+  const { imageModels } = useFetchModels();
+  const [selectedImageModel, setSelectedImageModel] = useState<string>(imageModels[0] || 'flux');
   const [imagePrompt, setImagePrompt] = useState("A futuristic city with flying cars and neon lights");
   const [imageSeed, setImageSeed] = useState<number>(42);
   const [imageWidth, setImageWidth] = useState<number>(1024);
@@ -174,5 +167,3 @@ export default ImageComponent;
 };
 
 export default ImageTab;
-
-

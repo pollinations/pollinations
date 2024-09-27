@@ -10,24 +10,15 @@ import { Copy, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useFetchModels } from '../hooks/useFetchModels';
 
-interface TextModel {
-  name: string;
-  type: 'chat' | 'completion';
-  censored: boolean;
-}
-
-interface ChatTabProps {
-  textModels: TextModel[];
-  selectedTextModel: string;
-  setSelectedTextModel: (model: string) => void;
-}
-
-const ChatTab: React.FC<ChatTabProps> = ({ textModels, selectedTextModel, setSelectedTextModel }) => {
+const ChatTab: React.FC = () => {
+  const { textModels } = useFetchModels();
+  const [selectedTextModel, setSelectedTextModel] = useState<string>(textModels[0]?.name || 'openai');
   const [chatPrompt, setChatPrompt] = useState("");
   const [systemMessage, setSystemMessage] = useState<string>("You are a helpful AI assistant.");
   const [chatSeed, setChatSeed] = useState<number>(42);
-  const [chatModel, setChatModel] = useState<string>('openai');
+  const [chatModel, setChatModel] = useState<string>(selectedTextModel);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePollinationsText } from '@pollinations/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Copy } from 'lucide-react';
+import { useFetchModels } from '../hooks/useFetchModels';
 
 interface TextModel {
   name: string;
@@ -16,15 +17,11 @@ interface TextModel {
   censored: boolean;
 }
 
-interface TextTabProps {
-  textModels: TextModel[];
-  selectedTextModel: string;
-  setSelectedTextModel: (model: string) => void;
-}
-
-const TextTab: React.FC<TextTabProps> = ({ textModels, selectedTextModel, setSelectedTextModel }) => {
+const TextTab: React.FC = () => {
   const [textPrompt, setTextPrompt] = useState("Write a haiku about artificial intelligence");
   const [textSeed, setTextSeed] = useState<number>(42);
+  const [selectedTextModel, setSelectedTextModel] = useState<string>('openai');
+  const { textModels } = useFetchModels();
 
   const textResult = usePollinationsText(textPrompt, {
     seed: textSeed,

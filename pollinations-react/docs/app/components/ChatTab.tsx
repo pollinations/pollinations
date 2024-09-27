@@ -1,53 +1,53 @@
-import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
-import { usePollinationsChat } from '@pollinations/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Copy, Send } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useFetchModels } from '../hooks/useFetchModels';
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react'
+import { usePollinationsChat } from '@pollinations/react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Copy, Send, Flower, Bird } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useFetchModels } from '../hooks/useFetchModels'
 
-const ChatTab: React.FC = () => {
-  const { textModels } = useFetchModels();
-  const [selectedTextModel, setSelectedTextModel] = useState<string>(textModels[0]?.name || 'openai');
-  const [chatPrompt, setChatPrompt] = useState("");
-  const [systemMessage, setSystemMessage] = useState<string>("You are a helpful AI assistant.");
-  const [chatSeed, setChatSeed] = useState<number>(42);
-  const [chatModel, setChatModel] = useState<string>(selectedTextModel);
+export default function ChatComponent() {
+  const { textModels } = useFetchModels()
+  const [selectedTextModel, setSelectedTextModel] = useState<string>(textModels[0]?.name || 'openai')
+  const [chatPrompt, setChatPrompt] = useState("")
+  const [systemMessage, setSystemMessage] = useState<string>("You are a helpful AI assistant.")
+  const [chatSeed, setChatSeed] = useState<number>(42)
+  const [chatModel, setChatModel] = useState<string>(selectedTextModel)
 
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null)
 
   const { sendUserMessage, messages } = usePollinationsChat([
     { role: "system", content: systemMessage }
   ], {
     seed: chatSeed,
     model: chatModel
-  });
+  })
 
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
-  }, [messages]);
+  }, [messages])
 
   const handleSendMessage = () => {
     if (chatPrompt.trim()) {
-      sendUserMessage(chatPrompt);
-      setChatPrompt('');
+      sendUserMessage(chatPrompt)
+      setChatPrompt('')
     }
-  };
+  }
 
   const handleKeyPress = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleSendMessage();
+      event.preventDefault()
+      handleSendMessage()
     }
-  };
+  }
 
   const getChatCode = (): string => {
     return `
@@ -91,9 +91,10 @@ const ChatComponent: React.FC = () => {
         {messages.map((msg, index) => (
           <div key={index} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
             <div className={\`max-w-[70%] p-3 rounded-lg \${
-              msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'
+              msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-gray-900'
             }\`}>
-              {msg.role === 'user' ? '🐦' : '🌸'} <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <span className="mr-2">{msg.role === 'user' ? '🐦' : '🌸'}</span>
+              <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           </div>
         ))}
@@ -106,7 +107,10 @@ const ChatComponent: React.FC = () => {
           placeholder="Type your message..."
           className="w-full p-2 border rounded-lg"
         />
-        <button onClick={handleSend} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
+        <button 
+          onClick={handleSend} 
+          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+        >
           Send
         </button>
       </div>
@@ -115,8 +119,19 @@ const ChatComponent: React.FC = () => {
 };
 
 export default ChatComponent;
-    `;
-  };
+    `
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        console.log('Code copied to clipboard')
+        // You can add a toast notification here if you want
+      })
+      .catch(err => {
+        console.error('Failed to copy code: ', err)
+      })
+  }
 
   return (
     <Card className="bg-slate-800 text-slate-100">
@@ -125,49 +140,55 @@ export default ChatComponent;
         <CardDescription>Chat with Pollinations' AI</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col space-y-4">
+        <form className="space-y-4">
           <div>
             <Label htmlFor="systemMessage">System Message</Label>
             <Input
               id="systemMessage"
               value={systemMessage}
               onChange={(e) => setSystemMessage(e.target.value)}
-              className="bg-slate-700 text-slate-100"
+              className="w-full bg-slate-700 text-slate-100"
             />
           </div>
-          <div>
-            <Label htmlFor="chatSeed">Seed</Label>
-            <Input
-              id="chatSeed"
-              type="number"
-              value={chatSeed}
-              onChange={(e) => setChatSeed(Math.max(1, Number(e.target.value)))}
-              min={1}
-              className="bg-slate-700 text-slate-100"
-            />
-          </div>
-          <div>
-            <Label htmlFor="chatModel">Model</Label>
-            <Select
-              value={chatModel}
-              onValueChange={setChatModel}
-            >
-              <SelectTrigger id="chatModel" className="bg-slate-700 text-slate-100">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 text-slate-100">
-                {textModels.map((model) => (
-                  <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex space-x-4">
+            <div className="flex-1">
+              <Label htmlFor="chatModel">Model</Label>
+              <Select
+                value={chatModel}
+                onValueChange={setChatModel}
+              >
+                <SelectTrigger id="chatModel" className="w-full bg-slate-700 text-slate-100">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 text-slate-100">
+                  {textModels.map((model) => (
+                    <SelectItem key={model.name} value={model.name}>{model.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <Label htmlFor="chatSeed">Seed</Label>
+              <Input
+                id="chatSeed"
+                type="number"
+                value={chatSeed}
+                onChange={(e) => setChatSeed(Math.max(1, Number(e.target.value)))}
+                min={1}
+                className="w-full bg-slate-700 text-slate-100"
+              />
+            </div>
           </div>
           <div ref={chatContainerRef} className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
             {messages.map((msg: any, index: number) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[70%] p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'
-                  }`}>
-                  {msg.role === 'user' ? '🐦' : '🌸'} <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <div className={`max-w-[70%] p-3 rounded-lg ${
+                  msg.role === 'user' ? 'bg-blue-100 text-blue-900' : 'bg-gray-100 text-gray-900'
+                }`}>
+                  <span className="mr-2">
+                    {msg.role === 'user' ? <Bird className="inline-block w-4 h-4" /> : <Flower className="inline-block w-4 h-4" />}
+                  </span>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
             ))}
@@ -178,9 +199,12 @@ export default ChatComponent;
               onChange={(e) => setChatPrompt(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="bg-slate-700 text-slate-100 flex-grow"
+              className="w-full bg-slate-700 text-slate-100 flex-grow"
             />
-            <Button onClick={handleSendMessage}>
+            <Button 
+              onClick={handleSendMessage}
+              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
@@ -200,11 +224,8 @@ export default ChatComponent;
               </Button>
             </div>
           </div>
-        </div>
+        </form>
       </CardContent>
     </Card>
-  );
-};
-
-export default ChatTab;
-
+  )
+}

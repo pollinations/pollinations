@@ -5,9 +5,15 @@ import TextTab from './components/TextTab';
 import ImageTab from './components/ImageTab';
 import ChatTab from './components/ChatTab';
 
+const tabs = [
+  { value: 'text', label: 'usePollinationsText', shortLabel: 'Text', component: <TextTab /> },
+  { value: 'image', label: 'usePollinationsImage', shortLabel: 'Image', component: <ImageTab /> },
+  { value: 'chat', label: 'usePollinationsChat', shortLabel: 'Chat', component: <ChatTab /> }
+];
+
 export default function PollinationsDemo() {
   const [activeTab, setActiveTab] = useState<'text' | 'image' | 'chat'>('text');
-
+  
   return (
     <div className="container mx-auto p-4 bg-slate-900 text-slate-100 max-w-4xl">
       <h1 className="text-4xl font-bold mb-2 text-center">
@@ -19,37 +25,22 @@ export default function PollinationsDemo() {
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'text' | 'image' | 'chat')} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger
-            value="text"
-            className={`${activeTab === 'text' ? 'bg-slate-300 text-white underline' : 'bg-slate-800 text-slate-500'} transition-colors duration-200 hover:bg-slate-600`}
-          >
-            <span className="hidden sm:inline">usePollinationsText</span>
-            <span className="sm:hidden">Text</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="image"
-            className={`${activeTab === 'image' ? 'bg-slate-300 text-white underline' : 'bg-slate-800 text-slate-500'} transition-colors duration-200 hover:bg-slate-600`}
-          >
-            <span className="hidden sm:inline">usePollinationsImage</span>
-            <span className="sm:hidden">Image</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="chat"
-            className={`${activeTab === 'chat' ? 'bg-slate-300 text-white underline' : 'bg-slate-800 text-slate-500'} transition-colors duration-200 hover:bg-slate-600`}
-          >
-            <span className="hidden sm:inline">usePollinationsChat</span>
-            <span className="sm:hidden">Chat</span>
-          </TabsTrigger>
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className={`${activeTab === tab.value ? 'bg-slate-300 text-white underline' : 'bg-slate-800 text-slate-500'} transition-colors duration-200 hover:bg-slate-600`}
+            >
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.shortLabel}</span>
+            </TabsTrigger>
+          ))}
         </TabsList>
-        <TabsContent value="text">
-          <TextTab />
-        </TabsContent>
-        <TabsContent value="image">
-          <ImageTab />
-        </TabsContent>
-        <TabsContent value="chat">
-          <ChatTab />
-        </TabsContent>
+        {tabs.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value}>
+            {tab.component}
+          </TabsContent>
+        ))} 
       </Tabs>
 
       <footer className="mt-8 text-center text-slate-300">

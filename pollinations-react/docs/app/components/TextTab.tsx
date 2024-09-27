@@ -40,7 +40,7 @@ import React from 'react';
 import { usePollinationsText } from '@pollinations/react';
 import ReactMarkdown from 'react-markdown';
 
-const TextComponent: React.FC = () => {
+const TextComponent= () => {
   const text = usePollinationsText("${textPrompt}", { 
     seed: ${textSeed},
     model: '${selectedTextModel}'

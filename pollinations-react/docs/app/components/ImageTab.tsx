@@ -40,7 +40,7 @@ export default function ImageGenerationForm() {
 import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
 
-const ImageComponent: React.FC = () => {
+const ImageComponent = () => {
   const imageUrl = usePollinationsImage("${imagePrompt}", {
     width: ${imageWidth},
     height: ${imageHeight},

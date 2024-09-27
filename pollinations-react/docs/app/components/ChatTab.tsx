@@ -41,7 +41,7 @@ import React, { useState, useEffect } from 'react';
 import { usePollinationsChat } from '@pollinations/react';
 import ReactMarkdown from 'react-markdown';
 
-const ChatComponent: React.FC = () => {
+const ChatComponent = () => {
   const [input, setInput] = useState('');
   const { sendUserMessage, messages } = usePollinationsChat([
     { role: "system", content: "${systemMessage}" }

@@ -83,8 +83,6 @@ const PageLayout = styled(BaseContainer)`
   align-items: flex-start;
   justify-content: center;
   gap: 1em;
-  margin: auto;
-  animation: ${fadeIn} 1.5s ease-out;
 
   h2 {
     initial: unset;
@@ -101,7 +99,6 @@ const PageLayout = styled(BaseContainer)`
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;
       line-height: 40px;
-      margin-bottom: 1.6em;
     }
   }
   p {
@@ -117,8 +114,9 @@ const PageLayout = styled(BaseContainer)`
       color: ${(props) => (props.dark ? Colors.accent : Colors.offblack)};
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
-      width: 90%;
+      width: 100%;
       font-size: 22px;
+      text-align: center; /* Center text horizontally on mobile */
     }
   }
 
@@ -141,7 +139,7 @@ const ContactWrapper = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  margin-bottom: 2em;
+  margin-bottom: 5em;
 
   p {
     width: 45%; // Adjust this value as needed
@@ -154,13 +152,15 @@ const ContactWrapper = styled.div`
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     flex-direction: column;
+    align-items: center; /* Center all items horizontally on mobile */
 
     p {
       width: 100%;
+      text-align: center; /* Center text horizontally on mobile */
     }
 
     p:last-child {
-      text-align: left;
+      text-align: center; /* Center text horizontally on mobile */
     }
 
     .mobile-break {

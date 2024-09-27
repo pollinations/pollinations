@@ -4,6 +4,8 @@ A simple way to generate images, text and markdown using the Pollinations API in
 
 ## 🚀 Quick Start
 
+For interactive example code and documentation, visit [Pollinations React Hooks](https://react-hooks.pollinations.ai).
+
 Install the package:
 
     npm install @pollinations/react

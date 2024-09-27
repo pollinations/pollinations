@@ -12,6 +12,7 @@ Welcome to the Pollinations React Playground! This project showcases a React com
 - **Effortless Copy & Paste**: Easily copy code snippets with a click for quick testing.
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices.
 
+
 ## Installation
 
 To install and run the project, follow these steps:

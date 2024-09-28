@@ -266,7 +266,9 @@ const ProjectsSection = () => {
   )
 
   return (
-    <GenerativeImageURLContainer style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "800px" }}>
+    <GenerativeImageURLContainer
+      style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "800px" }}
+    >
       <ImageURLHeading
         customPrompt={`an image with the text "Integration" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
         className={classes.scaledImageURLHeading}
@@ -326,15 +328,14 @@ const ProjectsSection = () => {
           width={300}
           height={50}
           whiteText={true}
-        >
-          Get in touch
-        </ImageURLHeading>{" "}
-        <StyledNavLink
+          customPrompt={`an image with the text "Get in touch" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+        ></ImageURLHeading>{" "}
+        <LinkStyle
           href="mailto:hello@pollinations.ai"
-          style={{ color: Colors.lime, fontSize: "1.1em" }}
+          style={{ color: Colors.lime, fontSize: "1em" }}
         >
           hello@pollinations.ai
-        </StyledNavLink>
+        </LinkStyle>
       </Typography>
     </GenerativeImageURLContainer>
   )

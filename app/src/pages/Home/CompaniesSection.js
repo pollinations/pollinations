@@ -5,7 +5,6 @@ import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 import { GenerativeImageURLContainer } from "./ImageHeading"
 
-
 const CompaniesSection = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
@@ -24,16 +23,12 @@ const CompaniesSection = () => {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
+
     },
     table: {
       width: "100%",
       maxWidth: "100vw",
       borderCollapse: "collapse",
-      marginBottom: "5em",
-      margin: "0",
-      [theme.breakpoints.down("sm")]: {
-        marginBottom: "0.5em",
-      },
     },
     td: {
       padding: theme.spacing(1),
@@ -119,9 +114,12 @@ const CompaniesSection = () => {
 
   return (
     <GenerativeImageURLContainer>
-        <GenerativeImageURLContainer>
-      <ImageURLHeading>Supported By</ImageURLHeading></GenerativeImageURLContainer>
-      <table className={classes.table} style={{ marginTop: "3em" }}>
+      <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
+          Supported By
+        </ImageURLHeading>
+      </GenerativeImageURLContainer>
+      <table className={classes.table} style={{ marginBottom: "6em" }}>
         <tbody>{tableRows}</tbody>
       </table>
     </GenerativeImageURLContainer>
@@ -129,5 +127,3 @@ const CompaniesSection = () => {
 }
 
 export default CompaniesSection
-
-

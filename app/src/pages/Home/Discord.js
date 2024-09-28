@@ -29,13 +29,13 @@ const DiscordSection = (props) => {
       </CenteredLink>
       <Body>
         <TextWithLogo>
-          <Text style={{ maxWidth: "90%" }}>
+          <Text style={{ maxWidth: "800px" }}>
             <p style={{ fontSize: "36px", userSelect: "none" }}>
               <ReactMarkdown>{markdownText}</ReactMarkdown>
             </p>
           </Text>
-          <Logo src={discordLogo} alt="Discord Logo" />
         </TextWithLogo>
+        <Logo src={discordLogo} alt="Discord Logo" />
         <br />
         <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
           <b>join our discord</b>
@@ -113,7 +113,6 @@ const Text = styled.div`
 const Logo = styled.img`
   width: 90px;
   height: auto;
-  margin-left: 40px;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     margin-left: 0;

@@ -13,14 +13,13 @@ import Markdown from "markdown-to-jsx"
 import { LinkStyle } from "./components"
 import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
-import { CodeExamples } from "./CodeExamples"
 import { ImageContext } from "../../contexts/ImageContext"
 
 const useStyles = makeStyles((theme) => ({
   root: {},
   gridContainer: {
     marginBottom: "2em",
-    
+
   },
   gridItem: {
     padding: "8px 16px", // Tighter padding
@@ -32,7 +31,7 @@ const useStyles = makeStyles((theme) => ({
     width: "48px", // Smaller image size
     height: "48px",
     objectFit: "cover",
-    margin:"10px"
+    margin: "10px"
   },
   sectionHeading: {
     color: Colors.lime,
@@ -209,8 +208,7 @@ const projects = {
 }
 
 const generateImageUrl = (name) =>
-  `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${
-    imageDimension * 4
+  `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension * 4
   }&height=${imageDimension * 4}&nologo=true&seed=${seedValue}`
 
 const ProjectsSection = () => {
@@ -223,68 +221,68 @@ const ProjectsSection = () => {
     <Grid container spacing={2} className={classes.gridContainer}>
       {!isMobile
         ? projectList.map((project, index) => (
-            <Grid container item xs={12} key={index} className={classes.gridItem}>
-              <Grid item xs={3} style={{ textAlign: "right" }}>
-                {renderProjectLink(project)}
-                {project.author && (
-                  <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
-                    by {project.author}
-                  </div>
-                )}
-              </Grid>
-              <Grid item xs={1.1} style={{ textAlign: "left" }}>
-                <img
-                  src={generateImageUrl(project.name)}
-                  alt={project.name}
-                  className={classes.projectImage}
-                  style={{ width: imageDimension, height: imageDimension }}
-                />
-              </Grid>
-              <Grid item xs={4} style={{ textAlign: "left" }}>
-                <span style={{ color: Colors.white, fontSize: "1em" }}>
-                  <Markdown>{project.description}</Markdown>
-                </span>
-                <br />
-                {project.repo && renderRepoLink(project.repo)}
-              </Grid>
+          <Grid container item xs={12} key={index} className={classes.gridItem}>
+            <Grid item xs={3} style={{ textAlign: "right" }}>
+              {renderProjectLink(project)}
+              {project.author && (
+                <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
+                  by {project.author}
+                </div>
+              )}
             </Grid>
-          ))
+            <Grid item xs={1.1} style={{ textAlign: "left" }}>
+              <img
+                src={generateImageUrl(project.name)}
+                alt={project.name}
+                className={classes.projectImage}
+                style={{ width: imageDimension, height: imageDimension }}
+              />
+            </Grid>
+            <Grid item xs={4} style={{ textAlign: "left" }}>
+              <span style={{ color: Colors.white, fontSize: "1em" }}>
+                <Markdown>{project.description}</Markdown>
+              </span>
+              <br />
+              {project.repo && renderRepoLink(project.repo)}
+            </Grid>
+          </Grid>
+        ))
         : projectList.reduce((rows, project, index) => {
-            if (index % 2 === 0) {
-              rows.push([]);
-            }
-            rows[rows.length - 1].push(project);
-            return rows;
-          }, []).map((row, rowIndex) => (
-            <Grid container item xs={12} key={rowIndex} className={classes.gridItem}>
-              {row.map((project, colIndex) => (
-                <Grid item xs={6} key={colIndex} style={{ textAlign: "center" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <img
-                      src={generateImageUrl(project.name)}
-                      alt={project.name}
-                      className={classes.projectImage}
-                      style={{ width: imageDimension, height: imageDimension }}
-                    />
-                    {renderProjectLink(project)}
-                    {project.author && (
-                      <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em", maxWidth: "50%" }}>
-                        by {project.author}
-                      </div>
-                    )}
-                    {project.repo && (
-                      <div style={{ marginTop: "5px", fontSize: "1em" }}>
-                        <LinkStyle href={project.repo} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>
-                          GitHub
-                        </LinkStyle>
-                      </div>
-                    )}
-                  </div>
-                </Grid>
-              ))}
-              {row.length < 2 && <Grid item xs={6} />} {/* Empty cell for alignment */}
-            </Grid>
-          ))}
+          if (index % 2 === 0) {
+            rows.push([]);
+          }
+          rows[rows.length - 1].push(project);
+          return rows;
+        }, []).map((row, rowIndex) => (
+          <Grid container item xs={12} key={rowIndex} className={classes.gridItem}>
+            {row.map((project, colIndex) => (
+              <Grid item xs={6} key={colIndex} style={{ textAlign: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <img
+                    src={generateImageUrl(project.name)}
+                    alt={project.name}
+                    className={classes.projectImage}
+                    style={{ width: imageDimension, height: imageDimension }}
+                  />
+                  {renderProjectLink(project)}
+                  {project.author && (
+                    <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em", maxWidth: "50%" }}>
+                      by {project.author}
+                    </div>
+                  )}
+                  {project.repo && (
+                    <div style={{ marginTop: "5px", fontSize: "1em" }}>
+                      <LinkStyle href={project.repo} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>
+                        GitHub
+                      </LinkStyle>
+                    </div>
+                  )}
+                </div>
+              </Grid>
+            ))}
+            {row.length < 2 && <Grid item xs={6} />} {/* Empty cell for alignment */}
+          </Grid>
+        ))}
     </Grid>
   )
 
@@ -292,17 +290,6 @@ const ProjectsSection = () => {
     <GenerativeImageURLContainer
       style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "1000px" }}
     >
-      <ImageURLHeading
-        customPrompt={`an image with the text "Integration" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
-        className={classes.scaledImageURLHeading}
-        width={isMobile ? 400 : 700}
-        height={isMobile ? 150 : 200}
-      >
-        Integrations
-      </ImageURLHeading>
-      <Box maxWidth="100%" marginBottom="500px">
-        <CodeExamples image={image} />
-      </Box>
       <ImageURLHeading
         className={classes.scaledImageURLHeading}
         width={350}

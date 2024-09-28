@@ -12,9 +12,10 @@ import {
   IconButton,
   Button,
   Link,
+  useMediaQuery,
 } from "@material-ui/core"
 import InfoIcon from "@material-ui/icons/Info"
-import { Colors } from "../../../styles/global"
+import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { CustomTooltip } from "../../../components/CustomTooltip"
 import discordLogo from "../../../assets/icons/discord.png" // Corrected import for the Discord logo
 
@@ -27,6 +28,7 @@ export function ImageEditor({
 }) {
   const { width, height, seed, nofeed, nologo, model, prompt } = image
   const [anchorEl, setAnchorEl] = useState(null)
+  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
 
   const handleMenuOpen = (event) => {
     setAnchorEl(event.currentTarget)
@@ -80,7 +82,7 @@ export function ImageEditor({
                 width: "100%",
                 justifyContent: "flex-start",
                 height: "56px",
-                fontSize: "1.5rem",
+                fontSize: isMobile ? "1.5rem" : "1.1rem",
               }}
             >
               {model || "flux"}
@@ -111,7 +113,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white, fontSize: "1.5rem" },
+                style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
               disabled={isLoading}
               style={{ width: "100%" }}
@@ -128,7 +130,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white, fontSize: "1.5rem" },
+                style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
               disabled={isLoading}
               style={{ width: "100%" }}
@@ -150,7 +152,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white, fontSize: "1.5rem" },
+                style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
               disabled={isLoading}
             />
@@ -172,7 +174,7 @@ export function ImageEditor({
               onChange={(e) => handleInputChange("nofeed", e.target.checked)}
               onFocus={handleFocus}
               disabled={isLoading}
-              style={{ fontSize: "1.5rem" }}
+              style={{ fontSize: isMobile ? "1.5rem" : "1.1rem" }}
             />
           </Grid>
           <Grid item xs={4}>
@@ -223,7 +225,7 @@ export function ImageEditor({
               onChange={(e) => handleInputChange("nologo", e.target.checked)}
               onFocus={handleFocus}
               disabled={isLoading}
-              style={{ fontSize: "1.5rem" }}
+              style={{ fontSize: isMobile ? "1.5rem" : "1.1rem" }}
             />
           </Grid>
         </Grid>

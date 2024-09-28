@@ -29,6 +29,7 @@ export default function Home() {
       <GenerativeImageFeed />
       <TopBand />
       <ProjectsSection />
+      <TopBand />
       <Discord />
       <TopBand />
       <CompaniesSection />

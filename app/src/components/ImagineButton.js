@@ -18,7 +18,7 @@ export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) 
           fontFamily: 'Uncut-Sans-Variable',
           fontStyle: 'italic',
           fontWeight: 600,
-          height: "75px",
+          height: "50px",
           width: "160px",
           position: "relative",
           marginTop: "0em",

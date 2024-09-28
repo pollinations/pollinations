@@ -1,8 +1,10 @@
 import React from "react"
-import { Grid, Typography, TextareaAutosize } from "@material-ui/core"
-import { Colors } from "../../../styles/global"
+import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@material-ui/core"
+import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 
 export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading, isStopped }) {
+    const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
+
     return (
         <Grid item xs={12}>
             {isStopped && (
@@ -12,7 +14,7 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
             )}
             <TextareaAutosize
                 style={{
-                    width: isStopped ? "100%" : "100%",
+                    width: "100%",
                     height: isStopped ? "340px" : "160px",
                     backgroundColor: "transparent",
                     border: isStopped ? `0.1px solid #4A4A4A` : "none",
@@ -20,8 +22,8 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                     color: Colors.offwhite,
                     paddingLeft: "15px",
                     paddingRight: "15px",
-                    paddingTop: "10",
-                    fontSize: "1.5rem",
+                    paddingTop: "10px",
+                    fontSize: isMobile ? "1.5rem" : "1.1rem",                    
                     overflow: "auto",
                     scrollbarWidth: "none", // For Firefox
                     msOverflowStyle: "none", // For Internet Explorer and Edge

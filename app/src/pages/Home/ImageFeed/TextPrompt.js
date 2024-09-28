@@ -6,7 +6,7 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
     return (
         <Grid item xs={12}>
             {isStopped && (
-                <Typography variant="body2" style={{ color: Colors.lime, fontWeight: "bold" }}>
+                <Typography variant="body2" style={{ color: '#f5f5f5', fontWeight: "normal" }}>
                     Prompt
                 </Typography>
             )}
@@ -15,7 +15,7 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                     width: "100%",
                     height: "160px",
                     backgroundColor: "transparent",
-                    border: `0.1px solid #4A4A4A`,
+                    border: isStopped ? `0.1px solid #4A4A4A` : "none",
                     borderRadius: "5px",
                     color: Colors.offwhite,
                     paddingLeft: "15px",

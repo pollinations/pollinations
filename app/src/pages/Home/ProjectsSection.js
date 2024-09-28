@@ -1,7 +1,7 @@
 import React, { useContext } from "react"
 import {
-  Box,
   useMediaQuery,
+  Box,
   Link,
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import { LinkStyle } from "./components"
 import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
 import { CodeExamples } from "./CodeExamples"
-import { ImageContext } from "../../contexts/ImageContext";
+import { ImageContext } from "../../contexts/ImageContext"
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -225,7 +225,7 @@ const ProjectsSection = () => {
   const classes = useStyles()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const { image } = useContext(ImageContext);
+  const { image } = useContext(ImageContext)
 
   const renderProjects = (projectList) => (
     <>
@@ -266,9 +266,18 @@ const ProjectsSection = () => {
   )
 
   return (
-    <GenerativeImageURLContainer style={{ margin: "3em", maxWidth: "800px" }}>
-      <ImageURLHeading className={classes.scaledImageURLHeading}>Integrations</ImageURLHeading>
-      <CodeExamples image={image} />
+    <GenerativeImageURLContainer style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "800px" }}>
+      <ImageURLHeading
+        customPrompt={`an image with the text "Integration" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+        className={classes.scaledImageURLHeading}
+        width={isMobile ? 400 : 700}
+        height={isMobile ? 150 : 200}
+      >
+        Integrations
+      </ImageURLHeading>
+      <Box maxWidth="100%" marginBottom="500px">
+        <CodeExamples image={image} />
+      </Box>
       <ImageURLHeading
         className={classes.scaledImageURLHeading}
         width={350}
@@ -309,20 +318,20 @@ const ProjectsSection = () => {
       </ImageURLHeading>
       {renderProjects(projects.tutorials)}
 
-      <Typography className={classes.listProjectText} style={{ fontSize: "1.5em" }}>
+      <Typography className={classes.listProjectText} style={{ fontSize: "1.3em" }}>
         Have you created a project that integrates Pollinations? We'd love to feature it!
         <br />
         <ImageURLHeading
           className={classes.scaledImageURLHeading}
-          width={350}
-          height={70}
+          width={300}
+          height={50}
           whiteText={true}
         >
           Get in touch
         </ImageURLHeading>{" "}
         <StyledNavLink
           href="mailto:hello@pollinations.ai"
-          style={{ color: Colors.lime, fontSize: "1.5em" }}
+          style={{ color: Colors.lime, fontSize: "1.1em" }}
         >
           hello@pollinations.ai
         </StyledNavLink>

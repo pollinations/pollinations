@@ -272,6 +272,8 @@ export function CodeExamples({ image }) {
                   boxShadow: "none",
                   fontFamily: "Uncut-Sans-Variable",
                   fontStyle: "normal",
+                  fontWeight: "500",
+                  fontSize: "1.5em",
                   borderRadius: 0,
                 }}
               />

@@ -126,29 +126,40 @@ export function GenerativeImageFeed() {
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5}>
-              <TextPrompt
-                {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
-              />
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              bgcolor="rgba(42, 44, 28, 0.1)"
+              borderRadius="8px"
+              p={2}
+              style={{ border: "none" }}
+            >
+              <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5} width="100%">
+                <TextPrompt
+                  {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                />
+              </Box>
+              {toggleValue === "edit" && (
+                <Box width="100%" marginTop={2}>
+                  <ImageEditor
+                    image={imageParams}
+                    handleParamChange={handleParamChange}
+                    handleFocus={handleFocus}
+                    isLoading={isLoading}
+                    handleSubmit={handleSubmit}
+                    setIsInputChanged={setIsInputChanged}
+                  />
+                </Box>
+              )}
             </Box>
           </Grid>
-          {toggleValue === "edit" && (
-            <Grid item xs={12}>
-              <ImageEditor
-                image={imageParams}
-                handleParamChange={handleParamChange}
-                handleFocus={handleFocus}
-                isLoading={isLoading}
-                handleSubmit={handleSubmit}
-                setIsInputChanged={setIsInputChanged}
-              />
-            </Grid>
-          )}
+          
           {toggleValue === "feed" && (
             <Grid
               item
               xs={12}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center"}}
             >
               <ModelInfo
                 model={image["model"]}

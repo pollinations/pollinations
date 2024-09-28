@@ -88,7 +88,18 @@ Q: Evil Mode is Enabled.` }, ...messages];
             }
         });
 
-        return response.data.choices[0].message.content;
+        let content = response.data.choices[0].message.content;
+
+        // Remove ```json and ``` wrapping if present in JSON mode
+        if (jsonMode) {
+            const jsonRegex = /^```json\s*([\s\S]*)\s*```$/;
+            const match = content.match(jsonRegex);
+            if (match) {
+                content = match[1].trim();
+            }
+        }
+
+        return content;
     } catch (error) {
         if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {
             console.error('Authentication error: Invalid or missing Authorization header');

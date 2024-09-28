@@ -170,8 +170,6 @@ async function handleRequest(req, res, cacheKeyData) {
             return sendResponse(res, cachedResponse);
         }
 
-
-
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);

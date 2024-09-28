@@ -3,10 +3,7 @@ import {
   useMediaQuery,
   Box,
   Link,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
+  Grid,
   Typography,
 } from "@material-ui/core"
 import { makeStyles, useTheme } from "@material-ui/core/styles"
@@ -21,20 +18,12 @@ import { ImageContext } from "../../contexts/ImageContext"
 
 const useStyles = makeStyles((theme) => ({
   root: {},
-  table: {
+  gridContainer: {
     marginBottom: "2em",
   },
-
-  tableCell: {
-    border: "none", // Removes cell borders
+  gridItem: {
     padding: "8px 16px", // Tighter padding
     fontSize: "1.1em", // Larger text size
-    "&:first-child": {
-      paddingLeft: 0, // Removes left padding for the first cell
-    },
-    "&:last-child": {
-      paddingRight: 0, // Removes right padding for the last cell
-    },
   },
   projectImage: {
     width: "48px", // Smaller image size
@@ -51,7 +40,6 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(4),
     marginBottom: theme.spacing(2),
     textAlign: "center",
-    width: "100%",
   },
   listProjectText: {
     color: Colors.white,
@@ -61,14 +49,14 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "1.1em",
   },
   scaledImageURLHeading: {
-    transform: "scale(0.8)",
+    transform: "scale(1)",
     transformOrigin: "center",
     width: "100%",
     maxWidth: "100%",
   },
 }))
 
-const logoPrefix = "minimalist logo on black background"
+const logoPrefix = "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
 const imageDimension = 96
 const seedValue = 41 + Math.floor(Math.random() * 3) // Define the seed value here
 
@@ -228,41 +216,72 @@ const ProjectsSection = () => {
   const { image } = useContext(ImageContext)
 
   const renderProjects = (projectList) => (
-    <>
-      {" "}
-      <Table className={classes.table}>
-        <TableBody>
-          {projectList.map((project, index) => (
-            <TableRow key={index} className={classes.tableRow}>
-              <TableCell className={classes.tableCell}>
-                {!isMobile && (
-                  <img
-                    src={generateImageUrl(project.name)}
-                    alt={project.name}
-                    className={classes.projectImage}
-                    style={{ width: imageDimension, height: imageDimension }}
-                  />
-                )}
-              </TableCell>
-              <TableCell className={classes.tableCell}>
+    <Grid container spacing={2} className={classes.gridContainer}>
+      {!isMobile
+        ? projectList.map((project, index) => (
+            <Grid container item xs={12} key={index} className={classes.gridItem}>
+              <Grid item xs={3} style={{ textAlign: "left" }}>
                 {renderProjectLink(project)}
                 {project.author && (
-                  <span style={{ marginLeft: "8px", color: Colors.white, fontSize: "1em" }}>
+                  <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
                     by {project.author}
-                  </span>
+                  </div>
                 )}
-              </TableCell>
-              <TableCell className={classes.tableCell}>
+              </Grid>
+              <Grid item xs={3} style={{ textAlign: "left" }}>
+                <img
+                  src={generateImageUrl(project.name)}
+                  alt={project.name}
+                  className={classes.projectImage}
+                  style={{ width: imageDimension, height: imageDimension }}
+                />
+              </Grid>
+              <Grid item xs={6} style={{ textAlign: "left" }}>
                 <span style={{ color: Colors.white, fontSize: "1em" }}>
                   <Markdown>{project.description}</Markdown>
                 </span>
+                <br />
                 {project.repo && renderRepoLink(project.repo)}
-              </TableCell>
-            </TableRow>
+              </Grid>
+            </Grid>
+          ))
+        : projectList.reduce((rows, project, index) => {
+            if (index % 2 === 0) {
+              rows.push([]);
+            }
+            rows[rows.length - 1].push(project);
+            return rows;
+          }, []).map((row, rowIndex) => (
+            <Grid container item xs={12} key={rowIndex} className={classes.gridItem}>
+              {row.map((project, colIndex) => (
+                <Grid item xs={6} key={colIndex} style={{ textAlign: "center" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <img
+                      src={generateImageUrl(project.name)}
+                      alt={project.name}
+                      className={classes.projectImage}
+                      style={{ width: imageDimension, height: imageDimension }}
+                    />
+                    {renderProjectLink(project)}
+                    {project.author && (
+                      <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em", maxWidth: "50%" }}>
+                        by {project.author}
+                      </div>
+                    )}
+                    {project.repo && (
+                      <div style={{ marginTop: "5px", fontSize: "1em" }}>
+                        <LinkStyle href={project.repo} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>
+                          GitHub
+                        </LinkStyle>
+                      </div>
+                    )}
+                  </div>
+                </Grid>
+              ))}
+              {row.length < 2 && <Grid item xs={6} />} {/* Empty cell for alignment */}
+            </Grid>
           ))}
-        </TableBody>
-      </Table>
-    </>
+    </Grid>
   )
 
   return (
@@ -284,7 +303,7 @@ const ProjectsSection = () => {
         className={classes.scaledImageURLHeading}
         width={350}
         height={70}
-        whiteText={"yellow"}
+        whiteText={"white"}
       >
         AI Chat / LLMs
       </ImageURLHeading>
@@ -294,7 +313,7 @@ const ProjectsSection = () => {
         className={classes.scaledImageURLHeading}
         width={350}
         height={70}
-        whiteText={"yellow"}
+        whiteText={"white"}
       >
         Social Bots
       </ImageURLHeading>
@@ -304,7 +323,7 @@ const ProjectsSection = () => {
         className={classes.scaledImageURLHeading}
         width={350}
         height={70}
-        whiteText={"yellow"}
+        whiteText={"white"}
       >
         Mobile & Web Apps
       </ImageURLHeading>
@@ -314,7 +333,7 @@ const ProjectsSection = () => {
         className={classes.scaledImageURLHeading}
         width={350}
         height={70}
-        whiteText={"yellow"}
+        whiteText={"white"}
       >
         Tutorials
       </ImageURLHeading>
@@ -341,20 +360,6 @@ const ProjectsSection = () => {
   )
 }
 
-const StyledLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${Colors.primary};
-  }
-`
-
-const StyledNavLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${Colors.primary};
-  }
-`
-
 const renderProjectLink = (project) => {
   return (
     <Link
@@ -366,9 +371,10 @@ const renderProjectLink = (project) => {
         fontFamily: Fonts.body,
         fontStyle: "normal",
         fontWeight: "500",
-        fontSize: "1.1em",
+        fontSize: "1.4em",
         lineHeight: "22px",
         textDecoration: "none",
+        maxWidth: "100px",
         "&:hover": {
           textDecoration: "underline",
         },
@@ -381,26 +387,16 @@ const renderProjectLink = (project) => {
 
 const renderRepoLink = (repoUrl) => {
   return (
-    <Link
+    <LinkStyle
       href={repoUrl}
       target="_blank"
       rel="noopener noreferrer"
       style={{
         color: Colors.lime,
-        fontFamily: Fonts.body,
-        fontStyle: "normal",
-        fontWeight: "500",
-        fontSize: "1.1em",
-        lineHeight: "22px",
-        textDecoration: "none",
-        marginLeft: "8px",
-        "&:hover": {
-          textDecoration: "underline",
-        },
       }}
     >
       GitHub
-    </Link>
+    </LinkStyle>
   )
 }
 

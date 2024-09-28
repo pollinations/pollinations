@@ -24,7 +24,6 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                         color: Colors.offwhite,
                         paddingLeft: "15px",
                         paddingRight: "15px",
-                        paddingTop: "10px",
                         fontSize: isMobile ? "1.5rem" : "1.2rem",                    
                         overflow: "auto",
                         scrollbarWidth: "none", // For Firefox
@@ -46,11 +45,11 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                         color: Colors.offwhite,
                         paddingLeft: "15px",
                         paddingRight: "15px",
-                        paddingTop: "10px",
-                        fontSize: isMobile ? "1.5rem" : "1.2rem",
+                        fontSize: isMobile ? "1.5rem" : "1.5rem",
                         overflow: "auto",
                         scrollbarWidth: "none", // For Firefox
                         msOverflowStyle: "none", // For Internet Explorer and Edge
+                        textAlign: "center", // Center the text horizontally
                     }}
                 >
                     <ReactMarkdown>{imageParams.prompt}</ReactMarkdown>

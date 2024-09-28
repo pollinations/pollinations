@@ -239,71 +239,81 @@ export function CodeExamples({ image }) {
   );
 
   return (
-      <URLExplanation>
-        <AppBar
-          position="static"
-          style={{ color: "white", width: "auto", boxShadow: "none" }}
+    <URLExplanation>
+      <AppBar
+        position="static"
+        style={{ color: "white", width: "auto", boxShadow: "none" }}
+      >
+        <Tabs
+          value={tabValue}
+          onChange={handleChange}
+          aria-label="simple tabs example"
+          variant="scrollable"
+          scrollButtons="on"
+          TabIndicatorProps={{
+            style: {
+              background: Colors.lime,
+              fontFamily: Fonts.body,
+              fontStyle: "normal",
+              fontWeight: "500",
+              fontSize: "1.1em",
+              lineHeight: "22px",
+              textDecoration: "none",
+            },
+          }}
         >
-          <Tabs
-            value={tabValue}
-            onChange={handleChange}
-            aria-label="simple tabs example"
-            variant="scrollable"
-            scrollButtons="on"
-            TabIndicatorProps={{
-              style: {
-                background: Colors.lime,
-                fontFamily: Fonts.body,
+          {codeExampleTabs.map((key, index) => (
+            <Tab
+              key={key}
+              label={key}
+              style={{
+                color: tabValue === index ? Colors.lime : Colors.offwhite,
+                backgroundColor: "transparent",
+                boxShadow: "none",
+                fontFamily: "Uncut-Sans-Variable",
                 fontStyle: "normal",
                 fontWeight: "500",
-                fontSize: "1.1em",
-                lineHeight: "22px",
-                textDecoration: "none",
-              },
-            }}
-          >
-            {codeExampleTabs.map((key, index) => (
-              <Tab
-                key={key}
-                label={key}
-                style={{
-                  color: tabValue === index ? Colors.lime : Colors.offwhite,
-                  backgroundColor: "transparent",
-                  boxShadow: "none",
-                  fontFamily: "Uncut-Sans-Variable",
-                  fontStyle: "normal",
-                  fontWeight: "500",
-                  fontSize: "1.5em",
-                  borderRadius: 0,
-                }}
-              />
-            ))}
-          </Tabs>
-        </AppBar>
-        <>
-          {codeExampleTabs.map((key, index) => {
-            if (tabValue !== index) return null;
-            if (!image || !image.imageURL) return null;
+                fontSize: "1.5em",
+                borderRadius: 0,
+              }}
+            />
+          ))}
+        </Tabs>
+      </AppBar>
+      <>
+        {codeExampleTabs.map((key, index) => {
+          if (tabValue !== index) return null;
+          if (!image || !image.imageURL) return null;
 
-            const text = CODE_EXAMPLES[key](image);
+          const text = CODE_EXAMPLES[key](image);
 
-            return (
-              <CodeBlock
-                key={key}
-                text={text}
-                language={key}
-                theme={irBlack}
-                showLineNumbers={text.split("\n").length > 1}
-                customStyle={{
-                  backgroundColor: "transparent",
-                  color: Colors.offwhite,
-                  scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
-                }}
-              />
-            );
-          })}
-        </>
-      </URLExplanation>
+          return (
+            <CodeBlock
+              key={key}
+              text={text}
+              language={key}
+              theme={irBlack}
+              showLineNumbers={text.split("\n").length > 1}
+              customStyle={{
+                backgroundColor: "transparent",
+                color: Colors.offwhite,
+                scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+              }}
+            />
+          );
+        })}
+      </>
+      <Box mt={2} textAlign="center">
+        <Link
+          href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: Colors.lime, fontSize: "1.1em" }}
+        >
+          Check the API documentation on GitHub
+        </Link>
+      </Box>
+    </URLExplanation>
   );
 }
 

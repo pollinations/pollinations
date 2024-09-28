@@ -155,7 +155,7 @@ export function GenerativeImageFeed() {
 
   return (
     <GenerativeImageURLContainer className={classes.container}>
-      <Grid item className={classes.gridItem}>
+      <Grid item className={classes.gridItem} style={{ marginTop: "2em" }}>
         <ImageURLHeading
           customPrompt={`an image with the text "Image Feed" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
           width={isMobile ? 400 : 700}
@@ -167,7 +167,7 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={0} direction="column">
+        <Grid container spacing={0} direction="column" >
           <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
@@ -212,20 +212,28 @@ export function GenerativeImageFeed() {
               />
             </Grid>
           )}
+          <Grid item xs={12} style={{ marginTop: "4em" }}>
+            <ImageURLHeading
+              customPrompt={`A large, detailed arrow pointing downwards on a solid black background. The arrow is adorned with colorful, intricate insects, creating a striking and bold visual contrast. Incorporate elements related to pollinators and digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the arrow. Each part of the arrow features unique, creative touches that make the design stand out. Make it very colorful with vibrant hues and gradients.`}
+              className={classes.scaledImageURLHeading}
+              width={isMobile ? 80 : 80}
+              height={isMobile ? 100 : 100}
+            >
+            </ImageURLHeading>
+            <ImageURLHeading
+              customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+              className={classes.scaledImageURLHeading}
+              width={isMobile ? 400 : 700}
+              height={isMobile ? 150 : 200}
+            >
+              Integrations
+            </ImageURLHeading>
+            <Box style={{ marginTop: "4em", marginBottom: "4em" }} >
+              <CodeExamples image={image} />
+            </Box>
+          </Grid>
         </Grid>
       )}
-      <ImageURLHeading
-        customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
-        className={classes.scaledImageURLHeading}
-        width={isMobile ? 400 : 700}
-        height={isMobile ? 150 : 200}
-      >
-        Integrations
-      </ImageURLHeading>
-
-      <Box className={classes.boxBottom}>
-        <CodeExamples image={image} />
-      </Box>
     </GenerativeImageURLContainer>
   )
 }

@@ -45,7 +45,7 @@ const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
 // Create custom instance of Midijourney
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextClaude);
 // Create custom instance of Rtist
 const rtist = wrapModelWithContext(rtistPrompt, generateText); // Add this line
 
@@ -206,6 +206,7 @@ function sendResponse(res, response) {
     res.send(response);
 }
 
+
 // Common function to handle request data
 function getRequestData(req, isPost = false) {
     const query = req.query;
@@ -215,10 +216,10 @@ function getRequestData(req, isPost = false) {
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
-    const systemPrompt = data.system ? decodeURIComponent(data.system) : null;
+    const systemPrompt = data.system ? safeDecodeURIComponent(data.system) : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
 
-    const messages = isPost ? data.messages : [{ role: 'user', content: decodeURIComponent(req.params.prompt) }];
+    const messages = isPost ? data.messages : [{ role: 'user', content: safeDecodeURIComponent(req.params.prompt) }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -369,6 +370,15 @@ async function generateTextBasedOnModel(messages, options) {
         return rtist(messages, options); // Add this line
     } else {
         return generateText(messages, options);
+    }
+}
+
+const safeDecodeURIComponent = (str) => {
+    try {
+        return decodeURIComponent(str);
+    } catch (error) {
+        c
+        return str;
     }
 }
 

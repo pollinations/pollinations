@@ -21,7 +21,7 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                     paddingLeft: "15px",
                     paddingRight: "15px",
                     paddingTop: "10",
-                    fontSize: "1.2rem",
+                    fontSize: "1.5rem",
                     overflow: "auto",
                     scrollbarWidth: "none", // For Firefox
                     msOverflowStyle: "none", // For Internet Explorer and Edge

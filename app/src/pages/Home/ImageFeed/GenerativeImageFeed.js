@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useContext } from "react"
 import { Grid, Box, useMediaQuery } from "@material-ui/core"
-import { CodeExamples } from "../CodeExamples"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
 import { GenerativeImageURLContainer, ImageURLHeading } from "../ImageHeading"
@@ -14,6 +13,7 @@ import { ImagineButton } from "../../../components/ImagineButton"
 import { TextPrompt } from "./TextPrompt"
 import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
+import { ImageContext } from "../../../contexts/ImageContext"
 
 const log = debug("GenerativeImageFeed")
 
@@ -26,6 +26,7 @@ export function GenerativeImageFeed() {
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
   const [isInputChanged, setIsInputChanged] = useState(false)
+  const { setImage } = useContext(ImageContext)
 
   useEffect(() => {
     setImageParams(image)
@@ -97,10 +98,12 @@ export function GenerativeImageFeed() {
   }
 
   return (
-    <GenerativeImageURLContainer style={{ margin: "3em 0 6em 0", maxWidth: "800px" }}>
-      <Grid item style={{ margin: "3em 0" }}>
+    <GenerativeImageURLContainer style={{ margin: "2em 0 5em 0", maxWidth: "1000px" }}>
+      <Grid item style={{ margin: "0em 0" }}>
         <ImageURLHeading
           customPrompt={`an image with the text "Image Feed" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+          width={isMobile ? 400 : 700}
+          height={isMobile ? 150 : 200}
         >
           image.pollinations
         </ImageURLHeading>
@@ -109,27 +112,24 @@ export function GenerativeImageFeed() {
         <LoadingIndicator />
       ) : (
         <Grid container spacing={4} direction="column">
-          <Grid item xs={12} >
+          <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-            <ImageDisplay
-              image={image}
-              isMobile={isMobile}
-              isLoading={isLoading}
-            />
+            <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
           </Grid>
           <Grid item xs={12}>
-            <Box position="relative" maxWidth="800px" margin="0 auto" marginBottom={2}>
-              <Box display="flex" justifyContent="flex-start" marginLeft={1.5}>
+            <Box position="relative">
+              <Box display="flex" justifyContent="center">
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-              </Box>
-              <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }} marginRight={1.5}>
+                <Box mx={2} /> {/* Add horizontal space */}
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
           </Grid>
           <Grid item xs={12}>
             <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5}>
-              <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
+              <TextPrompt
+                {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+              />
             </Box>
           </Grid>
           {toggleValue === "edit" && (
@@ -145,7 +145,11 @@ export function GenerativeImageFeed() {
             </Grid>
           )}
           {toggleValue === "feed" && (
-            <Grid item xs={12} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Grid
+              item
+              xs={12}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
               <ModelInfo
                 model={image["model"]}
                 wasPimped={image["wasPimped"]}
@@ -153,9 +157,6 @@ export function GenerativeImageFeed() {
               />
             </Grid>
           )}
-          <Grid item xs={12}>
-            <CodeExamples {...image} />
-          </Grid>
         </Grid>
       )}
     </GenerativeImageURLContainer>

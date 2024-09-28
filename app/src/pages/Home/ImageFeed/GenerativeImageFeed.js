@@ -167,12 +167,12 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={4} direction="column" >
+        <Grid container spacing={0} direction="column">
           <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} style={{ marginTop: "2em" }}>
             <Box className={classes.boxRelative}>
               <Box className={classes.boxCenter}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
@@ -222,6 +222,7 @@ export function GenerativeImageFeed() {
       >
         Integrations
       </ImageURLHeading>
+
       <Box className={classes.boxBottom}>
         <CodeExamples image={image} />
       </Box>

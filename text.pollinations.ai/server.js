@@ -170,8 +170,6 @@ async function handleRequest(req, res, cacheKeyData) {
             return sendResponse(res, cachedResponse);
         }
 
-
-
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
@@ -206,14 +204,13 @@ function sendResponse(res, response) {
     res.send(response);
 }
 
-
 // Common function to handle request data
 function getRequestData(req, isPost = false) {
     const query = req.query;
     const body = req.body;
     const data = isPost ? { ...query, ...body } : query;
 
-    const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true';
+    const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true' || data.response_format?.type === 'json_object';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
     const systemPrompt = data.system ? safeDecodeURIComponent(data.system) : null;

@@ -111,7 +111,7 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={4} direction="column">
+        <Grid container spacing={4} direction="column" >
           <Grid item xs={12}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
@@ -130,12 +130,16 @@ export function GenerativeImageFeed() {
               display="flex"
               flexDirection="column"
               alignItems="center"
-              bgcolor="rgba(42, 44, 28, 0.1)"
+              bgcolor="transparent"
               borderRadius="8px"
-              p={2}
-              style={{ border: "none" }}
             >
-              <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5} width="100%">
+              <Box
+                display="flex"
+                alignItems="center"
+                width="100%"
+                borderRadius="8px"
+
+              >
                 <TextPrompt
                   {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
                 />

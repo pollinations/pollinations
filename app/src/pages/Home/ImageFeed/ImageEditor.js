@@ -80,6 +80,7 @@ export function ImageEditor({
                 width: "100%",
                 justifyContent: "flex-start",
                 height: "56px",
+                fontSize: "1.5rem",
               }}
             >
               {model || "flux"}
@@ -110,7 +111,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white },
+                style: { color: Colors.white, fontSize: "1.5rem" },
               }}
               disabled={isLoading}
               style={{ width: "100%" }}
@@ -127,7 +128,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white },
+                style: { color: Colors.white, fontSize: "1.5rem" },
               }}
               disabled={isLoading}
               style={{ width: "100%" }}
@@ -149,7 +150,7 @@ export function ImageEditor({
               onFocus={handleFocus}
               type="number"
               InputProps={{
-                style: { color: Colors.white },
+                style: { color: Colors.white, fontSize: "1.5rem" },
               }}
               disabled={isLoading}
             />
@@ -171,6 +172,7 @@ export function ImageEditor({
               onChange={(e) => handleInputChange("nofeed", e.target.checked)}
               onFocus={handleFocus}
               disabled={isLoading}
+              style={{ fontSize: "1.5rem" }}
             />
           </Grid>
           <Grid item xs={4}>
@@ -221,6 +223,7 @@ export function ImageEditor({
               onChange={(e) => handleInputChange("nologo", e.target.checked)}
               onFocus={handleFocus}
               disabled={isLoading}
+              style={{ fontSize: "1.5rem" }}
             />
           </Grid>
         </Grid>

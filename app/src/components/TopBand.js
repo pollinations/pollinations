@@ -1,13 +1,15 @@
 import React, { useMemo } from "react";
 import styled from "@emotion/styled";
 import { usePollinationsImage } from "@pollinations/react";
+import useRandomSeed from "../hooks/useRandomSeed";
 
 const topBandPrompt = encodeURIComponent(
     "One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white."
 );
 
 const TopBand = () => {
-    const seed = useMemo(() => Math.floor(Math.random() * 10), []);
+
+    const seed = useRandomSeed();
     const backgroundImage = usePollinationsImage(topBandPrompt, { width: 500, height: 100, nologo: true, seed });
 
     return <TopBandStyle backgroundImage={backgroundImage} />;

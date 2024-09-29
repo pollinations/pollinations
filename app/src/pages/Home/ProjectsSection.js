@@ -15,11 +15,13 @@ import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
 import { ImageContext } from "../../contexts/ImageContext"
 
+const MOBILE_BREAKPOINT = "sm"
+
 const useStyles = makeStyles((theme) => ({
   root: {},
   gridContainer: {
     marginBottom: "2em",
-
+    justifyContent: "center", // Center the grid horizontally
   },
   gridItem: {
     padding: "8px 16px", // Tighter padding
@@ -213,15 +215,14 @@ const generateImageUrl = (name) =>
 
 const ProjectsSection = () => {
   const classes = useStyles()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down(MOBILE_BREAKPOINT))
 
   const renderProjects = (projectList) => (
     <Grid container spacing={2} className={classes.gridContainer}>
       {!isMobile
         ? projectList.map((project, index) => (
-          <Grid container item xs={12} key={index} className={classes.gridItem}>
-            <Grid item xs={3} style={{ textAlign: "right" }}>
+          <Grid container item xs={10} key={index} className={classes.gridItem}>
+            <Grid item xs={4} style={{ textAlign: "right" }}>
               {renderProjectLink(project)}
               {project.author && (
                 <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>

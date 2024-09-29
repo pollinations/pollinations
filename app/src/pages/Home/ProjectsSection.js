@@ -290,6 +290,11 @@ const ProjectsSection = () => {
     <GenerativeImageURLContainer
       style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "1000px" }}
     >
+            <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
+          Integrations
+        </ImageURLHeading>
+      </GenerativeImageURLContainer>
       <ImageURLHeading
         className={classes.scaledImageURLHeading}
         width={350}

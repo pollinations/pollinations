@@ -6,10 +6,10 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../st
 import { LinkStyle } from "../pages/Home/components"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator"
-import { useMediaQuery } from "@material-ui/core"
+import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
 
 const Footer = () => {
-  const isMobile = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT})`)
+  const isMobile = useIsMobile(); // Use the new hook
 
   return (
     <OuterContainer>

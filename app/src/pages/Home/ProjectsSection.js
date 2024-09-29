@@ -1,24 +1,18 @@
-import React, { useContext } from "react"
+import React from "react"
 import {
-  useMediaQuery,
-  Box,
   Link,
   Grid,
   Typography,
 } from "@material-ui/core"
-import { makeStyles, useTheme } from "@material-ui/core/styles"
+import { makeStyles, } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
-import Markdown from "markdown-to-jsx"
 import { LinkStyle } from "./components"
-import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
-import { ImageContext } from "../../contexts/ImageContext"
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-
-const MOBILE_BREAKPOINT = "sm"
+import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -213,7 +207,7 @@ const projects = {
 
 const ProjectsSection = () => {
   const classes = useStyles()
-  const isMobile = useMediaQuery((theme) => theme.breakpoints.down(MOBILE_BREAKPOINT))
+  const isMobile = useIsMobile() // Use the new hook
   const seedValue = useRandomSeed()
 
   const renderProjects = (projectList) => (

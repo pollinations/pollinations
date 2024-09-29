@@ -62,7 +62,7 @@ ${props => props.right && ('right:' + props.right + ';') };
 export const LinkStyle = styled.a`
 font-family: ${Fonts.body};
 font-style: normal;
-font-weight: 500;
+font-weight: 900;
 font-size: 18px;
 line-height: 22px;
 /* identical to box height */

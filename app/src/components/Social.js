@@ -23,7 +23,7 @@ export const SocialLinks = ({ small, hideOnMobile, gap, invert }) => (
 )
 
 const IconImg = styled.img`
-width: ${props => props.small ? '16px' : '22px'};
+width: ${props => props.small ? '16px' : '24px'};
 height: auto;
 ${props => props.invert ? 'filter:invert(100%)' : ''};
 `
@@ -56,23 +56,3 @@ a {
   display: ${props => props.hideOnMobile ? 'none' : ''};
 }
 `
-
-const PlatformLink = (platform) => {
-  const { icon_img, url } = SOCIAL_LINKS[platform]
-  return (
-    <Link
-      key={`plt_link_${platform}`}
-      href={url}
-      style={{ 
-        borderRadius: '50%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-      target="_blank"
-      title={platform}
-    >
-      <IconImg src={icon_img} small={small} />
-    </Link>
-  )
-}

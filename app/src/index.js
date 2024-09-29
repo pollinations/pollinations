@@ -27,9 +27,11 @@ ReactDOM.render(
     <ThemeProvider theme={darkTheme}>
         <CssBaseline />
         <BrowserRouter>
-          <ScrollToTop>
+        <ScrollToTop>
+
             <App />
-          </ScrollToTop>
+            </ScrollToTop>
+
         </BrowserRouter>
     </ThemeProvider>,
   document.getElementById('root')

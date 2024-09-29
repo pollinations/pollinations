@@ -1,18 +1,14 @@
 import styled from "@emotion/styled"
 import React from "react"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
-import { LinkStyle } from "./components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from 'react-markdown';
-
-const StyledLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
-  }
-`
+import Box from '@material-ui/core/Box';
+import useRandomSeed from "../../hooks/useRandomSeed"
+import { EmojiRephrase } from "../../components/EmojiRephrase"
+import StyledLink from "../../components/StyledLink"; // Updated import
 
 const WhoWeAreContent = () => {
   const handleLinkClick = (e) => {
@@ -23,11 +19,11 @@ const WhoWeAreContent = () => {
     })
   }
 
-  const seed = Math.floor(Math.random() * 20);
+  const seed = useRandomSeed();
   const markdownText = usePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
 
   return (
-    <>
+    <Box maxWidth="1000px" style={{ margin: "0 auto" }}>
       <h2 style={{ userSelect: "none" }}>
         <ReactMarkdown
           components={{
@@ -39,14 +35,14 @@ const WhoWeAreContent = () => {
       </h2>
       <ContactWrapper>
         <p style={{ userSelect: "none" }}>
-          To talk to us, reach out on{" "}
-          <StyledLink href="https://discord.gg/k9F7SyTgqn">
+          <EmojiRephrase> talk to us, reach out on [Discord](https://discord.gg/k9F7SyTgqn) or at [hello@pollinations.ai](mailto:hello@pollinations.ai)</EmojiRephrase>
+          {/* <StyledLink href="https://discord.gg/k9F7SyTgqn">
             <b>Discord</b>
           </StyledLink>{" "}
           <span className="mobile-break">or at </span>
           <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
             <b>hello@pollinations.ai</b>
-          </StyledLink>
+          </StyledLink> */}
         </p>
         <p style={{ userSelect: "none" }}>
           <StyledLink href="https://github.com/pollinations/pollinations/#readme">
@@ -56,7 +52,7 @@ const WhoWeAreContent = () => {
           to learn more.
         </p>
       </ContactWrapper>
-    </>
+    </Box>
   )
 }
 
@@ -83,8 +79,6 @@ const PageLayout = styled(BaseContainer)`
   align-items: flex-start;
   justify-content: center;
   gap: 1em;
-  margin: auto;
-  animation: ${fadeIn} 1.5s ease-out;
 
   h2 {
     initial: unset;
@@ -101,7 +95,6 @@ const PageLayout = styled(BaseContainer)`
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;
       line-height: 40px;
-      margin-bottom: 1.6em;
     }
   }
   p {
@@ -117,8 +110,9 @@ const PageLayout = styled(BaseContainer)`
       color: ${(props) => (props.dark ? Colors.accent : Colors.offblack)};
     }
     @media (max-width: ${MOBILE_BREAKPOINT}) {
-      width: 90%;
+      width: 100%;
       font-size: 22px;
+      text-align: center; /* Center text horizontally on mobile */
     }
   }
 
@@ -141,7 +135,7 @@ const ContactWrapper = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  margin-bottom: 2em;
+  margin-bottom: 5em;
 
   p {
     width: 45%; // Adjust this value as needed
@@ -154,13 +148,15 @@ const ContactWrapper = styled.div`
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     flex-direction: column;
+    align-items: center; /* Center all items horizontally on mobile */
 
     p {
       width: 100%;
+      text-align: center; /* Center text horizontally on mobile */
     }
 
     p:last-child {
-      text-align: left;
+      text-align: center; /* Center text horizontally on mobile */
     }
 
     .mobile-break {

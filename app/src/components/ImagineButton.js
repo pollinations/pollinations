@@ -14,17 +14,18 @@ export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) 
         style={{
           backgroundColor: isInputChanged ? Colors.lime : Colors.lime,
           color: isInputChanged ? null : Colors.offblack,
-          fontSize: "1.3rem",
-          fontFamily: "Uncut-Sans-Variable",
-          fontStyle: "normal",
-          fontWeight: 400,
-          height: "56px",
-          width: "150px",
+          fontSize: '1.3rem',
+          fontFamily: 'Uncut-Sans-Variable',
+          fontStyle: 'normal',
+          fontWeight: 600,
+          height: "60px",
+          width: "160px",
           position: "relative",
           marginTop: "0em",
-          display: "block",
-          marginLeft: "auto",
-          marginRight: "auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          letterSpacing: "0.1em", // Increased letter spacing
         }}
       >
         {isLoading ? <span></span> : "Pollinate"}

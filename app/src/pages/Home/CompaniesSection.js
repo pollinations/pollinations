@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react"
-import { Container } from "@material-ui/core"
+import { Container, Box, useMediaQuery } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
+import { GenerativeImageURLContainer } from "./ImageHeading"
 
 const CompaniesSection = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth)
+  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
 
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth)
@@ -16,31 +18,30 @@ const CompaniesSection = () => {
 
   const useStyles = makeStyles((theme) => ({
     root: {
-      maxWidth: "800px",
+      width: "100%",
       padding: theme.spacing(1),
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
+
     },
     table: {
-      maxWidth: "800px",
+      width: "100%",
+      maxWidth: "100vw",
       borderCollapse: "collapse",
-      marginBottom: "5em",
-      margin: "0",
-      [theme.breakpoints.down('sm')]: {
-        marginBottom: "0.5em",
-      },
     },
     td: {
       padding: theme.spacing(1),
       fontSize: "1.1em",
+      textAlign: "center",
+      verticalAlign: "top",
     },
     link: {
       fontFamily: Fonts.body,
-      fontStyle: 'normal',
-      fontWeight: '500',
-      fontSize: '1.1em',
-      lineHeight: '22px',
+      fontStyle: "normal",
+      fontWeight: "500",
+      fontSize: "1.1em",
+      lineHeight: "22px",
       textDecoration: "underline",
       textTransform: "uppercase",
       color: Colors.lime,
@@ -54,43 +55,74 @@ const CompaniesSection = () => {
   const seedValue = 41 + Math.floor(Math.random() * 3)
 
   const companies = [
-    { name: "LLMPlayground.net", url: "https://llmplayground.net/", description: "Hosting Custom Flux Models" },
+    {
+      name: "LLMPlayground.net",
+      url: "https://llmplayground.net/",
+      description: "Hosting Custom Flux Models",
+    },
     { name: "Karma.YT", url: "https://karma.yt", description: "Social media integrations" },
     { name: "AWS Activate", url: "https://aws.amazon.com/", description: "GPU Cloud Credits" },
-    { name: "Google Cloud for Startups", url: "https://cloud.google.com/", description: "GPU Cloud Credits" },
+    {
+      name: "Google Cloud for Startups",
+      url: "https://cloud.google.com/",
+      description: "GPU Cloud Credits",
+    },
     { name: "OVH Cloud", url: "https://www.ovhcloud.com/", description: "GPU Cloud credits" },
-    { name: "NVIDIA Inception", url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/", description: "AI startup support" },
-    { name: "Azure (MS for Startups)", url: "https://azure.microsoft.com/", description: "OpenAI credits" },
-    { name: "Outlier Ventures", url: "https://outlierventures.io/", description: "Startup Accelerator" },
+    {
+      name: "NVIDIA Inception",
+      url: "https://www.nvidia.com/en-us/deep-learning-ai/startups/",
+      description: "AI startup support",
+    },
+    {
+      name: "Azure (MS for Startups)",
+      url: "https://azure.microsoft.com/",
+      description: "OpenAI credits",
+    },
+    {
+      name: "Outlier Ventures",
+      url: "https://outlierventures.io/",
+      description: "Startup Accelerator",
+    },
   ]
 
   const generateImageUrl = (name, description) =>
-    `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name} ${description}`)}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
+    `https://pollinations.ai/p/${encodeURIComponent(
+      `${logoPrefix} ${name} ${description}`
+    )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 
-  const tableRows = companies.reduce((rows, company, index) => {
-    if (index % 2 === 0) rows.push([])
-    rows[rows.length - 1].push(
-      <>
+  const tableRows = companies
+    .reduce((rows, company, index) => {
+      if (index % 2 === 0) rows.push([])
+      rows[rows.length - 1].push(
         <td key={company.name} className={classes.td}>
-          <img src={generateImageUrl(company.name, company.description)} alt={company.name} style={{ width: `${imageDimension}px`, height: `${imageDimension}px` }} />
-        </td>
-        <td>
-          <a href={company.url} className={classes.link}>{company.name}</a>
+          <img
+            src={generateImageUrl(company.name, company.description)}
+            alt={company.name}
+            style={{ width: `${imageDimension}px`, height: `${imageDimension}px` }}
+          />
           <br />
-          {company.description}
+          <a href={company.url} className={classes.link}>
+            {company.name}
+          </a>
+          <br />
+          {!isMobile && company.description}
         </td>
-      </>
-    )
-    return rows
-  }, []).map((row, index) => <tr key={index}>{row}</tr>)
+      )
+      return rows
+    }, [])
+    .map((row, index) => <tr key={index}>{row}</tr>)
 
   return (
-    <Container className={classes.root} style={{ margin: '3em 0 4em 0' }}>
-      <ImageURLHeading>Supported By</ImageURLHeading>
-      <table className={classes.table} style={{ marginTop: '3em' }}>
+    <GenerativeImageURLContainer>
+      <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
+          Supported By
+        </ImageURLHeading>
+      </GenerativeImageURLContainer>
+      <table className={classes.table} style={{ marginBottom: "6em" }}>
         <tbody>{tableRows}</tbody>
       </table>
-    </Container>
+    </GenerativeImageURLContainer>
   )
 }
 

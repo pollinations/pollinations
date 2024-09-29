@@ -1,5 +1,9 @@
 # Pollinations.AI Image Generation API
 
+## React Hooks
+
+For easy integration with React applications, check out our [Pollinations React Hooks documentation](./pollinations-react/README.md).
+
 ## Endpoint
 
     GET https://image.pollinations.ai/prompt/{prompt}
@@ -138,3 +142,4 @@ We provide an OpenAI compatible endpoint that provides access to all the existin
     https://text.pollinations.ai/openai
 
 Note: The message format used in the POST request is similar to the one used by OpenAI's ChatGPT API. For more detailed information on structuring your messages, please refer to the [OpenAI API documentation](https://platform.openai.com/docs/guides/chat).
+

@@ -16,7 +16,6 @@ import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
 import { ImageContext } from "../../../contexts/ImageContext"
 import { CodeExamples } from "../CodeExamples"
-import TopBand from "../../../components/TopBand"
 
 const log = debug("GenerativeImageFeed")
 
@@ -214,7 +213,13 @@ export function GenerativeImageFeed() {
             </Grid>
           )}
           <Grid item xs={12} style={{ marginTop: "4em" }}>
-            <TopBand />
+            <ImageURLHeading
+              customPrompt={`A large, detailed arrow pointing downwards on a solid black background. The arrow is adorned with colorful, intricate insects, creating a striking and bold visual contrast. Incorporate elements related to pollinators and digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the arrow. Each part of the arrow features unique, creative touches that make the design stand out. Make it very colorful with vibrant hues and gradients.`}
+              className={classes.scaledImageURLHeading}
+              width={isMobile ? 80 : 80}
+              height={isMobile ? 100 : 100}
+            >
+            </ImageURLHeading>
             <ImageURLHeading
               customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
               className={classes.scaledImageURLHeading}

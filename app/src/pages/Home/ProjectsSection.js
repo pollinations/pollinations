@@ -150,6 +150,13 @@ const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
+      name: "DevSaura AI",
+      url: "https://ai.devsaura.com",
+      description:
+        "A web platform offering AI-powered tools for image generation, blog creation, and story writing with visuals, all powered by Pollinations and GroqCloud.",
+      author: "@saadaryf",
+    },
+    {
       name: "Own-AI",
       url: "https://own-ai.pages.dev/",
       description:
@@ -252,6 +259,15 @@ const ProjectsSection = () => {
         height={70}
         whiteText={"white"}
       >
+        Mobile & Web Apps
+      </ImageURLHeading>
+      {renderProjects(projects.apps)}
+      <ImageURLHeading
+        className={classes.scaledImageURLHeading}
+        width={350}
+        height={70}
+        whiteText={"white"}
+      >
         AI Chat / LLMs
       </ImageURLHeading>
       {renderProjects(projects.llmIntegration)}
@@ -265,16 +281,6 @@ const ProjectsSection = () => {
         Social Bots
       </ImageURLHeading>
       {renderProjects(projects.socialBots)}
-
-      <ImageURLHeading
-        className={classes.scaledImageURLHeading}
-        width={350}
-        height={70}
-        whiteText={"white"}
-      >
-        Mobile & Web Apps
-      </ImageURLHeading>
-      {renderProjects(projects.apps)}
 
       <ImageURLHeading
         className={classes.scaledImageURLHeading}

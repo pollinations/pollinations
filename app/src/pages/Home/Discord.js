@@ -8,19 +8,18 @@ import discordLogo from "../../assets/imgs/discord_logo.png"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
 import ReactMarkdown from "react-markdown"
 import { useMediaQuery, useTheme } from "@material-ui/core"
+import { EmojiRephrase } from "../../components/EmojiRephrase"
+import useRandomSeed from "../../hooks/useRandomSeed"
 
 const DiscordSection = (props) => {
-  const seed = useMemo(() => Math.floor(Math.random() * 20), [])
+  const seed = useRandomSeed();
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
   const imageURL = usePollinationsImage(
     "an image with the text 'Discord' displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.",
     { seed, width: isMobile ? 400 : 700, height: isMobile ? 150 : 200 }
   )
-  const markdownText = usePollinationsText(
-    "Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.",
-    { seed }
-  )
+
 
   return (
     <Container>
@@ -30,9 +29,9 @@ const DiscordSection = (props) => {
       <Body>
         <TextWithLogo>
           <Text style={{ maxWidth: "800px" }}>
-            <p style={{ fontSize: "36px", userSelect: "none" }}>
-              <ReactMarkdown>{markdownText}</ReactMarkdown>
-            </p>
+            <EmojiRephrase>
+              Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+            </EmojiRephrase>
           </Text>
         </TextWithLogo>
         <Logo src={discordLogo} alt="Discord Logo" />

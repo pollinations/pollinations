@@ -1,20 +1,14 @@
 import styled from "@emotion/styled"
 import React from "react"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
-import { LinkStyle } from "./components"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from 'react-markdown';
 import Box from '@material-ui/core/Box';
 import useRandomSeed from "../../hooks/useRandomSeed"
-
-const StyledLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
-  }
-`
+import { EmojiRephrase } from "../../components/EmojiRephrase"
+import StyledLink from "../../components/StyledLink"; // Updated import
 
 const WhoWeAreContent = () => {
   const handleLinkClick = (e) => {
@@ -41,14 +35,14 @@ const WhoWeAreContent = () => {
       </h2>
       <ContactWrapper>
         <p style={{ userSelect: "none" }}>
-          To talk to us, reach out on{" "}
-          <StyledLink href="https://discord.gg/k9F7SyTgqn">
+          <EmojiRephrase> talk to us, reach out on [Discord](https://discord.gg/k9F7SyTgqn) or at [hello@pollinations.ai](mailto:hello@pollinations.ai)</EmojiRephrase>
+          {/* <StyledLink href="https://discord.gg/k9F7SyTgqn">
             <b>Discord</b>
           </StyledLink>{" "}
           <span className="mobile-break">or at </span>
           <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
             <b>hello@pollinations.ai</b>
-          </StyledLink>
+          </StyledLink> */}
         </p>
         <p style={{ userSelect: "none" }}>
           <StyledLink href="https://github.com/pollinations/pollinations/#readme">

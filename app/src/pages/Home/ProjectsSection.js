@@ -219,70 +219,33 @@ const ProjectsSection = () => {
 
   const renderProjects = (projectList) => (
     <Grid container spacing={2} className={classes.gridContainer}>
-      {!isMobile
-        ? projectList.map((project, index) => (
-          <Grid container item xs={10} key={index} className={classes.gridItem}>
-            <Grid item xs={4} style={{ textAlign: "right" }}>
-              {renderProjectLink(project)}
-              {project.author && (
-                <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
-                  by {project.author}
-                </div>
-              )}
-            </Grid>
-            <Grid item xs={1.1} style={{ textAlign: "left" }}>
-              <img
-                src={generateImageUrl(project.name)}
-                alt={project.name}
-                className={classes.projectImage}
-                style={{ width: imageDimension, height: imageDimension }}
-              />
-            </Grid>
-            <Grid item xs={4} style={{ textAlign: "left" }}>
-              <span style={{ color: Colors.white, fontSize: "1em" }}>
-                <Markdown>{project.description}</Markdown>
-              </span>
-              <br />
-              {project.repo && renderRepoLink(project.repo)}
-            </Grid>
+      {projectList.map((project, index) => (
+        <Grid container item xs={10} key={index} className={classes.gridItem}>
+          <Grid item xs={1.1} style={{ textAlign: "right" }}>
+            <img
+              src={generateImageUrl(project.name)}
+              alt={project.name}
+              className={classes.projectImage}
+              style={{ width: imageDimension, height: imageDimension }}
+            />
           </Grid>
-        ))
-        : projectList.reduce((rows, project, index) => {
-          if (index % 2 === 0) {
-            rows.push([]);
-          }
-          rows[rows.length - 1].push(project);
-          return rows;
-        }, []).map((row, rowIndex) => (
-          <Grid container item xs={12} key={rowIndex} className={classes.gridItem}>
-            {row.map((project, colIndex) => (
-              <Grid item xs={6} key={colIndex} style={{ textAlign: "center" }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <img
-                    src={generateImageUrl(project.name)}
-                    alt={project.name}
-                    className={classes.projectImage}
-                    style={{ width: imageDimension, height: imageDimension }}
-                  />
-                  {renderProjectLink(project)}
-                  {project.author && (
-                    <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em", maxWidth: "50%" }}>
-                      by {project.author}
-                    </div>
-                  )}
-                  {project.repo && (
-                    <div style={{ marginTop: "5px", fontSize: "1em" }}>
-                      <LinkStyle href={project.repo} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime }}>
-                        GitHub
-                      </LinkStyle>
-                    </div>
-                  )}
-                </div>
-              </Grid>
-            ))}
-            {row.length < 2 && <Grid item xs={6} />} {/* Empty cell for alignment */}
+          <Grid item xs={4} style={{ textAlign: "left" }}>
+            {renderProjectLink(project)}
+            {project.author && (
+              <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
+                by {project.author}
+              </div>
+            )}
           </Grid>
-        ))}
+          <Grid item xs={4} style={{ textAlign: "left" }}>
+            <span style={{ color: Colors.white, fontSize: "1em" }}>
+              <Markdown>{project.description}</Markdown>
+            </span>
+            <br />
+            {project.repo && renderRepoLink(project.repo)}
+          </Grid>
+        </Grid>
+      ))}
     </Grid>
   )
 
@@ -290,7 +253,7 @@ const ProjectsSection = () => {
     <GenerativeImageURLContainer
       style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "1000px" }}
     >
-            <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+      <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
         <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Integrations
         </ImageURLHeading>

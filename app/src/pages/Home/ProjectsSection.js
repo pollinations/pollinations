@@ -215,7 +215,6 @@ const ProjectsSection = () => {
   const classes = useStyles()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const { image } = useContext(ImageContext)
 
   const renderProjects = (projectList) => (
     <Grid container spacing={2} className={classes.gridContainer}>

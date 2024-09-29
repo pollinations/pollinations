@@ -19,7 +19,7 @@ const useRandomSeed = () => {
         return () => clearTimeout(timeoutId);
     }, []);
 
-    return 1;//seed;
+    return seed;
 };
 
 export default useRandomSeed;

@@ -3,7 +3,8 @@ import { Box, Container, Paper } from "@material-ui/core"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 import { useMemo, useState, useEffect } from "react"
 import useRandomSeed from "../../hooks/useRandomSeed";
-import { usePollinationsImage } from "@pollinations/react";
+import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
+import { useTranslatedPollinationsText } from "../../hooks/useResponsivePollinationsText";
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
@@ -32,7 +33,11 @@ export const ImageURLHeading = styled(
     height = height * 3
     const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black")
     const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white")
-    const defaultPrompt = `an image with the text "${children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
+
+    const translatedPrompt = usePollinationsText("Translate the following text to " + navigator.language.split("-")[0] + ". If the text is already in English, just return the text. Don't give any explanation. Text:" + children);
+
+    console.log("imgtranslatedPrompt", translatedPrompt)
+    const defaultPrompt = `an image with the text "${translatedPrompt || children}" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
     const prompt = encodeURIComponent(customPrompt || defaultPrompt)
 
     const seed = useRandomSeed()

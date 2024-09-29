@@ -4,10 +4,10 @@ import styled from "@emotion/styled"
 import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
-import { useMediaQuery } from "@material-ui/core"
+import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
 
 const TopBar = () => {
-  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
+  const isMobile = useIsMobile(); // Use the new hook
   return (
     <TopContainer>
       {isMobile ? (
@@ -88,7 +88,7 @@ const NavBarStyle = styled(BaseContainer)`
   padding: 1% 0 2%; /* Added padding-bottom here */
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     grid-template-areas: ${({ isMobile }) =>
-      isMobile ? `"social" "logo"` : `"logo nav mobilebutton social"`};
+    isMobile ? `"social" "logo"` : `"logo nav mobilebutton social"`};
     justify-items: center;
   }
 `

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react"
-import { Container, Box, useMediaQuery } from "@material-ui/core"
+import { Container, Box } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
-import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
+import { Colors, Fonts } from "../../styles/global"
 import { GenerativeImageURLContainer } from "./ImageHeading"
+import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 
 const CompaniesSection = () => {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth)
-  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
+  const isMobile = useIsMobile() // Use the new hook
 
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth)
@@ -23,7 +24,6 @@ const CompaniesSection = () => {
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-
     },
     table: {
       width: "100%",

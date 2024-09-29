@@ -3,12 +3,12 @@ import React from "react"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
 import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
-import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from 'react-markdown';
 import Box from '@material-ui/core/Box';
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import StyledLink from "../../components/StyledLink"; // Updated import
+import useResponsivePollinationsText from "../../hooks/useResponsivePollinationsText"
 
 const WhoWeAreContent = () => {
   const handleLinkClick = (e) => {
@@ -20,7 +20,7 @@ const WhoWeAreContent = () => {
   }
 
   const seed = useRandomSeed();
-  const markdownText = usePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
+  const markdownText = useResponsivePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
 
   return (
     <Box maxWidth="1000px" style={{ margin: "0 auto" }}>

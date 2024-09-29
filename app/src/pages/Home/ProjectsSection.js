@@ -150,6 +150,14 @@ const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
+      name: "Elixpo",
+      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations/elixpo_homepage.html",
+      description:
+        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.ai.",
+      author: "Ayushman Bhattacharya",
+      repo: "https://github.com/Circuit-Overtime",
+    },
+    {
       name: "DevSaura AI",
       url: "https://ai.devsaura.com",
       description:

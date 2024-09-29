@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useContext } from "react"
 import { Grid, Box, useMediaQuery } from "@material-ui/core"
-import { CodeExamples } from "../CodeExamples"
+import { makeStyles } from "@material-ui/core/styles" // Import makeStyles
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
 import { GenerativeImageURLContainer, ImageURLHeading } from "../ImageHeading"
@@ -14,10 +14,66 @@ import { ImagineButton } from "../../../components/ImagineButton"
 import { TextPrompt } from "./TextPrompt"
 import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
+import { ImageContext } from "../../../contexts/ImageContext"
+import { CodeExamples } from "../CodeExamples"
 
 const log = debug("GenerativeImageFeed")
 
+// Define the useStyles hook
+const useStyles = makeStyles((theme) => ({
+  container: {
+    margin: "2em 0 5em 0",
+    maxWidth: "1000px",
+  },
+  gridItem: {
+    margin: "0em 0",
+  },
+  boxRelative: {
+    position: "relative",
+  },
+  boxCenter: {
+    display: "flex",
+    justifyContent: "center",
+  },
+  boxColumn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    bgcolor: "rgba(42, 44, 28, 0.1)",
+    borderRadius: "8px",
+    padding: theme.spacing(2),
+    border: "none",
+  },
+  boxFlex: {
+    display: "flex",
+    alignItems: "center",
+    marginLeft: theme.spacing(1.5),
+    marginRight: theme.spacing(1.5),
+    width: "100%",
+  },
+  boxMarginTop: {
+    width: "100%",
+    marginTop: theme.spacing(2),
+  },
+  gridCenter: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scaledImageURLHeading: {
+    transform: "scale(1)",
+    transformOrigin: "center",
+    width: "100%",
+    maxWidth: "100%",
+  },
+  boxBottom: {
+    maxWidth: "100%",
+    marginBottom: "500px",
+  },
+}))
+
 export function GenerativeImageFeed() {
+  const classes = useStyles() // Use the useStyles hook
   const [lastImage, setLastImage] = useState(null)
   const [imageParams, setImageParams] = useState({})
   const imageParamsRef = useRef(imageParams)
@@ -26,6 +82,7 @@ export function GenerativeImageFeed() {
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
   const [isInputChanged, setIsInputChanged] = useState(false)
+  const { setImage } = useContext(ImageContext)
 
   useEffect(() => {
     setImageParams(image)
@@ -97,10 +154,12 @@ export function GenerativeImageFeed() {
   }
 
   return (
-    <GenerativeImageURLContainer style={{ margin: "3em 0 6em 0", maxWidth: "800px" }}>
-      <Grid item style={{ margin: "3em 0" }}>
+    <GenerativeImageURLContainer className={classes.container}>
+      <Grid item className={classes.gridItem} style={{ marginTop: "2em" }}>
         <ImageURLHeading
           customPrompt={`an image with the text "Image Feed" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+          width={isMobile ? 400 : 700}
+          height={isMobile ? 150 : 200}
         >
           image.pollinations
         </ImageURLHeading>
@@ -108,44 +167,44 @@ export function GenerativeImageFeed() {
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={4} direction="column">
-          <Grid item xs={12} >
-            <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-            <ImageDisplay
-              image={image}
-              isMobile={isMobile}
-              isLoading={isLoading}
-            />
-          </Grid>
+        <Grid container spacing={0} direction="column" >
           <Grid item xs={12}>
-            <Box position="relative" maxWidth="800px" margin="0 auto" marginBottom={2}>
-              <Box display="flex" justifyContent="flex-start" marginLeft={1.5}>
+            <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
+            <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
+          </Grid>
+          <Grid item xs={12} style={{ marginTop: "2em" }}>
+            <Box className={classes.boxRelative}>
+              <Box className={classes.boxCenter}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-              </Box>
-              <Box position="absolute" right={0} top="50%" style={{ transform: 'translateY(-50%)' }} marginRight={1.5}>
+                <Box mx={2} /> {/* Add horizontal space */}
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
           </Grid>
           <Grid item xs={12}>
-            <Box display="flex" alignItems="center" marginLeft={1.5} marginRight={1.5}>
-              <TextPrompt {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }} />
+            <Box className={classes.boxColumn}>
+              <Box className={classes.boxFlex}>
+                <TextPrompt
+                  {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                />
+              </Box>
+              {toggleValue === "edit" && (
+                <Box className={classes.boxMarginTop}>
+                  <ImageEditor
+                    image={imageParams}
+                    handleParamChange={handleParamChange}
+                    handleFocus={handleFocus}
+                    isLoading={isLoading}
+                    handleSubmit={handleSubmit}
+                    setIsInputChanged={setIsInputChanged}
+                  />
+                </Box>
+              )}
             </Box>
           </Grid>
-          {toggleValue === "edit" && (
-            <Grid item xs={12}>
-              <ImageEditor
-                image={imageParams}
-                handleParamChange={handleParamChange}
-                handleFocus={handleFocus}
-                isLoading={isLoading}
-                handleSubmit={handleSubmit}
-                setIsInputChanged={setIsInputChanged}
-              />
-            </Grid>
-          )}
+
           {toggleValue === "feed" && (
-            <Grid item xs={12} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Grid item xs={12} className={classes.gridCenter}>
               <ModelInfo
                 model={image["model"]}
                 wasPimped={image["wasPimped"]}
@@ -153,8 +212,25 @@ export function GenerativeImageFeed() {
               />
             </Grid>
           )}
-          <Grid item xs={12}>
-            <CodeExamples {...image} />
+          <Grid item xs={12} style={{ marginTop: "4em" }}>
+            <ImageURLHeading
+              customPrompt={`A large, detailed arrow pointing downwards on a solid black background. The arrow is adorned with colorful, intricate insects, creating a striking and bold visual contrast. Incorporate elements related to pollinators and digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the arrow. Each part of the arrow features unique, creative touches that make the design stand out. Make it very colorful with vibrant hues and gradients.`}
+              className={classes.scaledImageURLHeading}
+              width={isMobile ? 80 : 80}
+              height={isMobile ? 100 : 100}
+            >
+            </ImageURLHeading>
+            <ImageURLHeading
+              customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+              className={classes.scaledImageURLHeading}
+              width={isMobile ? 400 : 700}
+              height={isMobile ? 150 : 200}
+            >
+              Integrations
+            </ImageURLHeading>
+            <Box style={{ marginTop: "4em", marginBottom: "4em" }} >
+              <CodeExamples image={image} />
+            </Box>
           </Grid>
         </Grid>
       )}

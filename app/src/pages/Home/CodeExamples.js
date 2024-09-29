@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
+import { AppBar, Tabs, Tab, Box } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
@@ -7,7 +7,7 @@ import GitHubIcon from "@material-ui/icons/GitHub"
 import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
-
+import { LinkStyle } from "./components"
 
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -304,14 +304,25 @@ export function CodeExamples({ image }) {
         })}
       </>
       <Box mt={2} textAlign="center">
-        <Link
+
+
+        <ImageURLHeading
+              customPrompt={`Github logo that looks cool, on a black background`}
+              width="100"
+              height="100"
+            >
+            </ImageURLHeading>
+            <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.5em" }}>
+          Check the API documentation on
+        </span><br/>
+        <LinkStyle
           href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: Colors.lime, fontSize: "1.1em" }}
+          style={{ color: Colors.lime, fontSize: "1.4em" }}
         >
-          Check the API documentation on GitHub
-        </Link>
+          GitHub
+        </LinkStyle>
       </Box>
     </URLExplanation>
   );

@@ -17,7 +17,7 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                 <TextareaAutosize
                     style={{
                         width: "100%",
-                        height: "340px",
+                        height: "200px",
                         backgroundColor: "transparent",
                         border: `0.1px solid #4A4A4A`,
                         borderRadius: "5px",

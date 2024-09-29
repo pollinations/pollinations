@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AppBar, Tabs, Tab, Box, IconButton } from "@material-ui/core"
+import { AppBar, ButtonGroup, Button, Box, IconButton } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
@@ -250,41 +250,39 @@ export function CodeExamples({ image }) {
         position="static"
         style={{ color: "white", width: "auto", boxShadow: "none" }}
       >
-        <Tabs
-          value={tabValue}
-          onChange={handleChange}
-          aria-label="simple tabs example"
-          variant="scrollable"
-          scrollButtons="on"
-          TabIndicatorProps={{
-            style: {
-              background: Colors.lime,
-              fontFamily: Fonts.body,
-              fontStyle: "normal",
-              fontWeight: "500",
-              fontSize: "1.1em",
-              lineHeight: "22px",
-              textDecoration: "none",
-            },
-          }}
+        <ButtonGroup
+          variant="contained"
+          aria-label="contained primary button group"
+          style={{ backgroundColor: "transparent", flexWrap: "wrap", justifyContent: "center" }}
         >
           {codeExampleTabs.map((key, index) => (
-            <Tab
+            <Button
               key={key}
-              label={key}
+              onClick={() => handleChange(null, index)}
               style={{
-                color: tabValue === index ? Colors.lime : Colors.offwhite,
-                backgroundColor: "transparent",
-                boxShadow: "none",
-                fontFamily: "Uncut-Sans-Variable",
-                fontStyle: "normal",
-                fontWeight: "500",
-                fontSize: "1.5em",
-                borderRadius: 0,
+                backgroundColor: tabValue === index ? Colors.lime : "transparent",
+                color: tabValue === index ? Colors.offblack : Colors.lime,
+                fontSize: '1.3rem',
+                fontFamily: 'Uncut-Sans-Variable',
+                fontStyle: 'normal',
+                fontWeight: 600,
+                height: "60px",
+                position: "relative",
+                margin: "0.5em",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                letterSpacing: "0.1em",
+                borderRadius: "5px",
+                padding: "0 1em", // Add padding to auto size based on text
+                whiteSpace: "nowrap", // Prevent text from wrapping
+                border: `1px solid ${Colors.lime}`, // Add border color lime
               }}
-            />
+            >
+              {key}
+            </Button>
           ))}
-        </Tabs>
+        </ButtonGroup>
       </AppBar>
       <>
         {codeExampleTabs.map((key, index) => {
@@ -304,6 +302,10 @@ export function CodeExamples({ image }) {
                   backgroundColor: "transparent",
                   color: Colors.offwhite,
                   scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+                  border: `5px solid ${Colors.offblack}`, // Add border to the code block
+                  marginTop: "1em", // Add margin top
+                  marginLeft: "10px", // Add margin left
+                  marginRight: "10px", // Add margin right
                 }}
               />
               <IconButton
@@ -313,6 +315,7 @@ export function CodeExamples({ image }) {
                   top: 0,
                   right: 0,
                   color: Colors.lime,
+                  marginRight: "10px", // Add margin right
                 }}
               >
                 <FileCopyIcon />

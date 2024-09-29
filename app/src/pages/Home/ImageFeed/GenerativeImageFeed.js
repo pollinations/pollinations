@@ -228,7 +228,7 @@ export function GenerativeImageFeed() {
             >
               Integrations
             </ImageURLHeading>
-            <Box style={{ marginTop: "4em", marginBottom: "4em" }} >
+            <Box style={{ marginTop: "2em", marginBottom: "4em" }} >
               <CodeExamples image={image} />
             </Box>
           </Grid>

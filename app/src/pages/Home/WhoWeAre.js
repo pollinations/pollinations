@@ -7,6 +7,7 @@ import { keyframes } from "@emotion/react"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import ReactMarkdown from 'react-markdown';
 import Box from '@material-ui/core/Box';
+import useRandomSeed from "../../hooks/useRandomSeed"
 
 const StyledLink = styled(LinkStyle)`
   transition: color 0.3s ease;
@@ -24,7 +25,7 @@ const WhoWeAreContent = () => {
     })
   }
 
-  const seed = Math.floor(Math.random() * 20);
+  const seed = useRandomSeed();
   const markdownText = usePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
 
   return (

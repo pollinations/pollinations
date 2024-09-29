@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AppBar, Tabs, Tab, Box } from "@material-ui/core"
+import { AppBar, Tabs, Tab, Box, IconButton } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
@@ -8,6 +8,7 @@ import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
 import { LinkStyle } from "./components"
+import FileCopyIcon from '@material-ui/icons/FileCopy'
 
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -33,7 +34,7 @@ You are an image generator. The user provides a prompt. Please infer the followi
       "height": [height],
       "model": "[model]"
     }
-
+      
 Key points:
 - If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
 - Each seed value creates a unique image for a given prompt.
@@ -238,6 +239,11 @@ export function CodeExamples({ image }) {
     { seed }
   );
 
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("Code copied to clipboard!");
+  };
+
   return (
     <URLExplanation>
       <AppBar
@@ -288,31 +294,40 @@ export function CodeExamples({ image }) {
           const text = CODE_EXAMPLES[key](image);
 
           return (
-            <CodeBlock
-              key={key}
-              text={text}
-              language={key}
-              theme={irBlack}
-              showLineNumbers={text.split("\n").length > 1}
-              customStyle={{
-                backgroundColor: "transparent",
-                color: Colors.offwhite,
-                scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
-              }}
-            />
+            <Box key={key} position="relative">
+              <CodeBlock
+                text={text}
+                language={key}
+                theme={irBlack}
+                showLineNumbers={text.split("\n").length > 1}
+                customStyle={{
+                  backgroundColor: "transparent",
+                  color: Colors.offwhite,
+                  scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+                }}
+              />
+              <IconButton
+                onClick={() => handleCopy(text)}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  color: Colors.lime,
+                }}
+              >
+                <FileCopyIcon />
+              </IconButton>
+            </Box>
           );
         })}
       </>
       <Box mt={2} textAlign="center">
-
-
         <ImageURLHeading
-              customPrompt={`Github logo that looks cool, on a black background`}
-              width="100"
-              height="100"
-            >
-            </ImageURLHeading>
-            <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.5em" }}>
+          customPrompt={`Github logo that looks cool, on a black background`}
+          width="100"
+          height="100"
+        />
+        <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.5em" }}>
           Check the API documentation on
         </span><br/>
         <LinkStyle

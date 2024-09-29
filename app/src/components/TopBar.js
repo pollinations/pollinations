@@ -4,6 +4,7 @@ import styled from "@emotion/styled"
 import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
+import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
 import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
 
 const TopBar = () => {
@@ -26,6 +27,9 @@ const TopBar = () => {
                 Pollinations
               </ImageURLHeading>
             </NavLink>
+            <AsciiArtContainer>
+              <AsciiArtGenerator />
+            </AsciiArtContainer>
           </LogoContainer>
         </MobileNavContainer>
       ) : (
@@ -41,6 +45,9 @@ const TopBar = () => {
                 Pollinations
               </ImageURLHeading>
             </NavLink>
+            <AsciiArtContainer>
+              <AsciiArtGenerator />
+            </AsciiArtContainer>
           </LogoContainer>
           <NavBarStyle>
             <SocialLinks medium gap="1em" invert />
@@ -69,8 +76,7 @@ const TopContainer = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-    padding: 30px;
-  }
+  padding: 30px;
 `
 
 const NavBarStyle = styled(BaseContainer)`
@@ -99,6 +105,7 @@ const LogoContainer = styled.div`
   align-items: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   justify-content: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   width: 100%;
+  position: relative; /* Added to position the AsciiArtContainer */
 `
 
 const CenteredSocialLinks = styled.div`
@@ -106,6 +113,18 @@ const CenteredSocialLinks = styled.div`
   justify-content: center;
   width: 100%;
   margin-bottom: 3em;
+`
+
+const AsciiArtContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* Ensure it doesn't interfere with other elements */
 `
 
 export default TopBar

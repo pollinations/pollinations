@@ -3,6 +3,7 @@ import { Box, Container, Paper } from "@material-ui/core"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../../styles/global"
 import { useMemo, useState, useEffect } from "react"
 import useRandomSeed from "../../hooks/useRandomSeed";
+import { usePollinationsImage } from "@pollinations/react";
 
 export const ImageStyle = styled.img`
   height: 600px; /* Set your desired fixed height */
@@ -36,7 +37,7 @@ export const ImageURLHeading = styled(
 
     const seed = useRandomSeed()
 
-    const imageUrl = `https://image.pollinations.ai/prompt/${prompt}?width=${width}&height=${height}&nologo=true&seed=${seed}`
+    const imageUrl = usePollinationsImage(prompt, { width, height, nologo: true, seed });
 
     return (
       <div className={className}>

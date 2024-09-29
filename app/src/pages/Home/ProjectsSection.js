@@ -1,19 +1,14 @@
-import React, { useContext } from "react"
+import React from "react"
 import {
-  useMediaQuery,
-  Box,
   Link,
   Grid,
   Typography,
 } from "@material-ui/core"
-import { makeStyles, useTheme } from "@material-ui/core/styles"
+import { makeStyles, } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
-import Markdown from "markdown-to-jsx"
 import { LinkStyle } from "./components"
-import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
-import { ImageContext } from "../../contexts/ImageContext"
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"

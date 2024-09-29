@@ -14,6 +14,9 @@ import { LinkStyle } from "./components"
 import styled from "@emotion/styled"
 import { GenerativeImageURLContainer } from "./ImageHeading"
 import { ImageContext } from "../../contexts/ImageContext"
+import { EmojiRephrase } from "../../components/EmojiRephrase"
+import useRandomSeed from "../../hooks/useRandomSeed"
+import { usePollinationsImage } from "@pollinations/react"
 
 const MOBILE_BREAKPOINT = "sm"
 
@@ -63,7 +66,6 @@ const useStyles = makeStyles((theme) => ({
 
 const logoPrefix = "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
 const imageDimension = 96
-const seedValue = 41 + Math.floor(Math.random() * 3) // Define the seed value here
 
 const projects = {
   llmIntegration: [
@@ -209,25 +211,17 @@ const projects = {
   ],
 }
 
-const generateImageUrl = (name) =>
-  `https://pollinations.ai/p/${encodeURIComponent(`${logoPrefix} ${name}`)}?width=${imageDimension * 4
-  }&height=${imageDimension * 4}&nologo=true&seed=${seedValue}`
-
 const ProjectsSection = () => {
   const classes = useStyles()
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down(MOBILE_BREAKPOINT))
+  const seedValue = useRandomSeed()
 
   const renderProjects = (projectList) => (
     <Grid container spacing={2} className={classes.gridContainer}>
       {projectList.map((project, index) => (
         <Grid container item xs={10} key={index} className={classes.gridItem}>
           <Grid item xs={1.1} style={{ textAlign: "right" }}>
-            <img
-              src={generateImageUrl(project.name)}
-              alt={project.name}
-              className={classes.projectImage}
-              style={{ width: imageDimension, height: imageDimension }}
-            />
+            <ProjectImage name={project.name} />
           </Grid>
           <Grid item xs={4} style={{ textAlign: "left" }}>
             {renderProjectLink(project)}
@@ -239,7 +233,7 @@ const ProjectsSection = () => {
           </Grid>
           <Grid item xs={4} style={{ textAlign: "left" }}>
             <span style={{ color: Colors.white, fontSize: "1em" }}>
-              <Markdown>{project.description}</Markdown>
+              <EmojiRephrase>{project.description}</EmojiRephrase>
             </span>
             <br />
             {project.repo && renderRepoLink(project.repo)}
@@ -356,6 +350,20 @@ const renderRepoLink = (repoUrl) => {
     >
       GitHub
     </LinkStyle>
+  )
+}
+
+const ProjectImage = ({ name }) => {
+  const seed = useRandomSeed();
+  const prompt = `${logoPrefix} ${name}`
+  const imageUrl = usePollinationsImage(prompt, { width: imageDimension * 4, height: imageDimension * 4, nologo: true, seed })
+
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      style={{ width: imageDimension, height: imageDimension }}
+    />
   )
 }
 

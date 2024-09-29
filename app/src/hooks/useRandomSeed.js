@@ -8,7 +8,7 @@ const useRandomSeed = () => {
 
         const changeSeed = () => {
             setSeed(Math.floor(Math.random() * 10));
-            const randomDelay = Math.floor(Math.random() * 25001) + 2000;
+            const randomDelay = Math.floor(Math.random() * 35001);
             timeoutId = setTimeout(changeSeed, randomDelay);
         };
 

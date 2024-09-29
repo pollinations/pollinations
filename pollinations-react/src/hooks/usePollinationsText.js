@@ -12,11 +12,12 @@ import memoize from 'lodash.memoize';
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
  * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
+ * @param {boolean} [options.loadNull=false] - Whether to reset the text state to null before fetching new data.
  * @returns {Object} - An object containing the generated text and loading state.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = 42, systemPrompt, model, jsonMode = false } = options;
+    const { seed = 42, systemPrompt, model, jsonMode = false, loadNull = false } = options;
 
     // State to hold the generated text
     const [text, setText] = useState(null);
@@ -25,7 +26,9 @@ const usePollinationsText = (prompt, options = {}) => {
     useEffect(() => {
         if (prompt === null) return;
 
-        setText(null);
+
+        if (loadNull)
+            setText(null);
 
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];

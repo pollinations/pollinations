@@ -153,7 +153,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
           console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
           if (queueSize >= 20) {
-            throw new Error("ip queue full");
+            throw new Error("queue full");
           }
 
           await sleep(1000 * queueSize);

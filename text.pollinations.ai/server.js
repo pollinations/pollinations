@@ -13,7 +13,7 @@ import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import unityPrompt from './personas/unity.js';
 import midijourneyPrompt from './personas/midijourney.js';
-import rtistPrompt from './personas/rtist.js'; // Add this line
+import rtistPrompt from './personas/rtist.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
@@ -47,23 +47,9 @@ const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral)
 // Create custom instance of Midijourney
 const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextClaude);
 // Create custom instance of Rtist
-const rtist = wrapModelWithContext(rtistPrompt, generateText); // Add this line
+const rtist = wrapModelWithContext(rtistPrompt, generateText);
 
 app.set('trust proxy', true);
-
-// // Rate limiting middleware
-// // skip if a request would be cached
-// const limiter = rateLimit({
-//     windowMs: 1 * 60 * 1000, // 1 minute
-//     max: 20, // limit each IP to 30 requests per windowMs
-//     message: 'Too many requests, please try again later.',
-//     skip: (req, res) => {
-//         const cacheKey = createHashKey(JSON.stringify(req.body));
-//         return cache[cacheKey] !== undefined;
-//     }
-// });
-
-// app.use(limiter);
 
 // Queue setup per IP address
 const queues = new Map();
@@ -157,12 +143,18 @@ app.get('/models', (req, res) => {
 });
 
 // Helper function to handle both GET and POST requests
-async function handleRequest(req, res, cacheKeyData) {
-    // console.log("handleRequest", cacheKeyData);
+async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
+    const ip = getIp(req);
+    const queue = getQueue(ip);
+
+    if (queue.size >= 30) {
+        return res.status(429).send('Too many requests in queue. Please try again later.');
+    }
+
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
 
     try {
-        if (cache[cacheKey]) {
+        if (shouldCache && cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
@@ -174,18 +166,24 @@ async function handleRequest(req, res, cacheKeyData) {
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
 
-        cache[cacheKey] = responsePromise;
+        if (shouldCache) {
+            cache[cacheKey] = responsePromise;
+        }
         let response;
         try {
             // Don't cache the promise, wait for it to resolve or reject
             response = await responsePromise;
         } catch (error) {
             console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
-            delete cache[cacheKey];
+            if (shouldCache) {
+                delete cache[cacheKey];
+            }
             throw error; // rethrow the error so the caller can handle it
         }
 
-        await saveCache();
+        if (shouldCache) {
+            await saveCache();
+        }
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
@@ -227,7 +225,8 @@ function getRequestData(req, isPost = false) {
         seed,
         model,
         temperature,
-        type: isPost ? 'POST' : 'GET'
+        type: isPost ? 'POST' : 'GET',
+        cache: isPost ? data.cache !== false : true // Default to true if not specified
     };
 }
 
@@ -249,7 +248,11 @@ app.post('/', async (req, res) => {
     const cacheKeyData = getRequestData(req, true);
     const ip = getIp(req);
     const queue = getQueue(ip);
-    await queue.add(() => handleRequest(req, res, cacheKeyData));
+    if (cacheKeyData.cache) {
+        await queue.add(() => handleRequest(req, res, cacheKeyData, true));
+    } else {
+        await handleRequest(req, res, cacheKeyData, false);
+    }
 });
 
 app.get('/openai/models', (req, res) => {
@@ -281,9 +284,9 @@ app.post('/openai*', async (req, res) => {
     const ip = getIp(req);
     const queue = getQueue(ip);
     const isStream = req.body.stream;
-    await queue.add(async () => {
+    const run = async () => {
 
-        if (cache[cacheKey]) {
+        if (cacheKeyData.cache && cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
@@ -314,7 +317,9 @@ app.post('/openai*', async (req, res) => {
                 "object": isStream ? "chat.completion.chunk" : "chat.completion",
                 "choices": choices
             };
-            cache[cacheKey] = result;
+            if (cacheKeyData.cache) {
+                cache[cacheKey] = result;
+            }
             console.log("openai format result", JSON.stringify(result, null, 2));
             res.json(result);
         } catch (error) {
@@ -322,7 +327,14 @@ app.post('/openai*', async (req, res) => {
             console.error(error.stack); // Print stack trace
             res.status(500).send(error.message);
         }
-    });
+    };
+
+    // if cache is false, run the request immediately
+    if (cacheKeyData.cache) {
+        await queue.add(run);
+    } else {
+        await run();
+    }
 });
 
 // Helper function to save cache to disk

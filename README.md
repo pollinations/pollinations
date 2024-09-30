@@ -10,13 +10,13 @@
 
 ## 🚀 Key Features
 
-- 🔓 100% Open Source
-- 🆓 Free to use
+- 🔓 **100% Open Source**
+- 🆓 **_Free to use_**
 - 🔑 No signup or API keys
-- 🖼️ Embed like any normal image or text
-- 🌍 Over 50,000 active users and > 2 million images generated per month
-- 🤝 Used by various open-source LLMs, bots, and communities
-- 🎣 Easy-to-use React hooks ([React Hooks Examples](https://react-hooks.pollinations.ai/))
+- 🖼️ **Embed like any normal image or text**
+- 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
+- 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
+- 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
 ## 🚀 Getting Started
 

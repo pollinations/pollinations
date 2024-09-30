@@ -5,13 +5,20 @@ import { Star as StarBase, LinkStyle, Container as ContainerBase } from "./compo
 import { Link } from "react-router-dom"
 import { GenerativeImageURLContainer, ImageURLHeading } from "./ImageHeading"
 import discordLogo from "../../assets/imgs/discord_logo.png"
-import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
-import ReactMarkdown from 'react-markdown';
+import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
+import ReactMarkdown from "react-markdown"
+import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
+import { EmojiRephrase } from "../../components/EmojiRephrase"
+import useRandomSeed from "../../hooks/useRandomSeed"
 
 const DiscordSection = (props) => {
-  const seed = useMemo(() => Math.floor(Math.random() * 20), []);
-  const imageURL = usePollinationsImage("an image with the text 'Discord' displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. Make it very colorful with vibrant hues and gradients.", { seed, width: 500, height: 500 });
-  const markdownText = usePollinationsText("Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
+  const seed = useRandomSeed();
+  const isMobile = useIsMobile(); // Use the new hook
+  const imageURL = usePollinationsImage(
+    "an image with the text 'Discord' displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.",
+    { seed, width: isMobile ? 400 : 700, height: isMobile ? 150 : 200 }
+  )
+
 
   return (
     <Container>
@@ -20,13 +27,13 @@ const DiscordSection = (props) => {
       </CenteredLink>
       <Body>
         <TextWithLogo>
-          <Logo src={discordLogo} alt="Discord Logo" />
-          <Text style={{ maxWidth: "90%", width: "500px" }}>
-            <p style={{ fontSize: "36px", userSelect: "none" }}>
-              <ReactMarkdown>{markdownText}</ReactMarkdown>
-            </p>
+          <Text style={{ maxWidth: "800px" }}>
+            <EmojiRephrase>
+              Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
+            </EmojiRephrase>
           </Text>
         </TextWithLogo>
+        <Logo src={discordLogo} alt="Discord Logo" />
         <br />
         <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
           <b>join our discord</b>
@@ -60,6 +67,7 @@ const CenteredLink = styled(Link)`
   display: flex;
   justify-content: center;
   width: 100%;
+  margin-top: 2em;
 `
 
 const DiscordLogoHeading = styled.img`
@@ -103,12 +111,10 @@ const Text = styled.div`
 const Logo = styled.img`
   width: 90px;
   height: auto;
-  margin-right: 40px;
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
-    margin-right: 0;
+    margin-left: 0;
     width: 60px;
     height: auto;
-    margin-bottom: 20px;
   }
 `

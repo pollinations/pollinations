@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import memoize from 'lodash.memoize';
 
 /**
@@ -12,27 +12,33 @@ import memoize from 'lodash.memoize';
  * @param {number} [options.seed=-1] - Seed for deterministic text generation. -1 for random.
  * @param {string} [options.systemPrompt] - Optional system prompt to guide the text generation.
  * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
+ * @param {boolean} [options.loadNull=false] - Whether to reset the text state to null before fetching new data.
  * @returns {Object} - An object containing the generated text and loading state.
  */
 const usePollinationsText = (prompt, options = {}) => {
     // Destructure options with default values
-    const { seed = 42, systemPrompt, model, jsonMode = false } = options;
+    const { seed = 42, systemPrompt, model, jsonMode = false, loadNull = false } = options;
 
     // State to hold the generated text
     const [text, setText] = useState(null);
+
+    // Ref to track the current fetch request
+    const currentFetchRef = useRef(Promise.resolve());
 
     // Effect to fetch or retrieve memoized text
     useEffect(() => {
         if (prompt === null) return;
 
-        setText(null);
+        if (loadNull) setText(null);
 
         // Prepare the request body for the API call
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
         messages.push({ role: "user", content: prompt });
         const requestBody = { messages, seed, model, jsonMode };
 
-        memoizedFetchPollinationsText(requestBody)
+        // Queue the fetch request
+        currentFetchRef.current = currentFetchRef.current
+            .then(() => memoizedFetchPollinationsText(requestBody))
             .then(cleanedData => {
                 setText(cleanedData);
             })
@@ -40,11 +46,11 @@ const usePollinationsText = (prompt, options = {}) => {
                 console.error("Error in usePollinationsText:", error);
                 setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
+
     }, [prompt, systemPrompt, seed, model, jsonMode]);
 
     return text;
 };
-
 
 /**
  * Function to fetch text from the Pollinations API.
@@ -70,12 +76,8 @@ const fetchPollinationsText = async (requestBody) => {
     }
 };
 
-
-
 // Memoized version of fetchPollinationsText
 const memoizedFetchPollinationsText = memoize(fetchPollinationsText, JSON.stringify);
-
-
 
 /**
  * Helper function to clean markdown data.

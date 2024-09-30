@@ -12,7 +12,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
       exclusive
       onChange={handleToggleChange}
       aria-label="Feed or Edit"
-      style={{ height: '56px', border: `0.1px solid ${Colors.lime}` }}
+      style={{ height: '60px', border: `0.1px solid ${Colors.lime}` }}
     >
       <CustomTooltip title="Activate real-time generated image feed.">
         <ToggleButton
@@ -24,7 +24,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
             fontSize: '1.3rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
-            fontWeight: 400,
+            fontWeight: 600,
             height: '100%',
             width: '100px',
             border: `1px solid ${Colors.lime}`,
@@ -43,7 +43,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
             fontSize: '1.3rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
-            fontWeight: 400,
+            fontWeight: 600,
             height: '100%',
             width: '100px',
             border: `1px solid ${Colors.lime}`,

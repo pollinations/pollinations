@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
 
+const SEED_RANGE = 5;
+const DELAY_RANGE = 35000;
 const useRandomSeed = () => {
-    const [seed, setSeed] = useState(Math.floor(Math.random() * 10));
+    const [seed, setSeed] = useState(Math.floor(Math.random() * SEED_RANGE));
 
     useEffect(() => {
+        let timeoutId;
+
         const changeSeed = () => {
-            setSeed(Math.floor(Math.random() * 10));
-            const randomDelay = Math.floor(Math.random() * 100001) + 2000;
-            setTimeout(changeSeed, randomDelay);
+            setSeed(Math.floor(Math.random() * SEED_RANGE));
+            const randomDelay = Math.floor(Math.random() * DELAY_RANGE);
+            timeoutId = setTimeout(changeSeed, randomDelay);
         };
 
-        const timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * 10001) + 2000);
+        timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * 10001) + 2000);
 
         return () => clearTimeout(timeoutId);
     }, []);

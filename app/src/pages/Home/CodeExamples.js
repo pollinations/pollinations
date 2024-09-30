@@ -1,12 +1,14 @@
 import { useState } from "react"
-import { AppBar, Tabs, Tab, Box, Link } from "@material-ui/core"
+import { AppBar, Tabs, Tab, Box } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
-import GitHubIcon from '@material-ui/icons/GitHub'
-import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
-
+import GitHubIcon from "@material-ui/icons/GitHub"
+import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
+import React from "react";
+import { LinkStyle } from "./components"
+
 // Code examples as an object
 const CODE_EXAMPLES = {
   llm_prompt: () => `You will now act as a prompt generator. 
@@ -69,21 +71,18 @@ import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
 
 const GeneratedImageComponent = () => {
-  const imageUrl = usePollinationsImage('${prompt}', {
-    width: ${width},
-    height: ${height},
-    seed: ${seed},
-    model: '${model || "turbo"}'
-  });
+const imageUrl = usePollinationsImage('${prompt}', {
+  width: ${width},
+  height: ${height},
+  seed: ${seed},
+  model: '${model || "turbo"}'
+});
 
-  return (
-    <div>
-      {imageUrl ? <img src={imageUrl} alt="Generated Image" /> : <p>Loading...</p>}
-    </div>
-  );
-};
-
-export default GeneratedImageComponent;
+return (
+  <div>
+    {imageUrl ? <img src={imageUrl} alt="Generated Image" /> : <p>Loading...</p>}
+  </div>
+);
 `,
   html: ({ imageURL, prompt, width, height, seed, model }) =>
     `<html>
@@ -224,101 +223,109 @@ print(image.url)
 `,
 }
 
-export function CodeExamples(image) {
-  const [tabValue, setTabValue] = useState(0) // Set initial tab to 0 (llm_prompt)
+export function CodeExamples({ image }) {
+  const [tabValue, setTabValue] = useState(0); // Set initial tab to 0 (markdown)
 
   const handleChange = (event, newValue) => {
-    setTabValue(newValue)
-  }
+    setTabValue(newValue);
+  };
 
-  const codeExampleTabs = Object.keys(CODE_EXAMPLES)
+  const codeExampleTabs = Object.keys(CODE_EXAMPLES);
 
   const seed = useRandomSeed();
-
-  const imageURL = usePollinationsImage("Minimal GitHub API Logo on black background", { seed, width: 96, height: 96 });
-  const markdownText = usePollinationsText("Rephrase with emojis and simplify: 'Learn more on GitHub'", { seed });
+  const markdownText = usePollinationsText(
+    "Rephrase with emojis and simplify: 'Learn more on GitHub'",
+    { seed }
+  );
 
   return (
-    <Box style={{ marginTop: "3em" }}>
-      <ImageURLHeading whiteText={"yellow"} width={350} height={70}>
-        Integrate
-      </ImageURLHeading>
-      <URLExplanation>
-        <AppBar position="static" style={{ color: "white", width: "auto", boxShadow: "none" }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleChange}
-            aria-label="simple tabs example"
+    <URLExplanation>
+      <AppBar
+        position="static"
+        style={{ color: "white", width: "auto", boxShadow: "none" }}
+      >
+        <Tabs
+          value={tabValue}
+          onChange={handleChange}
+          aria-label="simple tabs example"
+          variant="scrollable"
+          scrollButtons="on"
+          TabIndicatorProps={{
+            style: {
+              background: Colors.lime,
+              fontFamily: Fonts.body,
+              fontStyle: "normal",
+              fontWeight: "500",
+              fontSize: "1.1em",
+              lineHeight: "22px",
+              textDecoration: "none",
+            },
+          }}
+        >
+          {codeExampleTabs.map((key, index) => (
+            <Tab
+              key={key}
+              label={key}
+              style={{
+                color: tabValue === index ? Colors.lime : Colors.offwhite,
+                backgroundColor: "transparent",
+                boxShadow: "none",
+                fontFamily: "Uncut-Sans-Variable",
+                fontStyle: "normal",
+                fontWeight: "500",
+                fontSize: "1.5em",
+                borderRadius: 0,
+              }}
+            />
+          ))}
+        </Tabs>
+      </AppBar>
+      <>
+        {codeExampleTabs.map((key, index) => {
+          if (tabValue !== index) return null;
+          if (!image || !image.imageURL) return null;
 
-            variant="scrollable"
-            scrollButtons="on"
-            TabIndicatorProps={{
-              style: {
-                background: Colors.lime,
-                fontFamily: Fonts.body,
-                fontStyle: 'normal',
-                fontWeight: '500',
-                fontSize: '1.1em',
-                lineHeight: '22px',
-                textDecoration: 'none',
-              }
-            }}
-          >
-            {codeExampleTabs.map((key, index) => (
-              <Tab
-                key={key}
-                label={key}
-                style={{
-                  color: tabValue === index ? Colors.lime : Colors.offwhite,
-                  backgroundColor: "transparent",
-                  boxShadow: "none",
-                  fontFamily: "Uncut-Sans-Variable",
-                  fontStyle: "normal",
-                  borderRadius: 0,
-                }}
-              />
-            ))}
-          </Tabs>
-        </AppBar>
-        <>
-          {codeExampleTabs.map((key, index) => {
-            if (tabValue !== index) return null
+          const text = CODE_EXAMPLES[key](image);
 
-            if (!image.imageURL) return null
+          return (
+            <CodeBlock
+              key={key}
+              text={text}
+              language={key}
+              theme={irBlack}
+              showLineNumbers={text.split("\n").length > 1}
+              customStyle={{
+                backgroundColor: "transparent",
+                color: Colors.offwhite,
+                scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
+              }}
+            />
+          );
+        })}
+      </>
+      <Box mt={2} textAlign="center">
 
-            const text = CODE_EXAMPLES[key](image)
 
-            return (
-              tabValue === index && (
-                <CodeBlock
-                  key={key}
-                  text={text}
-                  language={key}
-                  theme={irBlack}
-                  // wrapLongLines
-                  showLineNumbers={text.split("\n").length > 1}
-                  customStyle={{
-                    backgroundColor: "transparent",
-                    color: Colors.offwhite,
-                    scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
-                  }}
-                />
-              )
-            )
-          })}
-          <Box margin="0px" overflow="hidden" display="flex" alignItems="center">
-
-            <Box display="flex" alignItems="left" width="100%" fontSize="1.2rem">
-              <img src={imageURL} alt="Generated GitHub API Logo" width={96} height={96} />
-              <Link href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md" style={{ marginLeft: "10px" }}>
-                {markdownText}
-              </Link>
-            </Box>
-          </Box>
-        </>
-      </URLExplanation>
-    </Box>
-  )
+        <ImageURLHeading
+              customPrompt={`Github logo that looks cool, on a black background`}
+              width="100"
+              height="100"
+            >
+            </ImageURLHeading>
+            <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.5em" }}>
+          Check the API documentation on
+        </span><br/>
+        <LinkStyle
+          href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: Colors.lime, fontSize: "1.4em" }}
+        >
+          GitHub
+        </LinkStyle>
+      </Box>
+    </URLExplanation>
+  );
 }
 
 const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str)

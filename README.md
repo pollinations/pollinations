@@ -104,11 +104,11 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 graph LR
     Q[Bots - Discord, Telegram, WhatsApp] --> L1
     
-    A[pollinations.ai Web Frontend] --> L1
-    A --> L2
-    
     N[30+ Mobile and Web Apps] --> L1
     N --> L2
+    
+    A[pollinations.ai Web Frontend] --> L1
+    A --> L2
     
     R[AI Agents - Qwen, Sillytavern, ...] --> L1
     
@@ -121,12 +121,13 @@ graph LR
     F --> E[Translation Service - 1 GPU VM]
     E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
     
-    C[text.pollinations.ai - AWS EC2 CPU] --> G[Azure-hosted Serverless LLMs]
-    G --> H[OpenAI]
+    C[text.pollinations.ai - AWS EC2 CPU] --> P[karma.yt - Realtime News]
+    C --> G[Azure-hosted Serverless LLMs]
+    G  --> H[OpenAI]
     G --> I[Mistral]
     G --> J[Llama]
     G --> K[Claude]
-    C --> P[karma.yt - Realtime News]
+
 ```
 
 ## ���� Projects Using Pollinations.AI

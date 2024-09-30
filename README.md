@@ -102,7 +102,7 @@ Check out our [Pollinations React Hooks](./pollinations-react/README.md) for mor
 
 ```mermaid
 graph LR
-    Q[Bots Discord, Telegram, WhatsApp] --> L1
+    Q[Bots\nDiscord, Telegram, WhatsApp] --> L1
     
     A[pollinations.ai Web Frontend] --> L1
     A --> L2
@@ -110,20 +110,23 @@ graph LR
     N[30+ Mobile and Web Apps] --> L1
     N --> L2
     
-    R[AI Agents - Qwen, Sillytavern, ...] --> L1
+    R[AI Agents\nQwen, Sillytavern, ...] --> L1
     
     L1[Image CDN] --> B
     L2[Text CDN] --> C
     
-    B[image.pollinations.ai AWS EC2 CPU] --> F[groqCloud Prompt Enhancing]
-    F --> E[Translation Service 1 GPU VM]
-    E --> D[FLUX image generation model 2-6 GPU VMs on AWS]
+    B[image.pollinations.ai\nAWS EC2 CPU] --> F[groqCloud\nPrompt Enhancing]
+    B --> S[Safety Checker]
+    B --> M[llmplayground.net\nCustom FLUX models]
+    F --> E[Translation Service\n1 GPU VM]
+    E --> D[FLUX image generation model\n2-6 GPU VMs on AWS]
     
-    C[text.pollinations.ai AWS EC2 CPU] --> G[Azure-hosted Serverless LLMs]
+    C[text.pollinations.ai\nAWS EC2 CPU] --> G[Azure-hosted Serverless LLMs]
     G --> H[OpenAI]
     G --> I[Mistral]
     G --> J[Llama]
     G --> K[Claude]
+    C --> P[karma.yt\nRealtime News]
 ```
 
 ## ���� Projects Using Pollinations.AI

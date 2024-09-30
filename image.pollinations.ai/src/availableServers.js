@@ -32,7 +32,6 @@ export const registerServer = ({ url }) => {
  * @returns {Promise<string>} - The next FLUX server URL.
  */
 export const getNextFluxServerUrl = async () => {
-    console.log("FLUX_SERVERS", FLUX_SERVERS);
     FLUX_SERVERS = filterActiveServers(FLUX_SERVERS);
 
     if (FLUX_SERVERS.length === 0) {
@@ -100,7 +99,6 @@ async function fetchServersFromMainServer() {
             totalRequests: 0,
             startTime: Date.now()
         }));
-        console.log("Fetched servers from main server:", FLUX_SERVERS);
     } catch (error) {
         console.error("Failed to fetch servers from main server:", error);
     }

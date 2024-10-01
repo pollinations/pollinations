@@ -42,11 +42,26 @@ export const ImageURLHeading = styled(
 
     const seed = useRandomSeed()
 
-    const imageUrl = usePollinationsImage(prompt, { width, height, nologo: true, seed });
+    const imageUrl = usePollinationsImage(prompt, { width, height, nologo: true, seed, enhance: true });
+
+    const [currentImageUrl, setCurrentImageUrl] = useState(imageUrl);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      if (!loading) {
+        setLoading(true);
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => {
+          setCurrentImageUrl(imageUrl);
+          setLoading(false);
+        };
+      }
+    }, [imageUrl]);
 
     return (
       <div className={className}>
-        <img src={imageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
+        <img src={currentImageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
       </div>
     )
   }

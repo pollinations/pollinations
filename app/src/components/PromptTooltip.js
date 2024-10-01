@@ -24,8 +24,8 @@ const PromptTooltip = ({ title, children }) => {
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
                     WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 3,
-                    maxHeight: '45em',
+                    WebkitLineClamp: 4,
+                    maxHeight: '60em',
                     lineHeight: '1.5em',
                 }}>
                     {title}
@@ -36,7 +36,9 @@ const PromptTooltip = ({ title, children }) => {
             leaveDelay={200}
             placement="top"
         >
-            {children}
+            <span style={{ margin: '0px', padding: '0px' }}>
+                {children}
+            </span>
         </StyledTooltip>
     );
 };

@@ -8,7 +8,7 @@ import PromptTooltip from "./PromptTooltip"; // Ensure correct import
 
 export function EmojiRephrase({ children }) {
     const seed = useRandomSeed();
-    const prompt = `Format and add emojis. Only respond with the markdown. No explanation. No code box. try not to change the length much: '${children}'`;
+    const prompt = `Format and add emojis. Text: '${children}'. Only respond with the markdown. No explanation. No code box. try not to change the length much.`;
     const rephrase = useResponsivePollinationsText(prompt, { seed });
 
     // Add console log to debug

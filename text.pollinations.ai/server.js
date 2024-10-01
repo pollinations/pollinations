@@ -198,7 +198,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
 function sendResponse(res, response) {
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8'); // Set charset to utf-8
     res.send(response);
 }
 

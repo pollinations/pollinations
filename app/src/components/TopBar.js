@@ -45,7 +45,7 @@ const TopBar = () => {
                 Pollinations
               </ImageURLHeading>
             </NavLink>
-            <AsciiArtContainer>
+            <AsciiArtContainer width={500} height={100}>
               <AsciiArtGenerator />
             </AsciiArtContainer>
           </LogoContainer>

@@ -10,6 +10,7 @@ import ReactMarkdown from "react-markdown"
 import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
+import AsciiArtGenerator from "../../components/AsciiArtGenerator" // Import the AsciiArtGenerator
 
 const DiscordSection = (props) => {
   const seed = useRandomSeed();
@@ -19,12 +20,14 @@ const DiscordSection = (props) => {
     { seed, width: isMobile ? 400 : 700, height: isMobile ? 150 : 200 }
   )
 
-
   return (
     <Container>
       <CenteredLink to="https://discord.gg/k9F7SyTgqn'">
         <DiscordLogoHeading src={imageURL} alt="Discord" />
       </CenteredLink>
+      <AsciiArtContainer>
+        <AsciiArtGenerator />
+      </AsciiArtContainer>
       <Body>
         <TextWithLogo>
           <Text style={{ maxWidth: "800px" }}>
@@ -33,6 +36,8 @@ const DiscordSection = (props) => {
             </EmojiRephrase>
           </Text>
         </TextWithLogo>
+        <br />
+
         <Logo src={discordLogo} alt="Discord Logo" />
         <br />
         <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
@@ -73,6 +78,18 @@ const CenteredLink = styled(Link)`
 const DiscordLogoHeading = styled.img`
   width: 100%;
   max-width: 500px;
+`
+
+const AsciiArtContainer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none; /* Ensure it doesn't interfere with other elements */
 `
 
 const Body = styled.div`

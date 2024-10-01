@@ -262,7 +262,7 @@ const ProjectsSection = () => {
 
   const generateCustomPrompt = (text, whiteText = "white", width = 450, height = 100) => {
     return {
-      customPrompt: `The word "${text}" is written in elegant letters, on top of a frame. The colourfull wooden or metal frame is hanged on a solid black background, creating a striking contrast. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
+      customPrompt: `The word "${text}" is written in elegant letters on black background. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
       width,
       height,
       whiteText,

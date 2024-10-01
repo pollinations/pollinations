@@ -9,6 +9,7 @@ import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
 import { LinkStyle } from "./components"
 import FileCopyIcon from '@material-ui/icons/FileCopy'
+import { EmojiRephrase } from "../../components/EmojiRephrase"
 
 // Code examples as an object
 const CODE_EXAMPLES = {
@@ -330,8 +331,12 @@ export function CodeExamples({ image }) {
           width="100"
           height="100"
         />
-        <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.5em" }}>
-          Check the API documentation on
+        <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.4em", maxWidth: "400px" }}>
+        <EmojiRephrase>
+
+          Check the API documentation
+          </EmojiRephrase>
+
         </span><br/>
         <LinkStyle
           href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"

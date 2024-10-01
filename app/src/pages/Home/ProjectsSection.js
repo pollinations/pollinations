@@ -234,7 +234,7 @@ const ProjectsSection = () => {
   const seedValue = useRandomSeed()
 
   const renderProjects = (projectList) => (
-    <Grid container spacing={2} className={classes.gridContainer}>
+    <Grid container spacing={4} className={classes.gridContainer}>
       {projectList.map((project, index) => (
         <Grid container item xs={10} key={index} className={classes.gridItem}>
           <Grid item xs={4} style={{ textAlign: "right" }}>
@@ -262,7 +262,7 @@ const ProjectsSection = () => {
 
   const generateCustomPrompt = (text, whiteText = "white", width = 450, height = 100) => {
     return {
-      prompt: `The word "${text}" is written in elegant letters, standing atop a bed of tropical leaves and flowers, giving a natural feeling. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. The scene is set against a solid black background, creating a striking contrast. It's a vibrant micro biome.`,
+      customPrompt: `The word "${text}" is written in elegant letters, on top of a frame. The colourfull wooden or metal frame is hanged on a solid black background, creating a striking contrast. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
       width,
       height,
       whiteText,
@@ -289,24 +289,28 @@ const ProjectsSection = () => {
           {renderProjects(projects[category.key])}
         </React.Fragment>
       ))}
-      <Typography className={classes.listProjectText} style={{ fontSize: "1.3em" }}>
-        Have you created a project that integrates Pollinations? We'd love to feature it!
-        <br />
-        <ImageURLHeading
-          width={100}
-          height={50}
-          className={classes.scaledImageURLHeading}
-          {...generateCustomPrompt("Get in touch")}
-        >
-          Get in touch
-        </ImageURLHeading>
-        <LinkStyle
-          href="mailto:hello@pollinations.ai"
-          style={{ color: Colors.lime, fontSize: "1em" }}
-        >
-          hello@pollinations.ai
-        </LinkStyle>
-      </Typography>
+      <div style={{ position: "relative" }}>
+        <Typography className={classes.listProjectText} style={{ fontSize: "1.5em", maxWidth: "500px" }}>
+          <EmojiRephrase>
+            Have you created a project that integrates Pollinations? <br />
+            We'd love to feature it!
+          </EmojiRephrase>
+          <ImageURLHeading
+            width={100}
+            height={50}
+            className={classes.scaledImageURLHeading}
+            {...generateCustomPrompt("Get in touch")}
+          >
+            Get in touch
+          </ImageURLHeading>
+          <LinkStyle
+            href="mailto:hello@pollinations.ai"
+            style={{ color: Colors.lime, fontSize: "1em" }}
+          >
+            hello@pollinations.ai
+          </LinkStyle>
+        </Typography>
+      </div>
     </GenerativeImageURLContainer>
   )
 }
@@ -365,3 +369,5 @@ const ProjectImage = ({ name }) => {
 }
 
 export default ProjectsSection
+
+//      prompt: `The word "${text}" is written in elegant letters, standing atop a bed of tropical leaves and flowers, giving a natural feeling. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. The scene is set against a solid black background, creating a striking contrast. It's a vibrant micro biome.`,

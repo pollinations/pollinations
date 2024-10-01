@@ -12,7 +12,7 @@ export function EmojiRephrase({ children }) {
     const rephrase = useResponsivePollinationsText(prompt, { seed });
 
     return (
-        <PromptTooltip title={prompt}>
+        <PromptTooltip title={prompt} seed={seed}>
             <ReactMarkdown
                 components={{
                     p: ({ node, ...props }) => <Typography component="span" style={{ fontSize: "1.2em" }} {...props} />,

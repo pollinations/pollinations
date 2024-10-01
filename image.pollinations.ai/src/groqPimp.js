@@ -12,26 +12,22 @@ async function main() {
 
 /**
  * Function to get chat completion from Pollinations Text API.
- * Tries calling the API up to 2 times if it fails.
- * If it takes longer than 2 seconds, returns the original prompt.
+ * If it takes longer than 5 seconds, returns the original prompt.
  * @param {string} prompt - The input prompt for the API.
  * @param {number} seed - The seed value for reproducible results.
  * @returns {Promise<string>} The chat completion response.
  */
 async function pimpPromptRaw(prompt, seed) {
-    const maxRetries = 2;
-    let attempt = 0;
     let response = "";
     console.log("pimping prompt", prompt);
     const startTime = Date.now();
-    while (attempt < maxRetries) {
-        try {
-            const apiUrl = `https://text.pollinations.ai/`;
-            const body = JSON.stringify({
-                messages: [
-                    {
-                        role: "system",
-                        content: `Instruction Set for Image Prompt Diversification:
+    try {
+        const apiUrl = `https://text.pollinations.ai/`;
+        const body = JSON.stringify({
+            messages: [
+                {
+                    role: "system",
+                    content: `Instruction Set for Image Prompt Diversification:
 
 - If the prompt is in a language other than English, translate it to English first.
 - Imagine details such as setting, colors, lighting, and overall mood.
@@ -47,43 +43,33 @@ async function pimpPromptRaw(prompt, seed) {
 - Dont omit any details from the originalprompt.
 
 Respond only with the new prompt. Nothing Else.                       
-                        `
-                    },
-                    {
-                        role: "user",
-                        content: "Prompt: " + prompt
-                    }
-                ],
-                seed: seed,
-                model: "openai",
-                cache: false
-            });
+                    `
+                },
+                {
+                    role: "user",
+                    content: "Prompt: " + prompt
+                }
+            ],
+            seed: seed,
+            model: "openai",
+            cache: false
+        });
 
-            response = await Promise.race([
-                fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: body
-                }).then(res => res.text()),
-                new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
-            ]);
-            break; // Exit loop if successful
-        } catch (error) {
-            console.error("Error:", error.message);
-            // stack trace
-            console.error(error.stack);
-            attempt++;
-            if (attempt >= maxRetries) {
-                console.error(`Failed to get chat completion after ${maxRetries} attempts`);
-                return prompt;
-            }
-            if (error.message === "Timeout") {
-                console.error("Request timed out");
-                return prompt;
-            }
-        }
+        response = await Promise.race([
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: body
+            }).then(res => res.text()),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
+        ]);
+    } catch (error) {
+        console.error("Error:", error.message);
+        // stack trace
+        console.error(error.stack);
+        return prompt;
     }
     const endTime = Date.now();
     console.log(`Prompt pimping took ${endTime - startTime}ms`);

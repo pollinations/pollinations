@@ -32,8 +32,6 @@ const PromptTooltip = ({ title, children }) => {
                 </span>
             }
             arrow
-            enterDelay={200}
-            leaveDelay={200}
             placement="top"
         >
             <span style={{ margin: '0px', padding: '0px' }}>

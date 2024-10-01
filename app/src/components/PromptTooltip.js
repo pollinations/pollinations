@@ -14,8 +14,6 @@ const StyledTooltip = withStyles({
 
 const PromptTooltip = ({ title, children }) => {
     // Add console log to debug
-    console.log("PromptTooltip received title:", title);
-
     return (
         <StyledTooltip
             title={

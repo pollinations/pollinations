@@ -11,9 +11,6 @@ export function EmojiRephrase({ children }) {
     const prompt = `Format and add emojis. Text: '${children}'. Only respond with the markdown. No explanation. No code box. try not to change the length much.`;
     const rephrase = useResponsivePollinationsText(prompt, { seed });
 
-    // Add console log to debug
-    console.log("PromptTooltip title:", prompt);
-
     return (
         <PromptTooltip title={prompt}>
             <ReactMarkdown

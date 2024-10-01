@@ -9,6 +9,7 @@ import useRandomSeed from "../../hooks/useRandomSeed"
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import StyledLink from "../../components/StyledLink"; // Updated import
 import useResponsivePollinationsText from "../../hooks/useResponsivePollinationsText"
+import PromptTooltip from "../../components/PromptTooltip"
 
 const WhoWeAreContent = () => {
   const handleLinkClick = (e) => {
@@ -20,18 +21,21 @@ const WhoWeAreContent = () => {
   }
 
   const seed = useRandomSeed();
-  const markdownText = useResponsivePollinationsText("Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.", { seed });
+  const prompt = "Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
+  const markdownText = useResponsivePollinationsText(prompt, { seed });
 
   return (
     <Box maxWidth="1000px" style={{ margin: "0 auto" }}>
       <h2 style={{ userSelect: "none" }}>
-        <ReactMarkdown
-          components={{
-            p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
-          }}
-        >
-          {markdownText}
-        </ReactMarkdown>
+        <PromptTooltip title={prompt}>
+          <ReactMarkdown
+            components={{
+              p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,
+            }}
+          >
+            {markdownText}
+          </ReactMarkdown>
+        </PromptTooltip>
       </h2>
       <ContactWrapper>
         <p style={{ userSelect: "none" }}>

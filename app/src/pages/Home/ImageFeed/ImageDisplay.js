@@ -1,6 +1,7 @@
 import React from "react"
 import { Typography } from "@material-ui/core"
 import { ImageContainer, ImageStyle } from "../ImageHeading"
+import PromptTooltip from "../../../components/PromptTooltip"
 
 export function ImageDisplay({ image }) {
     return (
@@ -13,7 +14,11 @@ export function ImageDisplay({ image }) {
             }}
         >
             {image ? (
-                <ImageStyle src={image["imageURL"]} alt="generative_image" />
+                <a href={image["imageURL"]} target="_blank" rel="noopener">
+                    <PromptTooltip title={image["prompt"]}>
+                        <ImageStyle src={image["imageURL"]} alt="generative_image" />
+                    </PromptTooltip>
+                </a>
             ) : (
                 <Typography variant="h6" color="textSecondary">
                     Loading image...

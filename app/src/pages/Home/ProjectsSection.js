@@ -268,9 +268,9 @@ const ProjectsSection = () => {
     </Grid>
   )
 
-  const generateCustomPrompt = (text, whiteText = "white", width = 450, height = 100) => {
+  const generateCustomPrompt = (text, whiteText = "white. subheading. italic.", width = 450, height = 70) => {
     return {
-      customPrompt: `The word "${text}" is written in elegant letters on black background. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
+      // customPrompt: `The word "${text}" is written in elegant letters on black background. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
       width,
       height,
       whiteText,

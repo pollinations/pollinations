@@ -15,7 +15,7 @@ export function ImageDisplay({ image }) {
         >
             {image ? (
                 <a href={image["imageURL"]} target="_blank" rel="noopener">
-                    <PromptTooltip title={image["prompt"]}>
+                    <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
                         <ImageStyle src={image["imageURL"]} alt="generative_image" />
                     </PromptTooltip>
                 </a>

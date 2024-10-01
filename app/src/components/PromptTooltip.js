@@ -1,5 +1,6 @@
 import React from 'react';
-import { withStyles, Tooltip } from '@material-ui/core';
+import { withStyles, Tooltip, Typography, Box } from '@material-ui/core';
+import LabelIcon from '@material-ui/icons/Label'; // Import an icon for the seed label
 
 const StyledTooltip = withStyles({
     tooltip: {
@@ -12,29 +13,43 @@ const StyledTooltip = withStyles({
     },
 })(Tooltip);
 
-const PromptTooltip = ({ title, children }) => {
-    // Add console log to debug
+const PromptTooltip = ({ title, children, seed = null }) => {
     return (
         <StyledTooltip
             title={
-                <span style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 4,
-                    maxHeight: '60em',
-                    lineHeight: '1.5em',
-                }}>
-                    {title}
-                </span>
+                <Box>
+                    <Typography
+                        variant="body2"
+                        style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: 4,
+                            maxHeight: '6em',
+                            lineHeight: '1.5em',
+                        }}
+                    >
+                        {title}
+                    </Typography>
+                    {seed !== null ? (
+                        <Box display="flex" alignItems="center" style={{ marginTop: '0.5em' }}>
+                            <Typography variant="caption" style={{ fontWeight: 'bold', marginRight: '0.5em' }}>
+                                Seed:
+                            </Typography>
+                            <Typography variant="caption" style={{ fontStyle: 'italic' }}>
+                                {seed}
+                            </Typography>
+                        </Box>
+                    ) : null}
+                </Box>
             }
             arrow
             placement="top"
         >
-            <span style={{ margin: '0px', padding: '0px' }}>
+            <Box component="span" style={{ margin: '0px', padding: '0px' }}>
                 {children}
-            </span>
+            </Box>
         </StyledTooltip>
     );
 };

@@ -34,7 +34,7 @@ export const ImageURLHeading = styled(
     const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black");
     const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white");
 
-    const translatedPrompt = usePollinationsText("Translate the following text to i18n: '" + navigator.language.split("-")[0] + "'. If the text is already in English, just return the text. Don't give any explanation. Text:" + children);
+    const translatedPrompt = usePollinationsText("Translate the following text to i18n: '" + navigator.language.split("-")[0] + "'. If the text is already in English, just return the text. Don't give any explanation. Text:" + children, { seed: 45 });
 
     console.log("imgtranslatedPrompt", translatedPrompt);
     const defaultPrompt = `An image with the text "${translatedPrompt || children}" displayed in an elegant, decorative serif font. no border. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`;

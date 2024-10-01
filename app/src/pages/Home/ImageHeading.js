@@ -5,16 +5,16 @@ import { useMemo, useState, useEffect } from "react"
 import useRandomSeed from "../../hooks/useRandomSeed";
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react";
 import { useTranslatedPollinationsText } from "../../hooks/useResponsivePollinationsText";
+import PromptTooltip from "../../components/PromptTooltip";
 
 export const ImageStyle = styled.img`
-  height: 600px; /* Set your desired fixed height */
-  max-width: 100%; /* Prevents image from exceeding container width */
-  object-fit: contain; /* Maintains aspect ratio without cropping */
+  height: 600px;
+  max-width: 100%;
+  object-fit: contain;
 `
 
 export const GenerativeImageURLContainer = styled(Container)`
   color: ${Colors.offwhite};
-  // background-color: transparent;
   margin: 0em auto;
   padding: 0em;
   max-width: 960px;
@@ -27,20 +27,20 @@ export const GenerativeImageURLContainer = styled(Container)`
 
 export const ImageURLHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
-    const originalWidth = width
-    const originalHeight = height
-    width = width * 3
-    height = height * 3
-    const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black")
-    const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white")
+    const originalWidth = width;
+    const originalHeight = height;
+    width = width * 3;
+    height = height * 3;
+    const foregroundColor = typeof whiteText === 'string' ? whiteText : (whiteText ? "white" : "black");
+    const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white");
 
-    const translatedPrompt = usePollinationsText("Translate the following text to " + navigator.language.split("-")[0] + ". If the text is already in English, just return the text. Don't give any explanation. Text:" + children);
+    const translatedPrompt = usePollinationsText("Translate the following text to i18n: '" + navigator.language.split("-")[0] + "'. If the text is already in English, just return the text. Don't give any explanation. Text:" + children);
 
-    console.log("imgtranslatedPrompt", translatedPrompt)
-    const defaultPrompt = `an image with the text "${translatedPrompt || children}" displayed in an elegant, decorative serif font. no border. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`
-    const prompt = encodeURIComponent(customPrompt || defaultPrompt)
+    console.log("imgtranslatedPrompt", translatedPrompt);
+    const defaultPrompt = `An image with the text "${translatedPrompt || children}" displayed in an elegant, decorative serif font. no border. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font.`;
+    const prompt = encodeURIComponent(customPrompt || defaultPrompt);
 
-    const seed = useRandomSeed()
+    const seed = useRandomSeed();
 
     const imageUrl = usePollinationsImage(prompt, { width, height, nologo: true, seed, enhance: true });
 
@@ -60,9 +60,11 @@ export const ImageURLHeading = styled(
     }, [imageUrl]);
 
     return (
-      <div className={className}>
-        <img src={currentImageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px` }} />
-      </div>
+      <PromptTooltip title={customPrompt || defaultPrompt}>
+        <div className={className}>
+          <img src={currentImageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px`, overflow: 'hidden' }} />
+        </div>
+      </PromptTooltip>
     )
   }
 )`

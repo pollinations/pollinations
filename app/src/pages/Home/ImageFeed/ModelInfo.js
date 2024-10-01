@@ -18,16 +18,40 @@ export function ModelInfo({ model, wasPimped, referrer }) {
       {isMobile ? (
         <>
           Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link><br />
-          LoRA: {loraLink ? <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}<br />
-          Prompt Enhancer: {wasPimped ? <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}<br />
-          Referrer: {referrer ? <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}
+          {loraLink && (
+            <>
+              LoRA: <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link><br />
+            </>
+          )}
+          {wasPimped && (
+            <>
+              Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link><br />
+            </>
+          )}
+          {referrer && (
+            <>
+              Referrer: <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link>
+            </>
+          )}
         </>
       ) : (
         <>
           Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link>&nbsp;&nbsp;
-          LoRA: {loraLink ? <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}&nbsp;&nbsp;
-          Prompt Enhancer: {wasPimped ? <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}&nbsp;&nbsp;
-          Referrer: {referrer ? <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link> : <i style={{ fontSize: "1.2rem" }}>N/A</i>}
+          {loraLink && (
+            <>
+              LoRA: <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link>&nbsp;&nbsp;
+            </>
+          )}
+          {wasPimped && (
+            <>
+              Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link>&nbsp;&nbsp;
+            </>
+          )}
+          {referrer && (
+            <>
+              Referrer: <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link>
+            </>
+          )}
         </>
       )}
     </Typography>

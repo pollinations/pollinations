@@ -3,27 +3,36 @@ import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@material-ui/
 import ReactMarkdown from "react-markdown"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 
-export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoading, isStopped }) {
-    const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
-
+export function TextPrompt({
+    imageParams,
+    handleParamChange,
+    handleFocus,
+    isLoading,
+    isStopped,
+    stop,
+    switchToEditMode,
+  }) {
+    const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`);
+  
     return (
-        <Grid item xs={12}>
-            {isStopped && (
-                <Typography variant="body2" style={{ color: '#f5f5f5', fontWeight: "normal" }}>
-                    Prompt
-                </Typography>
-            )}
-            {isStopped ? (
-                <TextareaAutosize
+      <Grid item xs={12}>
+        {isStopped && (
+          <Typography variant="body2" style={{ color: '#f5f5f5', fontWeight: "normal" }}>
+            Prompt
+          </Typography>
+        )}
+        {isStopped ? (
+          <TextareaAutosize
                     style={{
                         width: "100%",
-                        height: "340px",
+                        height: "200px",
                         backgroundColor: "transparent",
                         border: `0.1px solid #4A4A4A`,
                         borderRadius: "5px",
                         color: Colors.offwhite,
                         paddingLeft: "15px",
                         paddingRight: "15px",
+                        paddingTop: "10px",
                         fontSize: isMobile ? "1.5rem" : "1.2rem",                    
                         overflow: "auto",
                         scrollbarWidth: "none", // For Firefox
@@ -40,9 +49,10 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                         width: "100%",
                         height: "160px",
                         backgroundColor: "transparent",
-                        border: "none",
+                        border: `0.1px solid #4A4A4A`,
                         borderRadius: "5px",
                         color: Colors.offwhite,
+                        paddingTop: "0px",
                         paddingLeft: "15px",
                         paddingRight: "15px",
                         fontSize: isMobile ? "1.5rem" : "1.5rem",
@@ -50,7 +60,12 @@ export function TextPrompt({ imageParams, handleParamChange, handleFocus, isLoad
                         scrollbarWidth: "none", // For Firefox
                         msOverflowStyle: "none", // For Internet Explorer and Edge
                         textAlign: "center", // Center the text horizontally
+                        cursor: "pointer" // Indicate that the div is clickable
                     }}
+                    onClick={() => {
+                        stop(true);              // Use the stop function to stop the slideshow
+                        switchToEditMode();  // Switch to edit mode when clicked
+                      }}
                 >
                     <ReactMarkdown>{imageParams.prompt}</ReactMarkdown>
                 </div>

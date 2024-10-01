@@ -32,7 +32,7 @@ const CompaniesSection = () => {
     },
     td: {
       padding: theme.spacing(1),
-      fontSize: "1.1em",
+      fontSize: "1em",
       textAlign: "center",
       verticalAlign: "top",
     },
@@ -102,7 +102,7 @@ const CompaniesSection = () => {
           />
           <br />
           <a href={company.url} className={classes.link}>
-            {company.name}
+            <strong>{company.name}</strong>
           </a>
           <br />
           {!isMobile && company.description}

@@ -1,10 +1,6 @@
 import React from "react"
-import {
-  Link,
-  Grid,
-  Typography,
-} from "@material-ui/core"
-import { makeStyles, } from "@material-ui/core/styles"
+import { Link, Grid, Typography } from "@material-ui/core"
+import { makeStyles } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
 import { LinkStyle } from "./components"
@@ -30,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
     width: "48px", // Smaller image size
     height: "48px",
     objectFit: "cover",
-    margin: "10px"
+    margin: "10px",
   },
   sectionHeading: {
     color: Colors.lime,
@@ -58,8 +54,28 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-const logoPrefix = "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
+const logoPrefix =
+  "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
 const imageDimension = 96
+
+const projectCategories = [
+  {
+    title: "Mobile & Web Apps",
+    key: "apps",
+  },
+  {
+    title: "AI Chat / LLMs",
+    key: "llmIntegration",
+  },
+  {
+    title: "Social Bots",
+    key: "socialBots",
+  },
+  {
+    title: "Tutorials",
+    key: "tutorials",
+  },
+]
 
 const projects = {
   llmIntegration: [
@@ -226,13 +242,10 @@ const ProjectsSection = () => {
   const seedValue = useRandomSeed()
 
   const renderProjects = (projectList) => (
-    <Grid container spacing={2} className={classes.gridContainer}>
+    <Grid container spacing={4} className={classes.gridContainer}>
       {projectList.map((project, index) => (
         <Grid container item xs={10} key={index} className={classes.gridItem}>
-          <Grid item xs={1.1} style={{ textAlign: "right" }}>
-            <ProjectImage name={project.name} />
-          </Grid>
-          <Grid item xs={4} style={{ textAlign: "left" }}>
+          <Grid item xs={4} style={{ textAlign: "right" }}>
             {renderProjectLink(project)}
             {project.author && (
               <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
@@ -240,7 +253,10 @@ const ProjectsSection = () => {
               </div>
             )}
           </Grid>
-          <Grid item xs={4} style={{ textAlign: "left" }}>
+          <Grid item xs={1.1} style={{ textAlign: "right" }}>
+            <ProjectImage name={project.name} />
+          </Grid>
+          <Grid item xs={isMobile ? 4 : 6} style={{ textAlign: "left" }}>
             <span style={{ color: Colors.white, fontSize: "1em" }}>
               <EmojiRephrase>{project.description}</EmojiRephrase>
             </span>
@@ -252,71 +268,57 @@ const ProjectsSection = () => {
     </Grid>
   )
 
+  const generateCustomPrompt = (text, whiteText = "white", width = 450, height = 100) => {
+    return {
+      customPrompt: `The word "${text}" is written in elegant letters on black background. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. It's a vibrant micro biome.`,
+      width,
+      height,
+      whiteText,
+    }
+  }
+
   return (
     <GenerativeImageURLContainer
-      style={{ marginTop: "2em", marginBottom: "4em", maxWidth: "1000px" }}
+      style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px" }}
     >
       <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
         <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Integrations
         </ImageURLHeading>
       </GenerativeImageURLContainer>
-      <ImageURLHeading
-        className={classes.scaledImageURLHeading}
-        width={350}
-        height={70}
-        whiteText={"white"}
-      >
-        Mobile & Web Apps
-      </ImageURLHeading>
-      {renderProjects(projects.apps)}
-      <ImageURLHeading
-        className={classes.scaledImageURLHeading}
-        width={350}
-        height={70}
-        whiteText={"white"}
-      >
-        AI Chat / LLMs
-      </ImageURLHeading>
-      {renderProjects(projects.llmIntegration)}
-
-      <ImageURLHeading
-        className={classes.scaledImageURLHeading}
-        width={350}
-        height={70}
-        whiteText={"white"}
-      >
-        Social Bots
-      </ImageURLHeading>
-      {renderProjects(projects.socialBots)}
-
-      <ImageURLHeading
-        className={classes.scaledImageURLHeading}
-        width={350}
-        height={70}
-        whiteText={"white"}
-      >
-        Tutorials
-      </ImageURLHeading>
-      {renderProjects(projects.tutorials)}
-
-      <Typography className={classes.listProjectText} style={{ fontSize: "1.3em" }}>
-        Have you created a project that integrates Pollinations? We'd love to feature it!
-        <br />
-        <ImageURLHeading
-          className={classes.scaledImageURLHeading}
-          width={300}
-          height={50}
-          whiteText={true}
-          customPrompt={`an image with the text "Get in touch" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
-        ></ImageURLHeading>{" "}
-        <LinkStyle
-          href="mailto:hello@pollinations.ai"
-          style={{ color: Colors.lime, fontSize: "1em" }}
-        >
-          hello@pollinations.ai
-        </LinkStyle>
-      </Typography>
+      {projectCategories.map((category) => (
+        <React.Fragment key={category.key}>
+          <ImageURLHeading
+            className={classes.scaledImageURLHeading}
+            {...generateCustomPrompt(category.title)}
+          >
+            {category.title}
+          </ImageURLHeading>
+          {renderProjects(projects[category.key])}
+        </React.Fragment>
+      ))}
+      <div style={{ position: "relative" }}>
+        <Typography className={classes.listProjectText} style={{ fontSize: "1.5em", maxWidth: "500px" }}>
+          <EmojiRephrase>
+            Have you created a project that integrates Pollinations? <br />
+            We'd love to feature it!
+          </EmojiRephrase>
+          <ImageURLHeading
+            width={100}
+            height={50}
+            className={classes.scaledImageURLHeading}
+            {...generateCustomPrompt("Get in touch")}
+          >
+            Get in touch
+          </ImageURLHeading>
+          <LinkStyle
+            href="mailto:hello@pollinations.ai"
+            style={{ color: Colors.lime, fontSize: "1em" }}
+          >
+            hello@pollinations.ai
+          </LinkStyle>
+        </Typography>
+      </div>
     </GenerativeImageURLContainer>
   )
 }
@@ -362,17 +364,18 @@ const renderRepoLink = (repoUrl) => {
 }
 
 const ProjectImage = ({ name }) => {
-  const seed = useRandomSeed();
+  const seed = useRandomSeed()
   const prompt = `${logoPrefix} ${name}`
-  const imageUrl = usePollinationsImage(prompt, { width: imageDimension * 4, height: imageDimension * 4, nologo: true, seed })
+  const imageUrl = usePollinationsImage(prompt, {
+    width: imageDimension * 4,
+    height: imageDimension * 4,
+    nologo: true,
+    seed,
+  })
 
-  return (
-    <img
-      src={imageUrl}
-      alt={name}
-      style={{ width: imageDimension, height: imageDimension }}
-    />
-  )
+  return <img src={imageUrl} alt={name} style={{ width: imageDimension, height: imageDimension }} />
 }
 
 export default ProjectsSection
+
+//      prompt: `The word "${text}" is written in elegant letters, standing atop a bed of tropical leaves and flowers, giving a natural feeling. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. The scene is set against a solid black background, creating a striking contrast. It's a vibrant micro biome.`,

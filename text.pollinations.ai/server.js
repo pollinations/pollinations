@@ -198,7 +198,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
 function sendResponse(res, response) {
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8'); // Ensure charset is set to utf-8
     res.send(response);
 }
 
@@ -300,7 +300,7 @@ app.post('/openai*', async (req, res) => {
             const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
             let choices;
             if (isStream) {
-                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
                 res.flushHeaders();
@@ -321,6 +321,7 @@ app.post('/openai*', async (req, res) => {
                 cache[cacheKey] = result;
             }
             console.log("openai format result", JSON.stringify(result, null, 2));
+            res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
             res.json(result);
         } catch (error) {
             console.error(`Error generating text`, error.message);

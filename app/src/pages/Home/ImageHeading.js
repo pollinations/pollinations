@@ -60,7 +60,7 @@ export const ImageURLHeading = styled(
     }, [imageUrl]);
 
     return (
-      <PromptTooltip title={customPrompt || defaultPrompt}>
+      <PromptTooltip title={customPrompt || defaultPrompt} seed={seed}>
         <div className={className}>
           <img src={currentImageUrl} alt={children} style={{ width: `${originalWidth}px`, height: `${originalHeight}px`, overflow: 'hidden' }} />
         </div>

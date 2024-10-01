@@ -27,7 +27,7 @@ const WhoWeAreContent = () => {
   return (
     <Box maxWidth="1000px" style={{ margin: "0 auto" }}>
       <h2 style={{ userSelect: "none" }}>
-        <PromptTooltip title={prompt}>
+        <PromptTooltip title={prompt} seed={seed}>
           <ReactMarkdown
             components={{
               p: (props) => <p {...props} style={{ fontSize: "36px", userSelect: "none" }} />,

@@ -11,9 +11,10 @@ import { LinkStyle } from "./components"
 import FileCopyIcon from '@material-ui/icons/FileCopy'
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 
-// Code examples as an object
+// Code examples as an object with language property
 const CODE_EXAMPLES = {
-  llm_prompt: () => `You will now act as a prompt generator. 
+  llm_prompt: {
+    code: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
   
@@ -23,7 +24,10 @@ where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
   
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
-  llm_prompt_advanced: () => `
+    language: "markdown"
+  },
+  llm_prompt_advanced: {
+    code: () => `
 # Image Generator Instructions
 
 You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
@@ -58,8 +62,11 @@ Additional instructions:
 - If the user specifies the /imagine command, return the parameters as JSON.
 - Response should be in valid JSON format only.
 `,
-  markdown: ({ imageURL, prompt, width, height, seed, model }) =>
-    `# Image Parameters
+    language: "json"
+  },
+  markdown: {
+    code: ({ imageURL, prompt, width, height, seed, model }) =>
+      `# Image Parameters
 Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
@@ -68,7 +75,13 @@ Model: **${model || "turbo"}**
 
 # Image
 ![Generative Image](${imageURL})`,
-  react: ({ prompt, width, height, seed, model }) => `
+    language: "markdown"
+  },
+  react: {
+    code: ({ prompt, width, height, seed, model }) => `
+// React code example using usePollinationsImage hook
+// For more details, visit: https://react-hooks.pollinations.ai/
+
 import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
 
@@ -86,8 +99,11 @@ return (
   </div>
 );
 `,
-  html: ({ imageURL, prompt, width, height, seed, model }) =>
-    `<html>
+    language: "javascript"
+  },
+  html: {
+    code: ({ imageURL, prompt, width, height, seed, model }) =>
+      `<html>
   <body>
     <h2>Image Parameters</h2>
     <p>Prompt: ${prompt}</p>
@@ -103,11 +119,12 @@ return (
   </body>
 </html>
 `,
-
-  rust: ({ prompt, width, height, seed, model }) => `
-// Here's the equivalent Rust code using the reqwest crate for HTTP requests
-// and the std::fs module for file operations.
-// First part of the code that fetches an image from a URL and saves it to a file.
+    language: "html"
+  },
+  rust: {
+    code: ({ prompt, width, height, seed, model }) => `
+// Rust code example for downloading an image
+// For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 use reqwest::blocking::get;
 use std::fs::File;
@@ -149,9 +166,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 [dependencies]
 reqwest = { version = "0.11", features = ["blocking", "json"] }
 `,
-
-  nodejs: ({ prompt, width, height, seed, model }) => `
-// This Node.js snippet downloads the image using node-fetch and saves it to disk, including image details.
+    language: "rust"
+  },
+  nodejs: {
+    code: ({ prompt, width, height, seed, model }) => `
+// Node.js code example for downloading an image
+// For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 import fs from 'fs';
 import fetch from 'node-fetch';
@@ -177,9 +197,12 @@ const model = '${model || "turbo"}'; // Using 'turbo' as default if model is not
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);`,
-
-  python: ({ prompt, width, height, seed, model }) => `
-# This Python snippet downloads the image using requests and saves it to disk, including image details.
+    language: "javascript"
+  },
+  python: {
+    code: ({ prompt, width, height, seed, model }) => `
+# Python code example for downloading an image
+# For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 import requests
 
@@ -223,6 +246,8 @@ image.save('image-output.jpg')
 
 print(image.url)
 `,
+    language: "python"
+  }
 }
 
 export function CodeExamples({ image }) {
@@ -290,13 +315,14 @@ export function CodeExamples({ image }) {
           if (tabValue !== index) return null;
           if (!image || !image.imageURL) return null;
 
-          const text = CODE_EXAMPLES[key](image);
+          const { code, language } = CODE_EXAMPLES[key];
+          const text = code(image);
 
           return (
             <Box key={key} position="relative">
               <CodeBlock
                 text={text}
-                language={key}
+                language={language}
                 theme={irBlack}
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
@@ -332,12 +358,12 @@ export function CodeExamples({ image }) {
           height="100"
         />
         <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.4em", maxWidth: "400px" }}>
-        <EmojiRephrase>
+          <EmojiRephrase>
 
-          Check the API documentation
+            Check the API documentation
           </EmojiRephrase>
 
-        </span><br/>
+        </span><br />
         <LinkStyle
           href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
           target="_blank"

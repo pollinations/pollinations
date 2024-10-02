@@ -3,13 +3,33 @@ import { AppBar, ButtonGroup, Button, Box, IconButton } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
-import GitHubIcon from "@material-ui/icons/GitHub"
 import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
 import { LinkStyle } from "./components"
 import FileCopyIcon from '@material-ui/icons/FileCopy'
 import { EmojiRephrase } from "../../components/EmojiRephrase"
+
+// Common styles
+const buttonStyle = (isActive) => ({
+  backgroundColor: isActive ? Colors.lime : "transparent",
+  color: isActive ? Colors.offblack : Colors.lime,
+  fontSize: '1.3rem',
+  fontFamily: 'Uncut-Sans-Variable',
+  fontStyle: 'normal',
+  fontWeight: 600,
+  height: "60px",
+  position: "relative",
+  margin: "0.5em",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  letterSpacing: "0.1em",
+  borderRadius: "5px",
+  padding: "0 1em",
+  whiteSpace: "nowrap",
+  border: `1px solid ${Colors.lime}`,
+});
 
 // Code examples as an object with language property
 const CODE_EXAMPLES = {
@@ -28,41 +48,42 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   },
   llm_prompt_advanced: {
     code: () => `
-# Image Generator Instructions
+  # Image Generator Instructions
 
-You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
+  You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
 
-    {
-      "prompt": "[prompt, max 50 words]",
-      "seed": [seed],
-      "width": [width],
-      "height": [height],
-      "model": "[model]"
-    }
-      
-Key points:
-- If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
-- Each seed value creates a unique image for a given prompt.
-- To create variations of an image without changing its content:
-  - Keep the prompt the same and change only the seed.
-- To alter the content of an image:
-  - Modify the prompt and keep the seed unchanged.
-- Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
-- Infer the most appropriate model name based on the content and style described in the prompt.
+  - **Prompt:** [prompt, max 50 words]
+  - **Seed:** [seed]
+  - **Width:** [width]
+  - **Height:** [height]
+  - **Model:** [model]
 
-Default params:
-- prompt (required): The text description of the image you want to generate.
-- model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
-  - Infer the most suitable model based on the prompt's content and style.
-- seed (optional): Seed for reproducible results (default: random).
-- width/height (optional): Default 1024x1024.
-- nologo (optional): Set to true to disable the logo rendering.
+  ## Key points:
+  - If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
+  - Each seed value creates a unique image for a given prompt.
+  - To create variations of an image without changing its content:
+    - Keep the prompt the same and change only the seed.
+  - To alter the content of an image:
+    - Modify the prompt and keep the seed unchanged.
+  - Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
+  - Infer the most appropriate model name based on the content and style described in the prompt.
 
-Additional instructions:
-- If the user specifies the /imagine command, return the parameters as JSON.
-- Response should be in valid JSON format only.
-`,
-    language: "json"
+  ## Default params:
+  - prompt (required): The text description of the image you want to generate.
+  - model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
+    - Infer the most suitable model based on the prompt's content and style.
+  - seed (optional): Seed for reproducible results (default: random).
+  - width/height (optional): Default 1024x1024.
+  - nologo (optional): Set to true to disable the logo rendering.
+
+  ## Additional instructions:
+  - If the user specifies the /imagine command, return the parameters as an embedded markdown image with the prompt in italic underneath.
+
+  ## Example:
+  ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
+  *{description}*
+  `,
+    language: "markdown"
   },
   markdown: {
     code: ({ imageURL, prompt, width, height, seed, model }) =>
@@ -86,18 +107,21 @@ import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
 
 const GeneratedImageComponent = () => {
-const imageUrl = usePollinationsImage('${prompt}', {
-  width: ${width},
-  height: ${height},
-  seed: ${seed},
-  model: '${model || "flux"}'
-});
+  const imageUrl = usePollinationsImage('${prompt}', {
+    width: ${width},
+    height: ${height},
+    seed: ${seed},
+    model: '${model || "flux"}'
+  });
 
-return (
-  <div>
-    {imageUrl ? <img src={imageUrl} alt="Generated Image" /> : <p>Loading...</p>}
-  </div>
-);
+  return (
+    <div>
+      {imageUrl ? <img src={imageUrl} alt="Generated Image" /> : <p>Loading...</p>}
+    </div>
+  );
+};
+
+export default GeneratedImageComponent;
 `,
     language: "javascript"
   },
@@ -128,7 +152,6 @@ return (
 
 use reqwest::blocking::get;
 use std::fs::File;
-use std::io::copy;
 use std::io::Write;
 
 fn download_image(image_url: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -149,7 +172,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let width = ${width};
     let height = ${height};
     let seed = ${seed}; // Each seed generates a new image variation
-    let model = "${model || "flux"}; // Using 'turbo' as default if model is not provided
+    let model = "${model || "flux"}"; // Using 'flux' as default if model is not provided
 
     let image_url = format!(
       "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
@@ -158,7 +181,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     download_image(&image_url)?;
 
-  Ok(())
+    Ok(())
 }
 
 // Make sure you have the reqwest crate in your Cargo.toml:
@@ -192,11 +215,12 @@ const prompt = '${shorten(prompt)}';
 const width = ${width};
 const height = ${height};
 const seed = ${seed}; // Each seed generates a new image variation
-const model = '${model || "flux"}'; // Using 'turbo' as default if model is not provided
+const model = '${model || "flux"}'; // Using 'flux' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
-downloadImage(imageUrl);`,
+downloadImage(imageUrl);
+`,
     language: "javascript"
   },
   python: {
@@ -207,20 +231,20 @@ downloadImage(imageUrl);`,
 import requests
 
 def download_image(image_url):
-    // Fetching the image from the URL
+    # Fetching the image from the URL
     response = requests.get(image_url)
-    // Writing the content to a file named 'image.jpg'
+    # Writing the content to a file named 'image.jpg'
     with open('image.jpg', 'wb') as file:
         file.write(response.content)
-    // Logging completion message
+    # Logging completion message
     print('Download Completed')
 
 # Image details
 prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
-seed = ${seed} // Each seed generates a new image variation
-model = '${model || "flux"}' // Using 'turbo' as default if model is not provided
+seed = ${seed} # Each seed generates a new image variation
+model = '${model || "flux"}' # Using 'flux' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -233,9 +257,9 @@ download_image(image_url)
 
 import pollinations as ai
 
-model_obj: object = ai.Model()
+model_obj = ai.Model()
 
-image: object = model_obj.generate(
+image = model_obj.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
     model=ai.${model || "flux"},
     width=${width},
@@ -285,25 +309,7 @@ export function CodeExamples({ image }) {
             <Button
               key={key}
               onClick={() => handleChange(null, index)}
-              style={{
-                backgroundColor: tabValue === index ? Colors.lime : "transparent",
-                color: tabValue === index ? Colors.offblack : Colors.lime,
-                fontSize: '1.3rem',
-                fontFamily: 'Uncut-Sans-Variable',
-                fontStyle: 'normal',
-                fontWeight: 600,
-                height: "60px",
-                position: "relative",
-                margin: "0.5em",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                letterSpacing: "0.1em",
-                borderRadius: "5px",
-                padding: "0 1em", // Add padding to auto size based on text
-                whiteSpace: "nowrap", // Prevent text from wrapping
-                border: `1px solid ${Colors.lime}`, // Add border color lime
-              }}
+              style={buttonStyle(tabValue === index)}
             >
               {key}
             </Button>
@@ -312,8 +318,7 @@ export function CodeExamples({ image }) {
       </AppBar>
       <>
         {codeExampleTabs.map((key, index) => {
-          if (tabValue !== index) return null;
-          if (!image || !image.imageURL) return null;
+          if (tabValue !== index || !image || !image.imageURL) return null;
 
           const { code, language } = CODE_EXAMPLES[key];
           const text = code(image);
@@ -328,11 +333,11 @@ export function CodeExamples({ image }) {
                 customStyle={{
                   backgroundColor: "transparent",
                   color: Colors.offwhite,
-                  scrollbarColor: "transparent transparent", // scrollbar thumb and track colors
-                  border: `5px solid ${Colors.offblack}`, // Add border to the code block
-                  marginTop: "1em", // Add margin top
-                  marginLeft: "10px", // Add margin left
-                  marginRight: "10px", // Add margin right
+                  scrollbarColor: "transparent transparent",
+                  border: `5px solid ${Colors.offblack}`,
+                  marginTop: "1em",
+                  marginLeft: "10px",
+                  marginRight: "10px",
                 }}
               />
               <IconButton
@@ -342,7 +347,7 @@ export function CodeExamples({ image }) {
                   top: 0,
                   right: 0,
                   color: Colors.lime,
-                  marginRight: "10px", // Add margin right
+                  marginRight: "10px",
                 }}
               >
                 <FileCopyIcon />
@@ -359,10 +364,8 @@ export function CodeExamples({ image }) {
         />
         <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.4em", maxWidth: "400px" }}>
           <EmojiRephrase>
-
             Check the API documentation
           </EmojiRephrase>
-
         </span><br />
         <LinkStyle
           href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"

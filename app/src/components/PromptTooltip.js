@@ -1,21 +1,23 @@
 import React from 'react';
 import { withStyles, Tooltip, Typography, Box } from '@material-ui/core';
-import LabelIcon from '@material-ui/icons/Label'; // Import an icon for the seed label
 
 const StyledTooltip = withStyles({
     tooltip: {
-        fontSize: '1em',
-        backgroundColor: '#333',
-        color: '#fff',
+        fontSize: '0.75em', // Reduced font size
+        backgroundColor: 'rgba(10, 10, 0, 0.8)', // Lighter background with more transparency
+        color: 'rgba(255, 232, 1, 0.8)',
+        transition: 'opacity 1.0s ease-in-out', // Smooth transition
+        border: '1px solid rgba(255, 232, 1, 0.8)', // Thin yellow border
     },
-    popper: {
-        transitionDelay: '500ms',
+    arrow: {
+        color: 'rgba(255, 232, 1, 0.8)',
     },
 })(Tooltip);
 
 const PromptTooltip = ({ title, children, seed = null }) => {
     return (
         <StyledTooltip
+            key={title}
             title={
                 <Box>
                     <Typography
@@ -25,27 +27,25 @@ const PromptTooltip = ({ title, children, seed = null }) => {
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
                             WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 4,
-                            maxHeight: '6em',
+                            WebkitLineClamp: 3, // Reduced line clamp for conciseness
+                            maxHeight: '4.5em', // Adjusted max height
                             lineHeight: '1.5em',
                         }}
                     >
-                        {title}
+                        <strong>Prompt:</strong> {title}
                     </Typography>
-                    {seed !== null ? (
-                        <Box display="flex" alignItems="center" style={{ marginTop: '0.5em' }}>
-                            <Typography variant="caption" style={{ fontWeight: 'bold', marginRight: '0.5em' }}>
-                                Seed:
-                            </Typography>
-                            <Typography variant="caption" style={{ fontStyle: 'italic' }}>
-                                {seed}
-                            </Typography>
-                        </Box>
-                    ) : null}
+                    {seed !== null && (
+                        <Typography variant="caption" style={{ fontStyle: 'italic', marginTop: '0.3em' }}>
+                            <strong>Seed:</strong> {seed}
+                        </Typography>
+                    )}
                 </Box>
             }
             arrow
             placement="top"
+            enterDelay={2250}
+            enterNextDelay={1500}
+            leaveDelay={200} // Delay before hiding tooltip
         >
             <Box component="span" style={{ margin: '0px', padding: '0px' }}>
                 {children}

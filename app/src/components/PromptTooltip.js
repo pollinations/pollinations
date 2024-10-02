@@ -43,8 +43,8 @@ const PromptTooltip = ({ title, children, seed = null }) => {
             }
             arrow
             placement="top"
-            enterDelay={3000}
-            enterNextDelay={2000}
+            enterDelay={2250}
+            enterNextDelay={1500}
             leaveDelay={200} // Delay before hiding tooltip
         >
             <Box component="span" style={{ margin: '0px', padding: '0px' }}>

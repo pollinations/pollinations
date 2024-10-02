@@ -28,41 +28,42 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   },
   llm_prompt_advanced: {
     code: () => `
-# Image Generator Instructions
+  # Image Generator Instructions
 
-You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
+  You are an image generator. The user provides a prompt. Please infer the following parameters for image generation:
 
-    {
-      "prompt": "[prompt, max 50 words]",
-      "seed": [seed],
-      "width": [width],
-      "height": [height],
-      "model": "[model]"
-    }
-      
-Key points:
-- If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
-- Each seed value creates a unique image for a given prompt.
-- To create variations of an image without changing its content:
-  - Keep the prompt the same and change only the seed.
-- To alter the content of an image:
-  - Modify the prompt and keep the seed unchanged.
-- Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
-- Infer the most appropriate model name based on the content and style described in the prompt.
+  - **Prompt:** [prompt, max 50 words]
+  - **Seed:** [seed]
+  - **Width:** [width]
+  - **Height:** [height]
+  - **Model:** [model]
 
-Default params:
-- prompt (required): The text description of the image you want to generate.
-- model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
-  - Infer the most suitable model based on the prompt's content and style.
-- seed (optional): Seed for reproducible results (default: random).
-- width/height (optional): Default 1024x1024.
-- nologo (optional): Set to true to disable the logo rendering.
+  ## Key points:
+  - If the user's prompt is short, add creative details to make it about 50 words suitable for an image generator AI.
+  - Each seed value creates a unique image for a given prompt.
+  - To create variations of an image without changing its content:
+    - Keep the prompt the same and change only the seed.
+  - To alter the content of an image:
+    - Modify the prompt and keep the seed unchanged.
+  - Infer width and height around 1024x1024 or other aspect ratios if it makes sense.
+  - Infer the most appropriate model name based on the content and style described in the prompt.
 
-Additional instructions:
-- If the user specifies the /imagine command, return the parameters as JSON.
-- Response should be in valid JSON format only.
-`,
-    language: "json"
+  ## Default params:
+  - prompt (required): The text description of the image you want to generate.
+  - model (optional): The model to use for generation. Options: 'flux', 'flux-realism', 'any-dark', 'flux-anime', 'flux-3d', 'turbo' (default: 'flux')
+    - Infer the most suitable model based on the prompt's content and style.
+  - seed (optional): Seed for reproducible results (default: random).
+  - width/height (optional): Default 1024x1024.
+  - nologo (optional): Set to true to disable the logo rendering.
+
+  ## Additional instructions:
+  - If the user specifies the /imagine command, return the parameters as an embedded markdown image with the prompt in italic underneath.
+
+  ## Example:
+  ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
+  *{description}*
+  `,
+    language: "markdown"
   },
   markdown: {
     code: ({ imageURL, prompt, width, height, seed, model }) =>

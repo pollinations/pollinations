@@ -149,7 +149,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let width = ${width};
     let height = ${height};
     let seed = ${seed}; // Each seed generates a new image variation
-    let model = "${model || "fllx}"; // Using 'turbo' as default if model is not provided
+    let model = "${model || "flux"}; // Using 'turbo' as default if model is not provided
 
     let image_url = format!(
       "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
@@ -189,18 +189,18 @@ async function downloadImage(imageUrl) {
 
 // Image details
 const prompt = '${shorten(prompt)}';
-const width = ${ width };
-const height = ${ height };
-const seed = ${ seed }; // Each seed generates a new image variation
+const width = ${width};
+const height = ${height};
+const seed = ${seed}; // Each seed generates a new image variation
 const model = '${model || "flux"}'; // Using 'turbo' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);`,
-  language: "javascript"
+    language: "javascript"
   },
-python: {
-  code: ({ prompt, width, height, seed, model }) => `
+  python: {
+    code: ({ prompt, width, height, seed, model }) => `
 # Python code example for downloading an image
 # For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
@@ -247,7 +247,7 @@ image.save('image-output.jpg')
 print(image.url)
 `,
     language: "python"
-}
+  }
 }
 
 export function CodeExamples({ image }) {

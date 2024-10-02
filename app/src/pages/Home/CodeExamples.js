@@ -71,7 +71,7 @@ Prompt: **${prompt}**
 Width: **${width}**
 Height: **${height}**
 Seed: **${seed}** (Each seed generates a new image)
-Model: **${model || "turbo"}**
+Model: **${model || "flux"}**
 
 # Image
 ![Generative Image](${imageURL})`,
@@ -90,7 +90,7 @@ const imageUrl = usePollinationsImage('${prompt}', {
   width: ${width},
   height: ${height},
   seed: ${seed},
-  model: '${model || "turbo"}'
+  model: '${model || "flux"}'
 });
 
 return (
@@ -110,7 +110,7 @@ return (
     <p>Width: ${width}</p>
     <p>Height: ${height}</p>
     <p>Seed: ${seed} <i>Each seed generates a new image variation</i></p>
-    <p>Model: ${model || "turbo"}</p>
+    <p>Model: ${model || "flux"}</p>
 
     <img 
       src="${imageURL}" 
@@ -149,23 +149,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let width = ${width};
     let height = ${height};
     let seed = ${seed}; // Each seed generates a new image variation
-    let model = "${model || "turbo"}"; // Using 'turbo' as default if model is not provided
+    let model = "${model || "fllx}"; // Using 'turbo' as default if model is not provided
 
     let image_url = format!(
-        "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
-        prompt, width, height, seed, model
+      "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
+      prompt, width, height, seed, model
     );
 
     download_image(&image_url)?;
 
-    Ok(())
+  Ok(())
 }
 
 // Make sure you have the reqwest crate in your Cargo.toml:
 
 [dependencies]
-reqwest = { version = "0.11", features = ["blocking", "json"] }
-`,
+reqwest = { version = "0.11", features =["blocking", "json"] }
+  `,
     language: "rust"
   },
   nodejs: {
@@ -189,18 +189,18 @@ async function downloadImage(imageUrl) {
 
 // Image details
 const prompt = '${shorten(prompt)}';
-const width = ${width};
-const height = ${height};
-const seed = ${seed}; // Each seed generates a new image variation
-const model = '${model || "turbo"}'; // Using 'turbo' as default if model is not provided
+const width = ${ width };
+const height = ${ height };
+const seed = ${ seed }; // Each seed generates a new image variation
+const model = '${model || "flux"}'; // Using 'turbo' as default if model is not provided
 
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);`,
-    language: "javascript"
+  language: "javascript"
   },
-  python: {
-    code: ({ prompt, width, height, seed, model }) => `
+python: {
+  code: ({ prompt, width, height, seed, model }) => `
 # Python code example for downloading an image
 # For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
@@ -220,7 +220,7 @@ prompt = '${shorten(prompt)}'
 width = ${width}
 height = ${height}
 seed = ${seed} // Each seed generates a new image variation
-model = '${model || "turbo"}' // Using 'turbo' as default if model is not provided
+model = '${model || "flux"}' // Using 'turbo' as default if model is not provided
 
 image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
@@ -237,7 +237,7 @@ model_obj: object = ai.Model()
 
 image: object = model_obj.generate(
     prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || "turbo"},
+    model=ai.${model || "flux"},
     width=${width},
     height=${height},
     seed=${seed}
@@ -247,7 +247,7 @@ image.save('image-output.jpg')
 print(image.url)
 `,
     language: "python"
-  }
+}
 }
 
 export function CodeExamples({ image }) {

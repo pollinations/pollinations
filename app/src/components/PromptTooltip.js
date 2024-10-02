@@ -1,15 +1,16 @@
 import React from 'react';
 import { withStyles, Tooltip, Typography, Box } from '@material-ui/core';
-import LabelIcon from '@material-ui/icons/Label'; // Import an icon for the seed label
 
 const StyledTooltip = withStyles({
     tooltip: {
-        fontSize: '1em',
-        backgroundColor: '#333',
+        fontSize: '0.8em',
+        backgroundColor: 'rgba(51, 51, 51, 0.7)',
         color: '#fff',
+        padding: '4px 8px',
+        maxWidth: '200px',
     },
     popper: {
-        transitionDelay: '500ms',
+        transitionDelay: '1000ms',
     },
 })(Tooltip);
 
@@ -18,38 +19,21 @@ const PromptTooltip = ({ title, children, seed = null }) => {
         <StyledTooltip
             title={
                 <Box>
-                    <Typography
-                        variant="body2"
-                        style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 4,
-                            maxHeight: '6em',
-                            lineHeight: '1.5em',
-                        }}
-                    >
+                    <Typography variant="caption">
                         {title}
                     </Typography>
-                    {seed !== null ? (
-                        <Box display="flex" alignItems="center" style={{ marginTop: '0.5em' }}>
-                            <Typography variant="caption" style={{ fontWeight: 'bold', marginRight: '0.5em' }}>
-                                Seed:
-                            </Typography>
-                            <Typography variant="caption" style={{ fontStyle: 'italic' }}>
-                                {seed}
-                            </Typography>
-                        </Box>
-                    ) : null}
+                    {seed !== null && (
+                        <Typography variant="caption" style={{ display: 'block', marginTop: '4px', opacity: 0.7 }}>
+                            Seed: {seed}
+                        </Typography>
+                    )}
                 </Box>
             }
-            arrow
             placement="top"
+            enterDelay={500}
+            leaveDelay={200}
         >
-            <Box component="span" style={{ margin: '0px', padding: '0px' }}>
-                {children}
-            </Box>
+            {children}
         </StyledTooltip>
     );
 };

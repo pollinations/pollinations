@@ -42,8 +42,7 @@ async function pimpPromptRaw(prompt, seed) {
 - When asked for a random prompt, generate an evocative and surprising one that fits user constraints, and provide any unspecified details.
 - Dont omit any details from the originalprompt.
 
-Respond only with the new prompt. Nothing Else.                       
-                    `
+Respond only with the new prompt. Nothing Else.`
                 },
                 {
                     role: "user",

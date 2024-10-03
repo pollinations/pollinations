@@ -7,6 +7,8 @@ import ProjectsSection from "./ProjectsSection";
 import CompaniesSection from "./CompaniesSection";
 import { ImageContext } from "../../contexts/ImageContext";
 import TopBand from "../../components/TopBand"; // Updated import
+import { TextFeed } from "./TextFeed"; // Import TextFeed
+import { ImageURLHeading } from "./ImageHeading"; // Import ImageURLHeading
 
 export default function Home() {
   const [image, setImage] = useState({});
@@ -15,6 +17,9 @@ export default function Home() {
     <ImageContext.Provider value={{ image, setImage }}>
       <Style>
         <WhoWeAre />
+        <TopBand />
+        <ImageURLHeading>Text Feed</ImageURLHeading> {/* Add heading for TextFeed */}
+        <TextFeed /> {/* Move TextFeed component above GenerativeImageFeed */}
         <TopBand />
         <GenerativeImageFeed />
         <TopBand />

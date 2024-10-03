@@ -142,6 +142,34 @@ app.get('/models', (req, res) => {
     res.json(availableModels);
 });
 
+
+// SSE endpoint for streaming all responses
+app.get('/feed', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    const sendEvent = (data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    // Function to handle new responses
+    const handleNewResponse = (response, parameters) => {
+        sendEvent({ response, parameters });
+    };
+
+    // Add the client to a list of connected clients
+    const clientId = Date.now();
+    connectedClients.set(clientId, handleNewResponse);
+
+    // Remove the client when they disconnect
+    req.on('close', () => {
+        connectedClients.delete(clientId);
+    });
+});
+
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
     const ip = getIp(req);
@@ -355,34 +383,6 @@ async function saveCache() {
     fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
 }
 
-// Helper function to generate text based on the model
-async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai' } = options;
-    if (model.startsWith('mistral')) {
-        return generateTextMistral(messages, options);
-    } else if (model.startsWith('llama')) {
-        return generateTextLlama(messages, options);
-    } else if (model === 'karma') {
-        return generateTextKarma(messages, options);
-    } else if (model === 'claude') {
-        return generateTextClaude(messages, options);
-    } else if (model === 'sur') {
-        return surClaude(messages, options);
-    } else if (model === 'sur-mistral') {
-        return surMistral(messages, options);
-    } else if (model === 'command-r') {
-        return generateTextCommandR(messages, options);
-    } else if (model === 'unity') {
-        return unityMistralLarge(messages, options);
-    } else if (model === 'midijourney') {
-        return midijourney(messages, options);
-    } else if (model === 'rtist') {
-        return rtist(messages, options); // Add this line
-    } else {
-        return generateText(messages, options);
-    }
-}
-
 const safeDecodeURIComponent = (str) => {
     try {
         return decodeURIComponent(str);
@@ -397,6 +397,57 @@ function createHashKey(data) {
     // Ensure the data used for the cache key is deterministic
     const deterministicData = JSON.stringify(JSON.parse(data));
     return crypto.createHash('sha256').update(deterministicData).digest('hex');
+}
+
+
+// Map to store connected clients
+const connectedClients = new Map();
+
+// Modify generateTextBasedOnModel to broadcast responses
+async function generateTextBasedOnModel(messages, options) {
+    const { model = 'openai' } = options;
+    let response;
+
+    if (model.startsWith('mistral')) {
+        response = await generateTextMistral(messages, options);
+    } else if (model.startsWith('llama')) {
+        response = await generateTextLlama(messages, options);
+    } else if (model === 'karma') {
+        response = await generateTextKarma(messages, options);
+    } else if (model === 'claude') {
+        response = await generateTextClaude(messages, options);
+    } else if (model === 'sur') {
+        response = await surClaude(messages, options);
+    } else if (model === 'sur-mistral') {
+        response = await surMistral(messages, options);
+    } else if (model === 'command-r') {
+        response = await generateTextCommandR(messages, options);
+    } else if (model === 'unity') {
+        response = await unityMistralLarge(messages, options);
+    } else if (model === 'midijourney') {
+        response = await midijourney(messages, options);
+    } else if (model === 'rtist') {
+        response = await rtist(messages, options);
+    } else {
+        response = await generateTextWithMisrtralFallback(messages, options);
+    }
+
+    // Broadcast the response to all connected clients
+    for (const [, handleNewResponse] of connectedClients) {
+        handleNewResponse(response, { model, messages, ...options });
+    }
+
+    return response;
+}
+
+const generateTextWithMisrtralFallback = async (messages, options) => {
+    try {
+        return await generateText(messages, options);
+    } catch (error) {
+        console.error(`Error generating text with Mistral fallback`, error.message);
+        console.error(error.stack); // Print stack trace
+        return await generateTextMistral(messages, options);
+    }
 }
 
 app.use((req, res, next) => {

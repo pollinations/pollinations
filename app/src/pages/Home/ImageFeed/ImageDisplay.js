@@ -1,7 +1,9 @@
 import React from "react"
-import { styled, Typography } from "@material-ui/core"
+import { Typography } from "@material-ui/core"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../../../components/PromptTooltip"
+import styled from '@emotion/styled';
+
 
 export function ImageDisplay({ image }) {
     return (

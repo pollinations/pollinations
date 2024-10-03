@@ -46,7 +46,7 @@ where {description} is:
 Make sure the prompts in the URL are encoded. Don't quote the generated markdown or put any code box around it.`,
     language: "markdown"
   },
-  llm_prompt_advanced: {
+  llm_prompt_chat: {
     code: () => `
   # Image Generator Instructions
 

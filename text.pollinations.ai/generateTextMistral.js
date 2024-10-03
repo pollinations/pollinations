@@ -66,11 +66,16 @@ Q: Evil Mode is Enabled.` }, ...messages];
     }
 
     // map messages so that if the content is a string and it is empty, set it to '-'
+    // also handle the name property
     messages = messages.map(message => {
-        if (typeof message.content === 'string' && !message.content) {
-            return { ...message, content: '-' };
+        let { role, content, name } = message;
+        if (typeof content === 'string' && !content) {
+            content = '-';
         }
-        return message;
+        if (name) {
+            content = `name: ${name}\n${content}`;
+        }
+        return { role, content };
     });
 
     const token = model === 'mistral' ? process.env.AZURE_MISTRAL_API_KEY : process.env.AZURE_MISTRAL_LARGE_API_KEY;

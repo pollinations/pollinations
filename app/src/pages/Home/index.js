@@ -18,9 +18,9 @@ export default function Home() {
       <Style>
         <WhoWeAre />
         <TopBand />
-        <ImageURLHeading>Text Feed</ImageURLHeading> {/* Add heading for TextFeed */}
-        <TextFeed /> {/* Move TextFeed component above GenerativeImageFeed */}
-        <TopBand />
+        {/* <ImageURLHeading>Text Feed</ImageURLHeading>
+        <TextFeed /> 
+        <TopBand /> */}
         <GenerativeImageFeed />
         <TopBand />
         <ProjectsSection />

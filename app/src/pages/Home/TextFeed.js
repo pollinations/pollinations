@@ -66,13 +66,16 @@ export function TextFeed() {
     const { response, parameters } = lastEntry;
     const { model, messages, seed, type } = parameters;
 
+    const systemMessage = messages.filter(msg => msg.role === "system").pop()?.content || "No system message found";
+    const userPrompt = messages.filter(msg => msg.role === "user").pop()?.content || "No user prompt found";
+
     return (
         <Table>
             <tbody>
                 <TableRow>
                     <KeyCell>Prompt</KeyCell>
                     <ValueCell>
-                        <MultiLineText>{messages[1].content}</MultiLineText>
+                        <MultiLineText>{userPrompt}</MultiLineText>
                     </ValueCell>
                 </TableRow>
                 <TableRow>
@@ -83,6 +86,12 @@ export function TextFeed() {
                     <KeyCell>Response</KeyCell>
                     <ValueCell>
                         <MultiLineText>{response}</MultiLineText>
+                    </ValueCell>
+                </TableRow>
+                <TableRow>
+                    <KeyCell>System</KeyCell>
+                    <ValueCell>
+                        <MultiLineText>{systemMessage}</MultiLineText>
                     </ValueCell>
                 </TableRow>
                 <TableRow>

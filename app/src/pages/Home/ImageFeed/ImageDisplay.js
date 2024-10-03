@@ -1,6 +1,6 @@
 import React from "react"
 import { Typography } from "@material-ui/core"
-import { ImageContainer, ImageStyle } from "../ImageHeading"
+import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../../../components/PromptTooltip"
 
 export function ImageDisplay({ image }) {
@@ -27,3 +27,10 @@ export function ImageDisplay({ image }) {
         </ImageContainer>
     )
 }
+
+
+export const ImageStyle = styled.img`
+  height: 600px;
+  max-width: 100%;
+  object-fit: contain;
+`

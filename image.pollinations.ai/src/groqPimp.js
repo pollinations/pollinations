@@ -1,5 +1,6 @@
 "use strict";
 import fetch from 'node-fetch';
+import urldecode from 'urldecode';
 
 /**
  * Main function to get and print chat completion from Pollinations Text API.
@@ -18,6 +19,12 @@ async function main() {
  * @returns {Promise<string>} The chat completion response.
  */
 async function pimpPromptRaw(prompt, seed) {
+    try {
+        prompt = urldecode(prompt);
+    } catch (error) {
+        console.error("Error decoding prompt:", error);
+        // If decoding fails, use the original prompt
+    }
     let response = "";
     console.log("pimping prompt", prompt);
     const startTime = Date.now();

@@ -95,11 +95,12 @@ export function ImageEditor({
               onClose={() => handleMenuClose(null)}
               MenuListProps={{ style: { textAlign: "left", backgroundColor: "black" } }}
             >
-              <MenuItem onClick={() => handleMenuClose("turbo")}>Turbo</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux")}>Flux</MenuItem>
+              <MenuItem onClick={() => handleMenuClose("flux-pro")}>Flux-Pro</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux-realism")}>Flux-Realism</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux-anime")}>Flux-Anime</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux-3d")}>Flux-3D</MenuItem>
+              <MenuItem onClick={() => handleMenuClose("turbo")}>Turbo</MenuItem>
             </Menu>
           </Grid>
           <Grid item xs={4}>

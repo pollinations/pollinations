@@ -7,6 +7,8 @@ import ProjectsSection from "./ProjectsSection";
 import CompaniesSection from "./CompaniesSection";
 import { ImageContext } from "../../contexts/ImageContext";
 import TopBand from "../../components/TopBand"; // Updated import
+import { TextFeed } from "./TextFeed"; // Import TextFeed
+import { ImageURLHeading } from "./ImageHeading"; // Import ImageURLHeading
 
 export default function Home() {
   const [image, setImage] = useState({});
@@ -16,6 +18,9 @@ export default function Home() {
       <Style>
         <WhoWeAre />
         <TopBand />
+        {/* <ImageURLHeading>Text Feed</ImageURLHeading>
+        <TextFeed /> 
+        <TopBand /> */}
         <GenerativeImageFeed />
         <TopBand />
         <ProjectsSection />

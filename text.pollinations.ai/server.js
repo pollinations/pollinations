@@ -175,7 +175,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
     const ip = getIp(req);
     const queue = getQueue(ip);
 
-    if (queue.size >= 30) {
+    if (queue.size >= 300) {
         return res.status(429).send('Too many requests in queue. Please try again later.');
     }
 
@@ -429,7 +429,7 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'rtist') {
         response = await rtist(messages, options);
     } else {
-        response = await generateTextWithMisrtralFallback(messages, options);
+        response = await generateTextWithMistralFallback(messages, options);
     }
 
     // Broadcast the response to all connected clients
@@ -440,7 +440,7 @@ async function generateTextBasedOnModel(messages, options) {
     return response;
 }
 
-const generateTextWithMisrtralFallback = async (messages, options) => {
+const generateTextWithMistralFallback = async (messages, options) => {
     try {
         return await generateText(messages, options);
     } catch (error) {

@@ -7,6 +7,8 @@ import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './
 import sharp from 'sharp';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
+const MEOOW_2_SERVER_URL = 'https://cablyai.com/v1/images/generations';
+const MEOOW_2_API_KEY = process.env.MEOOW_2_API_KEY;
 // const TURBO_SERVER_URL = 'http://54.91.176.109:5003/generate';
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
@@ -109,6 +111,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     throw e;
   }
 };
+
 /**
  * Calls the Meoow API with the given parameters and returns image buffers.
  * @param {string} prompt - The prompt for the image generation.
@@ -150,6 +153,53 @@ const callMeoow = async (prompt, safeParams) => {
 };
 
 /**
+ * Calls the Meoow-2 API with the given parameters and returns image buffers.
+ * @param {string} prompt - The prompt for the image generation.
+ * @param {Object} safeParams - The safe parameters for the image generation.
+ * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
+ */
+const callMeoow2 = async (prompt, safeParams) => {
+  try {
+    prompt = sanitizeString(prompt);
+    const body = {
+      prompt: prompt,
+      n: 1,
+      size: `${safeParams.width}x${safeParams.height}`,
+      response_format: 'url',
+      model: 'flux-pro',
+    };
+
+    console.log("calling meoow-2", body);
+    const response = await fetch(MEOOW_2_SERVER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MEOOW_2_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server responded with ${response.status}: ${errorText}`);
+    }
+
+    const jsonResponse = await response.json();
+    const imageUrl = jsonResponse.data[0].url;
+
+    // Fetch the image from the URL
+    const imageResponse = await fetch(imageUrl);
+    const buffer = await imageResponse.buffer();
+
+    return { buffer: buffer, has_nsfw_concept: false, concept: null };
+
+  } catch (e) {
+    console.error('Error in callMeoow2:', e);
+    throw e;
+  }
+};
+
+/**
  * Calculates the closest aspect ratio from a list of predefined aspect ratios.
  * @param {number} width - The width of the image.
  * @param {number} height - The height of the image.
@@ -180,8 +230,11 @@ async function convertToJpeg(buffer) {
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt) {
   let bufferAndMaturity;
   const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
+  const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
   if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
+  } else if (meoow2Models.includes(safeParams.model)) {
+    bufferAndMaturity = await callMeoow2(prompt, safeParams);
   } else {
     bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
   }

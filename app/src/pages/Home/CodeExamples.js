@@ -33,6 +33,36 @@ const buttonStyle = (isActive) => ({
 
 // Code examples as an object with language property
 const CODE_EXAMPLES = {
+  api_cheatsheet: {
+    code: () => `## Pollinations.AI Cheatsheet for Coding Assistants
+
+### Image Generation API (Default model: 'flux')
+
+Generate Image: \`GET https://image.pollinations.ai/prompt/{prompt}\`
+- Params: prompt*, model, seed, width, height, nologo, private, enhance
+- Return: Image file
+
+List Models: \`GET https://image.pollinations.ai/models\`
+
+### Text Generation API (Default model: 'openai')
+
+Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
+- Params: prompt*, model, seed, json, system
+- Return: Generated text
+
+Generate (POST): \`POST https://text.pollinations.ai/\`
+- Body: messages*, model, seed, jsonMode
+- Return: Generated text
+
+OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
+- Body: Follows OpenAI ChatGPT API format
+- Return: OpenAI-style response
+
+List Models: \`GET https://text.pollinations.ai/models\`
+
+*\\* required parameter*`,
+    language: "markdown"
+  },
   llm_prompt: {
     code: () => `You will now act as a prompt generator. 
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
@@ -275,7 +305,7 @@ print(image.url)
 }
 
 export function CodeExamples({ image }) {
-  const [tabValue, setTabValue] = useState(0); // Set initial tab to 0 (markdown)
+  const [tabValue, setTabValue] = useState(0); // Set initial tab to 0 (api_cheatsheet)
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue);

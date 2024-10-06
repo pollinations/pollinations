@@ -5,6 +5,7 @@ import { MODELS } from './models.js';
 import { sanitizeString } from './translateIfNecessary.js';
 import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
 import sharp from 'sharp';
+import sleep from 'await-sleep';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
 const MEOOW_2_SERVER_URL = 'https://cablyai.com/v1/images/generations';
@@ -186,7 +187,7 @@ const callMeoow2 = async (prompt, safeParams) => {
 
     const jsonResponse = await response.json();
     const imageUrl = jsonResponse.data[0].url;
-
+    await sleep(500);
     // Fetch the image from the URL
     const imageResponse = await fetch(imageUrl);
     const buffer = await imageResponse.buffer();

@@ -239,10 +239,10 @@ function getRequestData(req, isPost = false) {
     const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true' || data.response_format?.type === 'json_object';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
-    const systemPrompt = data.system ? safeDecodeURIComponent(data.system) : null;
+    const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
 
-    const messages = isPost ? data.messages : [{ role: 'user', content: safeDecodeURIComponent(req.params.prompt) }];
+    const messages = isPost ? data.messages : [{ role: 'user', content: req.params.prompt }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -444,8 +444,7 @@ const generateTextWithMistralFallback = async (messages, options) => {
     try {
         return await generateText(messages, options);
     } catch (error) {
-        console.error(`Error generating text with Mistral fallback`, error.message);
-        console.error(error.stack); // Print stack trace
+        console.error(`Error generating. Trying Mistral fallback`, error.message);
         return await generateTextMistral(messages, options);
     }
 }

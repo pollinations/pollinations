@@ -122,7 +122,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   if (!needsProcessing) return;
 
-  const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random prompt");
+  const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
 
   const { ...safeParams } = makeParamsSafe(query);
 
@@ -130,7 +130,6 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"], referrer };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
-
 
   try {
     // Cache the generated image
@@ -175,9 +174,12 @@ const checkCacheAndGenerate = async (req, res) => {
       return result;
     });
 
+    const sanitizedFileName = sanitizeFileName(originalPrompt) + '.png';
+
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
+      // 'Content-Disposition': `attachment; filename="${sanitizedFileName}"`,
     });
     res.write(buffer);
     res.end();
@@ -191,7 +193,6 @@ const checkCacheAndGenerate = async (req, res) => {
 
     sendToAnalytics(req, "imageGenerationError", { ...analyticsMetadata, error: error.message });
   }
-
 };
 
 // Modify the server creation to set CORS headers for all requests
@@ -228,4 +229,13 @@ function relativeTiming(timingInfo) {
     ...info,
     timestamp: info.timestamp - timingInfo[0].timestamp
   }));
+}
+
+/**
+ * @function
+ * @param {string} prompt - The original prompt.
+ * @returns {string} - The sanitized file name.
+ */
+const sanitizeFileName = (prompt) => {
+  return prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 }

@@ -8,9 +8,9 @@ const llamaEndpoint = process.env.AZURE_LLAMA_ENDPOINT + process.env.AZURE_LLAMA
 async function generateTextLlama(messages, { jsonMode = false }) {
     // Check if the total character count of the stringified input is greater than 60000
     const stringifiedMessages = JSON.stringify(messages);
-    if (stringifiedMessages.length > 60000) {
-        throw new Error('Input messages exceed the character limit of 60000.');
-    }
+    // if (stringifiedMessages.length > 60000) {
+    //     throw new Error('Input messages exceed the character limit of 60000.');
+    // }
 
     // if json mode is activated and there is no system message, prepend the system message
     if (jsonMode && !hasSystemMessage(messages)) {

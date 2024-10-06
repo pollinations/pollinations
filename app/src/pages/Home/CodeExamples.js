@@ -34,7 +34,7 @@ const buttonStyle = (isActive) => ({
 // Code examples as an object with language property
 const CODE_EXAMPLES = {
   api_cheatsheet: {
-    code: () => `## Cheatsheet for Coding Assistants
+    code: () => `## Pollinations.AI Cheatsheet for Coding Assistants
 
 ### Image Generation API (Default model: 'flux')
 

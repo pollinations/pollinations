@@ -167,7 +167,7 @@ const callMeoow2 = async (prompt, safeParams) => {
       n: 1,
       size: `${safeParams.width}x${safeParams.height}`,
       response_format: 'url',
-      model: 'flux-pro',
+      model: safeParams.model === 'flux-pro' ? 'flux-pro' : 'flux-1.1-pro',
     };
 
     console.log("calling meoow-2", body);

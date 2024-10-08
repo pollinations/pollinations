@@ -284,21 +284,19 @@ download_image(image_url)
 # Using the pollinations pypi package
 
 ## pip install pollinations
+import pollinations
 
-import pollinations as ai
-
-model_obj = ai.Model()
-
-image = model_obj.generate(
-    prompt=f'${shorten(prompt)} {ai.realistic}',
-    model=ai.${model || "flux"},
-    width=${width},
-    height=${height},
-    seed=${seed}
+image_model = pollinations.image(
+    model = pollinations.${(model || "flux").replace(/-/g, "_")},
+    seed = ${seed},
+    width = ${width},
+    height = ${height},
 )
-image.save('image-output.jpg')
 
-print(image.url)
+image_model.generate(
+    prompt = "${shorten(prompt)}",
+    save = True,
+)
 `,
     language: "python"
   }

@@ -81,5 +81,9 @@ export function ModelInfo({ model, wasPimped, referrer }) {
     return renderModelInfo("Flux.Realism", "https://llmplayground.net/", null)
   }
 
+  if (model === "flux-cablyai") {
+    return renderModelInfo("CablyAI Pro", "https://cablyai.com/", null)
+  }
+
   return renderModelInfo("Unknown Model", "#", null)
 }

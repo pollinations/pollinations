@@ -100,6 +100,7 @@ export function ImageEditor({
               <MenuItem onClick={() => handleMenuClose("flux-realism")}>Flux-Realism</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux-anime")}>Flux-Anime</MenuItem>
               <MenuItem onClick={() => handleMenuClose("flux-3d")}>Flux-3D</MenuItem>
+              <MenuItem onClick={() => handleMenuClose("flux-cablyai")}>Flux-CablyAI</MenuItem>
               <MenuItem onClick={() => handleMenuClose("turbo")}>Turbo</MenuItem>
             </Menu>
           </Grid>

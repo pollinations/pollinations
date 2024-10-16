@@ -20,7 +20,7 @@
         },
         "repositoryUrl": {
             "url": "https://github.com/pollinations/pollinations",
-            "wellKnown": ""
+            "wellKnown": "https://github.com/pollinations/pollinations/.well-known/funding-manifest-urls"
         },
         "licenses": ["spdx:MIT"],
         "tags": ["ai", "generative-ai", "open-source", "creativity", "digital-twins", "api"]

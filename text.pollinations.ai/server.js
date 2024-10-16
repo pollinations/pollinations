@@ -346,7 +346,7 @@ app.post('/openai*', async (req, res) => {
     } else {
         await run();
     }
-}
+});
 
 const safeDecodeURIComponent = (str) => {
     try {

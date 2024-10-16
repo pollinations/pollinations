@@ -6,7 +6,7 @@
         "name": "Pollinations.AI",
         "email": "thomash@pollinations.ai",
         "phone": "",
-        "description": "Pollinations.AI is an open-source platform focused on democratizing generative AI for creative industries. We provide tools for generating images, audio, and digital twins, enabling artists, influencers, and developers to create and innovate. Our platform includes a free and open-source API that can be self-hosted.",
+        "description": "Pollinations.AI is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering a free and open-source API that users can also self-host.",
         "webpageUrl": {
             "url": "https://pollinations.ai"
         }
@@ -15,7 +15,7 @@
       {
         "guid": "pollinations-ai",
         "name": "Pollinations.AI",
-        "description": "An open-source platform for generative AI, focusing on image generation, audio processing, and digital twin creation. Our platform serves over 120,000 monthly active users and integrates with various open-source LLMs, bots, and communities. We offer a free and open-source API that users can also self-host.",
+        "description": "An open-source platform for generative AI, focusing on image generation. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering a free and open-source API that users can also self-host.",
         "webpageUrl": {
           "url": "https://pollinations.ai"
         },
@@ -31,7 +31,6 @@
           "generative-ai",
           "open-source",
           "creativity",
-          "digital-twins",
           "api"
         ]
       }
@@ -49,6 +48,12 @@
           "type": "payment-provider",
           "address": "https://paypal.me/pollinations",
           "description": "Send payments via PayPal."
+        },
+        {
+          "guid": "buymeacoffee",
+          "type": "payment-provider",
+          "address": "https://buymeacoffee.com/pollinations",
+          "description": "Support us by buying a coffee!"
         }
       ],
       "plans": [
@@ -62,7 +67,8 @@
           "frequency": "monthly",
           "channels": [
             "bank-transfer",
-            "paypal"
+            "paypal",
+            "buymeacoffee"
           ]
         },
         {
@@ -75,7 +81,8 @@
           "frequency": "monthly",
           "channels": [
             "bank-transfer",
-            "paypal"
+            "paypal",
+            "buymeacoffee"
           ]
         },
         {
@@ -88,7 +95,8 @@
           "frequency": "one-time",
           "channels": [
             "bank-transfer",
-            "paypal"
+            "paypal",
+            "buymeacoffee"
           ]
         }
       ],

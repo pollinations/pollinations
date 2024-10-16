@@ -1,25 +1,15 @@
 {
-    "id": 0,
-    "guid": "",
-    "version": "",
-    "url": "",
-    "meta": {},
-    "status": "",
-    "status_message": null,
-    "crawl_errors": 0,
-    "crawl_message": null,
-    "created_at": "0001-01-01T00:00:00Z",
-    "updated_at": "0001-01-01T00:00:00Z",
+    "version": "v1.0.0",
     "entity": {
-      "type": "organisation",
-      "role": "owner",
-      "name": "Pollinations.AI",
-      "email": "thomash@pollinations.ai",
-      "phone": "",
-      "description": "Pollinations.AI is an open-source platform focused on democratizing generative AI for creative industries. We provide tools for generating images, audio, and digital twins, enabling artists, influencers, and developers to create and innovate. Our platform includes a free and open-source API that can be self-hosted.",
-      "webpageUrl": {
-        "url": "https://pollinations.ai"
-      }
+        "type": "organisation",
+        "role": "owner",
+        "name": "Pollinations.AI",
+        "email": "thomash@pollinations.ai",
+        "phone": "",
+        "description": "Pollinations.AI is an open-source platform focused on democratizing generative AI for creative industries. We provide tools for generating images, audio, and digital twins, enabling artists, influencers, and developers to create and innovate. Our platform includes a free and open-source API that can be self-hosted.",
+        "webpageUrl": {
+            "url": "https://pollinations.ai"
+        }
     },
     "projects": [
       {

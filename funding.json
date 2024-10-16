@@ -5,72 +5,93 @@
         "role": "owner",
         "name": "Pollinations.AI",
         "email": "thomash@pollinations.ai",
+        "phone": "",
         "description": "Pollinations.AI is an open-source platform focused on democratizing generative AI for creative industries. We provide tools for generating images, audio, and digital twins, enabling artists, influencers, and developers to create and innovate. Our platform includes a free and open-source API that can be self-hosted.",
         "webpageUrl": {
-            "url": "https://pollinations.ai",
-            "wellKnown": ""
+            "url": "https://pollinations.ai"
         }
     },
-    "projects": [{
+    "projects": [
+      {
         "guid": "pollinations-ai",
         "name": "Pollinations.AI",
         "description": "An open-source platform for generative AI, focusing on image generation, audio processing, and digital twin creation. Our platform serves over 120,000 monthly active users and integrates with various open-source LLMs, bots, and communities. We offer a free and open-source API that users can also self-host.",
         "webpageUrl": {
-            "url": "https://pollinations.ai"
+          "url": "https://pollinations.ai"
         },
         "repositoryUrl": {
-            "url": "https://github.com/pollinations/pollinations",
-            "wellKnown": "https://github.com/pollinations/pollinations/blob/master/.well-known/funding-manifest-urls"
+          "url": "https://raw.githubusercontent.com/pollinations/pollinations",
+          "wellKnown": "https://raw.githubusercontent.com/pollinations/pollinations/refs/heads/master/.well-known/funding-manifest-urls"
         },
-        "licenses": ["spdx:MIT"],
-        "tags": ["ai", "generative-ai", "open-source", "creativity", "digital-twins", "api"]
-    }],
-    "funding": {
-        "channels": [
-            {
-                "guid": "bank-transfer",
-                "type": "bank",
-                "address": "",
-                "description": "Please contact us for bank transfer details."
-            },
-            {
-                "guid": "paypal",
-                "type": "payment-provider",
-                "address": "https://paypal.me/pollinations",
-                "description": "Send payments via PayPal."
-            }
+        "licenses": [
+          "spdx:MIT"
         ],
-        "plans": [
-            {
-                "guid": "infrastructure-support",
-                "status": "active",
-                "name": "Infrastructure Support",
-                "description": "Help cover our server and GPU infrastructure costs to keep Pollinations.AI free and accessible. Our monthly GPU costs are approximately $3000.",
-                "amount": 3000,
-                "currency": "USD",
-                "frequency": "monthly",
-                "channels": ["bank-transfer", "paypal"]
-            },
-            {
-                "guid": "developer-fund",
-                "status": "active",
-                "name": "Developer Fund",
-                "description": "Support our team in continuing to develop and improve Pollinations.AI. Our monthly developer costs are approximately $4000.",
-                "amount": 4000,
-                "currency": "USD",
-                "frequency": "monthly",
-                "channels": ["bank-transfer", "paypal"]
-            },
-            {
-                "guid": "open-source-contribution",
-                "status": "active",
-                "name": "Open Source Contribution",
-                "description": "Contribute any amount to support our open-source development efforts and help maintain our free, self-hostable API.",
-                "amount": 0,
-                "currency": "USD",
-                "frequency": "one-time",
-                "channels": ["bank-transfer", "paypal"]
-            }
+        "tags": [
+          "ai",
+          "generative-ai",
+          "open-source",
+          "creativity",
+          "digital-twins",
+          "api"
         ]
+      }
+    ],
+    "funding": {
+      "channels": [
+        {
+          "guid": "bank-transfer",
+          "type": "bank",
+          "address": "",
+          "description": "Please contact us for bank transfer details."
+        },
+        {
+          "guid": "paypal",
+          "type": "payment-provider",
+          "address": "https://paypal.me/pollinations",
+          "description": "Send payments via PayPal."
+        }
+      ],
+      "plans": [
+        {
+          "guid": "infrastructure-support",
+          "status": "active",
+          "name": "Infrastructure Support",
+          "description": "Help cover our server and GPU infrastructure costs to keep Pollinations.AI free and accessible. Our monthly GPU costs are approximately $3000.",
+          "amount": 3000,
+          "currency": "USD",
+          "frequency": "monthly",
+          "channels": [
+            "bank-transfer",
+            "paypal"
+          ]
+        },
+        {
+          "guid": "developer-fund",
+          "status": "active",
+          "name": "Developer Fund",
+          "description": "Support our team in continuing to develop and improve Pollinations.AI. Our monthly developer costs are approximately $4000.",
+          "amount": 4000,
+          "currency": "USD",
+          "frequency": "monthly",
+          "channels": [
+            "bank-transfer",
+            "paypal"
+          ]
+        },
+        {
+          "guid": "open-source-contribution",
+          "status": "active",
+          "name": "Open Source Contribution",
+          "description": "Contribute any amount to support our open-source development efforts and help maintain our free, self-hostable API.",
+          "amount": 0,
+          "currency": "USD",
+          "frequency": "one-time",
+          "channels": [
+            "bank-transfer",
+            "paypal"
+          ]
+        }
+      ],
+      "history": null
     }
-}
+  }

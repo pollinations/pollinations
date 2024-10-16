@@ -1,5 +1,6 @@
 import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
+import { imageGenerationPrompt } from './pollinationsPrompt.js';
 
 dotenv.config();
 
@@ -17,9 +18,13 @@ async function generateText(messages, { seed = null, jsonMode = false }) {
     // }
 
     // if json mode is activated and there is no system message, prepend the system message
-    if (jsonMode && !hasSystemMessage(messages)) {
-        messages = [{ role: 'system', content: 'Respond in simple json format' }, ...messages];
+    if (!hasSystemMessage(messages)) {
+        if (jsonMode)
+            messages = [{ role: 'system', content: 'Respond in simple json format' }, ...messages];
+        else
+            messages = [{ role: 'system', content: 'You are a helpful assistant.\n\n'+imageGenerationPrompt }, ...messages];
     }
+
 
     console.log("calling openai with messages", messages);
 

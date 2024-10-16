@@ -24,6 +24,11 @@ const port = process.env.PORT || 16385;
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
+// New route handler for root path
+app.get('/', (req, res) => {
+    res.redirect('https://chat.pollinations.ai');
+});
+
 const cacheDir = path.join(process.cwd(), '.cache');
 if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
@@ -454,6 +459,4 @@ app.use((req, res, next) => {
     next();
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+export default app; // Add this line to export the app instance

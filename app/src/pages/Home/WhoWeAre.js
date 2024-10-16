@@ -55,6 +55,11 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           to learn more.
         </p>
+        <p style={{ userSelect: "none" }}>
+          <StyledLink href="https://buymeacoffee.com/pollinations">
+            <b>BuyMeACoffee</b>
+          </StyledLink>
+        </p>
       </ContactWrapper>
     </Box>
   )

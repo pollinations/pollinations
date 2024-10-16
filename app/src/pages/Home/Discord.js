@@ -35,6 +35,9 @@ const DiscordSection = (props) => {
               Introduce our Discord channel and incitivate to join, make it just a few words. Don't cite Discord. In one sentence. Format with emojis. Use italics and bold to make the text more engaging.
             </EmojiRephrase>
           </Text>
+          <LinkStyle href="https://buymeacoffee.com/pollinations" style={{ zIndex: 10 }}>
+            <b>BuyMeACoffee</b>
+          </LinkStyle>
         </TextWithLogo>
         <br />
 

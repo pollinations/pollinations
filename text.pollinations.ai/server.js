@@ -1,8 +1,6 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
@@ -24,19 +22,7 @@ const port = process.env.PORT || 16385;
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
-const cacheDir = path.join(process.cwd(), '.cache');
-if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir, { recursive: true });
-}
-
 let cache = {};
-
-// Load cache from disk
-const cachePath = path.join(cacheDir, 'cache.json');
-if (fs.existsSync(cachePath)) {
-    const cacheData = fs.readFileSync(cachePath, 'utf8');
-    cache = JSON.parse(cacheData);
-}
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
@@ -209,10 +195,6 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
             throw error; // rethrow the error so the caller can handle it
         }
 
-        if (shouldCache) {
-            await saveCache();
-        }
-
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
         await sleep(1000); // ensures one ip can only make one request per second
@@ -364,30 +346,12 @@ app.post('/openai*', async (req, res) => {
     } else {
         await run();
     }
-});
-
-// Helper function to save cache to disk
-async function saveCache() {
-    const resolvedCache = {};
-    for (const [key, value] of Object.entries(cache)) {
-        try {
-            const resolvedValue = await value;
-            if (!(resolvedValue instanceof Error)) {
-                resolvedCache[key] = resolvedValue;
-            }
-        } catch (error) {
-            console.error(`Error resolving cache value for key: ${key}`, error.message);
-            console.error(error.stack); // Print stack trace
-        }
-    }
-    fs.writeFileSync(cachePath, JSON.stringify(resolvedCache), 'utf8');
 }
 
 const safeDecodeURIComponent = (str) => {
     try {
         return decodeURIComponent(str);
     } catch (error) {
-        c
         return str;
     }
 }

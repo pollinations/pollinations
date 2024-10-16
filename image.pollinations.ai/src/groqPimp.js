@@ -61,14 +61,20 @@ Respond only with the new prompt. Nothing Else.`
             cache: false
         });
 
+        const apiResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: body
+        });
+
+        if (apiResponse.status !== 200) {
+            throw new Error(`Error enhancing prompt: ${apiResponse.status}`);
+        }
+
         response = await Promise.race([
-            fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: body
-            }).then(res => res.text()),
+            apiResponse.text(),
             new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
         ]);
     } catch (error) {

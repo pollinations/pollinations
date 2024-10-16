@@ -1,0 +1,13 @@
+# GitHub Sponsors for Pollinations.AI
+# Pollinations.AI is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image. Our platform serves over 50,000 active users and generates more than 8 million images per month. We integrate with various open-source LLMs, bots, and communities, offering a free and open-source API that users can also self-host.
+github: [pollinations]
+
+# Support us via Buy Me a Coffee
+# Help cover our server and GPU infrastructure costs to keep Pollinations.AI free and accessible. Our monthly GPU costs are approximately $3000.
+buy_me_a_coffee: pollinations
+
+# Custom funding URLs
+# Send payments via PayPal to support our team in continuing to develop and improve Pollinations.AI. Our monthly developer costs are approximately $4000.
+custom: ["https://paypal.me/pollinations"]
+
+# Note: The 'paypal' property is not allowed in FUNDING.yml, so we use custom URLs instead.

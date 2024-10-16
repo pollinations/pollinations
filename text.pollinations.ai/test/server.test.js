@@ -30,3 +30,30 @@ test('POST /openai should handle a valid request', async t => {
     t.is(response.status, 200);
     t.truthy(response.body);
 });
+
+// New test for invalid POST request
+test('POST / should return 400 for invalid messages array', async t => {
+    const response = await request(app)
+        .post('/')
+        .send({ messages: 'invalid' });
+    t.is(response.status, 400);
+    t.is(response.text, 'Invalid messages array');
+});
+
+
+// New test for caching behavior
+test('POST / should cache responses', async t => {
+    const messages = [{ role: 'user', content: 'Hello' }];
+    const response1 = await request(app).post('/').send({ messages });
+    const response2 = await request(app).post('/').send({ messages });
+    t.is(response1.status, 200);
+    t.is(response2.status, 200);
+    t.is(response1.text, response2.text);
+});
+
+// // New test for SSE endpoint
+// test('GET /feed should establish SSE connection', async t => {
+//     const response = await request(app).get('/feed');
+//     t.is(response.status, 200);
+//     t.is(response.headers['content-type'], 'text/event-stream');
+// });

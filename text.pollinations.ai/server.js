@@ -16,6 +16,7 @@ import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
+import { availableModels } from './availableModels.js';
 const app = express();
 const port = process.env.PORT || 16385;
 
@@ -59,74 +60,6 @@ export function getIp(req) {
     const ipSegments = ip.split('.').slice(0, 3).join('.');
     return ipSegments;
 }
-
-const availableModels = [
-    {
-        name: 'openai',
-        type: 'chat',
-        censored: true,
-        description: 'OpenAI GPT-4o',
-        baseModel: true,
-    },
-    {
-        name: 'mistral',
-        type: 'chat',
-        censored: false,
-        description: 'Mistral Nemo',
-        baseModel: true,
-    },
-    {
-        name: 'mistral-large',
-        type: 'chat',
-        censored: false,
-        description: 'Mistral Large (v2)',
-        baseModel: true,
-    },
-    {
-        name: 'llama',
-        type: 'completion',
-        censored: true,
-        description: 'Llama 3.1',
-        baseModel: true,
-    },
-    {
-        name: 'karma',
-        type: 'completion',
-        censored: true,
-        description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)',
-        baseModel: false,
-    },
-    {
-        name: 'command-r',
-        type: 'chat',
-        censored: false,
-        description: 'Command-R',
-        baseModel: false,
-    },
-    {
-        name: 'unity',
-        type: 'chat',
-        censored: false,
-        description: 'Unity with Mistral Large by @gfourteen',
-        baseModel: false,
-    },
-    {
-        name: 'midijourney',
-        type: 'chat',
-        censored: true,
-        description: 'Midijourney musical transformer',
-        baseModel: false,
-    },
-    {
-        name: 'rtist',
-        type: 'chat',
-        censored: true,
-        description: 'Rtist image generator by @bqrio',
-        baseModel: false,
-    }
-    // { name: 'claude', type: 'chat', censored: true }
-    // { name: 'sur', type: 'chat', censored: true }
-];
 
 // GET /models request handler
 app.get('/models', (req, res) => {

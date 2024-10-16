@@ -53,18 +53,10 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
 
   if (enhance) {
-    try {
-      console.log("pimping prompt", prompt, seed);
-      const response = await pimpPrompt(prompt, seed);
-      if (response.status !== 200) {
-        throw new Error(`Error enhancing prompt: ${response.status}`);
-      }
-      prompt = await response.text();
-      console.log(`Pimped prompt: ${prompt}`);
-    } catch (error) {
-      console.error("Error enhancing prompt:", error);
-      prompt = originalPrompt;
-    }
+
+    console.log("pimping prompt", prompt, seed);
+    prompt = await pimpPrompt(prompt, seed);
+    console.log(`Pimped prompt: ${prompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });

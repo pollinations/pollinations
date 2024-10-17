@@ -5,6 +5,7 @@ import InstagramLogo from '../assets/icons/instagram.png'
 import TwitterLogo from '../assets/icons/twitter.png'
 import GithubLogo from '../assets/icons/github.png'
 import TikTokLogo from '../assets/icons/tiktok.png'
+import BuyMeACoffeeLogo from '../assets/icons/buymeacoffee.png' // P91e9
 
 export const SOCIAL_LINKS = {
   discord: {
@@ -43,4 +44,10 @@ export const SOCIAL_LINKS = {
     icon_img: TikTokLogo,
     url: 'https://tiktok.com/@pollinations.ai'
   },
+  buymecoffee: { // P91e9
+    label: 'BuyMeACoffee', // P91e9
+    icon: ICONS.buymeacoffee, // P91e9
+    icon_img: BuyMeACoffeeLogo, // P91e9
+    url: 'https://buymeacoffee.com/pollinations' // P91e9
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext, memo } from "react"
+import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
 import { Grid, Box, useMediaQuery } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles" // Import makeStyles
 import { useFeedLoader } from "./useFeedLoader"
@@ -110,7 +110,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
     setToggleValue(isStopped ? "edit" : "feed")
   }, [isStopped])
 
-  const handleParamChange = (param, value) => {
+  const handleParamChange = useCallback((param, value) => {
     setIsInputChanged(true)
     if (!isStopped) {
       stop(true)
@@ -119,9 +119,9 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
       ...prevParams,
       [param]: value,
     }))
-  }
+  }, [isStopped, stop])
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
     const imageURL = getImageURL(currentImageParams)
     console.log("Submitting with imageParams:", currentImageParams)
@@ -129,7 +129,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
       ...currentImageParams,
       imageURL,
     })
-  }
+  }, [updateImage])
 
   const handleButtonClick = () => {
     if (!isInputChanged) {

@@ -1,11 +1,11 @@
-import React from "react"
+import React, { memo } from "react"
 import { Typography } from "@material-ui/core"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../../../components/PromptTooltip"
 import styled from '@emotion/styled';
 
 
-export function ImageDisplay({ image }) {
+export const ImageDisplay = memo(function ImageDisplay({ image }) {
     return (
         <ImageContainer
             style={{
@@ -28,7 +28,7 @@ export function ImageDisplay({ image }) {
             )}
         </ImageContainer>
     )
-}
+})
 
 
 const ImageStyle = styled.img`

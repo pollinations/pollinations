@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react"
+import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
 import { Grid, Box, useMediaQuery } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles" // Import makeStyles
 import { useFeedLoader } from "./useFeedLoader"
@@ -72,11 +72,11 @@ const useStyles = makeStyles((theme) => ({
   },
 }))
 
-export function GenerativeImageFeed() {
+export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   const classes = useStyles() // Use the useStyles hook
   const [lastImage, setLastImage] = useState(null)
   const [imageParams, setImageParams] = useState({})
-  const imageParamsRef = useRef(imageParams)
+  const imageParamsRef = useRef(imageParams) // Use useRef for imageParamsRef
   const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow()
   const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
@@ -110,7 +110,7 @@ export function GenerativeImageFeed() {
     setToggleValue(isStopped ? "edit" : "feed")
   }, [isStopped])
 
-  const handleParamChange = (param, value) => {
+  const handleParamChange = useCallback((param, value) => {
     setIsInputChanged(true)
     if (!isStopped) {
       stop(true)
@@ -119,9 +119,9 @@ export function GenerativeImageFeed() {
       ...prevParams,
       [param]: value,
     }))
-  }
+  }, [isStopped, stop])
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
     const imageURL = getImageURL(currentImageParams)
     console.log("Submitting with imageParams:", currentImageParams)
@@ -129,7 +129,7 @@ export function GenerativeImageFeed() {
       ...currentImageParams,
       imageURL,
     })
-  }
+  }, [updateImage])
 
   const handleButtonClick = () => {
     if (!isInputChanged) {
@@ -240,7 +240,7 @@ export function GenerativeImageFeed() {
       )}
     </GenerativeImageURLContainer>
   )
-}
+})
 
 function getImageURL(newImage) {
   let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`
@@ -259,4 +259,3 @@ function getImageURL(newImage) {
   }
   return imageURL
 }
-

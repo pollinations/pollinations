@@ -1,5 +1,5 @@
 // ImageEditor.js
-import React, { useState } from "react"
+import React, { useState, memo } from "react"
 import {
   Box,
   Paper,
@@ -19,7 +19,7 @@ import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { CustomTooltip } from "../../../components/CustomTooltip"
 import discordLogo from "../../../assets/icons/discord.png" // Corrected import for the Discord logo
 
-export function ImageEditor({
+export const ImageEditor = memo(function ImageEditor({
   image,
   handleParamChange,
   handleFocus,
@@ -234,4 +234,4 @@ export function ImageEditor({
       </Grid>
     </Box>
   )
-}
+})

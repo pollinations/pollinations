@@ -18,7 +18,6 @@ import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 const app = express();
-const port = process.env.PORT || 16385;
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());

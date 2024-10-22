@@ -18,7 +18,6 @@ import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 const app = express();
-const port = process.env.PORT || 16385;
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
@@ -127,9 +126,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
             response = await responsePromise;
         } catch (error) {
             console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
-            if (shouldCache) {
-                delete cache[cacheKey];
-            }
+            delete cache[cacheKey];
             throw error; // rethrow the error so the caller can handle it
         }
 

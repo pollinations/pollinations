@@ -127,9 +127,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
             response = await responsePromise;
         } catch (error) {
             console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
-            if (shouldCache) {
-                delete cache[cacheKey];
-            }
+            delete cache[cacheKey];
             throw error; // rethrow the error so the caller can handle it
         }
 

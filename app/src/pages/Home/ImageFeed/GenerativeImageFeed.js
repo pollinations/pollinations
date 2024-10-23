@@ -179,12 +179,12 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             <Box className={classes.boxRelative}>
               <Box className={classes.boxCenter}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-                <Box mx={2} /> {/* Add horizontal space */}
+                <Box mx={2} /> 
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
           </Grid>
-          {/* <Grid item xs={12}>
+          <Grid item xs={12}>
             <Box className={classes.boxColumn}>
               <Box className={classes.boxFlex}>
                 <TextPrompt
@@ -206,7 +206,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
                 </Box>
               )}
             </Box>
-          </Grid> */}
+          </Grid>
 
           {toggleValue === "feed" && (
             <Grid item xs={12} className={classes.gridCenter}>

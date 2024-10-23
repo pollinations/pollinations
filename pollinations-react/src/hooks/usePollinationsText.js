@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import memoize from 'lodash.memoize';
 
 /**
@@ -25,18 +25,15 @@ const usePollinationsText = (prompt, options = {}) => {
     // Ref to track the current fetch request
     const currentFetchRef = useRef(Promise.resolve());
 
-    // Effect to fetch or retrieve memoized text
-    useEffect(() => {
-        if (prompt === null) return;
-
-        if (loadNull) setText(null);
-
-        // Prepare the request body for the API call
+    // Memoized request body
+    const requestBody = useMemo(() => {
         const messages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
         messages.push({ role: "user", content: prompt });
-        const requestBody = { messages, seed, model, jsonMode };
+        return { messages, seed, model, jsonMode };
+    }, [prompt, systemPrompt, seed, model, jsonMode]);
 
-        // Queue the fetch request
+    // Memoized fetch function
+    const fetchText = useCallback(() => {
         currentFetchRef.current = currentFetchRef.current
             .then(() => memoizedFetchPollinationsText(requestBody))
             .then(cleanedData => {
@@ -46,8 +43,14 @@ const usePollinationsText = (prompt, options = {}) => {
                 console.error("Error in usePollinationsText:", error);
                 setText(`An error occurred while generating text: ${error.message}. Please try again.`);
             });
+    }, [requestBody]);
 
-    }, [prompt, systemPrompt, seed, model, jsonMode]);
+    // Effect to fetch or retrieve memoized text
+    useEffect(() => {
+        if (prompt === null) return;
+        if (loadNull) setText(null);
+        fetchText();
+    }, [fetchText, loadNull, prompt]);
 
     return text;
 };

@@ -45,12 +45,12 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                     console.error("Error parsing response:", error);
                     assistantMessage = `Sorry, I encountered an error while processing the response: ${error.message}`;
                 }
-                setMessages([...updatedMessages, { role: "assistant", content: assistantMessage }]);
+                setMessages(prevMessages => [...prevMessages, { role: "assistant", content: assistantMessage }]);
             })
             .catch((error) => {
                 console.error("Error fetching chat:", error);
                 const errorMessage = `I'm sorry, but I encountered an error while trying to respond: ${error.message}. Please try again later.`;
-                setMessages([...updatedMessages, { role: "assistant", content: errorMessage }]);
+                setMessages(prevMessages => [...prevMessages, { role: "assistant", content: errorMessage }]);
             });
     }, [messages, jsonMode, seed, model]);
 

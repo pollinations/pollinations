@@ -21,7 +21,7 @@ export default function Home() {
         {/* <ImageURLHeading>Text Feed</ImageURLHeading>
         <TextFeed /> 
         <TopBand /> */}
-        <GenerativeImageFeed />
+        {/* <GenerativeImageFeed /> */}
         <TopBand />
         <ProjectsSection />
         <TopBand />

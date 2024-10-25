@@ -1,6 +1,7 @@
 import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { imageGenerationPrompt } from './pollinationsPrompt.js';
+import { searchToolDefinition, performWebSearch } from './tools/searchTool.js';
 
 dotenv.config();
 
@@ -10,39 +11,60 @@ const openai = new AzureOpenAI({
     apiKey: process.env.AZURE_OPENAI_API_KEY,
 });
 
-async function generateText(messages, { seed = null, jsonMode = false }) {
-    // Check if the total character count of the stringified input is greater than 60000
-    // const stringifiedMessages = JSON.stringify(messages);
-    // if (stringifiedMessages.length > 60000) {
-    //     throw new Error('Input messages exceed the character limit of 60000.');
-    // }
-
-    // if json mode is activated and there is no system message, prepend the system message
+export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
-        if (jsonMode)
-            messages = [{ role: 'system', content: 'Respond in simple json format' }, ...messages];
-        else
-            messages = [{ role: 'system', content: 'You are a helpful assistant.\n\n'+imageGenerationPrompt }, ...messages];
+        const systemContent = options.jsonMode
+            ? 'Respond in simple json format'
+            : 'You are a helpful assistant.\n\n' + imageGenerationPrompt();
+        messages = [{ role: 'system', content: systemContent }, ...messages];
     }
-
 
     console.log("calling openai with messages", messages);
 
-
-    const result = await openai.chat.completions.create({
+    const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
-        seed,
-        response_format: jsonMode ? { type: 'json_object' } : undefined
+        seed: options.seed,
+        response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+        tools: performSearch ? [searchToolDefinition] : undefined,
+        tool_choice: performSearch ? "auto" : undefined
     });
 
-    console.log("Got result for openai", JSON.stringify(result, null, 2));
+    const responseMessage = completion.choices[0].message;
 
-    return result.choices[0]?.message?.content;
+    // Handle tool calls if present
+    if (responseMessage.tool_calls) {
+        const toolCalls = responseMessage.tool_calls;
+        messages.push(responseMessage);
+
+        for (const toolCall of toolCalls) {
+            if (toolCall.function.name === 'web_search') {
+                const args = JSON.parse(toolCall.function.arguments);
+                const searchResponse = await performWebSearch(args);
+                
+                messages.push({
+                    tool_call_id: toolCall.id,
+                    role: "tool",
+                    name: toolCall.function.name,
+                    content: searchResponse
+                });
+            }
+        }
+
+        // Get final response after tool use
+        const secondResponse = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages,
+            seed: options.seed,
+            response_format: options.jsonMode ? { type: 'json_object' } : undefined
+        });
+
+        return secondResponse.choices[0].message.content;
+    }
+
+    return responseMessage.content;
 }
 
 function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
 }
-
-export default generateText;

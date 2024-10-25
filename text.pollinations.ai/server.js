@@ -2,7 +2,6 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
-import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextKarma from './generateTextKarma.js';
@@ -17,6 +16,7 @@ import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
+import { generateText } from './generateTextOpenai.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -159,7 +159,7 @@ function getRequestData(req, isPost = false) {
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
 
-    const messages = isPost ? data.messages : [{ role: 'user', content: req.params.prompt }];
+    const messages = isPost ? data.messages : [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -174,9 +174,8 @@ function getRequestData(req, isPost = false) {
         cache: isPost ? data.cache !== false : true // Default to true if not specified
     };
 }
-
 // GET request handler
-app.get('/:prompt', async (req, res) => {
+app.get('/*', async (req, res) => {
     const cacheKeyData = getRequestData(req);
     const ip = getIp(req);
     const queue = getQueue(ip);
@@ -327,6 +326,8 @@ async function generateTextBasedOnModel(messages, options) {
         response = await midijourney(messages, options);
     } else if (model === 'rtist') {
         response = await rtist(messages, options);
+    } else if (model === 'searchgpt') { // New model for web search
+        response = await generateText(messages, options, true);
     } else {
         response = await generateTextWithMistralFallback(messages, options);
     }
@@ -352,5 +353,6 @@ app.use((req, res, next) => {
     console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
     next();
 });
+
 
 export default app; // Add this line to export the app instance

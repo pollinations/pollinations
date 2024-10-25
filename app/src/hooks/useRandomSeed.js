@@ -10,8 +10,15 @@ const useRandomSeed = () => {
 
         const changeSeed = () => {
             setSeed(Math.floor(Math.random() * SEED_RANGE));
-            const randomDelay = Math.floor(Math.random() * DELAY_RANGE);
-            timeoutId = setTimeout(changeSeed, randomDelay);
+            const now = new Date();
+            const isWithinThreeMinutesAfterMidnight = now.getHours() === 0 && now.getMinutes() < 3;
+
+            if (isWithinThreeMinutesAfterMidnight) {
+                timeoutId = setTimeout(changeSeed, 1000);
+            } else {
+                const randomDelay = Math.floor(Math.random() * DELAY_RANGE);
+                timeoutId = setTimeout(changeSeed, randomDelay);
+            }
         };
 
         timeoutId = setTimeout(changeSeed, Math.floor(Math.random() * 10001) + 2000);

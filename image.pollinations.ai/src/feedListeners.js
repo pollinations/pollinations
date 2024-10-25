@@ -24,7 +24,7 @@ export const registerFeedListener = async (req, res) => {
   });
 
   for (const lastState of lastStates) {
-    await sendToListener(res, lastState, req.query.nsfw === 'true');
+    await sendToListener(res, lastState, req.query?.nsfw === 'true');
   }
 
 };

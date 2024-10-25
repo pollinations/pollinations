@@ -61,6 +61,13 @@ export const availableModels = [
         censored: true,
         description: 'Rtist image generator by @bqrio',
         baseModel: false,
+    },
+    {
+        name: 'searchgpt',
+        type: 'chat',
+        censored: true,
+        description: 'SearchGPT with realtime news and web search',
+        baseModel: false,
     }
     // { name: 'claude', type: 'chat', censored: true }
     // { name: 'sur', type: 'chat', censored: true }

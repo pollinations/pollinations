@@ -2,7 +2,6 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
-import generateText from './generateTextOpenai.js';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextLlama from './generateTextLlama.js';
 import generateTextKarma from './generateTextKarma.js';
@@ -17,6 +16,7 @@ import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
+import { generateTextWithSearch, generateTextBase } from './generateTextOpenai.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -327,6 +327,8 @@ async function generateTextBasedOnModel(messages, options) {
         response = await midijourney(messages, options);
     } else if (model === 'rtist') {
         response = await rtist(messages, options);
+    } else if (model === 'searchgpt') { // New model for web search
+        response = await generateTextWithSearch(messages, options);
     } else {
         response = await generateTextWithMistralFallback(messages, options);
     }

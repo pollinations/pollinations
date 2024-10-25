@@ -36,15 +36,16 @@ export async function performWebSearch({ query, num_results = 20 }) {
             params: { q: query, count: num_results },
             headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY }
         });
-
-        console.log("Bing search response", JSON.stringify(response.data, null, 2));
-
         const results = response.data.webPages.value
             // .slice(0, Math.min(num_results, 20))
             .map(result => ({
                 title: result.name,
                 snippet: result.snippet,
-                url: result.url
+                url: result.url,
+                published: result.datePublishedDisplayText,
+                crawled: result.dateLastCrawled,
+                publisher: result.publisher,
+                thumbnailUrl: result.thumbnailUrl
             }));
         console.log("Search results", JSON.stringify(results, null, 2));
         return JSON.stringify(results);

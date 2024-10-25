@@ -68,7 +68,14 @@ export const availableModels = [
         censored: true,
         description: 'SearchGPT with realtime news and web search',
         baseModel: false,
-    }
+    },
     // { name: 'claude', type: 'chat', censored: true }
     // { name: 'sur', type: 'chat', censored: true }
+    {
+        name: 'evil',
+        type: 'chat',
+        censored: false,
+        description: 'Evil Mode - Experimental',
+        baseModel: false,
+    }
 ];

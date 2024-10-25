@@ -1,5 +1,8 @@
 
-export const imageGenerationPrompt = ``;
+export const imageGenerationPrompt = () => `
+# Date
+Today is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
+`;
 // `## Image generation (only if the user asks for an image)
 
 // If the user asks to create an image you will create a prompt suitable for an AI image generator. 

@@ -15,7 +15,7 @@ export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'
-            : 'You are a helpful assistant.\n\n' + imageGenerationPrompt;
+            : 'You are a helpful assistant.\n\n' + imageGenerationPrompt();
         messages = [{ role: 'system', content: systemContent }, ...messages];
     }
 

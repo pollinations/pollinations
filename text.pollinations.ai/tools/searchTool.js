@@ -10,7 +10,7 @@ export const searchToolDefinition = {
     type: "function",
     function: {
         name: "web_search",
-        description: "Search the web for current information about a topic",
+        description: "Search the web for current information about a topic. Try to get as many results as possible (minimum 20, maximum 100).",
         parameters: {
             type: "object",
             properties: {
@@ -20,8 +20,8 @@ export const searchToolDefinition = {
                 },
                 num_results: {
                     type: "number",
-                    description: "Number of results to return (max 10)",
-                    default: 3
+                    description: "Number of results to return (min 20, max 100)",
+                    default: 20
                 }
             },
             required: ["query"]
@@ -29,16 +29,18 @@ export const searchToolDefinition = {
     }
 };
 
-export async function performWebSearch({ query, num_results = 3 }) {
+export async function performWebSearch({ query, num_results = 20 }) {
     try {
-        console.log("Performing web search with query", query);
+        console.log("Performing web search with query", query, "and num_results", num_results);
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
-            params: { q: query },
+            params: { q: query, count: num_results },
             headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY }
         });
 
+        console.log("Bing search response", JSON.stringify(response.data, null, 2));
+
         const results = response.data.webPages.value
-            .slice(0, Math.min(num_results, 10))
+            // .slice(0, Math.min(num_results, 20))
             .map(result => ({
                 title: result.name,
                 snippet: result.snippet,

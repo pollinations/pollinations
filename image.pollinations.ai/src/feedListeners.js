@@ -15,7 +15,7 @@ export const registerFeedListener = async (req, res) => {
   });
 
   // add listener to feedListeners
-  feedListeners = [...feedListeners, { res, nsfw: req.query.nsfw === 'true' }];
+  feedListeners = [...feedListeners, { res, nsfw: req.query?.nsfw === 'true' }];
 
   // remove listener when connection closes
   req.on('close', () => {

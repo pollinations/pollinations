@@ -1,5 +1,6 @@
 let feedListeners = [];
 let lastStates = [];
+
 // create a server sent event stream
 export const registerFeedListener = async (req, res) => {
   // Set CORS headers
@@ -14,16 +15,19 @@ export const registerFeedListener = async (req, res) => {
   });
 
   // add listener to feedListeners
-  feedListeners = [...feedListeners, res];
+  feedListeners = [...feedListeners, { res, nsfw: req.query?.nsfw === 'true' }];
 
   // remove listener when connection closes
   req.on('close', () => {
     // remove listener from feedListeners
-    feedListeners = feedListeners.filter(listener => listener !== res);
+    feedListeners = feedListeners.filter(listener => listener.res !== res);
   });
 
-  for (const lastState of lastStates) {
-    await sendToListener(res, lastState);
+  const pastResults = parseInt(req.query?.past_results) || 20;
+  const statesToSend = lastStates.slice(-pastResults);
+
+  for (const lastState of statesToSend) {
+    await sendToListener(res, lastState, req.query?.nsfw === 'true');
   }
 
 };
@@ -31,12 +35,13 @@ export const registerFeedListener = async (req, res) => {
 export const sendToFeedListeners = (data, options = {}) => {
   if (options.saveAsLastState) {
     lastStates.push(data);
-    lastStates = lastStates.slice(-20);
   }
-  feedListeners.forEach(listener => sendToListener(listener, data));
+  feedListeners.forEach(listener => sendToListener(listener.res, data, listener.nsfw));
 };
 
-function sendToListener(listener, data) {
+function sendToListener(listener, data, nsfw) {
+  if (!nsfw && (data?.nsfw || data?.isChild)) return;
+  console.log("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 

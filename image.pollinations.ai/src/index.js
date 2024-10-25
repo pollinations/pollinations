@@ -137,7 +137,7 @@ const checkCacheAndGenerate = async (req, res) => {
       const ip = getIp(req);
 
       const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-      sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
+      // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
       let queueExisted = false;
       if (!ipQueue[ip]) {

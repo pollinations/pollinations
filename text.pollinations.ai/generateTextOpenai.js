@@ -2,6 +2,7 @@ import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { imageGenerationPrompt } from './pollinationsPrompt.js';
 import { searchToolDefinition, performWebSearch } from './tools/searchTool.js';
+import { performWebScrape, scrapeToolDefinition } from './tools/scrapeTool.js';
 
 dotenv.config();
 
@@ -21,19 +22,18 @@ export async function generateText(messages, options, performSearch = false) {
 
     console.log("calling openai with messages", messages);
 
-    const completion = await openai.chat.completions.create({
+    let completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        tools: performSearch ? [searchToolDefinition] : undefined,
+        tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
         tool_choice: performSearch ? "auto" : undefined
     });
 
-    const responseMessage = completion.choices[0].message;
+    let responseMessage = completion.choices[0].message;
 
-    // Handle tool calls if present
-    if (responseMessage.tool_calls) {
+    while (responseMessage.tool_calls) {
         const toolCalls = responseMessage.tool_calls;
         messages.push(responseMessage);
 
@@ -48,18 +48,29 @@ export async function generateText(messages, options, performSearch = false) {
                     name: toolCall.function.name,
                     content: searchResponse
                 });
+            } else if (toolCall.function.name === 'web_scrape') {
+                const args = JSON.parse(toolCall.function.arguments);
+                const scrapeResponse = await performWebScrape(args);
+                
+                messages.push({
+                    tool_call_id: toolCall.id,
+                    role: "tool",
+                    name: toolCall.function.name,
+                    content: scrapeResponse
+                });
             }
         }
 
-        // Get final response after tool use
-        const secondResponse = await openai.chat.completions.create({
+        // Get next response after tool use
+        completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages,
             seed: options.seed,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined
+            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+            tools: [searchToolDefinition, scrapeToolDefinition],
+            tool_choice: "auto"
         });
-
-        return secondResponse.choices[0].message.content;
+        responseMessage = completion.choices[0].message;
     }
 
     return responseMessage.content;

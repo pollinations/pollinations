@@ -20,7 +20,9 @@
     "express": "^4.20.0",
     "express-rate-limit": "^7.4.0",
     "openai": "^4.58.2",
-    "p-queue": "^8.0.1"
+    "p-queue": "^8.0.1",
+    "puppeteer": "^23.6.0",
+    "turndown": "^7.2.0"
   },
   "devDependencies": {
     "ava": "^6.1.3",

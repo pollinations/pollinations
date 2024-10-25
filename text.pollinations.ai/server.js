@@ -16,7 +16,7 @@ import PQueue from 'p-queue';
 import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
-import { generateTextWithSearch, generateTextBase } from './generateTextOpenai.js';
+import { generateText } from './generateTextOpenai.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -328,7 +328,7 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'rtist') {
         response = await rtist(messages, options);
     } else if (model === 'searchgpt') { // New model for web search
-        response = await generateTextWithSearch(messages, options);
+        response = await generateText(messages, options, true);
     } else {
         response = await generateTextWithMistralFallback(messages, options);
     }

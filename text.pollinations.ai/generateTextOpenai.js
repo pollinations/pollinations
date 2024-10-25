@@ -11,7 +11,7 @@ const openai = new AzureOpenAI({
     apiKey: process.env.AZURE_OPENAI_API_KEY,
 });
 
-async function generateTextBase(messages, options, performSearch = false) {
+export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'
@@ -67,12 +67,4 @@ async function generateTextBase(messages, options, performSearch = false) {
 
 function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
-}
-
-export async function generateText(messages, options) {
-    return generateTextBase(messages, options, false);
-}
-
-export async function generateTextWithSearch(messages, options) {
-    return generateTextBase(messages, options, true);
 }

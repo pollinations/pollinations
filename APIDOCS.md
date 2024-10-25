@@ -26,6 +26,11 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 List Models: `GET https://text.pollinations.ai/models`
 
+### Feed Endpoints
+
+- Image Feed: `GET https://image.pollinations.ai/feed` - SSE stream of user-generated images.
+- Text Feed: `GET https://text.pollinations.ai/feed` - SSE stream of user-generated text.
+
 *\* required parameter*
 
 ### React Hooks (`npm install @pollinations/react`)
@@ -54,7 +59,7 @@ Docs: https://pollinations.ai/react-hooks
 **Parameters:**
 - prompt* (required): Text description of the image you want to generate. Should be URL-encoded.
 - model: Model to use for generation. See https://image.pollinations.ai/models for available models.
-- seed: Seed for reproducible results. Use -1 for random.
+- seed: Seed for reproducible results.
 - width: Width of the generated image. Default: 1024
 - height: Height of the generated image. Default: 1024
 - nologo: Set to 'true' to turn off the rendering of the logo. Default: false
@@ -77,7 +82,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 **Parameters:**
 - prompt* (required): Text prompt for the AI to respond to. Should be URL-encoded.
 - model: Model to use for text generation. Options: 'openai', 'mistral'. See https://text.pollinations.ai/models for available models.
-- seed: Seed for reproducible results. Use -1 for random.
+- seed: Seed for reproducible results.
 - json: Set to 'true' to receive response in JSON format.
 - system: System prompt to set the behavior of the AI. Should be URL-encoded.
 
@@ -114,7 +119,7 @@ https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=
 ```python
 import requests
 
-def download_image(prompt, width=768, height=768, model='flux', seed=-1):
+def download_image(prompt, width=768, height=768, model='flux', seed=None):
     url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&seed={seed}"
     response = requests.get(url)
     with open('generated_image.jpg', 'wb') as file:

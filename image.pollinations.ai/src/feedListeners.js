@@ -23,7 +23,10 @@ export const registerFeedListener = async (req, res) => {
     feedListeners = feedListeners.filter(listener => listener.res !== res);
   });
 
-  for (const lastState of lastStates) {
+  const pastResults = parseInt(req.query?.past_results) || 20;
+  const statesToSend = lastStates.slice(-pastResults);
+
+  for (const lastState of statesToSend) {
     await sendToListener(res, lastState, req.query?.nsfw === 'true');
   }
 
@@ -32,7 +35,6 @@ export const registerFeedListener = async (req, res) => {
 export const sendToFeedListeners = (data, options = {}) => {
   if (options.saveAsLastState) {
     lastStates.push(data);
-    lastStates = lastStates.slice(-20);
   }
   feedListeners.forEach(listener => sendToListener(listener.res, data, listener.nsfw));
 };

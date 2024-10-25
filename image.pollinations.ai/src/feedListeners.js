@@ -38,7 +38,8 @@ export const sendToFeedListeners = (data, options = {}) => {
 };
 
 function sendToListener(listener, data, nsfw) {
-  if (!nsfw && data.nsfw) return;
+  if (!nsfw && data?.nsfw) return;
+  console.log("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 

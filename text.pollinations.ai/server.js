@@ -353,4 +353,28 @@ app.use((req, res, next) => {
     next();
 });
 
+// New POST endpoint for text generation with search
+app.post('/generate-text-with-search', async (req, res) => {
+    if (!req.body.messages || !Array.isArray(req.body.messages)) {
+        console.log('Invalid messages array');
+        return res.status(400).send('Invalid messages array');
+    }
+
+    const cacheKeyData = getRequestData(req, true);
+    const ip = getIp(req);
+    const queue = getQueue(ip);
+    const run = async () => {
+        try {
+            const response = await generateTextWithSearch(cacheKeyData.messages, cacheKeyData);
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.json({ content: response });
+        } catch (error) {
+            console.error(`Error generating text with search`, error.message);
+            res.status(500).send(error.message);
+        }
+    };
+
+    await queue.add(run);
+});
+
 export default app; // Add this line to export the app instance

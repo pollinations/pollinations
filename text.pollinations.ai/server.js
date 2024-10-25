@@ -17,6 +17,7 @@ import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
+import evilPrompt from './personas/evil.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -39,6 +40,8 @@ const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral)
 const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextClaude);
 // Create custom instance of Rtist
 const rtist = wrapModelWithContext(rtistPrompt, generateText);
+// Create custom instance of Evil backed by Command-R
+const evilCommandR = wrapModelWithContext(evilPrompt, generateTextCommandR);
 
 app.set('trust proxy', true);
 
@@ -328,6 +331,8 @@ async function generateTextBasedOnModel(messages, options) {
         response = await rtist(messages, options);
     } else if (model === 'searchgpt') { // New model for web search
         response = await generateText(messages, options, true);
+    } else if (model === 'evil') {
+        response = await evilCommandR(messages, options);
     } else {
         response = await generateTextWithMistralFallback(messages, options);
     }

@@ -4,12 +4,12 @@
 cd /home/ubuntu/pollinations/image_gen_dmd2/
 
 # if venv not found, create it
-if [ ! -d "venv" ]; then
-    python3 -m venv venv
+if [ ! -d "venv2" ]; then
+    python3 -m venv venv2
 fi
 
 # activate venv
-source venv/bin/activate
+source venv2/bin/activate
 
 # install requirements
 pip install -r requirements.txt

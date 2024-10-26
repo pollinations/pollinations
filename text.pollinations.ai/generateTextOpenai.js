@@ -22,16 +22,24 @@ export async function generateText(messages, options, performSearch = false) {
 
     console.log("calling openai with messages", messages);
 
-    let completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages,
-        seed: options.seed,
-        response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
-        tool_choice: performSearch ? "auto" : undefined
-    });
+    let completion;
+    let responseMessage;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    let responseMessage = completion.choices[0].message;
+    do {
+        completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages,
+            seed: options.seed + attempts, // Modify seed on each attempt
+            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+            tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
+            tool_choice: performSearch ? "auto" : undefined
+        });
+
+        responseMessage = completion.choices[0].message;
+        attempts++;
+    } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
 
     while (responseMessage.tool_calls) {
         const toolCalls = responseMessage.tool_calls;
@@ -62,15 +70,19 @@ export async function generateText(messages, options, performSearch = false) {
         }
 
         // Get next response after tool use
-        completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages,
-            seed: options.seed,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-            tools: [searchToolDefinition, scrapeToolDefinition],
-            tool_choice: "auto"
-        });
-        responseMessage = completion.choices[0].message;
+        attempts = 0;
+        do {
+            completion = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages,
+                seed: options.seed + attempts,
+                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+                tools: [searchToolDefinition, scrapeToolDefinition],
+                tool_choice: "auto"
+            });
+            responseMessage = completion.choices[0].message;
+            attempts++;
+        } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
     }
 
     return responseMessage.content;

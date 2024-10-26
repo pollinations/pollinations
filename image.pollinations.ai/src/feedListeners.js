@@ -1,8 +1,13 @@
+import { parse } from 'url';
+
 let feedListeners = [];
 let lastStates = [];
 
 // create a server sent event stream
 export const registerFeedListener = async (req, res) => {
+  // Parse the URL to extract query parameters
+  const { query } = parse(req.url, true);
+
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -15,7 +20,7 @@ export const registerFeedListener = async (req, res) => {
   });
 
   // add listener to feedListeners
-  feedListeners = [...feedListeners, { res, nsfw: req.query?.nsfw === 'true' }];
+  feedListeners = [...feedListeners, { res, nsfw: query.nsfw === 'true' }];
 
   // remove listener when connection closes
   req.on('close', () => {
@@ -23,13 +28,12 @@ export const registerFeedListener = async (req, res) => {
     feedListeners = feedListeners.filter(listener => listener.res !== res);
   });
 
-  const pastResults = parseInt(req.query?.past_results) || 20;
+  const pastResults = parseInt(query.past_results) || 20;
   const statesToSend = lastStates.slice(-pastResults);
 
   for (const lastState of statesToSend) {
-    await sendToListener(res, lastState, req.query?.nsfw === 'true');
+    await sendToListener(res, lastState, query.nsfw === 'true');
   }
-
 };
 
 export const sendToFeedListeners = (data, options = {}) => {
@@ -44,4 +48,3 @@ function sendToListener(listener, data, nsfw) {
   console.log("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }
-

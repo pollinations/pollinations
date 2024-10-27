@@ -39,14 +39,22 @@ const WhoWeAreContent = () => {
       </h2>
       <ContactWrapper>
         <p style={{ userSelect: "none" }}>
-          <EmojiRephrase> talk to us, reach out on [Discord](https://discord.gg/k9F7SyTgqn) or at [hello@pollinations.ai](mailto:hello@pollinations.ai)</EmojiRephrase>
-          {/* <StyledLink href="https://discord.gg/k9F7SyTgqn">
+          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
+          <br />
+          <StyledLink href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">
             <b>Discord</b>
           </StyledLink>{" "}
           <span className="mobile-break">or at </span>
-          <StyledLink href="mailto:hello@pollinations.ai" onClick={handleLinkClick}>
+          <StyledLink
+            href="mailto:hello@pollinations.ai"
+            onClick={(e) => {
+              handleLinkClick(e);
+              alert("Copied");
+            }}
+            style={{ userSelect: "text" }}
+          >
             <b>hello@pollinations.ai</b>
-          </StyledLink> */}
+          </StyledLink>
         </p>
         <p style={{ userSelect: "none" }}>
           <StyledLink href="https://github.com/pollinations/pollinations/#readme">

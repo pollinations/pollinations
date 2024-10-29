@@ -245,6 +245,10 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
   console.error("isMature", isMature, "concepts", isChild);
 
+  if (safeParams.safe_mode && isMature) {
+    throw new Error("NSFW content detected in safe mode.");
+  }
+
   const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 

@@ -2,16 +2,17 @@ import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe_mode: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe_mode = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
     refine = sanitizeBoolean(refine);
     enhance = sanitizeBoolean(enhance);
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed);
+    safe_mode = sanitizeBoolean(safe_mode);
 
     // Ensure model is one of the allowed models or default to "flux"
     const allowedModels = Object.keys(MODELS);
@@ -30,19 +31,16 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     const maxSeedValue = 1844674407370955;
     seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
 
-
-
     if (seed < 0 || seed > maxSeedValue) {
         seed = 42;
     }
 
-    // // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
+    // Adjust dimensions to maintain aspect ratio if exceeding maxPixels
     if (width * height > maxPixels) {
         const ratio = Math.sqrt(maxPixels / (width * height));
         width = Math.floor(width * ratio);
         height = Math.floor(height * ratio);
     }
 
-
-    return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
+    return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed, safe_mode };
 };

@@ -94,10 +94,10 @@ const projects = {
     },
     {
       name: "TurboReel",
-      url: "https://turboreel.com",
+      url: "https://turboreelgpt.tech/",
       description: "An open-source video generation system using AI to create engaging content from scripts.",
       author: "@pedroriosa",
-      repo: "https://github.com/turboreel/turboreel",
+      repo: "https://github.com/TurboReel/TurboReel_studio",
     },
     {
       name: "JustBuildThings",

@@ -20,12 +20,27 @@ export default function ChatComponent() {
   const [chatSeed, setChatSeed] = useState<number>(42)
   const [chatModel, setChatModel] = useState<string>(selectedTextModel)
 
-  const { sendUserMessage, messages } = usePollinationsChat([
-    { role: "system", content: systemMessage }
-  ], {
+  // Add states for active values
+  const [activeSystemMessage, setActiveSystemMessage] = useState(systemMessage)
+  const [activeSettings, setActiveSettings] = useState({
     seed: chatSeed,
     model: chatModel
   })
+
+  // Create a new chat instance when system message or settings change
+  const { sendUserMessage, messages } = usePollinationsChat(
+    [{ role: "system", content: activeSystemMessage }], 
+    activeSettings
+  )
+
+  const handleApplySettings = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setActiveSystemMessage(systemMessage)
+    setActiveSettings({
+      seed: chatSeed,
+      model: chatModel
+    })
+  }
 
   const handleSendMessage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -116,11 +131,12 @@ export default ChatComponent;
         <form className="space-y-4">
           <div>
             <Label htmlFor="systemMessage">System Message</Label>
-            <Input
+            <Textarea
               id="systemMessage"
               value={systemMessage}
               onChange={(e) => setSystemMessage(e.target.value)}
               className="w-full bg-slate-700 text-slate-100"
+              rows={3}
             />
           </div>
           <div className="flex space-x-4">
@@ -152,6 +168,15 @@ export default ChatComponent;
               />
             </div>
           </div>
+          <div className="flex justify-end">
+            <Button 
+              type="button"
+              onClick={handleApplySettings}
+              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+            >
+              Apply Settings
+            </Button>
+          </div>
           <div className="h-64 overflow-y-auto bg-slate-700 p-4 rounded-md space-y-4">
             {messages.map((msg: any, index: number) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -172,6 +197,13 @@ export default ChatComponent;
               onChange={(e) => setChatPrompt(e.target.value)}
               placeholder="Type your message..."
               className="w-full bg-slate-700 text-slate-100 flex-grow"
+              rows={3}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage(e as any);
+                }
+              }}
             />
             <Button 
               onClick={handleSendMessage}

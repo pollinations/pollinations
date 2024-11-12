@@ -9,13 +9,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Copy } from 'lucide-react'
 import { useFetchModels } from '../hooks/useFetchModels'
-import { useDebounce } from '@uidotdev/usehooks'
-
-// Custom hook for debounced image generation
-const usePollinationsImageDebounced = (promptUnDebounced: string, optionsUnDebounced: any) => {
-  const [prompt, options] = useDebounce([promptUnDebounced, optionsUnDebounced], 3000)
-  return usePollinationsImage(prompt, options)
-}
+import { Textarea } from "@/components/ui/textarea"
 
 export default function ImageGenerationForm() {
   const { imageModels } = useFetchModels()
@@ -24,14 +18,29 @@ export default function ImageGenerationForm() {
   const [imageSeed, setImageSeed] = useState<number>(42)
   const [imageWidth, setImageWidth] = useState<number>(1024)
   const [imageHeight, setImageHeight] = useState<number>(1024)
-
-  const imageUrl = usePollinationsImageDebounced(imagePrompt, {
+  
+  // Add states for the actual values that will be used for generation
+  const [activePrompt, setActivePrompt] = useState(imagePrompt)
+  const [activeSettings, setActiveSettings] = useState({
     width: imageWidth,
     height: imageHeight,
     seed: imageSeed,
     model: selectedImageModel,
     nologo: true
   })
+
+  const imageUrl = usePollinationsImage(activePrompt, activeSettings)
+
+  const handleApplyChanges = () => {
+    setActivePrompt(imagePrompt)
+    setActiveSettings({
+      width: imageWidth,
+      height: imageHeight,
+      seed: imageSeed,
+      model: selectedImageModel,
+      nologo: true
+    })
+  }
 
   const getImageCode = (): string => {
     const imageUrlWithParams = `https://image.pollinations.ai/prompt/${encodeURIComponent(imagePrompt)}?width=${imageWidth}&height=${imageHeight}&seed=${imageSeed}&model=${selectedImageModel}&nologo=true`
@@ -90,14 +99,15 @@ export default ImageComponent;
         <CardDescription>Generate images using Pollinations' API</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
           <div>
             <Label htmlFor="imagePrompt">Prompt</Label>
-            <Input
+            <Textarea
               id="imagePrompt"
               value={imagePrompt}
               onChange={(e) => setImagePrompt(e.target.value)}
               className="w-full bg-slate-700 text-slate-100"
+              rows={3}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -150,6 +160,14 @@ export default ImageComponent;
                 className="bg-slate-700 text-slate-100"
               />
             </div>
+          </div>
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleApplyChanges}
+              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+            >
+              Apply Changes
+            </Button>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Generated Image:</h3>

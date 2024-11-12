@@ -1,12 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Custom hook to generate a Pollinations chat response based on the given messages and fetch the response.
  * 
  * @param {Array} initMessages - The initial array of message objects to send.
- * @param {number} [seed=-1] - The seed for random text generation.
- * @param {boolean} [jsonMode=false] - Whether to parse the response as JSON.
- * @returns {Array} - The array of messages with the assistant's response added.
+ * @param {Object} options - Configuration options
+ * @param {number} [options.seed=42] - The seed for random text generation.
+ * @param {boolean} [options.jsonMode=false] - Whether to parse the response as JSON.
+ * @param {string} [options.model="openai"] - The model to use for chat.
+ * @returns {Object} - Object containing messages array and control functions
  */
 const usePollinationsChat = (initMessages = [], options = {}) => {
     const { seed = 42, jsonMode = false, model = "openai" } = options;
@@ -53,6 +55,11 @@ const usePollinationsChat = (initMessages = [], options = {}) => {
                 setMessages(prevMessages => [...prevMessages, { role: "assistant", content: errorMessage }]);
             });
     }, [messages, jsonMode, seed, model]);
+
+    // Add useEffect to update messages when initMessages changes
+    useEffect(() => {
+        setMessages(initMessages);
+    }, [initMessages]);
 
     return { sendUserMessage, messages };
 };

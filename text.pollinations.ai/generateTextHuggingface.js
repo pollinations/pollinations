@@ -19,6 +19,9 @@ async function generateTextHuggingface(messages, {  temperature, jsonMode = fals
             messages,
             temperature: temperature || 0.7,
             seed,
+            stream: false,
+            max_tokens: 16384,
+            max_length: 16384,
         });
 
         return response.choices[0]?.message?.content || '';

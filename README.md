@@ -18,7 +18,15 @@
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
-[<img src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="400">](https://star-history.com/#pollinations/pollinations&Date)
+<a href="https://star-history.com/#pollinations/pollinations&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date&theme=dark" width="400" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="400" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="400" />
+ </picture>
+</a>
+
+
 
 ## 🚀 Getting Started
 

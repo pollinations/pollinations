@@ -10,12 +10,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { Copy } from 'lucide-react'
 import { useFetchModels } from '../hooks/useFetchModels'
-import { useDebounce } from '@uidotdev/usehooks'
-
-const usePollinationsTextDebounced = (promptUnDebounced: string, optionsUnDebounced: any) => {
-  const [prompt, options] = useDebounce([promptUnDebounced, optionsUnDebounced], 3000)
-  return usePollinationsText(prompt, options)
-}
+import { Textarea } from "@/components/ui/textarea"
 
 interface TextModel {
   name: string
@@ -28,11 +23,16 @@ export default function TextGenerationForm() {
   const [textSeed, setTextSeed] = useState<number>(42)
   const [selectedTextModel, setSelectedTextModel] = useState<string>('openai')
   const { textModels } = useFetchModels()
+  const [systemPrompt, setSystemPrompt] = useState<string>("You are a helpful AI assistant.")
 
-  const textResult = usePollinationsTextDebounced(textPrompt, {
+  const [activePrompt, setActivePrompt] = useState(textPrompt)
+  const [activeSettings, setActiveSettings] = useState({
     seed: textSeed,
-    model: selectedTextModel
+    model: selectedTextModel,
+    systemPrompt
   })
+
+  const textResult = usePollinationsText(activePrompt, activeSettings)
 
   const getTextCode = (): string => {
     return `
@@ -40,10 +40,11 @@ import React from 'react';
 import { usePollinationsText } from '@pollinations/react';
 import ReactMarkdown from 'react-markdown';
 
-const TextComponent= () => {
+const TextComponent = () => {
   const text = usePollinationsText("${textPrompt}", { 
     seed: ${textSeed},
-    model: '${selectedTextModel}'
+    model: '${selectedTextModel}',
+    systemPrompt: "${systemPrompt}"
   });
   
   return (
@@ -68,6 +69,16 @@ export default TextComponent;
       })
   }
 
+  const handleApplyChanges = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    setActivePrompt(textPrompt)
+    setActiveSettings({
+      seed: textSeed,
+      model: selectedTextModel,
+      systemPrompt
+    })
+  }
+
   return (
     <Card className="bg-slate-800 text-slate-100">
       <CardHeader>
@@ -77,12 +88,23 @@ export default TextComponent;
       <CardContent>
         <form className="space-y-4">
           <div>
+            <Label htmlFor="systemPrompt">System Prompt</Label>
+            <Textarea
+              id="systemPrompt"
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              className="w-full bg-slate-700 text-slate-100"
+              rows={3}
+            />
+          </div>
+          <div>
             <Label htmlFor="textPrompt">Prompt</Label>
-            <Input
+            <Textarea
               id="textPrompt"
               value={textPrompt}
               onChange={(e) => setTextPrompt(e.target.value)}
               className="w-full bg-slate-700 text-slate-100"
+              rows={3}
             />
           </div>
           <div className="flex space-x-4">
@@ -113,6 +135,15 @@ export default TextComponent;
                 className="bg-slate-700 text-slate-100"
               />
             </div>
+          </div>
+          <div className="flex justify-end">
+            <Button 
+              type="button"
+              onClick={handleApplyChanges}
+              className="bg-blue-500 hover:bg-blue-600 transition-colors"
+            >
+              Apply Changes
+            </Button>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-2">Generated Text:</h3>

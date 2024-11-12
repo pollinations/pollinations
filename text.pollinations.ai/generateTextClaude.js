@@ -32,7 +32,7 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
 
         const response = await axios.post(claudeEndpoint, {
             model: "claude-3-5-sonnet-20240620",
-            // max_tokens: 1024,
+            max_tokens: 1024,
             messages: convertedMessages,
             system: systemMessage,
             temperature: temperature

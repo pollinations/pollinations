@@ -26,8 +26,6 @@
  </picture>
 </a>
 
-
-
 ## 🚀 Getting Started
 
 ### Image Generation
@@ -116,7 +114,6 @@ We offer React hooks for easy integration. Example usage:
 Check out our [Pollinations React Hooks](./pollinations-react/README.md) for more details.
 
 ## Architecture
-
 ```mermaid
 graph LR
     Q[Bots - Discord, Telegram, WhatsApp] --> L1
@@ -191,11 +188,23 @@ We're constantly exploring new ways to push the boundaries of AI-driven content 
 
 ## 🌍 Our Vision
 
-Pollinations.AI aims to bridge technological innovation with global creativity. Our international team combines precision engineering with artistic flair to create a platform that serves creators worldwide.
+Pollinations.AI envisions a future where AI technology is:
+
+- **Open & Accessible**: We believe AI should be available to everyone, not locked behind paywalls or restricted access
+
+- **Transparent & Ethical**: Our open-source approach ensures transparency in how our models work and behave
+
+- **Community-Driven**: We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate
+
+- **Interconnected**: We're creating an ecosystem where AI services can seamlessly work together, fostering innovation through composability
+
+- **Evolving**: We embrace the rapid evolution of AI technology while maintaining our commitment to openness and accessibility
+
+We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
 
 ## 🤝 Community and Support
 
-Join our vibrant community of over 12,000 Discord members to share your creations, get support, and collaborate with fellow AI enthusiasts. 
+Join our vibrant community on Discord to share your creations, get support, and collaborate with fellow AI enthusiasts. 
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 

@@ -20,7 +20,7 @@ async function generateTextKarma(messages, { jsonMode = false }) {
   try {
     const response = await axios.post(KARMA_ENDPOINT, {
       messages,
-      max_tokens: 400,
+      // max_tokens: 400,
     }, {
       headers: {
         'Content-Type': 'application/json',

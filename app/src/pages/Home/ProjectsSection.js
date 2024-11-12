@@ -92,6 +92,13 @@ const projects = {
       description: "A framework for developing agentic LLM applications.",
     },
     {
+      name: "Sirius Cybernetics Elevator Challenge",
+      url: "https://sirius-cybernetics.pollinations.ai/",
+      description: "A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game.",
+      author: "@thomash_pollinations",
+      repo: "https://github.com/voodoohop/sirius-cybernetics-elevator-challenge",
+    },
+    {
       name: "LobeChat",
       url: "https://lobehub.com/plugins/pollinations-drawing",
       description:
@@ -121,16 +128,14 @@ const projects = {
     {
       name: "Discord Bot",
       url: "https://discord.gg/D9xGg8mq3D",
-      description:
-        "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
+      description: "A **Discord bot** that uses Pollinations.ai for generating images based on user prompts.",
       author: "@Zngzy",
       repo: "https://github.com/Zingzy/pollinations.ai-bot",
     },
     {
       name: "WhatsApp Group",
       url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-      description:
-        "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
+      description: "A **WhatsApp group** for that allows you to generate images using Pollinations.ai.",
       author: "@dg_karma",
     },
     {
@@ -142,16 +147,14 @@ const projects = {
     },
     {
       name: "Anyai",
-      url: "#",
-      description:
-        "A **Discord bot** and community that amongst others leverages **Pollinations.ai** for generating AI-driven content.",
+      url: "https://discord.gg/anyai",
+      description: "A **Discord bot** and community that leverages **Pollinations.ai** for generating AI-driven content.",
       author: "@meow_18838",
     },
     {
       name: "OpenHive",
       url: "https://discord.gg/Zv3SXTF5xy",
-      description:
-        "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.ai!",
+      description: "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.ai!",
       author: "@creativegpt",
     },
   ],
@@ -159,8 +162,7 @@ const projects = {
     {
       name: "Pollinator Android App",
       url: "https://github.com/g-aggarwal/Pollinator",
-      description:
-        "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+      description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
       author: "@gaurav_87680",
     },
     {
@@ -181,8 +183,7 @@ const projects = {
     {
       name: "DevSaura AI",
       url: "https://ai.devsaura.com",
-      description:
-        "A web platform offering AI-powered tools for image generation, blog creation, and story writing with visuals, all powered by Pollinations and GroqCloud.",
+      description: "A web platform offering AI-powered tools for image generation, blog creation, and story writing with visuals, all powered by Pollinations and GroqCloud.",
       author: "@saadaryf",
     },
     {
@@ -204,8 +205,7 @@ const projects = {
     {
       name: "POLLIPAPER",
       url: "https://github.com/Tolerable/POLLIPAPER",
-      description:
-        "A dynamic wallpaper app that uses Pollinations AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
+      description: "A dynamic wallpaper app that uses Pollinations AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
       author: "@intolerant0ne",
       repo: "https://github.com/Tolerable/",
     },
@@ -226,9 +226,14 @@ const projects = {
     {
       name: "Websim",
       url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-      description:
-        "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
+      description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
       author: "@thomash_pollinations",
+    },
+    {
+      name: "JCode Website Builder",
+      url: "https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories",
+      description: "A website generator using Pollinations text API.",
+      author: "@rtxpower",
     },
   ],
   tutorials: [
@@ -254,7 +259,16 @@ const ProjectsSection = () => {
             {renderProjectLink(project)}
             {project.author && (
               <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
-                by {project.author}
+                by {project.author.startsWith('@') ? (
+                  <Link 
+                    href={`https://discord.com/users/${project.author.substring(1)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: Colors.lime }}
+                  >
+                    {project.author}
+                  </Link>
+                ) : project.author}
               </div>
             )}
           </Grid>

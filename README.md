@@ -155,6 +155,7 @@ Pollinations.AI is used in various projects, including:
 4. [Unity AI Lab](https://blog.unityailab.com/unity.html): A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.
 5. [DynaSpark AI](https://dynaspark.onrender.com): A versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
 6. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT.
+7. [Sirius Cybernetics Elevator Challenge](https://sirius-cybernetics.pollinations.ai/): A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game. Created by @thomash_pollinations. [GitHub Repo](https://github.com/voodoohop/sirius-cybernetics-elevator-challenge)
 
 ### Social Bots
 1. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)
@@ -172,6 +173,7 @@ Pollinations.AI is used in various projects, including:
 6. [StoryWeaver](https://devpost.com/software/storyweaver-013xdw): StoryWeaver crafts personalized picture books for children based on themes and prompts you choose, bringing your unique story ideas to life with AI! Created by Advaith Narayanan, Omeed Sabouri, Yufan Wang. [GitHub Repo](https://github.com/AdvaithN1/StoryWeaver)
 7. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool that integrates Pollinations.ai for generating AI-driven content. Remix the app with your own prompts. Created by @thomash_pollinations.
 8. [MIDIjourney](https://korus.co/): An AI-powered plugin for Ableton Live that turns text descriptions into music. Created by KORUS Labs. [GitHub Repo](https://github.com/korus-labs/MIDIjourney)
+9. [JCode Website Builder](https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories): A website generator using Pollinations text API. Created by @rtxpower.
 
 ### Tutorials
 1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.

@@ -6,7 +6,7 @@ dotenv.config();
 const DEFAULT_MODEL = 'Qwen/Qwen2.5-Coder-32B-Instruct';
 const inference = new HfInference(process.env.HUGGINGFACE_TOKEN);
 
-async function generateTextHuggingface(messages, {  temperature, jsonMode = false }) {
+async function generateTextHuggingface(messages, {  temperature, jsonMode = false, seed=null }) {
     // If jsonMode and no system message, add one
     if (jsonMode && !messages.some(m => m.role === 'system')) {
         messages = [{ role: 'system', content: 'Respond in simple JSON format' }, ...messages];
@@ -18,6 +18,7 @@ async function generateTextHuggingface(messages, {  temperature, jsonMode = fals
             model: DEFAULT_MODEL,
             messages,
             temperature: temperature || 0.7,
+            seed,
         });
 
         return response.choices[0]?.message?.content || '';

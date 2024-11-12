@@ -2,11 +2,11 @@
 
 *Your Engine for Personalized Synthetic Media*
 
-[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_with_a_stylized_flower_and_bee,_simple_and_modern_design?width=300&height=100&nologo=true&seed=-1)
+[![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image.
+[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required.
 
 ## 🚀 Key Features
 
@@ -18,11 +18,28 @@
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
+<a href="https://star-history.com/#pollinations/pollinations&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date&theme=dark" width="600" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date" width="600" />
+ </picture>
+</a>
+
+
+
 ## 🚀 Getting Started
+
+### Image Generation
 
 1. Visit [https://pollinations.ai](https://pollinations.ai)
 2. Type your description in the text box
 3. Click "Generate" and watch the magic happen!
+
+### Text Generation
+
+1. Visit [https://text.pollinations.ai](https://text.pollinations.ai)
+2. Start chatting with the AI
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 
@@ -46,7 +63,7 @@ Replace the description with your own, and you'll get a unique image based on yo
 
 Here's an example of a generated image:
 
-[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=512&height=512&nologo=true&seed=-1)
+[![Conceptual Isometric World](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=2000&height=500&nologo=true&seed=-1)](https://pollinations.ai/p/3d_wireframe_blueprint_for_the_prompt_conceptual%20isometric%20world%20of%20pollinations%20ai%20surreal%20hyperrealistic%20digital%20garden?width=2000&height=500&nologo=true&seed=-1)
 
 Python code to download the generated image:
 

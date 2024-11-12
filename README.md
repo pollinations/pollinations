@@ -6,7 +6,7 @@
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free image generation API available. No signups or API keys required. Embed like any normal image.
+[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required.
 
 ## 🚀 Key Features
 
@@ -18,11 +18,20 @@
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 
+[![Star History Chart](https://api.star-history.com/svg?repos=pollinations/pollinations&type=Date)](https://star-history.com/#pollinations/pollinations&Date)
+
 ## 🚀 Getting Started
+
+### Image Generation
 
 1. Visit [https://pollinations.ai](https://pollinations.ai)
 2. Type your description in the text box
 3. Click "Generate" and watch the magic happen!
+
+### Text Generation
+
+1. Visit [https://text.pollinations.ai](https://text.pollinations.ai)
+2. Start chatting with the AI
 
 For more advanced usage, check out our [API documentation](APIDOCS.md).
 

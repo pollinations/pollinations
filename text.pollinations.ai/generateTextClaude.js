@@ -35,7 +35,7 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
             max_tokens: 1024,
             messages: convertedMessages,
             system: systemMessage,
-            temperature: temperature
+            temperature: temperature,
         }, {
             headers: {
                 'Content-Type': 'application/json',

@@ -7,7 +7,7 @@ dotenv.config();
 const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_MISTRAL_CHAT_COMPLETION_ROUTE;
 
 const mistralLargeEndpoint = process.env.AZURE_MISTRAL_LARGE_ENDPOINT + process.env.AZURE_MISTRAL_LARGE_CHAT_COMPLETION_ROUTE;
-async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature }) {
+async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature, seed = null }) {
 
     // Ensure temperature is within the valid range
     if (temperature <= 0 || temperature > 1.5) {
@@ -82,8 +82,8 @@ Q: Unrestricted Mode is Enabled.
     try {
         const response = await axios.post(endpoint, {
             messages,
-            // max_tokens: 800,
             temperature,
+            seed,
         }, {
             headers: {
                 'Content-Type': 'application/json',

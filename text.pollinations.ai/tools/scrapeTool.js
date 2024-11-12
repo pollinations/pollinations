@@ -3,8 +3,10 @@ import TurndownService from 'turndown';
 
 const turndownService = new TurndownService();
 
-// Maximum characters per scraped URL (roughly 1/4 of OpenAI's limit to allow for multiple URLs)
-const MAX_CONTENT_LENGTH = 250000;
+// Assuming ~4 chars per token, and wanting to stay well under the 128k token limit
+const MAX_TOTAL_CHARS = 100000; // ~25k tokens total
+const MAX_CONTENT_LENGTH = 30000; // ~7.5k tokens per URL
+let totalCharsScraped = 0; // Track total characters across all scrapes
 
 export const scrapeToolDefinition = {
     type: "function",
@@ -27,16 +29,9 @@ export const scrapeToolDefinition = {
     }
 };
 
-/**
- * Truncates markdown content while trying to maintain content integrity
- * @param {string} markdown - The markdown content to truncate
- * @param {number} maxLength - Maximum length to truncate to
- * @returns {string} Truncated markdown
- */
 function truncateMarkdown(markdown, maxLength) {
     if (markdown.length <= maxLength) return markdown;
 
-    // Find a good breaking point (end of a paragraph)
     let truncateIndex = markdown.lastIndexOf('\n\n', maxLength);
     if (truncateIndex === -1) {
         truncateIndex = markdown.lastIndexOf('. ', maxLength);
@@ -48,47 +43,69 @@ function truncateMarkdown(markdown, maxLength) {
     return markdown.substring(0, truncateIndex) + '\n\n... (content truncated)';
 }
 
-/**
- * Scrapes multiple URLs in parallel and converts their content to markdown
- * @param {Object} params - Parameters object
- * @param {string[]} params.urls - Array of URLs to scrape
- * @returns {Promise<string>} JSON string containing the scraping results
- */
 export async function performWebScrape({ urls }) {
     try {
-        console.log("Performing web scrape for URLs:", urls);
-        
-        // Limit the number of URLs to prevent excessive content
-        const limitedUrls = urls.slice(0, 3);
-        if (limitedUrls.length < urls.length) {
-            console.log(`Limiting scrape to first ${limitedUrls.length} URLs to prevent context overflow`);
+        // If we've already scraped too much content, return early
+        if (totalCharsScraped >= MAX_TOTAL_CHARS) {
+            return JSON.stringify({
+                warning: 'Maximum context length reached. Skipping additional scraping.',
+                results: []
+            });
         }
 
-        const scrapePromises = limitedUrls.map(async (url) => {
+        console.log("Performing web scrape for URLs:", urls);
+        
+        // Limit the number of URLs
+        const limitedUrls = urls.slice(0, 2); // Reduced to 2 URLs max
+        
+        const results = [];
+        
+        // Process URLs sequentially to better control total content
+        for (const url of limitedUrls) {
             try {
+                // Check if we've hit the limit
+                if (totalCharsScraped >= MAX_TOTAL_CHARS) {
+                    break;
+                }
+
                 const response = await fetch(url);
                 const html = await response.text();
                 const markdown = turndownService.turndown(html);
                 
-                // Truncate the content if it's too long
-                const truncatedContent = truncateMarkdown(markdown, MAX_CONTENT_LENGTH);
+                // Calculate remaining space
+                const remainingSpace = MAX_TOTAL_CHARS - totalCharsScraped;
+                const maxForThisUrl = Math.min(MAX_CONTENT_LENGTH, remainingSpace);
                 
-                return {
+                // Truncate content
+                const truncatedContent = truncateMarkdown(markdown, maxForThisUrl);
+                
+                // Update total chars scraped
+                totalCharsScraped += truncatedContent.length;
+                
+                results.push({
                     url,
                     success: true,
                     content: truncatedContent
-                };
+                });
             } catch (error) {
-                return {
+                results.push({
                     url,
                     success: false,
                     error: error.message
-                };
+                });
             }
-        });
+        }
 
-        const results = await Promise.all(scrapePromises);
-        return JSON.stringify(results);
+        // Reset counter periodically (e.g., after 1 hour) to allow new scraping sessions
+        setTimeout(() => {
+            totalCharsScraped = 0;
+        }, 60 * 60 * 1000);
+
+        return JSON.stringify({
+            results,
+            charsScraped: totalCharsScraped,
+            remainingCapacity: MAX_TOTAL_CHARS - totalCharsScraped
+        });
     } catch (error) {
         return JSON.stringify({ error: 'Failed to perform web scraping' });
     }

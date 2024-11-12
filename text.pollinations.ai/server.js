@@ -18,6 +18,7 @@ import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
+import generateTextHuggingface from './generateTextHuggingface.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -333,6 +334,8 @@ async function generateTextBasedOnModel(messages, options) {
         response = await generateText(messages, options, true);
     } else if (model === 'evil') {
         response = await evilCommandR(messages, options);
+    } else if (model === 'qwen-coder') {
+        response = await generateTextHuggingface(messages, options);
     } else {
         response = await generateTextWithMistralFallback(messages, options);
     }

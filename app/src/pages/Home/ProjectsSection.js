@@ -111,6 +111,11 @@ const projects = {
       url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
       description: "Generate images on-demand with **ChatGPT**.",
     },
+    {
+      name: "Unity AI Lab",
+      url: "https://blog.unityailab.com/unity.html",
+      description: "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
+    },
   ],
   socialBots: [
     {

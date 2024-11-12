@@ -31,7 +31,7 @@ export async function generateText(messages, options, performSearch = false) {
         completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages,
-            seed: options.seed + attempts, // Modify seed on each attempt
+            seed: options.seed + attempts,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
             tool_choice: performSearch ? "auto" : undefined

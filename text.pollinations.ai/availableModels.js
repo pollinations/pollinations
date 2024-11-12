@@ -77,5 +77,12 @@ export const availableModels = [
         censored: false,
         description: 'Evil Mode - Experimental',
         baseModel: false,
-    }
+    },
+    {
+        name: 'qwen-coder',
+        type: 'chat',
+        censored: true,
+        description: 'Qwen Coder 32b Instruct (Supposedly better than GPT-4o at coding)',
+        baseModel: true,
+    },
 ];

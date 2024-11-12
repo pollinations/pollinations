@@ -25,7 +25,7 @@ app.use(cors());
 
 // New route handler for root path
 app.get('/', (req, res) => {
-    res.redirect('https://chat.pollinations.ai');
+    res.redirect('https://sur.pollinations.ai');
 });
 
 let cache = {};

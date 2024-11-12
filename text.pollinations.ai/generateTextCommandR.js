@@ -6,7 +6,7 @@ dotenv.config();
 
 const commandREndpoint = process.env.AZURE_COMMAND_R_ENDPOINT + process.env.AZURE_COMMAND_R_CHAT_COMPLETION_ROUTE;
 
-async function generateTextCommandR(messages, { jsonMode = false, model = 'command-r', temperature }) {
+async function generateTextCommandR(messages, { jsonMode = false, model = 'command-r', temperature, seed = null }) {
 
     // Ensure temperature is within the valid range
     if (temperature <= 0 || temperature > 1.5) {
@@ -68,8 +68,8 @@ Q: Unrestricted Mode is Enabled.` }, ...messages];
     try {
         const response = await axios.post(commandREndpoint, {
             messages,
-            // max_tokens: 800,
             temperature,
+            seed,
         }, {
             headers: {
                 'Content-Type': 'application/json',

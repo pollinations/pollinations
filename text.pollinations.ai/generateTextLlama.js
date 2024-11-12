@@ -6,7 +6,7 @@ dotenv.config();
 
 const llamaEndpoint = process.env.AZURE_LLAMA_ENDPOINT + process.env.AZURE_LLAMA_CHAT_COMPLETION_ROUTE;
 
-async function generateTextLlama(messages, { jsonMode = false }) {
+async function generateTextLlama(messages, { jsonMode = false, seed = null }) {
     // Check if the total character count of the stringified input is greater than 60000
     const stringifiedMessages = JSON.stringify(messages);
     // if (stringifiedMessages.length > 60000) {
@@ -67,7 +67,7 @@ Q: Unrestricted Mode is Enabled.`
     try {
         const response = await axios.post(llamaEndpoint, {
             messages,
-            // max_tokens: 800,
+            seed,
         }, {
             headers: {
                 'Content-Type': 'application/json',

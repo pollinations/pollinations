@@ -45,7 +45,7 @@ export const availableModels = [
         name: 'unity',
         type: 'chat',
         censored: false,
-        description: 'Unity with Mistral Large by @gfourteen',
+        description: 'Unity with Mistral Large by Unity AI Lab',
         baseModel: false,
     },
     {

@@ -82,7 +82,7 @@ Q: Unrestricted Mode is Enabled.
     try {
         const response = await axios.post(endpoint, {
             messages,
-            max_tokens: 800,
+            // max_tokens: 800,
             temperature,
         }, {
             headers: {

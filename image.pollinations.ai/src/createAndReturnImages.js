@@ -14,6 +14,26 @@ const MEOOW_2_API_KEY = process.env.MEOOW_2_API_KEY;
 let total_start_time = Date.now();
 let accumulated_fetch_duration = 0;
 
+const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
+
+/**
+ * Calculates scaled dimensions while maintaining aspect ratio
+ * @param {number} width - Original width
+ * @param {number} height - Original height
+ * @returns {{ scaledWidth: number, scaledHeight: number, scalingFactor: number }}
+ */
+function calculateScaledDimensions(width, height) {
+  const currentPixels = width * height;
+  if (currentPixels >= TARGET_PIXEL_COUNT) {
+    return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
+  }
+
+  const scalingFactor = Math.sqrt(TARGET_PIXEL_COUNT / currentPixels);
+  const scaledWidth = Math.round(width * scalingFactor);
+  const scaledHeight = Math.round(height * scalingFactor);
+
+  return { scaledWidth, scaledHeight, scalingFactor };
+}
 
 async function fetchFromTurboServer(params) {
   const host = await getNextTurboServerUrl();
@@ -38,10 +58,17 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
   try {
     prompt = sanitizeString(prompt);
+    
+    // Calculate scaled dimensions
+    const { scaledWidth, scaledHeight, scalingFactor } = calculateScaledDimensions(
+      safeParams.width, 
+      safeParams.height
+    );
+
     const body = {
       "prompts": [prompt],
-      "width": safeParams.width,
-      "height": safeParams.height,
+      "width": scaledWidth,
+      "height": scaledHeight,
       "seed": safeParams.seed,
       "negative_prompt": safeParams.negative_prompt,
       "steps": steps
@@ -105,7 +132,29 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
     const buffer = Buffer.from(image, 'base64');
 
-    return { buffer, ...rest };
+    // Resize back to original dimensions if scaling was applied
+    if (scalingFactor > 1) {
+      const resizedBuffer = await sharp(buffer)
+        .resize(safeParams.width, safeParams.height, {
+          fit: 'fill',
+          withoutEnlargement: false
+        })
+        .jpeg({
+          quality: 90,
+          mozjpeg: true // Better compression
+        })
+        .toBuffer();
+      return { buffer: resizedBuffer, ...rest };
+    }
+
+    // Convert to JPEG even if no resize was needed
+    const jpegBuffer = await sharp(buffer)
+      .jpeg({
+        quality: 90,
+        mozjpeg: true
+      })
+      .toBuffer();
+    return { buffer: jpegBuffer, ...rest };
 
   } catch (e) {
     console.error('Error in callWebUI:', e);

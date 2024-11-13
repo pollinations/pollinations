@@ -6,16 +6,14 @@ import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
-import { getCachedImage, cacheImage, isImageCached } from './cacheGeneratedImages.js';
+import { cacheImage } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
 import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js';
 import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
-import { readFileSync } from 'fs';
 import { MODELS } from './models.js';
-import { registerServer } from './availableServers.js';
+import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
-import { getNextFluxServerUrl } from './availableServers.js';
 
 export let currentJobs = [];
 
@@ -68,8 +66,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   console.error("prompt", prompt);
 
   console.log("safeParams", safeParams);
-  const fluxServerUrl = await getNextFluxServerUrl();
-  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countJobs(), originalPrompt, fluxServerUrl);
+  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt);
 
   // if isChild and nsfw is true, delay the response by 10 seconds
   if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
@@ -82,7 +79,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   const imageURL = `https://image.pollinations.ai${req.url}`;
 
   if (!safeParams.nofeed) {
-    const concurrentRequests = countJobs();
+    const concurrentRequests = countFluxJobs();
     const ip = getIp(req);
 
     if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
@@ -128,7 +125,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
-  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countJobs(), model: safeParams["model"], referrer };
+  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countFluxJobs(), model: safeParams["model"], referrer };
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
   try {
@@ -151,7 +148,7 @@ const checkCacheAndGenerate = async (req, res) => {
           const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
 
           console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          if (queueSize >= 20) {
+          if (queueSize >= 40) {
             throw new Error("queue full");
           }
 

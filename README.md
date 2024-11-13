@@ -180,6 +180,7 @@ Pollinations.AI is used in various projects, including:
 
 ### Tutorials
 1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.
+2. [Apple Shortcuts Guide](https://www.youtube.com/watch?v=-bS41VTzh_s): A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations. Created by RoutineHub. [Shortcut](https://routinehub.co/shortcut/19953/)
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 

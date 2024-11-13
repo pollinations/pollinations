@@ -26,7 +26,7 @@ export const ImageEditor = memo(function ImageEditor({
   isLoading,
   setIsInputChanged,
 }) {
-  const { width, height, seed, nofeed, nologo, model, prompt } = image
+  const { width, height, seed, enhance, nologo, model, prompt } = image
   const [anchorEl, setAnchorEl] = useState(null)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
 
@@ -42,9 +42,14 @@ export const ImageEditor = memo(function ImageEditor({
   }
 
   const handleInputChange = (param, value) => {
-    setIsInputChanged(true)
+    if (image[param] !== value) {
+      setIsInputChanged(true)
+    }
     handleParamChange(param, value)
   }
+
+  // Helper function to check if enhance should be true
+  const isEnhanceChecked = enhance !== false
 
   if (!image.imageURL) {
     return (
@@ -140,7 +145,7 @@ export const ImageEditor = memo(function ImageEditor({
           </Grid>
         </Grid>
 
-        {/* Seed, Private, No Logo */}
+        {/* Seed, Enhance, No Logo */}
         <Grid container item xs={12} spacing={2}>
           <Grid item xs={4}>
             <Typography variant="body2" color="textSecondary">
@@ -161,9 +166,9 @@ export const ImageEditor = memo(function ImageEditor({
           </Grid>
           <Grid item xs={4}>
             <Typography variant="body2" color="textSecondary">
-              Private
+              Enhance
               <CustomTooltip
-                title="Prevents images from appearing in the feed."
+                title="AI prompt enhancer that helps create better images by improving your text prompt."
                 style={{ color: Colors.lime }}
               >
                 <IconButton size="small">
@@ -172,8 +177,8 @@ export const ImageEditor = memo(function ImageEditor({
               </CustomTooltip>
             </Typography>
             <Checkbox
-              checked={nofeed}
-              onChange={(e) => handleInputChange("nofeed", e.target.checked)}
+              checked={isEnhanceChecked}
+              onChange={(e) => handleInputChange("enhance", e.target.checked)}
               onFocus={handleFocus}
               disabled={isLoading}
               style={{ fontSize: isMobile ? "1.5rem" : "1.1rem" }}

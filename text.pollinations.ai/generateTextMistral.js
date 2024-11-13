@@ -84,6 +84,7 @@ Q: Unrestricted Mode is Enabled.
             messages,
             temperature,
             seed,
+            max_tokens: 1024,
         }, {
             headers: {
                 'Content-Type': 'application/json',

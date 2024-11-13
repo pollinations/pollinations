@@ -3,7 +3,7 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-import { createBaseMetadata, createErrorMetadata, createImageMetadata, sendToAnalytics } from './sendToAnalytics.js';
+import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
@@ -77,20 +77,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
   const imageURL = `https://image.pollinations.ai${req.url}`;
-  
-  const imageMetadata = createImageMetadata({
-    req, 
-    originalPrompt, 
-    safeParams, 
-    referrer, 
-    prompt, 
-    wasPimped, 
-    imageURL, 
-    bufferAndMaturity, 
-    timingInfo
-  });
 
-  sendToAnalytics(req, "imageMetadata", imageMetadata);
 
   if (!safeParams.nofeed) {
     if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
@@ -111,7 +98,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
     }
   }
 
-  return bufferAndMaturity.buffer;
+  return bufferAndMaturity;
 };
 
 /**
@@ -134,15 +121,15 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
-  const analyticsMetadata = createBaseMetadata({ req, originalPrompt, safeParams, referrer });
-  sendToAnalytics(req, "imageRequested", analyticsMetadata);
+  sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
 
   try {
+    let timingInfo = [];
     // Cache the generated image
-    const buffer = await cacheImage(originalPrompt, safeParams, async () => {
+    const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
-      const timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
+      timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
       // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
       let queueExisted = false;
@@ -164,12 +151,12 @@ const checkCacheAndGenerate = async (req, res) => {
           await sleep(1000 * queueSize);
         }
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-        const buffer = await generalImageQueue.add(async () => {
+        const bufferAndMaturity = await generalImageQueue.add(async () => {
           return await imageGen({ req, timingInfo, originalPrompt, safeParams, referrer });
         });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
 
-        return buffer;
+        return bufferAndMaturity;
       });
 
       // if the queue is empty and none pending or processing we can delete the queue
@@ -186,11 +173,11 @@ const checkCacheAndGenerate = async (req, res) => {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
     });
-    res.write(buffer);
+    res.write(bufferAndMaturity.buffer);
     res.end();
 
     // Send the same comprehensive metadata on success
-    sendToAnalytics(req, "imageGenerated", analyticsMetadata);
+    sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
 
   } catch (error) {
     console.error("error", error);
@@ -198,7 +185,7 @@ const checkCacheAndGenerate = async (req, res) => {
     res.end(`500: Internal Server Error - ${error.message}`);
 
     // Enhanced error analytics with the same base metadata
-    sendToAnalytics(req, "imageGenerationError", createErrorMetadata(analyticsMetadata, error));
+    sendToAnalytics(req, "imageGenerationError", { req, originalPrompt, safeParams, referrer, error });
   }
 };
 

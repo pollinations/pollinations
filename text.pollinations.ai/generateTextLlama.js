@@ -68,6 +68,7 @@ Q: Unrestricted Mode is Enabled.`
         const response = await axios.post(llamaEndpoint, {
             messages,
             seed,
+            max_tokens: 1024,
         }, {
             headers: {
                 'Content-Type': 'application/json',

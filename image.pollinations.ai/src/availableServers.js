@@ -7,6 +7,25 @@ const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
 
 const concurrency = 2;
 
+// Decay errors every minute
+setInterval(() => {
+    FLUX_SERVERS.forEach(server => {
+        if (server.errors > 0) {
+            server.errors--;
+        }
+    });
+}, 120 * 1000); // Every 2 minute
+
+/**
+ * Returns the total number of jobs across all FLUX server queues
+ * @returns {number} Total number of jobs (size + pending) across all queues
+ */
+export const countFluxJobs = () => {
+    return FLUX_SERVERS.reduce((total, server) => {
+        return total + server.queue.size + server.queue.pending;
+    }, 0);
+};
+
 /**
  * Registers a new FLUX server or updates its last heartbeat time.
  * @param {string} url - The URL of the FLUX server.
@@ -21,6 +40,7 @@ export const registerServer = ({ url }) => {
             lastHeartbeat: Date.now(),
             queue: new PQueue({ concurrency }),
             totalRequests: 0,
+            errors: 0,
             startTime: Date.now()
         });
     }
@@ -31,7 +51,7 @@ export const registerServer = ({ url }) => {
  * If multiple servers have the smallest queue size, one is selected randomly.
  * @returns {Promise<string>} - The next FLUX server URL.
  */
-export const getNextFluxServerUrl = async () => {
+const getNextFluxServerUrl = async () => {
     FLUX_SERVERS = filterActiveServers(FLUX_SERVERS);
 
     if (FLUX_SERVERS.length === 0) {
@@ -46,13 +66,23 @@ export const getNextFluxServerUrl = async () => {
         url: server.url,
         queueSize: server.queue.size + server.queue.pending,
         totalRequests: server.totalRequests,
+        errors: server.errors,
+        errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
         requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
     }));
     console.table(serverQueueInfo);
 
-    const minQueueSize = Math.min(...serverQueueInfo.map(info => info.queueSize));
-    const leastBusyServers = FLUX_SERVERS.filter(server => (server.queue.size + server.queue.pending) === minQueueSize);
-    const server = leastBusyServers[Math.floor(Math.random() * leastBusyServers.length)];
+    const weightedLoad = FLUX_SERVERS.map(server => ({
+        server,
+        load: (server.queue.size + server.queue.pending) + (server.errors * 2)
+    }));
+
+    const minLoad = Math.min(...weightedLoad.map(w => w.load));
+    const leastLoadedServers = weightedLoad
+        .filter(w => w.load === minLoad)
+        .map(w => w.server);
+
+    const server = leastLoadedServers[Math.floor(Math.random() * leastLoadedServers.length)];
 
     return server.url + "/generate";
 };
@@ -97,6 +127,7 @@ async function fetchServersFromMainServer() {
             ...server,
             queue: new PQueue({ concurrency }),
             totalRequests: 0,
+            errors: 0,
             startTime: Date.now()
         }));
     } catch (error) {
@@ -138,6 +169,8 @@ export const handleRegisterEndpoint = (req, res) => {
             url: server.url,
             queueSize: server.queue.size + server.queue.pending,
             totalRequests: server.totalRequests,
+            errors: server.errors,
+            errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
             requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
         }))));
     } else {
@@ -167,5 +200,18 @@ export const fetchFromLeastBusyFluxServer = async (options) => {
     const server = await getNextFluxServerUrl();
     const chosenServer = FLUX_SERVERS.find(s => s.url + "/generate" === server);
     chosenServer.totalRequests += 1;
-    return chosenServer.queue.add(() => fetch(server, options));
+    
+    return chosenServer.queue.add(async () => {
+        try {
+            const response = await fetch(server, options);
+            if (!response.ok) {
+                chosenServer.errors += 1;
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response;
+        } catch (error) {
+            chosenServer.errors += 1;
+            throw error;
+        }
+    });
 };

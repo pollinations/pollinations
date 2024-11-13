@@ -54,7 +54,7 @@ async function fetchFromTurboServer(params) {
 const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-  const steps = concurrentRequests < 24 ? 4 : concurrentRequests < 30 ? 3 : concurrentRequests < 40 ? 2 : 1;
+  const steps = concurrentRequests < 8 ? 4 : concurrentRequests < 15 ? 3 : concurrentRequests < 25 ? 2 : 1;
 
   try {
     prompt = sanitizeString(prompt);
@@ -172,7 +172,11 @@ const callMeoow = async (prompt, safeParams) => {
   try {
     const url = new URL(MEOOW_SERVER_URL);
     prompt = sanitizeString(prompt);
-    url.searchParams.append('prompt', prompt);
+    // calculate a unique 4 digit seed for this prompt
+    // it should depend on the prompt text
+    const seedHack = prompt.split(' ').reduce((acc, word) => acc + word.charCodeAt(0), 0) % 10000;
+
+    url.searchParams.append('prompt', `#${seedHack} - ${prompt}`);
 
     const closestRatio = calculateClosestAspectRatio(safeParams.width, safeParams.height);
 

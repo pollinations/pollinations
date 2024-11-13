@@ -11,29 +11,16 @@ const apiSecret = process.env.GA_API_SECRET;
  * @param {Object} params - Parameters including req, originalPrompt, safeParams, referrer
  * @returns {Object} Base metadata object
  */
-export const createBaseMetadata = ({ req, originalPrompt, safeParams, referrer }) => ({
+const createAnalyticsMetadata = (req, { originalPrompt, safeParams, referrer, timingInfo, bufferAndMaturity }) => ({
   ...safeParams,
   promptRaw: originalPrompt,
   concurrentRequests: countFluxJobs(),
   referrer,
   ip: getIp(req),
-  queueSize: countJobs(true)
-});
-
-/**
- * Creates comprehensive image metadata for analytics
- * @param {Object} params - Parameters for image metadata
- * @returns {Object} Complete image metadata
- */
-export const createImageMetadata = ({ req, originalPrompt, safeParams, referrer, prompt, wasPimped, imageURL, bufferAndMaturity, timingInfo }) => ({
-  ...createBaseMetadata({ req, originalPrompt, safeParams, referrer }),
-  promptProcessed: prompt,
-  wasPimped,
-  imageURL,
-  nsfw: bufferAndMaturity.isMature,
-  isChild: bufferAndMaturity.isChild,
-  timing: relativeTiming(timingInfo),
-  totalProcessingTime: timingInfo[timingInfo.length - 1].timestamp - timingInfo[0].timestamp
+  queueSize: countJobs(true),
+  totalProcessingTime: timingInfo?.[timingInfo?.length - 1]?.timestamp - timingInfo?.[0]?.timestamp,
+  nsfw: bufferAndMaturity?.isMature,
+  isChild: bufferAndMaturity?.isChild,
 });
 
 /**
@@ -56,6 +43,7 @@ export async function sendToAnalytics(request, name, metadata) {
     const language = request.headers['accept-language'];
     const clientIP = request.headers["x-real-ip"] || request.headers['x-forwarded-for'] || request.connection.remoteAddress;
 
+    const analyticsMetadata = createAnalyticsMetadata(request, metadata);
     // Extracting query parameters
     const queryParams = request.query;
 
@@ -70,7 +58,7 @@ export async function sendToAnalytics(request, name, metadata) {
                     userAgent,
                     language,
                     queryParams,
-                    ...metadata,
+                    ...analyticsMetadata,
                 }
             }]
         })

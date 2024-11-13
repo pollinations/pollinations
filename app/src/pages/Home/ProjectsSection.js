@@ -256,6 +256,13 @@ const projects = {
       description: "An in-depth Portuguese tutorial on using Pollinations AI.",
       author: "Janderson de Sales",
     },
+    {
+      name: "Apple Shortcuts Guide",
+      url: "https://www.youtube.com/watch?v=-bS41VTzh_s",
+      description: "A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations.",
+      author: "RoutineHub",
+      repo: "https://routinehub.co/shortcut/19953/",
+    },
   ],
 }
 

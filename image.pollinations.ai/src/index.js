@@ -3,7 +3,7 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
-import { sendToAnalytics } from './sendToAnalytics.js';
+import { createBaseMetadata, createErrorMetadata, createImageMetadata, sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
@@ -77,22 +77,33 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
   const imageURL = `https://image.pollinations.ai${req.url}`;
+  
+  const imageMetadata = createImageMetadata({
+    req, 
+    originalPrompt, 
+    safeParams, 
+    referrer, 
+    prompt, 
+    wasPimped, 
+    imageURL, 
+    bufferAndMaturity, 
+    timingInfo
+  });
+
+  sendToAnalytics(req, "imageMetadata", imageMetadata);
 
   if (!safeParams.nofeed) {
-    const concurrentRequests = countFluxJobs();
-    const ip = getIp(req);
-
     if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
       sendToFeedListeners({
         ...safeParams,
-        concurrentRequests,
+        concurrentRequests: countFluxJobs(),
         imageURL,
         prompt,
         originalPrompt,
         nsfw: bufferAndMaturity.isMature,
         isChild: bufferAndMaturity.isChild,
         timingInfo: relativeTiming(timingInfo),
-        ip,
+        ip: getIp(req),
         status: "end_generating",
         referrer,
         wasPimped
@@ -100,9 +111,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
     }
   }
 
-  // Return the generated image buffer
   return bufferAndMaturity.buffer;
-
 };
 
 /**
@@ -125,7 +134,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
 
-  const analyticsMetadata = { promptRaw: originalPrompt, concurrentRequests: countFluxJobs(), model: safeParams["model"], referrer };
+  const analyticsMetadata = createBaseMetadata({ req, originalPrompt, safeParams, referrer });
   sendToAnalytics(req, "imageRequested", analyticsMetadata);
 
   try {
@@ -176,11 +185,11 @@ const checkCacheAndGenerate = async (req, res) => {
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=31536000, immutable',
-      // 'Content-Disposition': `attachment; filename="${sanitizedFileName}"`,
     });
     res.write(buffer);
     res.end();
 
+    // Send the same comprehensive metadata on success
     sendToAnalytics(req, "imageGenerated", analyticsMetadata);
 
   } catch (error) {
@@ -188,7 +197,8 @@ const checkCacheAndGenerate = async (req, res) => {
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.end(`500: Internal Server Error - ${error.message}`);
 
-    sendToAnalytics(req, "imageGenerationError", { ...analyticsMetadata, error: error.message });
+    // Enhanced error analytics with the same base metadata
+    sendToAnalytics(req, "imageGenerationError", createErrorMetadata(analyticsMetadata, error));
   }
 };
 

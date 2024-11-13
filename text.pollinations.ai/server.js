@@ -309,6 +309,7 @@ const connectedClients = new Map();
 async function generateTextBasedOnModel(messages, options) {
     const { model = 'openai' } = options;
     let response;
+    let fallback = false;
 
     if (model.startsWith('mistral')) {
         response = await generateTextMistral(messages, options);
@@ -337,12 +338,16 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'qwen-coder') {
         response = await generateTextHuggingface(messages, options);
     } else {
-        response = await generateTextWithMistralFallback(messages, options);
+        const result = await generateTextWithMistralFallback(messages, options);
+        response = result.response;
+        fallback = result.fallback;
     }
 
     // Broadcast the response to all connected clients
-    for (const [, handleNewResponse] of connectedClients) {
-        handleNewResponse(response, { model, messages, ...options });
+    if (!fallback) {
+        for (const [, handleNewResponse] of connectedClients) {
+            handleNewResponse(response, { model, messages, ...options });
+        }
     }
 
     return response;
@@ -353,7 +358,7 @@ const generateTextWithMistralFallback = async (messages, options) => {
         return await generateText(messages, options);
     } catch (error) {
         console.error(`Error generating. Trying Mistral fallback`, error.message);
-        return await generateTextMistral(messages, options);
+        return { response: await generateTextMistral(messages, options), fallback: true };
     }
 }
 

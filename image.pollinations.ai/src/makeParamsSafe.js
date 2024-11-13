@@ -2,13 +2,12 @@ import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, refine: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, refine = false, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
-    refine = sanitizeBoolean(refine);
     enhance = sanitizeBoolean(enhance);
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed);
@@ -44,5 +43,5 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     }
 
 
-    return { width, height, seed, model, enhance, refine, nologo, negative_prompt, nofeed };
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed };
 };

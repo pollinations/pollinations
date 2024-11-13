@@ -34,7 +34,8 @@ export async function generateText(messages, options, performSearch = false) {
             seed: options.seed + attempts,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
-            tool_choice: performSearch ? "auto" : undefined
+            tool_choice: performSearch ? "auto" : undefined,
+            max_tokens: 1024,
         });
 
         responseMessage = completion.choices[0].message;
@@ -78,7 +79,8 @@ export async function generateText(messages, options, performSearch = false) {
                 seed: options.seed + attempts,
                 response_format: options.jsonMode ? { type: 'json_object' } : undefined,
                 tools: [searchToolDefinition, scrapeToolDefinition],
-                tool_choice: "auto"
+                tool_choice: "auto",
+                max_tokens: 1024,
             });
             responseMessage = completion.choices[0].message;
             attempts++;

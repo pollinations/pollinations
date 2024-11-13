@@ -8,6 +8,9 @@ const MAX_TOTAL_CHARS = 100000; // ~25k tokens total
 const MAX_CONTENT_LENGTH = 30000; // ~7.5k tokens per URL
 let totalCharsScraped = 0; // Track total characters across all scrapes
 
+// Add timeout constant
+const SCRAPE_TIMEOUT = 30000; // 30 seconds timeout for scraping
+
 export const scrapeToolDefinition = {
     type: "function",
     function: {
@@ -45,7 +48,6 @@ function truncateMarkdown(markdown, maxLength) {
 
 export async function performWebScrape({ urls }) {
     try {
-        // If we've already scraped too much content, return early
         if (totalCharsScraped >= MAX_TOTAL_CHARS) {
             return JSON.stringify({
                 warning: 'Maximum context length reached. Skipping additional scraping.',
@@ -54,52 +56,37 @@ export async function performWebScrape({ urls }) {
         }
 
         console.log("Performing web scrape for URLs:", urls);
-        
-        // Limit the number of URLs
-        const limitedUrls = urls.slice(0, 2); // Reduced to 2 URLs max
-        
+        const limitedUrls = urls.slice(0, 2);
         const results = [];
         
-        // Process URLs sequentially to better control total content
         for (const url of limitedUrls) {
             try {
-                // Check if we've hit the limit
-                if (totalCharsScraped >= MAX_TOTAL_CHARS) {
-                    break;
-                }
+                if (totalCharsScraped >= MAX_TOTAL_CHARS) break;
 
-                const response = await fetch(url);
+                // Add timeout to fetch operation
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), SCRAPE_TIMEOUT);
+
+                const response = await fetch(url, { signal: controller.signal });
                 const html = await response.text();
+                clearTimeout(timeoutId);
+
                 const markdown = turndownService.turndown(html);
-                
-                // Calculate remaining space
                 const remainingSpace = MAX_TOTAL_CHARS - totalCharsScraped;
                 const maxForThisUrl = Math.min(MAX_CONTENT_LENGTH, remainingSpace);
-                
-                // Truncate content
                 const truncatedContent = truncateMarkdown(markdown, maxForThisUrl);
                 
-                // Update total chars scraped
                 totalCharsScraped += truncatedContent.length;
-                
-                results.push({
-                    url,
-                    success: true,
-                    content: truncatedContent
-                });
+                results.push({ url, success: true, content: truncatedContent });
             } catch (error) {
-                results.push({
-                    url,
-                    success: false,
-                    error: error.message
-                });
+                const errorMessage = error.name === 'AbortError' 
+                    ? 'Scraping timed out' 
+                    : error.message;
+                results.push({ url, success: false, error: errorMessage });
             }
         }
 
-        // Reset counter periodically (e.g., after 1 hour) to allow new scraping sessions
-        setTimeout(() => {
-            totalCharsScraped = 0;
-        }, 60 * 60 * 1000);
+        setTimeout(() => { totalCharsScraped = 0; }, 60 * 60 * 1000);
 
         return JSON.stringify({
             results,
@@ -107,6 +94,9 @@ export async function performWebScrape({ urls }) {
             remainingCapacity: MAX_TOTAL_CHARS - totalCharsScraped
         });
     } catch (error) {
-        return JSON.stringify({ error: 'Failed to perform web scraping' });
+        return JSON.stringify({ 
+            error: 'Failed to perform web scraping',
+            details: error.message 
+        });
     }
 }

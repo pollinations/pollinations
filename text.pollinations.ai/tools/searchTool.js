@@ -6,6 +6,9 @@ dotenv.config();
 const BING_SEARCH_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search';
 const BING_API_KEY = process.env.BING_API_KEY;
 
+// Add timeout constant
+const SEARCH_TIMEOUT = 20000; // 10 seconds timeout for search
+
 export const searchToolDefinition = {
     type: "function",
     function: {
@@ -32,25 +35,33 @@ export const searchToolDefinition = {
 export async function performWebSearch({ query, num_results = 20 }) {
     try {
         console.log("Performing web search with query", query, "and num_results", num_results);
+        
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
             params: { q: query, count: num_results },
-            headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY }
+            headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY },
+            timeout: SEARCH_TIMEOUT
         });
-        const results = response.data.webPages.value
-            // .slice(0, Math.min(num_results, 20))
-            .map(result => ({
-                title: result.name,
-                snippet: result.snippet,
-                url: result.url,
-                published: result.datePublishedDisplayText,
-                crawled: result.dateLastCrawled,
-                publisher: result.publisher,
-                thumbnailUrl: result.thumbnailUrl
-            }));
-        console.log("Search results", JSON.stringify(results, null, 2));
+
+        const results = response.data.webPages.value.map(result => ({
+            title: result.name,
+            snippet: result.snippet,
+            url: result.url,
+            published: result.datePublishedDisplayText,
+            crawled: result.dateLastCrawled,
+            publisher: result.publisher,
+            thumbnailUrl: result.thumbnailUrl
+        }));
+
         return JSON.stringify(results);
     } catch (error) {
-        console.error('Search API error:', error);
-        return JSON.stringify({ error: 'Failed to perform web search' });
+        const errorMessage = error.code === 'ECONNABORTED' 
+            ? 'Search timed out' 
+            : error.response?.data?.error || error.message;
+            
+        console.error('Search API error:', errorMessage);
+        return JSON.stringify({ 
+            error: 'Failed to perform web search',
+            details: errorMessage
+        });
     }
 }

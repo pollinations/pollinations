@@ -51,7 +51,7 @@ const queues = new Map();
 
 function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 3 }));
     }
     return queues.get(ip);
 }

@@ -5,7 +5,7 @@ let FLUX_SERVERS = [];
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
 
-const concurrency = 2;
+const concurrency = 3;
 
 // Decay errors every minute
 setInterval(() => {

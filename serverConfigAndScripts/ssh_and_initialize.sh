@@ -10,7 +10,9 @@ HOST=$1
 # Automatically accept adding the key if ssh asks
 ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
   cd /home/ubuntu/pollinations/serverConfigAndScripts
+  git fetch origin
   git pull
+  git checkout master
   bash install-services.sh
   sudo reboot
 EOF

@@ -85,4 +85,11 @@ export const availableModels = [
         description: 'Qwen Coder 32b Instruct (Supposedly better than GPT-4o at coding)',
         baseModel: true,
     },
+    {
+        name: 'p1',
+        type: 'chat',
+        censored: false,
+        description: 'Pollinations 1 (OptiLLM)',
+        baseModel: false,
+    }
 ];

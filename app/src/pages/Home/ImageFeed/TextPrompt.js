@@ -41,7 +41,6 @@ export function TextPrompt({
                     value={imageParams.prompt}
                     onChange={(e) => handleParamChange("prompt", e.target.value)}
                     onFocus={handleFocus}
-                    disabled={isLoading}
                 />
             ) : (
                 <div

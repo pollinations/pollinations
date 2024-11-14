@@ -11,31 +11,19 @@ const apiSecret = process.env.GA_API_SECRET;
  * @param {Object} params - Parameters including req, originalPrompt, safeParams, referrer
  * @returns {Object} Base metadata object
  */
-const createAnalyticsMetadata = (req, { originalPrompt, safeParams, referrer, timingInfo, bufferAndMaturity }) => ({
+const createAnalyticsMetadata = (req, { originalPrompt, safeParams, referrer, timingInfo, bufferAndMaturity, error }) => ({
   ...safeParams,
   promptRaw: originalPrompt,
   concurrentRequests: countFluxJobs(),
   referrer,
   ip: getIp(req),
   queueSize: countJobs(true),
-  totalProcessingTime: timingInfo?.[timingInfo?.length - 1]?.timestamp - timingInfo?.[0]?.timestamp,
+  totalProcessingTime: Math.floor(((timingInfo?.[timingInfo?.length - 1]?.timestamp - timingInfo?.[0]?.timestamp) || 0) / 1000),
   nsfw: bufferAndMaturity?.isMature,
   isChild: bufferAndMaturity?.isChild,
+  error: error?.message || error,
 });
 
-/**
- * Creates error metadata for analytics
- * @param {Object} baseMetadata - Base metadata object
- * @param {Error} error - Error object
- * @returns {Object} Error metadata
- */
-export const createErrorMetadata = (baseMetadata, error) => ({
-  ...baseMetadata,
-  error: error.message,
-  errorStack: error.stack,
-  errorType: error.name,
-  timeOfError: new Date().toISOString()
-});
 
 export async function sendToAnalytics(request, name, metadata) {
     const referrer = request.headers.referer;

@@ -17,7 +17,7 @@ import {
 import InfoIcon from "@material-ui/icons/Info"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { CustomTooltip } from "../../../components/CustomTooltip"
-import discordLogo from "../../../assets/icons/discord.png" // Corrected import for the Discord logo
+import discordLogo from "../../../assets/icons/discord.png"
 
 export const ImageEditor = memo(function ImageEditor({
   image,
@@ -48,7 +48,6 @@ export const ImageEditor = memo(function ImageEditor({
     handleParamChange(param, value)
   }
 
-  // Helper function to check if enhance should be true
   const isEnhanceChecked = enhance !== false
 
   if (!image.imageURL) {
@@ -81,7 +80,6 @@ export const ImageEditor = memo(function ImageEditor({
               aria-haspopup="true"
               onClick={handleMenuOpen}
               onFocus={handleFocus}
-              disabled={isLoading}
               style={{
                 color: Colors.white,
                 width: "100%",
@@ -122,7 +120,6 @@ export const ImageEditor = memo(function ImageEditor({
               InputProps={{
                 style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
-              disabled={isLoading}
               style={{ width: "100%" }}
             />
           </Grid>
@@ -139,7 +136,6 @@ export const ImageEditor = memo(function ImageEditor({
               InputProps={{
                 style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
-              disabled={isLoading}
               style={{ width: "100%" }}
             />
           </Grid>
@@ -161,7 +157,6 @@ export const ImageEditor = memo(function ImageEditor({
               InputProps={{
                 style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
               }}
-              disabled={isLoading}
             />
           </Grid>
           <Grid item xs={4}>
@@ -180,7 +175,6 @@ export const ImageEditor = memo(function ImageEditor({
               checked={isEnhanceChecked}
               onChange={(e) => handleInputChange("enhance", e.target.checked)}
               onFocus={handleFocus}
-              disabled={isLoading}
               style={{ fontSize: isMobile ? "1.5rem" : "1.1rem" }}
             />
           </Grid>
@@ -191,32 +185,6 @@ export const ImageEditor = memo(function ImageEditor({
                 title={
                   <span>
                     Disable watermark logo.
-                    {/*
-                    <br/>
-                    Get the password in Pollinations' Discord
-                    community.
-                    {" "}
-                      <Box style={{ paddingTop: "1em", paddingBottom: "0.5em" }}>
-                        <img
-                          src={discordLogo}
-                          alt="Discord Logo"
-                          style={{
-                            width: "16px",
-                            height: "16px",
-                            marginLeft: "0.5em",
-                            marginRight: "0.3em",
-                            paddingBottom: "0.2em",
-                            verticalAlign: "middle",
-                          }}
-                        />
-                        <Link
-                          href="https://discord.gg/k9F7SyTgqn"
-                          target="_blank"
-                          style={{ color: Colors.lime }}
-                        >
-                          Join here
-                        </Link>
-                      </Box>*/}
                   </span>
                 }
                 interactive
@@ -231,7 +199,6 @@ export const ImageEditor = memo(function ImageEditor({
               checked={nologo}
               onChange={(e) => handleInputChange("nologo", e.target.checked)}
               onFocus={handleFocus}
-              disabled={isLoading}
               style={{ fontSize: isMobile ? "1.5rem" : "1.1rem" }}
             />
           </Grid>

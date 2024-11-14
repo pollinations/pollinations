@@ -10,7 +10,7 @@ log "Starting service installation script"
 PUBLIC_IP=$(curl -s http://checkip.amazonaws.com)
 
 # Check if the flag file exists
-FLAG_FILE="/home/ubuntu/ComfyUI/models/all_models_downloaded_shuttle_${PUBLIC_IP}.flag"
+FLAG_FILE="/home/ubuntu/ComfyUI/models/all_models_downloaded_schnell2_${PUBLIC_IP}.flag"
 
 if [ -f "$FLAG_FILE" ]; then
     log "Flag file exists. Skipping downloads."
@@ -21,20 +21,20 @@ else
 
     # Download the required UNET model file, overwriting any existing file
     log "Downloading flux1-schnell-fp8-e4m3fn.safetensors"
-    # if wget -O flux1-schnell-fp8-e4m3fn.safetensors https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-schnell-fp8-e4m3fn.safetensors; then
-    #     log "flux1-schnell-fp8-e4m3fn.safetensors downloaded successfully"
-    # else
-    #     log "ERROR: Failed to download flux1-schnell-fp8-e4m3fn.safetensors"
-    #     exit 1
-    # fi
-
-    # use https://huggingface.co/shuttleai/shuttle-3-diffusion-fp8/resolve/main/shuttle-3-diffusion-fp8.safetensors
-    if wget -O flux1-schnell-fp8-e4m3fn.safetensors https://huggingface.co/shuttleai/shuttle-3-diffusion-fp8/resolve/main/shuttle-3-diffusion-fp8.safetensors; then
-        log "flux1-shuttle-fp8 downloaded successfully"
+    if wget -O flux1-schnell-fp8-e4m3fn.safetensors https://huggingface.co/Kijai/flux-fp8/resolve/main/flux1-schnell-fp8-e4m3fn.safetensors; then
+        log "flux1-schnell-fp8-e4m3fn.safetensors downloaded successfully"
     else
-        log "ERROR: Failed to download flux1-shuttle-fp8"
+        log "ERROR: Failed to download flux1-schnell-fp8-e4m3fn.safetensors"
         exit 1
     fi
+
+    # # use https://huggingface.co/shuttleai/shuttle-3-diffusion-fp8/resolve/main/shuttle-3-diffusion-fp8.safetensors
+    # if wget -O flux1-schnell-fp8-e4m3fn.safetensors https://huggingface.co/shuttleai/shuttle-3-diffusion-fp8/resolve/main/shuttle-3-diffusion-fp8.safetensors; then
+    #     log "flux1-shuttle-fp8 downloaded successfully"
+    # else
+    #     log "ERROR: Failed to download flux1-shuttle-fp8"
+    #     exit 1
+    # fi
 
     # Navigate to the CLIP models directory
     log "Navigating to CLIP models directory"

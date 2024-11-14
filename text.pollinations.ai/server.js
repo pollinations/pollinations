@@ -355,7 +355,7 @@ async function generateTextBasedOnModel(messages, options) {
 
 const generateTextWithMistralFallback = async (messages, options) => {
     try {
-        return await generateText(messages, options);
+        return { response: await generateText(messages, options), fallback: false };
     } catch (error) {
         console.error(`Error generating. Trying Mistral fallback`, error.message);
         return { response: await generateTextMistral(messages, options), fallback: true };

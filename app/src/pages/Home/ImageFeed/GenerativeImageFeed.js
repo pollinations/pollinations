@@ -78,7 +78,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   const [imageParams, setImageParams] = useState({})
   const imageParamsRef = useRef(imageParams) // Use useRef for imageParamsRef
   const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow()
-  const { updateImage, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
+  const { updateImage, cancelLoading, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
   const [isInputChanged, setIsInputChanged] = useState(false)
@@ -132,6 +132,12 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   }, [updateImage])
 
   const handleButtonClick = () => {
+    if (isLoading) {
+      // Cancel the current generation
+      cancelLoading();
+      return;
+    }
+
     if (!isInputChanged) {
       setImageParams((prevParams) => ({
         ...prevParams,
@@ -199,7 +205,6 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
                     image={imageParams}
                     handleParamChange={handleParamChange}
                     handleFocus={handleFocus}
-                    isLoading={isLoading}
                     handleSubmit={handleSubmit}
                     setIsInputChanged={setIsInputChanged}
                   />

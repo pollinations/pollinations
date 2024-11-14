@@ -46,20 +46,40 @@ export function useImageSlideshow() {
 export function useImageEditor({ stop, image }) {
   const [isLoading, setIsLoading] = useState(false);
   const [editedImage, setEditedImage] = useState(null);
+  const abortControllerRef = useRef(null);
+
   const updateImage = useCallback(async (newImage) => {
     stop(true);
     setIsLoading(true);
 
-    console.log("Updating image with newImage:", newImage);
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
 
-    const loadedImage = await loadImage(newImage);
-    setEditedImage(loadedImage);
-    setIsLoading(false);
-  }, [stop, editedImage]);
+    try {
+      console.log("Updating image with newImage:", newImage);
+      const loadedImage = await loadImage(newImage);
+      setEditedImage(loadedImage);
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('Image loading cancelled');
+      } else {
+        console.error('Error loading image:', error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [stop]);
+
+  const cancelLoading = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsLoading(false);
+    }
+  }, []);
 
   image = editedImage || image;
 
-  return { updateImage, image, isLoading };
+  return { updateImage, cancelLoading, image, isLoading, setIsLoading };
 }
 
 const loadImage = async (newImage) => {

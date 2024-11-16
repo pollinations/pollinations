@@ -3,7 +3,7 @@ Description=Turbo Service
 After=network.target
 
 [Service]
-ExecStart=/home/ubuntu/pollinations/serverConfigAndScripts/turbo-startup.sh
+ExecStart=/home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts/turbo-startup.sh
 User=ubuntu
 Restart=always
 

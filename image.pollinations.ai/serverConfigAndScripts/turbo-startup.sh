@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start the ComfyUI server
-cd /home/ubuntu/pollinations/image_gen_dmd2/
+cd /home/ubuntu/pollinations/image.pollinations.ai/image_gen_dmd2/
 
 # if venv not found, create it
 if [ ! -d "venv2" ]; then

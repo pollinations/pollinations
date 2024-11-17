@@ -23,7 +23,7 @@ log "ComfyUI is now available"
 
 # Navigate to the pollinationsServer directory
 log "Navigating to pollinationsServer directory"
-cd /home/ubuntu/pollinations/image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change directory to pollinationsServer"; exit 1; }
+cd /home/ubuntu/pollinations/image.pollinations.ai/image_gen_comfyui/pollinationsServer/ || { log "ERROR: Failed to change directory to pollinationsServer"; exit 1; }
 
 # Start the Python server using uvicorn
 log "Starting Python server"

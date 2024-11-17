@@ -218,15 +218,11 @@ For any questions or support, please visit our [Discord channel](https://discord
 
 Our codebase is organized into several key folders, each serving a specific purpose in the Pollinations.AI ecosystem:
 
-- [`app/`](./app/): The main React application for the Pollinations.ai website.
+- [`pollinations.ai/`](./app/): The main React application for the Pollinations.ai website.
 
 - [`image.pollinations.ai/`](./image.pollinations.ai/): Backend service for image generation and caching.
 
-- [`pollinations.ai-bot/`](./pollinations.ai-bot/): Discord bot implementation for Pollinations.ai.
-
 - [`pollinations-react/`](./pollinations-react/): React component library for Pollinations.ai.
-
-- [`serverConfigAndScripts/`](./serverConfigAndScripts/): Server configuration files and deployment scripts.
 
 - [`text.pollinations.ai/`](./text.pollinations.ai/): Backend service for text generation.
 

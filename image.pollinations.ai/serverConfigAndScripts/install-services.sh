@@ -105,8 +105,8 @@ cd /home/ubuntu/ComfyUI || { log "ERROR: Failed to change directory to ComfyUI";
 log "Activating environment and upgrading dependencies"
 source comfyenv/bin/activate && pip install --upgrade -r requirements.txt || { log "ERROR: Failed to upgrade dependencies"; exit 1; }
 
-# change folder to /home/ubuntu/pollinations/serverConfigAndScripts
-cd /home/ubuntu/pollinations/serverConfigAndScripts || { log "ERROR: Failed to change directory to /home/ubuntu/pollinations/serverConfigAndScripts"; exit 1; }
+# change folder to /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts
+cd /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts || { log "ERROR: Failed to change directory to /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts"; exit 1; }
 
 # Copy service files to systemd directory
 log "Copying service files to /etc/systemd/system/"

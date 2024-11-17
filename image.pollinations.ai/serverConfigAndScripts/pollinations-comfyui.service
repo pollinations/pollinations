@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 User=ubuntu
-ExecStart=/bin/bash /home/ubuntu/pollinations/serverConfigAndScripts/comfyui-startup.sh
+ExecStart=/bin/bash /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts/comfyui-startup.sh
 Restart=always
 RestartSec=10
 

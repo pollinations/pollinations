@@ -86,6 +86,12 @@ const projects = {
       author: "@gaurav_87680",
     },
     {
+      name: "Rangrez AI",
+      url: "https://rangrezai.com",
+      description: "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations and GroqCloud.",
+      author: "@saadaryf",
+    },
+    {
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
@@ -112,12 +118,6 @@ const projects = {
         "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.ai.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime",
-    },
-    {
-      name: "DevSaura AI",
-      url: "https://ai.devsaura.com",
-      description: "A web platform offering AI-powered tools for image generation, blog creation, and story writing with visuals, all powered by Pollinations and GroqCloud.",
-      author: "@saadaryf",
     },
     {
       name: "Own-AI",

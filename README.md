@@ -1,6 +1,6 @@
 # [Pollinations.AI](https://pollinations.ai)
 
-*Your EnHangovers from the world I showed them I am proudgine for Personalized Synthetic Media*
+*Your Engine for Personalized Synthetic Media*
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 

@@ -157,6 +157,11 @@ Pollinations.AI is used in various projects, including:
 6. [DynaSpark AI](https://dynaspark.onrender.com): A versatile AI assistant with advanced image and text generation capabilities, integrating Pollinations.ai for image generation. Created by [Th3-C0der](https://github.com/Th3-C0der).
 7. [FlowGPT](https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai): Generate images on-demand with ChatGPT.
 8. [Sirius Cybernetics Elevator Challenge](https://sirius-cybernetics.pollinations.ai/): A Hitchhiker's Guide to the Galaxy themed LLM-based elevator game. Created by @thomash_pollinations. [GitHub Repo](https://github.com/voodoohop/sirius-cybernetics-elevator-challenge)
+9. [Pollinator](https://gaurav-aggarwal.com/Pollinator/): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by [Gaurav](https://github.com/g-aggarwal/Pollinator)
+10. [Elixpo](https://circuit-overtime.github.io/Elixpo_ai_pollinations/elixpoArtGenerator.html): A web interface for easy image generation, with theme selection, aspect ratio options, and an internal server gallery. Created by [Ayushman Bhattacharya](https://github.com/Circuit-Overtime)
+11. [MIDIJourney](https://github.com/korus-labs/MIDIjourney): An AI-powered plugin for Ableton Live that transforms ext descriptions into music! 🎶. Created by @korus-labs. [GitHub Repo](https://github.com/korus-labs/MIDIjourney)
+12. [Infinite Tales](https://infinite-tales-rpg.vercel.app/): A Choose Your Own Adventure RPG, dynamically narrated by AI. Created by [JayJayBinks](https://github.com/JayJayBinks/infinite-tales-rpg)
+13. [POLLIPAPER](https://github.com/Tolerable/POLLIPAPER): A dynamic wallpaper app that uses Pollinations AI to create unique desktop backgrounds. Created by [@intolerant0ne](https://github.com/Tolerable)
 
 ### Social Bots
 1. [Discord Bot](https://discord.gg/D9xGg8mq3D): A Discord bot that uses Pollinations.ai for generating images based on user prompts. Created by @Zngzy. [GitHub Repo](https://github.com/Zingzy/pollinations.ai-bot)
@@ -164,6 +169,7 @@ Pollinations.AI is used in various projects, including:
 3. [Telegram Bot](http://t.me/pollinationsbot): A Telegram bot that uses Pollinations.ai for generating images based on user prompts. Created by Wong Wei Hao.
 4. [Anyai](https://discord.com): A Discord bot and community that leverages Pollinations.ai for generating AI-driven content. Created by @meow_18838.
 5. [OpenHive](https://discord.gg/Zv3SXTF5xy): A Discord server that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.ai! Created by @creativegpt.
+6. [Elixpo-art](https://discord.com/oauth2/authorize?client_id=1214916249222643752): A discord bot using Pollinations.ai allowing multiple themes and aspect ratios to generate images based on user prompts. Created by [Ayushman Bhattacharya](https://github.com/Circuit-Overtime)
 
 ### Mobile & Web Applications
 1. [Pollinator Android App](https://github.com/g-aggarwal/Pollinator): An open-source Android app for text-to-image generation using Pollinations.ai's endpoint. Created by @gaurav_87680.
@@ -178,6 +184,9 @@ Pollinations.AI is used in various projects, including:
 10. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool that integrates Pollinations.ai for generating AI-driven content. Remix the app with your own prompts. Created by @thomash_pollinations.
 11. [JCode Website Builder](https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories): A website generator using Pollinations text API. Created by @rtxpower.
 12. [JustBuildThings](https://justbuildthings.com): A collection of AI tools for image generation, character chat, and writing powered by Pollinations. Created by rasit.
+
+### Chrome Extension
+1. [Elixpo-art](https://chromewebstore.google.com/detail/elixpo-art-select-text-an/hcjdeknbbbllfllddkbacfgehddpnhdh): A chrome extension that allows direct image generation from selected text. Created by [Ayushman Bhattacharya](https://github.com/Circuit-Overtime)
 
 ### Tutorials
 1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.

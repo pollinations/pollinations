@@ -113,11 +113,11 @@ const projects = {
     },
     {
       name: "Elixpo",
-      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations/elixpo_homepage.html",
+      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
       description:
         "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.ai.",
       author: "Ayushman Bhattacharya",
-      repo: "https://github.com/Circuit-Overtime",
+      repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
     },
     {
       name: "Own-AI",

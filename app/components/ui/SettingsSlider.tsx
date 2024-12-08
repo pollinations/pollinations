@@ -27,7 +27,7 @@ export const SettingsSlider = memo(<T,>({ selected, options, setSelected }: Sett
       <motion.div
         className={classNames(
           'settings-slider__thumb',
-          isLeftSelected ? 'settings-slider__thumb--left' : 'settings-slider__thumb--right'
+          isLeftSelected ? 'settings-slider__thumb--left' : 'settings-slider__thumb--right',
         )}
         initial={false}
         animate={{
@@ -44,7 +44,7 @@ export const SettingsSlider = memo(<T,>({ selected, options, setSelected }: Sett
         onClick={() => setSelected?.(options.left.value)}
         className={classNames(
           'settings-slider__button',
-          isLeftSelected ? 'settings-slider__button--selected' : 'settings-slider__button--unselected'
+          isLeftSelected ? 'settings-slider__button--selected' : 'settings-slider__button--unselected',
         )}
       >
         {options.left.text}
@@ -53,7 +53,7 @@ export const SettingsSlider = memo(<T,>({ selected, options, setSelected }: Sett
         onClick={() => setSelected?.(options.right.value)}
         className={classNames(
           'settings-slider__button',
-          !isLeftSelected ? 'settings-slider__button--selected' : 'settings-slider__button--unselected'
+          !isLeftSelected ? 'settings-slider__button--selected' : 'settings-slider__button--unselected',
         )}
       >
         {options.right.text}

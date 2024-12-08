@@ -10,7 +10,6 @@ import { toast } from 'react-toastify';
 import { useNavigate } from '@remix-run/react';
 import commit from '~/commit.json';
 import Cookies from 'js-cookie';
-import { SettingsSlider } from './SettingsSlider';
 import '~/styles/components/SettingsSlider.scss';
 import '~/styles/components/Settings.scss';
 
@@ -219,9 +218,7 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={classNames(
-                      activeTab === tab.id ? 'active' : ''
-                    )}
+                    className={classNames(activeTab === tab.id ? 'active' : '')}
                   >
                     <div className={tab.icon} />
                     {tab.label}
@@ -250,7 +247,9 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
               </div>
 
               <div className="flex-1 flex flex-col p-8 bg-gray-50 dark:bg-gray-800">
-                <DialogTitle className="flex-shrink-0 text-lg font-semibold text-bolt-elements-textPrimary">Settings</DialogTitle>
+                <DialogTitle className="flex-shrink-0 text-lg font-semibold text-bolt-elements-textPrimary">
+                  Settings
+                </DialogTitle>
                 <div className="flex-1 overflow-y-auto">
                   {activeTab === 'chat-history' && (
                     <div className="p-4">
@@ -304,14 +303,20 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
                                 checked={provider.isEnabled}
                                 onChange={() => handleToggleProvider(provider.name)}
                               />
-                              <div className={classNames(
-                                'settings-toggle__track',
-                                provider.isEnabled ? 'settings-toggle__track--enabled' : 'settings-toggle__track--disabled'
-                              )}></div>
-                              <div className={classNames(
-                                'settings-toggle__thumb',
-                                provider.isEnabled ? 'settings-toggle__thumb--enabled' : ''
-                              )}></div>
+                              <div
+                                className={classNames(
+                                  'settings-toggle__track',
+                                  provider.isEnabled
+                                    ? 'settings-toggle__track--enabled'
+                                    : 'settings-toggle__track--disabled',
+                                )}
+                              ></div>
+                              <div
+                                className={classNames(
+                                  'settings-toggle__thumb',
+                                  provider.isEnabled ? 'settings-toggle__thumb--enabled' : '',
+                                )}
+                              ></div>
                             </label>
                           </div>
                           {/* Base URL input for configurable providers */}
@@ -343,14 +348,18 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
                             checked={isDebugEnabled}
                             onChange={() => setIsDebugEnabled(!isDebugEnabled)}
                           />
-                          <div className={classNames(
-                            'settings-toggle__track',
-                            isDebugEnabled ? 'settings-toggle__track--enabled' : 'settings-toggle__track--disabled'
-                          )}></div>
-                          <div className={classNames(
-                            'settings-toggle__thumb',
-                            isDebugEnabled ? 'settings-toggle__thumb--enabled' : ''
-                          )}></div>
+                          <div
+                            className={classNames(
+                              'settings-toggle__track',
+                              isDebugEnabled ? 'settings-toggle__track--enabled' : 'settings-toggle__track--disabled',
+                            )}
+                          ></div>
+                          <div
+                            className={classNames(
+                              'settings-toggle__thumb',
+                              isDebugEnabled ? 'settings-toggle__thumb--enabled' : '',
+                            )}
+                          ></div>
                         </label>
                       </div>
                     </div>
@@ -367,14 +376,18 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
                             checked={isJustSayEnabled}
                             onChange={() => setIsJustSayEnabled(!isJustSayEnabled)}
                           />
-                          <div className={classNames(
-                            'settings-toggle__track',
-                            isJustSayEnabled ? 'settings-toggle__track--enabled' : 'settings-toggle__track--disabled'
-                          )}></div>
-                          <div className={classNames(
-                            'settings-toggle__thumb',
-                            isJustSayEnabled ? 'settings-toggle__thumb--enabled' : ''
-                          )}></div>
+                          <div
+                            className={classNames(
+                              'settings-toggle__track',
+                              isJustSayEnabled ? 'settings-toggle__track--enabled' : 'settings-toggle__track--disabled',
+                            )}
+                          ></div>
+                          <div
+                            className={classNames(
+                              'settings-toggle__thumb',
+                              isJustSayEnabled ? 'settings-toggle__thumb--enabled' : '',
+                            )}
+                          ></div>
                         </label>
                       </div>
                     </div>
@@ -408,7 +421,9 @@ export const Settings = ({ open, onClose }: SettingsProps) => {
                       <ul>
                         <li className="text-bolt-elements-textSecondary">Ollama: {process.env.REACT_APP_OLLAMA_URL}</li>
                         <li className="text-bolt-elements-textSecondary">OpenAI: {process.env.REACT_APP_OPENAI_URL}</li>
-                        <li className="text-bolt-elements-textSecondary">LM Studio: {process.env.REACT_APP_LM_STUDIO_URL}</li>
+                        <li className="text-bolt-elements-textSecondary">
+                          LM Studio: {process.env.REACT_APP_LM_STUDIO_URL}
+                        </li>
                       </ul>
 
                       <h4 className="text-md font-medium text-bolt-elements-textPrimary mt-4">Version Information</h4>

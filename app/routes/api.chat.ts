@@ -8,17 +8,15 @@ export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
 }
 
-function parseCookies(cookieHeader: string) {
-  const cookies: any = {};
+function parseCookies(cookieHeader: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
 
-  // Split the cookie string by semicolons and spaces
   const items = cookieHeader.split(';').map((cookie) => cookie.trim());
 
   items.forEach((item) => {
     const [name, ...rest] = item.split('=');
 
     if (name && rest) {
-      // Decode the name and value, and join value parts in case it contains '='
       const decodedName = decodeURIComponent(name.trim());
       const decodedValue = decodeURIComponent(rest.join('=').trim());
       cookies[decodedName] = decodedValue;
@@ -35,16 +33,15 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   }>();
 
   const cookieHeader = request.headers.get('Cookie');
-
-  // Parse the cookie's value (returns an object or null if no cookie exists)
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
-
   const stream = new SwitchableStream();
 
   try {
     const options: StreamingOptions = {
       toolChoice: 'none',
-      onFinish: async ({ text: content, finishReason }) => {
+      onFinish: async ({ text: content, finishReason, usage }) => {
+        console.log('usage', usage);
+
         if (finishReason !== 'length') {
           return stream.close();
         }
@@ -62,13 +59,12 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         const result = await streamText(messages, context.cloudflare.env, options, apiKeys);
 
-        return stream.switchSource(result.toAIStream());
+        return stream.switchSource(result.toDataStream());
       },
     };
 
     const result = await streamText(messages, context.cloudflare.env, options, apiKeys);
-
-    stream.switchSource(result.toAIStream());
+    stream.switchSource(result.toDataStream());
 
     return new Response(stream.readable, {
       status: 200,
@@ -77,7 +73,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       },
     });
   } catch (error: any) {
-    console.log(error);
+    console.error(error);
 
     if (error.message?.includes('API key')) {
       throw new Response('Invalid or missing API key', {

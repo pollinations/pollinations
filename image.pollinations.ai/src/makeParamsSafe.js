@@ -2,15 +2,16 @@ import { MODELS } from './models.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
- * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string }} params
+ * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string }} params
  * @returns {Object} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false }) => {
+export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
     enhance = sanitizeBoolean(enhance);
     nologo = sanitizeBoolean(nologo);
     nofeed = sanitizeBoolean(nofeed);
+    safe = sanitizeBoolean(safe);
 
     // Ensure model is one of the allowed models or default to "flux"
     const allowedModels = Object.keys(MODELS);
@@ -29,8 +30,6 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     const maxSeedValue = 1844674407370955;
     seed = Number.isInteger(parseInt(seed)) ? parseInt(seed) : 42;
 
-
-
     if (seed < 0 || seed > maxSeedValue) {
         seed = 42;
     }
@@ -42,6 +41,5 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         height = Math.floor(height * ratio);
     }
 
-
-    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed };
+    return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe };
 };

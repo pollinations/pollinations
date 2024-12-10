@@ -5,16 +5,17 @@ let FLUX_SERVERS = [];
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
 
-const concurrency = 3;
+const concurrency = 2;
 
 // Decay errors every minute
 setInterval(() => {
     FLUX_SERVERS.forEach(server => {
         if (server.errors > 0) {
             server.errors--;
+            console.log(`Decreased errors for ${server.url} to ${server.errors}`);
         }
     });
-}, 120 * 1000); // Every 2 minute
+}, 60 * 1000); // Every 1 minute
 
 /**
  * Returns the total number of jobs across all FLUX server queues
@@ -74,7 +75,7 @@ const getNextFluxServerUrl = async () => {
 
     const weightedLoad = FLUX_SERVERS.map(server => ({
         server,
-        load: (server.queue.size + server.queue.pending) + (server.errors * 2)
+        load: (server.queue.size + server.queue.pending) + (server.errors)
     }));
 
     const minLoad = Math.min(...weightedLoad.map(w => w.load));

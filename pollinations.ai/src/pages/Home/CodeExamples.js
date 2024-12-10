@@ -39,7 +39,7 @@ const CODE_EXAMPLES = {
 ### Image Generation API (Default model: 'flux')
 
 Generate Image: \`GET https://image.pollinations.ai/prompt/{prompt}\`
-- Params: prompt*, model, seed, width, height, nologo, private, enhance
+- Params: prompt*, model, seed, width, height, nologo, private, enhance, safe
 - Return: Image file
 
 List Models: \`GET https://image.pollinations.ai/models\`
@@ -459,4 +459,3 @@ export function CodeExamples({ image }) {
 }
 
 const shorten = (str) => (str.length > 60 ? str.slice(0, 60) + "..." : str)
-

@@ -5,7 +5,7 @@
 ### Image Generation API (Default model: 'flux')
 
 Generate Image: `GET https://image.pollinations.ai/prompt/{prompt}`
-- Params: prompt*, model, seed, width, height, nologo, private, enhance
+- Params: prompt*, model, seed, width, height, nologo, private, enhance, safe
 - Return: Image file
 
 List Models: `GET https://image.pollinations.ai/models`
@@ -65,6 +65,7 @@ Docs: https://pollinations.ai/react-hooks
 - nologo: Set to 'true' to turn off the rendering of the logo. Default: false
 - private: Set to 'true' to prevent the image from appearing in the public feed. Default: false
 - enhance: Set to 'true' to turn on prompt enhancing (passes prompts through an LLM to add detail). Default: false
+- safe: Set to 'true' to enable strict NSFW content filtering, throwing an error if NSFW content is detected. Default: false
 
 **Return:** Image file (typically JPEG or PNG)
 

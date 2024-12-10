@@ -55,8 +55,9 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
   // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
-  const steps = Math.max(1, Math.round(6 - ((concurrentRequests - 2) * (6 - 1)) / (16 - 2)));
-  
+  const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
+  console.log("calculated_steps", steps);
+
   try {
     prompt = sanitizeString(prompt);
     
@@ -140,10 +141,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
           fit: 'fill',
           withoutEnlargement: false
         })
-        .jpeg({
-          quality: 90,
-          mozjpeg: true // Better compression
-        })
+        .jpeg()
         .toBuffer();
       return { buffer: resizedBuffer, ...rest };
     }

@@ -80,16 +80,16 @@ const projectCategories = [
 const projects = {
   apps: [
     {
+      name: "Free AI Chatbot & Image Generator",
+      url: "https://freeaichat.app",
+      description: "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
+      author: "@andreas_11",
+    },
+    {
       name: "Pollinator Android App",
       url: "https://github.com/g-aggarwal/Pollinator",
       description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
       author: "@gaurav_87680",
-    },
-    {
-      name: "Rangrez AI",
-      url: "https://rangrezai.com",
-      description: "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations and GroqCloud.",
-      author: "@saadaryf",
     },
     {
       name: "MIDIjourney",
@@ -104,6 +104,12 @@ const projects = {
       description: "An open-source video generation system using AI to create engaging content from scripts.",
       author: "@pedroriosa",
       repo: "https://github.com/TurboReel/TurboReel_studio",
+    },
+    {
+      name: "Rangrez AI",
+      url: "https://rangrezai.com",
+      description: "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations and GroqCloud.",
+      author: "@saadaryf",
     },
     {
       name: "JustBuildThings",

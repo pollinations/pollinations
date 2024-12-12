@@ -22,9 +22,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   console.log("promptRaw", prompt);
 
 
-  // if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
-  //   enhance = true;
-  // }
+  if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
+    enhance = true;
+  }
 
 
   timingInfo.push({ step: 'Start prompt normalization and translation', timestamp: Date.now() });

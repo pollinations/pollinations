@@ -7,4 +7,5 @@ console.log(`
 ★═══════════════════════════════════════★
 `);
 console.log('📍 Current Commit Version:', commit);
+console.log('  Please wait until the URL appears here')
 console.log('★═══════════════════════════════════════★');

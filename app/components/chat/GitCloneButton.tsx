@@ -1,7 +1,8 @@
 import ignore from 'ignore';
 import { useGit } from '~/lib/hooks/useGit';
 import type { Message } from 'ai';
-import WithTooltip from '~/components/ui/Tooltip';
+import { detectProjectCommands, createCommandsMessage } from '~/utils/projectCommands';
+import { generateId } from '~/utils/fileUtils';
 
 const IGNORE_PATTERNS = [
   'node_modules/**',
@@ -28,7 +29,6 @@ const IGNORE_PATTERNS = [
 ];
 
 const ig = ignore().add(IGNORE_PATTERNS);
-const generateId = () => Math.random().toString(36).substring(2, 15);
 
 interface GitCloneButtonProps {
   className?: string;
@@ -52,52 +52,59 @@ export default function GitCloneButton({ importChat }: GitCloneButtonProps) {
         console.log(filePaths);
 
         const textDecoder = new TextDecoder('utf-8');
-        const message: Message = {
+
+        // Convert files to common format for command detection
+        const fileContents = filePaths
+          .map((filePath) => {
+            const { data: content, encoding } = data[filePath];
+            return {
+              path: filePath,
+              content: encoding === 'utf8' ? content : content instanceof Uint8Array ? textDecoder.decode(content) : '',
+            };
+          })
+          .filter((f) => f.content);
+
+        // Detect and create commands message
+        const commands = await detectProjectCommands(fileContents);
+        const commandsMessage = createCommandsMessage(commands);
+
+        // Create files message
+        const filesMessage: Message = {
           role: 'assistant',
           content: `Cloning the repo ${repoUrl} into ${workdir}
-<boltArtifact id="imported-files" title="Git Cloned Files" type="bundled" >           
-          ${filePaths
-            .map((filePath) => {
-              const { data: content, encoding } = data[filePath];
-
-              if (encoding === 'utf8') {
-                return `<boltAction type="file" filePath="${filePath}">
-${content}
-</boltAction>`;
-              } else if (content instanceof Uint8Array) {
-                return `<boltAction type="file" filePath="${filePath}">
-${textDecoder.decode(content)}
-</boltAction>`;
-              } else {
-                return '';
-              }
-            })
-            .join('\n')}
- </boltArtifact>`,
+<boltArtifact id="imported-files" title="Git Cloned Files" type="bundled">
+${fileContents
+  .map(
+    (file) =>
+      `<boltAction type="file" filePath="${file.path}">
+${file.content}
+</boltAction>`,
+  )
+  .join('\n')}
+</boltArtifact>`,
           id: generateId(),
           createdAt: new Date(),
         };
-        console.log(JSON.stringify(message));
 
-        importChat(`Git Project:${repoUrl.split('/').slice(-1)[0]}`, [message]);
+        const messages = [filesMessage];
 
-        // console.log(files);
+        if (commandsMessage) {
+          messages.push(commandsMessage);
+        }
+
+        await importChat(`Git Project:${repoUrl.split('/').slice(-1)[0]}`, messages);
       }
     }
   };
 
   return (
-    <WithTooltip tooltip="Clone A Git Repo">
-      <button
-        onClick={(e) => {
-          onClick(e);
-        }}
-        title="Clone A Git Repo"
-        className="px-4 py-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-all flex items-center gap-2"
-      >
-        <span className="i-ph:git-branch" />
-        Clone A Git Repo
-      </button>
-    </WithTooltip>
+    <button
+      onClick={onClick}
+      title="Clone a Git Repo"
+      className="px-4 py-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-all flex items-center gap-2"
+    >
+      <span className="i-ph:git-branch" />
+      Clone a Git Repo
+    </button>
   );
 }

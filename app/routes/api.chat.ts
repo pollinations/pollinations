@@ -3,6 +3,7 @@ import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import type { IProviderSetting } from '~/types/model';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -27,13 +28,17 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 }
 
 async function chatAction({ context, request }: ActionFunctionArgs) {
-  const { messages } = await request.json<{
+  const { messages, files } = await request.json<{
     messages: Messages;
-    model: string;
+    files: any;
   }>();
 
   const cookieHeader = request.headers.get('Cookie');
   const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
+  const providerSettings: Record<string, IProviderSetting> = JSON.parse(
+    parseCookies(cookieHeader || '').providers || '{}',
+  );
+
   const stream = new SwitchableStream();
 
   try {
@@ -57,13 +62,27 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, context.cloudflare.env, options, apiKeys);
+        const result = await streamText({
+          messages,
+          env: context.cloudflare.env,
+          options,
+          apiKeys,
+          files,
+          providerSettings,
+        });
 
         return stream.switchSource(result.toDataStream());
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options, apiKeys);
+    const result = await streamText({
+      messages,
+      env: context.cloudflare.env,
+      options,
+      apiKeys,
+      files,
+      providerSettings,
+    });
     stream.switchSource(result.toDataStream());
 
     return new Response(stream.readable, {

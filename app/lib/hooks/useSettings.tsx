@@ -4,6 +4,7 @@ import {
   isEventLogsEnabled,
   isLocalModelsEnabled,
   LOCAL_PROVIDERS,
+  promptStore,
   providersStore,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,6 +16,7 @@ export function useSettings() {
   const providers = useStore(providersStore);
   const debug = useStore(isDebugMode);
   const eventLogs = useStore(isEventLogsEnabled);
+  const promptId = useStore(promptStore);
   const isLocalModel = useStore(isLocalModelsEnabled);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
 
@@ -59,6 +61,12 @@ export function useSettings() {
 
     if (savedLocalModels) {
       isLocalModelsEnabled.set(savedLocalModels === 'true');
+    }
+
+    const promptId = Cookies.get('promptId');
+
+    if (promptId) {
+      promptStore.set(promptId);
     }
   }, []);
 
@@ -111,6 +119,11 @@ export function useSettings() {
     Cookies.set('isLocalModelsEnabled', String(enabled));
   }, []);
 
+  const setPromptId = useCallback((promptId: string) => {
+    promptStore.set(promptId);
+    Cookies.set('promptId', promptId);
+  }, []);
+
   return {
     providers,
     activeProviders,
@@ -121,5 +134,7 @@ export function useSettings() {
     enableEventLogs,
     isLocalModel,
     enableLocalModels,
+    promptId,
+    setPromptId,
   };
 }

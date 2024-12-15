@@ -3,6 +3,12 @@ import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import { logStore } from '~/lib/stores/logs';
 
+interface GitHubUserResponse {
+  login: string;
+  id: number;
+  [key: string]: any;  // for other properties we don't explicitly need
+}
+
 export default function ConnectionsTab() {
   const [githubUsername, setGithubUsername] = useState(Cookies.get('githubUsername') || '');
   const [githubToken, setGithubToken] = useState(Cookies.get('githubToken') || '');
@@ -26,7 +32,7 @@ export default function ConnectionsTab() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as GitHubUserResponse;
         if (data.login === githubUsername) {
           setIsConnected(true);
           return true;

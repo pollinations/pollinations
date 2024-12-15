@@ -4,8 +4,7 @@ import { PromptLibrary } from '~/lib/common/prompt-library';
 import { useSettings } from '~/lib/hooks/useSettings';
 
 export default function FeaturesTab() {
-
-  const { debug, enableDebugMode, isLocalModel, enableLocalModels, eventLogs, enableEventLogs, promptId, setPromptId } =
+  const { debug, enableDebugMode, isLocalModel, enableLocalModels, enableEventLogs, promptId, setPromptId } =
     useSettings();
   const handleToggle = (enabled: boolean) => {
     enableDebugMode(enabled);

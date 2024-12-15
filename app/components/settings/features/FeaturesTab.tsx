@@ -3,7 +3,8 @@ import { Switch } from '~/components/ui/Switch';
 import { useSettings } from '~/lib/hooks/useSettings';
 
 export default function FeaturesTab() {
-  const { debug, enableDebugMode, isLocalModel, enableLocalModels, eventLogs, enableEventLogs, useLatestBranch, enableLatestBranch } = useSettings();
+  const { debug, enableDebugMode, isLocalModel, enableLocalModels, enableEventLogs, latestBranch, enableLatestBranch } =
+    useSettings();
 
   const handleToggle = (enabled: boolean) => {
     enableDebugMode(enabled);
@@ -22,9 +23,11 @@ export default function FeaturesTab() {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-bolt-elements-textPrimary">Use Main Branch</span>
-              <p className="text-sm text-bolt-elements-textSecondary">Check for updates against the main branch instead of stable</p>
+              <p className="text-sm text-bolt-elements-textSecondary">
+                Check for updates against the main branch instead of stable
+              </p>
             </div>
-            <Switch className="ml-auto" checked={useLatestBranch} onCheckedChange={enableLatestBranch} />
+            <Switch className="ml-auto" checked={latestBranch} onCheckedChange={enableLatestBranch} />
           </div>
         </div>
       </div>

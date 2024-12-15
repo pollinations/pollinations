@@ -5,7 +5,7 @@ import {
   isLocalModelsEnabled,
   LOCAL_PROVIDERS,
   providersStore,
-  latestBranch,
+  latestBranchStore,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
@@ -15,25 +15,33 @@ import commit from '~/commit.json';
 
 interface CommitData {
   commit: string;
+  version?: string;
 }
+
+const commitJson: CommitData = commit;
 
 export function useSettings() {
   const providers = useStore(providersStore);
   const debug = useStore(isDebugMode);
   const eventLogs = useStore(isEventLogsEnabled);
   const isLocalModel = useStore(isLocalModelsEnabled);
-  const useLatest = useStore(latestBranch);
+  const latestBranch = useStore(latestBranchStore);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
 
   // Function to check if we're on stable version
   const checkIsStableVersion = async () => {
     try {
-      const stableResponse = await fetch('https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/stable/app/commit.json');
+      const stableResponse = await fetch(
+        `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/refs/tags/v${commitJson.version}/app/commit.json`,
+      );
+
       if (!stableResponse.ok) {
         console.warn('Failed to fetch stable commit info');
         return false;
       }
-      const stableData = await stableResponse.json() as CommitData;
+
+      const stableData = (await stableResponse.json()) as CommitData;
+
       return commit.commit === stableData.commit;
     } catch (error) {
       console.warn('Error checking stable version:', error);
@@ -85,16 +93,23 @@ export function useSettings() {
     }
 
     // load latest branch setting from cookies or determine based on version
-    const savedLatestBranch = Cookies.get('useLatestBranch');
-    if (savedLatestBranch === undefined) {
+    const savedLatestBranch = Cookies.get('latestBranch');
+    let checkCommit = Cookies.get('commitHash');
+
+    if (checkCommit === undefined) {
+      checkCommit = commit.commit;
+    }
+
+    if (savedLatestBranch === undefined || checkCommit !== commit.commit) {
       // If setting hasn't been set by user, check version
-      checkIsStableVersion().then(isStable => {
+      checkIsStableVersion().then((isStable) => {
         const shouldUseLatest = !isStable;
-        latestBranch.set(shouldUseLatest);
-        Cookies.set('useLatestBranch', String(shouldUseLatest));
+        latestBranchStore.set(shouldUseLatest);
+        Cookies.set('latestBranch', String(shouldUseLatest));
+        Cookies.set('commitHash', String(commit.commit));
       });
     } else {
-      latestBranch.set(savedLatestBranch === 'true');
+      latestBranchStore.set(savedLatestBranch === 'true');
     }
   }, []);
 
@@ -148,9 +163,9 @@ export function useSettings() {
   }, []);
 
   const enableLatestBranch = useCallback((enabled: boolean) => {
-    latestBranch.set(enabled);
+    latestBranchStore.set(enabled);
     logStore.logSystem(`Main branch updates ${enabled ? 'enabled' : 'disabled'}`);
-    Cookies.set('useLatestBranch', String(enabled));
+    Cookies.set('latestBranch', String(enabled));
   }, []);
 
   return {
@@ -163,7 +178,7 @@ export function useSettings() {
     enableEventLogs,
     isLocalModel,
     enableLocalModels,
-    useLatestBranch: useLatest,
+    latestBranch,
     enableLatestBranch,
   };
 }

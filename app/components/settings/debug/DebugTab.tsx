@@ -410,7 +410,7 @@ export default function DebugTab() {
               <p className="text-sm font-medium text-bolt-elements-textPrimary font-mono">
                 {versionHash.slice(0, 7)}
                 <span className="ml-2 text-xs text-bolt-elements-textSecondary">
-                  (v{versionTag}) - {latestBranch ? 'nightly' : 'stable'}
+                  (v{versionTag || '0.0.1'}) - {latestBranch ? 'nightly' : 'stable'}
                 </span>
               </p>
             </div>

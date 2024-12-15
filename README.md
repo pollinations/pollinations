@@ -44,6 +44,8 @@ https://thinktank.ottomator.ai
 - ✅ Better prompt enhancing (@SujalXplores)
 - ✅ Attach images to prompts (@atrokhym)
 - ✅ Detect package.json and commands to auto install and run preview for folder and git import (@wonderwhy-er)
+- ✅ Added Git Clone button (@thecodacus)
+- ✅ Git Import from url (@thecodacus)
 - ✅ PromptLibrary to have different variations of prompts for different use cases (@thecodacus)
 - ⬜ **HIGH PRIORITY** - Prevent Bolt from rewriting files as often (file locking and diffs)
 - ⬜ **HIGH PRIORITY** - Better prompting for smaller LLMs (code window sometimes doesn't start)

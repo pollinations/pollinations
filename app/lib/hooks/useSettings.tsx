@@ -6,11 +6,17 @@ import {
   LOCAL_PROVIDERS,
   promptStore,
   providersStore,
+  latestBranchStore,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
 import type { IProviderSetting, ProviderInfo } from '~/types/model';
 import { logStore } from '~/lib/stores/logs'; // assuming logStore is imported from this location
+import commit from '~/commit.json';
+
+interface CommitData {
+  commit: string;
+}
 
 export function useSettings() {
   const providers = useStore(providersStore);
@@ -18,7 +24,29 @@ export function useSettings() {
   const eventLogs = useStore(isEventLogsEnabled);
   const promptId = useStore(promptStore);
   const isLocalModel = useStore(isLocalModelsEnabled);
+  const isLatestBranch = useStore(latestBranchStore);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
+
+  // Function to check if we're on stable version
+  const checkIsStableVersion = async () => {
+    try {
+      const stableResponse = await fetch(
+        'https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/stable/app/commit.json',
+      );
+
+      if (!stableResponse.ok) {
+        console.warn('Failed to fetch stable commit info');
+        return false;
+      }
+
+      const stableData = (await stableResponse.json()) as CommitData;
+
+      return commit.commit === stableData.commit;
+    } catch (error) {
+      console.warn('Error checking stable version:', error);
+      return false;
+    }
+  };
 
   // reading values from cookies on mount
   useEffect(() => {
@@ -67,6 +95,20 @@ export function useSettings() {
 
     if (promptId) {
       promptStore.set(promptId);
+    }
+
+    // load latest branch setting from cookies or determine based on version
+    const savedLatestBranch = Cookies.get('isLatestBranch');
+
+    if (savedLatestBranch === undefined) {
+      // If setting hasn't been set by user, check version
+      checkIsStableVersion().then((isStable) => {
+        const shouldUseLatest = !isStable;
+        latestBranchStore.set(shouldUseLatest);
+        Cookies.set('isLatestBranch', String(shouldUseLatest));
+      });
+    } else {
+      latestBranchStore.set(savedLatestBranch === 'true');
     }
   }, []);
 
@@ -123,6 +165,11 @@ export function useSettings() {
     promptStore.set(promptId);
     Cookies.set('promptId', promptId);
   }, []);
+  const enableLatestBranch = useCallback((enabled: boolean) => {
+    latestBranchStore.set(enabled);
+    logStore.logSystem(`Main branch updates ${enabled ? 'enabled' : 'disabled'}`);
+    Cookies.set('isLatestBranch', String(enabled));
+  }, []);
 
   return {
     providers,
@@ -136,5 +183,7 @@ export function useSettings() {
     enableLocalModels,
     promptId,
     setPromptId,
+    isLatestBranch,
+    enableLatestBranch,
   };
 }

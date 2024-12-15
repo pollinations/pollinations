@@ -21,6 +21,12 @@ interface SystemInfo {
   timezone: string;
   memory: string;
   cores: number;
+  deviceType: string;
+  colorDepth: string;
+  pixelRatio: number;
+  online: boolean;
+  cookiesEnabled: boolean;
+  doNotTrack: boolean;
 }
 
 interface IProviderConfig {
@@ -50,14 +56,100 @@ function getSystemInfo(): SystemInfo {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getBrowserInfo = (): string => {
+    const ua = navigator.userAgent;
+    let browser = 'Unknown';
+
+    if (ua.includes('Firefox/')) {
+      browser = 'Firefox';
+    } else if (ua.includes('Chrome/')) {
+      if (ua.includes('Edg/')) {
+        browser = 'Edge';
+      } else if (ua.includes('OPR/')) {
+        browser = 'Opera';
+      } else {
+        browser = 'Chrome';
+      }
+    } else if (ua.includes('Safari/')) {
+      if (!ua.includes('Chrome')) {
+        browser = 'Safari';
+      }
+    }
+
+    // Extract version number
+    const match = ua.match(new RegExp(`${browser}\\/([\\d.]+)`));
+    const version = match ? ` ${match[1]}` : '';
+
+    return `${browser}${version}`;
+  };
+
+  const getOperatingSystem = (): string => {
+    const ua = navigator.userAgent;
+    const platform = navigator.platform;
+
+    if (ua.includes('Win')) {
+      return 'Windows';
+    }
+
+    if (ua.includes('Mac')) {
+      if (ua.includes('iPhone') || ua.includes('iPad')) {
+        return 'iOS';
+      }
+
+      return 'macOS';
+    }
+
+    if (ua.includes('Linux')) {
+      return 'Linux';
+    }
+
+    if (ua.includes('Android')) {
+      return 'Android';
+    }
+
+    return platform || 'Unknown';
+  };
+
+  const getDeviceType = (): string => {
+    const ua = navigator.userAgent;
+
+    if (ua.includes('Mobile')) {
+      return 'Mobile';
+    }
+
+    if (ua.includes('Tablet')) {
+      return 'Tablet';
+    }
+
+    return 'Desktop';
+  };
+
+  // Get more detailed memory info if available
+  const getMemoryInfo = (): string => {
+    if ('memory' in performance) {
+      const memory = (performance as any).memory;
+      return `${formatBytes(memory.jsHeapSizeLimit)} (Used: ${formatBytes(memory.usedJSHeapSize)})`;
+    }
+
+    return 'Not available';
+  };
+
   return {
-    os: navigator.platform,
-    browser: navigator.userAgent.split(' ').slice(-1)[0],
+    os: getOperatingSystem(),
+    browser: getBrowserInfo(),
     screen: `${window.screen.width}x${window.screen.height}`,
     language: navigator.language,
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    memory: formatBytes(performance?.memory?.jsHeapSizeLimit || 0),
+    memory: getMemoryInfo(),
     cores: navigator.hardwareConcurrency || 0,
+    deviceType: getDeviceType(),
+
+    // Add new fields
+    colorDepth: `${window.screen.colorDepth}-bit`,
+    pixelRatio: window.devicePixelRatio,
+    online: navigator.onLine,
+    cookiesEnabled: navigator.cookieEnabled,
+    doNotTrack: navigator.doNotTrack === '1',
   };
 }
 
@@ -372,8 +464,29 @@ export default function DebugTab() {
                 <p className="text-sm font-medium text-bolt-elements-textPrimary">{systemInfo.os}</p>
               </div>
               <div>
+                <p className="text-xs text-bolt-elements-textSecondary">Device Type</p>
+                <p className="text-sm font-medium text-bolt-elements-textPrimary">{systemInfo.deviceType}</p>
+              </div>
+              <div>
                 <p className="text-xs text-bolt-elements-textSecondary">Browser</p>
                 <p className="text-sm font-medium text-bolt-elements-textPrimary">{systemInfo.browser}</p>
+              </div>
+              <div>
+                <p className="text-xs text-bolt-elements-textSecondary">Display</p>
+                <p className="text-sm font-medium text-bolt-elements-textPrimary">
+                  {systemInfo.screen} ({systemInfo.colorDepth}) @{systemInfo.pixelRatio}x
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-bolt-elements-textSecondary">Connection</p>
+                <p className="text-sm font-medium flex items-center gap-2">
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full ${systemInfo.online ? 'bg-green-500' : 'bg-red-500'}`}
+                  />
+                  <span className={`${systemInfo.online ? 'text-green-600' : 'text-red-600'}`}>
+                    {systemInfo.online ? 'Online' : 'Offline'}
+                  </span>
+                </p>
               </div>
               <div>
                 <p className="text-xs text-bolt-elements-textSecondary">Screen Resolution</p>

@@ -1,4 +1,5 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
+import { createDataStream } from 'ai';
 import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
@@ -53,26 +54,30 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       onFinish: async ({ text: content, finishReason, usage }) => {
         console.log('usage', usage);
 
-        if (usage && stream._controller) {
+        if (usage) {
           cumulativeUsage.completionTokens += usage.completionTokens || 0;
           cumulativeUsage.promptTokens += usage.promptTokens || 0;
           cumulativeUsage.totalTokens += usage.totalTokens || 0;
-
-          // Send usage info in message metadata for assistant messages
-          const usageMetadata = `0:"[Usage: ${JSON.stringify({
-            completionTokens: cumulativeUsage.completionTokens,
-            promptTokens: cumulativeUsage.promptTokens,
-            totalTokens: cumulativeUsage.totalTokens,
-          })}\n]"`;
-
-          console.log(usageMetadata);
-
-          const encodedData = new TextEncoder().encode(usageMetadata);
-          stream._controller.enqueue(encodedData);
         }
 
         if (finishReason !== 'length') {
-          return stream.close();
+          return stream
+            .switchSource(
+              createDataStream({
+                async execute(dataStream) {
+                  dataStream.writeMessageAnnotation({
+                    type: 'usage',
+                    value: {
+                      completionTokens: cumulativeUsage.completionTokens,
+                      promptTokens: cumulativeUsage.promptTokens,
+                      totalTokens: cumulativeUsage.totalTokens,
+                    },
+                  });
+                },
+                onError: (error: any) => `Custom error: ${error.message}`,
+              }),
+            )
+            .then(() => stream.close());
         }
 
         if (stream.switches >= MAX_RESPONSE_SEGMENTS) {

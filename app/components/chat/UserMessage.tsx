@@ -12,42 +12,36 @@ interface UserMessageProps {
 export function UserMessage({ content }: UserMessageProps) {
   if (Array.isArray(content)) {
     const textItem = content.find((item) => item.type === 'text');
-    const textContent = sanitizeUserMessage(textItem?.text || '');
+    const textContent = stripMetadata(textItem?.text || '');
     const images = content.filter((item) => item.type === 'image' && item.image);
 
     return (
       <div className="overflow-hidden pt-[4px]">
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <Markdown limitedMarkdown>{textContent}</Markdown>
-          </div>
-          {images.length > 0 && (
-            <div className="flex-shrink-0 w-[160px]">
-              {images.map((item, index) => (
-                <div key={index} className="relative">
-                  <img
-                    src={item.image}
-                    alt={`Uploaded image ${index + 1}`}
-                    className="w-full h-[160px] rounded-lg object-cover border border-bolt-elements-borderColor"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="flex flex-col gap-4">
+          {textContent && <Markdown html>{textContent}</Markdown>}
+          {images.map((item, index) => (
+            <img
+              key={index}
+              src={item.image}
+              alt={`Image ${index + 1}`}
+              className="max-w-full h-auto rounded-lg"
+              style={{ maxHeight: '512px', objectFit: 'contain' }}
+            />
+          ))}
         </div>
       </div>
     );
   }
 
-  const textContent = sanitizeUserMessage(content);
+  const textContent = stripMetadata(content);
 
   return (
     <div className="overflow-hidden pt-[4px]">
-      <Markdown limitedMarkdown>{textContent}</Markdown>
+      <Markdown html>{textContent}</Markdown>
     </div>
   );
 }
 
-function sanitizeUserMessage(content: string) {
+function stripMetadata(content: string) {
   return content.replace(MODEL_REGEX, '').replace(PROVIDER_REGEX, '');
 }

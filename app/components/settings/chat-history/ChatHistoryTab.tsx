@@ -22,6 +22,12 @@ export default function ChatHistoryTab() {
   };
 
   const handleDeleteAllChats = async () => {
+    const confirmDelete = window.confirm('Are you sure you want to delete all chats? This action cannot be undone.');
+
+    if (!confirmDelete) {
+      return; // Exit if the user cancels
+    }
+
     if (!db) {
       const error = new Error('Database is not available');
       logStore.logError('Failed to delete chats - DB unavailable', error);

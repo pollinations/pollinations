@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSettings } from '~/lib/hooks/useSettings';
 import commit from '~/commit.json';
+import { toast } from 'react-toastify';
 
 interface ProviderStatus {
   name: string;
@@ -33,14 +34,25 @@ interface IProviderConfig {
   name: string;
   settings: {
     enabled: boolean;
+    baseUrl?: string;
   };
 }
 
+interface CommitData {
+  commit: string;
+  version?: string;
+}
+
+const connitJson: CommitData = commit;
+
 const LOCAL_PROVIDERS = ['Ollama', 'LMStudio', 'OpenAILike'];
-const versionHash = commit.commit;
+const versionHash = connitJson.commit;
+const versionTag = connitJson.version;
 const GITHUB_URLS = {
   original: 'https://api.github.com/repos/stackblitz-labs/bolt.diy/commits/main',
   fork: 'https://api.github.com/repos/Stijnus/bolt.new-any-llm/commits/main',
+  commitJson: (branch: string) =>
+    `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/${branch}/app/commit.json`,
 };
 
 function getSystemInfo(): SystemInfo {
@@ -291,7 +303,7 @@ const checkProviderStatus = async (url: string | null, providerName: string): Pr
 };
 
 export default function DebugTab() {
-  const { providers } = useSettings();
+  const { providers, latestBranch } = useSettings();
   const [activeProviders, setActiveProviders] = useState<ProviderStatus[]>([]);
   const [updateMessage, setUpdateMessage] = useState<string>('');
   const [systemInfo] = useState<SystemInfo>(getSystemInfo());
@@ -304,29 +316,31 @@ export default function DebugTab() {
 
     try {
       const entries = Object.entries(providers) as [string, IProviderConfig][];
-      const statuses = entries
-        .filter(([, provider]) => LOCAL_PROVIDERS.includes(provider.name))
-        .map(async ([, provider]) => {
-          const envVarName =
-            provider.name.toLowerCase() === 'ollama'
-              ? 'OLLAMA_API_BASE_URL'
-              : provider.name.toLowerCase() === 'lmstudio'
-                ? 'LMSTUDIO_API_BASE_URL'
-                : `REACT_APP_${provider.name.toUpperCase()}_URL`;
+      const statuses = await Promise.all(
+        entries
+          .filter(([, provider]) => LOCAL_PROVIDERS.includes(provider.name))
+          .map(async ([, provider]) => {
+            const envVarName =
+              provider.name.toLowerCase() === 'ollama'
+                ? 'OLLAMA_API_BASE_URL'
+                : provider.name.toLowerCase() === 'lmstudio'
+                  ? 'LMSTUDIO_API_BASE_URL'
+                  : `REACT_APP_${provider.name.toUpperCase()}_URL`;
 
-          // Access environment variables through import.meta.env
-          const url = import.meta.env[envVarName] || null;
-          console.log(`[Debug] Using URL for ${provider.name}:`, url, `(from ${envVarName})`);
+            // Access environment variables through import.meta.env
+            const url = import.meta.env[envVarName] || provider.settings.baseUrl || null; // Ensure baseUrl is used
+            console.log(`[Debug] Using URL for ${provider.name}:`, url, `(from ${envVarName})`);
 
-          const status = await checkProviderStatus(url, provider.name);
+            const status = await checkProviderStatus(url, provider.name);
 
-          return {
-            ...status,
-            enabled: provider.settings.enabled ?? false,
-          };
-        });
+            return {
+              ...status,
+              enabled: provider.settings.enabled ?? false,
+            };
+          }),
+      );
 
-      Promise.all(statuses).then(setActiveProviders);
+      setActiveProviders(statuses);
     } catch (error) {
       console.error('[Debug] Failed to update provider statuses:', error);
     }
@@ -349,32 +363,27 @@ export default function DebugTab() {
       setIsCheckingUpdate(true);
       setUpdateMessage('Checking for updates...');
 
-      const [originalResponse, forkResponse] = await Promise.all([
-        fetch(GITHUB_URLS.original),
-        fetch(GITHUB_URLS.fork),
-      ]);
+      const branchToCheck = latestBranch ? 'main' : 'stable';
+      console.log(`[Debug] Checking for updates against ${branchToCheck} branch`);
 
-      if (!originalResponse.ok || !forkResponse.ok) {
-        throw new Error('Failed to fetch repository information');
+      const localCommitResponse = await fetch(GITHUB_URLS.commitJson(branchToCheck));
+
+      if (!localCommitResponse.ok) {
+        throw new Error('Failed to fetch local commit info');
       }
 
-      const [originalData, forkData] = await Promise.all([
-        originalResponse.json() as Promise<{ sha: string }>,
-        forkResponse.json() as Promise<{ sha: string }>,
-      ]);
+      const localCommitData = (await localCommitResponse.json()) as CommitData;
+      const remoteCommitHash = localCommitData.commit;
+      const currentCommitHash = versionHash;
 
-      const originalCommitHash = originalData.sha;
-      const forkCommitHash = forkData.sha;
-      const isForked = versionHash === forkCommitHash && forkCommitHash !== originalCommitHash;
-
-      if (originalCommitHash !== versionHash) {
+      if (remoteCommitHash !== currentCommitHash) {
         setUpdateMessage(
-          `Update available from original repository!\n` +
-            `Current: ${versionHash.slice(0, 7)}${isForked ? ' (forked)' : ''}\n` +
-            `Latest: ${originalCommitHash.slice(0, 7)}`,
+          `Update available from ${branchToCheck} branch!\n` +
+            `Current: ${currentCommitHash.slice(0, 7)}\n` +
+            `Latest: ${remoteCommitHash.slice(0, 7)}`,
         );
       } else {
-        setUpdateMessage('You are on the latest version from the original repository');
+        setUpdateMessage(`You are on the latest version from the ${branchToCheck} branch`);
       }
     } catch (error) {
       setUpdateMessage('Failed to check for updates');
@@ -382,7 +391,7 @@ export default function DebugTab() {
     } finally {
       setIsCheckingUpdate(false);
     }
-  }, [isCheckingUpdate]);
+  }, [isCheckingUpdate, latestBranch]);
 
   const handleCopyToClipboard = useCallback(() => {
     const debugInfo = {
@@ -397,13 +406,17 @@ export default function DebugTab() {
         responseTime: provider.responseTime,
         url: provider.url,
       })),
-      Version: versionHash,
+      Version: {
+        hash: versionHash.slice(0, 7),
+        branch: latestBranch ? 'main' : 'stable',
+      },
       Timestamp: new Date().toISOString(),
     };
+
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2)).then(() => {
-      alert('Debug information copied to clipboard!');
+      toast.success('Debug information copied to clipboard!');
     });
-  }, [activeProviders, systemInfo]);
+  }, [activeProviders, systemInfo, latestBranch]);
 
   return (
     <div className="p-4 space-y-6">
@@ -510,7 +523,7 @@ export default function DebugTab() {
               <p className="text-sm font-medium text-bolt-elements-textPrimary font-mono">
                 {versionHash.slice(0, 7)}
                 <span className="ml-2 text-xs text-bolt-elements-textSecondary">
-                  ({new Date().toLocaleDateString()})
+                  (v{versionTag || '0.0.1'}) - {latestBranch ? 'nightly' : 'stable'}
                 </span>
               </p>
             </div>

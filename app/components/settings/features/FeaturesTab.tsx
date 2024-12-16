@@ -3,18 +3,32 @@ import { Switch } from '~/components/ui/Switch';
 import { useSettings } from '~/lib/hooks/useSettings';
 
 export default function FeaturesTab() {
-  const { debug, enableDebugMode, isLocalModel, enableLocalModels, eventLogs, enableEventLogs } = useSettings();
+
+  const { debug, enableDebugMode, isLocalModel, enableLocalModels, enableEventLogs, latestBranch, enableLatestBranch } = useSettings();
+
+  const handleToggle = (enabled: boolean) => {
+    enableDebugMode(enabled);
+    enableEventLogs(enabled);
+  };
+
   return (
     <div className="p-4 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-lg mb-4">
       <div className="mb-6">
         <h3 className="text-lg font-medium text-bolt-elements-textPrimary mb-4">Optional Features</h3>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-bolt-elements-textPrimary">Debug Info</span>
-          <Switch className="ml-auto" checked={debug} onCheckedChange={enableDebugMode} />
-        </div>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-bolt-elements-textPrimary">Event Logs</span>
-          <Switch className="ml-auto" checked={eventLogs} onCheckedChange={enableEventLogs} />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-bolt-elements-textPrimary">Debug Features</span>
+            <Switch className="ml-auto" checked={debug} onCheckedChange={handleToggle} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-bolt-elements-textPrimary">Use Main Branch</span>
+              <p className="text-sm text-bolt-elements-textSecondary">
+                Check for updates against the main branch instead of stable
+              </p>
+            </div>
+            <Switch className="ml-auto" checked={latestBranch} onCheckedChange={enableLatestBranch} />
+          </div>
         </div>
       </div>
 
@@ -24,7 +38,7 @@ export default function FeaturesTab() {
           Disclaimer: Experimental features may be unstable and are subject to change.
         </p>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-bolt-elements-textPrimary">Enable Local Models</span>
+          <span className="text-bolt-elements-textPrimary">Experimental Providers</span>
           <Switch className="ml-auto" checked={isLocalModel} onCheckedChange={enableLocalModels} />
         </div>
       </div>

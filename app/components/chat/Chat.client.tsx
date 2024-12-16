@@ -93,7 +93,7 @@ export const ChatImpl = memo(
     const [uploadedFiles, setUploadedFiles] = useState<File[]>([]); // Move here
     const [imageDataList, setImageDataList] = useState<string[]>([]); // Move here
     const files = useStore(workbenchStore.files);
-    const { activeProviders } = useSettings();
+    const { activeProviders, promptId } = useSettings();
 
     const [model, setModel] = useState(() => {
       const savedModel = Cookies.get('selectedModel');
@@ -115,14 +115,24 @@ export const ChatImpl = memo(
       body: {
         apiKeys,
         files,
+        promptId,
       },
+      sendExtraMessageFields: true,
       onError: (error) => {
         logger.error('Request failed\n\n', error);
         toast.error(
           'There was an error processing your request: ' + (error.message ? error.message : 'No details were returned'),
         );
       },
-      onFinish: () => {
+      onFinish: (message, response) => {
+        const usage = response.usage;
+
+        if (usage) {
+          console.log('Token usage:', usage);
+
+          // You can now use the usage data as needed
+        }
+
         logger.debug('Finished streaming');
       },
       initialMessages,

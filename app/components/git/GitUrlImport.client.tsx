@@ -8,6 +8,8 @@ import { Chat } from '~/components/chat/Chat.client';
 import { useGit } from '~/lib/hooks/useGit';
 import { useChatHistory } from '~/lib/persistence';
 import { createCommandsMessage, detectProjectCommands } from '~/utils/projectCommands';
+import { LoadingOverlay } from '~/components/ui/LoadingOverlay';
+import { toast } from 'react-toastify';
 
 const IGNORE_PATTERNS = [
   'node_modules/**',
@@ -38,6 +40,7 @@ export function GitUrlImport() {
   const { ready: historyReady, importChat } = useChatHistory();
   const { ready: gitReady, gitClone } = useGit();
   const [imported, setImported] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const importRepo = async (repoUrl?: string) => {
     if (!gitReady && !historyReady) {
@@ -109,9 +112,23 @@ ${file.content}
       return;
     }
 
-    importRepo(url);
+    importRepo(url).catch((error) => {
+      console.error('Error importing repo:', error);
+      toast.error('Failed to import repository');
+      setLoading(false);
+      window.location.href = '/';
+    });
     setImported(true);
   }, [searchParams, historyReady, gitReady, imported]);
 
-  return <ClientOnly fallback={<BaseChat />}>{() => <Chat />}</ClientOnly>;
+  return (
+    <ClientOnly fallback={<BaseChat />}>
+      {() => (
+        <>
+          <Chat />
+          {loading && <LoadingOverlay message="Please wait while we clone the repository..." />}
+        </>
+      )}
+    </ClientOnly>
+  );
 }

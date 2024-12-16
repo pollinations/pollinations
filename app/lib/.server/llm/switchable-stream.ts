@@ -1,5 +1,5 @@
 export default class SwitchableStream extends TransformStream {
-  private _controller: TransformStreamDefaultController | null = null;
+  _controller: TransformStreamDefaultController | null = null;
   private _currentReader: ReadableStreamDefaultReader | null = null;
   private _switches = 0;
 

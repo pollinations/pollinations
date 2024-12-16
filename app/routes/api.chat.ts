@@ -41,11 +41,35 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
   const stream = new SwitchableStream();
 
+  const cumulativeUsage = {
+    completionTokens: 0,
+    promptTokens: 0,
+    totalTokens: 0,
+  };
+
   try {
     const options: StreamingOptions = {
       toolChoice: 'none',
       onFinish: async ({ text: content, finishReason, usage }) => {
         console.log('usage', usage);
+
+        if (usage && stream._controller) {
+          cumulativeUsage.completionTokens += usage.completionTokens || 0;
+          cumulativeUsage.promptTokens += usage.promptTokens || 0;
+          cumulativeUsage.totalTokens += usage.totalTokens || 0;
+
+          // Send usage info in message metadata for assistant messages
+          const usageMetadata = `0:"[Usage: ${JSON.stringify({
+            completionTokens: cumulativeUsage.completionTokens,
+            promptTokens: cumulativeUsage.promptTokens,
+            totalTokens: cumulativeUsage.totalTokens,
+          })}\n]"`;
+
+          console.log(usageMetadata);
+
+          const encodedData = new TextEncoder().encode(usageMetadata);
+          stream._controller.enqueue(encodedData);
+        }
 
         if (finishReason !== 'length') {
           return stream.close();
@@ -83,6 +107,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       files,
       providerSettings,
     });
+
     stream.switchSource(result.toDataStream());
 
     return new Response(stream.readable, {

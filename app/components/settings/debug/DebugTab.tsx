@@ -34,10 +34,14 @@ interface IProviderConfig {
 
 interface CommitData {
   commit: string;
+  version?: string;
 }
 
+const connitJson: CommitData = commit;
+
 const LOCAL_PROVIDERS = ['Ollama', 'LMStudio', 'OpenAILike'];
-const versionHash = commit.commit;
+const versionHash = connitJson.commit;
+const versionTag = connitJson.version;
 const GITHUB_URLS = {
   original: 'https://api.github.com/repos/stackblitz-labs/bolt.diy/commits/main',
   fork: 'https://api.github.com/repos/Stijnus/bolt.new-any-llm/commits/main',
@@ -406,7 +410,7 @@ export default function DebugTab() {
               <p className="text-sm font-medium text-bolt-elements-textPrimary font-mono">
                 {versionHash.slice(0, 7)}
                 <span className="ml-2 text-xs text-bolt-elements-textSecondary">
-                  ({new Date().toLocaleDateString()})
+                  (v{versionTag || '0.0.1'}) - {isLatestBranch ? 'nightly' : 'stable'}
                 </span>
               </p>
             </div>

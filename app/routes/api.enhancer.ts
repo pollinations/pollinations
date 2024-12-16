@@ -1,5 +1,6 @@
 import { type ActionFunctionArgs } from '@remix-run/cloudflare';
-import { StreamingTextResponse, parseStreamPart } from 'ai';
+
+//import { StreamingTextResponse, parseStreamPart } from 'ai';
 import { streamText } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
 import type { IProviderSetting, ProviderInfo } from '~/types/model';
@@ -73,32 +74,32 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
             `[Model: ${model}]\n\n[Provider: ${providerName}]\n\n` +
             stripIndents`
             You are a professional prompt engineer specializing in crafting precise, effective prompts.
-          Your task is to enhance prompts by making them more specific, actionable, and effective.
+            Your task is to enhance prompts by making them more specific, actionable, and effective.
 
-          I want you to improve the user prompt that is wrapped in \`<original_prompt>\` tags.
+            I want you to improve the user prompt that is wrapped in \`<original_prompt>\` tags.
 
-          For valid prompts:
-          - Make instructions explicit and unambiguous
-          - Add relevant context and constraints
-          - Remove redundant information
-          - Maintain the core intent
-          - Ensure the prompt is self-contained
-          - Use professional language
+            For valid prompts:
+            - Make instructions explicit and unambiguous
+            - Add relevant context and constraints
+            - Remove redundant information
+            - Maintain the core intent
+            - Ensure the prompt is self-contained
+            - Use professional language
 
-          For invalid or unclear prompts:
-          - Respond with a clear, professional guidance message
-          - Keep responses concise and actionable
-          - Maintain a helpful, constructive tone
-          - Focus on what the user should provide
-          - Use a standard template for consistency
+            For invalid or unclear prompts:
+            - Respond with clear, professional guidance
+            - Keep responses concise and actionable
+            - Maintain a helpful, constructive tone
+            - Focus on what the user should provide
+            - Use a standard template for consistency
 
-          IMPORTANT: Your response must ONLY contain the enhanced prompt text.
-          Do not include any explanations, metadata, or wrapper tags.
+            IMPORTANT: Your response must ONLY contain the enhanced prompt text.
+            Do not include any explanations, metadata, or wrapper tags.
 
-          <original_prompt>
-            ${message}
-          </original_prompt>
-        `,
+            <original_prompt>
+              ${message}
+            </original_prompt>
+          `,
         },
       ],
       env: context.cloudflare.env,
@@ -113,7 +114,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
         for (const line of lines) {
           try {
-            const parsed = parseStreamPart(line);
+            const parsed = JSON.parse(line);
 
             if (parsed.type === 'text') {
               controller.enqueue(encoder.encode(parsed.value));
@@ -128,7 +129,12 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
     const transformedStream = result.toDataStream().pipeThrough(transformStream);
 
-    return new StreamingTextResponse(transformedStream);
+    return new Response(transformedStream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+      },
+    });
   } catch (error: unknown) {
     console.log(error);
 

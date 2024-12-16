@@ -16,7 +16,10 @@ import commit from '~/commit.json';
 
 interface CommitData {
   commit: string;
+  version?: string;
 }
+
+const commitJson: CommitData = commit;
 
 export function useSettings() {
   const providers = useStore(providersStore);
@@ -31,7 +34,7 @@ export function useSettings() {
   const checkIsStableVersion = async () => {
     try {
       const stableResponse = await fetch(
-        'https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/stable/app/commit.json',
+        `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/refs/tags/v${commitJson.version}/app/commit.json`,
       );
 
       if (!stableResponse.ok) {
@@ -99,13 +102,19 @@ export function useSettings() {
 
     // load latest branch setting from cookies or determine based on version
     const savedLatestBranch = Cookies.get('isLatestBranch');
+    let checkCommit = Cookies.get('commitHash');
 
-    if (savedLatestBranch === undefined) {
+    if (checkCommit === undefined) {
+      checkCommit = commit.commit;
+    }
+
+    if (savedLatestBranch === undefined || checkCommit !== commit.commit) {
       // If setting hasn't been set by user, check version
       checkIsStableVersion().then((isStable) => {
         const shouldUseLatest = !isStable;
         latestBranchStore.set(shouldUseLatest);
         Cookies.set('isLatestBranch', String(shouldUseLatest));
+        Cookies.set('commitHash', String(commit.commit));
       });
     } else {
       latestBranchStore.set(savedLatestBranch === 'true');

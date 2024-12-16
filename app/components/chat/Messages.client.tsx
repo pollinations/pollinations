@@ -65,7 +65,11 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                   </div>
                 )}
                 <div className="grid grid-col-1 w-full">
-                  {isUserMessage ? <UserMessage content={content} /> : <AssistantMessage content={content} />}
+                  {isUserMessage ? (
+                    <UserMessage content={content} />
+                  ) : (
+                    <AssistantMessage content={content} annotations={message.annotations} />
+                  )}
                 </div>
                 {!isUserMessage && (
                   <div className="flex gap-2 flex-col lg:flex-row">

@@ -303,7 +303,7 @@ const checkProviderStatus = async (url: string | null, providerName: string): Pr
 };
 
 export default function DebugTab() {
-  const { providers, latestBranch } = useSettings();
+  const { providers, isLatestBranch } = useSettings();
   const [activeProviders, setActiveProviders] = useState<ProviderStatus[]>([]);
   const [updateMessage, setUpdateMessage] = useState<string>('');
   const [systemInfo] = useState<SystemInfo>(getSystemInfo());
@@ -363,7 +363,7 @@ export default function DebugTab() {
       setIsCheckingUpdate(true);
       setUpdateMessage('Checking for updates...');
 
-      const branchToCheck = latestBranch ? 'main' : 'stable';
+      const branchToCheck = isLatestBranch ? 'main' : 'stable';
       console.log(`[Debug] Checking for updates against ${branchToCheck} branch`);
 
       const localCommitResponse = await fetch(GITHUB_URLS.commitJson(branchToCheck));
@@ -391,7 +391,7 @@ export default function DebugTab() {
     } finally {
       setIsCheckingUpdate(false);
     }
-  }, [isCheckingUpdate, latestBranch]);
+  }, [isCheckingUpdate, isLatestBranch]);
 
   const handleCopyToClipboard = useCallback(() => {
     const debugInfo = {
@@ -408,7 +408,7 @@ export default function DebugTab() {
       })),
       Version: {
         hash: versionHash.slice(0, 7),
-        branch: latestBranch ? 'main' : 'stable',
+        branch: isLatestBranch ? 'main' : 'stable',
       },
       Timestamp: new Date().toISOString(),
     };
@@ -416,7 +416,7 @@ export default function DebugTab() {
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2)).then(() => {
       toast.success('Debug information copied to clipboard!');
     });
-  }, [activeProviders, systemInfo, latestBranch]);
+  }, [activeProviders, systemInfo, isLatestBranch]);
 
   return (
     <div className="p-4 space-y-6">
@@ -523,7 +523,7 @@ export default function DebugTab() {
               <p className="text-sm font-medium text-bolt-elements-textPrimary font-mono">
                 {versionHash.slice(0, 7)}
                 <span className="ml-2 text-xs text-bolt-elements-textSecondary">
-                  (v{versionTag || '0.0.1'}) - {latestBranch ? 'nightly' : 'stable'}
+                  (v{versionTag || '0.0.1'}) - {isLatestBranch ? 'nightly' : 'stable'}
                 </span>
               </p>
             </div>

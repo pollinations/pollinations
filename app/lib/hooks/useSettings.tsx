@@ -4,6 +4,7 @@ import {
   isEventLogsEnabled,
   isLocalModelsEnabled,
   LOCAL_PROVIDERS,
+  promptStore,
   providersStore,
   latestBranchStore,
 } from '~/lib/stores/settings';
@@ -24,8 +25,9 @@ export function useSettings() {
   const providers = useStore(providersStore);
   const debug = useStore(isDebugMode);
   const eventLogs = useStore(isEventLogsEnabled);
+  const promptId = useStore(promptStore);
   const isLocalModel = useStore(isLocalModelsEnabled);
-  const latestBranch = useStore(latestBranchStore);
+  const isLatestBranch = useStore(latestBranchStore);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
 
   // Function to check if we're on stable version
@@ -92,8 +94,14 @@ export function useSettings() {
       isLocalModelsEnabled.set(savedLocalModels === 'true');
     }
 
+    const promptId = Cookies.get('promptId');
+
+    if (promptId) {
+      promptStore.set(promptId);
+    }
+
     // load latest branch setting from cookies or determine based on version
-    const savedLatestBranch = Cookies.get('latestBranch');
+    const savedLatestBranch = Cookies.get('isLatestBranch');
     let checkCommit = Cookies.get('commitHash');
 
     if (checkCommit === undefined) {
@@ -105,7 +113,7 @@ export function useSettings() {
       checkIsStableVersion().then((isStable) => {
         const shouldUseLatest = !isStable;
         latestBranchStore.set(shouldUseLatest);
-        Cookies.set('latestBranch', String(shouldUseLatest));
+        Cookies.set('isLatestBranch', String(shouldUseLatest));
         Cookies.set('commitHash', String(commit.commit));
       });
     } else {
@@ -162,10 +170,14 @@ export function useSettings() {
     Cookies.set('isLocalModelsEnabled', String(enabled));
   }, []);
 
+  const setPromptId = useCallback((promptId: string) => {
+    promptStore.set(promptId);
+    Cookies.set('promptId', promptId);
+  }, []);
   const enableLatestBranch = useCallback((enabled: boolean) => {
     latestBranchStore.set(enabled);
     logStore.logSystem(`Main branch updates ${enabled ? 'enabled' : 'disabled'}`);
-    Cookies.set('latestBranch', String(enabled));
+    Cookies.set('isLatestBranch', String(enabled));
   }, []);
 
   return {
@@ -178,7 +190,9 @@ export function useSettings() {
     enableEventLogs,
     isLocalModel,
     enableLocalModels,
-    latestBranch,
+    promptId,
+    setPromptId,
+    isLatestBranch,
     enableLatestBranch,
   };
 }

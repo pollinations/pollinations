@@ -294,6 +294,30 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://api.together.xyz/settings/api-keys',
   },
+  {
+    name: 'Perplexity',
+    staticModels: [
+      {
+        name: 'llama-3.1-sonar-small-128k-online',
+        label: 'Sonar Small Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-large-128k-online',
+        label: 'Sonar Large Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-huge-128k-online',
+        label: 'Sonar Huge Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+    ],
+    getApiKeyLink: 'https://www.perplexity.ai/settings/api',
+  },
 ];
 
 export const DEFAULT_PROVIDER = PROVIDER_LIST[0];
@@ -476,8 +500,6 @@ async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: I
     }));
   } catch (e: any) {
     logStore.logError('Failed to get LMStudio models', e, { baseUrl: settings?.baseUrl });
-    logger.warn('Failed to get LMStudio models: ', e.message || '');
-
     return [];
   }
 }

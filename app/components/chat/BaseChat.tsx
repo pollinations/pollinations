@@ -77,6 +77,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       input = '',
       enhancingPrompt,
       handleInputChange,
+
+      // promptEnhanced,
       enhancePrompt,
       sendMessage,
       handleStop,

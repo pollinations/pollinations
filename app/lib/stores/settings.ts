@@ -47,4 +47,6 @@ export const isEventLogsEnabled = atom(false);
 
 export const isLocalModelsEnabled = atom(true);
 
+export const promptStore = atom<string>('default');
+
 export const latestBranchStore = atom(false);

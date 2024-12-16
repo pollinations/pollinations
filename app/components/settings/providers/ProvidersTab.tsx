@@ -6,7 +6,7 @@ import type { IProviderConfig } from '~/types/model';
 import { logStore } from '~/lib/stores/logs';
 
 // Import a default fallback icon
-import DefaultIcon from '/icons/Ollama.svg'; // Adjust the path as necessary
+import DefaultIcon from '/icons/Default.svg'; // Adjust the path as necessary
 
 export default function ProvidersTab() {
   const { providers, updateProviderSettings, isLocalModel } = useSettings();
@@ -56,7 +56,8 @@ export default function ProvidersTab() {
             <div className="flex items-center gap-2">
               <img
                 src={`/icons/${provider.name}.svg`} // Attempt to load the specific icon
-                onError={(e) => { // Fallback to default icon on error
+                onError={(e) => {
+                  // Fallback to default icon on error
                   e.currentTarget.src = DefaultIcon;
                 }}
                 alt={`${provider.name} icon`}

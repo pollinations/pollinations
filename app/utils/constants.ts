@@ -141,7 +141,7 @@ const PROVIDER_LIST: ProviderInfo[] = [
     staticModels: [
       { name: 'llama-3.1-8b-instant', label: 'Llama 3.1 8b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-11b-vision-preview', label: 'Llama 3.2 11b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
-      { name: 'llama-3.2-90b-vision-preview', label: 'Llama 3.2 90b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },      
+      { name: 'llama-3.2-90b-vision-preview', label: 'Llama 3.2 90b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-3b-preview', label: 'Llama 3.2 3b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-1b-preview', label: 'Llama 3.2 1b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
@@ -499,8 +499,6 @@ async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: I
     }));
   } catch (e: any) {
     logStore.logError('Failed to get LMStudio models', e, { baseUrl: settings?.baseUrl });
-    logger.warn('Failed to get LMStudio models: ', e.message || '');
-
     return [];
   }
 }

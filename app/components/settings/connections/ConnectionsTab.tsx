@@ -6,7 +6,7 @@ import { logStore } from '~/lib/stores/logs';
 interface GitHubUserResponse {
   login: string;
   id: number;
-  [key: string]: any;  // for other properties we don't explicitly need
+  [key: string]: any; // for other properties we don't explicitly need
 }
 
 export default function ConnectionsTab() {
@@ -24,6 +24,7 @@ export default function ConnectionsTab() {
 
   const verifyGitHubCredentials = async () => {
     setIsVerifying(true);
+
     try {
       const response = await fetch('https://api.github.com/user', {
         headers: {
@@ -33,16 +34,20 @@ export default function ConnectionsTab() {
 
       if (response.ok) {
         const data = (await response.json()) as GitHubUserResponse;
+
         if (data.login === githubUsername) {
           setIsConnected(true);
           return true;
         }
       }
+
       setIsConnected(false);
+
       return false;
     } catch (error) {
       console.error('Error verifying GitHub credentials:', error);
       setIsConnected(false);
+
       return false;
     } finally {
       setIsVerifying(false);
@@ -56,6 +61,7 @@ export default function ConnectionsTab() {
     }
 
     setIsVerifying(true);
+
     const isValid = await verifyGitHubCredentials();
 
     if (isValid) {

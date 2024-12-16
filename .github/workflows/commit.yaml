@@ -28,7 +28,7 @@ jobs:
       
     - name: Update commit file
       run: |
-        echo "{ \"commit\": \"$COMMIT_HASH\" , \"version\": \"$CURRENT_VERSION\" }" > app/commit.json
+        echo "{ \"commit\": \"$COMMIT_HASH\", \"version\": \"$CURRENT_VERSION\" }" > app/commit.json
 
     - name: Commit and push the update
       run: |

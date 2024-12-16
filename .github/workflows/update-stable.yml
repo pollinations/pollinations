@@ -158,10 +158,13 @@ jobs:
           echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Commit and Tag Release
+      - name: Get the latest commit hash and version tag
         run: |
           echo "COMMIT_HASH=$(git rev-parse HEAD)" >> $GITHUB_ENV
           echo "CURRENT_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+          
+      - name: Commit and Tag Release
+        run: |
           git pull
           echo "{ \"commit\": \"$COMMIT_HASH\" , \"version\": \"$CURRENT_VERSION\" }" > app/commit.json
           git add package.json pnpm-lock.yaml changelog.md app/commit.json

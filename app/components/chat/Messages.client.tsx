@@ -65,12 +65,16 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                   </div>
                 )}
                 <div className="grid grid-col-1 w-full">
-                  {isUserMessage ? <UserMessage content={content} /> : <AssistantMessage content={content} />}
+                  {isUserMessage ? (
+                    <UserMessage content={content} />
+                  ) : (
+                    <AssistantMessage content={content} annotations={message.annotations} />
+                  )}
                 </div>
                 {!isUserMessage && (
                   <div className="flex gap-2 flex-col lg:flex-row">
-                    <WithTooltip tooltip="Revert to this message">
-                      {messageId && (
+                    {messageId && (
+                      <WithTooltip tooltip="Revert to this message">
                         <button
                           onClick={() => handleRewind(messageId)}
                           key="i-ph:arrow-u-up-left"
@@ -79,8 +83,8 @@ export const Messages = React.forwardRef<HTMLDivElement, MessagesProps>((props: 
                             'text-xl text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary transition-colors',
                           )}
                         />
-                      )}
-                    </WithTooltip>
+                      </WithTooltip>
+                    )}
 
                     <WithTooltip tooltip="Fork chat from this message">
                       <button

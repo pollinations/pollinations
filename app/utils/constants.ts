@@ -2,6 +2,7 @@ import Cookies from 'js-cookie';
 import type { ModelInfo, OllamaApiResponse, OllamaModel } from './types';
 import type { ProviderInfo, IProviderSetting } from '~/types/model';
 import { createScopedLogger } from './logger';
+import { logStore } from '~/lib/stores/logs';
 
 export const WORK_DIR_NAME = 'project';
 export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
@@ -138,11 +139,12 @@ const PROVIDER_LIST: ProviderInfo[] = [
   {
     name: 'Groq',
     staticModels: [
-      { name: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.1-8b-instant', label: 'Llama 3.1 8b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-11b-vision-preview', label: 'Llama 3.2 11b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
+      { name: 'llama-3.2-90b-vision-preview', label: 'Llama 3.2 90b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-3b-preview', label: 'Llama 3.2 3b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-1b-preview', label: 'Llama 3.2 1b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
+      { name: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     ],
     getApiKeyLink: 'https://console.groq.com/keys',
   },
@@ -291,6 +293,30 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://api.together.xyz/settings/api-keys',
   },
+  {
+    name: 'Perplexity',
+    staticModels: [
+      {
+        name: 'llama-3.1-sonar-small-128k-online',
+        label: 'Sonar Small Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-large-128k-online',
+        label: 'Sonar Large Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-huge-128k-online',
+        label: 'Sonar Huge Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+    ],
+    getApiKeyLink: 'https://www.perplexity.ai/settings/api',
+  },
 ];
 
 export const DEFAULT_PROVIDER = PROVIDER_LIST[0];
@@ -373,12 +399,6 @@ const getOllamaBaseUrl = (settings?: IProviderSetting) => {
 };
 
 async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
-  /*
-   * if (typeof window === 'undefined') {
-   * return [];
-   * }
-   */
-
   try {
     const baseUrl = getOllamaBaseUrl(settings);
     const response = await fetch(`${baseUrl}/api/tags`);
@@ -391,7 +411,9 @@ async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IPro
       maxTokenAllowed: 8000,
     }));
   } catch (e: any) {
+    logStore.logError('Failed to get Ollama models', e, { baseUrl: settings?.baseUrl });
     logger.warn('Failed to get Ollama models: ', e.message || '');
+
     return [];
   }
 }
@@ -465,10 +487,6 @@ async function getOpenRouterModels(): Promise<ModelInfo[]> {
 }
 
 async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
   try {
     const baseUrl = settings?.baseUrl || import.meta.env.LMSTUDIO_API_BASE_URL || 'http://localhost:1234';
     const response = await fetch(`${baseUrl}/v1/models`);
@@ -480,7 +498,7 @@ async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: I
       provider: 'LMStudio',
     }));
   } catch (e: any) {
-    logger.warn('Failed to get LMStudio models: ', e.message || '');
+    logStore.logError('Failed to get LMStudio models', e, { baseUrl: settings?.baseUrl });
     return [];
   }
 }
@@ -499,6 +517,7 @@ async function initializeModelList(providerSettings?: Record<string, IProviderSe
       }
     }
   } catch (error: any) {
+    logStore.logError('Failed to fetch API keys from cookies', error);
     logger.warn(`Failed to fetch apikeys from cookies: ${error?.message}`);
   }
   MODEL_LIST = [

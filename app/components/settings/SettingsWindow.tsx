@@ -10,6 +10,7 @@ import ProvidersTab from './providers/ProvidersTab';
 import { useSettings } from '~/lib/hooks/useSettings';
 import FeaturesTab from './features/FeaturesTab';
 import DebugTab from './debug/DebugTab';
+import EventLogsTab from './event-logs/EventLogsTab';
 import ConnectionsTab from './connections/ConnectionsTab';
 
 interface SettingsProps {
@@ -17,18 +18,17 @@ interface SettingsProps {
   onClose: () => void;
 }
 
-type TabType = 'chat-history' | 'providers' | 'features' | 'debug' | 'connection';
+type TabType = 'chat-history' | 'providers' | 'features' | 'debug' | 'event-logs' | 'connection';
 
-// Providers that support base URL configuration
 export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
-  const { debug } = useSettings();
+  const { debug, eventLogs } = useSettings();
   const [activeTab, setActiveTab] = useState<TabType>('chat-history');
 
   const tabs: { id: TabType; label: string; icon: string; component?: ReactElement }[] = [
     { id: 'chat-history', label: 'Chat History', icon: 'i-ph:book', component: <ChatHistoryTab /> },
     { id: 'providers', label: 'Providers', icon: 'i-ph:key', component: <ProvidersTab /> },
-    { id: 'features', label: 'Features', icon: 'i-ph:star', component: <FeaturesTab /> },
     { id: 'connection', label: 'Connection', icon: 'i-ph:link', component: <ConnectionsTab /> },
+    { id: 'features', label: 'Features', icon: 'i-ph:star', component: <FeaturesTab /> },
     ...(debug
       ? [
           {
@@ -36,6 +36,16 @@ export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
             label: 'Debug Tab',
             icon: 'i-ph:bug',
             component: <DebugTab />,
+          },
+        ]
+      : []),
+    ...(eventLogs
+      ? [
+          {
+            id: 'event-logs' as TabType,
+            label: 'Event Logs',
+            icon: 'i-ph:list-bullets',
+            component: <EventLogsTab />,
           },
         ]
       : []),

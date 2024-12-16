@@ -28,12 +28,17 @@ export function useSettings() {
   // Function to check if we're on stable version
   const checkIsStableVersion = async () => {
     try {
-      const stableResponse = await fetch('https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/stable/app/commit.json');
+      const stableResponse = await fetch(
+        'https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/stable/app/commit.json',
+      );
+
       if (!stableResponse.ok) {
         console.warn('Failed to fetch stable commit info');
         return false;
       }
-      const stableData = await stableResponse.json() as CommitData;
+
+      const stableData = (await stableResponse.json()) as CommitData;
+
       return commit.commit === stableData.commit;
     } catch (error) {
       console.warn('Error checking stable version:', error);
@@ -86,9 +91,10 @@ export function useSettings() {
 
     // load latest branch setting from cookies or determine based on version
     const savedLatestBranch = Cookies.get('useLatestBranch');
+
     if (savedLatestBranch === undefined) {
       // If setting hasn't been set by user, check version
-      checkIsStableVersion().then(isStable => {
+      checkIsStableVersion().then((isStable) => {
         const shouldUseLatest = !isStable;
         latestBranch.set(shouldUseLatest);
         Cookies.set('useLatestBranch', String(shouldUseLatest));

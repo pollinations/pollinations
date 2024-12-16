@@ -41,7 +41,8 @@ const versionHash = commit.commit;
 const GITHUB_URLS = {
   original: 'https://api.github.com/repos/stackblitz-labs/bolt.diy/commits/main',
   fork: 'https://api.github.com/repos/Stijnus/bolt.new-any-llm/commits/main',
-  commitJson: (branch: string) => `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/${branch}/app/commit.json`,
+  commitJson: (branch: string) =>
+    `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/${branch}/app/commit.json`,
 };
 
 function getSystemInfo(): SystemInfo {
@@ -227,19 +228,20 @@ export default function DebugTab() {
               provider.name.toLowerCase() === 'ollama'
                 ? 'OLLAMA_API_BASE_URL'
                 : provider.name.toLowerCase() === 'lmstudio'
-                ? 'LMSTUDIO_API_BASE_URL'
-                : `REACT_APP_${provider.name.toUpperCase()}_URL`;
+                  ? 'LMSTUDIO_API_BASE_URL'
+                  : `REACT_APP_${provider.name.toUpperCase()}_URL`;
 
             // Access environment variables through import.meta.env
             const url = import.meta.env[envVarName] || provider.settings.baseUrl || null; // Ensure baseUrl is used
             console.log(`[Debug] Using URL for ${provider.name}:`, url, `(from ${envVarName})`);
 
             const status = await checkProviderStatus(url, provider.name);
+
             return {
               ...status,
               enabled: provider.settings.enabled ?? false,
             };
-          })
+          }),
       );
 
       setActiveProviders(statuses);
@@ -269,19 +271,20 @@ export default function DebugTab() {
       console.log(`[Debug] Checking for updates against ${branchToCheck} branch`);
 
       const localCommitResponse = await fetch(GITHUB_URLS.commitJson(branchToCheck));
+
       if (!localCommitResponse.ok) {
         throw new Error('Failed to fetch local commit info');
       }
 
-      const localCommitData = await localCommitResponse.json() as CommitData;
+      const localCommitData = (await localCommitResponse.json()) as CommitData;
       const remoteCommitHash = localCommitData.commit;
       const currentCommitHash = versionHash;
 
       if (remoteCommitHash !== currentCommitHash) {
         setUpdateMessage(
           `Update available from ${branchToCheck} branch!\n` +
-          `Current: ${currentCommitHash.slice(0, 7)}\n` +
-          `Latest: ${remoteCommitHash.slice(0, 7)}`
+            `Current: ${currentCommitHash.slice(0, 7)}\n` +
+            `Latest: ${remoteCommitHash.slice(0, 7)}`,
         );
       } else {
         setUpdateMessage(`You are on the latest version from the ${branchToCheck} branch`);
@@ -309,7 +312,7 @@ export default function DebugTab() {
       })),
       Version: {
         hash: versionHash.slice(0, 7),
-        branch: useLatestBranch ? 'main' : 'stable'
+        branch: useLatestBranch ? 'main' : 'stable',
       },
       Timestamp: new Date().toISOString(),
     };

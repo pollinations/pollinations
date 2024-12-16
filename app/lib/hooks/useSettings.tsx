@@ -99,7 +99,6 @@ export function useSettings() {
     if (checkCommit === undefined) {
       checkCommit = commit.commit;
     }
-
     if (savedLatestBranch === undefined || checkCommit !== commit.commit) {
       // If setting hasn't been set by user, check version
       checkIsStableVersion().then((isStable) => {

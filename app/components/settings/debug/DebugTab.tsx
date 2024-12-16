@@ -34,14 +34,19 @@ interface IProviderConfig {
 
 interface CommitData {
   commit: string;
+  version?: string;
 }
 
+const connitJson: CommitData = commit;
+
 const LOCAL_PROVIDERS = ['Ollama', 'LMStudio', 'OpenAILike'];
-const versionHash = commit.commit;
+const versionHash = connitJson.commit;
+const versionTag = connitJson.version;
 const GITHUB_URLS = {
   original: 'https://api.github.com/repos/stackblitz-labs/bolt.diy/commits/main',
   fork: 'https://api.github.com/repos/Stijnus/bolt.new-any-llm/commits/main',
-  commitJson: (branch: string) => `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/${branch}/app/commit.json`,
+  commitJson: (branch: string) =>
+    `https://raw.githubusercontent.com/stackblitz-labs/bolt.diy/${branch}/app/commit.json`,
 };
 
 function getSystemInfo(): SystemInfo {
@@ -206,7 +211,7 @@ const checkProviderStatus = async (url: string | null, providerName: string): Pr
 };
 
 export default function DebugTab() {
-  const { providers, useLatestBranch } = useSettings();
+  const { providers, latestBranch } = useSettings();
   const [activeProviders, setActiveProviders] = useState<ProviderStatus[]>([]);
   const [updateMessage, setUpdateMessage] = useState<string>('');
   const [systemInfo] = useState<SystemInfo>(getSystemInfo());
@@ -227,19 +232,20 @@ export default function DebugTab() {
               provider.name.toLowerCase() === 'ollama'
                 ? 'OLLAMA_API_BASE_URL'
                 : provider.name.toLowerCase() === 'lmstudio'
-                ? 'LMSTUDIO_API_BASE_URL'
-                : `REACT_APP_${provider.name.toUpperCase()}_URL`;
+                  ? 'LMSTUDIO_API_BASE_URL'
+                  : `REACT_APP_${provider.name.toUpperCase()}_URL`;
 
             // Access environment variables through import.meta.env
             const url = import.meta.env[envVarName] || provider.settings.baseUrl || null; // Ensure baseUrl is used
             console.log(`[Debug] Using URL for ${provider.name}:`, url, `(from ${envVarName})`);
 
             const status = await checkProviderStatus(url, provider.name);
+
             return {
               ...status,
               enabled: provider.settings.enabled ?? false,
             };
-          })
+          }),
       );
 
       setActiveProviders(statuses);
@@ -265,23 +271,24 @@ export default function DebugTab() {
       setIsCheckingUpdate(true);
       setUpdateMessage('Checking for updates...');
 
-      const branchToCheck = useLatestBranch ? 'main' : 'stable';
+      const branchToCheck = latestBranch ? 'main' : 'stable';
       console.log(`[Debug] Checking for updates against ${branchToCheck} branch`);
 
       const localCommitResponse = await fetch(GITHUB_URLS.commitJson(branchToCheck));
+
       if (!localCommitResponse.ok) {
         throw new Error('Failed to fetch local commit info');
       }
 
-      const localCommitData = await localCommitResponse.json() as CommitData;
+      const localCommitData = (await localCommitResponse.json()) as CommitData;
       const remoteCommitHash = localCommitData.commit;
       const currentCommitHash = versionHash;
 
       if (remoteCommitHash !== currentCommitHash) {
         setUpdateMessage(
           `Update available from ${branchToCheck} branch!\n` +
-          `Current: ${currentCommitHash.slice(0, 7)}\n` +
-          `Latest: ${remoteCommitHash.slice(0, 7)}`
+            `Current: ${currentCommitHash.slice(0, 7)}\n` +
+            `Latest: ${remoteCommitHash.slice(0, 7)}`,
         );
       } else {
         setUpdateMessage(`You are on the latest version from the ${branchToCheck} branch`);
@@ -292,7 +299,7 @@ export default function DebugTab() {
     } finally {
       setIsCheckingUpdate(false);
     }
-  }, [isCheckingUpdate, useLatestBranch]);
+  }, [isCheckingUpdate, latestBranch]);
 
   const handleCopyToClipboard = useCallback(() => {
     const debugInfo = {
@@ -309,7 +316,7 @@ export default function DebugTab() {
       })),
       Version: {
         hash: versionHash.slice(0, 7),
-        branch: useLatestBranch ? 'main' : 'stable'
+        branch: latestBranch ? 'main' : 'stable',
       },
       Timestamp: new Date().toISOString(),
     };
@@ -317,7 +324,7 @@ export default function DebugTab() {
     navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2)).then(() => {
       toast.success('Debug information copied to clipboard!');
     });
-  }, [activeProviders, systemInfo, useLatestBranch]);
+  }, [activeProviders, systemInfo, latestBranch]);
 
   return (
     <div className="p-4 space-y-6">
@@ -403,7 +410,7 @@ export default function DebugTab() {
               <p className="text-sm font-medium text-bolt-elements-textPrimary font-mono">
                 {versionHash.slice(0, 7)}
                 <span className="ml-2 text-xs text-bolt-elements-textSecondary">
-                  ({new Date().toLocaleDateString()})
+                  (v{versionTag || '0.0.1'}) - {latestBranch ? 'nightly' : 'stable'}
                 </span>
               </p>
             </div>

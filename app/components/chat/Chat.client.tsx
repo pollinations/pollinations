@@ -116,13 +116,22 @@ export const ChatImpl = memo(
         apiKeys,
         files,
       },
+      sendExtraMessageFields: true,
       onError: (error) => {
         logger.error('Request failed\n\n', error);
         toast.error(
           'There was an error processing your request: ' + (error.message ? error.message : 'No details were returned'),
         );
       },
-      onFinish: () => {
+      onFinish: (message, response) => {
+        const usage = response.usage;
+
+        if (usage) {
+          console.log('Token usage:', usage);
+
+          // You can now use the usage data as needed
+        }
+
         logger.debug('Finished streaming');
       },
       initialMessages,

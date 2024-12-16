@@ -3,8 +3,8 @@ import { Switch } from '~/components/ui/Switch';
 import { useSettings } from '~/lib/hooks/useSettings';
 
 export default function FeaturesTab() {
-  const { debug, enableDebugMode, isLocalModel, enableLocalModels, enableEventLogs, latestBranch, enableLatestBranch } =
-    useSettings();
+
+  const { debug, enableDebugMode, isLocalModel, enableLocalModels, enableEventLogs, latestBranch, enableLatestBranch } = useSettings();
 
   const handleToggle = (enabled: boolean) => {
     enableDebugMode(enabled);

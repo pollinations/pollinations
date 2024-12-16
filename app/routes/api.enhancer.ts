@@ -114,14 +114,30 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
 
         for (const line of lines) {
           try {
-            const parsed = JSON.parse(line);
+            // Handle token-based streaming format
+            if (line.includes('0:"')) {
+              // Extract all token contents and join them
+              const tokens = line.match(/0:"([^"]+)"/g) || [];
+              const content = tokens
+                .map(token => token.slice(3, -1)) // Remove the '0:"' prefix and '"' suffix
+                .join('');
+              
+              if (content) {
+                controller.enqueue(encoder.encode(content));
+              }
+              continue;
+            }
 
+            // Try to parse as JSON if it's not token-based format
+            const parsed = JSON.parse(line);
             if (parsed.type === 'text') {
               controller.enqueue(encoder.encode(parsed.value));
             }
           } catch (e) {
-            // skip invalid JSON lines
-            console.warn('Failed to parse stream part:', line, e);
+            // If not JSON and not token-based, treat as plain text
+            if (!line.includes('e:') && !line.includes('d:')) { // Skip metadata lines
+              controller.enqueue(encoder.encode(line));
+            }
           }
         }
       },

@@ -233,7 +233,10 @@ const PROVIDER_LIST: ProviderInfo[] = [
   },
   {
     name: 'xAI',
-    staticModels: [{ name: 'grok-beta', label: 'xAI Grok Beta', provider: 'xAI', maxTokenAllowed: 8000 }],
+    staticModels: [
+      { name: 'grok-beta', label: 'xAI Grok Beta', provider: 'xAI', maxTokenAllowed: 8000 },
+      { name: 'grok-2-1212', label: 'xAI Grok2 1212', provider: 'xAI', maxTokenAllowed: 8000 },
+    ],
     getApiKeyLink: 'https://docs.x.ai/docs/quickstart#creating-an-api-key',
   },
   {

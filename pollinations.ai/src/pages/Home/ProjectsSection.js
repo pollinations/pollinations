@@ -80,6 +80,11 @@ const projectCategories = [
 const projects = {
   apps: [
     {
+      name: "Character RP (Roblox) 🆕",
+      url: "https://www.roblox.com/games/108463136689847",
+      description: "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
+    },
+    {
       name: "Free AI Chatbot & Image Generator",
       url: "https://freeaichat.app",
       description: "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",

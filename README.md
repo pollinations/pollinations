@@ -179,6 +179,7 @@ Pollinations.AI is used in various projects, including:
 11. [Websim](https://websim.ai/c/bXsmNE96e3op5rtUS): A web simulation tool that integrates Pollinations.ai for generating AI-driven content. Remix the app with your own prompts. Created by @thomash_pollinations.
 12. [JCode Website Builder](https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories): A website generator using Pollinations text API. Created by @rtxpower.
 13. [JustBuildThings](https://justbuildthings.com): A collection of AI tools for image generation, character chat, and writing powered by Pollinations. Created by rasit.
+14. [Roblox Character RP](https://www.roblox.com/games/108463136689847): 🆕 A Roblox game where players can create and roleplay with AI characters using Pollinations' text generation. Created by @user113.
 
 ### Tutorials
 1. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.

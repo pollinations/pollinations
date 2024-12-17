@@ -72,4 +72,9 @@ Local LLMs like Qwen-2.5-Coder are powerful for small applications but still exp
 
 ---
 
+### **"Miniflare or Wrangler errors in Windows"**
+You will need to make sure you have the latest version of Visual Studio C++ installed (14.40.33816), more information here https://github.com/stackblitz-labs/bolt.diy/issues/19.
+
+---
+
 Got more questions? Feel free to reach out or open an issue in our GitHub repo!

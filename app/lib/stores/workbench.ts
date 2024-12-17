@@ -17,6 +17,7 @@ import { extractRelativePath } from '~/utils/diff';
 import { description } from '~/lib/persistence';
 import Cookies from 'js-cookie';
 import { createSampler } from '~/utils/sampler';
+import type { ActionAlert } from '~/types/actions';
 
 export interface ArtifactState {
   id: string;
@@ -43,6 +44,8 @@ export class WorkbenchStore {
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
   currentView: WritableAtom<WorkbenchViewType> = import.meta.hot?.data.currentView ?? atom('code');
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
+  actionAlert: WritableAtom<ActionAlert | undefined> =
+    import.meta.hot?.data.unsavedFiles ?? atom<ActionAlert | undefined>(undefined);
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
   #globalExecutionQueue = Promise.resolve();
@@ -52,6 +55,7 @@ export class WorkbenchStore {
       import.meta.hot.data.unsavedFiles = this.unsavedFiles;
       import.meta.hot.data.showWorkbench = this.showWorkbench;
       import.meta.hot.data.currentView = this.currentView;
+      import.meta.hot.data.actionAlert = this.actionAlert;
     }
   }
 
@@ -88,6 +92,12 @@ export class WorkbenchStore {
   }
   get boltTerminal() {
     return this.#terminalStore.boltTerminal;
+  }
+  get alert() {
+    return this.actionAlert;
+  }
+  clearAlert() {
+    this.actionAlert.set(undefined);
   }
 
   toggleTerminal(value?: boolean) {
@@ -249,7 +259,11 @@ export class WorkbenchStore {
       title,
       closed: false,
       type,
-      runner: new ActionRunner(webcontainer, () => this.boltTerminal),
+      runner: new ActionRunner(
+        webcontainer,
+        () => this.boltTerminal,
+        (alert) => this.actionAlert.set(alert),
+      ),
     });
   }
 

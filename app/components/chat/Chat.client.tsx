@@ -95,6 +95,7 @@ export const ChatImpl = memo(
     const [imageDataList, setImageDataList] = useState<string[]>([]); // Move here
     const [searchParams, setSearchParams] = useSearchParams();
     const files = useStore(workbenchStore.files);
+    const actionAlert = useStore(workbenchStore.alert);
     const { activeProviders, promptId } = useSettings();
 
     const [model, setModel] = useState(() => {
@@ -387,6 +388,8 @@ export const ChatImpl = memo(
         setUploadedFiles={setUploadedFiles}
         imageDataList={imageDataList}
         setImageDataList={setImageDataList}
+        actionAlert={actionAlert}
+        clearAlert={() => workbenchStore.clearAlert()}
       />
     );
   },

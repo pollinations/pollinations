@@ -21,7 +21,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 
 ## Join the community
 
-[Join our bolt.diy community here!](https://thinktank.ottomator.ai)
+[Join the bolt.diy community here, in the thinktank on ottomator.ai!](https://thinktank.ottomator.ai)
 
 
 ## Requested Additions

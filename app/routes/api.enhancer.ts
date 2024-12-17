@@ -5,9 +5,6 @@ import { streamText } from '~/lib/.server/llm/stream-text';
 import { stripIndents } from '~/utils/stripIndent';
 import type { IProviderSetting, ProviderInfo } from '~/types/model';
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
 export async function action(args: ActionFunctionArgs) {
   return enhancerAction(args);
 }
@@ -107,29 +104,7 @@ async function enhancerAction({ context, request }: ActionFunctionArgs) {
       providerSettings,
     });
 
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        const text = decoder.decode(chunk);
-        const lines = text.split('\n').filter((line) => line.trim() !== '');
-
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-
-            if (parsed.type === 'text') {
-              controller.enqueue(encoder.encode(parsed.value));
-            }
-          } catch (e) {
-            // skip invalid JSON lines
-            console.warn('Failed to parse stream part:', line, e);
-          }
-        }
-      },
-    });
-
-    const transformedStream = result.toDataStream().pipeThrough(transformStream);
-
-    return new Response(transformedStream, {
+    return new Response(result.textStream, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',

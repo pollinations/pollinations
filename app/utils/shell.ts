@@ -105,6 +105,7 @@ export class BoltShell {
      *  this.#shellInputStream?.write('\x03');
      */
     this.terminal.input('\x03');
+    await this.waitTillOscCode('prompt');
 
     if (state && state.executionPrms) {
       await state.executionPrms;
@@ -145,6 +146,10 @@ export class BoltShell {
     terminalOutput.pipeTo(
       new WritableStream({
         write(data) {
+          /*
+           * const [, osc] = data.match(/\x1b\]654;([^\x07]+)\x07/) || [];
+           * console.log('terminal onData', { data,osc });
+           */
           if (!isInteractive) {
             const [, osc] = data.match(/\x1b\]654;([^\x07]+)\x07/) || [];
 

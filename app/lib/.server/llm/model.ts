@@ -84,6 +84,8 @@ export function getHuggingFaceModel(apiKey: OptionalApiKey, model: string) {
 }
 
 export function getOllamaModel(baseURL: string, model: string) {
+  console.log({ baseURL, model });
+
   const ollamaInstance = ollama(model, {
     numCtx: DEFAULT_NUM_CTX,
   }) as LanguageModelV1 & { config: any };
@@ -140,7 +142,7 @@ export function getPerplexityModel(apiKey: OptionalApiKey, model: string) {
 export function getModel(
   provider: string,
   model: string,
-  env: Env,
+  serverEnv: Env,
   apiKeys?: Record<string, string>,
   providerSettings?: Record<string, IProviderSetting>,
 ) {
@@ -148,9 +150,12 @@ export function getModel(
    * let apiKey; // Declare first
    * let baseURL;
    */
+  // console.log({provider,model});
 
-  const apiKey = getAPIKey(env, provider, apiKeys); // Then assign
-  const baseURL = providerSettings?.[provider].baseUrl || getBaseURL(env, provider);
+  const apiKey = getAPIKey(serverEnv, provider, apiKeys); // Then assign
+  const baseURL = getBaseURL(serverEnv, provider, providerSettings);
+
+  // console.log({apiKey,baseURL});
 
   switch (provider) {
     case 'Anthropic':

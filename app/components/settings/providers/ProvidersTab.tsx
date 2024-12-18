@@ -87,7 +87,12 @@ export default function ProvidersTab() {
                 type="text"
                 value={provider.settings.baseUrl || ''}
                 onChange={(e) => {
-                  const newBaseUrl = e.target.value;
+                  let newBaseUrl: string | undefined = e.target.value;
+
+                  if (newBaseUrl && newBaseUrl.trim().length === 0) {
+                    newBaseUrl = undefined;
+                  }
+
                   updateProviderSettings(provider.name, { ...provider.settings, baseUrl: newBaseUrl });
                   logStore.logProvider(`Base URL updated for ${provider.name}`, {
                     provider: provider.name,

@@ -220,7 +220,6 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://huggingface.co/settings/tokens',
   },
-
   {
     name: 'OpenAI',
     staticModels: [
@@ -325,26 +324,46 @@ const staticModels: ModelInfo[] = PROVIDER_LIST.map((p) => p.staticModels).flat(
 
 export let MODEL_LIST: ModelInfo[] = [...staticModels];
 
-export async function getModelList(
-  apiKeys: Record<string, string>,
-  providerSettings?: Record<string, IProviderSetting>,
-) {
+export async function getModelList(options: {
+  apiKeys?: Record<string, string>;
+  providerSettings?: Record<string, IProviderSetting>;
+  serverEnv?: Record<string, string>;
+}) {
+  const { apiKeys, providerSettings, serverEnv } = options;
+
+  // console.log({ providerSettings, serverEnv,env:process.env });
   MODEL_LIST = [
     ...(
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name])),
+        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name], serverEnv)),
       )
     ).flat(),
     ...staticModels,
   ];
+
   return MODEL_LIST;
 }
 
-async function getTogetherModels(apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getTogetherModels(
+  apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.TOGETHER_API_BASE_URL || '';
+    let settingsBaseUrl = settings?.baseUrl;
+
+    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+      settingsBaseUrl = undefined;
+    }
+
+    const baseUrl =
+      settingsBaseUrl ||
+      serverEnv?.TOGETHER_API_BASE_URL ||
+      process.env.TOGETHER_API_BASE_URL ||
+      import.meta.env.TOGETHER_API_BASE_URL ||
+      '';
     const provider = 'Together';
 
     if (!baseUrl) {
@@ -383,8 +402,19 @@ async function getTogetherModels(apiKeys?: Record<string, string>, settings?: IP
   }
 }
 
-const getOllamaBaseUrl = (settings?: IProviderSetting) => {
-  const defaultBaseUrl = settings?.baseUrl || import.meta.env.OLLAMA_API_BASE_URL || 'http://localhost:11434';
+const getOllamaBaseUrl = (settings?: IProviderSetting, serverEnv: Record<string, string> = {}) => {
+  let settingsBaseUrl = settings?.baseUrl;
+
+  if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+    settingsBaseUrl = undefined;
+  }
+
+  const defaultBaseUrl =
+    settings?.baseUrl ||
+    serverEnv?.OLLAMA_API_BASE_URL ||
+    process.env.OLLAMA_API_BASE_URL ||
+    import.meta.env.OLLAMA_API_BASE_URL ||
+    'http://localhost:11434';
 
   // Check if we're in the browser
   if (typeof window !== 'undefined') {
@@ -398,9 +428,13 @@ const getOllamaBaseUrl = (settings?: IProviderSetting) => {
   return isDocker ? defaultBaseUrl.replace('localhost', 'host.docker.internal') : defaultBaseUrl;
 };
 
-async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getOllamaModels(
+  apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = getOllamaBaseUrl(settings);
+    const baseUrl = getOllamaBaseUrl(settings, serverEnv);
     const response = await fetch(`${baseUrl}/api/tags`);
     const data = (await response.json()) as OllamaApiResponse;
 
@@ -421,9 +455,21 @@ async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IPro
 async function getOpenAILikeModels(
   apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.OPENAI_LIKE_API_BASE_URL || '';
+    let settingsBaseUrl = settings?.baseUrl;
+
+    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+      settingsBaseUrl = undefined;
+    }
+
+    const baseUrl =
+      settingsBaseUrl ||
+      serverEnv.OPENAI_LIKE_API_BASE_URL ||
+      process.env.OPENAI_LIKE_API_BASE_URL ||
+      import.meta.env.OPENAI_LIKE_API_BASE_URL ||
+      '';
 
     if (!baseUrl) {
       return [];
@@ -486,9 +532,24 @@ async function getOpenRouterModels(): Promise<ModelInfo[]> {
     }));
 }
 
-async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getLMStudioModels(
+  _apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.LMSTUDIO_API_BASE_URL || 'http://localhost:1234';
+    let settingsBaseUrl = settings?.baseUrl;
+
+    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+      settingsBaseUrl = undefined;
+    }
+
+    const baseUrl =
+      settingsBaseUrl ||
+      serverEnv.LMSTUDIO_API_BASE_URL ||
+      process.env.LMSTUDIO_API_BASE_URL ||
+      import.meta.env.LMSTUDIO_API_BASE_URL ||
+      'http://localhost:1234';
     const response = await fetch(`${baseUrl}/v1/models`);
     const data = (await response.json()) as any;
 
@@ -503,29 +564,37 @@ async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: I
   }
 }
 
-async function initializeModelList(providerSettings?: Record<string, IProviderSetting>): Promise<ModelInfo[]> {
-  let apiKeys: Record<string, string> = {};
+async function initializeModelList(options: {
+  env?: Record<string, string>;
+  providerSettings?: Record<string, IProviderSetting>;
+  apiKeys?: Record<string, string>;
+}): Promise<ModelInfo[]> {
+  const { providerSettings, apiKeys: providedApiKeys, env } = options;
+  let apiKeys: Record<string, string> = providedApiKeys || {};
 
-  try {
-    const storedApiKeys = Cookies.get('apiKeys');
+  if (!providedApiKeys) {
+    try {
+      const storedApiKeys = Cookies.get('apiKeys');
 
-    if (storedApiKeys) {
-      const parsedKeys = JSON.parse(storedApiKeys);
+      if (storedApiKeys) {
+        const parsedKeys = JSON.parse(storedApiKeys);
 
-      if (typeof parsedKeys === 'object' && parsedKeys !== null) {
-        apiKeys = parsedKeys;
+        if (typeof parsedKeys === 'object' && parsedKeys !== null) {
+          apiKeys = parsedKeys;
+        }
       }
+    } catch (error: any) {
+      logStore.logError('Failed to fetch API keys from cookies', error);
+      logger.warn(`Failed to fetch apikeys from cookies: ${error?.message}`);
     }
-  } catch (error: any) {
-    logStore.logError('Failed to fetch API keys from cookies', error);
-    logger.warn(`Failed to fetch apikeys from cookies: ${error?.message}`);
   }
+
   MODEL_LIST = [
     ...(
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name])),
+        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name], env)),
       )
     ).flat(),
     ...staticModels,
@@ -534,6 +603,7 @@ async function initializeModelList(providerSettings?: Record<string, IProviderSe
   return MODEL_LIST;
 }
 
+// initializeModelList({})
 export {
   getOllamaModels,
   getOpenAILikeModels,

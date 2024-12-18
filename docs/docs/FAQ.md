@@ -1,5 +1,19 @@
 # Frequently Asked Questions (FAQ)
 
+## What are the best models for bolt.diy?
+
+For the best experience with bolt.diy, we recommend using the following models:
+
+- **Claude 3.5 Sonnet (old)**: Best overall coder, providing excellent results across all use cases
+- **Gemini 2.0 Flash**: Exceptional speed while maintaining good performance
+- **GPT-4o**: Strong alternative to Claude 3.5 Sonnet with comparable capabilities
+- **DeepSeekCoder V2 236b**: Best open source model (available through OpenRouter, DeepSeek API, or self-hosted)
+- **Qwen 2.5 Coder 32b**: Best model for self-hosting with reasonable hardware requirements
+
+**Note**: Models with less than 7b parameters typically lack the capability to properly interact with bolt!
+
+---
+
 ## How do I get the best results with bolt.diy?
 
 - **Be specific about your stack**:  
@@ -69,6 +83,12 @@ To troubleshoot:
 
 ### **"Everything works, but the results are bad"**
 Local LLMs like Qwen-2.5-Coder are powerful for small applications but still experimental for larger projects. For better results, consider using larger models like GPT-4o, Claude 3.5 Sonnet, or DeepSeek Coder V2 236b.
+
+---
+
+### **"Received structured exception #0xc0000005: access violation"**
+
+If you are getting this, you are probably on Windows. The fix is generally to update the [Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
 
 ---
 

@@ -3,7 +3,12 @@ import type { ModelInfo } from '~/utils/types';
 export type ProviderInfo = {
   staticModels: ModelInfo[];
   name: string;
-  getDynamicModels?: (apiKeys?: Record<string, string>, providerSettings?: IProviderSetting) => Promise<ModelInfo[]>;
+  getDynamicModels?: (
+    providerName: string,
+    apiKeys?: Record<string, string>,
+    providerSettings?: IProviderSetting,
+    serverEnv?: Record<string, string>,
+  ) => Promise<ModelInfo[]>;
   getApiKeyLink?: string;
   labelForGetApiKey?: string;
   icon?: string;

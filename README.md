@@ -4,7 +4,9 @@
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
-Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information. This documentation is still being updated after the transfer.
+Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information. 
+
+We have also launched an experimental agent called the "bolt.diy Expert" that can answer common questions about bolt.diy. Find it here on the [oTTomator Live Agent Studio](https://studio.ottomator.ai/).
 
 bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
 
@@ -211,4 +213,4 @@ Explore upcoming features and priorities on our [Roadmap](https://roadmap.sh/r/o
 
 ## FAQ
 
-For answers to common questions, visit our [FAQ Page](FAQ.md).
+For answers to common questions, issues, and to see a list of recommended models, visit our [FAQ Page](FAQ.md).

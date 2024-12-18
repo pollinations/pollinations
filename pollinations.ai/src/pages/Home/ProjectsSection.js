@@ -262,6 +262,11 @@ const projects = {
   ],
   tutorials: [
     {
+      name: "Proyecto Descartes 🆕",
+      url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html?page=102",
+      description: "An educational initiative integrating Pollinations AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
+    },
+    {
       name: "Tutorial",
       url: "https://guiadehospedagem.com.br/pollinations-ai/",
       description: "An in-depth Portuguese tutorial on using Pollinations AI.",

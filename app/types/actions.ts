@@ -22,7 +22,7 @@ export type BoltAction = FileAction | ShellAction | StartAction;
 export type BoltActionData = BoltAction | BaseAction;
 
 export interface ActionAlert {
-  type: 'error' | 'info';
+  type: string;
   title: string;
   description: string;
   content: string;

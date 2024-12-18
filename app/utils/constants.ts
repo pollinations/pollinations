@@ -408,7 +408,6 @@ export async function getModelList(options: {
 }) {
   const { apiKeys, providerSettings, serverEnv } = options;
 
-  // console.log({ providerSettings, serverEnv,env:process.env });
   MODEL_LIST = [
     ...(
       await Promise.all(
@@ -438,7 +437,6 @@ async function getTogetherModels(
       defaultBaseUrlKey: 'TOGETHER_API_BASE_URL',
       defaultApiTokenKey: 'TOGETHER_API_KEY',
     });
-    console.log({ baseUrl, apiKey });
 
     if (!baseUrl) {
       return [];

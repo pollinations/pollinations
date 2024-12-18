@@ -95,34 +95,6 @@ Clone the repository using Git:
 git clone -b stable https://github.com/stackblitz-labs/bolt.diy  
 ```  
 
-### (Optional) Configure Environment Variables  
-
-Most environment variables can be configured directly through the settings menu of the application. However, if you need to manually configure them:  
-
-1. Rename `.env.example` to `.env.local`.  
-2. Add your LLM API keys. For example:  
-
-```env  
-GROQ_API_KEY=YOUR_GROQ_API_KEY  
-OPENAI_API_KEY=YOUR_OPENAI_API_KEY  
-ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY  
-```  
-
-**Note**: Ollama does not require an API key as it runs locally.  
-
-3. Optionally, set additional configurations:  
-
-```env  
-# Debugging  
-VITE_LOG_LEVEL=debug  
-
-# Ollama settings (example: 8K context, localhost port 11434)  
-OLLAMA_API_BASE_URL=http://localhost:11434  
-DEFAULT_NUM_CTX=8192  
-```  
-
-**Important**: Do not commit your `.env.local` file to version control. This file is already included in `.gitignore`.  
-
 ---
 
 ## Run the Application  
@@ -155,24 +127,27 @@ DEFAULT_NUM_CTX=8192
 
    Use the provided NPM scripts:  
    ```bash  
-   npm run dockerbuild       # Development build  
-   npm run dockerbuild:prod  # Production build  
+   npm run dockerbuild 
    ```  
 
    Alternatively, use Docker commands directly:  
    ```bash  
-   docker build . --target bolt-ai-development  # Development build  
-   docker build . --target bolt-ai-production   # Production build  
+   docker build . --target bolt-ai-development
    ```  
 
 2. **Run the Container**:  
    Use Docker Compose profiles to manage environments:  
    ```bash  
-   docker-compose --profile development up  # Development  
-   docker-compose --profile production up   # Production  
+   docker-compose --profile development up 
    ```  
 
    - With the development profile, changes to your code will automatically reflect in the running container (hot reloading).  
+
+---
+
+### Entering API Keys
+
+All of your API Keys can be configured directly in the application. Just selecte the provider you want from the dropdown and click the pencile icon to enter your API key.
 
 ---
 

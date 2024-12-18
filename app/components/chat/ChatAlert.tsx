@@ -9,7 +9,7 @@ interface Props {
 }
 
 export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
-  const { title, description, content } = alert;
+  const { description, content } = alert;
 
   return (
     <AnimatePresence>
@@ -38,7 +38,8 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
               transition={{ delay: 0.1 }}
               className={`text-sm font-medium text-bolt-elements-textPrimary`}
             >
-              {title}
+              {/* {title} */}
+              Opps There is an error
             </motion.h3>
             <motion.div
               initial={{ opacity: 0 }}

@@ -188,7 +188,7 @@ For providers that support custom base URLs (such as Ollama or LM Studio), follo
 
 
 
-## Setup Option 3: Git Clone (For Developers only)
+## Setup Using Git (For Developers only)
 
 This method is recommended for developers who want to:
 - Contribute to the project

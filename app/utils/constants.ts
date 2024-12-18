@@ -318,6 +318,83 @@ const PROVIDER_LIST: ProviderInfo[] = [
   },
 ];
 
+export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {
+  Anthropic: {
+    apiTokenKey: 'ANTHROPIC_API_KEY',
+  },
+  OpenAI: {
+    apiTokenKey: 'OPENAI_API_KEY',
+  },
+  Groq: {
+    apiTokenKey: 'GROQ_API_KEY',
+  },
+  HuggingFace: {
+    apiTokenKey: 'HuggingFace_API_KEY',
+  },
+  OpenRouter: {
+    apiTokenKey: 'OPEN_ROUTER_API_KEY',
+  },
+  Google: {
+    apiTokenKey: 'GOOGLE_GENERATIVE_AI_API_KEY',
+  },
+  OpenAILike: {
+    baseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
+    apiTokenKey: 'OPENAI_LIKE_API_KEY',
+  },
+  Together: {
+    baseUrlKey: 'TOGETHER_API_BASE_URL',
+    apiTokenKey: 'TOGETHER_API_KEY',
+  },
+  Deepseek: {
+    apiTokenKey: 'DEEPSEEK_API_KEY',
+  },
+  Mistral: {
+    apiTokenKey: 'MISTRAL_API_KEY',
+  },
+  LMStudio: {
+    baseUrlKey: 'LMSTUDIO_API_BASE_URL',
+  },
+  xAI: {
+    apiTokenKey: 'XAI_API_KEY',
+  },
+  Cohere: {
+    apiTokenKey: 'COHERE_API_KEY',
+  },
+  Perplexity: {
+    apiTokenKey: 'PERPLEXITY_API_KEY',
+  },
+  Ollama: {
+    baseUrlKey: 'OLLAMA_API_BASE_URL',
+  },
+};
+
+export const getProviderBaseUrlAndKey = (options: {
+  provider: string;
+  apiKeys?: Record<string, string>;
+  providerSettings?: IProviderSetting;
+  serverEnv?: Record<string, string>;
+  defaultBaseUrlKey: string;
+  defaultApiTokenKey: string;
+}) => {
+  const { provider, apiKeys, providerSettings, serverEnv, defaultBaseUrlKey, defaultApiTokenKey } = options;
+  let settingsBaseUrl = providerSettings?.baseUrl;
+
+  if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+    settingsBaseUrl = undefined;
+  }
+
+  const baseUrlKey = providerBaseUrlEnvKeys[provider]?.baseUrlKey || defaultBaseUrlKey;
+  const baseUrl = settingsBaseUrl || serverEnv?.[baseUrlKey] || process.env[baseUrlKey] || import.meta.env[baseUrlKey];
+
+  const apiTokenKey = providerBaseUrlEnvKeys[provider]?.apiTokenKey || defaultApiTokenKey;
+  const apiKey =
+    apiKeys?.[provider] || serverEnv?.[apiTokenKey] || process.env[apiTokenKey] || import.meta.env[apiTokenKey];
+
+  return {
+    baseUrl,
+    apiKey,
+  };
+};
 export const DEFAULT_PROVIDER = PROVIDER_LIST[0];
 
 const staticModels: ModelInfo[] = PROVIDER_LIST.map((p) => p.staticModels).flat();
@@ -337,7 +414,7 @@ export async function getModelList(options: {
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name], serverEnv)),
+        ).map((p) => p.getDynamicModels(p.name, apiKeys, providerSettings?.[p.name], serverEnv)),
       )
     ).flat(),
     ...staticModels,
@@ -347,33 +424,24 @@ export async function getModelList(options: {
 }
 
 async function getTogetherModels(
+  name: string,
   apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
   serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    let settingsBaseUrl = settings?.baseUrl;
-
-    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
-      settingsBaseUrl = undefined;
-    }
-
-    const baseUrl =
-      settingsBaseUrl ||
-      serverEnv?.TOGETHER_API_BASE_URL ||
-      process.env.TOGETHER_API_BASE_URL ||
-      import.meta.env.TOGETHER_API_BASE_URL ||
-      '';
-    const provider = 'Together';
+    const { baseUrl, apiKey } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'TOGETHER_API_BASE_URL',
+      defaultApiTokenKey: 'TOGETHER_API_KEY',
+    });
+    console.log({ baseUrl, apiKey });
 
     if (!baseUrl) {
       return [];
-    }
-
-    let apiKey = import.meta.env.OPENAI_LIKE_API_KEY ?? '';
-
-    if (apiKeys && apiKeys[provider]) {
-      apiKey = apiKeys[provider];
     }
 
     if (!apiKey) {
@@ -393,7 +461,7 @@ async function getTogetherModels(
       label: `${m.display_name} - in:$${m.pricing.input.toFixed(
         2,
       )} out:$${m.pricing.output.toFixed(2)} - context ${Math.floor(m.context_length / 1000)}k`,
-      provider,
+      provider: name,
       maxTokenAllowed: 8000,
     }));
   } catch (e) {
@@ -402,39 +470,40 @@ async function getTogetherModels(
   }
 }
 
-const getOllamaBaseUrl = (settings?: IProviderSetting, serverEnv: Record<string, string> = {}) => {
-  let settingsBaseUrl = settings?.baseUrl;
-
-  if (settingsBaseUrl && settingsBaseUrl.length == 0) {
-    settingsBaseUrl = undefined;
-  }
-
-  const defaultBaseUrl =
-    settings?.baseUrl ||
-    serverEnv?.OLLAMA_API_BASE_URL ||
-    process.env.OLLAMA_API_BASE_URL ||
-    import.meta.env.OLLAMA_API_BASE_URL ||
-    'http://localhost:11434';
+const getOllamaBaseUrl = (name: string, settings?: IProviderSetting, serverEnv: Record<string, string> = {}) => {
+  const { baseUrl } = getProviderBaseUrlAndKey({
+    provider: name,
+    providerSettings: settings,
+    serverEnv,
+    defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
+    defaultApiTokenKey: '',
+  });
 
   // Check if we're in the browser
   if (typeof window !== 'undefined') {
     // Frontend always uses localhost
-    return defaultBaseUrl;
+    return baseUrl;
   }
 
   // Backend: Check if we're running in Docker
   const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
 
-  return isDocker ? defaultBaseUrl.replace('localhost', 'host.docker.internal') : defaultBaseUrl;
+  return isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
 };
 
 async function getOllamaModels(
-  apiKeys?: Record<string, string>,
+  name: string,
+  _apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
   serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    const baseUrl = getOllamaBaseUrl(settings, serverEnv);
+    const baseUrl = getOllamaBaseUrl(name, settings, serverEnv);
+
+    if (!baseUrl) {
+      return [];
+    }
+
     const response = await fetch(`${baseUrl}/api/tags`);
     const data = (await response.json()) as OllamaApiResponse;
 
@@ -453,32 +522,23 @@ async function getOllamaModels(
 }
 
 async function getOpenAILikeModels(
+  name: string,
   apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
   serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    let settingsBaseUrl = settings?.baseUrl;
-
-    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
-      settingsBaseUrl = undefined;
-    }
-
-    const baseUrl =
-      settingsBaseUrl ||
-      serverEnv.OPENAI_LIKE_API_BASE_URL ||
-      process.env.OPENAI_LIKE_API_BASE_URL ||
-      import.meta.env.OPENAI_LIKE_API_BASE_URL ||
-      '';
+    const { baseUrl, apiKey } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
+      defaultApiTokenKey: 'OPENAI_LIKE_API_KEY',
+    });
 
     if (!baseUrl) {
       return [];
-    }
-
-    let apiKey = '';
-
-    if (apiKeys && apiKeys.OpenAILike) {
-      apiKey = apiKeys.OpenAILike;
     }
 
     const response = await fetch(`${baseUrl}/models`, {
@@ -491,7 +551,7 @@ async function getOpenAILikeModels(
     return res.data.map((model: any) => ({
       name: model.id,
       label: model.id,
-      provider: 'OpenAILike',
+      provider: name,
     }));
   } catch (e) {
     console.error('Error getting OpenAILike models:', e);
@@ -533,23 +593,25 @@ async function getOpenRouterModels(): Promise<ModelInfo[]> {
 }
 
 async function getLMStudioModels(
-  _apiKeys?: Record<string, string>,
+  name: string,
+  apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
   serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    let settingsBaseUrl = settings?.baseUrl;
+    const { baseUrl } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'LMSTUDIO_API_BASE_URL',
+      defaultApiTokenKey: '',
+    });
 
-    if (settingsBaseUrl && settingsBaseUrl.length == 0) {
-      settingsBaseUrl = undefined;
+    if (!baseUrl) {
+      return [];
     }
 
-    const baseUrl =
-      settingsBaseUrl ||
-      serverEnv.LMSTUDIO_API_BASE_URL ||
-      process.env.LMSTUDIO_API_BASE_URL ||
-      import.meta.env.LMSTUDIO_API_BASE_URL ||
-      'http://localhost:1234';
     const response = await fetch(`${baseUrl}/v1/models`);
     const data = (await response.json()) as any;
 
@@ -594,7 +656,7 @@ async function initializeModelList(options: {
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name], env)),
+        ).map((p) => p.getDynamicModels(p.name, apiKeys, providerSettings?.[p.name], env)),
       )
     ).flat(),
     ...staticModels,

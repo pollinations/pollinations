@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSettings } from '~/lib/hooks/useSettings';
 import commit from '~/commit.json';
 import { toast } from 'react-toastify';
+import { providerBaseUrlEnvKeys } from '~/utils/constants';
 
 interface ProviderStatus {
   name: string;
@@ -236,7 +237,7 @@ const checkProviderStatus = async (url: string | null, providerName: string): Pr
     }
 
     // Try different endpoints based on provider
-    const checkUrls = [`${url}/api/health`, `${url}/v1/models`];
+    const checkUrls = [`${url}/api/health`, url.endsWith('v1') ? `${url}/models` : `${url}/v1/models`];
     console.log(`[Debug] Checking additional endpoints:`, checkUrls);
 
     const results = await Promise.all(
@@ -321,14 +322,16 @@ export default function DebugTab() {
           .filter(([, provider]) => LOCAL_PROVIDERS.includes(provider.name))
           .map(async ([, provider]) => {
             const envVarName =
-              provider.name.toLowerCase() === 'ollama'
-                ? 'OLLAMA_API_BASE_URL'
-                : provider.name.toLowerCase() === 'lmstudio'
-                  ? 'LMSTUDIO_API_BASE_URL'
-                  : `REACT_APP_${provider.name.toUpperCase()}_URL`;
+              providerBaseUrlEnvKeys[provider.name].baseUrlKey || `REACT_APP_${provider.name.toUpperCase()}_URL`;
 
             // Access environment variables through import.meta.env
-            const url = import.meta.env[envVarName] || provider.settings.baseUrl || null; // Ensure baseUrl is used
+            let settingsUrl = provider.settings.baseUrl;
+
+            if (settingsUrl && settingsUrl.trim().length === 0) {
+              settingsUrl = undefined;
+            }
+
+            const url = settingsUrl || import.meta.env[envVarName] || null; // Ensure baseUrl is used
             console.log(`[Debug] Using URL for ${provider.name}:`, url, `(from ${envVarName})`);
 
             const status = await checkProviderStatus(url, provider.name);

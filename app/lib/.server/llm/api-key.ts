@@ -4,6 +4,7 @@
  */
 import { env } from 'node:process';
 import type { IProviderSetting } from '~/types/model';
+import { getProviderBaseUrlAndKey } from '~/utils/constants';
 
 export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Record<string, string>) {
   /**
@@ -16,7 +17,20 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
     return userApiKeys[provider];
   }
 
-  // Fall back to environment variables
+  const { apiKey } = getProviderBaseUrlAndKey({
+    provider,
+    apiKeys: userApiKeys,
+    providerSettings: undefined,
+    serverEnv: cloudflareEnv as any,
+    defaultBaseUrlKey: '',
+    defaultApiTokenKey: '',
+  });
+
+  if (apiKey) {
+    return apiKey;
+  }
+
+  // Fall back to hardcoded  environment variables names
   switch (provider) {
     case 'Anthropic':
       return env.ANTHROPIC_API_KEY || cloudflareEnv.ANTHROPIC_API_KEY;
@@ -52,6 +66,19 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
 }
 
 export function getBaseURL(cloudflareEnv: Env, provider: string, providerSettings?: Record<string, IProviderSetting>) {
+  const { baseUrl } = getProviderBaseUrlAndKey({
+    provider,
+    apiKeys: {},
+    providerSettings,
+    serverEnv: cloudflareEnv as any,
+    defaultBaseUrlKey: '',
+    defaultApiTokenKey: '',
+  });
+
+  if (baseUrl) {
+    return baseUrl;
+  }
+
   let settingBaseUrl = providerSettings?.[provider].baseUrl;
 
   if (settingBaseUrl && settingBaseUrl.length == 0) {

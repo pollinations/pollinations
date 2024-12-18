@@ -4,6 +4,7 @@ export type ProviderInfo = {
   staticModels: ModelInfo[];
   name: string;
   getDynamicModels?: (
+    providerName: string,
     apiKeys?: Record<string, string>,
     providerSettings?: IProviderSetting,
     serverEnv?: Record<string, string>,

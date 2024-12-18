@@ -174,27 +174,41 @@ export default function DataTab() {
       try {
         const apiKeys = JSON.parse(e.target?.result as string);
         let importedCount = 0;
+        const consolidatedKeys: Record<string, string> = {};
 
         API_KEY_PROVIDERS.forEach(provider => {
           const keyName = `${provider}_API_KEY`;
           if (apiKeys[keyName]) {
-            Cookies.set(keyName, apiKeys[keyName]);
-            importedCount++;
-          }
-        });
-
-        ['OPENAI_LIKE_API_BASE_URL', 'LMSTUDIO_API_BASE_URL', 'OLLAMA_API_BASE_URL', 'TOGETHER_API_BASE_URL'].forEach(baseUrl => {
-          if (apiKeys[baseUrl]) {
-            Cookies.set(baseUrl, apiKeys[baseUrl]);
+            consolidatedKeys[provider] = apiKeys[keyName];
             importedCount++;
           }
         });
 
         if (importedCount > 0) {
-          toast.success(`Successfully imported ${importedCount} API keys/URLs`);
+          // Store all API keys in a single cookie as JSON
+          Cookies.set('apiKeys', JSON.stringify(consolidatedKeys));
+          
+          // Also set individual cookies for backward compatibility
+          Object.entries(consolidatedKeys).forEach(([provider, key]) => {
+            Cookies.set(`${provider}_API_KEY`, key);
+          });
+
+          toast.success(`Successfully imported ${importedCount} API keys/URLs. Refreshing page to apply changes...`);
+          // Reload the page after a short delay to allow the toast to be seen
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
         } else {
           toast.warn('No valid API keys found in the file');
         }
+
+        // Set base URLs if they exist
+        ['OPENAI_LIKE_API_BASE_URL', 'LMSTUDIO_API_BASE_URL', 'OLLAMA_API_BASE_URL', 'TOGETHER_API_BASE_URL'].forEach(baseUrl => {
+          if (apiKeys[baseUrl]) {
+            Cookies.set(baseUrl, apiKeys[baseUrl]);
+          }
+        });
+
       } catch (error) {
         toast.error('Failed to import API keys. Make sure the file is a valid JSON file.');
         console.error('Failed to import API keys:', error);

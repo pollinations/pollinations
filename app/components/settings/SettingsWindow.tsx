@@ -63,7 +63,7 @@ export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
             variants={dialogBackdropVariants}
           />
         </RadixDialog.Overlay>
-        <RadixDialog.Content asChild>
+        <RadixDialog.Content aria-describedby={undefined} asChild>
           <motion.div
             className="fixed top-[50%] left-[50%] z-max h-[85vh] w-[90vw] max-w-[900px] translate-x-[-50%] translate-y-[-50%] border border-bolt-elements-borderColor rounded-lg shadow-lg focus:outline-none overflow-hidden"
             initial="closed"

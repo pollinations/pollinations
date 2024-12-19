@@ -1,7 +1,3 @@
-/*
- * @ts-nocheck
- * Preventing TS checks with files presented in the video for a better presentation.
- */
 import { env } from 'node:process';
 import type { IProviderSetting } from '~/types/model';
 import { getProviderBaseUrlAndKey } from '~/utils/constants';

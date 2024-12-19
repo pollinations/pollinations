@@ -139,11 +139,12 @@ const PROVIDER_LIST: ProviderInfo[] = [
   {
     name: 'Groq',
     staticModels: [
-      { name: 'llama-3.1-70b-versatile', label: 'Llama 3.1 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.1-8b-instant', label: 'Llama 3.1 8b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-11b-vision-preview', label: 'Llama 3.2 11b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
+      { name: 'llama-3.2-90b-vision-preview', label: 'Llama 3.2 90b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-3b-preview', label: 'Llama 3.2 3b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
       { name: 'llama-3.2-1b-preview', label: 'Llama 3.2 1b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
+      { name: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     ],
     getApiKeyLink: 'https://console.groq.com/keys',
   },
@@ -219,7 +220,6 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://huggingface.co/settings/tokens',
   },
-
   {
     name: 'OpenAI',
     staticModels: [
@@ -292,44 +292,154 @@ const PROVIDER_LIST: ProviderInfo[] = [
     ],
     getApiKeyLink: 'https://api.together.xyz/settings/api-keys',
   },
+  {
+    name: 'Perplexity',
+    staticModels: [
+      {
+        name: 'llama-3.1-sonar-small-128k-online',
+        label: 'Sonar Small Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-large-128k-online',
+        label: 'Sonar Large Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+      {
+        name: 'llama-3.1-sonar-huge-128k-online',
+        label: 'Sonar Huge Online',
+        provider: 'Perplexity',
+        maxTokenAllowed: 8192,
+      },
+    ],
+    getApiKeyLink: 'https://www.perplexity.ai/settings/api',
+  },
 ];
 
+export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {
+  Anthropic: {
+    apiTokenKey: 'ANTHROPIC_API_KEY',
+  },
+  OpenAI: {
+    apiTokenKey: 'OPENAI_API_KEY',
+  },
+  Groq: {
+    apiTokenKey: 'GROQ_API_KEY',
+  },
+  HuggingFace: {
+    apiTokenKey: 'HuggingFace_API_KEY',
+  },
+  OpenRouter: {
+    apiTokenKey: 'OPEN_ROUTER_API_KEY',
+  },
+  Google: {
+    apiTokenKey: 'GOOGLE_GENERATIVE_AI_API_KEY',
+  },
+  OpenAILike: {
+    baseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
+    apiTokenKey: 'OPENAI_LIKE_API_KEY',
+  },
+  Together: {
+    baseUrlKey: 'TOGETHER_API_BASE_URL',
+    apiTokenKey: 'TOGETHER_API_KEY',
+  },
+  Deepseek: {
+    apiTokenKey: 'DEEPSEEK_API_KEY',
+  },
+  Mistral: {
+    apiTokenKey: 'MISTRAL_API_KEY',
+  },
+  LMStudio: {
+    baseUrlKey: 'LMSTUDIO_API_BASE_URL',
+  },
+  xAI: {
+    apiTokenKey: 'XAI_API_KEY',
+  },
+  Cohere: {
+    apiTokenKey: 'COHERE_API_KEY',
+  },
+  Perplexity: {
+    apiTokenKey: 'PERPLEXITY_API_KEY',
+  },
+  Ollama: {
+    baseUrlKey: 'OLLAMA_API_BASE_URL',
+  },
+};
+
+export const getProviderBaseUrlAndKey = (options: {
+  provider: string;
+  apiKeys?: Record<string, string>;
+  providerSettings?: IProviderSetting;
+  serverEnv?: Record<string, string>;
+  defaultBaseUrlKey: string;
+  defaultApiTokenKey: string;
+}) => {
+  const { provider, apiKeys, providerSettings, serverEnv, defaultBaseUrlKey, defaultApiTokenKey } = options;
+  let settingsBaseUrl = providerSettings?.baseUrl;
+
+  if (settingsBaseUrl && settingsBaseUrl.length == 0) {
+    settingsBaseUrl = undefined;
+  }
+
+  const baseUrlKey = providerBaseUrlEnvKeys[provider]?.baseUrlKey || defaultBaseUrlKey;
+  const baseUrl = settingsBaseUrl || serverEnv?.[baseUrlKey] || process.env[baseUrlKey] || import.meta.env[baseUrlKey];
+
+  const apiTokenKey = providerBaseUrlEnvKeys[provider]?.apiTokenKey || defaultApiTokenKey;
+  const apiKey =
+    apiKeys?.[provider] || serverEnv?.[apiTokenKey] || process.env[apiTokenKey] || import.meta.env[apiTokenKey];
+
+  return {
+    baseUrl,
+    apiKey,
+  };
+};
 export const DEFAULT_PROVIDER = PROVIDER_LIST[0];
 
 const staticModels: ModelInfo[] = PROVIDER_LIST.map((p) => p.staticModels).flat();
 
 export let MODEL_LIST: ModelInfo[] = [...staticModels];
 
-export async function getModelList(
-  apiKeys: Record<string, string>,
-  providerSettings?: Record<string, IProviderSetting>,
-) {
+export async function getModelList(options: {
+  apiKeys?: Record<string, string>;
+  providerSettings?: Record<string, IProviderSetting>;
+  serverEnv?: Record<string, string>;
+}) {
+  const { apiKeys, providerSettings, serverEnv } = options;
+
   MODEL_LIST = [
     ...(
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name])),
+        ).map((p) => p.getDynamicModels(p.name, apiKeys, providerSettings?.[p.name], serverEnv)),
       )
     ).flat(),
     ...staticModels,
   ];
+
   return MODEL_LIST;
 }
 
-async function getTogetherModels(apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getTogetherModels(
+  name: string,
+  apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.TOGETHER_API_BASE_URL || '';
-    const provider = 'Together';
+    const { baseUrl, apiKey } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'TOGETHER_API_BASE_URL',
+      defaultApiTokenKey: 'TOGETHER_API_KEY',
+    });
 
     if (!baseUrl) {
       return [];
-    }
-
-    let apiKey = import.meta.env.OPENAI_LIKE_API_KEY ?? '';
-
-    if (apiKeys && apiKeys[provider]) {
-      apiKey = apiKeys[provider];
     }
 
     if (!apiKey) {
@@ -349,7 +459,7 @@ async function getTogetherModels(apiKeys?: Record<string, string>, settings?: IP
       label: `${m.display_name} - in:$${m.pricing.input.toFixed(
         2,
       )} out:$${m.pricing.output.toFixed(2)} - context ${Math.floor(m.context_length / 1000)}k`,
-      provider,
+      provider: name,
       maxTokenAllowed: 8000,
     }));
   } catch (e) {
@@ -358,24 +468,40 @@ async function getTogetherModels(apiKeys?: Record<string, string>, settings?: IP
   }
 }
 
-const getOllamaBaseUrl = (settings?: IProviderSetting) => {
-  const defaultBaseUrl = settings?.baseUrl || import.meta.env.OLLAMA_API_BASE_URL || 'http://localhost:11434';
+const getOllamaBaseUrl = (name: string, settings?: IProviderSetting, serverEnv: Record<string, string> = {}) => {
+  const { baseUrl } = getProviderBaseUrlAndKey({
+    provider: name,
+    providerSettings: settings,
+    serverEnv,
+    defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
+    defaultApiTokenKey: '',
+  });
 
   // Check if we're in the browser
   if (typeof window !== 'undefined') {
     // Frontend always uses localhost
-    return defaultBaseUrl;
+    return baseUrl;
   }
 
   // Backend: Check if we're running in Docker
   const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
 
-  return isDocker ? defaultBaseUrl.replace('localhost', 'host.docker.internal') : defaultBaseUrl;
+  return isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
 };
 
-async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getOllamaModels(
+  name: string,
+  _apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = getOllamaBaseUrl(settings);
+    const baseUrl = getOllamaBaseUrl(name, settings, serverEnv);
+
+    if (!baseUrl) {
+      return [];
+    }
+
     const response = await fetch(`${baseUrl}/api/tags`);
     const data = (await response.json()) as OllamaApiResponse;
 
@@ -394,20 +520,23 @@ async function getOllamaModels(apiKeys?: Record<string, string>, settings?: IPro
 }
 
 async function getOpenAILikeModels(
+  name: string,
   apiKeys?: Record<string, string>,
   settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
 ): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.OPENAI_LIKE_API_BASE_URL || '';
+    const { baseUrl, apiKey } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
+      defaultApiTokenKey: 'OPENAI_LIKE_API_KEY',
+    });
 
     if (!baseUrl) {
       return [];
-    }
-
-    let apiKey = '';
-
-    if (apiKeys && apiKeys.OpenAILike) {
-      apiKey = apiKeys.OpenAILike;
     }
 
     const response = await fetch(`${baseUrl}/models`, {
@@ -420,7 +549,7 @@ async function getOpenAILikeModels(
     return res.data.map((model: any) => ({
       name: model.id,
       label: model.id,
-      provider: 'OpenAILike',
+      provider: name,
     }));
   } catch (e) {
     console.error('Error getting OpenAILike models:', e);
@@ -461,9 +590,26 @@ async function getOpenRouterModels(): Promise<ModelInfo[]> {
     }));
 }
 
-async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: IProviderSetting): Promise<ModelInfo[]> {
+async function getLMStudioModels(
+  name: string,
+  apiKeys?: Record<string, string>,
+  settings?: IProviderSetting,
+  serverEnv: Record<string, string> = {},
+): Promise<ModelInfo[]> {
   try {
-    const baseUrl = settings?.baseUrl || import.meta.env.LMSTUDIO_API_BASE_URL || 'http://localhost:1234';
+    const { baseUrl } = getProviderBaseUrlAndKey({
+      provider: name,
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'LMSTUDIO_API_BASE_URL',
+      defaultApiTokenKey: '',
+    });
+
+    if (!baseUrl) {
+      return [];
+    }
+
     const response = await fetch(`${baseUrl}/v1/models`);
     const data = (await response.json()) as any;
 
@@ -474,35 +620,41 @@ async function getLMStudioModels(_apiKeys?: Record<string, string>, settings?: I
     }));
   } catch (e: any) {
     logStore.logError('Failed to get LMStudio models', e, { baseUrl: settings?.baseUrl });
-    logger.warn('Failed to get LMStudio models: ', e.message || '');
-
     return [];
   }
 }
 
-async function initializeModelList(providerSettings?: Record<string, IProviderSetting>): Promise<ModelInfo[]> {
-  let apiKeys: Record<string, string> = {};
+async function initializeModelList(options: {
+  env?: Record<string, string>;
+  providerSettings?: Record<string, IProviderSetting>;
+  apiKeys?: Record<string, string>;
+}): Promise<ModelInfo[]> {
+  const { providerSettings, apiKeys: providedApiKeys, env } = options;
+  let apiKeys: Record<string, string> = providedApiKeys || {};
 
-  try {
-    const storedApiKeys = Cookies.get('apiKeys');
+  if (!providedApiKeys) {
+    try {
+      const storedApiKeys = Cookies.get('apiKeys');
 
-    if (storedApiKeys) {
-      const parsedKeys = JSON.parse(storedApiKeys);
+      if (storedApiKeys) {
+        const parsedKeys = JSON.parse(storedApiKeys);
 
-      if (typeof parsedKeys === 'object' && parsedKeys !== null) {
-        apiKeys = parsedKeys;
+        if (typeof parsedKeys === 'object' && parsedKeys !== null) {
+          apiKeys = parsedKeys;
+        }
       }
+    } catch (error: any) {
+      logStore.logError('Failed to fetch API keys from cookies', error);
+      logger.warn(`Failed to fetch apikeys from cookies: ${error?.message}`);
     }
-  } catch (error: any) {
-    logStore.logError('Failed to fetch API keys from cookies', error);
-    logger.warn(`Failed to fetch apikeys from cookies: ${error?.message}`);
   }
+
   MODEL_LIST = [
     ...(
       await Promise.all(
         PROVIDER_LIST.filter(
           (p): p is ProviderInfo & { getDynamicModels: () => Promise<ModelInfo[]> } => !!p.getDynamicModels,
-        ).map((p) => p.getDynamicModels(apiKeys, providerSettings?.[p.name])),
+        ).map((p) => p.getDynamicModels(p.name, apiKeys, providerSettings?.[p.name], env)),
       )
     ).flat(),
     ...staticModels,
@@ -511,6 +663,7 @@ async function initializeModelList(providerSettings?: Record<string, IProviderSe
   return MODEL_LIST;
 }
 
+// initializeModelList({})
 export {
   getOllamaModels,
   getOpenAILikeModels,

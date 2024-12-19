@@ -128,10 +128,19 @@ export function getXAIModel(apiKey: OptionalApiKey, model: string) {
   return openai(model);
 }
 
+export function getPerplexityModel(apiKey: OptionalApiKey, model: string) {
+  const perplexity = createOpenAI({
+    baseURL: 'https://api.perplexity.ai/',
+    apiKey,
+  });
+
+  return perplexity(model);
+}
+
 export function getModel(
   provider: string,
   model: string,
-  env: Env,
+  serverEnv: Env,
   apiKeys?: Record<string, string>,
   providerSettings?: Record<string, IProviderSetting>,
 ) {
@@ -139,9 +148,12 @@ export function getModel(
    * let apiKey; // Declare first
    * let baseURL;
    */
+  // console.log({provider,model});
 
-  const apiKey = getAPIKey(env, provider, apiKeys); // Then assign
-  const baseURL = providerSettings?.[provider].baseUrl || getBaseURL(env, provider);
+  const apiKey = getAPIKey(serverEnv, provider, apiKeys); // Then assign
+  const baseURL = getBaseURL(serverEnv, provider, providerSettings);
+
+  // console.log({apiKey,baseURL});
 
   switch (provider) {
     case 'Anthropic':
@@ -170,6 +182,8 @@ export function getModel(
       return getXAIModel(apiKey, model);
     case 'Cohere':
       return getCohereAIModel(apiKey, model);
+    case 'Perplexity':
+      return getPerplexityModel(apiKey, model);
     default:
       return getOllamaModel(baseURL, model);
   }

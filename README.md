@@ -1,6 +1,5 @@
-[![bolt.diy: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index.jpg)](https://bolt.diy)
-
 # bolt.diy (Previously oTToDev)
+[![bolt.diy: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index.jpg)](https://bolt.diy)
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
@@ -10,12 +9,24 @@ We have also launched an experimental agent called the "bolt.diy Expert" that ca
 
 bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
 
-## Join the community for bolt.diy!
+## Table of Contents
 
-https://thinktank.ottomator.ai
+- [Join the Community](#join-the-community)
+- [Requested Additions](#requested-additions)
+- [Features](#features)
+- [Setup](#setup)
+- [Run the Application](#run-the-application)
+- [Available Scripts](#available-scripts)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [FAQ](#faq)
+
+## Join the community
+
+[Join the bolt.diy community here, in the thinktank on ottomator.ai!](https://thinktank.ottomator.ai)
 
 
-## Requested Additions - Feel Free to Contribute!
+## Requested Additions
 
 - ✅ OpenRouter Integration (@coleam00)
 - ✅ Gemini Integration (@jonathands)
@@ -62,7 +73,7 @@ https://thinktank.ottomator.ai
 - ⬜ Perplexity Integration
 - ⬜ Vertex AI Integration
 
-## bolt.diy Features
+## Features
 
 - **AI-powered full-stack web development** directly in your browser.
 - **Support for multiple LLMs** with an extensible architecture to integrate additional models.
@@ -72,7 +83,7 @@ https://thinktank.ottomator.ai
 - **Download projects as ZIP** for easy portability.
 - **Integration-ready Docker support** for a hassle-free setup.
 
-## Setup bolt.diy 
+## Setup 
 
 If you're new to installing software from GitHub, don't worry! If you encounter any issues, feel free to submit an "issue" using the provided links or improve this documentation by forking the repository, editing the instructions, and submitting a pull request. The following instruction will help you get the stable branch up and running on your local machine in no time.  
 

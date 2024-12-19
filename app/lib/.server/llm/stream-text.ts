@@ -151,10 +151,13 @@ export async function streamText(props: {
   providerSettings?: Record<string, IProviderSetting>;
   promptId?: string;
 }) {
-  const { messages, env, options, apiKeys, files, providerSettings, promptId } = props;
+  const { messages, env: serverEnv, options, apiKeys, files, providerSettings, promptId } = props;
+
+  // console.log({serverEnv});
+
   let currentModel = DEFAULT_MODEL;
   let currentProvider = DEFAULT_PROVIDER.name;
-  const MODEL_LIST = await getModelList(apiKeys || {}, providerSettings);
+  const MODEL_LIST = await getModelList({ apiKeys, providerSettings, serverEnv: serverEnv as any });
   const processedMessages = messages.map((message) => {
     if (message.role === 'user') {
       const { model, provider, content } = extractPropertiesFromMessage(message);
@@ -196,7 +199,7 @@ export async function streamText(props: {
   }
 
   return _streamText({
-    model: getModel(currentProvider, currentModel, env, apiKeys, providerSettings) as any,
+    model: getModel(currentProvider, currentModel, serverEnv, apiKeys, providerSettings) as any,
     system: systemPrompt,
     maxTokens: dynamicMaxTokens,
     messages: convertToCoreMessages(processedMessages as any),

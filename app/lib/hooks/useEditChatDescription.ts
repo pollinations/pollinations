@@ -92,7 +92,9 @@ export function useEditChatDescription({
     }
 
     const lengthValid = trimmedDesc.length > 0 && trimmedDesc.length <= 100;
-    const characterValid = /^[a-zA-Z0-9\s]+$/.test(trimmedDesc);
+
+    // Allow letters, numbers, spaces, and common punctuation but exclude characters that could cause issues
+    const characterValid = /^[a-zA-Z0-9\s\-_.,!?()[\]{}'"]+$/.test(trimmedDesc);
 
     if (!lengthValid) {
       toast.error('Description must be between 1 and 100 characters.');
@@ -100,7 +102,7 @@ export function useEditChatDescription({
     }
 
     if (!characterValid) {
-      toast.error('Description can only contain alphanumeric characters and spaces.');
+      toast.error('Description can only contain letters, numbers, spaces, and basic punctuation.');
       return false;
     }
 

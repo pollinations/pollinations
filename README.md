@@ -4,7 +4,9 @@
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
-Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information. This documentation is still being updated after the transfer.
+Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information. 
+
+We have also launched an experimental agent called the "bolt.diy Expert" that can answer common questions about bolt.diy. Find it here on the [oTTomator Live Agent Studio](https://studio.ottomator.ai/).
 
 bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMedin) but has quickly grown into a massive community effort to build the BEST open source AI coding assistant!
 
@@ -95,34 +97,6 @@ Clone the repository using Git:
 git clone -b stable https://github.com/stackblitz-labs/bolt.diy  
 ```  
 
-### (Optional) Configure Environment Variables  
-
-Most environment variables can be configured directly through the settings menu of the application. However, if you need to manually configure them:  
-
-1. Rename `.env.example` to `.env.local`.  
-2. Add your LLM API keys. For example:  
-
-```env  
-GROQ_API_KEY=YOUR_GROQ_API_KEY  
-OPENAI_API_KEY=YOUR_OPENAI_API_KEY  
-ANTHROPIC_API_KEY=YOUR_ANTHROPIC_API_KEY  
-```  
-
-**Note**: Ollama does not require an API key as it runs locally.  
-
-3. Optionally, set additional configurations:  
-
-```env  
-# Debugging  
-VITE_LOG_LEVEL=debug  
-
-# Ollama settings (example: 8K context, localhost port 11434)  
-OLLAMA_API_BASE_URL=http://localhost:11434  
-DEFAULT_NUM_CTX=8192  
-```  
-
-**Important**: Do not commit your `.env.local` file to version control. This file is already included in `.gitignore`.  
-
 ---
 
 ## Run the Application  
@@ -155,24 +129,27 @@ DEFAULT_NUM_CTX=8192
 
    Use the provided NPM scripts:  
    ```bash  
-   npm run dockerbuild       # Development build  
-   npm run dockerbuild:prod  # Production build  
+   npm run dockerbuild 
    ```  
 
    Alternatively, use Docker commands directly:  
    ```bash  
-   docker build . --target bolt-ai-development  # Development build  
-   docker build . --target bolt-ai-production   # Production build  
+   docker build . --target bolt-ai-development
    ```  
 
 2. **Run the Container**:  
    Use Docker Compose profiles to manage environments:  
    ```bash  
-   docker-compose --profile development up  # Development  
-   docker-compose --profile production up   # Production  
+   docker-compose --profile development up 
    ```  
 
    - With the development profile, changes to your code will automatically reflect in the running container (hot reloading).  
+
+---
+
+### Entering API Keys
+
+All of your API Keys can be configured directly in the application. Just selecte the provider you want from the dropdown and click the pencile icon to enter your API key.
 
 ---
 
@@ -236,4 +213,4 @@ Explore upcoming features and priorities on our [Roadmap](https://roadmap.sh/r/o
 
 ## FAQ
 
-For answers to common questions, visit our [FAQ Page](FAQ.md).
+For answers to common questions, issues, and to see a list of recommended models, visit our [FAQ Page](FAQ.md).

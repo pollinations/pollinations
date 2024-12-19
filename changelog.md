@@ -1,271 +1,31 @@
-# Release v0.0.2
+# Release v0.0.3
 
-### 🔄 Changes since v0.0.1
-
-#### ✨ Features
-
-- add unit configuration to uno.config.ts
-- added perplexity model
-- Experimental Prompt Library Added
-- start update by branch
-
+### 🔄 Changes since v0.0.2
 
 #### 🐛 Bug Fixes
 
-- added more controlled rate for code streaming
-- handle conflicts between input method engine and enter key
-- LM Studio sending messgae
-- adjust intro section margin and textarea outline style in BaseChat component
-- commit-file-ignore
-- lm studio fix
-- start new chat icon
-- removed context optimization temporarily, to be moved to optional from menu
+- Prompt Enhance
 
 
-#### ♻️ Code Refactoring
+#### 📚 Documentation
 
-- remove unused React import in ImportButtons component
-- simplify GitCloneButton component by removing unused tooltip and streamlining button structure
+- miniflare error knowledge
 
 
 #### 🔧 Chores
 
-- update commit hash to 7bafd2a5d67dce70d15b77201ef8de9745efab61
-- update commit hash to e5ecb0b7d5e0fb53f13654689cebd8eb99b10578
-- update commit hash to 8f15c81f37f36667fe796b1f75d0003a7c0f395b
-- update commit hash to d13da30bda2d10eb2da42113493625cd55e0d34d
-- update commit hash to dd296ab00d4d51ea0bc30ebe9aed0e6632feb37a
-- update commit hash to eeafc12522b184dcbded28c5c6606e4a23e6849f
-- update commit hash to d479daa5781a533c68a6f9ffdb3b919914c9305e
-- update commit hash to 5773b1e271c8effec20ff1c10a759d9a654a2a94
-- update commit hash to 5f3405151043b3c32da7acc6353247a5508969b3
-- update commit hash to 5f3405151043b3c32da7acc6353247a5508969b3
-- update commit hash to 0c899e430a4d33e78e3e44ebf7100b5da14eda3f
-- update commit hash to 1d64a15ed0110fc62091b1dca90139de9fb9fdb4
-- update commit hash to d1fa70fc97dc7839ea8cd005feb03266f201cf4f
-- update commit hash to 1e04ab38b07e82852626b164890f4a6df1f98cef
-- update commit hash to 8c4397a19f3eab2382082a39526d66385e9d2a49
-- update commit hash to 55094392cf4c5bc607aff796680ad50236a4cf20
-- update commit hash to 9666b2ab67d25345542722ab9d870b36ad06252e
-- update commit hash to 6a5ed21c0fed92a8c842b683bf9a430901e6bb05
-- update commit hash to 4af18c069f2429ffaf410d92702a1e1294af2628
-- update commit hash to a71cfba660f04a8440960ab772670b192e2d066f
-- update commit hash to 4f02887565e13eeaabbfb6f699cbe089e802338f
-- update commit hash to f27f7bba5132346db18e70e514a6a6202d6ab634
-- update commit hash to eb53146937cbe49a84aaaaa59882df6db4a1e459
-- update commit hash to 4f10fb1294e11cf8f5a68b30a1e85acdf65ffcbc
-- update commit hash to 43370f515df1184be2fb54db637a73bb683d6d86
-- update commit hash to ece0213500a94a6b29e29512c5040baf57884014
-- update commit hash to b06f6e3a3e7e5b2b5f8d9b13a761422993559f3e
-- update commit hash to 25fe15232fcd6cee83f179adbd1d3e7d6a90acca
-- update commit hash to a87cfd79503a62db2be00656f4874ec747d76a09
-- update commit hash to 7c3a3bbde6c61f374a6d37c888c6900a335e3d33
-- update commit hash to d936c012bdeb210ee876be1941ef8e370ea0b2e3
-- update commit hash to b3f7a5c3785060c7937dcd681b38f17b5396fc84
-- update commit hash to 23346f6271bf2f438489660357e6ffee803befb1
-- update commit hash to 9cd9ee9088467882e1e4efdf491959619307cc9d
-- update commit hash to 87a90718d31bd8ec501cb32f863efd26156fb1e2
-- update commit hash to e223e9b6af1f6f31300fd7ed9ce498236cedd5dc
-- update commit hash to 4016f54933102bf67336b8ae58e14673dfad72ee
-- update commit hash to 1e7c3a4ff8f3153f53e0b0ed7cb13434825e41d9
-- update commit hash to d75899d737243cd7303704adef16d77290de5a0b
-- update commit hash to b5867835f5da5c93bd9a8376df9e9d32b97acff5
-- update commit hash to d22b32ae636b9f134cdb5f96a10e4398aa2171b7
-- update commit hash to d9b2801434011b60dca700c19cabd0652f31f8e4
-- update commit hash to 0157fddc76fd5eebc545085e2c3c4ab37d9ca925
-- update commit hash to 810cc81a16955eebec943f7d504749dbcbb85b25
-- update commit hash to d3727459aa594505efd0cef58c4218eaf48d5baf
-- update commit hash to 6ba93974a02a98c83badf2f0002ff4812b8f75a9
-- update commit hash to 960f532f8234663d0b3630d18033c959fac6882c
-- update commit hash to 77073a5e7f759ae8e5752628131d0c56df6b5c34
-- update commit hash to 78505ed2f347dd3a7778b4c1c7c38c89ecacedd3
-- update commit hash to f752bf7da532ec6196dafff1c388250d44db4de5
-- update commit hash to 995fb81ac7a03eb1a6d1c56cf2fc92a60028c024
-- update commit hash to 8aee6ebf477c08d896b4419fbdeb670cc2bb8f29
-- update commit hash to 6987ceae9e1e91bec301f9e25ed9e8e03449d806
-- update commit hash to eb1d5417e77e699e0489f09814e87fb5afed9dd5
-- update commit hash to de2cb43d170033c43a6cf436af02e033f66a7e4d
-- update commit hash to 49b02dd885919e24a201f07b1a7b0fd0371b4f85
-- update commit hash to 43e1f436f57fc4adb43b5481b403967803d4786d
-- update commit hash to 0a4ef117ae5d3687b04415e64a22794ea55841d1
-- update commit hash to 25b80ab267541b6ea290985dde09863f1a29c85c
-- update commit hash to c257129a61e258650b321c19323ddebaf03b0a54
+- adding back semantic pull pr check for better changelog system
+- update commit hash to 1e72d52278730f7d22448be9d5cf2daf12559486
+- update commit hash to 282beb96e2ee92ba8b1174aaaf9f270e03a288e8
 
 
 #### 🔍 Other Changes
 
-- Check the render method of SlotClone. #432
-- Initial commit for screen cap feature
-- Second commit for screen cap feature
-- Add 90b llama-3.2 model for better performance
-- More selection tool changes
-- feat(context optimization):improved context management and redused chat overhead
-- added backdrop and loading screen
-- basic context menu for folders
-- copyPath and copyRelativePath for files and folders
-- pnpm lock file
-- Refactor to use newver v4 version of Vercel AI package
-- removed console logs
-- Update README.md
-- Update README.md
-- Update README.md
-- Update README.md
-- Merge branch 'main' into context-optimization
-- Merge branch 'main' into context-optimization
-- added prompt url params
-- added support for private github repo through github connections
-- Add Logo icons LLM's
-- Settings UI enhancement
-- Event logs bug fix
-- Merge branch 'stackblitz-labs:main' into main
-- auto select model on provider disabled
-- Update debug tab to check against fork
-- debug fixes
-- minor bug fixes
-- Merge branch 'main' of https://github.com/stackblitz-labs/bolt.diy
-- Update commit.json
-- Merge branch 'main' of https://github.com/Stijnus/bolt.new-any-llm
-- Update commit.json
-- Merge pull request #684 from thecodacus/fix-auto-select-model
-- ui styles fixed
-- Update README.md
-- some clean up and added a all log option
-- Merge remote-tracking branch 'github-desktop-stijnus/main' into pr/676
-- update README.md
-- Merge branch 'main' into main
-- Merge pull request #676 from Stijnus/main
-- Update .gitignore
-- Update commit.json
-- Merge branch 'main' into fix/start-new-chat-icon
-- Merge branch 'main' into fix/ui-enhancements
-- Merge pull request #708 from SujalXplores/fix/ui-enhancements
-- Update constants.ts
-- Merge pull request #578 from thecodacus/context-optimization
-- Merge pull request #713 from thecodacus/context-optimization-fix
-- merged main
-- Merge branch 'main' into feat/image-select-merge
-- merge main into image
-- Merge pull request #670 from thecodacus/private-github-repo
-- Merge branch 'main' into streaming-fixed
-- Merge pull request #655 from thecodacus/streaming-fixed
-- Update BaseChat.tsx
-- Merge pull request #679 from Dlouxgit/main
-- Merge branch 'main' into feat/image-select
-- merge main
-- groq-llama3.3-70b
-- Merge branch 'main' into feat/image-select
-- Merge pull request #582 from emcconnell/feat/image-select
-- update readme
-- update readme
-- Merge branch 'main' into update-readme
-- Merge pull request #722 from emcconnell/update-readme
-- Groq Llama 3.2 90B Vision Preview
-- Merge
-- Setting Modal Changes
-- Renamed feature
-- combined optional features
-- Update DebugTab.tsx
-- Update DebugTab.tsx
-- Branding updates
-- Update DebugTab.tsx
-- prompt enhanced toast notification
-- Merge branch 'main' into perplexity-models
-- Merge pull request #715 from meetpateltech/perplexity-models
-- Merge pull request #602 from mark-when/contextMenu2
-- Merge pull request #728 from dustinwloring1988/branding/Change-Bolt-to-bolt
-- Setting-Menu
-- prompt-enhanced-toast
-- Merge pull request #726 from dustinwloring1988/ui-ux/features-tab
-- fallback icon for provider
-- fix-perplexity-icon
-- Update README.md
-- updated readme
-- updated readme
-- Perplexity Provider Icon
-- perplexity-provider-icon
-- README-formatting
-- Merge branch 'main' into system-prompt-variations
-- update by branch
-- Merge branch 'main' into ui-ux/debug-tab
-- updated the examples and added strict rules
-- Merge branch 'main' into system-prompt-variations
-- Update commit.yaml
-- Update commit.yaml
-- branding update
-- updated to use settings for branch selection
-- Update useSettings.tsx
-- quick fix
-- Update FAQ.md
-- Update CONTRIBUTING.md
-- quick fix
-- update-Bolt-to-bolt
-- debug-tab
-- Update mkdocs.yml
-- Update vite.config.ts
-- added auto detect branch name and version tag
-- Update constants.ts
-- Update DebugTab.tsx
-- a fav.ico
-- favicon-ico
-- fix
-- Merge pull request #753 from dustinwloring1988/fix/lm-studio-fetch-warning
-- Merge pull request #751 from dustinwloring1988/fix/v3_lazyRouteDiscovery-warn
-- mkdoc-update-names
-- mkdoc consistent style
-- Merge branch 'main' into system-prompt-variations-local
-- Update ConnectionsTab.tsx
-- quick fix
-- mkdoc-docs-styled
-- new section heading
-- new section heading
-- Make links clickable in docs
-- Update CONTRIBUTING.md
-- fix clickable links docs
-- default provider icon
-- default-provider-image
-- Another attempt to add toek usage info
-- merge
-- Lint fix
-- updated implementation
-- Merge branch 'main' into fix-variable-name
-- Merge pull request #755 from thecodacus/fix-variable-name
-- Merge branch 'main' into token-usage
-- Merge pull request #769 from thecodacus/token-usage
 - Merge remote-tracking branch 'upstream/main'
-- Merge remote-tracking branch 'origin/main' into system-prompt-variations-local
-- Merge branch 'main' into main
-- added missing icons for safari
-- Merge pull request #760 from Stijnus/main
-- Merge branch 'main' into app-fail-safari-fix
-- Merge pull request #771 from thecodacus/app-fail-safari-fix
-- Merge pull request #433 from DiegoSouzaPW/feature/SlotCloneError
-- Merge remote-tracking branch 'upstream/main'
-- commit workflow fix
-- Merge pull request #772 from thecodacus/commit-workflow-fix
-- Merge remote-tracking branch 'upstream/main'
-- Merge branch 'main' into system-prompt-variations-local
-- Merge pull request #744 from thecodacus/system-prompt-variations
-- Merge remote-tracking branch 'upstream/main'
-- updated workflow for commit and stable release
-- Merge pull request #773 from thecodacus/workflowfix
-- Fixed theming of Copy Code button
-- Merge branch 'main' into copyMyFix
-- Merge remote-tracking branch 'upstream/main'
-- minor bugfix
-- Merge branch 'minor-bugfix' into bugfix-for-stable
-- Merge branch 'main' into prompt-url-params
-- Merge pull request #669 from thecodacus/prompt-url-params
-- Merge branch 'main' into add-loading-on-git-import-from-url
-- added UI fix for loading screen
-- Merge branch 'main' into add-loading-on-git-import-from-url
-- Merge pull request #597 from thecodacus/add-loading-on-git-import-from-url
-- Merge branch 'main' into copyMyFix
-- Merge pull request #774 from D-Byte/copyMyFix
-- Merge remote-tracking branch 'upstream/main'
-- Merge branch 'main' into bugfix-for-stable
-- Merge pull request #757 from dustinwloring1988/feat/enhanced-github-connection
-- Merge remote-tracking branch 'upstream/main'
-- Merge branch 'main' into bugfix-for-stable
+- Merge pull request #781 from thecodacus/semantic-pull-pr
+- miniflare and wrangler error
+- simplified the fix
+- Merge branch 'main' into fix/prompt-enhance
 
 
-**Full Changelog**: [`v0.0.1..v0.0.2`](https://github.com/stackblitz-labs/bolt.diy/compare/v0.0.1...v0.0.2)
+**Full Changelog**: [`v0.0.2..v0.0.3`](https://github.com/stackblitz-labs/bolt.diy/compare/v0.0.2...v0.0.3)

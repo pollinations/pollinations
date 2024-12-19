@@ -135,7 +135,10 @@ export default function ProvidersTab() {
       {/* URL Configurable Providers Section */}
       {urlConfigurableProviders.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-4 text-bolt-elements-textPrimary">Providers with Custom Base URL</h3>
+          <h3 className="text-lg font-semibold mb-2 text-bolt-elements-textPrimary">Experimental Providers</h3>
+          <p className="text-sm text-bolt-elements-textSecondary mb-4">
+            These providers are experimental and allow you to run AI models locally or connect to your own infrastructure. They require additional setup but offer more flexibility.
+          </p>
           <div className="space-y-4">
             {urlConfigurableProviders.map(renderProviderCard)}
           </div>

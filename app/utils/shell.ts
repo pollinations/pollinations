@@ -105,6 +105,7 @@ export class BoltShell {
      *  this.#shellInputStream?.write('\x03');
      */
     this.terminal.input('\x03');
+    await this.waitTillOscCode('prompt');
 
     if (state && state.executionPrms) {
       await state.executionPrms;

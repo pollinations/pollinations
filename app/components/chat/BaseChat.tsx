@@ -119,6 +119,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     useEffect(() => {
       // Load API keys from cookies on component mount
+
+      let parsedApiKeys: Record<string, string> | undefined = {};
+
       try {
         const storedApiKeys = Cookies.get('apiKeys');
 
@@ -127,6 +130,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
           if (typeof parsedKeys === 'object' && parsedKeys !== null) {
             setApiKeys(parsedKeys);
+            parsedApiKeys = parsedKeys;
           }
         }
       } catch (error) {
@@ -155,7 +159,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         Cookies.remove('providers');
       }
 
-      initializeModelList(providerSettings).then((modelList) => {
+      initializeModelList({ apiKeys: parsedApiKeys, providerSettings }).then((modelList) => {
         setModelList(modelList);
       });
 

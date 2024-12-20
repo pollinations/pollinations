@@ -91,7 +91,11 @@ Let's get you up and running with the stable version of Bolt.DIY!
 
 ## Quick Download
 
-[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest/download/bolt.diy.zip) ← Click here to download the latest version!
+[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest) ← Click here to go the the latest release version! 
+
+- Next **click source.zip**
+
+
 
 
 ## Prerequisites

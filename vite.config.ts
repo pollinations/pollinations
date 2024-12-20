@@ -20,8 +20,8 @@ const getGitHash = () => {
 export default defineConfig((config) => {
   return {
     define: {
-      __COMMIT_HASH__: JSON.stringify(getGitHash()),
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+      __COMMIT_HASH: JSON.stringify(getGitHash()),
+      __APP_VERSION: JSON.stringify(process.env.npm_package_version),
     },
     build: {
       target: 'esnext',

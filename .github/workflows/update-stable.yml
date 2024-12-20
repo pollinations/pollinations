@@ -166,8 +166,7 @@ jobs:
       - name: Commit and Tag Release
         run: |
           git pull
-          echo "{ \"commit\": \"$COMMIT_HASH\", \"version\": \"$NEW_VERSION\" }" > app/commit.json
-          git add package.json pnpm-lock.yaml changelog.md app/commit.json
+          git add package.json pnpm-lock.yaml changelog.md
           git commit -m "chore: release version ${{ steps.bump_version.outputs.new_version }}"
           git tag "v${{ steps.bump_version.outputs.new_version }}"
           git push

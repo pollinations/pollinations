@@ -1,246 +1,219 @@
 # Contribution Guidelines
 
+Welcome! This guide provides all the details you need to contribute effectively to the project. Thank you for helping us make **bolt.diy** a better tool for developers worldwide. 💡
+
+---
+
 ## 📋 Table of Contents
-- [Code of Conduct](#code-of-conduct)
-- [How Can I Contribute?](#how-can-i-contribute)
-- [Pull Request Guidelines](#pull-request-guidelines)
-- [Coding Standards](#coding-standards)
-- [Development Setup](#development-setup)
-- [Deploymnt with Docker](#docker-deployment-documentation)
+
+1. [Code of Conduct](#code-of-conduct)  
+2. [How Can I Contribute?](#how-can-i-contribute)  
+3. [Pull Request Guidelines](#pull-request-guidelines)  
+4. [Coding Standards](#coding-standards)  
+5. [Development Setup](#development-setup)  
+6. [Testing](#testing)  
+7. [Deployment](#deployment)  
+8. [Docker Deployment](#docker-deployment)  
+9. [VS Code Dev Containers Integration](#vs-code-dev-containers-integration)  
 
 ---
 
-## Code of Conduct
+## 🛡️ Code of Conduct
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
-
----
-
-## How Can I Contribute?
-
-### 🐞 Reporting Bugs and Feature Requests
-- Check the issue tracker to avoid duplicates
-- Use the issue templates when available
-- Include as much relevant information as possible
-- For bugs, add steps to reproduce the issue
-
-### 🔧 Code Contributions
-1. Fork the repository
-2. Create a new branch for your feature/fix
-3. Write your code
-4. Submit a pull request
-
-### ✨ Becoming a Core Contributor
-We're looking for dedicated contributors to help maintain and grow this project. If you're interested in becoming a core contributor, please fill out our [Contributor Application Form](https://forms.gle/TBSteXSDCtBDwr5m7).
+This project is governed by our **Code of Conduct**. By participating, you agree to uphold this code. Report unacceptable behavior to the project maintainers.
 
 ---
 
-## Pull Request Guidelines
+## 🛠️ How Can I Contribute?
 
-### 📝 PR Checklist
-- [ ] Branch from the main branch
-- [ ] Update documentation if needed
-- [ ] Manually verify all new functionality works as expected
-- [ ] Keep PRs focused and atomic
+### 1️⃣ Reporting Bugs or Feature Requests
+- Check the [issue tracker](#) to avoid duplicates.
+- Use issue templates (if available).  
+- Provide detailed, relevant information and steps to reproduce bugs.
 
-### 👀 Review Process
-1. Manually test the changes
-2. At least one maintainer review required
-3. Address all review comments
-4. Maintain clean commit history
+### 2️⃣ Code Contributions
+1. Fork the repository.  
+2. Create a feature or fix branch.  
+3. Write and test your code.  
+4. Submit a pull request (PR).
 
----
-
-## Coding Standards
-
-### 💻 General Guidelines
-- Follow existing code style
-- Comment complex logic
-- Keep functions focused and small
-- Use meaningful variable names
+### 3️⃣ Join as a Core Contributor  
+Interested in maintaining and growing the project? Fill out our [Contributor Application Form](https://forms.gle/TBSteXSDCtBDwr5m7).
 
 ---
 
-## Development Setup
+## ✅ Pull Request Guidelines
 
-### 🔄 Initial Setup
-1. Clone the repository:
-```bash
-git clone https://github.com/stackblitz-labs/bolt.diy.git
-```
+### PR Checklist  
+- Branch from the **main** branch.  
+- Update documentation, if needed.  
+- Test all functionality manually.  
+- Focus on one feature/bug per PR.  
 
-2. Install dependencies:
-```bash
-pnpm install
-```
+### Review Process  
+1. Manual testing by reviewers.  
+2. At least one maintainer review required.  
+3. Address review comments.  
+4. Maintain a clean commit history.
 
-3. Set up environment variables:
-   - Rename `.env.example` to `.env.local`
-   - Add your LLM API keys (only set the ones you plan to use):
-```bash
-GROQ_API_KEY=XXX
-HuggingFace_API_KEY=XXX
-OPENAI_API_KEY=XXX
-ANTHROPIC_API_KEY=XXX
-...
-```
-   - Optionally set debug level:
-```bash
-VITE_LOG_LEVEL=debug
-```
+---
 
-   - Optionally set context size:
-```bash
-DEFAULT_NUM_CTX=32768
-```
+## 📏 Coding Standards
 
-Some Example Context Values for the qwen2.5-coder:32b models are.
- 
-* DEFAULT_NUM_CTX=32768 - Consumes 36GB of VRAM
-* DEFAULT_NUM_CTX=24576 - Consumes 32GB of VRAM
-* DEFAULT_NUM_CTX=12288 - Consumes 26GB of VRAM
-* DEFAULT_NUM_CTX=6144 - Consumes 24GB of VRAM
+### General Guidelines  
+- Follow existing code style.  
+- Comment complex logic.  
+- Keep functions small and focused.  
+- Use meaningful variable names.
 
-**Important**: Never commit your `.env.local` file to version control. It's already included in .gitignore.
+---
 
-### 🚀 Running the Development Server
+## 🖥️ Development Setup
+
+### 1️⃣ Initial Setup  
+- Clone the repository:  
+  ```bash
+  git clone https://github.com/stackblitz-labs/bolt.diy.git
+  ```
+- Install dependencies:  
+  ```bash
+  pnpm install
+  ```
+- Set up environment variables:  
+  1. Rename `.env.example` to `.env.local`.  
+  2. Add your API keys:
+     ```bash
+     GROQ_API_KEY=XXX
+     HuggingFace_API_KEY=XXX
+     OPENAI_API_KEY=XXX
+     ...
+     ```
+  3. Optionally set:  
+     - Debug level: `VITE_LOG_LEVEL=debug`  
+     - Context size: `DEFAULT_NUM_CTX=32768`  
+
+**Note**: Never commit your `.env.local` file to version control. It’s already in `.gitignore`.
+
+### 2️⃣ Run Development Server  
 ```bash
 pnpm run dev
 ```
-
-**Note**: You will need Google Chrome Canary to run this locally if you use Chrome! It's an easy install and a good browser for web development anyway.
+**Tip**: Use **Google Chrome Canary** for local testing.
 
 ---
 
-## Testing
+## 🧪 Testing
 
-Run the test suite with:
-
+Run the test suite with:  
 ```bash
 pnpm test
 ```
 
 ---
 
-## Deployment
+## 🚀 Deployment
 
-To deploy the application to Cloudflare Pages:
-
+### Deploy to Cloudflare Pages  
 ```bash
 pnpm run deploy
 ```
-
-Make sure you have the necessary permissions and Wrangler is correctly configured for your Cloudflare account.
+Ensure you have required permissions and that Wrangler is configured.
 
 ---
 
-# Docker Deployment Documentation
+## 🐳 Docker Deployment
 
-This guide outlines various methods for building and deploying the application using Docker.
+This section outlines the methods for deploying the application using Docker. The processes for **Development** and **Production** are provided separately for clarity.
 
-## Build Methods
+---
 
-### 1. Using Helper Scripts
+### 🧑‍💻 Development Environment  
 
-NPM scripts are provided for convenient building:
+#### Build Options  
 
+**Option 1: Helper Scripts**  
 ```bash
 # Development build
 npm run dockerbuild
+```
 
+**Option 2: Direct Docker Build Command**  
+```bash
+docker build . --target bolt-ai-development
+```
+
+**Option 3: Docker Compose Profile**  
+```bash
+docker-compose --profile development up
+```
+
+#### Running the Development Container  
+```bash
+docker run -p 5173:5173 --env-file .env.local bolt-ai:development
+```
+
+---
+
+### 🏭 Production Environment  
+
+#### Build Options  
+
+**Option 1: Helper Scripts**  
+```bash
 # Production build
 npm run dockerbuild:prod
 ```
 
-### 2. Direct Docker Build Commands
-
-You can use Docker's target feature to specify the build environment:
-
+**Option 2: Direct Docker Build Command**  
 ```bash
-# Development build
-docker build . --target bolt-ai-development
-
-# Production build
 docker build . --target bolt-ai-production
 ```
 
-### 3. Docker Compose with Profiles
-
-Use Docker Compose profiles to manage different environments:
-
+**Option 3: Docker Compose Profile**  
 ```bash
-# Development environment
-docker-compose --profile development up
-
-# Production environment
 docker-compose --profile production up
 ```
 
----
-
-## Running the Application
-
-After building using any of the methods above, run the container with:
-
+#### Running the Production Container  
 ```bash
-# Development
-docker run -p 5173:5173 --env-file .env.local bolt-ai:development
-
-# Production
 docker run -p 5173:5173 --env-file .env.local bolt-ai:production
 ```
 
 ---
 
-## Deployment with Coolify
+### Coolify Deployment  
 
-[Coolify](https://github.com/coollabsio/coolify) provides a straightforward deployment process:
-
-1. Import your Git repository as a new project
-2. Select your target environment (development/production)
-3. Choose "Docker Compose" as the Build Pack
-4. Configure deployment domains
-5. Set the custom start command:
+For an easy deployment process, use [Coolify](https://github.com/coollabsio/coolify):  
+1. Import your Git repository into Coolify.  
+2. Choose **Docker Compose** as the build pack.  
+3. Configure environment variables (e.g., API keys).  
+4. Set the start command:  
    ```bash
    docker compose --profile production up
    ```
-6. Configure environment variables
-   - Add necessary AI API keys
-   - Adjust other environment variables as needed
-7. Deploy the application
 
 ---
 
-## VS Code Integration
+## 🛠️ VS Code Dev Containers Integration
 
-The `docker-compose.yaml` configuration is compatible with VS Code dev containers:
+The `docker-compose.yaml` configuration is compatible with **VS Code Dev Containers**, making it easy to set up a development environment directly in Visual Studio Code.
 
-1. Open the command palette in VS Code
-2. Select the dev container configuration
-3. Choose the "development" profile from the context menu
+### Steps to Use Dev Containers
 
----
-
-## Environment Files
-
-Ensure you have the appropriate `.env.local` file configured before running the containers. This file should contain:
-- API keys
-- Environment-specific configurations
-- Other required environment variables
+1. Open the command palette in VS Code (`Ctrl+Shift+P` or `Cmd+Shift+P` on macOS).  
+2. Select **Dev Containers: Reopen in Container**.  
+3. Choose the **development** profile when prompted.  
+4. VS Code will rebuild the container and open it with the pre-configured environment.
 
 ---
 
-## DEFAULT_NUM_CTX
+## 🔑 Environment Variables
 
-The `DEFAULT_NUM_CTX` environment variable can be used to limit the maximum number of context values used by the qwen2.5-coder model. For example, to limit the context to 24576 values (which uses 32GB of VRAM), set `DEFAULT_NUM_CTX=24576` in your `.env.local` file.
+Ensure `.env.local` is configured correctly with:  
+- API keys.  
+- Context-specific configurations.  
 
-First off, thank you for considering contributing to bolt.diy! This fork aims to expand the capabilities of the original project by integrating multiple LLM providers and enhancing functionality. Every contribution helps make bolt.diy a better tool for developers worldwide.
-
----
-
-## Notes
-
-- Port 5173 is exposed and mapped for both development and production environments
-- Environment variables are loaded from `.env.local`
-- Different profiles (development/production) can be used for different deployment scenarios
-- The configuration supports both local development and production deployment
+Example for the `DEFAULT_NUM_CTX` variable:  
+```bash
+DEFAULT_NUM_CTX=24576 # Uses 32GB VRAM
+```

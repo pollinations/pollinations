@@ -185,14 +185,19 @@ To keep your local version of bolt.diy up to date with the latest changes, follo
    pnpm install
    ```
 
-#### 4. **Run the Application**  
-   Once the updates are complete, you can start the application again with:
+#### 4. **Rebuild and Start the Application**  
 
-   ```bash
-   pnpm run dev
-   ```
+   - **If using Docker**, ensure you rebuild the Docker image to avoid using a cached version:  
+     ```bash  
+     docker-compose --profile development up --build  
+     ```  
 
-This ensures that you're running the latest version of bolt.diy and can take advantage of all the newest features and bug fixes.
+   - **If not using Docker**, you can start the application as usual with:  
+     ```bash  
+     pnpm run dev  
+     ```  
+
+This ensures that you're running the latest version of bolt.diy and can take advantage of all the newest features and bug fixes. 
 
 ---
 

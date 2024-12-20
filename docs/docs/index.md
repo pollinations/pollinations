@@ -1,6 +1,21 @@
 # Welcome to bolt diy
 bolt.diy allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
+## Table of Contents
+- [Join the community!](#join-the-community)
+- [What's bolt.diy](#whats-boltdiy)
+- [What Makes bolt.diy Different](#what-makes-boltdiy-different)
+- [Setup](#setup)
+- [Run with Docker](#run-with-docker)
+  - [Using Helper Scripts](#1a-using-helper-scripts)
+  - [Direct Docker Build Commands](#1b-direct-docker-build-commands-alternative-to-using-npm-scripts)
+  - [Docker Compose with Profiles](#2-docker-compose-with-profiles-to-run-the-container)
+- [Run Without Docker](#run-without-docker)
+- [Adding New LLMs](#adding-new-llms)
+- [Available Scripts](#available-scripts)
+- [Development](#development)
+- [Tips and Tricks](#tips-and-tricks)
+
 ---
 
 ## Join the community!

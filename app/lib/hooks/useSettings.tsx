@@ -60,15 +60,18 @@ export function useSettings() {
     if (savedProviders) {
       try {
         const parsedProviders: Record<string, IProviderSetting> = JSON.parse(savedProviders);
-        Object.keys(parsedProviders).forEach((provider) => {
-          const currentProvider = providers[provider];
-          providersStore.setKey(provider, {
-            ...currentProvider,
-            settings: {
-              ...parsedProviders[provider],
-              enabled: parsedProviders[provider].enabled ?? true,
-            },
-          });
+        Object.keys(providers).forEach((provider) => {
+          const currentProviderSettings = parsedProviders[provider];
+
+          if (currentProviderSettings) {
+            providersStore.setKey(provider, {
+              ...providers[provider],
+              settings: {
+                ...currentProviderSettings,
+                enabled: currentProviderSettings.enabled ?? true,
+              },
+            });
+          }
         });
       } catch (error) {
         console.error('Failed to parse providers from cookies:', error);

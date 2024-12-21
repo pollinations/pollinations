@@ -81,13 +81,20 @@ export default class OllamaProvider extends BaseProvider {
     providerSettings?: Record<string, IProviderSetting>;
   }) => LanguageModelV1 = (options) => {
     const { apiKeys, providerSettings, serverEnv, model } = options;
-    const { baseUrl } = this.getProviderBaseUrlAndKey({
+    let { baseUrl } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings,
       serverEnv: serverEnv as any,
       defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
       defaultApiTokenKey: '',
     });
+
+    // Backend: Check if we're running in Docker
+    const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+
+    baseUrl = isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
+    baseUrl = isDocker ? baseUrl.replace('127.0.0.1', 'host.docker.internal') : baseUrl;
+
     const ollamaInstance = ollama(model, {
       numCtx: DEFAULT_NUM_CTX,
     }) as LanguageModelV1 & { config: any };

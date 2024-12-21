@@ -39,6 +39,8 @@ export class WorkbenchStore {
   #editorStore = new EditorStore(this.#filesStore);
   #terminalStore = new TerminalStore(webcontainer);
 
+  #reloadedMessages = new Set<string>();
+
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
 
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
@@ -243,6 +245,10 @@ export class WorkbenchStore {
     // TODO: what do we wanna do and how do we wanna recover from this?
   }
 
+  setReloadedMessages(messages: string[]) {
+    this.#reloadedMessages = new Set(messages);
+  }
+
   addArtifact({ messageId, title, id, type }: ArtifactCallbackData) {
     const artifact = this.#getArtifact(messageId);
 
@@ -262,7 +268,13 @@ export class WorkbenchStore {
       runner: new ActionRunner(
         webcontainer,
         () => this.boltTerminal,
-        (alert) => this.actionAlert.set(alert),
+        (alert) => {
+          if (this.#reloadedMessages.has(messageId)) {
+            return;
+          }
+
+          this.actionAlert.set(alert);
+        },
       ),
     });
   }

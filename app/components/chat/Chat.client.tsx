@@ -35,6 +35,9 @@ export function Chat() {
 
   const { ready, initialMessages, storeMessageHistory, importChat, exportChat } = useChatHistory();
   const title = useStore(description);
+  useEffect(() => {
+    workbenchStore.setReloadedMessages(initialMessages.map((m) => m.id));
+  }, [initialMessages]);
 
   return (
     <>

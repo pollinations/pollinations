@@ -20,8 +20,12 @@ if [ -n "$1" ]; then
     ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
         cd /home/ubuntu/pollinations
         git fetch origin
+        git checkout origin/923-svgquant-nunchaku-optimization
         git pull
-        git checkout master
+        
+        # Install systemd service file
+        sudo cp image.pollinations.ai/serverConfigAndScripts/pollinations-flux-docker.service /etc/systemd/system/
+        sudo systemctl daemon-reload
         
         # Stop the existing service
         sudo systemctl stop pollinations-flux-docker.service
@@ -34,6 +38,7 @@ if [ -n "$1" ]; then
         
         # Start the service
         sudo systemctl start pollinations-flux-docker.service
+        sudo systemctl enable pollinations-flux-docker.service
         
         # Show the service status
         sudo systemctl status pollinations-flux-docker.service

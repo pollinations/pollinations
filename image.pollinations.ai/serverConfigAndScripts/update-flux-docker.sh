@@ -21,8 +21,8 @@ ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << 'EOF'
 
     cd /home/ubuntu/pollinations
     git fetch origin
-    git checkout main
-    git pull origin main
+    git checkout master
+    git pull origin master
     
     # Stop and disable old services if they exist
     log "Cleaning up old services..."

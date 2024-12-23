@@ -6,13 +6,14 @@
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required.
+[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
 
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source**
 - 🆓 **_Free to use_**
 - 🔑 No signup or API keys
+- 🔒 **Privacy-first: No data stored**
 - 🖼️ **Embed like any normal image or text**
 - 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**

@@ -9,6 +9,7 @@ const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_M
 const mistralLargeEndpoint = process.env.AZURE_MISTRAL_LARGE_ENDPOINT + process.env.AZURE_MISTRAL_LARGE_CHAT_COMPLETION_ROUTE;
 async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature, seed = null }) {
 
+    model = 'mistral'
     // Ensure temperature is within the valid range
     if (temperature <= 0 || temperature > 1.5) {
         temperature = Math.min(Math.max(temperature, 0), 1.5);

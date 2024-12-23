@@ -76,6 +76,9 @@ RUN git clone https://github.com/mit-han-lab/nunchaku.git \
 # Install hf_transfer separately to keep cache layers
 RUN pip3 install --no-cache-dir hf_transfer
 
+# Install aiohttp for async HTTP requests
+RUN pip3 install --no-cache-dir aiohttp
+
 # Copy server code and safety checker
 COPY server.py .
 COPY safety_checker ./safety_checker

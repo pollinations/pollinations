@@ -21,8 +21,8 @@ ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << 'EOF'
 
     cd /home/ubuntu/pollinations
     git fetch origin
-    git checkout main
-    git pull origin main
+    git checkout master
+    git pull origin master
     
     # Install systemd service file
     sudo cp image.pollinations.ai/serverConfigAndScripts/pollinations-flux-docker.service /etc/systemd/system/

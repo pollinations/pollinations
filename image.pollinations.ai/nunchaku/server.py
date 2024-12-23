@@ -154,15 +154,15 @@ async def generate(request: ImageRequest):
     image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
     
-    response_content = {
+    response_content = [{
         "image": img_base64,
-        "has_nsfw_concept": has_nsfw,
-        "concept": concepts,
+        "has_nsfw_concept": has_nsfw[0],
+        "concept": concepts[0],
         "width": width,
         "height": height,
         "seed": seed,
         "prompt": request.prompts[0]
-    }
+    }]
     
     # Send heartbeat after successful generation
     await send_heartbeat()

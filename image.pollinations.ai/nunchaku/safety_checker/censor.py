@@ -44,7 +44,7 @@ def check_safety(x_image, safety_checker_adj: float):
         x_image = numpy_to_pil(x_image)
     
     safety_checker_input = safety_feature_extractor(x_image, return_tensors="pt").to("cuda")
-    has_nsfw_concept, concepts,  = safety_checker(
+    has_nsfw_concept, concepts = safety_checker(
         images=x_image,
         clip_input=safety_checker_input.pixel_values,
         safety_checker_adj=safety_checker_adj,  # customize adjustment
@@ -52,11 +52,11 @@ def check_safety(x_image, safety_checker_adj: float):
 
     print("concept", concepts, "has_nsfw_concept", has_nsfw_concept)
 
-    # Convert numpy numbers to regular Python numbers
-    # concepts = replace_numpy_with_python(concepts)
-    # has_nsfw_concept = replace_numpy_with_python(has_nsfw_concept)
+    # Only convert numpy numbers to Python numbers, preserve the dictionary structure
+    concepts = replace_numpy_with_python(concepts)
+    has_nsfw_concept = replace_numpy_with_python(has_nsfw_concept)
 
-    return replace_numpy_with_python(replace_sets_with_lists(concepts)), replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept))
+    return concepts, has_nsfw_concept
 
 
 def censor_batch(x, safety_checker_adj: float):

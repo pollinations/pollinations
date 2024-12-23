@@ -29,7 +29,7 @@ class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
     width: int = 1024
     height: int = 1024
-    num_inference_steps: int = 4
+    steps: int = 4
     seed: int | None = None
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 
@@ -177,7 +177,7 @@ async def generate(request: ImageRequest):
             generator=generator,
             width=width,
             height=height,
-            num_inference_steps=request.num_inference_steps,
+            num_inference_steps=request.steps,
         )
 
     # Check for NSFW content

@@ -52,11 +52,8 @@ def check_safety(x_image, safety_checker_adj: float):
 
     print("concept", concepts, "has_nsfw_concept", has_nsfw_concept)
 
-    # Only convert numpy numbers to Python numbers, preserve the dictionary structure
-    concepts = replace_numpy_with_python(concepts)
-    has_nsfw_concept = replace_numpy_with_python(has_nsfw_concept)
-
-    return concepts, has_nsfw_concept
+    # Convert both numpy types and sets to Python types
+    return replace_numpy_with_python(replace_sets_with_lists(concepts)), replace_numpy_with_python(replace_sets_with_lists(has_nsfw_concept))
 
 
 def censor_batch(x, safety_checker_adj: float):

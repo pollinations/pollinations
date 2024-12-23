@@ -2,7 +2,7 @@ import os
 import time
 import uuid
 from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline
@@ -31,15 +31,6 @@ class ImageRequest(BaseModel):
     num_inference_steps: int = 4
     seed: int | None = None
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
-
-class ImageResponse(BaseModel):
-    image: str
-    has_nsfw_concept: bool
-    concept: Dict[str, Any] | None
-    width: int
-    height: int
-    seed: int
-    prompt: str
 
 pipe = None
 
@@ -128,7 +119,7 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     # If no valid dimensions found, return the nearest multiples of 8
     return nearest_w, nearest_h
 
-@app.post("/generate", response_model=ImageResponse)
+@app.post("/generate")
 async def generate(request: ImageRequest):
     print(f"Request: {request}")
     if pipe is None:
@@ -162,19 +153,19 @@ async def generate(request: ImageRequest):
     image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
     
-    # Return the concept dictionary directly without converting to string
-    response = ImageResponse(
-        image=img_base64,
-        has_nsfw_concept=has_nsfw[0],
-        concept=concepts[0],  # Return the raw concept dictionary
-        width=width,
-        height=height,
-        seed=seed,
-        prompt=request.prompts[0]
-    )
+    response_content = {
+        "image": img_base64,
+        "has_nsfw_concept": has_nsfw[0],
+        "concept": concepts[0],
+        "width": width,
+        "height": height,
+        "seed": seed,
+        "prompt": request.prompts[0]
+    }
+    
     # Send heartbeat after successful generation
     await send_heartbeat()
-    return response
+    return JSONResponse(content=response_content)
 
 if __name__ == "__main__":
     import uvicorn

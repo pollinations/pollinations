@@ -2,7 +2,8 @@ import os
 import time
 import uuid
 from typing import List, Dict, Any
-from fastapi import FastAPI, HTTPException, Request, JSONResponse
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import torch
 from diffusers import FluxPipeline

@@ -119,11 +119,17 @@ export async function getNextTurboServerUrl() {
  */
 async function fetchServersFromMainServer() {
     try {
+        console.log(`[${new Date().toISOString()}] Fetching servers from ${MAIN_SERVER_URL}...`);
         const response = await fetch(MAIN_SERVER_URL);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const servers = await response.json();
+        console.log(`[${new Date().toISOString()}] Received ${servers.length} servers from main server:`);
+        servers.forEach((server, index) => {
+            console.log(`  ${index + 1}. ${server.url}`);
+        });
+        
         FLUX_SERVERS = servers.map(server => ({
             ...server,
             queue: new PQueue({ concurrency }),
@@ -131,8 +137,9 @@ async function fetchServersFromMainServer() {
             errors: 0,
             startTime: Date.now()
         }));
+        console.log(`[${new Date().toISOString()}] Successfully initialized ${FLUX_SERVERS.length} FLUX servers`);
     } catch (error) {
-        console.error("Failed to fetch servers from main server:", error);
+        console.error(`[${new Date().toISOString()}] Failed to fetch servers from main server:`, error);
     }
 }
 

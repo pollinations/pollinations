@@ -35,7 +35,7 @@ class ImageRequest(BaseModel):
 class ImageResponse(BaseModel):
     image: str
     has_nsfw_concept: bool
-    concept: str | None
+    concept: dict | None
     width: int
     height: int
     seed: int
@@ -162,10 +162,13 @@ async def generate(request: ImageRequest):
     image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
     
+    # Convert concept dictionary to string if it exists
+    concept_str = concepts[0] if concepts and concepts[0] else None
+    
     response = ImageResponse(
         image=img_base64,
         has_nsfw_concept=has_nsfw[0],
-        concept=concepts[0],
+        concept=concept_str,
         width=width,
         height=height,
         seed=seed,

@@ -12,6 +12,7 @@ from safety_checker.censor import check_safety
 import requests
 import logging
 import asyncio
+import aiohttp
 import io
 import base64
 from contextlib import asynccontextmanager
@@ -44,16 +45,17 @@ def get_public_ip():
 
 # Heartbeat function
 async def send_heartbeat():
-    public_ip = get_public_ip()
+    public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
     if public_ip:
         try:
             port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
-            response = requests.post('https://image.pollinations.ai/register', json={'url': url})
-            if response.status_code == 200:
-                logger.info(f"Heartbeat sent successfully. URL: {url}")
-            else:
-                logger.error(f"Failed to send heartbeat. Status code: {response.status_code}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post('https://image.pollinations.ai/register', json={'url': url}) as response:
+                    if response.status == 200:
+                        logger.info(f"Heartbeat sent successfully. URL: {url}")
+                    else:
+                        logger.error(f"Failed to send heartbeat. Status code: {response.status}")
         except Exception as e:
             logger.error(f"Error sending heartbeat: {str(e)}")
 
@@ -61,7 +63,7 @@ async def send_heartbeat():
 async def periodic_heartbeat():
     while True:
         try:
-            await asyncio.get_event_loop().run_in_executor(None, send_heartbeat)
+            await send_heartbeat()
             await asyncio.sleep(30)  # Send heartbeat every 30 seconds
         except asyncio.CancelledError:
             logger.info("Heartbeat task cancelled")
@@ -87,7 +89,7 @@ async def lifespan(app: FastAPI):
         
         # Send initial heartbeat and start periodic task
         try:
-            await asyncio.get_event_loop().run_in_executor(None, send_heartbeat)
+            await send_heartbeat()
             logger.info("Initial heartbeat sent successfully")
             # Store the task in app.state to prevent garbage collection
             heartbeat_task = asyncio.create_task(periodic_heartbeat())

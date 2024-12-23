@@ -1,0 +1,32 @@
+build:
+  gpu: true
+  cuda: "12.4"
+  python_version: "3.11"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "git"
+    - "ninja-build"
+    - "gcc-11"
+    - "g++-11"
+  python_packages:
+    - "torch==2.4.1"
+    - "torchvision==0.19.1"
+    - "torchaudio==2.4.1"
+    - "diffusers"
+    - "transformers"
+    - "accelerate"
+    - "sentencepiece"
+    - "protobuf"
+    - "huggingface_hub"
+    - "peft"
+    - "opencv-python"
+    - "einops"
+    - "gradio"
+    - "GPUtil"
+  run:
+    - "echo 'Cloning nunchaku repository'"
+    - "git clone https://github.com/mit-han-lab/nunchaku.git"
+    - "cd nunchaku && git submodule init && git submodule update"
+    - "cd nunchaku && pip install -e ."
+predict: "predict.py:Predictor"

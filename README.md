@@ -12,8 +12,7 @@
 
 - 🔓 **100% Open Source**
 - 🆓 **_Free to use_**
-- 🔑 No signup or API keys
-- 🔒 **Privacy-first: No data stored**
+- 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
 - 🖼️ **Embed like any normal image or text**
 - 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**

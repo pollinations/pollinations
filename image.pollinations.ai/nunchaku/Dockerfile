@@ -63,7 +63,8 @@ RUN pip3 install --no-cache-dir \
     GPUtil \
     fastapi \
     uvicorn \
-    pydantic
+    pydantic \
+    hf_transfer
 
 # Clone and install nunchaku
 WORKDIR /app

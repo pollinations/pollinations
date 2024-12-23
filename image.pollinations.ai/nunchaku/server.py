@@ -1,7 +1,7 @@
 import os
 import time
 import uuid
-from typing import List
+from typing import List, Dict, Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import torch
@@ -35,7 +35,7 @@ class ImageRequest(BaseModel):
 class ImageResponse(BaseModel):
     image: str
     has_nsfw_concept: bool
-    concept: dict | None
+    concept: Dict[str, Any] | None
     width: int
     height: int
     seed: int
@@ -162,13 +162,11 @@ async def generate(request: ImageRequest):
     image.save(img_byte_arr, format='JPEG', quality=95)
     img_base64 = base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
     
-    # Convert concept dictionary to string if it exists
-    concept_str = concepts[0] if concepts and concepts[0] else None
-    
+    # Return the concept dictionary directly without converting to string
     response = ImageResponse(
         image=img_base64,
         has_nsfw_concept=has_nsfw[0],
-        concept=concept_str,
+        concept=concepts[0],  # Return the raw concept dictionary
         width=width,
         height=height,
         seed=seed,

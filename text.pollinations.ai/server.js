@@ -316,8 +316,8 @@ async function generateTextBasedOnModel(messages, options) {
         response = await generateTextMistral(messages, options);
     } else if (model.startsWith('llama')) {
         response = await generateTextLlama(messages, options);
-    } else if (model === 'karma') {
-        response = await generateTextKarma(messages, options);
+    //} else if (model === 'karma') {
+    //    response = await generateTextKarma(messages, options);
     // } else if (model === 'claude') {
     //     response = await generateTextClaude(messages, options);
     } else if (model === 'sur') {

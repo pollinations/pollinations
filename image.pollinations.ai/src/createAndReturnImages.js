@@ -296,7 +296,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
   let isMature = bufferAndMaturity?.has_nsfw_concept;
   const concept = bufferAndMaturity?.concept;
-  const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
+  const isChild = Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
   console.error("isMature", isMature, "concepts", isChild);
 
   // Throw error if NSFW content is detected and safe mode is enabled

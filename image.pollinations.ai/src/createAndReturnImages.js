@@ -292,8 +292,10 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
   }
 
-  let isMature = bufferAndMaturity.has_nsfw_concept;
-  const concept = bufferAndMaturity.concept;
+  console.error("bufferAndMaturity", bufferAndMaturity);
+
+  let isMature = bufferAndMaturity?.has_nsfw_concept;
+  const concept = bufferAndMaturity?.concept;
   const isChild = Object.values(concept?.special_scores || {})?.some(score => score > -0.05);
   console.error("isMature", isMature, "concepts", isChild);
 

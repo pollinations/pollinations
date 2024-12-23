@@ -84,7 +84,7 @@ const getNextFluxServerUrl = async () => {
         .map(w => w.server);
 
     const server = leastLoadedServers[Math.floor(Math.random() * leastLoadedServers.length)];
-
+    console.log(`Selected server: ${server.url}`);
     return server.url + "/generate";
 };
 
@@ -194,7 +194,8 @@ export const handleRegisterEndpoint = (req, res) => {
  */
 const filterActiveServers = (servers) => {
     return servers.filter(server =>
-        Date.now() - server.lastHeartbeat < SERVER_TIMEOUT
+        Date.now() - server.lastHeartbeat < SERVER_TIMEOUT 
+        // && server.url.includes('23.23.212.46')
     );
 };
 

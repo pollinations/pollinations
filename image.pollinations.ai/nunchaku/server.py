@@ -156,8 +156,8 @@ async def generate(request: ImageRequest):
     
     response_content = {
         "image": img_base64,
-        "has_nsfw_concept": has_nsfw[0],
-        "concept": concepts[0],
+        "has_nsfw_concept": has_nsfw,
+        "concept": concepts,
         "width": width,
         "height": height,
         "seed": seed,

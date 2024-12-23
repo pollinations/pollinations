@@ -63,8 +63,7 @@ RUN pip3 install --no-cache-dir \
     GPUtil \
     fastapi \
     uvicorn \
-    pydantic \
-    hf_transfer
+    pydantic
 
 # Clone and install nunchaku
 WORKDIR /app
@@ -73,6 +72,9 @@ RUN git clone https://github.com/mit-han-lab/nunchaku.git \
     && git submodule init \
     && git submodule update \
     && python3 -m pip install -e .
+
+# Install hf_transfer separately to keep cache layers
+RUN pip3 install --no-cache-dir hf_transfer
 
 # Copy server code and safety checker
 COPY server.py .

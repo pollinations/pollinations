@@ -11,7 +11,7 @@ if [ -n "$1" ]; then
     ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
         cd /home/ubuntu/pollinations
         git fetch origin
-        git checkout origin/923-svgquant-nunchaku-optimization
+        git checkout -B 923-svgquant-nunchaku-optimization --track origin/923-svgquant-nunchaku-optimization
         git pull
         
         # Install systemd service file
@@ -36,13 +36,31 @@ if [ -n "$1" ]; then
 EOF
     log "Update complete. New Docker image deployed to $HOST"
     
-    # Wait for container to start
+    # Wait for container to start with retries
     log "Waiting for container to start..."
-    sleep 5
+    max_attempts=12  # 2 minutes total (12 * 10 seconds)
+    attempt=1
+    container_running=false
     
-    # Check if container is running and follow logs
-    log "Following Docker logs..."
-    ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST "docker ps | grep -q flux-svdquant && docker logs -f flux-svdquant || echo 'Container flux-svdquant is not running'"
+    while [ $attempt -le $max_attempts ]; do
+        log "Checking container status (attempt $attempt of $max_attempts)..."
+        if ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST "docker ps | grep -q flux-svdquant"; then
+            container_running=true
+            break
+        fi
+        log "Container not ready yet, waiting 10 seconds..."
+        sleep 10
+        attempt=$((attempt + 1))
+    done
+    
+    if [ "$container_running" = true ]; then
+        log "Container is running, following logs..."
+        ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST "docker logs -f flux-svdquant"
+    else
+        log "ERROR: Container failed to start after 2 minutes"
+        ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST "docker ps -a | grep flux-svdquant || echo 'No container found'"
+        exit 1
+    fi
 else
     # Local update
     log "Updating locally"

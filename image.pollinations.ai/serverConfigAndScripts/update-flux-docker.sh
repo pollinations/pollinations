@@ -20,7 +20,7 @@ if [ -n "$1" ]; then
     ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
         cd /home/ubuntu/pollinations
         git fetch origin
-        git checkout origin/923-svgquant-nunchaku-optimization
+        git checkout -B 923-svgquant-nunchaku-optimization --track origin/923-svgquant-nunchaku-optimization
         git pull
         
         # Install systemd service file

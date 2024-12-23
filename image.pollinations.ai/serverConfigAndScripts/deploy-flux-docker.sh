@@ -13,18 +13,23 @@ HOST=$1
 log "Updating remote server $HOST"
 
 # SSH into the remote server and update services
-ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
+ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << 'EOF'
+    # Define logging function for remote session
+    log() {
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    }
+
     cd /home/ubuntu/pollinations
     git fetch origin
-    git checkout -B 923-svgquant-nunchaku-optimization --track origin/923-svgquant-nunchaku-optimization
-    git pull
+    git checkout main
+    git pull origin main
     
     # Install systemd service file
     sudo cp image.pollinations.ai/serverConfigAndScripts/pollinations-flux-docker.service /etc/systemd/system/
     sudo systemctl daemon-reload
     
-    # Stop the existing service
-    sudo systemctl stop pollinations-flux-docker.service
+    # Stop the existing service if running
+    sudo systemctl stop pollinations-flux-docker.service || true
     
     # Remove existing container
     docker rm -f flux-svdquant || true

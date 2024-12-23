@@ -14,8 +14,7 @@ import logging
 import asyncio
 import io
 import base64
-
-app = FastAPI(title="FLUX Image Generation API")
+from contextlib import asynccontextmanager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -61,12 +60,21 @@ async def send_heartbeat():
 # Periodic heartbeat function
 async def periodic_heartbeat():
     while True:
-        await send_heartbeat()
-        await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+        try:
+            await asyncio.get_event_loop().run_in_executor(None, send_heartbeat)
+            await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+        except asyncio.CancelledError:
+            logger.info("Heartbeat task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in periodic heartbeat: {str(e)}")
+            await asyncio.sleep(5)  # Wait a bit before retrying
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     global pipe
+    heartbeat_task = None
     try:
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
@@ -76,21 +84,44 @@ async def startup_event():
             torch_dtype=torch.bfloat16
         ).to("cuda")
         print("FLUX pipeline loaded successfully")
-        # Send initial heartbeat
+        
+        # Send initial heartbeat and start periodic task
         try:
-            await send_heartbeat()
-            print("Initial heartbeat sent successfully")
+            await asyncio.get_event_loop().run_in_executor(None, send_heartbeat)
+            logger.info("Initial heartbeat sent successfully")
+            # Store the task in app.state to prevent garbage collection
+            heartbeat_task = asyncio.create_task(periodic_heartbeat())
+            app.state.heartbeat_task = heartbeat_task
+            logger.info("Periodic heartbeat task started")
         except Exception as e:
-            print(f"Error sending initial heartbeat: {str(e)}")
-        # Start the heartbeat task
-        try:
-            asyncio.create_task(periodic_heartbeat())
-            print("Periodic heartbeat task started")
-        except Exception as e:
-            print(f"Error starting periodic heartbeat: {str(e)}")
+            logger.error(f"Error in heartbeat initialization: {str(e)}")
+            if heartbeat_task:
+                heartbeat_task.cancel()
+                try:
+                    await heartbeat_task
+                except asyncio.CancelledError:
+                    pass
+            raise
     except Exception as e:
-        print(f"Error during startup: {str(e)}")
+        logger.error(f"Error during startup: {str(e)}")
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
         raise
+
+    try:
+        yield  # Server is running
+    finally:
+        # Shutdown
+        if hasattr(app.state, "heartbeat_task"):
+            app.state.heartbeat_task.cancel()
+            try:
+                await app.state.heartbeat_task
+            except asyncio.CancelledError:
+                pass
 
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
     """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536."""
@@ -119,6 +150,8 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     
     # If no valid dimensions found, return the nearest multiples of 8
     return nearest_w, nearest_h
+
+app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
 
 @app.post("/generate")
 async def generate(request: ImageRequest):

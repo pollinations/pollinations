@@ -9,7 +9,13 @@ interface Props {
 }
 
 export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
-  const { description, content } = alert;
+  const { description, content, source } = alert;
+
+  const isPreview = source === 'preview';
+  const title = isPreview ? 'Preview Error' : 'Terminal Error';
+  const message = isPreview
+    ? 'We encountered an error while running the preview. Would you like Bolt to analyze and help resolve this issue?'
+    : 'We encountered an error while running terminal commands. Would you like Bolt to analyze and help resolve this issue?';
 
   return (
     <AnimatePresence>
@@ -38,8 +44,7 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
               transition={{ delay: 0.1 }}
               className={`text-sm font-medium text-bolt-elements-textPrimary`}
             >
-              {/* {title} */}
-              Opps There is an error
+              {title}
             </motion.h3>
             <motion.div
               initial={{ opacity: 0 }}
@@ -47,10 +52,7 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
               transition={{ delay: 0.2 }}
               className={`mt-2 text-sm text-bolt-elements-textSecondary`}
             >
-              <p>
-                We encountered an error while running terminal commands. Would you like Bolt to analyze and help resolve
-                this issue?
-              </p>
+              <p>{message}</p>
               {description && (
                 <div className="text-xs text-bolt-elements-textSecondary p-2 bg-bolt-elements-background-depth-3 rounded mt-4 mb-4">
                   Error: {description}
@@ -67,7 +69,11 @@ export default function ChatAlert({ alert, clearAlert, postMessage }: Props) {
             >
               <div className={classNames(' flex gap-2')}>
                 <button
-                  onClick={() => postMessage(`*Fix this error on terminal* \n\`\`\`sh\n${content}\n\`\`\`\n`)}
+                  onClick={() =>
+                    postMessage(
+                      `*Fix this ${isPreview ? 'preview' : 'terminal'} error* \n\`\`\`${isPreview ? 'js' : 'sh'}\n${content}\n\`\`\`\n`,
+                    )
+                  }
                   className={classNames(
                     `px-2 py-1.5 rounded-md text-sm font-medium`,
                     'bg-bolt-elements-button-primary-background',

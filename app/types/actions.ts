@@ -26,4 +26,5 @@ export interface ActionAlert {
   title: string;
   description: string;
   content: string;
+  source?: 'terminal' | 'preview'; // Add source to differentiate between terminal and preview errors
 }

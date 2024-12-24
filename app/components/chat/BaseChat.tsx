@@ -28,6 +28,7 @@ import { SpeechRecognitionButton } from '~/components/chat/SpeechRecognition';
 import type { IProviderSetting, ProviderInfo } from '~/types/model';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { toast } from 'react-toastify';
+import StarterTemplates from './StarterTemplates';
 import type { ActionAlert } from '~/types/actions';
 import ChatAlert from './ChatAlert';
 
@@ -569,21 +570,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 </div>
               </div>
             </div>
-            {!chatStarted && (
-              <div className="flex justify-center gap-2">
-                {ImportButtons(importChat)}
-                <GitCloneButton importChat={importChat} />
-              </div>
-            )}
-            {!chatStarted &&
-              ExamplePrompts((event, messageInput) => {
-                if (isStreaming) {
-                  handleStop?.();
-                  return;
-                }
+            <div className="flex flex-col justify-center gap-5">
+              {!chatStarted && (
+                <div className="flex justify-center gap-2">
+                  {ImportButtons(importChat)}
+                  <GitCloneButton importChat={importChat} />
+                </div>
+              )}
+              {!chatStarted &&
+                ExamplePrompts((event, messageInput) => {
+                  if (isStreaming) {
+                    handleStop?.();
+                    return;
+                  }
 
-                handleSendMessage?.(event, messageInput);
-              })}
+                  handleSendMessage?.(event, messageInput);
+                })}
+              {!chatStarted && <StarterTemplates />}
+            </div>
           </div>
           <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>

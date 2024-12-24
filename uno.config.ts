@@ -98,6 +98,9 @@ const COLOR_PRIMITIVES = {
 };
 
 export default defineConfig({
+  safelist: [
+    ...Object.keys(customIconCollection[collectionName]||{}).map(x=>`i-bolt:${x}`)    
+  ],
   shortcuts: {
     'bolt-ease-cubic-bezier': 'ease-[cubic-bezier(0.4,0,0.2,1)]',
     'transition-theme': 'transition-[background-color,border-color,color] duration-150 bolt-ease-cubic-bezier',

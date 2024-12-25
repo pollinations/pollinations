@@ -71,7 +71,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
   // if isChild and nsfw is true, delay the response by 10 seconds
   if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
     console.log("isChild and isMature, delaying response by 15 seconds");
-    await sleep(15000);
+    await sleep(8000);
   }
 
   timingInfo.push({ step: 'Image returned', timestamp: Date.now() });

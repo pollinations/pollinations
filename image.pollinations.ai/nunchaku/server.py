@@ -12,10 +12,10 @@ from safety_checker.censor import check_safety
 import requests
 import logging
 import asyncio
+import aiohttp
 import io
 import base64
-
-app = FastAPI(title="FLUX Image Generation API")
+from contextlib import asynccontextmanager
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +29,7 @@ class ImageRequest(BaseModel):
     prompts: List[str] = ["a photo of an astronaut riding a horse on mars"]
     width: int = 1024
     height: int = 1024
-    num_inference_steps: int = 4
+    steps: int = 4
     seed: int | None = None
     safety_checker_adj: float = 0.5  # Controls sensitivity of NSFW detection
 
@@ -45,28 +45,38 @@ def get_public_ip():
 
 # Heartbeat function
 async def send_heartbeat():
-    public_ip = get_public_ip()
+    public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
     if public_ip:
         try:
             port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
-            response = requests.post('https://image.pollinations.ai/register', json={'url': url})
-            if response.status_code == 200:
-                logger.info(f"Heartbeat sent successfully. URL: {url}")
-            else:
-                logger.error(f"Failed to send heartbeat. Status code: {response.status_code}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post('https://image.pollinations.ai/register', json={'url': url}) as response:
+                    if response.status == 200:
+                        logger.info(f"Heartbeat sent successfully. URL: {url}")
+                    else:
+                        logger.error(f"Failed to send heartbeat. Status code: {response.status}")
         except Exception as e:
             logger.error(f"Error sending heartbeat: {str(e)}")
 
 # Periodic heartbeat function
 async def periodic_heartbeat():
     while True:
-        await send_heartbeat()
-        await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+        try:
+            await send_heartbeat()
+            await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+        except asyncio.CancelledError:
+            logger.info("Heartbeat task cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Error in periodic heartbeat: {str(e)}")
+            await asyncio.sleep(5)  # Wait a bit before retrying
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     global pipe
+    heartbeat_task = None
     try:
         print("Loading FLUX pipeline...")
         transformer = NunchakuFluxTransformer2dModel.from_pretrained(QUANT_MODEL_PATH)
@@ -76,21 +86,44 @@ async def startup_event():
             torch_dtype=torch.bfloat16
         ).to("cuda")
         print("FLUX pipeline loaded successfully")
-        # Send initial heartbeat
+        
+        # Send initial heartbeat and start periodic task
         try:
             await send_heartbeat()
-            print("Initial heartbeat sent successfully")
+            logger.info("Initial heartbeat sent successfully")
+            # Store the task in app.state to prevent garbage collection
+            heartbeat_task = asyncio.create_task(periodic_heartbeat())
+            app.state.heartbeat_task = heartbeat_task
+            logger.info("Periodic heartbeat task started")
         except Exception as e:
-            print(f"Error sending initial heartbeat: {str(e)}")
-        # Start the heartbeat task
-        try:
-            asyncio.create_task(periodic_heartbeat())
-            print("Periodic heartbeat task started")
-        except Exception as e:
-            print(f"Error starting periodic heartbeat: {str(e)}")
+            logger.error(f"Error in heartbeat initialization: {str(e)}")
+            if heartbeat_task:
+                heartbeat_task.cancel()
+                try:
+                    await heartbeat_task
+                except asyncio.CancelledError:
+                    pass
+            raise
     except Exception as e:
-        print(f"Error during startup: {str(e)}")
+        logger.error(f"Error during startup: {str(e)}")
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
         raise
+
+    try:
+        yield  # Server is running
+    finally:
+        # Shutdown
+        if hasattr(app.state, "heartbeat_task"):
+            app.state.heartbeat_task.cancel()
+            try:
+                await app.state.heartbeat_task
+            except asyncio.CancelledError:
+                pass
 
 def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int]:
     """Find the nearest dimensions that are multiples of 8 and their product is divisible by 65536."""
@@ -120,6 +153,8 @@ def find_nearest_valid_dimensions(width: float, height: float) -> tuple[int, int
     # If no valid dimensions found, return the nearest multiples of 8
     return nearest_w, nearest_h
 
+app = FastAPI(title="FLUX Image Generation API", lifespan=lifespan)
+
 @app.post("/generate")
 async def generate(request: ImageRequest):
     print(f"Request: {request}")
@@ -142,7 +177,7 @@ async def generate(request: ImageRequest):
             generator=generator,
             width=width,
             height=height,
-            num_inference_steps=request.num_inference_steps,
+            num_inference_steps=request.steps,
         )
 
     # Check for NSFW content

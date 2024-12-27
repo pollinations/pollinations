@@ -7,6 +7,27 @@ export const availableModels = [
         baseModel: true,
     },
     {
+        name: 'qwen',
+        type: 'chat',
+        censored: false,
+        description: 'Qwen 2.5 72B',
+        baseModel: true,
+    },
+    {
+        name: 'qwen-coder',
+        type: 'chat',
+        censored: false,
+        description: 'Qwen 2.5 Coder 32B',
+        baseModel: true,
+    },
+    {
+        name: 'llama',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.3 70B',
+        baseModel: true,
+    },
+    {
         name: 'mistral',
         type: 'chat',
         censored: false,
@@ -77,13 +98,6 @@ export const availableModels = [
         censored: false,
         description: 'Evil Mode - Experimental',
         baseModel: false,
-    },
-    {
-        name: 'qwen-coder',
-        type: 'chat',
-        censored: true,
-        description: 'Qwen Coder 32b Instruct (Supposedly better than GPT-4o at coding)',
-        baseModel: true,
     },
     {
         name: 'p1',

@@ -188,6 +188,7 @@ Pollinations.AI is used in various projects, including:
 | Own-AI | An AI text-to-image generator powered by Pollinations.ai | Sujal Goswami | [Website](https://own-ai.pages.dev/), [GitHub](https://github.com/sujal-goswami/Own-AI) |
 | StorySight | An app to help children with learning disabilities by visualizing abstract concepts | @abiral-manandhar | [GitHub](https://github.com/abiral-manandhar/storySight), [Devpost](https://devpost.com/software/storysight-013xdw) |
 | StoryWeaver | A tool that crafts personalized picture books for children based on themes and prompts | Advaith Narayanan, Omeed Sabouri, Yufan Wang | [GitHub](https://github.com/AdvaithN1/StoryWeaver), [Devpost](https://devpost.com/software/storyweaver-013xdw) |
+| UR Imagine & Chat AI 🎨💬 | Free and limitless AI image generator with companion chat/roleplay system | withthatway | [Image Gen](https://perchance.org/ur-imagine-ai/), [Chat](https://perchance.org/urchat-ai/) |
 | Websim | A web simulation tool that integrates Pollinations.ai for generating AI-driven content | @thomash_pollinations | [Website](https://websim.ai/c/bXsmNE96e3op5rtUS) |
 | JCode Website Builder | A website generator using Pollinations text API | @rtxpower | [Website](https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories) |
 | JustBuildThings | A collection of AI tools for image generation, character chat, and writing | rasit | [Website](https://justbuildthings.com) |

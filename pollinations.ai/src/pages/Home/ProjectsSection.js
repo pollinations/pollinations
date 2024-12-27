@@ -86,6 +86,13 @@ const projects = {
       author: "@DeFactOfficial",
     },
     {
+      name: "AI-Bloom 🆕",
+      url: "https://ai-bloom.vercel.app/",
+      description: "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.",
+      author: "@diepdo1810",
+      repoUrl: "https://github.com/diepdo1810/AI-Bloom",
+    },
+    {
       name: "Character RP (Roblox) 🆕",
       url: "https://www.roblox.com/games/108463136689847",
       description: "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",

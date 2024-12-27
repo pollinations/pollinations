@@ -80,6 +80,12 @@ const projectCategories = [
 const projects = {
   apps: [
     {
+      name: "Image Gen - Uncensored Edition 🆕",
+      url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
+      description: "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
+      author: "@DeFactOfficial",
+    },
+    {
       name: "Character RP (Roblox) 🆕",
       url: "https://www.roblox.com/games/108463136689847",
       description: "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",

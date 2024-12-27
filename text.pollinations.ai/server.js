@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
 import generateTextMistral from './generateTextMistral.js';
-import generateTextLlama from './generateTextLlama.js';
 import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
@@ -314,12 +313,12 @@ async function generateTextBasedOnModel(messages, options) {
 
     if (model.startsWith('mistral')) {
         response = await generateTextMistral(messages, options);
-    } else if (model.startsWith('llama')) {
-        response = await generateTextLlama(messages, options);
-    //} else if (model === 'karma') {
-    //    response = await generateTextKarma(messages, options);
-    // } else if (model === 'claude') {
-    //     response = await generateTextClaude(messages, options);
+    } else if (model === 'llama' || model === 'qwen' || model === 'qwen-coder') {
+        response = await generateTextHuggingface(messages, { ...options, model });
+    } else if (model === 'karma') {
+        response = await generateTextKarma(messages, options);
+    } else if (model === 'claude') {
+        response = await generateTextClaude(messages, options);
     } else if (model === 'sur') {
         response = await surClaude(messages, options);
     } else if (model === 'sur-mistral') {
@@ -336,8 +335,6 @@ async function generateTextBasedOnModel(messages, options) {
         response = await generateText(messages, options, true);
     } else if (model === 'evil') {
         response = await evilCommandR(messages, options);
-    } else if (model === 'qwen-coder') {
-        response = await generateTextHuggingface(messages, options);
     } else if (model === 'p1') {
         response = await generateTextOptiLLM(messages, options);
     } else {

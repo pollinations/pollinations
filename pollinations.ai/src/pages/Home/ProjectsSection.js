@@ -110,6 +110,12 @@ const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
+      name: "Pollinations Gallery",
+      url: "https://deng-xian-sheng.github.io/pollinations-img-page/",
+      description: "A clean and simple gallery showcasing the community's AI-generated images using Pollinations' image feed interface.",
+      author: "@deng-xian-sheng",
+    },
+    {
       name: "TurboReel",
       url: "https://turboreelgpt.tech/",
       description: "An open-source video generation system using AI to create engaging content from scripts.",

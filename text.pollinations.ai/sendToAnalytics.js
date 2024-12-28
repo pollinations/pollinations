@@ -1,7 +1,22 @@
 import 'dotenv/config';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const measurementId = process.env.GA_MEASUREMENT_ID;
 const apiSecret = process.env.GA_API_SECRET;
+
+function getClientId(request) {
+    // Try to get existing GA client ID from cookies
+    const cookies = request.headers?.cookie?.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+    }, {});
+    
+    return cookies?._ga?.split('.')?.[2] || crypto.randomUUID();
+}
 
 export async function sendToAnalytics(request, name, metadata) {
     try {
@@ -10,12 +25,13 @@ export async function sendToAnalytics(request, name, metadata) {
             return;
         }
 
-        const clientIP = request.headers?.["x-real-ip"] || request.headers?.['x-forwarded-for'] || request?.connection?.remoteAddress || 'unknown';
+        const clientId = getClientId(request);
+        console.log('Analytics client ID:', clientId);
 
         const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
             method: "POST",
             body: JSON.stringify({
-                client_id: clientIP,
+                client_id: clientId,
                 events: [{
                     name: name,
                     params: metadata || {}

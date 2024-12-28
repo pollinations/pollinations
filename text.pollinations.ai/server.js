@@ -231,14 +231,14 @@ app.post('/openai*', async (req, res) => {
         return res.status(400).send('Invalid messages array');
     }
 
-    const cacheKeyData = getRequestData(req, true);
-    const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
+    const requestParams = getRequestData(req, true);
+    const cacheKey = createHashKey(JSON.stringify(requestParams));
     const ip = getIp(req);
     const queue = getQueue(ip);
     const isStream = req.body.stream;
     const run = async () => {
 
-        if (cacheKeyData.cache && cache[cacheKey]) {
+        if (requestParams.cache && cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
@@ -246,13 +246,13 @@ app.post('/openai*', async (req, res) => {
             return res.json(cachedResponse);
         }
 
-        console.log("endpoint: /openai", cacheKeyData);
+        console.log("endpoint: /openai", requestParams);
 
         try {
             // Send analytics event for text generation request
-            sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
+            sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
 
-            const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
+            const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
             let choices;
             if (isStream) {
                 res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
@@ -276,11 +276,11 @@ app.post('/openai*', async (req, res) => {
             const result = {
                 "created": Date.now(),
                 "id": crypto.randomUUID(),
-                "model": cacheKeyData.model,
+                "model": requestParams.model,
                 "object": isStream ? "chat.completion.chunk" : "chat.completion",
                 "choices": choices
             };
-            if (cacheKeyData.cache) {
+            if (requestParams.cache) {
                 cache[cacheKey] = result;
             }
             console.log("openai format result", JSON.stringify(result, null, 2));
@@ -294,7 +294,7 @@ app.post('/openai*', async (req, res) => {
     };
 
     // if cache is false, run the request immediately
-    if (cacheKeyData.cache) {
+    if (requestParams.cache) {
         await queue.add(run);
     } else {
         await run();

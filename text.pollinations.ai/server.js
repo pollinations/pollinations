@@ -19,6 +19,7 @@ import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
+import { sendToAnalytics } from './sendToAnalytics.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -118,6 +119,9 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
         }
 
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
+
+        // Send analytics event for text generation request
+        sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
 
@@ -245,6 +249,9 @@ app.post('/openai*', async (req, res) => {
         console.log("endpoint: /openai", cacheKeyData);
 
         try {
+            // Send analytics event for text generation request
+            sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
+
             const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
             let choices;
             if (isStream) {
@@ -284,7 +291,7 @@ app.post('/openai*', async (req, res) => {
     } else {
         await run();
     }
-});
+};
 
 const safeDecodeURIComponent = (str) => {
     try {

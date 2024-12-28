@@ -263,7 +263,15 @@ app.post('/openai*', async (req, res) => {
                 res.end();
                 return;
             } else {
-                choices = [{ "message": { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
+                choices = [{ 
+                    "message": { 
+                        "content": response, 
+                        "role": "assistant" 
+                    }, 
+                    "finish_reason": "stop", 
+                    "index": 0,
+                    "logprobs": null
+                }];
             }
             const result = {
                 "created": Date.now(),
@@ -291,7 +299,7 @@ app.post('/openai*', async (req, res) => {
     } else {
         await run();
     }
-};
+})
 
 const safeDecodeURIComponent = (str) => {
     try {
@@ -299,7 +307,7 @@ const safeDecodeURIComponent = (str) => {
     } catch (error) {
         return str;
     }
-}
+};
 
 // Helper function to create a hash for the cache key
 function createHashKey(data) {

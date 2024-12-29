@@ -52,6 +52,17 @@ interface MessageState {
   actionId: number;
 }
 
+function cleanoutMarkdownSyntax(content: string) {
+  const codeBlockRegex = /^\s*```\w*\n([\s\S]*?)\n\s*```\s*$/;
+  const match = content.match(codeBlockRegex);
+  console.log('matching', !!match, content);
+
+  if (match) {
+    return match[1]; // Remove common leading 4-space indent
+  } else {
+    return content;
+  }
+}
 export class StreamingMessageParser {
   #messages = new Map<string, MessageState>();
 
@@ -95,6 +106,12 @@ export class StreamingMessageParser {
             let content = currentAction.content.trim();
 
             if ('type' in currentAction && currentAction.type === 'file') {
+              // Remove markdown code block syntax if present and file is not markdown
+              if (!currentAction.filePath.endsWith('.md')) {
+                content = cleanoutMarkdownSyntax(content);
+                console.log('content after cleanup', content);
+              }
+
               content += '\n';
             }
 
@@ -120,7 +137,11 @@ export class StreamingMessageParser {
             i = closeIndex + ARTIFACT_ACTION_TAG_CLOSE.length;
           } else {
             if ('type' in currentAction && currentAction.type === 'file') {
-              const content = input.slice(i);
+              let content = input.slice(i);
+
+              if (!currentAction.filePath.endsWith('.md')) {
+                content = cleanoutMarkdownSyntax(content);
+              }
 
               this._options.callbacks?.onActionStream?.({
                 artifactId: currentArtifact.id,

@@ -109,7 +109,6 @@ export class StreamingMessageParser {
               // Remove markdown code block syntax if present and file is not markdown
               if (!currentAction.filePath.endsWith('.md')) {
                 content = cleanoutMarkdownSyntax(content);
-                console.log('content after cleanup', content);
               }
 
               content += '\n';

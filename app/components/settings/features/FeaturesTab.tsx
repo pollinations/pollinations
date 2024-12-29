@@ -14,6 +14,8 @@ export default function FeaturesTab() {
     enableLatestBranch,
     promptId,
     setPromptId,
+    autoSelectTemplate,
+    setAutoSelectTemplate,
     enableContextOptimization,
     contextOptimizationEnabled,
   } = useSettings();
@@ -35,11 +37,20 @@ export default function FeaturesTab() {
           <div className="flex items-center justify-between">
             <div>
               <span className="text-bolt-elements-textPrimary">Use Main Branch</span>
-              <p className="text-sm text-bolt-elements-textSecondary">
+              <p className="text-xs text-bolt-elements-textTertiary">
                 Check for updates against the main branch instead of stable
               </p>
             </div>
             <Switch className="ml-auto" checked={isLatestBranch} onCheckedChange={enableLatestBranch} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-bolt-elements-textPrimary">Auto Select Code Template</span>
+              <p className="text-xs text-bolt-elements-textTertiary">
+                Let Bolt select the best starter template for your project.
+              </p>
+            </div>
+            <Switch className="ml-auto" checked={autoSelectTemplate} onCheckedChange={setAutoSelectTemplate} />
           </div>
           <div className="flex items-center justify-between">
             <div>
@@ -59,18 +70,22 @@ export default function FeaturesTab() {
 
       <div className="mb-6 border-t border-bolt-elements-borderColor pt-4">
         <h3 className="text-lg font-medium text-bolt-elements-textPrimary mb-4">Experimental Features</h3>
-        <p className="text-sm text-bolt-elements-textSecondary mb-4">
+        <p className="text-sm text-bolt-elements-textSecondary mb-10">
           Disclaimer: Experimental features may be unstable and are subject to change.
         </p>
-
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-bolt-elements-textPrimary">Experimental Providers</span>
-          <Switch className="ml-auto" checked={isLocalModel} onCheckedChange={enableLocalModels} />
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-bolt-elements-textPrimary">Experimental Providers</span>
+            <Switch className="ml-auto" checked={isLocalModel} onCheckedChange={enableLocalModels} />
+          </div>
+          <p className="text-xs text-bolt-elements-textTertiary mb-4">
+            Enable experimental providers such as Ollama, LMStudio, and OpenAILike.
+          </p>
         </div>
         <div className="flex items-start justify-between pt-4 mb-2 gap-2">
           <div className="flex-1 max-w-[200px]">
             <span className="text-bolt-elements-textPrimary">Prompt Library</span>
-            <p className="text-sm text-bolt-elements-textSecondary mb-4">
+            <p className="text-xs text-bolt-elements-textTertiary mb-4">
               Choose a prompt from the library to use as the system prompt.
             </p>
           </div>

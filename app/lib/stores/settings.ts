@@ -54,4 +54,5 @@ export const promptStore = atom<string>('default');
 
 export const latestBranchStore = atom(false);
 
+export const autoSelectStarterTemplate = atom(true);
 export const enableContextOptimizationStore = atom(false);

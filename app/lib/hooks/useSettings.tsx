@@ -7,6 +7,7 @@ import {
   promptStore,
   providersStore,
   latestBranchStore,
+  autoSelectStarterTemplate,
   enableContextOptimizationStore,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
@@ -31,6 +32,7 @@ export function useSettings() {
   const promptId = useStore(promptStore);
   const isLocalModel = useStore(isLocalModelsEnabled);
   const isLatestBranch = useStore(latestBranchStore);
+  const autoSelectTemplate = useStore(autoSelectStarterTemplate);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
   const contextOptimizationEnabled = useStore(enableContextOptimizationStore);
 
@@ -121,6 +123,12 @@ export function useSettings() {
       latestBranchStore.set(savedLatestBranch === 'true');
     }
 
+    const autoSelectTemplate = Cookies.get('autoSelectTemplate');
+
+    if (autoSelectTemplate) {
+      autoSelectStarterTemplate.set(autoSelectTemplate === 'true');
+    }
+
     const savedContextOptimizationEnabled = Cookies.get('contextOptimizationEnabled');
 
     if (savedContextOptimizationEnabled) {
@@ -187,6 +195,12 @@ export function useSettings() {
     Cookies.set('isLatestBranch', String(enabled));
   }, []);
 
+  const setAutoSelectTemplate = useCallback((enabled: boolean) => {
+    autoSelectStarterTemplate.set(enabled);
+    logStore.logSystem(`Auto select template ${enabled ? 'enabled' : 'disabled'}`);
+    Cookies.set('autoSelectTemplate', String(enabled));
+  }, []);
+
   const enableContextOptimization = useCallback((enabled: boolean) => {
     enableContextOptimizationStore.set(enabled);
     logStore.logSystem(`Context optimization ${enabled ? 'enabled' : 'disabled'}`);
@@ -207,6 +221,8 @@ export function useSettings() {
     setPromptId,
     isLatestBranch,
     enableLatestBranch,
+    autoSelectTemplate,
+    setAutoSelectTemplate,
     contextOptimizationEnabled,
     enableContextOptimization,
   };

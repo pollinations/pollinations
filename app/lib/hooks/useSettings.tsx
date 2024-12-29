@@ -7,6 +7,7 @@ import {
   promptStore,
   providersStore,
   latestBranchStore,
+  enableContextOptimizationStore,
 } from '~/lib/stores/settings';
 import { useCallback, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
@@ -31,6 +32,7 @@ export function useSettings() {
   const isLocalModel = useStore(isLocalModelsEnabled);
   const isLatestBranch = useStore(latestBranchStore);
   const [activeProviders, setActiveProviders] = useState<ProviderInfo[]>([]);
+  const contextOptimizationEnabled = useStore(enableContextOptimizationStore);
 
   // Function to check if we're on stable version
   const checkIsStableVersion = async () => {
@@ -118,6 +120,12 @@ export function useSettings() {
     } else {
       latestBranchStore.set(savedLatestBranch === 'true');
     }
+
+    const savedContextOptimizationEnabled = Cookies.get('contextOptimizationEnabled');
+
+    if (savedContextOptimizationEnabled) {
+      enableContextOptimizationStore.set(savedContextOptimizationEnabled === 'true');
+    }
   }, []);
 
   // writing values to cookies on change
@@ -179,6 +187,12 @@ export function useSettings() {
     Cookies.set('isLatestBranch', String(enabled));
   }, []);
 
+  const enableContextOptimization = useCallback((enabled: boolean) => {
+    enableContextOptimizationStore.set(enabled);
+    logStore.logSystem(`Context optimization ${enabled ? 'enabled' : 'disabled'}`);
+    Cookies.set('contextOptimizationEnabled', String(enabled));
+  }, []);
+
   return {
     providers,
     activeProviders,
@@ -193,5 +207,7 @@ export function useSettings() {
     setPromptId,
     isLatestBranch,
     enableLatestBranch,
+    contextOptimizationEnabled,
+    enableContextOptimization,
   };
 }

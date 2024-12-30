@@ -149,6 +149,9 @@ importers:
       diff:
         specifier: ^5.2.0
         version: 5.2.0
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.4.7
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -2901,8 +2904,8 @@ packages:
     resolution: {integrity: sha512-IGBwjF7tNk3cwypFNH/7bfzBcgSCbaMOD3GsaY1AU/JRrnHnYgEM0+9kQt52iZxjNsjBtJYtao146V+f8jFZNw==}
     engines: {node: '>=10'}
 
-  dotenv@16.4.5:
-    resolution: {integrity: sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==}
+  dotenv@16.4.7:
+    resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
 
   duplexer@0.1.2:
@@ -7246,7 +7249,7 @@ snapshots:
       chalk: 4.1.2
       chokidar: 3.6.0
       cross-spawn: 7.0.6
-      dotenv: 16.4.5
+      dotenv: 16.4.7
       es-module-lexer: 1.5.4
       esbuild: 0.17.6
       esbuild-plugins-node-modules-polyfill: 1.6.8(esbuild@0.17.6)
@@ -8450,7 +8453,7 @@ snapshots:
 
   domain-browser@4.22.0: {}
 
-  dotenv@16.4.5: {}
+  dotenv@16.4.7: {}
 
   duplexer@0.1.2: {}
 

@@ -12,7 +12,7 @@ import { classNames } from '~/utils/classNames';
 import { MODEL_LIST, PROVIDER_LIST, initializeModelList } from '~/utils/constants';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
-import { APIKeyManager } from './APIKeyManager';
+import { APIKeyManager, getApiKeysFromCookies } from './APIKeyManager';
 import Cookies from 'js-cookie';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -125,52 +125,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     }, [transcript]);
 
     useEffect(() => {
-      // Load API keys from cookies on component mount
-
-      let parsedApiKeys: Record<string, string> | undefined = {};
-
-      try {
-        const storedApiKeys = Cookies.get('apiKeys');
-
-        if (storedApiKeys) {
-          const parsedKeys = JSON.parse(storedApiKeys);
-
-          if (typeof parsedKeys === 'object' && parsedKeys !== null) {
-            setApiKeys(parsedKeys);
-            parsedApiKeys = parsedKeys;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading API keys from cookies:', error);
-
-        // Clear invalid cookie data
-        Cookies.remove('apiKeys');
-      }
-
-      let providerSettings: Record<string, IProviderSetting> | undefined = undefined;
-
-      try {
-        const savedProviderSettings = Cookies.get('providers');
-
-        if (savedProviderSettings) {
-          const parsedProviderSettings = JSON.parse(savedProviderSettings);
-
-          if (typeof parsedProviderSettings === 'object' && parsedProviderSettings !== null) {
-            providerSettings = parsedProviderSettings;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading Provider Settings from cookies:', error);
-
-        // Clear invalid cookie data
-        Cookies.remove('providers');
-      }
-
-      initializeModelList({ apiKeys: parsedApiKeys, providerSettings }).then((modelList) => {
-        console.log('Model List: ', modelList);
-        setModelList(modelList);
-      });
-
       if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
@@ -201,6 +155,44 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         setRecognition(recognition);
       }
     }, []);
+
+    useEffect(() => {
+      let providerSettings: Record<string, IProviderSetting> | undefined = undefined;
+
+      try {
+        const savedProviderSettings = Cookies.get('providers');
+
+        if (savedProviderSettings) {
+          const parsedProviderSettings = JSON.parse(savedProviderSettings);
+
+          if (typeof parsedProviderSettings === 'object' && parsedProviderSettings !== null) {
+            providerSettings = parsedProviderSettings;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading Provider Settings from cookies:', error);
+
+        // Clear invalid cookie data
+        Cookies.remove('providers');
+      }
+
+      let parsedApiKeys: Record<string, string> | undefined = {};
+
+      try {
+        parsedApiKeys = getApiKeysFromCookies();
+        setApiKeys(parsedApiKeys);
+      } catch (error) {
+        console.error('Error loading API keys from cookies:', error);
+
+        // Clear invalid cookie data
+        Cookies.remove('apiKeys');
+      }
+
+      initializeModelList({ apiKeys: parsedApiKeys, providerSettings }).then((modelList) => {
+        console.log('Model List: ', modelList);
+        setModelList(modelList);
+      });
+    }, [apiKeys]);
 
     const startListening = () => {
       if (recognition) {

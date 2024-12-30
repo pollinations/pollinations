@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { IconButton } from '~/components/ui/IconButton';
 import type { ProviderInfo } from '~/types/model';
+import Cookies from 'js-cookie';
 
 interface APIKeyManagerProps {
   provider: ProviderInfo;
@@ -8,6 +9,23 @@ interface APIKeyManagerProps {
   setApiKey: (key: string) => void;
   getApiKeyLink?: string;
   labelForGetApiKey?: string;
+}
+
+const apiKeyMemoizeCache: { [k: string]: Record<string, string> } = {};
+
+export function getApiKeysFromCookies() {
+  const storedApiKeys = Cookies.get('apiKeys');
+  let parsedKeys = {};
+
+  if (storedApiKeys) {
+    parsedKeys = apiKeyMemoizeCache[storedApiKeys];
+
+    if (!parsedKeys) {
+      parsedKeys = apiKeyMemoizeCache[storedApiKeys] = JSON.parse(storedApiKeys);
+    }
+  }
+
+  return parsedKeys;
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

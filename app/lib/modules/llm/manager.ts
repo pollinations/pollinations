@@ -79,9 +79,16 @@ export class LLMManager {
   }): Promise<ModelInfo[]> {
     const { apiKeys, providerSettings, serverEnv } = options;
 
+    let enabledProviders = Array.from(this._providers.values()).map((p) => p.name);
+
+    if (providerSettings) {
+      enabledProviders = enabledProviders.filter((p) => providerSettings[p].enabled);
+    }
+
     // Get dynamic models from all providers that support them
     const dynamicModels = await Promise.all(
       Array.from(this._providers.values())
+        .filter((provider) => enabledProviders.includes(provider.name))
         .filter(
           (provider): provider is BaseProvider & Required<Pick<ProviderInfo, 'getDynamicModels'>> =>
             !!provider.getDynamicModels,

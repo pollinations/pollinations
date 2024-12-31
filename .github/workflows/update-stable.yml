@@ -88,6 +88,8 @@ jobs:
         id: changelog
         env:
           NEW_VERSION: ${{ steps.bump_version.outputs.new_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
         run: .github/scripts/generate-changelog.sh
 
       - name: Get the latest commit hash and version tag

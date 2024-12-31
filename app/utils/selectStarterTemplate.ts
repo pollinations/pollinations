@@ -2,6 +2,7 @@ import ignore from 'ignore';
 import type { ProviderInfo } from '~/types/model';
 import type { Template } from '~/types/template';
 import { STARTER_TEMPLATES } from './constants';
+import Cookies from 'js-cookie';
 
 const starterTemplateSelectionPrompt = (templates: Template[]) => `
 You are an experienced developer who helps people choose the best starter template for their projects.
@@ -116,14 +117,20 @@ const getGitHubRepoContent = async (
   const baseUrl = 'https://api.github.com';
 
   try {
+    const token = Cookies.get('githubToken') || import.meta.env.VITE_GITHUB_ACCESS_TOKEN;
+
+    const headers: HeadersInit = {
+      Accept: 'application/vnd.github.v3+json',
+    };
+
+    // Add your GitHub token if needed
+    if (token) {
+      headers.Authorization = 'token ' + token;
+    }
+
     // Fetch contents of the path
     const response = await fetch(`${baseUrl}/repos/${repoName}/contents/${path}`, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-
-        // Add your GitHub token if needed
-        Authorization: 'token ' + import.meta.env.VITE_GITHUB_ACCESS_TOKEN,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -156,10 +163,7 @@ const getGitHubRepoContent = async (
         } else if (item.type === 'file') {
           // Fetch file content
           const fileResponse = await fetch(item.url, {
-            headers: {
-              Accept: 'application/vnd.github.v3+json',
-              Authorization: 'token ' + import.meta.env.VITE_GITHUB_ACCESS_TOKEN,
-            },
+            headers,
           });
           const fileData: any = await fileResponse.json();
           const content = atob(fileData.content); // Decode base64 content

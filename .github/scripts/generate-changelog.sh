@@ -137,7 +137,7 @@ while IFS= read -r commit_line; do
                 fi
 
                 CATEGORIES["$CATEGORY"]=1
-                COMMITS_BY_CATEGORY["$CATEGORY"]+="* ${PR_TITLE#*: } ([#$PR_NUM](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/$PR_NUM)) by [@$GITHUB_USERNAME](https://github.com/$GITHUB_USERNAME)"$'\n'
+                COMMITS_BY_CATEGORY["$CATEGORY"]+="* ${PR_TITLE#*: } ([#$PR_NUM](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/$PR_NUM)) by @$GITHUB_USERNAME"$'\n'
             else
                 COMMITS_BY_CATEGORY["$CATEGORY"]+="* ${PR_TITLE#*: } ([#$PR_NUM](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/$PR_NUM))"$'\n'
             fi
@@ -165,7 +165,7 @@ while IFS= read -r commit_line; do
                 CATEGORIES["$CATEGORY"]=1
                 COMMIT_TITLE=${COMMIT_MSG%% (#*}  # Remove the PR number suffix
                 COMMIT_TITLE=${COMMIT_TITLE#*: }  # Remove the type prefix
-                COMMITS_BY_CATEGORY["$CATEGORY"]+="* $COMMIT_TITLE ([#$PR_NUM](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/$PR_NUM)) by [@$GITHUB_USERNAME](https://github.com/$GITHUB_USERNAME)"$'\n'
+                COMMITS_BY_CATEGORY["$CATEGORY"]+="* $COMMIT_TITLE ([#$PR_NUM](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/$PR_NUM)) by @$GITHUB_USERNAME"$'\n'
             else
                 COMMIT_TITLE=${COMMIT_MSG%% (#*}  # Remove the PR number suffix
                 COMMIT_TITLE=${COMMIT_TITLE#*: }  # Remove the type prefix
@@ -196,7 +196,7 @@ while IFS= read -r commit_line; do
 
                 CATEGORIES["$CATEGORY"]=1
                 COMMIT_TITLE=${COMMIT_MSG#*: }  # Remove the type prefix
-                COMMITS_BY_CATEGORY["$CATEGORY"]+="* $COMMIT_TITLE (${HASH:0:7}) by [@$GITHUB_USERNAME](https://github.com/$GITHUB_USERNAME)"$'\n'
+                COMMITS_BY_CATEGORY["$CATEGORY"]+="* $COMMIT_TITLE (${HASH:0:7}) by @$GITHUB_USERNAME"$'\n'
             else
                 # Fallback to git author name if no GitHub username found
                 AUTHOR_NAME=$(git show -s --format='%an' "$HASH")

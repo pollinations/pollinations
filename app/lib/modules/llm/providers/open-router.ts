@@ -27,7 +27,6 @@ export default class OpenRouterProvider extends BaseProvider {
   };
 
   staticModels: ModelInfo[] = [
-    { name: 'gpt-4o', label: 'GPT-4o', provider: 'OpenAI', maxTokenAllowed: 8000 },
     {
       name: 'anthropic/claude-3.5-sonnet',
       label: 'Anthropic: Claude 3.5 Sonnet (OpenRouter)',

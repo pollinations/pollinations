@@ -19,37 +19,32 @@ export default class OpenAILikeProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
-    try {
-      const { baseUrl, apiKey } = this.getProviderBaseUrlAndKey({
-        apiKeys,
-        providerSettings: settings,
-        serverEnv,
-        defaultBaseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
-        defaultApiTokenKey: 'OPENAI_LIKE_API_KEY',
-      });
+    const { baseUrl, apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'OPENAI_LIKE_API_BASE_URL',
+      defaultApiTokenKey: 'OPENAI_LIKE_API_KEY',
+    });
 
-      if (!baseUrl || !apiKey) {
-        return [];
-      }
-
-      const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      });
-
-      const res = (await response.json()) as any;
-
-      return res.data.map((model: any) => ({
-        name: model.id,
-        label: model.id,
-        provider: this.name,
-        maxTokenAllowed: 8000,
-      }));
-    } catch (error) {
-      console.error('Error getting OpenAILike models:', error);
+    if (!baseUrl || !apiKey) {
       return [];
     }
+
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    const res = (await response.json()) as any;
+
+    return res.data.map((model: any) => ({
+      name: model.id,
+      label: model.id,
+      provider: this.name,
+      maxTokenAllowed: 8000,
+    }));
   }
 
   getModelInstance(options: {

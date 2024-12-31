@@ -2,7 +2,9 @@ import type { IProviderSetting } from '~/types/model';
 import { BaseProvider } from './base-provider';
 import type { ModelInfo, ProviderInfo } from './types';
 import * as providers from './registry';
+import { createScopedLogger } from '~/utils/logger';
 
+const logger = createScopedLogger('LLMManager');
 export class LLMManager {
   private static _instance: LLMManager;
   private _providers: Map<string, BaseProvider> = new Map();
@@ -40,22 +42,22 @@ export class LLMManager {
           try {
             this.registerProvider(provider);
           } catch (error: any) {
-            console.log('Failed To Register Provider: ', provider.name, 'error:', error.message);
+            logger.warn('Failed To Register Provider: ', provider.name, 'error:', error.message);
           }
         }
       }
     } catch (error) {
-      console.error('Error registering providers:', error);
+      logger.error('Error registering providers:', error);
     }
   }
 
   registerProvider(provider: BaseProvider) {
     if (this._providers.has(provider.name)) {
-      console.warn(`Provider ${provider.name} is already registered. Skipping.`);
+      logger.warn(`Provider ${provider.name} is already registered. Skipping.`);
       return;
     }
 
-    console.log('Registering Provider: ', provider.name);
+    logger.info('Registering Provider: ', provider.name);
     this._providers.set(provider.name, provider);
     this._modelList = [...this._modelList, ...provider.staticModels];
   }
@@ -93,12 +95,28 @@ export class LLMManager {
           (provider): provider is BaseProvider & Required<Pick<ProviderInfo, 'getDynamicModels'>> =>
             !!provider.getDynamicModels,
         )
-        .map((provider) =>
-          provider.getDynamicModels(apiKeys, providerSettings?.[provider.name], serverEnv).catch((err) => {
-            console.error(`Error getting dynamic models ${provider.name} :`, err);
-            return [];
-          }),
-        ),
+        .map(async (provider) => {
+          const cachedModels = provider.getModelsFromCache(options);
+
+          if (cachedModels) {
+            return cachedModels;
+          }
+
+          const dynamicModels = await provider
+            .getDynamicModels(apiKeys, providerSettings?.[provider.name], serverEnv)
+            .then((models) => {
+              logger.info(`Caching ${models.length} dynamic models for ${provider.name}`);
+              provider.storeDynamicModels(options, models);
+
+              return models;
+            })
+            .catch((err) => {
+              logger.error(`Error getting dynamic models ${provider.name} :`, err);
+              return [];
+            });
+
+          return dynamicModels;
+        }),
     );
 
     // Combine static and dynamic models
@@ -109,6 +127,68 @@ export class LLMManager {
     this._modelList = modelList;
 
     return modelList;
+  }
+  getStaticModelList() {
+    return [...this._providers.values()].flatMap((p) => p.staticModels || []);
+  }
+  async getModelListFromProvider(
+    providerArg: BaseProvider,
+    options: {
+      apiKeys?: Record<string, string>;
+      providerSettings?: Record<string, IProviderSetting>;
+      serverEnv?: Record<string, string>;
+    },
+  ): Promise<ModelInfo[]> {
+    const provider = this._providers.get(providerArg.name);
+
+    if (!provider) {
+      throw new Error(`Provider ${providerArg.name} not found`);
+    }
+
+    const staticModels = provider.staticModels || [];
+
+    if (!provider.getDynamicModels) {
+      return staticModels;
+    }
+
+    const { apiKeys, providerSettings, serverEnv } = options;
+
+    const cachedModels = provider.getModelsFromCache({
+      apiKeys,
+      providerSettings,
+      serverEnv,
+    });
+
+    if (cachedModels) {
+      logger.info(`Found ${cachedModels.length} cached models for ${provider.name}`);
+      return [...cachedModels, ...staticModels];
+    }
+
+    logger.info(`Getting dynamic models for ${provider.name}`);
+
+    const dynamicModels = await provider
+      .getDynamicModels?.(apiKeys, providerSettings?.[provider.name], serverEnv)
+      .then((models) => {
+        logger.info(`Got ${models.length} dynamic models for ${provider.name}`);
+        provider.storeDynamicModels(options, models);
+
+        return models;
+      })
+      .catch((err) => {
+        logger.error(`Error getting dynamic models ${provider.name} :`, err);
+        return [];
+      });
+
+    return [...dynamicModels, ...staticModels];
+  }
+  getStaticModelListFromProvider(providerArg: BaseProvider) {
+    const provider = this._providers.get(providerArg.name);
+
+    if (!provider) {
+      throw new Error(`Provider ${providerArg.name} not found`);
+    }
+
+    return [...(provider.staticModels || [])];
   }
 
   getDefaultProvider(): BaseProvider {

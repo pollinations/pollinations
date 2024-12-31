@@ -27,7 +27,7 @@ ${templates
 Response Format:
 <selection>
   <templateName>{selected template name}</templateName>
-  <reasoning>{brief explanation for the choice}</reasoning>
+  <title>{a proper title for the project}</title>
 </selection>
 
 Examples:
@@ -37,7 +37,7 @@ User: I need to build a todo app
 Response:
 <selection>
   <templateName>react-basic-starter</templateName>
-  <reasoning>Simple React setup perfect for building a todo application</reasoning>
+  <title>Simple React todo application</title>
 </selection>
 </example>
 
@@ -46,7 +46,7 @@ User: Write a script to generate numbers from 1 to 100
 Response:
 <selection>
   <templateName>blank</templateName>
-  <reasoning>This is a simple script that doesn't require any template setup</reasoning>
+  <title>script to generate numbers from 1 to 100</title>
 </selection>
 </example>
 
@@ -62,16 +62,17 @@ Important: Provide only the selection tags in your response, no additional text.
 
 const templates: Template[] = STARTER_TEMPLATES.filter((t) => !t.name.includes('shadcn'));
 
-const parseSelectedTemplate = (llmOutput: string): string | null => {
+const parseSelectedTemplate = (llmOutput: string): { template: string; title: string } | null => {
   try {
     // Extract content between <templateName> tags
     const templateNameMatch = llmOutput.match(/<templateName>(.*?)<\/templateName>/);
+    const titleMatch = llmOutput.match(/<title>(.*?)<\/title>/);
 
     if (!templateNameMatch) {
       return null;
     }
 
-    return templateNameMatch[1].trim();
+    return { template: templateNameMatch[1].trim(), title: titleMatch?.[1].trim() || 'Untitled Project' };
   } catch (error) {
     console.error('Error parsing template selection:', error);
     return null;
@@ -101,7 +102,10 @@ export const selectStarterTemplate = async (options: { message: string; model: s
   } else {
     console.log('No template selected, using blank template');
 
-    return 'blank';
+    return {
+      template: 'blank',
+      title: '',
+    };
   }
 };
 
@@ -181,7 +185,7 @@ const getGitHubRepoContent = async (
   }
 };
 
-export async function getTemplates(templateName: string) {
+export async function getTemplates(templateName: string, title?: string) {
   const template = STARTER_TEMPLATES.find((t) => t.name == templateName);
 
   if (!template) {
@@ -211,7 +215,7 @@ export async function getTemplates(templateName: string) {
 
   const filesToImport = {
     files: filteredFiles,
-    ignoreFile: filteredFiles,
+    ignoreFile: [] as typeof filteredFiles,
   };
 
   if (templateIgnoreFile) {
@@ -227,7 +231,7 @@ export async function getTemplates(templateName: string) {
   }
 
   const assistantMessage = `
-<boltArtifact id="imported-files" title="Importing Starter Files" type="bundled">
+<boltArtifact id="imported-files" title="${title || 'Importing Starter Files'}" type="bundled">
 ${filesToImport.files
   .map(
     (file) =>
@@ -278,10 +282,16 @@ Any attempt to modify these protected files will result in immediate termination
 If you need to make changes to functionality, create new files instead of modifying the protected ones listed above.
 ---
 `;
-    userMessage += `
+  }
+
+  userMessage += `
+---
+template import is done, and you can now use the imported files,
+edit only the files that need to be changed, and you can create new files as needed.
+NO NOT EDIT/WRITE ANY FILES THAT ALREADY EXIST IN THE PROJECT AND DOES NOT NEED TO BE MODIFIED
+---
 Now that the Template is imported please continue with my original request
 `;
-  }
 
   return {
     assistantMessage,

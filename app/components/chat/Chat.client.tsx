@@ -168,7 +168,8 @@ export const ChatImpl = memo(
     });
     useEffect(() => {
       const prompt = searchParams.get('prompt');
-      console.log(prompt, searchParams, model, provider);
+
+      // console.log(prompt, searchParams, model, provider);
 
       if (prompt) {
         setSearchParams({});
@@ -289,14 +290,14 @@ export const ChatImpl = memo(
 
         // reload();
 
-        const template = await selectStarterTemplate({
+        const { template, title } = await selectStarterTemplate({
           message: messageInput,
           model,
           provider,
         });
 
         if (template !== 'blank') {
-          const temResp = await getTemplates(template);
+          const temResp = await getTemplates(template, title);
 
           if (temResp) {
             const { assistantMessage, userMessage } = temResp;

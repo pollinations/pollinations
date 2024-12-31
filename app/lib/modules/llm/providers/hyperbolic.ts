@@ -50,40 +50,35 @@ export default class HyperbolicProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
-    try {
-      const { baseUrl: fetchBaseUrl, apiKey } = this.getProviderBaseUrlAndKey({
-        apiKeys,
-        providerSettings: settings,
-        serverEnv,
-        defaultBaseUrlKey: '',
-        defaultApiTokenKey: 'HYPERBOLIC_API_KEY',
-      });
-      const baseUrl = fetchBaseUrl || 'https://api.hyperbolic.xyz/v1';
+    const { baseUrl: fetchBaseUrl, apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: '',
+      defaultApiTokenKey: 'HYPERBOLIC_API_KEY',
+    });
+    const baseUrl = fetchBaseUrl || 'https://api.hyperbolic.xyz/v1';
 
-      if (!baseUrl || !apiKey) {
-        return [];
-      }
-
-      const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      });
-
-      const res = (await response.json()) as any;
-
-      const data = res.data.filter((model: any) => model.object === 'model' && model.supports_chat);
-
-      return data.map((m: any) => ({
-        name: m.id,
-        label: `${m.id} - context ${m.context_length ? Math.floor(m.context_length / 1000) + 'k' : 'N/A'}`,
-        provider: this.name,
-        maxTokenAllowed: m.context_length || 8000,
-      }));
-    } catch (error: any) {
-      console.error('Error getting Hyperbolic models:', error.message);
-      return [];
+    if (!apiKey) {
+      throw `Missing Api Key configuration for ${this.name} provider`;
     }
+
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    const res = (await response.json()) as any;
+
+    const data = res.data.filter((model: any) => model.object === 'model' && model.supports_chat);
+
+    return data.map((m: any) => ({
+      name: m.id,
+      label: `${m.id} - context ${m.context_length ? Math.floor(m.context_length / 1000) + 'k' : 'N/A'}`,
+      provider: this.name,
+      maxTokenAllowed: m.context_length || 8000,
+    }));
   }
 
   getModelInstance(options: {
@@ -103,8 +98,7 @@ export default class HyperbolicProvider extends BaseProvider {
     });
 
     if (!apiKey) {
-      console.log(`Missing configuration for ${this.name} provider`);
-      throw new Error(`Missing configuration for ${this.name} provider`);
+      throw `Missing Api Key configuration for ${this.name} provider`;
     }
 
     const openai = createOpenAI({

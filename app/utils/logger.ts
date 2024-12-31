@@ -1,4 +1,7 @@
 export type DebugLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error';
+import { Chalk } from 'chalk';
+
+const chalk = new Chalk({ level: 3 });
 
 type LoggerFunction = (...messages: any[]) => void;
 
@@ -12,9 +15,6 @@ interface Logger {
 }
 
 let currentLevel: DebugLevel = (import.meta.env.VITE_LOG_LEVEL ?? import.meta.env.DEV) ? 'debug' : 'info';
-
-const isWorker = 'HTMLRewriter' in globalThis;
-const supportsColor = !isWorker;
 
 export const logger: Logger = {
   trace: (...messages: any[]) => log('trace', undefined, messages),
@@ -63,14 +63,8 @@ function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
     return `${acc} ${current}`;
   }, '');
 
-  if (!supportsColor) {
-    console.log(`[${level.toUpperCase()}]`, allMessages);
-
-    return;
-  }
-
   const labelBackgroundColor = getColorForLevel(level);
-  const labelTextColor = level === 'warn' ? 'black' : 'white';
+  const labelTextColor = level === 'warn' ? '#000000' : '#FFFFFF';
 
   const labelStyles = getLabelStyles(labelBackgroundColor, labelTextColor);
   const scopeStyles = getLabelStyles('#77828D', 'white');
@@ -81,7 +75,21 @@ function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
     styles.push('', scopeStyles);
   }
 
-  console.log(`%c${level.toUpperCase()}${scope ? `%c %c${scope}` : ''}`, ...styles, allMessages);
+  let labelText = formatText(` ${level.toUpperCase()} `, labelTextColor, labelBackgroundColor);
+
+  if (scope) {
+    labelText = `${labelText} ${formatText(` ${scope} `, '#FFFFFF', '77828D')}`;
+  }
+
+  if (typeof window !== 'undefined') {
+    console.log(`%c${level.toUpperCase()}${scope ? `%c %c${scope}` : ''}`, ...styles, allMessages);
+  } else {
+    console.log(`${labelText}`, allMessages);
+  }
+}
+
+function formatText(text: string, color: string, bg: string) {
+  return chalk.bgHex(bg)(chalk.hex(color)(text));
 }
 
 function getLabelStyles(color: string, textColor: string) {
@@ -104,7 +112,7 @@ function getColorForLevel(level: DebugLevel): string {
       return '#EE4744';
     }
     default: {
-      return 'black';
+      return '#000000';
     }
   }
 }

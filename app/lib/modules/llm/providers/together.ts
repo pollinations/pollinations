@@ -38,41 +38,36 @@ export default class TogetherProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
-    try {
-      const { baseUrl: fetchBaseUrl, apiKey } = this.getProviderBaseUrlAndKey({
-        apiKeys,
-        providerSettings: settings,
-        serverEnv,
-        defaultBaseUrlKey: 'TOGETHER_API_BASE_URL',
-        defaultApiTokenKey: 'TOGETHER_API_KEY',
-      });
-      const baseUrl = fetchBaseUrl || 'https://api.together.xyz/v1';
+    const { baseUrl: fetchBaseUrl, apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv,
+      defaultBaseUrlKey: 'TOGETHER_API_BASE_URL',
+      defaultApiTokenKey: 'TOGETHER_API_KEY',
+    });
+    const baseUrl = fetchBaseUrl || 'https://api.together.xyz/v1';
 
-      if (!baseUrl || !apiKey) {
-        return [];
-      }
-
-      // console.log({ baseUrl, apiKey });
-
-      const response = await fetch(`${baseUrl}/models`, {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      });
-
-      const res = (await response.json()) as any;
-      const data = (res || []).filter((model: any) => model.type === 'chat');
-
-      return data.map((m: any) => ({
-        name: m.id,
-        label: `${m.display_name} - in:$${m.pricing.input.toFixed(2)} out:$${m.pricing.output.toFixed(2)} - context ${Math.floor(m.context_length / 1000)}k`,
-        provider: this.name,
-        maxTokenAllowed: 8000,
-      }));
-    } catch (error: any) {
-      console.error('Error getting Together models:', error.message);
+    if (!baseUrl || !apiKey) {
       return [];
     }
+
+    // console.log({ baseUrl, apiKey });
+
+    const response = await fetch(`${baseUrl}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    const res = (await response.json()) as any;
+    const data = (res || []).filter((model: any) => model.type === 'chat');
+
+    return data.map((m: any) => ({
+      name: m.id,
+      label: `${m.display_name} - in:$${m.pricing.input.toFixed(2)} out:$${m.pricing.output.toFixed(2)} - context ${Math.floor(m.context_length / 1000)}k`,
+      provider: this.name,
+      maxTokenAllowed: 8000,
+    }));
   }
 
   getModelInstance(options: {

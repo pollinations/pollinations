@@ -6,8 +6,9 @@ import type { IProviderConfig } from '~/types/model';
 import { logStore } from '~/lib/stores/logs';
 
 // Import a default fallback icon
-import DefaultIcon from '/icons/Default.svg'; // Adjust the path as necessary
 import { providerBaseUrlEnvKeys } from '~/utils/constants';
+
+const DefaultIcon = '/icons/Default.svg'; // Adjust the path as necessary
 
 export default function ProvidersTab() {
   const { providers, updateProviderSettings, isLocalModel } = useSettings();

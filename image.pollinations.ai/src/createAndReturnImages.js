@@ -300,7 +300,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   console.error("isMature", isMature, "concepts", isChild);
 
   // Throw error if NSFW content is detected and safe mode is enabled
-  if (safeParams.safe && (isMature || isChild)) {
+  if (safeParams.safe && isMature) {
     throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
   }
 

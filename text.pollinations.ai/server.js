@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 let cache = {};
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
-const surClaude = wrapModelWithContext(surSystemPrompt, generateTextClaude);
+const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
 const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
@@ -51,7 +51,7 @@ const queues = new Map();
 
 function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 3 }));
+        queues.set(ip, new PQueue({ concurrency: 1 }));
     }
     return queues.get(ip);
 }
@@ -141,7 +141,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         console.error(error.stack); // Print stack trace
         res.status(500).send(error.message);
-        await sleep(1000); // ensures one ip can only make one request per second
+        await sleep(2000); // ensures one ip can only make one request per second
     }
 }
 
@@ -162,6 +162,8 @@ function getRequestData(req, isPost = false) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
+    const referrer = data.referrer || req.get('referrer') || '';
+    const isImagePollinationsReferrer = referrer.includes('image.pollinations.ai');
 
     const messages = isPost ? data.messages : [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
@@ -175,15 +177,22 @@ function getRequestData(req, isPost = false) {
         model,
         temperature,
         type: isPost ? 'POST' : 'GET',
-        cache: isPost ? data.cache !== false : true // Default to true if not specified
+        cache: isPost ? data.cache !== false : true, // Default to true if not specified
+        isImagePollinationsReferrer
     };
 }
+
 // GET request handler
 app.get('/*', async (req, res) => {
     const cacheKeyData = getRequestData(req);
     const ip = getIp(req);
-    const queue = getQueue(ip);
-    await queue.add(() => handleRequest(req, res, cacheKeyData));
+    
+    if (cacheKeyData.isImagePollinationsReferrer) {
+        await handleRequest(req, res, cacheKeyData);
+    } else {
+        const queue = getQueue(ip);
+        await queue.add(() => handleRequest(req, res, cacheKeyData));
+    }
 });
 
 // POST request handler
@@ -195,11 +204,16 @@ app.post('/', async (req, res) => {
 
     const cacheKeyData = getRequestData(req, true);
     const ip = getIp(req);
-    const queue = getQueue(ip);
-    if (cacheKeyData.cache) {
-        await queue.add(() => handleRequest(req, res, cacheKeyData, true));
+
+    if (cacheKeyData.isImagePollinationsReferrer) {
+        await handleRequest(req, res, cacheKeyData, cacheKeyData.cache);
     } else {
-        await handleRequest(req, res, cacheKeyData, false);
+        const queue = getQueue(ip);
+        if (cacheKeyData.cache) {
+            await queue.add(() => handleRequest(req, res, cacheKeyData, true));
+        } else {
+            await handleRequest(req, res, cacheKeyData, false);
+        }
     }
 });
 
@@ -320,7 +334,7 @@ async function generateTextBasedOnModel(messages, options) {
     } else if (model === 'claude') {
         response = await generateTextClaude(messages, options);
     } else if (model === 'sur') {
-        response = await surClaude(messages, options);
+        response = await surOpenai(messages, options);
     } else if (model === 'sur-mistral') {
         response = await surMistral(messages, options);
     } else if (model === 'command-r') {

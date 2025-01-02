@@ -68,6 +68,10 @@ const projectCategories = [
     key: "llmIntegration",
   },
   {
+    title: "SDK & Libraries",
+    key: "sdkLibraries",
+  },
+  {
     title: "Social Bots",
     key: "socialBots",
   },
@@ -86,7 +90,7 @@ const projects = {
       author: "@DeFactOfficial",
     },
     {
-      name: "UR Imagine & Chat AI 🎨💬",
+      name: "UR Imagine & Chat AI ",
       url: "https://perchance.org/ur-imagine-ai",
       description: "A free and limitless image generator with companion AI chat/roleplay system. Features enhanced prompting and privacy options.",
       author: "withthatway",
@@ -116,7 +120,7 @@ const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
-      name: "Pollinations Gallery",
+      name: "Pollinations Gallery 🆕",
       url: "https://deng-xian-sheng.github.io/pollinations-img-page/",
       description: "A clean and simple gallery showcasing the community's AI-generated images using Pollinations' image feed interface.",
       author: "@deng-xian-sheng",
@@ -192,6 +196,13 @@ const projects = {
       description: "A website generator using Pollinations text API.",
       author: "@rtxpower",
     },
+    {
+      name: "AI-Bloom 🆕",
+      url: "https://ai-bloom.vercel.app/",
+      description: "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.",
+      author: "@diepdo1810",
+      repoUrl: "https://github.com/diepdo1810/AI-Bloom",
+    },
   ],
   llmIntegration: [
     {
@@ -234,6 +245,29 @@ const projects = {
       name: "Unity AI Lab",
       url: "https://blog.unityailab.com/unity.html",
       description: "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
+    },
+  ],
+  sdkLibraries: [
+    {
+      name: "@pollinations/react 🆕",
+      url: "https://www.npmjs.com/package/@pollinations/react",
+      description: "React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
+      author: "@pollinations",
+      repoUrl: "https://react-hooks.pollinations.ai/",
+    },
+    {
+      name: "pypollinations 🆕",
+      url: "https://pypi.org/project/pypollinations/",
+      description: "A comprehensive Python wrapper for accessing Pollinations AI API endpoints. Features async support, image/text generation, and model management.",
+      author: "@KTS-o7",
+      repoUrl: "https://pypi.org/project/pypollinations/",
+    },
+    {
+      name: "pollinations.ai Python SDK 🆕",
+      url: "https://github.com/pollinations-ai/pollinations.ai",
+      description: "Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context.",
+      author: "@pollinations-ai",
+      repoUrl: "https://github.com/pollinations-ai/pollinations.ai",
     },
   ],
   socialBots: [

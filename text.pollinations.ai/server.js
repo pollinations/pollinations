@@ -157,7 +157,10 @@ function getRequestData(req, isPost = false) {
     const body = req.body;
     const data = isPost ? { ...query, ...body } : query;
 
-    const jsonMode = data.jsonMode || data.json?.toLowerCase() === 'true' || data.response_format?.type === 'json_object';
+    const jsonMode = data.jsonMode || 
+                    (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
+                    (typeof data.json === 'boolean' && data.json === true) ||
+                    data.response_format?.type === 'json_object';
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;

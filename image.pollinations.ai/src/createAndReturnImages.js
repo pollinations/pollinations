@@ -1,12 +1,19 @@
 import fetch from 'node-fetch';
-import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
-import { writeExifMetadata } from './writeExifMetadata.js';
+import { fileTypeFromBuffer } from 'file-type';
+import { addPollinationsLogoWithImagemagick, getLogoPath, nsfwCheck, resizeImage } from './imageOperations.js';
 import { MODELS } from './models.js';
+import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
+import debug from 'debug';
+
+const logError = debug('pollinations:error');
+const logPerf = debug('pollinations:perf');
+const logOps = debug('pollinations:ops');
+const logMeoow = debug('pollinations:meoow');
+
+import { writeExifMetadata } from './writeExifMetadata.js';
 import { sanitizeString } from './translateIfNecessary.js';
-import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
-import { profiler } from './profiling.js';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
 const MEOOW_2_SERVER_URL = 'https://cablyai.com/v1/images/generations';
@@ -53,13 +60,12 @@ async function fetchFromTurboServer(params) {
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
 const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
-  const start = profiler.start('external', 'comfy_ui');
   try {
-    console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
+    logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
     // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
     const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
-    console.log("calculated_steps", steps);
+    logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);
     
@@ -78,7 +84,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
       "steps": steps
     };
 
-    console.log("calling prompt", body.prompts, "width", body.width, "height", body.height);
+    logOps("calling prompt", body.prompts, "width", body.width, "height", body.height);
 
     // Start timing for fetch
     const fetch_start_time = Date.now();
@@ -96,10 +102,10 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
           body: JSON.stringify(body),
         });
         if (response.ok) break; // If response is ok, break out of the loop
-        console.error("Error from server. input was", body);
+        logError("Error from server. input was", body);
         throw new Error(`Server responded with ${response.status}`);
       } catch (error) {
-        console.error(`Fetch attempt ${attempt} failed: ${error.message}`);
+        logError(`Fetch attempt ${attempt} failed: ${error.message}`);
         if (attempt === 3) throw error;
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
       }
@@ -109,7 +115,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
     // Calculate the time spent in fetch
     const fetch_duration = fetch_end_time - fetch_start_time;
-    console.log(`Fetch duration: ${fetch_duration}ms`);
+    logPerf(`Fetch duration: ${fetch_duration}ms`);
     accumulated_fetch_duration += fetch_duration;
 
     // Calculate the total time the app has been running
@@ -117,10 +123,10 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
 
     // Calculate and print the percentage of time spent in fetch
     const fetch_percentage = (accumulated_fetch_duration / total_time) * 100;
-    console.log(`Fetch time percentage: ${fetch_percentage}%`);
+    logPerf(`Fetch time percentage: ${fetch_percentage}%`);
 
     if (!response?.ok) {
-      throw new Error(`Server responded with ${response}`);
+      throw new Error(`Server responded with ${response.status}`);
     }
 
     const jsonResponse = await response.json();
@@ -128,11 +134,11 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     const { image, ...rest } = Array.isArray(jsonResponse) ? jsonResponse[0] : jsonResponse;
 
     if (!image) {
-      console.error("image is null");
+      logError("image is null");
       throw new Error("image is null");
     }
 
-    console.log("decoding base64 image");
+    logOps("decoding base64 image");
 
     const buffer = Buffer.from(image, 'base64');
 
@@ -145,7 +151,6 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
         })
         .jpeg()
         .toBuffer();
-      profiler.end('external', 'comfy_ui', start);
       return { buffer: resizedBuffer, ...rest };
     }
 
@@ -156,12 +161,10 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
         mozjpeg: true
       })
       .toBuffer();
-    profiler.end('external', 'comfy_ui', start);
     return { buffer: jpegBuffer, ...rest };
 
   } catch (e) {
-    profiler.end('external', 'comfy_ui', start);
-    console.error('Error in callWebUI:', e);
+    logError('Error in callWebUI:', e);
     throw e;
   }
 };
@@ -173,7 +176,6 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
 const callMeoow = async (prompt, safeParams) => {
-  const start = profiler.start('external', 'meoow');
   try {
     const url = new URL(MEOOW_SERVER_URL);
     prompt = sanitizeString(prompt);
@@ -188,7 +190,7 @@ const callMeoow = async (prompt, safeParams) => {
     url.searchParams.append('size', closestRatio);
     url.searchParams.append('seed', safeParams.seed);
     url.searchParams.append('model', safeParams.model);
-    console.log("calling meoow", url.toString(), "aspect ratio", closestRatio);
+    logMeoow("calling meoow", url.toString(), "aspect ratio", closestRatio);
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
@@ -203,12 +205,10 @@ const callMeoow = async (prompt, safeParams) => {
     }
 
     const buffer = await response.buffer();
-    profiler.end('external', 'meoow', start);
     return { buffer: buffer, has_nsfw_concept: false, concept: null };
 
   } catch (e) {
-    profiler.end('external', 'meoow', start);
-    console.error('Error in callMeoow:', e);
+    logError('Error in callMeoow:', e);
     throw e;
   }
 };
@@ -220,7 +220,6 @@ const callMeoow = async (prompt, safeParams) => {
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
 const callMeoow2 = async (prompt, safeParams) => {
-  const start = profiler.start('external', 'meoow2');
   try {
     prompt = sanitizeString(prompt);
     const body = {
@@ -231,7 +230,7 @@ const callMeoow2 = async (prompt, safeParams) => {
       model: safeParams.model === 'flux-pro' ? 'flux-pro' : 'flux-1.1-pro',
     };
 
-    console.log("calling meoow-2", body);
+    logMeoow("calling meoow-2", body);
     const response = await fetch(MEOOW_2_SERVER_URL, {
       method: 'POST',
       headers: {
@@ -253,12 +252,10 @@ const callMeoow2 = async (prompt, safeParams) => {
     const imageResponse = await fetch(imageUrl);
     const buffer = await imageResponse.buffer();
 
-    profiler.end('external', 'meoow2', start);
     return { buffer: buffer, has_nsfw_concept: false, concept: null };
 
   } catch (e) {
-    profiler.end('external', 'meoow2', start);
-    console.error('Error in callMeoow2:', e);
+    logError('Error in callMeoow2:', e);
     throw e;
   }
 };
@@ -279,18 +276,14 @@ function calculateClosestAspectRatio(width, height) {
  * @returns {Promise<Buffer>} - The converted JPEG buffer.
  */
 async function convertToJpeg(buffer) {
-  const start = profiler.start('image', 'jpeg_conversion');
   try {
     const { format } = await sharp(buffer).metadata();
     if (format !== 'jpeg') {
       const result = await sharp(buffer).jpeg().toBuffer();
-      profiler.end('image', 'jpeg_conversion', start);
       return result;
     }
-    profiler.end('image', 'jpeg_conversion', start);
     return buffer;
   } catch (error) {
-    profiler.end('image', 'jpeg_conversion', start);
     throw error;
   }
 }
@@ -300,10 +293,14 @@ async function convertToJpeg(buffer) {
  * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
  * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
-export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt) {
+export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId) {
   let bufferAndMaturity;
   const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
   const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
+  
+  // Update generation progress
+  if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
+  
   if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
   } else if (meoow2Models.includes(safeParams.model)) {
@@ -311,38 +308,33 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   } else {
     bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
   }
+  
+  if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
+  if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
 
-  console.error("bufferAndMaturity", bufferAndMaturity);
+  logError("bufferAndMaturity", bufferAndMaturity);
 
   let isMature = bufferAndMaturity?.has_nsfw_concept;
   const concept = bufferAndMaturity?.concept;
   const isChild = Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
-  console.error("isMature", isMature, "concepts", isChild);
+  logError("isMature", isMature, "concepts", isChild);
 
   // Throw error if NSFW content is detected and safe mode is enabled
   if (safeParams.safe && isMature) {
     throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
   }
 
+  if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
   const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
+  if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
   // Convert the buffer to JPEG if it is not already in JPEG format
   bufferWithLegend = await convertToJpeg(bufferWithLegend);
 
-  //Resize the final image to the user's desired size
-  // bufferWithLegend = await resizeImage(bufferWithLegend, safeParams.width, safeParams.height);
-
-  // // blure image if isChild && isMature
-  // if (isChild && isMature) {
-  //   bufferWithLegend = await blurImage(bufferWithLegend);
-  // }
-
-  // if (isChild) isMature = true;
-
+  if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
   const { buffer: _buffer, ...maturity } = bufferAndMaturity;
   bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
 
   return { buffer: bufferWithLegend, isChild, isMature };
-
 }

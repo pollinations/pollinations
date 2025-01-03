@@ -1,4 +1,8 @@
 import sharp from 'sharp';
+import { exiftool } from 'exiftool-vendored';
+import debug from 'debug';
+
+const logPerf = debug('pollinations:perf');
 
 /**
  * Writes EXIF metadata to the image buffer.
@@ -22,7 +26,7 @@ export const writeExifMetadata = async (buffer, safeParams, maturity) => {
         .toBuffer();
 
     const exif_end_time = Date.now();
-    console.log(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
+    logPerf(`Exif writing duration: ${exif_end_time - exif_start_time}ms`);
 
     return bufferWithMetadata;
 };

@@ -1,5 +1,9 @@
 import { detectLanguage, sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
 import { pimpPrompt } from './groqPimp.js';
+import debug from 'debug';
+
+const logPrompt = debug('pollinations:prompt');
+const logPerf = debug('pollinations:perf');
 
 const memoizedPrompts = new Map();
 
@@ -19,7 +23,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
   let prompt = originalPrompt;
 
-  console.log("promptRaw", prompt);
+  logPrompt("promptRaw", prompt);
 
 
   if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
@@ -45,7 +49,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
     // prompt = await translateIfNecessary(prompt);
     const endTime = Date.now();
-    console.log(`Translation time: ${endTime - startTime}ms`);
+    logPerf(`Translation time: ${endTime - startTime}ms`);
 
     // enhance = true;
   }
@@ -54,9 +58,9 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
 
   if (enhance) {
 
-    console.log("pimping prompt", prompt, seed);
+    logPrompt("pimping prompt", prompt, seed);
     prompt = await pimpPrompt(prompt, seed);
-    console.log(`Pimped prompt: ${prompt}`);
+    logPrompt(`Pimped prompt: ${prompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });

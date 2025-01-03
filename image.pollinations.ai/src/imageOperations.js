@@ -1,10 +1,15 @@
 import { exec } from 'child_process';
 import tempfile from 'tempfile';
-import fs from 'fs';
+import fs from 'fs/promises';
 import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 import { MODELS } from './models.js';
+import debug from 'debug';
+
+const logError = debug('pollinations:error');
+const logPerf = debug('pollinations:perf');
+const logOps = debug('pollinations:ops');
 
 /**
 * Applies a blur effect to the image using ImageMagick.
@@ -17,20 +22,32 @@ export async function blurImage(buffer, size = 12) {
     const tempImageFile = tempfile({ extension: ext });
     const tempOutputFile = tempfile({ extension: ext });
 
-    fs.writeFileSync(tempImageFile, buffer);
+    await fs.writeFile(tempImageFile, buffer);
 
     return new Promise((resolve, reject) => {
-        exec(`convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferBlurred = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferBlurred);
-        });
+        const command = `convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`;
+        try {
+            exec(command, async (error, stdout, stderr) => {
+                try {
+                    if (error) {
+                        logError(`error: ${error.message}`);
+                        reject(error);
+                        return;
+                    }
+                    const bufferBlurred = await fs.readFile(tempOutputFile);
+                    await Promise.all([
+                        fs.unlink(tempImageFile),
+                        fs.unlink(tempOutputFile)
+                    ]);
+                    resolve(bufferBlurred);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
 
@@ -46,7 +63,7 @@ export async function resizeImage(buffer, width, height) {
     const tempImageFile = tempfile({ extension: ext });
     const tempOutputFile = tempfile({ extension: "jpg" });
 
-    fs.writeFileSync(tempImageFile, buffer);
+    await fs.writeFile(tempImageFile, buffer);
 
     // Calculate the scaling factor based on the total pixel count
     const maxPixels = 2048 * 2048;
@@ -60,22 +77,31 @@ export async function resizeImage(buffer, width, height) {
     }
 
     return new Promise((resolve, reject) => {
-        exec(`convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferResized = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferResized);
-        });
+        const command = `convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`;
+        try {
+            exec(command, async (error, stdout, stderr) => {
+                try {
+                    if (error) {
+                        logError(`error: ${error.message}`);
+                        reject(error);
+                        return;
+                    }
+                    const bufferResized = await fs.readFile(tempOutputFile);
+                    await Promise.all([
+                        fs.unlink(tempImageFile),
+                        fs.unlink(tempOutputFile)
+                    ]);
+                    resolve(bufferResized);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
-
-
-
 
 /**
 * Determines the appropriate logo path based on the parameters and maturity flags.
@@ -103,28 +129,38 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
     const tempImageFile = tempfile({ extension: ext });
     const tempOutputFile = tempfile({ extension: "jpg" });
 
-    fs.writeFileSync(tempImageFile, buffer);
+    await fs.writeFile(tempImageFile, buffer);
 
     const targetWidth = safeParams.width * 0.3;
     const scaleFactor = targetWidth / 200;
     const targetHeight = scaleFactor * 31;
 
     return new Promise((resolve, reject) => {
-        exec(`convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferWithLegend = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferWithLegend);
-        });
+        const command = `convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`;
+        try {
+            exec(command, async (error, stdout, stderr) => {
+                try {
+                    if (error) {
+                        logError(`error: ${error.message}`);
+                        reject(error);
+                        return;
+                    }
+                    const bufferWithLegend = await fs.readFile(tempOutputFile);
+                    await Promise.all([
+                        fs.unlink(tempImageFile),
+                        fs.unlink(tempOutputFile)
+                    ]);
+                    resolve(bufferWithLegend);
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
-
-
 
 /**
  * Checks if the image is NSFW.
@@ -137,7 +173,7 @@ export const nsfwCheck = async (buffer) => {
     const nsfwCheckStartTime = Date.now();
     const res = await fetch('http://localhost:10000/check', { method: 'POST', body: form });
     const nsfwCheckEndTime = Date.now();
-    console.log(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
+    logPerf(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
     const json = await res.json();
     return json;
 };

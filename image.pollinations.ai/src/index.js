@@ -8,13 +8,17 @@ import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
 import { cacheImage } from './cacheGeneratedImages.js';
 import { normalizeAndTranslatePrompt } from './normalizeAndTranslatePrompt.js';
-import { generalImageQueue, countJobs, BATCH_SIZE } from './generalImageQueue.js';
+import { countJobs } from './generalImageQueue.js';
 import { getIp } from './getIp.js';
 import sleep from 'await-sleep';
 import { MODELS } from './models.js';
 import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
-import { profiler } from './profiling.js';
+import debug from 'debug';
+import { createProgressTracker } from './progressBar.js';
+
+const logError = debug('pollinations:error');
+const logApi = debug('pollinations:api');
 
 export let currentJobs = [];
 
@@ -38,7 +42,7 @@ const setCORSHeaders = (res) => {
  * @returns {Promise<Object|boolean>}
  */
 const preMiddleware = async function (pathname, req, res) {
-  console.error("requestListener", req.url);
+  logApi("requestListener", req.url);
 
   if (pathname.startsWith("/feed")) {
     registerFeedListener(req, res);
@@ -60,54 +64,84 @@ const preMiddleware = async function (pathname, req, res) {
  * @param {Object} params - The parameters object.
  * @returns {Promise<void>}
  */
-const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer }) => {
-  const totalStart = profiler.start('request', 'total');
-  
-  timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
-  const promptStart = profiler.start('processing', 'prompt_normalization');
-  const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
-  profiler.end('processing', 'prompt_normalization', promptStart);
+const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+  try {
+    timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
+    
+    // Prompt processing
+    progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
+    const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+    progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
+    
+    logApi("prompt", prompt);
+    logApi("safeParams", safeParams);
 
-  console.error("prompt", prompt);
+    // Server selection and image generation
+    progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
+    progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
+    
+    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
-  console.log("safeParams", safeParams);
-  const genStart = profiler.start('processing', 'image_generation');
-  const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt);
-  profiler.end('processing', 'image_generation', genStart);
+    progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
+    
+    const ip = getIp(req);
+    const concurrentRequests = countJobs(true);
 
-  // if isChild and nsfw is true, djelay the response by 10 seconds
-  if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
-    console.log("isChild and isMature, delaying response by 15 seconds");
-    await sleep(8000);
-  }
+    timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
-  timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+    progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
+    timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, bufferAndMaturity });
 
-  const imageURL = `https://image.pollinations.ai${req.url}`;
+    progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
+    progress.stop();
 
-  if (!safeParams.nofeed) {
-    if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
-      const feedStart = profiler.start('processing', 'feed_update');
-      sendToFeedListeners({
-        ...safeParams,
-        concurrentRequests: countFluxJobs(),
-        imageURL,
-        prompt,
-        originalPrompt,
-        nsfw: bufferAndMaturity.isMature,
-        isChild: bufferAndMaturity.isChild,
-        timingInfo: relativeTiming(timingInfo),
-        ip: getIp(req),
-        status: "end_generating",
-        referrer,
-        wasPimped
-      }, { saveAsLastState: true });
-      profiler.end('processing', 'feed_update', feedStart);
+    // Safety checks
+    if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
+      logApi("isChild and isMature, delaying response by 15 seconds");
+      progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
+      await sleep(8000);
     }
-  }
+    progress.updateBar(requestId, 90, 'Safety', 'Check complete');
 
-  profiler.end('request', 'total', totalStart);
-  return bufferAndMaturity;
+    timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
+
+    const imageURL = `https://image.pollinations.ai${req.url}`;
+
+    // Cache and feed updates
+    progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
+    if (!safeParams.nofeed) {
+      if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
+        await sendToFeedListeners({
+          ...safeParams,
+          concurrentRequests: countFluxJobs(),
+          imageURL,
+          prompt,
+          originalPrompt,
+          nsfw: bufferAndMaturity.isMature,
+          isChild: bufferAndMaturity.isChild,
+          timingInfo: relativeTiming(timingInfo),
+          ip: getIp(req),
+          status: "end_generating",
+          referrer,
+          wasPimped
+        }, { saveAsLastState: true });
+      }
+    }
+    progress.updateBar(requestId, 100, 'Cache', 'Updated');
+    
+    // Complete main progress
+    progress.completeBar(requestId, 'Image generation complete');
+    progress.stop();
+    
+    return bufferAndMaturity;
+  } catch (error) {
+    // Handle errors gracefully in progress bars
+    progress.errorBar(requestId, 'Generation failed');
+    progress.stop();
+    throw error;
+  }
 };
 
 /**
@@ -125,10 +159,11 @@ const checkCacheAndGenerate = async (req, res) => {
   if (!needsProcessing) return;
 
   const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
-
   const { ...safeParams } = makeParamsSafe(query);
-
-  const referrer = query.referrer || req.headers.referer || req.headers.referrer || req.headers.origin;
+  const referrer = query.headers?.referer || req.headers.referer || req.headers.referrer || req.headers.origin;
+  const requestId = Math.random().toString(36).substring(7);
+  const progress = createProgressTracker().startRequest(requestId);
+  progress.updateBar(requestId, 0, 'Starting', 'Request received');
 
   sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
 
@@ -138,8 +173,8 @@ const checkCacheAndGenerate = async (req, res) => {
     const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
+      progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
-      // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
       sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
       let queueExisted = false;
@@ -149,23 +184,38 @@ const checkCacheAndGenerate = async (req, res) => {
         queueExisted = true;
       }
 
+      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
+
       const result = await ipQueue[ip].add(async () => {
         if (queueExisted && countJobs() > 2) {
           const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+          const queuePosition = Math.min(40, queueSize);
+          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
 
-          console.log("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
-          if (queueSize >= 40) {
+          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
+          logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
+          
+          if (queueSize >= 10) {
+            progress.errorBar(requestId, 'Queue full');
+            progress.stop();
             throw new Error("queue full");
           }
 
-          await sleep(250 * queueSize);
+          progress.setQueued(queueSize);
+          await sleep(500 * queueSize);
         }
+        
+        progress.setProcessing();
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-        const bufferAndMaturity = 
-        // await generalImageQueue.add(async () => {
-          // return 
-          await imageGen({ req, timingInfo, originalPrompt, safeParams, referrer });
-        // });
+        const bufferAndMaturity = await imageGen({ 
+          req, 
+          timingInfo, 
+          originalPrompt, 
+          safeParams, 
+          referrer,
+          progress,
+          requestId 
+        });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
 
         return bufferAndMaturity;
@@ -192,7 +242,7 @@ const checkCacheAndGenerate = async (req, res) => {
     sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
 
   } catch (error) {
-    console.error("error", error);
+    logError("error", error);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.end(`500: Internal Server Error - ${error.message}`);
 
@@ -222,11 +272,19 @@ const server = http.createServer((req, res) => {
 });
 
 // Set the timeout to 5 minutes (300,000 milliseconds)
-// server.setTimeout(300000, (socket) => {
-//   console.log('Request timed out.');
-//   // console.log(`Request details:`, socket);
-//   socket.end('HTTP/1.1 408 Request Timeout\r\n\r\n');
-// });
+server.setTimeout(300000, (socket) => {
+  socket.destroy();
+});
+
+server.on('connection', (socket) => {
+  socket.on('timeout', () => {
+    socket.destroy();
+  });
+
+  socket.on('error', (error) => {
+    socket.destroy();
+  });
+});
 
 server.listen(process.env.PORT || 16384);
 

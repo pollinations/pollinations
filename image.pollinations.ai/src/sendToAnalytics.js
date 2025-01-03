@@ -2,9 +2,14 @@ import 'dotenv/config'
 import { countFluxJobs } from './availableServers.js';
 import { countJobs } from './generalImageQueue.js';
 import { getIp } from './getIp.js';
+import fetch from 'node-fetch';
+import debug from 'debug';
 
 const measurementId = process.env.GA_MEASUREMENT_ID;
 const apiSecret = process.env.GA_API_SECRET;
+
+const logError = debug('pollinations:error');
+const logAnalytics = debug('pollinations:analytics');
 
 /**
  * Creates base metadata object used across different analytics events
@@ -59,8 +64,7 @@ export async function sendToAnalytics(request, name, metadata) {
         const responseText = await response.text();
         return responseText;
     } catch (error) {
-        // Silently handle any errors without crashing
-        console.debug('Analytics error (non-critical):', error?.message || error);
+        logError('Error sending analytics:', error);
         return;
     }
 }

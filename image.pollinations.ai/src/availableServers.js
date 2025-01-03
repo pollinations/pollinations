@@ -1,5 +1,9 @@
 import fetch from 'node-fetch';
 import PQueue from 'p-queue';
+import debug from 'debug';
+
+const logError = debug('pollinations:error');
+const logServer = debug('pollinations:server');
 
 let FLUX_SERVERS = [];
 const SERVER_TIMEOUT = 45000; // 45 seconds
@@ -12,10 +16,25 @@ setInterval(() => {
     FLUX_SERVERS.forEach(server => {
         if (server.errors > 0) {
             server.errors--;
-            console.log(`Decreased errors for ${server.url} to ${server.errors}`);
+            logServer(`Decreased errors for ${server.url} to ${server.errors}`);
         }
     });
 }, 60 * 1000); // Every 1 minute
+
+// Log server queue info every 5 seconds
+setInterval(() => {
+    if (FLUX_SERVERS.length > 0) {
+        const serverQueueInfo = FLUX_SERVERS.map(server => ({
+            url: server.url,
+            queueSize: server.queue.size + server.queue.pending,
+            totalRequests: server.totalRequests,
+            errors: server.errors,
+            errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
+            requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
+        }));
+        console.table(serverQueueInfo);
+    }
+}, 10000);
 
 /**
  * Returns the total number of jobs across all FLUX server queues
@@ -63,16 +82,6 @@ const getNextFluxServerUrl = async () => {
         throw new Error("No available FLUX servers.");
     }
 
-    const serverQueueInfo = FLUX_SERVERS.map(server => ({
-        url: server.url,
-        queueSize: server.queue.size + server.queue.pending,
-        totalRequests: server.totalRequests,
-        errors: server.errors,
-        errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
-        requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
-    }));
-    console.table(serverQueueInfo);
-
     const weightedLoad = FLUX_SERVERS.map(server => ({
         server,
         load: (server.queue.size + server.queue.pending) + (server.errors)
@@ -84,7 +93,7 @@ const getNextFluxServerUrl = async () => {
         .map(w => w.server);
 
     const server = leastLoadedServers[Math.floor(Math.random() * leastLoadedServers.length)];
-    console.log(`Selected server: ${server.url}`);
+    logServer(`Selected server: ${server.url}`);
     return server.url + "/generate";
 };
 
@@ -119,15 +128,15 @@ export async function getNextTurboServerUrl() {
  */
 async function fetchServersFromMainServer() {
     try {
-        console.log(`[${new Date().toISOString()}] Fetching servers from ${MAIN_SERVER_URL}...`);
+        logServer(`[${new Date().toISOString()}] Fetching servers from ${MAIN_SERVER_URL}...`);
         const response = await fetch(MAIN_SERVER_URL);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const servers = await response.json();
-        console.log(`[${new Date().toISOString()}] Received ${servers.length} servers from main server:`);
+        logServer(`[${new Date().toISOString()}] Received ${servers.length} servers from main server:`);
         servers.forEach((server, index) => {
-            console.log(`  ${index + 1}. ${server.url}`);
+            logServer(`  ${index + 1}. ${server.url}`);
         });
         
         FLUX_SERVERS = servers.map(server => ({
@@ -137,9 +146,9 @@ async function fetchServersFromMainServer() {
             errors: 0,
             startTime: Date.now()
         }));
-        console.log(`[${new Date().toISOString()}] Successfully initialized ${FLUX_SERVERS.length} FLUX servers`);
+        logServer(`[${new Date().toISOString()}] Successfully initialized ${FLUX_SERVERS.length} FLUX servers`);
     } catch (error) {
-        console.error(`[${new Date().toISOString()}] Failed to fetch servers from main server:`, error);
+        logError(`[${new Date().toISOString()}] Failed to fetch servers from main server:`, error);
     }
 }
 

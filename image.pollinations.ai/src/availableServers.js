@@ -165,13 +165,13 @@ export const handleRegisterEndpoint = (req, res) => {
         req.on('end', () => {
             try {
                 const server = JSON.parse(body);
-                if (server.url && server.serviceType) {
-                    registerServer(server.url, server.serviceType);
+                if (server.url) {
+                    registerServer(server.url, server.serviceType || 'flux');
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
                 } else {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Invalid request body' }));
+                    res.end(JSON.stringify({ success: false, message: 'Invalid request body - url is required' }));
                 }
             } catch (error) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });

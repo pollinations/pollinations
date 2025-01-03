@@ -5,6 +5,11 @@ import { fileTypeFromBuffer } from 'file-type';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
 import { MODELS } from './models.js';
+import debug from 'debug';
+
+const logError = debug('pollinations:error');
+const logPerf = debug('pollinations:perf');
+const logOps = debug('pollinations:ops');
 
 /**
 * Applies a blur effect to the image using ImageMagick.
@@ -20,17 +25,23 @@ export async function blurImage(buffer, size = 12) {
     fs.writeFileSync(tempImageFile, buffer);
 
     return new Promise((resolve, reject) => {
-        exec(`convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferBlurred = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferBlurred);
-        });
+        const command = `convert ${tempImageFile} -blur 0x${size} ${tempOutputFile}`;
+        try {
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    logError(`error: ${error.message}`);
+                    reject(error);
+                    return;
+                }
+                const bufferBlurred = fs.readFileSync(tempOutputFile);
+                fs.unlinkSync(tempImageFile);
+                fs.unlinkSync(tempOutputFile);
+                resolve(bufferBlurred);
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
 
@@ -60,17 +71,23 @@ export async function resizeImage(buffer, width, height) {
     }
 
     return new Promise((resolve, reject) => {
-        exec(`convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferResized = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferResized);
-        });
+        const command = `convert ${tempImageFile} -resize ${width}x${height}! ${tempOutputFile}`;
+        try {
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    logError(`error: ${error.message}`);
+                    reject(error);
+                    return;
+                }
+                const bufferResized = fs.readFileSync(tempOutputFile);
+                fs.unlinkSync(tempImageFile);
+                fs.unlinkSync(tempOutputFile);
+                resolve(bufferResized);
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
 
@@ -110,17 +127,23 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
     const targetHeight = scaleFactor * 31;
 
     return new Promise((resolve, reject) => {
-        exec(`convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`error: ${error.message}`);
-                reject(error);
-                return;
-            }
-            const bufferWithLegend = fs.readFileSync(tempOutputFile);
-            fs.unlinkSync(tempImageFile);
-            fs.unlinkSync(tempOutputFile);
-            resolve(bufferWithLegend);
-        });
+        const command = `convert -background none -gravity southeast -geometry ${targetWidth}x${targetHeight}+10+10 ${tempImageFile} ${logoPath} -composite ${tempOutputFile}`;
+        try {
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    logError(`error: ${error.message}`);
+                    reject(error);
+                    return;
+                }
+                const bufferWithLegend = fs.readFileSync(tempOutputFile);
+                fs.unlinkSync(tempImageFile);
+                fs.unlinkSync(tempOutputFile);
+                resolve(bufferWithLegend);
+            });
+        } catch (error) {
+            logError(`error: ${error.message}`);
+            reject(error);
+        }
     });
 }
 
@@ -137,7 +160,7 @@ export const nsfwCheck = async (buffer) => {
     const nsfwCheckStartTime = Date.now();
     const res = await fetch('http://localhost:10000/check', { method: 'POST', body: form });
     const nsfwCheckEndTime = Date.now();
-    console.log(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
+    logPerf(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
     const json = await res.json();
     return json;
 };

@@ -1,9 +1,13 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import debug from 'debug';
 
 const memCache = {};
 const diskCacheDir = '/tmp/cache';
+
+const logError = debug('pollinations:error');
+const logCache = debug('pollinations:cache');
 
 // Ensure the disk cache directory exists
 if (!fs.existsSync(diskCacheDir)) {
@@ -54,7 +58,7 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
     const buffer = await bufferPromise;
     return buffer;
   } catch (e) {
-    console.error('Error waiting for bufferPromise', e);
+    logError('Error waiting for bufferPromise', e);
     memCache[cachePath] = null;
     throw e;
   }

@@ -5,123 +5,127 @@ import debug from 'debug';
 const logError = debug('pollinations:error');
 const logServer = debug('pollinations:server');
 
-let FLUX_SERVERS = [];
+// Server storage by type
+const SERVERS = {
+    flux: [],
+    translation: [],
+    turbo: []
+};
+
 const SERVER_TIMEOUT = 45000; // 45 seconds
-const MAIN_SERVER_URL = 'https://image.pollinations.ai/register';
+const MAIN_SERVER_URL = process.env.POLLINATIONS_MASTER_URL || 'https://image.pollinations.ai/register';
 
 const concurrency = 2;
 
 // Decay errors every minute
 setInterval(() => {
-    FLUX_SERVERS.forEach(server => {
-        if (server.errors > 0) {
-            server.errors--;
-            logServer(`Decreased errors for ${server.url} to ${server.errors}`);
-        }
+    Object.values(SERVERS).forEach(servers => {
+        servers.forEach(server => {
+            if (server.errors > 0) {
+                server.errors--;
+                logServer(`Decreased errors for ${server.url} to ${server.errors}`);
+            }
+        });
     });
 }, 60 * 1000); // Every 1 minute
 
 // Log server queue info every 5 seconds
 setInterval(() => {
-    if (FLUX_SERVERS.length > 0) {
-        const serverQueueInfo = FLUX_SERVERS.map(server => ({
-            url: server.url,
-            queueSize: server.queue.size + server.queue.pending,
-            totalRequests: server.totalRequests,
-            errors: server.errors,
-            errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
-            requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
-        }));
-        console.table(serverQueueInfo);
-    }
+    Object.entries(SERVERS).forEach(([type, servers]) => {
+        if (servers.length > 0) {
+            const serverQueueInfo = servers.map(server => ({
+                type,
+                url: server.url,
+                queueSize: server.queue.size + server.queue.pending,
+                totalRequests: server.totalRequests,
+                errors: server.errors,
+                errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
+                requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
+            }));
+            console.table(serverQueueInfo);
+        }
+    });
 }, 10000);
 
 /**
- * Returns the total number of jobs across all FLUX server queues
+ * Returns the total number of jobs for a specific type
+ * @param {string} type - The type of service (default: 'flux')
  * @returns {number} Total number of jobs (size + pending) across all queues
  */
-export const countFluxJobs = () => {
-    return FLUX_SERVERS.reduce((total, server) => {
+export const countJobs = (type = 'flux') => {
+    const servers = SERVERS[type] || [];
+    return servers.reduce((total, server) => {
         return total + server.queue.size + server.queue.pending;
     }, 0);
 };
 
+// Wrapper for backward compatibility
+export const countFluxJobs = () => countJobs('flux');
+
 /**
- * Registers a new FLUX server or updates its last heartbeat time.
- * @param {string} url - The URL of the FLUX server.
+ * Registers a new server or updates its last heartbeat time.
+ * @param {string} url - The URL of the server.
+ * @param {string} type - The type of service (default: 'flux')
  */
-export const registerServer = ({ url }) => {
-    const existingServer = FLUX_SERVERS.find(server => server.url === url);
+export const registerServer = (url, type = 'flux') => {
+    if (!SERVERS[type]) {
+        SERVERS[type] = [];
+    }
+
+    const servers = SERVERS[type];
+    const existingServer = servers.find(server => server.url === url);
+
     if (existingServer) {
         existingServer.lastHeartbeat = Date.now();
+        logServer(`Updated heartbeat for ${type} server ${url}`);
     } else {
-        FLUX_SERVERS.push({
+        const newServer = {
             url,
-            lastHeartbeat: Date.now(),
             queue: new PQueue({ concurrency }),
+            lastHeartbeat: Date.now(),
+            startTime: Date.now(),
             totalRequests: 0,
-            errors: 0,
-            startTime: Date.now()
-        });
+            errors: 0
+        };
+        servers.push(newServer);
+        logServer(`Registered new ${type} server ${url}`);
     }
 };
 
 /**
- * Returns the next available FLUX server URL with the least amount of jobs processing + in queue.
- * If multiple servers have the smallest queue size, one is selected randomly.
- * @returns {Promise<string>} - The next FLUX server URL.
+ * Returns the next available server URL for a specific type
+ * @param {string} type - The type of service (default: 'flux')
+ * @returns {Promise<string>} - The next server URL
  */
-const getNextFluxServerUrl = async () => {
-    FLUX_SERVERS = filterActiveServers(FLUX_SERVERS);
-
-    if (FLUX_SERVERS.length === 0) {
+export const getNextServerUrl = async (type = 'flux') => {
+    const servers = SERVERS[type] || [];
+    if (servers.length === 0) {
         await fetchServersFromMainServer();
     }
 
-    if (FLUX_SERVERS.length === 0) {
-        throw new Error("No available FLUX servers.");
+    const activeServers = filterActiveServers(servers);
+    if (activeServers.length === 0) {
+        throw new Error(`No active ${type} servers available`);
     }
 
-    const weightedLoad = FLUX_SERVERS.map(server => ({
-        server,
-        load: (server.queue.size + server.queue.pending) + (server.errors)
-    }));
+    // Find servers with minimum queue size
+    const minQueueSize = Math.min(...activeServers.map(server => 
+        server.queue.size + server.queue.pending
+    ));
+    
+    const candidateServers = activeServers.filter(server => 
+        server.queue.size + server.queue.pending === minQueueSize
+    );
 
-    const minLoad = Math.min(...weightedLoad.map(w => w.load));
-    const leastLoadedServers = weightedLoad
-        .filter(w => w.load === minLoad)
-        .map(w => w.server);
-
-    const server = leastLoadedServers[Math.floor(Math.random() * leastLoadedServers.length)];
-    logServer(`Selected server: ${server.url}`);
-    return server.url + "/generate";
+    // Randomly select one of the servers with minimum queue size
+    const selectedServer = candidateServers[Math.floor(Math.random() * candidateServers.length)];
+    return selectedServer.url;
 };
 
-
-/**
- * Returns the next available Translation server URL with the least amount of jobs processing + in queue.
- * If multiple servers have the smallest queue size, one is selected randomly.
- * @returns {Promise<string>} - The next Translation server URL.
- */
-export async function getNextTranslationServerUrl() {
-    const nextFluxServer = await getNextFluxServerUrl();
-    //extract ip from url (the url has http:// or https://, we need the ip)
-    const ip = nextFluxServer.split("://")[1].split(":")[0];
-    return `http://${ip}:5000`;
-}
-
-/**
- * Returns the next available Turbo server URL with the least amount of jobs processing + in queue.
- * If multiple servers have the smallest queue size, one is selected randomly.
- * @returns {Promise<string>} - The next Turbo server URL.
- */
-export async function getNextTurboServerUrl() {
-    const nextFluxServer = await getNextFluxServerUrl();
-    //extract ip from url (the url has http:// or https://, we need the ip)
-    const ip = nextFluxServer.split("://")[1].split(":")[0];
-    return `http://${ip}:5003/generate`;
-}
-
+// Wrapper functions for backward compatibility
+export const getNextFluxServerUrl = () => getNextServerUrl('flux');
+export const getNextTranslationServerUrl = () => getNextServerUrl('translation');
+export const getNextTurboServerUrl = () => getNextServerUrl('turbo');
 
 /**
  * Fetches the list of available servers from the main server.
@@ -139,14 +143,10 @@ async function fetchServersFromMainServer() {
             logServer(`  ${index + 1}. ${server.url}`);
         });
         
-        FLUX_SERVERS = servers.map(server => ({
-            ...server,
-            queue: new PQueue({ concurrency }),
-            totalRequests: 0,
-            errors: 0,
-            startTime: Date.now()
-        }));
-        logServer(`[${new Date().toISOString()}] Successfully initialized ${FLUX_SERVERS.length} FLUX servers`);
+        servers.forEach(server => {
+            registerServer(server.url, server.type);
+        });
+        logServer(`[${new Date().toISOString()}] Successfully initialized ${Object.values(SERVERS).flat().length} servers`);
     } catch (error) {
         logError(`[${new Date().toISOString()}] Failed to fetch servers from main server:`, error);
     }
@@ -167,12 +167,12 @@ export const handleRegisterEndpoint = (req, res) => {
             try {
                 const server = JSON.parse(body);
                 if (server.url) {
-                    registerServer(server);
+                    registerServer(server.url, server.type || 'flux');
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
                 } else {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ success: false, message: 'Invalid request body' }));
+                    res.end(JSON.stringify({ success: false, message: 'Invalid request body - url is required' }));
                 }
             } catch (error) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -180,7 +180,7 @@ export const handleRegisterEndpoint = (req, res) => {
             }
         });
     } else if (req.method === 'GET') {
-        const availableServers = filterActiveServers(FLUX_SERVERS);
+        const availableServers = Object.values(SERVERS).flat();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(availableServers.map(server => ({
             url: server.url,
@@ -201,35 +201,44 @@ export const handleRegisterEndpoint = (req, res) => {
  * @param {Array} servers - The list of servers.
  * @returns {Array} - The filtered list of active servers.
  */
-const filterActiveServers = (servers) => {
+export const filterActiveServers = (servers) => {
+    const now = Date.now();
     return servers.filter(server =>
-        Date.now() - server.lastHeartbeat < SERVER_TIMEOUT 
+        now - server.lastHeartbeat < SERVER_TIMEOUT 
         // && server.url.includes('23.23.212.46')
     );
 };
 
 /**
- * Fetches data from the server with the least amount of jobs processing + in queue.
- * @param {string} url - The URL to fetch.
- * @param {Object} options - The fetch options.
- * @returns {Promise<Response>} - The fetch response.
+ * Fetches data from the least busy server of a specific type
+ * @param {string} type - The type of service (default: 'flux')
+ * @param {Object} options - The fetch options
+ * @returns {Promise<Response>} - The fetch response
  */
-export const fetchFromLeastBusyFluxServer = async (options) => {
-    const server = await getNextFluxServerUrl();
-    const chosenServer = FLUX_SERVERS.find(s => s.url + "/generate" === server);
-    chosenServer.totalRequests += 1;
+export const fetchFromLeastBusyServer = async (type = 'flux', options) => {
+    const serverUrl = await getNextServerUrl(type);
+    const server = SERVERS[type].find(s => s.url === serverUrl);
     
-    return chosenServer.queue.add(async () => {
+    if (!server) {
+        throw new Error(`Server ${serverUrl} not found for type ${type}`);
+    }
+
+    return server.queue.add(async () => {
+        server.totalRequests++;
         try {
-            const response = await fetch(server, options);
+            const response = await fetch(serverUrl+'/generate', options);
             if (!response.ok) {
-                chosenServer.errors += 1;
+                server.errors++;
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response;
         } catch (error) {
-            chosenServer.errors += 1;
+            server.errors++;
             throw error;
         }
     });
 };
+
+// Wrapper for backward compatibility
+export const fetchFromLeastBusyFluxServer = (options) => 
+    fetchFromLeastBusyServer('flux', options);

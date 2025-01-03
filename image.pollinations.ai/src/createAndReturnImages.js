@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import { fileTypeFromBuffer } from 'file-type';
-import { addPollinationsLogoWithImagemagick, getLogoPath, nsfwCheck, resizeImage } from './imageOperations.js';
+import { addPollinationsLogoWithImagemagick, getLogoPath} from './imageOperations.js';
 import { MODELS } from './models.js';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';

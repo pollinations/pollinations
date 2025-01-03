@@ -122,9 +122,9 @@ export const getNextServerUrl = async (serviceType = 'flux') => {
 };
 
 // Wrapper functions for backward compatibility
-export const getNextFluxServerUrl = () => getNextServerUrl('flux')+"/generate";
+export const getNextFluxServerUrl = () => getNextServerUrl('flux');
 export const getNextTranslationServerUrl = () => getNextServerUrl('translation');
-export const getNextTurboServerUrl = () => getNextServerUrl('turbo')+"/generate";
+export const getNextTurboServerUrl = () => getNextServerUrl('turbo');
 
 /**
  * Fetches the list of available servers from the main server.
@@ -225,7 +225,7 @@ export const fetchFromLeastBusyServer = async (serviceType = 'flux', options) =>
     return server.queue.add(async () => {
         server.totalRequests++;
         try {
-            const response = await fetch(serverUrl, options);
+            const response = await fetch(serverUrl+'/generate', options);
             if (!response.ok) {
                 server.errors++;
                 throw new Error(`HTTP error! status: ${response.status}`);

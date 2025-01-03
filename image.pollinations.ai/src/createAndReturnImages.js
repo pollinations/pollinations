@@ -298,8 +298,8 @@ export function calculateClosestAspectRatio(width, height) {
  */
 export async function convertToJpeg(buffer) {
   try {
-    const { format } = await sharp(buffer).metadata();
-    if (format !== 'jpeg') {
+    const fileType = await fileTypeFromBuffer(buffer);
+    if (!fileType || (fileType.ext !== 'jpg' && fileType.ext !== 'jpeg')) {
       const result = await sharp(buffer).jpeg().toBuffer();
       return result;
     }
@@ -307,7 +307,6 @@ export async function convertToJpeg(buffer) {
   } catch (error) {
     throw error;
   }
-  return buffer
 }
 
 /**

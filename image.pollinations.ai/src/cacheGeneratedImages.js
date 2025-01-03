@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-import fs from 'fs';
+import fs from 'fs/promises';
+import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import debug from 'debug';
 
@@ -10,8 +11,12 @@ const logError = debug('pollinations:error');
 const logCache = debug('pollinations:cache');
 
 // Ensure the disk cache directory exists
-if (!fs.existsSync(diskCacheDir)) {
-  fs.mkdirSync(diskCacheDir, { recursive: true });
+try {
+  if (!existsSync(diskCacheDir)) {
+    mkdirSync(diskCacheDir, { recursive: true });
+  }
+} catch (error) {
+  logError('Failed to create cache directory:', error);
 }
 
 // Function to generate a cache path

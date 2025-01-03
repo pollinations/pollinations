@@ -5,7 +5,7 @@ import debug from 'debug';
 const logError = debug('pollinations:error');
 const logServer = debug('pollinations:server');
 
-// Server storage by service type
+// Server storage by type
 const SERVERS = {
     flux: [],
     translation: [],
@@ -31,7 +31,7 @@ setInterval(() => {
 
 // Log server queue info every 5 seconds
 setInterval(() => {
-    Object.values(SERVERS).forEach((servers, serviceType) => {
+    Object.values(SERVERS).forEach((servers, type) => {
         if (servers.length > 0) {
             const serverQueueInfo = servers.map(server => ({
                 url: server.url,
@@ -47,12 +47,12 @@ setInterval(() => {
 }, 10000);
 
 /**
- * Returns the total number of jobs for a specific service type
- * @param {string} serviceType - The type of service (default: 'flux')
+ * Returns the total number of jobs for a specific type
+ * @param {string} type - The type of service (default: 'flux')
  * @returns {number} Total number of jobs (size + pending) across all queues
  */
-export const countJobs = (serviceType = 'flux') => {
-    const servers = SERVERS[serviceType] || [];
+export const countJobs = (type = 'flux') => {
+    const servers = SERVERS[type] || [];
     return servers.reduce((total, server) => {
         return total + server.queue.size + server.queue.pending;
     }, 0);
@@ -64,19 +64,19 @@ export const countFluxJobs = () => countJobs('flux');
 /**
  * Registers a new server or updates its last heartbeat time.
  * @param {string} url - The URL of the server.
- * @param {string} serviceType - The type of service (default: 'flux')
+ * @param {string} type - The type of service (default: 'flux')
  */
-export const registerServer = (url, serviceType = 'flux') => {
-    if (!SERVERS[serviceType]) {
-        SERVERS[serviceType] = [];
+export const registerServer = (url, type = 'flux') => {
+    if (!SERVERS[type]) {
+        SERVERS[type] = [];
     }
 
-    const servers = SERVERS[serviceType];
+    const servers = SERVERS[type];
     const existingServer = servers.find(server => server.url === url);
 
     if (existingServer) {
         existingServer.lastHeartbeat = Date.now();
-        logServer(`Updated heartbeat for ${serviceType} server ${url}`);
+        logServer(`Updated heartbeat for ${type} server ${url}`);
     } else {
         const newServer = {
             url,
@@ -87,24 +87,24 @@ export const registerServer = (url, serviceType = 'flux') => {
             errors: 0
         };
         servers.push(newServer);
-        logServer(`Registered new ${serviceType} server ${url}`);
+        logServer(`Registered new ${type} server ${url}`);
     }
 };
 
 /**
- * Returns the next available server URL for a specific service type
- * @param {string} serviceType - The type of service (default: 'flux')
+ * Returns the next available server URL for a specific type
+ * @param {string} type - The type of service (default: 'flux')
  * @returns {Promise<string>} - The next server URL
  */
-export const getNextServerUrl = async (serviceType = 'flux') => {
-    const servers = SERVERS[serviceType] || [];
+export const getNextServerUrl = async (type = 'flux') => {
+    const servers = SERVERS[type] || [];
     if (servers.length === 0) {
         await fetchServersFromMainServer();
     }
 
     const activeServers = filterActiveServers(servers);
     if (activeServers.length === 0) {
-        throw new Error(`No active ${serviceType} servers available`);
+        throw new Error(`No active ${type} servers available`);
     }
 
     // Find servers with minimum queue size
@@ -143,7 +143,7 @@ async function fetchServersFromMainServer() {
         });
         
         servers.forEach(server => {
-            registerServer(server.url, server.serviceType);
+            registerServer(server.url, server.type);
         });
         logServer(`[${new Date().toISOString()}] Successfully initialized ${Object.values(SERVERS).flat().length} servers`);
     } catch (error) {
@@ -166,7 +166,7 @@ export const handleRegisterEndpoint = (req, res) => {
             try {
                 const server = JSON.parse(body);
                 if (server.url) {
-                    registerServer(server.url, server.serviceType || 'flux');
+                    registerServer(server.url, server.type || 'flux');
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
                 } else {
@@ -209,17 +209,17 @@ export const filterActiveServers = (servers) => {
 };
 
 /**
- * Fetches data from the least busy server of a specific service type
- * @param {string} serviceType - The type of service (default: 'flux')
+ * Fetches data from the least busy server of a specific type
+ * @param {string} type - The type of service (default: 'flux')
  * @param {Object} options - The fetch options
  * @returns {Promise<Response>} - The fetch response
  */
-export const fetchFromLeastBusyServer = async (serviceType = 'flux', options) => {
-    const serverUrl = await getNextServerUrl(serviceType);
-    const server = SERVERS[serviceType].find(s => s.url === serverUrl);
+export const fetchFromLeastBusyServer = async (type = 'flux', options) => {
+    const serverUrl = await getNextServerUrl(type);
+    const server = SERVERS[type].find(s => s.url === serverUrl);
     
     if (!server) {
-        throw new Error(`Server ${serverUrl} not found for service type ${serviceType}`);
+        throw new Error(`Server ${serverUrl} not found for type ${type}`);
     }
 
     return server.queue.add(async () => {

@@ -69,36 +69,34 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
     
     // Prompt processing
-    progress.updateBar(`prompt-${requestId}`, 20, 'Normalizing prompt...');
+    progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
     const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
-    progress.completeBar(`prompt-${requestId}`, 'Prompt normalized');
+    progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
     
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
 
     // Server selection and image generation
-    progress.updateBar(`server-${requestId}`, 50, 'Selecting optimal server...');
-    progress.updateBar(`generation-${requestId}`, 10, 'Preparing generation...');
+    progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
+    progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
     const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
-    
-    progress.completeBar(`server-${requestId}`);
 
     // Safety checks
-    progress.updateBar(`safety-${requestId}`, 50, 'Checking content safety...');
+    progress.updateBar(requestId, 80, 'Safety', 'Checking content...');
     if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
-      progress.updateBar(`safety-${requestId}`, 75, 'Additional safety review...');
+      progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
       await sleep(8000);
     }
-    progress.completeBar(`safety-${requestId}`, 'Safety check complete');
+    progress.updateBar(requestId, 90, 'Safety', 'Check complete');
 
     timingInfo.push({ step: 'Image returned', timestamp: Date.now() });
 
     const imageURL = `https://image.pollinations.ai${req.url}`;
 
     // Cache and feed updates
-    progress.updateBar(`cache-${requestId}`, 50, 'Updating feed...');
+    progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
     if (!safeParams.nofeed) {
       if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
         await sendToFeedListeners({
@@ -117,16 +115,16 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
         }, { saveAsLastState: true });
       }
     }
-    progress.completeBar(`cache-${requestId}`, 'Cache updated');
+    progress.updateBar(requestId, 100, 'Cache', 'Updated');
     
     // Complete main progress
-    progress.completeBar(`main-${requestId}`, 'Image generation complete');
+    progress.completeBar(requestId, 'Image generation complete');
     progress.stop();
     
     return bufferAndMaturity;
   } catch (error) {
     // Handle errors gracefully in progress bars
-    progress.errorBar(`main-${requestId}`, 'Generation failed');
+    progress.errorBar(requestId, 'Generation failed');
     progress.stop();
     throw error;
   }
@@ -176,7 +174,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
           logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
           if (queueSize >= 40) {
-            progress.errorBar(`main-${requestId}`, 'Queue full');
+            progress.errorBar(requestId, 'Queue full');
             progress.stop();
             throw new Error("queue full");
           }

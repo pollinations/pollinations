@@ -300,7 +300,7 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
   const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
   
   // Update generation progress
-  if (progress) progress.updateBar(`generation-${requestId}`, 40, 'Calling API...');
+  if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
   
   if (meoowModels.includes(safeParams.model)) {
     bufferAndMaturity = await callMeoow(prompt, safeParams);
@@ -310,8 +310,8 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
   }
   
-  if (progress) progress.updateBar(`generation-${requestId}`, 100, 'API call complete');
-  if (progress) progress.updateBar(`processing-${requestId}`, 20, 'Checking safety...');
+  if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
+  if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
 
   logError("bufferAndMaturity", bufferAndMaturity);
 
@@ -325,19 +325,17 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
   }
 
-  if (progress) progress.updateBar(`processing-${requestId}`, 40, 'Adding logo...');
+  if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
   const logoPath = getLogoPath(safeParams, isChild, isMature);
   let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
 
-  if (progress) progress.updateBar(`processing-${requestId}`, 60, 'Converting format...');
+  if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
   // Convert the buffer to JPEG if it is not already in JPEG format
   bufferWithLegend = await convertToJpeg(bufferWithLegend);
 
-  if (progress) progress.updateBar(`processing-${requestId}`, 80, 'Writing metadata...');
+  if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
   const { buffer: _buffer, ...maturity } = bufferAndMaturity;
   bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
-
-  if (progress) progress.completeBar(`processing-${requestId}`, 'Post-processing complete');
 
   return { buffer: bufferWithLegend, isChild, isMature };
 }

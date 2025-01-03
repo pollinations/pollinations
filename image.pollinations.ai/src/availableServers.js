@@ -75,7 +75,7 @@ const getNextFluxServerUrl = async () => {
         errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
         requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
     }));
-    logServer(serverQueueInfo);
+    console.table(serverQueueInfo);
 
     const weightedLoad = FLUX_SERVERS.map(server => ({
         server,

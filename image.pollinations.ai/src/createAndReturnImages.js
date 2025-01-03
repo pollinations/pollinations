@@ -63,8 +63,8 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   try {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-    // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
-    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
+    // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
+    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (36 - 2)));
     logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);

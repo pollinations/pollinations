@@ -71,18 +71,12 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     // Prompt processing
     progress.updateBar(requestId, 20, 'Prompt', 'Normalizing...');
     const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
-    progress.updateBar(requestId, 30, 'Prompt', 'Normalized');
     
     logApi("prompt", prompt);
     logApi("safeParams", safeParams);
 
     // Server selection and image generation
-    progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
-    progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
-    
-    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
-
-    progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
+    progress.updateBar(requestId, 50, 'Generation', 'Starting generation...');
     
     const ip = getIp(req);
     const concurrentRequests = countJobs(true);
@@ -90,9 +84,13 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
     sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
 
+
+    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+
+
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, bufferAndMaturity });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, isChild: bufferAndMaturity?.isChild, isMature: bufferAndMaturity?.isMature });
 
     progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
     progress.stop();

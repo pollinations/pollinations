@@ -50,8 +50,9 @@ async def send_heartbeat():
         try:
             port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
+            service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
-                async with session.post('https://image.pollinations.ai/register', json={'url': url}) as response:
+                async with session.post('https://image.pollinations.ai/register', json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:
                         logger.info(f"Heartbeat sent successfully. URL: {url}")
                     else:

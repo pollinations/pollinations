@@ -8,12 +8,14 @@ const logServer = debug('pollinations:server');
 // Server storage by type
 const SERVERS = {
     flux: [],
-    translation: [],
+    translate: [],
     turbo: []
 };
 
 const SERVER_TIMEOUT = 45000; // 45 seconds
 const MAIN_SERVER_URL = process.env.POLLINATIONS_MASTER_URL || 'https://image.pollinations.ai/register';
+
+const IS_MAIN_SERVER = MAIN_SERVER_URL === 'https://image.pollinations.ai/register';
 
 const concurrency = 2;
 
@@ -68,8 +70,10 @@ export const countFluxJobs = () => countJobs('flux');
  * @param {string} type - The type of service (default: 'flux')
  */
 export const registerServer = (url, type = 'flux') => {
-    if (!SERVERS[type]) {
-        SERVERS[type] = [];
+    // Only allow predefined types, fall back to 'flux' for unknown types
+    if (!SERVERS.hasOwnProperty(type)) {
+        logServer(`Warning: Unknown server type "${type}", defaulting to "flux"`);
+        type = 'flux';
     }
 
     const servers = SERVERS[type];
@@ -99,7 +103,7 @@ export const registerServer = (url, type = 'flux') => {
  */
 export const getNextServerUrl = async (type = 'flux') => {
     const servers = SERVERS[type] || [];
-    if (servers.length === 0) {
+    if (!IS_MAIN_SERVER && servers.length === 0) {
         await fetchServersFromMainServer();
     }
 
@@ -124,7 +128,7 @@ export const getNextServerUrl = async (type = 'flux') => {
 
 // Wrapper functions for backward compatibility
 export const getNextFluxServerUrl = () => getNextServerUrl('flux');
-export const getNextTranslationServerUrl = () => getNextServerUrl('translation');
+export const getNextTranslationServerUrl = () => getNextServerUrl('translate');
 export const getNextTurboServerUrl = () => getNextServerUrl('turbo');
 
 /**

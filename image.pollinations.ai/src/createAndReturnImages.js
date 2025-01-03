@@ -55,12 +55,18 @@ async function fetchFromTurboServer(params) {
  * @param {number} concurrentRequests - The number of concurrent requests.
  * @returns {Promise<Array>} - The generated images.
  */
-export async function callComfyUI(prompt, safeParams, concurrentRequests) {
+
+/**
+ * Calls the Web UI with the given parameters and returns image buffers.
+ * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
+ * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
+ */
+export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
   try {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
-    // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
-    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
+    // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
+    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (36 - 2)));
     logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);
@@ -291,11 +297,15 @@ export function calculateClosestAspectRatio(width, height) {
  * @returns {Promise<Buffer>} - The converted image buffer.
  */
 export async function convertToJpeg(buffer) {
-  const fileType = await fileTypeFromBuffer(buffer)
-  if (!fileType || (fileType.ext !== 'jpg' && fileType.ext !== 'jpeg')) {
-    const sharpInstance = sharp(buffer)
-    await sharpInstance.metadata() // Ensure it's a valid image
-    return await sharpInstance.jpeg().toBuffer()
+  try {
+    const { format } = await sharp(buffer).metadata();
+    if (format !== 'jpeg') {
+      const result = await sharp(buffer).jpeg().toBuffer();
+      return result;
+    }
+    return buffer;
+  } catch (error) {
+    throw error;
   }
   return buffer
 }

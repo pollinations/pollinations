@@ -60,7 +60,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   if (enhance) {
 
     logPrompt("pimping prompt", prompt, seed);
-    prompt = await pimpPrompt(prompt, seed, { enhance });
+    prompt = await pimpPrompt(prompt, seed);
     logPrompt(`Pimped prompt: ${prompt}`);
   }
 

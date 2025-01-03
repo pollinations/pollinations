@@ -6,6 +6,7 @@ import { sanitizeString } from './translateIfNecessary.js';
 import { addPollinationsLogoWithImagemagick, getLogoPath, resizeImage } from './imageOperations.js';
 import sharp from 'sharp';
 import sleep from 'await-sleep';
+import { profiler } from './profiling.js';
 
 const MEOOW_SERVER_URL = 'https://api.airforce/imagine';
 const MEOOW_2_SERVER_URL = 'https://cablyai.com/v1/images/generations';
@@ -52,13 +53,14 @@ async function fetchFromTurboServer(params) {
  * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
  */
 const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
-  console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
-
-  // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
-  const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
-  console.log("calculated_steps", steps);
-
+  const start = profiler.start('external', 'comfy_ui');
   try {
+    console.log("concurrent requests", concurrentRequests, "safeParams", safeParams);
+
+    // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=16)
+    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (16 - 2)));
+    console.log("calculated_steps", steps);
+
     prompt = sanitizeString(prompt);
     
     // Calculate scaled dimensions
@@ -143,6 +145,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
         })
         .jpeg()
         .toBuffer();
+      profiler.end('external', 'comfy_ui', start);
       return { buffer: resizedBuffer, ...rest };
     }
 
@@ -153,9 +156,11 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
         mozjpeg: true
       })
       .toBuffer();
+    profiler.end('external', 'comfy_ui', start);
     return { buffer: jpegBuffer, ...rest };
 
   } catch (e) {
+    profiler.end('external', 'comfy_ui', start);
     console.error('Error in callWebUI:', e);
     throw e;
   }
@@ -168,6 +173,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
 const callMeoow = async (prompt, safeParams) => {
+  const start = profiler.start('external', 'meoow');
   try {
     const url = new URL(MEOOW_SERVER_URL);
     prompt = sanitizeString(prompt);
@@ -197,9 +203,11 @@ const callMeoow = async (prompt, safeParams) => {
     }
 
     const buffer = await response.buffer();
+    profiler.end('external', 'meoow', start);
     return { buffer: buffer, has_nsfw_concept: false, concept: null };
 
   } catch (e) {
+    profiler.end('external', 'meoow', start);
     console.error('Error in callMeoow:', e);
     throw e;
   }
@@ -212,6 +220,7 @@ const callMeoow = async (prompt, safeParams) => {
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
 const callMeoow2 = async (prompt, safeParams) => {
+  const start = profiler.start('external', 'meoow2');
   try {
     prompt = sanitizeString(prompt);
     const body = {
@@ -244,9 +253,11 @@ const callMeoow2 = async (prompt, safeParams) => {
     const imageResponse = await fetch(imageUrl);
     const buffer = await imageResponse.buffer();
 
+    profiler.end('external', 'meoow2', start);
     return { buffer: buffer, has_nsfw_concept: false, concept: null };
 
   } catch (e) {
+    profiler.end('external', 'meoow2', start);
     console.error('Error in callMeoow2:', e);
     throw e;
   }
@@ -268,11 +279,20 @@ function calculateClosestAspectRatio(width, height) {
  * @returns {Promise<Buffer>} - The converted JPEG buffer.
  */
 async function convertToJpeg(buffer) {
-  const { format } = await sharp(buffer).metadata();
-  if (format !== 'jpeg') {
-    return await sharp(buffer).jpeg().toBuffer();
+  const start = profiler.start('image', 'jpeg_conversion');
+  try {
+    const { format } = await sharp(buffer).metadata();
+    if (format !== 'jpeg') {
+      const result = await sharp(buffer).jpeg().toBuffer();
+      profiler.end('image', 'jpeg_conversion', start);
+      return result;
+    }
+    profiler.end('image', 'jpeg_conversion', start);
+    return buffer;
+  } catch (error) {
+    profiler.end('image', 'jpeg_conversion', start);
+    throw error;
   }
-  return buffer;
 }
 
 /**

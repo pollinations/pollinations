@@ -14,6 +14,7 @@ import sleep from 'await-sleep';
 import { MODELS } from './models.js';
 import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
+import { profiler } from './profiling.js';
 
 export let currentJobs = [];
 
@@ -60,15 +61,21 @@ const preMiddleware = async function (pathname, req, res) {
  * @returns {Promise<void>}
  */
 const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer }) => {
+  const totalStart = profiler.start('request', 'total');
+  
   timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
+  const promptStart = profiler.start('processing', 'prompt_normalization');
   const { prompt, wasPimped } = await normalizeAndTranslatePrompt(originalPrompt, req, timingInfo, safeParams);
+  profiler.end('processing', 'prompt_normalization', promptStart);
 
   console.error("prompt", prompt);
 
   console.log("safeParams", safeParams);
+  const genStart = profiler.start('processing', 'image_generation');
   const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt);
+  profiler.end('processing', 'image_generation', genStart);
 
-  // if isChild and nsfw is true, delay the response by 10 seconds
+  // if isChild and nsfw is true, djelay the response by 10 seconds
   if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
     console.log("isChild and isMature, delaying response by 15 seconds");
     await sleep(8000);
@@ -78,9 +85,9 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
 
   const imageURL = `https://image.pollinations.ai${req.url}`;
 
-
   if (!safeParams.nofeed) {
     if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
+      const feedStart = profiler.start('processing', 'feed_update');
       sendToFeedListeners({
         ...safeParams,
         concurrentRequests: countFluxJobs(),
@@ -95,9 +102,11 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer 
         referrer,
         wasPimped
       }, { saveAsLastState: true });
+      profiler.end('processing', 'feed_update', feedStart);
     }
   }
 
+  profiler.end('request', 'total', totalStart);
   return bufferAndMaturity;
 };
 
@@ -131,6 +140,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
       // sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
+      sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
       let queueExisted = false;
       if (!ipQueue[ip]) {
@@ -148,12 +158,14 @@ const checkCacheAndGenerate = async (req, res) => {
             throw new Error("queue full");
           }
 
-          await sleep(1000 * queueSize);
+          await sleep(250 * queueSize);
         }
         timingInfo.push({ step: 'Start generating job', timestamp: Date.now() });
-        const bufferAndMaturity = await generalImageQueue.add(async () => {
-          return await imageGen({ req, timingInfo, originalPrompt, safeParams, referrer });
-        });
+        const bufferAndMaturity = 
+        // await generalImageQueue.add(async () => {
+          // return 
+          await imageGen({ req, timingInfo, originalPrompt, safeParams, referrer });
+        // });
         timingInfo.push({ step: 'End generating job', timestamp: Date.now() });
 
         return bufferAndMaturity;

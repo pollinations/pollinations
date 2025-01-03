@@ -21,6 +21,21 @@ setInterval(() => {
     });
 }, 60 * 1000); // Every 1 minute
 
+// Log server queue info every 5 seconds
+setInterval(() => {
+    if (FLUX_SERVERS.length > 0) {
+        const serverQueueInfo = FLUX_SERVERS.map(server => ({
+            url: server.url,
+            queueSize: server.queue.size + server.queue.pending,
+            totalRequests: server.totalRequests,
+            errors: server.errors,
+            errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
+            requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
+        }));
+        console.table(serverQueueInfo);
+    }
+}, 5000);
+
 /**
  * Returns the total number of jobs across all FLUX server queues
  * @returns {number} Total number of jobs (size + pending) across all queues
@@ -66,16 +81,6 @@ const getNextFluxServerUrl = async () => {
     if (FLUX_SERVERS.length === 0) {
         throw new Error("No available FLUX servers.");
     }
-
-    const serverQueueInfo = FLUX_SERVERS.map(server => ({
-        url: server.url,
-        queueSize: server.queue.size + server.queue.pending,
-        totalRequests: server.totalRequests,
-        errors: server.errors,
-        errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
-        requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
-    }));
-    console.table(serverQueueInfo);
 
     const weightedLoad = FLUX_SERVERS.map(server => ({
         server,

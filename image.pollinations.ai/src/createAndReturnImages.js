@@ -30,7 +30,7 @@ const TARGET_PIXEL_COUNT = 1024 * 1024; // 1 megapixel
  * @param {number} height - Original height
  * @returns {{ scaledWidth: number, scaledHeight: number, scalingFactor: number }}
  */
-function calculateScaledDimensions(width, height) {
+export function calculateScaledDimensions(width, height) {
   const currentPixels = width * height;
   if (currentPixels >= TARGET_PIXEL_COUNT) {
     return { scaledWidth: width, scaledHeight: height, scalingFactor: 1 };
@@ -49,17 +49,13 @@ async function fetchFromTurboServer(params) {
 }
 
 /**
- * @typedef {Object} Job
- * @property {string} prompt
- * @property {string} ip
+ * Calls the ComfyUI API to generate images.
+ * @param {string} prompt - The prompt for image generation.
+ * @param {Object} safeParams - The parameters for image generation.
+ * @param {number} concurrentRequests - The number of concurrent requests.
+ * @returns {Promise<Array>} - The generated images.
  */
-
-/**
- * Calls the Web UI with the given parameters and returns image buffers.
- * @param {{ jobs: Job[], safeParams: Object, concurrentRequests: number, ip: string }} params
- * @returns {Promise<Array<{buffer: Buffer, [key: string]: any}>>}
- */
-const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
+export async function callComfyUI(prompt, safeParams, concurrentRequests) {
   try {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
@@ -164,7 +160,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     return { buffer: jpegBuffer, ...rest };
 
   } catch (e) {
-    logError('Error in callWebUI:', e);
+    logError('Error in callComfyUI:', e);
     throw e;
   }
 };
@@ -175,7 +171,7 @@ const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
  * @param {Object} safeParams - The safe parameters for the image generation.
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
-const callMeoow = async (prompt, safeParams) => {
+export async function callMeoow(prompt, safeParams) {
   try {
     const url = new URL(MEOOW_SERVER_URL);
     prompt = sanitizeString(prompt);
@@ -219,7 +215,7 @@ const callMeoow = async (prompt, safeParams) => {
  * @param {Object} safeParams - The safe parameters for the image generation.
  * @returns {Promise<{buffer: Buffer, [key: string]: any}>}
  */
-const callMeoow2 = async (prompt, safeParams) => {
+export async function callMeoow2(prompt, safeParams) {
   try {
     prompt = sanitizeString(prompt);
     const body = {
@@ -266,26 +262,42 @@ const callMeoow2 = async (prompt, safeParams) => {
  * @param {number} height - The height of the image.
  * @returns {string} - The closest aspect ratio as a string.
  */
-function calculateClosestAspectRatio(width, height) {
-  return `${width}:${height}`;
+export function calculateClosestAspectRatio(width, height) {
+  const aspectRatio = width / height
+  const ratios = {
+    '1:1': 1,
+    '4:3': 4/3,
+    '16:9': 16/9,
+    '3:2': 3/2
+  }
+
+  let closestRatio = '1:1'
+  let minDiff = Math.abs(aspectRatio - 1)
+
+  for (const [ratio, value] of Object.entries(ratios)) {
+    const diff = Math.abs(aspectRatio - value)
+    if (diff < minDiff) {
+      minDiff = diff
+      closestRatio = ratio
+    }
+  }
+
+  return closestRatio
 }
 
 /**
- * Converts the buffer to JPEG format if it is not already in JPEG format.
- * @param {Buffer} buffer - The image buffer.
- * @returns {Promise<Buffer>} - The converted JPEG buffer.
+ * Converts an image buffer to JPEG format if it's not already a JPEG.
+ * @param {Buffer} buffer - The image buffer to convert.
+ * @returns {Promise<Buffer>} - The converted image buffer.
  */
-async function convertToJpeg(buffer) {
-  try {
-    const { format } = await sharp(buffer).metadata();
-    if (format !== 'jpeg') {
-      const result = await sharp(buffer).jpeg().toBuffer();
-      return result;
-    }
-    return buffer;
-  } catch (error) {
-    throw error;
+export async function convertToJpeg(buffer) {
+  const fileType = await fileTypeFromBuffer(buffer)
+  if (!fileType || (fileType.ext !== 'jpg' && fileType.ext !== 'jpeg')) {
+    const sharpInstance = sharp(buffer)
+    await sharpInstance.metadata() // Ensure it's a valid image
+    return await sharpInstance.jpeg().toBuffer()
   }
+  return buffer
 }
 
 /**

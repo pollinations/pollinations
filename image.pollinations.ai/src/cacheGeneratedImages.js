@@ -4,7 +4,7 @@ import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import debug from 'debug';
 
-const MAX_CACHE_SIZE = 500000;
+const MAX_CACHE_SIZE = process.env.NODE_ENV === 'test' ? 2 : 500000;
 const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
 const logError = debug('pollinations:error');
@@ -75,7 +75,7 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
   return buffer;
 };
 
-const memoize = (fn, getKey) => {
+export const memoize = (fn, getKey) => {
   const cache = {};
   return (...args) => {
     const key = getKey(...args);

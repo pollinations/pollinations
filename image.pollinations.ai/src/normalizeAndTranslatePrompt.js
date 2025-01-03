@@ -26,7 +26,8 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   logPrompt("promptRaw", prompt);
 
 
-  if (prompt.length < 100 && (enhance === undefined || enhance === null)) {
+  // Only set enhance=true if it's not explicitly set to false
+  if (enhance !== false && prompt.length < 100) {
     enhance = true;
   }
 
@@ -59,12 +60,12 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   if (enhance) {
 
     logPrompt("pimping prompt", prompt, seed);
-    prompt = await pimpPrompt(prompt, seed);
+    prompt = await pimpPrompt(prompt, seed, { enhance });
     logPrompt(`Pimped prompt: ${prompt}`);
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  memoizedPrompts.set(`${originalPrompt}_seed_${seed}`, { prompt: prompt, wasPimped: enhance });
+  memoizedPrompts.set(`${originalPrompt}_seed_${seed}`, prompt);
 
-  return { prompt: prompt, wasPimped: enhance };
+  return prompt;
 };

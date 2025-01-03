@@ -22,38 +22,6 @@ setInterval(() => {
 }, 60 * 1000); // Every 1 minute
 
 // Log server queue info every 5 seconds
-function logAsTable(data) {
-    if (!data || data.length === 0) return;
-
-    // Get all unique columns
-    const columns = Object.keys(data[0]);
-    
-    // Calculate column widths
-    const columnWidths = {};
-    columns.forEach(col => {
-        columnWidths[col] = Math.max(
-            col.length,
-            ...data.map(row => String(row[col]).length)
-        );
-    });
-
-    // Create header
-    const header = columns.map(col => col.padEnd(columnWidths[col])).join(' | ');
-    const separator = columns.map(col => '-'.repeat(columnWidths[col])).join('-|-');
-
-    // Print header
-    console.log(header);
-    console.log(separator);
-
-    // Print rows
-    data.forEach(row => {
-        const formattedRow = columns.map(col => 
-            String(row[col]).padEnd(columnWidths[col])
-        ).join(' | ');
-        console.log(formattedRow);
-    });
-}
-
 setInterval(() => {
     if (FLUX_SERVERS.length > 0) {
         const serverQueueInfo = FLUX_SERVERS.map(server => ({
@@ -64,7 +32,7 @@ setInterval(() => {
             errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
             requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
         }));
-        logAsTable(serverQueueInfo);
+        console.table(serverQueueInfo);
     }
 }, 5000);
 

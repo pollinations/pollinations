@@ -1,5 +1,5 @@
-import { MultiProgressBars } from 'multi-progress-bars';
-import chalk from 'chalk';
+import cliProgress from 'cli-progress';
+import colors from 'ansi-colors';
 import debug from 'debug';
 
 const logProgress = debug('pollinations:progress');
@@ -7,71 +7,73 @@ const logTime = debug('pollinations:time');
 
 class ProgressManager {
     constructor() {
-        this.mpb = new MultiProgressBars({
-            anchor: 'top',
-            border: true,
-            persist: true,
-        });
-        
+        this.multibar = new cliProgress.MultiBar({
+            clearOnComplete: false,
+            hideCursor: true,
+            format: ' {bar} | {title} | {step}: {status}',
+            barCompleteChar: '█',
+            barIncompleteChar: '░',
+            barsize: 20
+        }, cliProgress.Presets.shades_classic);
+
         this.bars = new Map();
         this.startTimes = new Map();
     }
 
     createBar(id, title) {
-        this.mpb.addTask(id, {
-            type: 'percentage',
-            message: 'Initializing...',
-            barTransformFn: chalk.cyan,
-            nameTransformFn: chalk.bold,
-            percentage: 0
+        const bar = this.multibar.create(100, 0, {
+            title,
+            step: 'Starting',
+            status: 'Initializing...'
         });
-        this.bars.set(id, title);
+        this.bars.set(id, bar);
         this.startTimes.set(id, Date.now());
         logTime(`${id} started`);
-        return id;
+        return bar;
     }
 
     updateBar(id, progress, step, status) {
-        if (this.bars.has(id)) {
-            this.mpb.updateTask(id, {
-                percentage: progress / 100,
-                message: `${step}: ${status}`
-            });
+        const bar = this.bars.get(id);
+        if (bar) {
+            bar.update(progress, { step, status });
             logProgress(`${id}: ${progress}% - ${step} - ${status}`);
         }
     }
 
     completeBar(id, status = 'Complete') {
-        if (this.bars.has(id)) {
+        const bar = this.bars.get(id);
+        if (bar) {
             const startTime = this.startTimes.get(id);
             const duration = startTime ? (Date.now() - startTime) / 1000 : 0;
             const finalStatus = `${status} (${duration.toFixed(2)}s)`;
             
-            this.mpb.done(id, { message: finalStatus });
+            bar.update(100, { step: 'Done', status: finalStatus });
+            logProgress(`${id}: Complete - ${finalStatus}`);
+            logTime(`${id} completed in ${duration.toFixed(2)}s`);
+            
             this.bars.delete(id);
             this.startTimes.delete(id);
-            logTime(`${id} completed in ${duration.toFixed(2)}s`);
         }
     }
 
     errorBar(id, error) {
-        if (this.bars.has(id)) {
+        const bar = this.bars.get(id);
+        if (bar) {
             const startTime = this.startTimes.get(id);
             const duration = startTime ? (Date.now() - startTime) / 1000 : 0;
-            const finalStatus = chalk.red(`Error: ${error} (${duration.toFixed(2)}s)`);
+            const finalStatus = colors.red(`Error: ${error} (${duration.toFixed(2)}s)`);
             
-            this.mpb.done(id, { message: finalStatus });
+            bar.update(100, { step: 'Error', status: finalStatus });
+            logProgress(`${id}: Error - ${error}`);
+            logTime(`${id} failed after ${duration.toFixed(2)}s: ${error}`);
+            
             this.bars.delete(id);
             this.startTimes.delete(id);
-            logTime(`${id} failed after ${duration.toFixed(2)}s: ${error}`);
         }
     }
 
     stop() {
-        // Clean up all remaining bars
-        for (const [id] of this.bars) {
-            this.completeBar(id, 'Stopped');
-        }
+        this.multibar.stop();
     }
 
     setQueued(id, position) {
@@ -83,7 +85,7 @@ class ProgressManager {
     }
 }
 
-function createProgressTracker() {
+export const createProgressTracker = () => {
     const progress = new ProgressManager();
     
     return {
@@ -92,7 +94,6 @@ function createProgressTracker() {
             return progress;
         }
     };
-}
+};
 
-export { createProgressTracker };
 export default ProgressManager;

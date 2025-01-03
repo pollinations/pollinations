@@ -36,7 +36,6 @@
     "lodash.memoize": "^4.1.2",
     "memoize-fs": "^2.2.0",
     "mjpeg-server": "^0.3.1",
-    "multi-progress-bars": "^5.0.3",
     "node-fetch": "^2.6.7",
     "node-stream-zip": "^1.15.0",
     "npm": "^9.7.1",

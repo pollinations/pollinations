@@ -30,13 +30,26 @@ class ProgressManager {
             hideCursor: true,
             format: (options, params, payload) => {
                 const color = getColorForId(payload.id);
-                const completedLength = Math.round(params.progress / 100 * options.barsize);
+                const completedLength = Math.round((params.value / params.total) * options.barsize);
                 const bar = options.barCompleteChar.repeat(completedLength) + 
                            options.barIncompleteChar.repeat(options.barsize - completedLength);
-                return color(` ${bar} | ${payload.title} | ${payload.step}: ${payload.status}\n`);
+                
+                // Check if anything has changed
+                const lastStep = this.lastSteps.get(payload.id);
+                const lastValue = this.lastValues.get(payload.id);
+                const hasChanged = lastStep !== payload.step || lastValue !== params.value;
+                
+                // Only show time if step has changed
+                const timeStr = (lastStep !== payload.step) ? 
+                    ` (${((Date.now() - this.startTimes.get(payload.id)) / 1000).toFixed(2)}s)` : '';
+                
+                if (hasChanged) {
+                    this.lastSteps.set(payload.id, payload.step);
+                    this.lastValues.set(payload.id, params.value);
+                    return color(` ${bar} | ${payload.title} | ${payload.step}: ${payload.status}${timeStr}\n`);
+                }
+                return ''; // Return empty string if nothing changed
             },
-            barCompleteChar: '█',
-            barIncompleteChar: '░',
             barsize: 20,
             noTTYOutput: true,
             notTTYSchedule: 100
@@ -44,6 +57,8 @@ class ProgressManager {
 
         this.bars = new Map();
         this.startTimes = new Map();
+        this.lastSteps = new Map();
+        this.lastValues = new Map();
     }
 
     createBar(id, title) {
@@ -55,6 +70,8 @@ class ProgressManager {
         });
         this.bars.set(id, bar);
         this.startTimes.set(id, Date.now());
+        this.lastSteps.set(id, null);
+        this.lastValues.set(id, null);
         logTime(`${id} started`);
         return bar;
     }
@@ -72,14 +89,15 @@ class ProgressManager {
         if (bar) {
             const startTime = this.startTimes.get(id);
             const duration = startTime ? (Date.now() - startTime) / 1000 : 0;
-            const finalStatus = `${status} (${duration.toFixed(2)}s)`;
+            const finalStatus = `Image generation complete (${duration.toFixed(2)}s)`;
             
             bar.update(100, { step: 'Done', status: finalStatus });
             logProgress(`${id}: Complete - ${finalStatus}`);
-            logTime(`${id} completed in ${duration.toFixed(2)}s`);
             
-            this.bars.delete(id);
+            this.lastSteps.delete(id);
+            this.lastValues.delete(id);
             this.startTimes.delete(id);
+            this.bars.delete(id);
         }
     }
 
@@ -88,14 +106,15 @@ class ProgressManager {
         if (bar) {
             const startTime = this.startTimes.get(id);
             const duration = startTime ? (Date.now() - startTime) / 1000 : 0;
-            const finalStatus = colors.red(`Error: ${error} (${duration.toFixed(2)}s)`);
+            const finalStatus = `Error: ${error} (${duration.toFixed(2)}s)`;
             
             bar.update(100, { step: 'Error', status: finalStatus });
-            logProgress(`${id}: Error - ${error}`);
-            logTime(`${id} failed after ${duration.toFixed(2)}s: ${error}`);
+            logProgress(`${id}: Error - ${finalStatus}`);
             
-            this.bars.delete(id);
+            this.lastSteps.delete(id);
+            this.lastValues.delete(id);
             this.startTimes.delete(id);
+            this.bars.delete(id);
         }
     }
 

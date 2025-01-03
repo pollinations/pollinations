@@ -4,7 +4,6 @@ import { addPollinationsLogoWithImagemagick, getLogoPath, nsfwCheck, resizeImage
 import { MODELS } from './models.js';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
-import { createProgressTracker } from './progressBar.js';
 
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');

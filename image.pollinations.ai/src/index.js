@@ -82,8 +82,22 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     
     const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
+    progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
+    
+    const ip = getIp(req);
+    const concurrentRequests = countJobs(true);
+
+    timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "generating", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer });
+
+    progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
+    timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, bufferAndMaturity });
+
+    progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
+    progress.stop();
+
     // Safety checks
-    progress.updateBar(requestId, 80, 'Safety', 'Checking content...');
     if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
@@ -149,6 +163,7 @@ const checkCacheAndGenerate = async (req, res) => {
   const referrer = query.headers?.referer || req.headers.referer || req.headers.referrer || req.headers.origin;
   const requestId = Math.random().toString(36).substring(7);
   const progress = createProgressTracker().startRequest(requestId);
+  progress.updateBar(requestId, 0, 'Starting', 'Request received');
 
   sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
 
@@ -158,6 +173,7 @@ const checkCacheAndGenerate = async (req, res) => {
     const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
 
+      progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
       sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
 
@@ -168,11 +184,17 @@ const checkCacheAndGenerate = async (req, res) => {
         queueExisted = true;
       }
 
+      progress.updateBar(requestId, 20, 'Queueing', 'Checking cache');
+
       const result = await ipQueue[ip].add(async () => {
         if (queueExisted && countJobs() > 2) {
           const queueSize = ipQueue[ip].size + ipQueue[ip].pending;
+          const queuePosition = Math.min(40, queueSize);
+          const progressPercent = 30 + Math.floor((40 - queuePosition) / 40 * 20); // Maps position 40->30%, 0->50%
 
+          progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
           logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
+          
           if (queueSize >= 40) {
             progress.errorBar(requestId, 'Queue full');
             progress.stop();

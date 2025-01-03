@@ -31,9 +31,10 @@ setInterval(() => {
 
 // Log server queue info every 5 seconds
 setInterval(() => {
-    Object.values(SERVERS).forEach((servers, type) => {
+    Object.entries(SERVERS).forEach(([type, servers]) => {
         if (servers.length > 0) {
             const serverQueueInfo = servers.map(server => ({
+                type,
                 url: server.url,
                 queueSize: server.queue.size + server.queue.pending,
                 totalRequests: server.totalRequests,

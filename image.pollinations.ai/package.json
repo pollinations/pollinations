@@ -50,9 +50,10 @@
     "urldecode": "^1.0.1"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^1.1.0",
     "esbuild": "^0.15.18",
+    "express": "^4.21.2",
     "supertest": "^6.3.3",
-    "vitest": "^1.1.0",
-    "@vitest/coverage-v8": "^1.1.0"
+    "vitest": "^1.6.0"
   }
 }

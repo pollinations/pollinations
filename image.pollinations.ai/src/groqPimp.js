@@ -1,6 +1,11 @@
 "use strict";
 import fetch from 'node-fetch';
 import urldecode from 'urldecode';
+import debug from 'debug';
+
+const logError = debug('pollinations:error');
+const logPimp = debug('pollinations:pimp');
+const logPerf = debug('pollinations:perf');
 
 /**
  * Main function to get and print chat completion from Pollinations Text API.
@@ -22,11 +27,11 @@ async function pimpPromptRaw(prompt, seed) {
     try {
         prompt = urldecode(prompt);
     } catch (error) {
-        console.error("Error decoding prompt:", error);
+        logError("Error decoding prompt:", error);
         // If decoding fails, use the original prompt
     }
     let response = "";
-    console.log("pimping prompt", prompt);
+    logPimp("pimping prompt", prompt);
     const startTime = Date.now();
     try {
         const apiUrl = `https://text.pollinations.ai/`;
@@ -79,13 +84,12 @@ Respond only with the new prompt. Nothing Else.`
             new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000))
         ]);
     } catch (error) {
-        console.error("Error:", error.message);
-        // stack trace
-        console.error(error.stack);
+        logError("Error:", error.message);
+        logError(error.stack);
         return prompt;
     }
     const endTime = Date.now();
-    console.log(`Prompt pimping took ${endTime - startTime}ms`);
+    logPerf(`Prompt pimping took ${endTime - startTime}ms`);
     return response + "\n\n" + prompt;
 }
 
@@ -94,7 +98,7 @@ const memoize = (fn) => {
     const cache = new Map();
     return async (arg, seed) => {
         const cacheKey = `${arg}-${seed}`;
-        console.log("cache key", cacheKey);
+        logPimp("cache key", cacheKey);
         if (cache.has(cacheKey)) {
             return cache.get(cacheKey);
         }

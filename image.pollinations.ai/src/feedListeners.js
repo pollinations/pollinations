@@ -1,4 +1,7 @@
 import { parse } from 'url';
+import debug from 'debug';
+
+const logFeed = debug('pollinations:feed');
 
 let feedListeners = [];
 let lastStates = [];
@@ -45,6 +48,6 @@ export const sendToFeedListeners = (data, options = {}) => {
 
 function sendToListener(listener, data, nsfw) {
   if (!nsfw && (data?.nsfw || data?.isChild)) return;
-  console.log("data", data);
+  logFeed("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }

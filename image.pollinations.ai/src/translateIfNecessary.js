@@ -3,8 +3,12 @@ import cld from "cld";
 import fetch from "node-fetch";
 import AsyncLock from 'async-lock';
 import { getNextTranslationServerUrl } from "./availableServers.js";
+import debug from 'debug';
 
 const lock = new AsyncLock();
+const logError = debug('pollinations:error');
+const logPerf = debug('pollinations:perf');
+const logTranslate = debug('pollinations:translate');
 
 export async function detectLanguage(promptAnyLanguage) {
   const controller = new AbortController();
@@ -45,18 +49,18 @@ export async function translateIfNecessary(promptAnyLanguage) {
       const result = await Promise.race([translatePromise, timeoutPromise]);
 
       if (result) {
-        console.log("translate input", promptAnyLanguage, "translateResult", result);
+        logTranslate("translate input", promptAnyLanguage, "translateResult", result);
         const translatedPrompt = result.translatedText;
         const translateEnd = Date.now();
-        console.log(`Translation duration: ${translateEnd - translateStart}ms`);
-        console.log("translated prompt to english ", promptAnyLanguage, "---", translatedPrompt);
+        logPerf(`Translation duration: ${translateEnd - translateStart}ms`);
+        logTranslate("translated prompt to english ", promptAnyLanguage, "---", translatedPrompt);
 
         return translatedPrompt + "\n\n" + promptAnyLanguage;
       } else {
         return promptAnyLanguage;
       }
     } catch (e) {
-      console.error("error translating", e.message);
+      logError("error translating", e.message);
       return promptAnyLanguage;
     }
   });
@@ -78,7 +82,7 @@ async function fetchDetection(promptAnyLanguage, signal) {
 
     return resultJson[0]?.language;
   } catch (e) {
-    console.error("error fetching detection", e.message);
+    logError("error fetching detection", e.message);
     return "en";
   }
 }
@@ -101,7 +105,7 @@ async function fetchTranslation(promptAnyLanguage, signal) {
 
     return resultJson;
   } catch (e) {
-    console.error("error fetching translation", e.message);
+    logError("error fetching translation", e.message);
     return null;
   }
 }
@@ -109,9 +113,9 @@ async function fetchTranslation(promptAnyLanguage, signal) {
 // Function to sanitize a string to ensure it contains valid UTF-8 characters
 export function sanitizeString(str) {
   // Encode the string as UTF-8 and decode it back to filter out invalid characters
-  console.log("sanitizeString", str);
-  const removedNonUtf8 = new TextDecoder().decode(new TextEncoder().encode(str));
-  console.log("removedNonUtf8", removedNonUtf8);
+  logTranslate("sanitizeString", str);
+  const removedNonUtf8 = str.replace(/[^\x00-\x7F]/g, "");
+  logTranslate("removedNonUtf8", removedNonUtf8);
   if (removedNonUtf8)
     return removedNonUtf8;
   return str;

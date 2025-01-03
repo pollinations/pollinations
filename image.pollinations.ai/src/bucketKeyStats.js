@@ -1,6 +1,9 @@
 import { writeFileSync } from 'fs';
 import Table from 'cli-table3';
+import debug from 'debug';
 import { generalImageQueue } from './generalImageQueue.js';
+
+const logStats = debug('pollinations:stats');
 
 // Initialize an object to track images requested and returned per bucket key
 export let bucketKeyStats = {};
@@ -34,8 +37,8 @@ export const printQueueStatus = () => {
   // const queueUtilization = ((queueSize + queuePending) / (2 * generalImageQueue.concurrency) * 100).toFixed(2);
   imageTable.push([requestTimestamps.length, imageReturnTimestamps.length, queueSize, queuePending, `N/I%`]);
 
-  console.log(batchTable.toString());
-  console.log(imageTable.toString());
+  logStats(batchTable.toString());
+  logStats(imageTable.toString());
 
   // construct simple string tables for file writing
   const fileBatchTableHeaders = batchHead.join(',');

@@ -18,9 +18,11 @@ describe('Prompt Integration Tests', () => {
       { seed: 123 }
     )
 
-    expect(result).to.be.a('string')
-    expect(result.length).to.be.greaterThan(originalPrompt.length)
-    expect(result).to.include(originalPrompt)
+    expect(result).to.be.an('object')
+    expect(result).to.have.property('prompt').that.is.a('string')
+    expect(result).to.have.property('wasPimped', true)
+    expect(result.prompt.length).to.be.greaterThan(originalPrompt.length)
+    expect(result.prompt).to.include(originalPrompt)
   })
 
   it('should handle non-English prompts', async () => {
@@ -37,8 +39,10 @@ describe('Prompt Integration Tests', () => {
       { seed: 123 }
     )
 
-    expect(result).to.be.a('string')
-    expect(result.length).to.be.greaterThan(originalPrompt.length)
+    expect(result).to.be.an('object')
+    expect(result).to.have.property('prompt').that.is.a('string')
+    expect(result).to.have.property('wasPimped', true)
+    expect(result.prompt.length).to.be.greaterThan(originalPrompt.length)
   })
 
   it('should respect enhance=false', async () => {
@@ -55,7 +59,9 @@ describe('Prompt Integration Tests', () => {
       { seed: 123, enhance: false }
     )
 
-    expect(result).to.equal(originalPrompt)
+    expect(result).to.be.an('object')
+    expect(result).to.have.property('prompt', originalPrompt)
+    expect(result).to.have.property('wasPimped', false)
   })
 
   it('should handle special characters and sanitization', async () => {
@@ -72,25 +78,12 @@ describe('Prompt Integration Tests', () => {
       { seed: 123 }
     )
 
-    expect(result).to.be.a('string')
-    expect(result).not.to.include('  ')  // Should not have double spaces
-    expect(result.length).to.be.greaterThan(originalPrompt.trim().length)
+    expect(result).to.be.an('object')
+    expect(result).to.have.property('prompt').that.is.a('string')
+    expect(result).to.have.property('wasPimped', true)
+    expect(result.prompt).not.to.include('  ')  // Should not have double spaces
+    expect(result.prompt.length).to.be.greaterThan(originalPrompt.trim().length)
   })
-
-  // TODO: Fix test after implementing proper language detection
-  // it('should detect language correctly', async () => {
-  //   const frenchText = "Une belle fleur rouge"
-  //   const englishText = "A beautiful red flower"
-  //   const germanText = "Ein schöner blauer Himmel"
-
-  //   const frenchResult = await detectLanguage(frenchText)
-  //   const englishResult = await detectLanguage(englishText)
-  //   const germanResult = await detectLanguage(germanText)
-
-  //   expect(frenchResult).to.equal('fr')
-  //   expect(englishResult).to.equal('en')
-  //   expect(germanResult).to.equal('de')
-  // })
 
   it('should handle special characters in prompts', async () => {
     const req = {
@@ -106,9 +99,11 @@ describe('Prompt Integration Tests', () => {
       { seed: 123 }
     )
 
-    expect(result).to.be.a('string')
-    expect(result).not.to.include('  ')  // Should not have double spaces
-    expect(result.length).to.be.greaterThan(originalPrompt.trim().length)
+    expect(result).to.be.an('object')
+    expect(result).to.have.property('prompt').that.is.a('string')
+    expect(result).to.have.property('wasPimped', true)
+    expect(result.prompt).not.to.include('  ')  // Should not have double spaces
+    expect(result.prompt.length).to.be.greaterThan(originalPrompt.trim().length)
   })
 
   it('should enhance prompts with GROQ service', async () => {

@@ -65,7 +65,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   }
 
   timingInfo.push({ step: 'End prompt normalization and translation', timestamp: Date.now() });
-  memoizedPrompts.set(`${originalPrompt}_seed_${seed}`, prompt);
+  memoizedPrompts.set(`${originalPrompt}_seed_${seed}`, { prompt, wasPimped: enhance });
 
-  return { prompt: prompt, wasPimped: enhance };
+  return { prompt, wasPimped: enhance };
 };

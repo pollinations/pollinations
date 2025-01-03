@@ -4,20 +4,11 @@ import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import debug from 'debug';
 
-const memCache = {};
-const diskCacheDir = '/tmp/cache';
+const MAX_CACHE_SIZE = 500000;
+const memCache = new Map(); // Using Map to maintain insertion order for LRU
 
 const logError = debug('pollinations:error');
 const logCache = debug('pollinations:cache');
-
-// Ensure the disk cache directory exists
-try {
-  if (!existsSync(diskCacheDir)) {
-    mkdirSync(diskCacheDir, { recursive: true });
-  }
-} catch (error) {
-  logError('Failed to create cache directory:', error);
-}
 
 // Function to generate a cache path
 const generateCachePath = (prompt, extraParams) => {
@@ -28,8 +19,8 @@ const generateCachePath = (prompt, extraParams) => {
   const sanitizedPrompt = prompt.replaceAll("/", "_").replaceAll(" ", "_")
     .replaceAll("?", "_").replaceAll("!", "_").replaceAll(":", "_")
     .replaceAll(";", "_").replaceAll("(", "_").replaceAll(")", "_")
-    .replaceAll("’", "_").replaceAll("“", "_").replaceAll("”", "_")
-    .replaceAll("‘", "_").replaceAll("…", "_").replaceAll("—", "_")
+    .replaceAll("'", "_").replaceAll('"', "_").replaceAll('"', "_")
+    .replaceAll("'", "_").replaceAll("...", "_").replaceAll("-", "_")
     .replaceAll("\"", "_").replaceAll("\\", "_").replaceAll("*", "_")
     .slice(0, 50)
     .toLowerCase();
@@ -41,13 +32,27 @@ const generateCachePath = (prompt, extraParams) => {
 // Function to check if an image is cached
 export const isImageCached = (prompt, extraParams) => {
   const cachePath = generateCachePath(prompt, extraParams);
-  return memCache[cachePath];
+  if (memCache.has(cachePath)) {
+    // Move to end of Map to mark as recently used
+    const value = memCache.get(cachePath);
+    memCache.delete(cachePath);
+    memCache.set(cachePath, value);
+    return true;
+  }
+  return false;
 };
 
 // Function to retrieve a cached image
 export const getCachedImage = (prompt = "", extraParams) => {
   const cachePath = generateCachePath(prompt, extraParams);
-  return memCache[cachePath] || null; // Or handle this case as per your application's logic
+  if (memCache.has(cachePath)) {
+    // Move to end of Map to mark as recently used
+    const value = memCache.get(cachePath);
+    memCache.delete(cachePath);
+    memCache.set(cachePath, value);
+    return value;
+  }
+  return null;
 };
 
 export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
@@ -55,18 +60,19 @@ export const cacheImage = async (prompt, extraParams, bufferPromiseCreator) => {
     return getCachedImage(prompt, extraParams);
   }
 
-  const bufferPromise = bufferPromiseCreator();
-
   const cachePath = generateCachePath(prompt, extraParams);
-  memCache[cachePath] = bufferPromise;
-  try {
-    const buffer = await bufferPromise;
-    return buffer;
-  } catch (e) {
-    logError('Error waiting for bufferPromise', e);
-    memCache[cachePath] = null;
-    throw e;
+  const buffer = await bufferPromiseCreator();
+
+  // If cache is at max size, remove oldest entry (first item in Map)
+  if (memCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = memCache.keys().next().value;
+    memCache.delete(firstKey);
+    logCache(`Removed oldest cache entry: ${firstKey}`);
   }
+
+  memCache.set(cachePath, buffer);
+  logCache(`Cached image: ${cachePath}`);
+  return buffer;
 };
 
 const memoize = (fn, getKey) => {

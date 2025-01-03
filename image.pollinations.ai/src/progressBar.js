@@ -136,7 +136,7 @@ export const createProgressTracker = () => {
     
     return {
         startRequest: (requestId) => {
-            progress.createBar(requestId, `Request ${requestId}`);
+            progress.createBar(requestId, `${requestId}`);
             return progress;
         }
     };

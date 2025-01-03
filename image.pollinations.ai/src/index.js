@@ -195,14 +195,14 @@ const checkCacheAndGenerate = async (req, res) => {
           progress.updateBar(requestId, progressPercent, 'Queueing', `Queue position: ${queuePosition}`);
           logApi("queueExisted", queueExisted, "for ip", ip, " sleeping a little", queueSize);
           
-          if (queueSize >= 40) {
+          if (queueSize >= 10) {
             progress.errorBar(requestId, 'Queue full');
             progress.stop();
             throw new Error("queue full");
           }
 
           progress.setQueued(queueSize);
-          await sleep(250 * queueSize);
+          await sleep(500 * queueSize);
         }
         
         progress.setProcessing();

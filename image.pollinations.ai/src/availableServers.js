@@ -34,7 +34,7 @@ setInterval(() => {
         }));
         console.table(serverQueueInfo);
     }
-}, 5000);
+}, 10000);
 
 /**
  * Returns the total number of jobs across all FLUX server queues

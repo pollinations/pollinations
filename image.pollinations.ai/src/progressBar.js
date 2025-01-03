@@ -5,15 +5,41 @@ import debug from 'debug';
 const logProgress = debug('pollinations:progress');
 const logTime = debug('pollinations:time');
 
+// Define a set of distinct colors for the progress bars
+const progressColors = [
+    colors.cyan,
+    colors.green,
+    colors.yellow,
+    colors.blue,
+    colors.magenta,
+    colors.red
+];
+
+// Simple hash function to get consistent color for each ID
+function getColorForId(id) {
+    const hash = id.split('').reduce((acc, char) => {
+        return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+    return progressColors[Math.abs(hash) % progressColors.length];
+}
+
 class ProgressManager {
     constructor() {
         this.multibar = new cliProgress.MultiBar({
             clearOnComplete: false,
             hideCursor: true,
-            format: ' {bar} | {title} | {step}: {status}',
+            format: (options, params, payload) => {
+                const color = getColorForId(payload.id);
+                const completedLength = Math.round(params.progress / 100 * options.barsize);
+                const bar = options.barCompleteChar.repeat(completedLength) + 
+                           options.barIncompleteChar.repeat(options.barsize - completedLength);
+                return color(` ${bar} | ${payload.title} | ${payload.step}: ${payload.status}\n`);
+            },
             barCompleteChar: '█',
             barIncompleteChar: '░',
-            barsize: 20
+            barsize: 20,
+            noTTYOutput: true,
+            notTTYSchedule: 100
         }, cliProgress.Presets.shades_classic);
 
         this.bars = new Map();
@@ -22,6 +48,7 @@ class ProgressManager {
 
     createBar(id, title) {
         const bar = this.multibar.create(100, 0, {
+            id,
             title,
             step: 'Starting',
             status: 'Initializing...'

@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "node src/index.js"
   },
   "keywords": [],
@@ -48,6 +50,9 @@
     "urldecode": "^1.0.1"
   },
   "devDependencies": {
-    "esbuild": "^0.15.18"
+    "esbuild": "^0.15.18",
+    "supertest": "^6.3.3",
+    "vitest": "^1.1.0",
+    "@vitest/coverage-v8": "^1.1.0"
   }
 }

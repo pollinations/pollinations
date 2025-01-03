@@ -161,19 +161,3 @@ export async function addPollinationsLogoWithImagemagick(buffer, logoPath, safeP
         }
     });
 }
-
-/**
- * Checks if the image is NSFW.
- * @param {Buffer} buffer - The image buffer to check.
- * @returns {Promise<Object>} - The result of the NSFW check.
- */
-export const nsfwCheck = async (buffer) => {
-    const form = new FormData();
-    form.append('file', buffer, { filename: 'image.jpg' });
-    const nsfwCheckStartTime = Date.now();
-    const res = await fetch('http://localhost:10000/check', { method: 'POST', body: form });
-    const nsfwCheckEndTime = Date.now();
-    logPerf(`NSFW check duration: ${nsfwCheckEndTime - nsfwCheckStartTime}ms`);
-    const json = await res.json();
-    return json;
-};

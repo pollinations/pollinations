@@ -49,50 +49,54 @@ export function useGit() {
       }
 
       fileData.current = {};
-      await git.clone({
-        fs,
-        http,
-        dir: webcontainer.workdir,
-        url,
-        depth: 1,
-        singleBranch: true,
-        corsProxy: 'https://cors.isomorphic-git.org',
-        onAuth: (url) => {
-          // let domain=url.split("/")[2]
 
-          let auth = lookupSavedPassword(url);
+      try {
+        await git.clone({
+          fs,
+          http,
+          dir: webcontainer.workdir,
+          url,
+          depth: 1,
+          singleBranch: true,
+          corsProxy: '/api/git-proxy',
+          onAuth: (url) => {
+            let auth = lookupSavedPassword(url);
 
-          if (auth) {
-            return auth;
-          }
+            if (auth) {
+              return auth;
+            }
 
-          if (confirm('This repo is password protected. Ready to enter a username & password?')) {
-            auth = {
-              username: prompt('Enter username'),
-              password: prompt('Enter password'),
-            };
-            return auth;
-          } else {
-            return { cancel: true };
-          }
-        },
-        onAuthFailure: (url, _auth) => {
-          toast.error(`Error Authenticating with ${url.split('/')[2]}`);
-        },
-        onAuthSuccess: (url, auth) => {
-          saveGitAuth(url, auth);
-        },
-      });
+            if (confirm('This repo is password protected. Ready to enter a username & password?')) {
+              auth = {
+                username: prompt('Enter username'),
+                password: prompt('Enter password'),
+              };
+              return auth;
+            } else {
+              return { cancel: true };
+            }
+          },
+          onAuthFailure: (url, _auth) => {
+            toast.error(`Error Authenticating with ${url.split('/')[2]}`);
+          },
+          onAuthSuccess: (url, auth) => {
+            saveGitAuth(url, auth);
+          },
+        });
 
-      const data: Record<string, { data: any; encoding?: string }> = {};
+        const data: Record<string, { data: any; encoding?: string }> = {};
 
-      for (const [key, value] of Object.entries(fileData.current)) {
-        data[key] = value;
+        for (const [key, value] of Object.entries(fileData.current)) {
+          data[key] = value;
+        }
+
+        return { workdir: webcontainer.workdir, data };
+      } catch (error) {
+        console.error('Git clone error:', error);
+        throw error;
       }
-
-      return { workdir: webcontainer.workdir, data };
     },
-    [webcontainer],
+    [webcontainer, fs, ready],
   );
 
   return { ready, gitClone };
@@ -104,55 +108,86 @@ const getFs = (
 ) => ({
   promises: {
     readFile: async (path: string, options: any) => {
-      const encoding = options.encoding;
+      const encoding = options?.encoding;
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('readFile', relativePath, encoding);
 
-      return await webcontainer.fs.readFile(relativePath, encoding);
+      try {
+        const result = await webcontainer.fs.readFile(relativePath, encoding);
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     writeFile: async (path: string, data: any, options: any) => {
       const encoding = options.encoding;
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('writeFile', { relativePath, data, encoding });
 
       if (record.current) {
         record.current[relativePath] = { data, encoding };
       }
 
-      return await webcontainer.fs.writeFile(relativePath, data, { ...options, encoding });
+      try {
+        const result = await webcontainer.fs.writeFile(relativePath, data, { ...options, encoding });
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     mkdir: async (path: string, options: any) => {
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('mkdir', relativePath, options);
 
-      return await webcontainer.fs.mkdir(relativePath, { ...options, recursive: true });
+      try {
+        const result = await webcontainer.fs.mkdir(relativePath, { ...options, recursive: true });
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     readdir: async (path: string, options: any) => {
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('readdir', relativePath, options);
 
-      return await webcontainer.fs.readdir(relativePath, options);
+      try {
+        const result = await webcontainer.fs.readdir(relativePath, options);
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     rm: async (path: string, options: any) => {
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('rm', relativePath, options);
 
-      return await webcontainer.fs.rm(relativePath, { ...(options || {}) });
+      try {
+        const result = await webcontainer.fs.rm(relativePath, { ...(options || {}) });
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
     rmdir: async (path: string, options: any) => {
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      console.log('rmdir', relativePath, options);
 
-      return await webcontainer.fs.rm(relativePath, { recursive: true, ...options });
+      try {
+        const result = await webcontainer.fs.rm(relativePath, { recursive: true, ...options });
+
+        return result;
+      } catch (error) {
+        throw error;
+      }
     },
-
-    // Mock implementations for missing functions
     unlink: async (path: string) => {
-      // unlink is just removing a single file
       const relativePath = pathUtils.relative(webcontainer.workdir, path);
-      return await webcontainer.fs.rm(relativePath, { recursive: false });
-    },
 
+      try {
+        return await webcontainer.fs.rm(relativePath, { recursive: false });
+      } catch (error) {
+        throw error;
+      }
+    },
     stat: async (path: string) => {
       try {
         const relativePath = pathUtils.relative(webcontainer.workdir, path);
@@ -185,23 +220,12 @@ const getFs = (
         throw err;
       }
     },
-
     lstat: async (path: string) => {
-      /*
-       * For basic usage, lstat can return the same as stat
-       * since we're not handling symbolic links
-       */
       return await getFs(webcontainer, record).promises.stat(path);
     },
-
     readlink: async (path: string) => {
-      /*
-       * Since WebContainer doesn't support symlinks,
-       * we'll throw a "not a symbolic link" error
-       */
       throw new Error(`EINVAL: invalid argument, readlink '${path}'`);
     },
-
     symlink: async (target: string, path: string) => {
       /*
        * Since WebContainer doesn't support symlinks,

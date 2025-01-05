@@ -31,5 +31,5 @@ export async function generateTextOpenRouter(messages, options) {
 
     const data = await response.json();
     const responseMessage = data.choices[0].message;
-    return responseMessage;
+    return responseMessage.content;
 }

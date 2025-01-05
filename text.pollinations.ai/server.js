@@ -20,6 +20,7 @@ import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
+import { generateDeepseek } from './generateDeepseek.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -335,7 +336,7 @@ async function generateTextBasedOnModel(messages, options) {
             case 'openai':
                 return await generateText(messages, options);
             case 'deepseek':
-                return await generateTextOpenRouter(messages, options);
+                return await generateDeepseek(messages, options);
             case 'mistral':
                 return await generateTextMistral(messages, options);
             case 'llama' || 'qwen' || 'qwen-coder':

@@ -3,11 +3,11 @@ import fetch from 'node-fetch';
 
 dotenv.config();
 
-export async function generateTextOpenRouter(messages, options) {
+export async function generateDeepseek(messages, options) {
     const startTime = Date.now();
     const requestId = Math.random().toString(36).substring(7);
     
-    console.log(`[${requestId}] Starting text generation request`, {
+    console.log(`[${requestId}] Starting DeepSeek generation request`, {
         timestamp: new Date().toISOString(),
         messageCount: messages.length,
         options
@@ -15,37 +15,31 @@ export async function generateTextOpenRouter(messages, options) {
 
     try {
         const requestBody = {
-            model: "deepseek/deepseek-chat",
+            model: "deepseek-chat",
             messages,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             max_tokens: 4096,
-            // temperature: options.temperature,
-            // top_p: options.top_p,
-            // seed: options.seed,
+            stream: false,
             tools: options.tools,
             tool_choice: options.tool_choice
         };
 
-        console.log(`[${requestId}] Sending request to OpenRouter API`, {
+        console.log(`[${requestId}] Sending request to DeepSeek API`, {
             timestamp: new Date().toISOString(),
             model: requestBody.model,
-            maxTokens: requestBody.max_tokens,
-            temperature: requestBody.temperature
+            maxTokens: requestBody.max_tokens
         });
-        console.log('messages', messages);
-        console.log('API Key', process.env.OPENROUTER_API_KEY);
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+
+        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "HTTP-Referer": "https://pollinations.ai",
-                "X-Title": "Pollinations.AI",
+                "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(requestBody)
         });
 
-        console.log(`[${requestId}] Received response from OpenRouter API`, {
+        console.log(`[${requestId}] Received response from DeepSeek API`, {
             timestamp: new Date().toISOString(),
             status: response.status,
             statusText: response.statusText,
@@ -54,13 +48,13 @@ export async function generateTextOpenRouter(messages, options) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[${requestId}] OpenRouter API error`, {
+            console.error(`[${requestId}] DeepSeek API error`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
                 error: errorText
             });
-            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`DeepSeek API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
 
         const data = await response.json();

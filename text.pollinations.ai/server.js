@@ -100,22 +100,18 @@ app.get('/feed', (req, res) => {
     });
 });
 
-// Custom error handling middleware
-class APIError extends Error {
-    constructor(message, statusCode = 500) {
-        super(message);
-        this.statusCode = statusCode;
-        this.name = 'APIError';
-    }
-}
-
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
     const ip = getIp(req);
     const queue = getQueue(ip);
 
     if (queue.size >= 300) {
-        throw new APIError('Too many requests in queue. Please try again later.', 429);
+        return res.status(429).json({
+            error: {
+                message: 'Too many requests in queue. Please try again later.',
+                status: 429
+            }
+        });
     }
 
     const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
@@ -131,10 +127,6 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
-        // if (!cacheKeyData.messages || !Array.isArray(cacheKeyData.messages)) {
-        //     throw new APIError('Invalid messages format. Messages must be an array.', 400);
-        // }
-        
         // Send analytics event for text generation request
         sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
 
@@ -150,7 +142,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
         } catch (error) {
             console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
             delete cache[cacheKey];
-            throw new APIError(error.message, 500);
+            throw error;
         }
 
         console.log(`Generated response for key: ${cacheKey}`);
@@ -160,21 +152,12 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
         console.error(`Error handling request for key: ${cacheKey}`, error);
         console.error(error.stack);
         
-        if (error instanceof APIError) {
-            res.status(error.statusCode).json({
-                error: {
-                    message: error.message,
-                    status: error.statusCode
-                }
-            });
-        } else {
-            res.status(500).json({
-                error: {
-                    message: error.message || 'An unexpected error occurred while processing your request.',
-                    status: 500
-                }
-            });
-        }
+        res.status(500).json({
+            error: {
+                message: error.message || 'An unexpected error occurred while processing your request.',
+                status: 500
+            }
+        });
         await sleep(3000);
     }
 }
@@ -425,34 +408,6 @@ const generateTextWithMistralFallback = async (messages, options) => {
         return { response: await generateTextMistral(messages, options), fallback: true };
     }
 }
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    
-    // Default error message and status
-    let statusCode = err.statusCode || 500;
-    let message = err.message || 'An unexpected error occurred';
-
-    // Handle specific error types
-    if (err.name === 'RateLimitError') {
-        statusCode = 429;
-        message = 'Rate limit exceeded. Please try again later.';
-    } else if (err.name === 'ValidationError') {
-        statusCode = 400;
-        message = err.message || 'Invalid request parameters';
-    } else if (err.name === 'AuthenticationError') {
-        statusCode = 401;
-        message = 'Authentication failed';
-    }
-
-    res.status(statusCode).json({
-        error: {
-            message,
-            status: statusCode
-        }
-    });
-});
 
 app.use((req, res, next) => {
     console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);

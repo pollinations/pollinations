@@ -45,13 +45,14 @@ ENV WRANGLER_SEND_METRICS=false \
     TOGETHER_API_BASE_URL=${TOGETHER_API_BASE_URL} \
     AWS_BEDROCK_CONFIG=${AWS_BEDROCK_CONFIG} \
     VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
-    DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX}
+    DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX}\
+    RUNNING_IN_DOCKER=true
 
 # Pre-configure wrangler to disable metrics
 RUN mkdir -p /root/.config/.wrangler && \
     echo '{"enabled":false}' > /root/.config/.wrangler/metrics.json
 
-RUN npm run build
+RUN pnpm run build
 
 CMD [ "pnpm", "run", "dockerstart"]
 
@@ -84,7 +85,8 @@ ENV GROQ_API_KEY=${GROQ_API_KEY} \
     TOGETHER_API_BASE_URL=${TOGETHER_API_BASE_URL} \
     AWS_BEDROCK_CONFIG=${AWS_BEDROCK_CONFIG} \
     VITE_LOG_LEVEL=${VITE_LOG_LEVEL} \
-    DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX}
+    DEFAULT_NUM_CTX=${DEFAULT_NUM_CTX}\
+    RUNNING_IN_DOCKER=true
 
 RUN mkdir -p ${WORKDIR}/run
 CMD pnpm run dev --host

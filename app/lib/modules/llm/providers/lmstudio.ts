@@ -3,6 +3,7 @@ import type { ModelInfo } from '~/lib/modules/llm/types';
 import type { IProviderSetting } from '~/types/model';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModelV1 } from 'ai';
+import { logger } from '~/utils/logger';
 
 export default class LMStudioProvider extends BaseProvider {
   name = 'LMStudio';
@@ -22,7 +23,7 @@ export default class LMStudioProvider extends BaseProvider {
     settings?: IProviderSetting,
     serverEnv: Record<string, string> = {},
   ): Promise<ModelInfo[]> {
-    const { baseUrl } = this.getProviderBaseUrlAndKey({
+    let { baseUrl } = this.getProviderBaseUrlAndKey({
       apiKeys,
       providerSettings: settings,
       serverEnv,
@@ -31,7 +32,18 @@ export default class LMStudioProvider extends BaseProvider {
     });
 
     if (!baseUrl) {
-      return [];
+      throw new Error('No baseUrl found for LMStudio provider');
+    }
+
+    if (typeof window === 'undefined') {
+      /*
+       * Running in Server
+       * Backend: Check if we're running in Docker
+       */
+      const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+
+      baseUrl = isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
+      baseUrl = isDocker ? baseUrl.replace('127.0.0.1', 'host.docker.internal') : baseUrl;
     }
 
     const response = await fetch(`${baseUrl}/v1/models`);
@@ -51,13 +63,26 @@ export default class LMStudioProvider extends BaseProvider {
     providerSettings?: Record<string, IProviderSetting>;
   }) => LanguageModelV1 = (options) => {
     const { apiKeys, providerSettings, serverEnv, model } = options;
-    const { baseUrl } = this.getProviderBaseUrlAndKey({
+    let { baseUrl } = this.getProviderBaseUrlAndKey({
       apiKeys,
-      providerSettings,
+      providerSettings: providerSettings?.[this.name],
       serverEnv: serverEnv as any,
-      defaultBaseUrlKey: 'OLLAMA_API_BASE_URL',
+      defaultBaseUrlKey: 'LMSTUDIO_API_BASE_URL',
       defaultApiTokenKey: '',
     });
+
+    if (!baseUrl) {
+      throw new Error('No baseUrl found for LMStudio provider');
+    }
+
+    if (typeof window === 'undefined') {
+      const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+      baseUrl = isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
+      baseUrl = isDocker ? baseUrl.replace('127.0.0.1', 'host.docker.internal') : baseUrl;
+    }
+
+    logger.debug('LMStudio Base Url used: ', baseUrl);
+
     const lmstudio = createOpenAI({
       baseUrl: `${baseUrl}/v1`,
       apiKey: '',

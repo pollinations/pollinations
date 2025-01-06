@@ -10,6 +10,9 @@ on:
       - v*
       - "*"
 
+permissions:
+  packages: write
+
 env:
   REGISTRY: ghcr.io
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}

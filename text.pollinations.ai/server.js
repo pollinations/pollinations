@@ -21,6 +21,7 @@ import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
+import { sendToAnalytics } from './sendToAnalytics.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -130,9 +131,12 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
 
-        if (!cacheKeyData.messages || !Array.isArray(cacheKeyData.messages)) {
-            throw new APIError('Invalid messages format. Messages must be an array.', 400);
-        }
+        // if (!cacheKeyData.messages || !Array.isArray(cacheKeyData.messages)) {
+        //     throw new APIError('Invalid messages format. Messages must be an array.', 400);
+        // }
+        
+        // Send analytics event for text generation request
+        sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
 
         const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
 
@@ -276,14 +280,14 @@ app.post('/openai*', async (req, res) => {
         return res.status(400).send('Invalid messages array');
     }
 
-    const cacheKeyData = getRequestData(req, true);
-    const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
+    const requestParams = getRequestData(req, true);
+    const cacheKey = createHashKey(JSON.stringify(requestParams));
     const ip = getIp(req);
     const queue = getQueue(ip);
     const isStream = req.body.stream;
     const run = async () => {
 
-        if (cacheKeyData.cache && cache[cacheKey]) {
+        if (requestParams.cache && cache[cacheKey]) {
             const cachedResponse = await cache[cacheKey];
             if (cachedResponse instanceof Error) {
                 throw cachedResponse; // Re-throw the cached error
@@ -291,10 +295,13 @@ app.post('/openai*', async (req, res) => {
             return res.json(cachedResponse);
         }
 
-        console.log("endpoint: /openai", cacheKeyData);
+        console.log("endpoint: /openai", requestParams);
 
         try {
-            const response = await generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
+            // Send analytics event for text generation request
+            sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
+
+            const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
             let choices;
             if (isStream) {
                 res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
@@ -305,16 +312,24 @@ app.post('/openai*', async (req, res) => {
                 res.end();
                 return;
             } else {
-                choices = [{ "message": { "content": response, "role": "assistant" }, "finish_reason": "stop", "index": 0 }]
+                choices = [{ 
+                    "message": { 
+                        "content": response, 
+                        "role": "assistant" 
+                    }, 
+                    "finish_reason": "stop", 
+                    "index": 0,
+                    "logprobs": null
+                }];
             }
             const result = {
                 "created": Date.now(),
                 "id": crypto.randomUUID(),
-                "model": cacheKeyData.model,
+                "model": requestParams.model,
                 "object": isStream ? "chat.completion.chunk" : "chat.completion",
                 "choices": choices
             };
-            if (cacheKeyData.cache) {
+            if (requestParams.cache) {
                 cache[cacheKey] = result;
             }
             console.log("openai format result", JSON.stringify(result, null, 2));
@@ -328,12 +343,12 @@ app.post('/openai*', async (req, res) => {
     };
 
     // if cache is false, run the request immediately
-    if (cacheKeyData.cache) {
+    if (requestParams.cache) {
         await queue.add(run);
     } else {
         await run();
     }
-});
+})
 
 const safeDecodeURIComponent = (str) => {
     try {
@@ -341,7 +356,7 @@ const safeDecodeURIComponent = (str) => {
     } catch (error) {
         return str;
     }
-}
+};
 
 // Helper function to create a hash for the cache key
 function createHashKey(data) {

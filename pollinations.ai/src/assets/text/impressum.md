@@ -1,18 +1,16 @@
 &nbsp;
 
-### Impressum
+# Impressum
 
-&nbsp;
+### Angaben gemäß § 5 TMG
 
-Angaben gem. § 5 TMG:
-
-Pollinations GmbH  
+THOT-Labs GmbH  
 Köpenicker Chaussee, 26  
 10317  
 Berlin, Germany
 
 E-Mail:  
-help@pollinations.ai
+help@thot-labs.ai
 
 Haftungsausschluss – Disclaimer:
 

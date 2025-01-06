@@ -46,18 +46,18 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           <span className="mobile-break">or at </span>
           <StyledLink
-            href="mailto:hello@pollinations.ai"
+            href="mailto:hello@thot-labs.ai"
             onClick={(e) => {
               handleLinkClick(e);
               alert("Copied");
             }}
             style={{ userSelect: "text" }}
           >
-            <b>hello@pollinations.ai</b>
+            <b>hello@thot-labs.ai</b>
           </StyledLink>
         </p>
         <p style={{ userSelect: "none" }}>
-          <StyledLink href="https://github.com/pollinations/pollinations/#readme">
+          <StyledLink href="https://github.com/thot-labs/thot-labs/#readme">
             <b>README</b>
             <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
           </StyledLink>{" "}

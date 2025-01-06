@@ -1,9 +1,8 @@
-
 &nbsp;
 
 ##### About
 
-Pollinations is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
+THOT-Labs is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.
 
 We offer cutting-edge AI models that are constantly being updated. Every creation is unique and free to use.
 
@@ -18,9 +17,9 @@ The need to design digital worlds is rising fast, but the power and skills to ac
 
 ##### Integrate
 
-Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the **Pollinations’ API** and allow your users to create media with personalized looks and vibes that match your unique style.
+Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the **THOT-Labs API** and allow your users to create media with personalized looks and vibes that match your unique style.
 
-To learn more please get in touch at hello@pollinations.ai.
+To learn more please get in touch at hello@thot-labs.ai.
 
 &nbsp;
 
@@ -33,4 +32,3 @@ We are a  deep-tech company based in Berlin. Our team of machine-learning specia
 ---
 
 [Impressum](/impressum)
-

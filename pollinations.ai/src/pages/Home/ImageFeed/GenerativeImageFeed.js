@@ -230,7 +230,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               height={isMobile ? 100 : 100}
             ></ImageURLHeading>*/}
             <ImageURLHeading
-              customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate colorful elements related to pollinators and pollens, insects and plants into the design of the font. Make it very colorful with vibrant hues and gradients.`}
+              customPrompt={`an image with the text "Integrate" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in white, set against a solid black background, creating a striking and bold visual contrast. Incorporate elements related to technology, digital circuitry, such as chips, circuits, and other tech forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Make it very colorful with vibrant hues and gradients.`}
               className={classes.scaledImageURLHeading}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}

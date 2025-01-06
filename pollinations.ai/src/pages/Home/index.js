@@ -27,7 +27,7 @@ export default function Home() {
         <TopBand />
         <Discord />
         <TopBand />
-        <CompaniesSection />
+        {/* <CompaniesSection /> */}
         <TopBand />
       </Style>
     </ImageContext.Provider>

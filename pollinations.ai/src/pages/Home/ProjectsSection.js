@@ -410,10 +410,10 @@ const ProjectsSection = () => {
             Get in touch
           </ImageURLHeading>
           <LinkStyle
-            href="mailto:hello@pollinations.ai"
+            href="mailto:hello@thot-labs.com"
             style={{ color: Colors.lime, fontSize: "1em" }}
           >
-            hello@pollinations.ai
+            hello@thot-labs.com
           </LinkStyle>
         </Typography>
       </div>

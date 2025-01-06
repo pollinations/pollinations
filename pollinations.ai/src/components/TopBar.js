@@ -13,9 +13,9 @@ const TopBar = () => {
     <TopContainer>
       {isMobile ? (
         <MobileNavContainer>
-          <CenteredSocialLinks>
+          {/* <CenteredSocialLinks>
             <SocialLinks medium gap="1em" invert />
-          </CenteredSocialLinks>
+          </CenteredSocialLinks> */}
           <LogoContainer isMobile={isMobile}>
             <NavLink to="/">
               <ImageURLHeading
@@ -49,9 +49,9 @@ const TopBar = () => {
               <AsciiArtGenerator />
             </AsciiArtContainer>
           </LogoContainer>
-          <NavBarStyle>
+          {/* <NavBarStyle>
             <SocialLinks medium gap="1em" invert />
-          </NavBarStyle>
+          </NavBarStyle> */}
         </>
       )}
     </TopContainer>

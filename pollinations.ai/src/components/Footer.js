@@ -30,9 +30,9 @@ const Footer = () => {
         <AsciiArtContainer>
           <AsciiArtGenerator />
         </AsciiArtContainer>
-        <SocialContainer>
+        {/* <SocialContainer>
           <SocialLinks medium gap="1em" invert />
-        </SocialContainer>
+        </SocialContainer> */}
         <LogoContainer>
           <NavLink to="/">
             <ImageURLHeading

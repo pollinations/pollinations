@@ -392,7 +392,7 @@ async function generateTextBasedOnModel(messages, options) {
             case 'p1':
                 return await generateTextOptiLLM(messages, options);
             default:
-                const result = await generateTextWithMistralFallback(messages, options);
+                const result = await generateText(messages, options);
                 return result.response;
         }
     } catch (error) {

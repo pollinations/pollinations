@@ -24,7 +24,7 @@ const TopBar = () => {
                 height={100}
                 style={{ userSelect: "none", maxWidth: "100%" }} // Added to prevent selection and ensure max width
               >
-                Pollinations
+                THOT
               </ImageURLHeading>
             </NavLink>
             <AsciiArtContainer>
@@ -42,7 +42,7 @@ const TopBar = () => {
                 height={100}
                 style={{ userSelect: "none", maxWidth: "100%" }} // Added to prevent selection and ensure max width
               >
-                Pollinations
+                THOT
               </ImageURLHeading>
             </NavLink>
             <AsciiArtContainer width={500} height={100}>

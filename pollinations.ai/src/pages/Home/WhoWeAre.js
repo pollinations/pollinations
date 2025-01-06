@@ -1,7 +1,6 @@
 import styled from "@emotion/styled"
 import React from "react"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../../styles/global"
-import DescriptionIcon from "@material-ui/icons/Description"
 import { keyframes } from "@emotion/react"
 import ReactMarkdown from 'react-markdown';
 import Box from '@material-ui/core/Box';
@@ -41,10 +40,6 @@ const WhoWeAreContent = () => {
         <p style={{ userSelect: "none" }}>
           <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
           <br />
-          <StyledLink href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">
-            <b>Discord</b>
-          </StyledLink>{" "}
-          <span className="mobile-break">or at </span>
           <StyledLink
             href="mailto:hello@thot-labs.ai"
             onClick={(e) => {
@@ -55,13 +50,6 @@ const WhoWeAreContent = () => {
           >
             <b>hello@thot-labs.ai</b>
           </StyledLink>
-        </p>
-        <p style={{ userSelect: "none" }}>
-          <StyledLink href="https://github.com/thot-labs/thot-labs/#readme">
-            <b>README</b>
-            <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-          </StyledLink>{" "}
-          to learn more.
         </p>
       </ContactWrapper>
     </Box>

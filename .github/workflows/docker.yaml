@@ -75,18 +75,6 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ steps.string.outputs.lowercase }}:${{ steps.meta.outputs.version }}
 
-
-      - name: Make package public
-        run: |
-          gh api \
-            --method PATCH \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/user/packages/container/${{ github.event.repository.name }}/visibility" \
-            -f visibility='public'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Dump context
         if: always()
         uses: crazy-max/ghaction-dump-context@v2

@@ -1,48 +1,72 @@
 import 'dotenv/config';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import debug from 'debug';
 
 dotenv.config();
 
 const measurementId = process.env.GA_MEASUREMENT_ID;
 const apiSecret = process.env.GA_API_SECRET;
 
+const logError = debug('pollinations:error');
+const logAnalytics = debug('pollinations:analytics');
+
 function getClientId(request) {
-    // Try to get existing GA client ID from cookies
-    const cookies = request.headers?.cookie?.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-    }, {});
-    
-    return cookies?._ga?.split('.')?.[2] || crypto.randomUUID();
+    const clientIP = request.headers?.["x-real-ip"] || 
+                    request.headers?.['x-forwarded-for'] || 
+                    request?.connection?.remoteAddress;
+    return clientIP || 'unknown';
 }
 
 export async function sendToAnalytics(request, name, metadata) {
     try {
-        if (!request || !name || !measurementId || !apiSecret) {
-            console.log('Missing required parameters');
+        if (!request || !name) {
+            logError('Missing required parameters');
+            return;
+        }
+        
+        if (!measurementId || !apiSecret) {
+            logError('Missing analytics credentials');
             return;
         }
 
         const clientId = getClientId(request);
-        console.log('Analytics client ID:', clientId);
+        const referrer = request.headers?.referer;
+        const userAgent = request.headers?.['user-agent'];
+        const language = request.headers?.['accept-language'];
+
+        const analyticsData = {
+            client_id: clientId,
+            events: [{
+                name: name,
+                params: {
+                    referrer,
+                    userAgent,
+                    language,
+                    ...metadata
+                }
+            }]
+        };
+
+        logAnalytics('Sending analytics payload:', JSON.stringify(analyticsData, null, 2));
+        logAnalytics('Using measurement ID:', measurementId);
 
         const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
             method: "POST",
-            body: JSON.stringify({
-                client_id: clientId,
-                events: [{
-                    name: name,
-                    params: metadata || {}
-                }]
-            })
+            body: JSON.stringify(analyticsData)
         });
 
-        console.log('Analytics status:', response.status);
-        return response.ok;
+        const responseText = await response.text();
+        logAnalytics('Analytics response status:', response.status);
+        logAnalytics('Analytics response body:', responseText);
+
+        if (!response.ok) {
+            logError('Analytics request failed:', response.status, responseText);
+        }
+
+        return responseText;
     } catch (error) {
-        console.error('Analytics error:', error);
-        return false;
+        logError('Error sending analytics:', error);
+        return;
     }
 }

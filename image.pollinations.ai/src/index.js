@@ -140,6 +140,17 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     // Handle errors gracefully in progress bars
     progress.errorBar(requestId, 'Generation failed');
     progress.stop();
+    
+    // Log detailed error information
+    console.error('Image generation failed:', {
+      error: error.message,
+      stack: error.stack,
+      requestId,
+      prompt: originalPrompt,
+      params: safeParams,
+      referrer
+    });
+    
     throw error;
   }
 };

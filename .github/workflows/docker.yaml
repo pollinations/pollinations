@@ -65,6 +65,7 @@ jobs:
           context: .
           file: ./Dockerfile
           target: ${{ env.BUILD_TARGET }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

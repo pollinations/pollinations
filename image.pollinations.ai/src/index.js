@@ -213,7 +213,7 @@ const checkCacheAndGenerate = async (req, res) => {
           }
 
           progress.setQueued(queueSize);
-          await sleep(500 * queueSize);
+          await sleep(500);
         }
         
         progress.setProcessing();

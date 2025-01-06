@@ -359,7 +359,7 @@ function createHashKey(data) {
 // Map to store connected clients
 const connectedClients = new Map();
 
-// Modify generateTextBasedOnModel to broadcast responses
+// Modified generateTextBasedOnModel to store the response in a variable and broadcast it to all connected clients before returning it
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
     log('Using model:', model);
@@ -368,44 +368,64 @@ async function generateTextBasedOnModel(messages, options) {
         // Check if the request is from Roblox using the referer from options
         const isRoblox = options.isRobloxReferrer || options.referer?.toLowerCase().includes('roblox');
         
+        let response;
         switch (model) {
             case 'openai':
-                return await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
+                response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
+                break;
             case 'deepseek':
-                return await generateDeepseek(messages, options);
+                response = await generateDeepseek(messages, options);
+                break;
             case 'mistral':
-                return await generateTextMistral(messages, options);
+                response = await generateTextMistral(messages, options);
+                break;
             case 'llama' || 'qwen' || 'qwen-coder':
-                return await generateTextHuggingface(messages, { ...options, model });
+                response = await generateTextHuggingface(messages, { ...options, model });
+                break;
             case 'karma':
-                return await generateTextKarma(messages, options);
+                response = await generateTextKarma(messages, options);
+                break;
             case 'claude':
-                return await generateTextClaude(messages, options);
+                response = await generateTextClaude(messages, options);
+                break;
             case 'sur':
-                return await surOpenai(messages, options);
+                response = await surOpenai(messages, options);
+                break;
             case 'sur-mistral':
-                return await surMistral(messages, options);
-            // case 'command-r':
-            //     return await generateTextCommandR(messages, options);
+                response = await surMistral(messages, options);
+                break;
             case 'unity':
-                return await unityMistralLarge(messages, options);
+                response = await unityMistralLarge(messages, options);
+                break;
             case 'midijourney':
-                return await midijourney(messages, options);
+                response = await midijourney(messages, options);
+                break;
             case 'rtist':
-                return await rtist(messages, options);
-            case 'searchgpt': // New model for web search
-                return await generateText(messages, options, true);
+                response = await rtist(messages, options);
+                break;
+            case 'searchgpt':
+                response = await generateText(messages, options, true);
+                break;
             case 'evil':
-                return await evilCommandR(messages, options);
+                response = await evilCommandR(messages, options);
+                break;
             case 'p1':
-                return await generateTextOptiLLM(messages, options);
+                response = await generateTextOptiLLM(messages, options);
+                break;
             default:
-                const result = await generateText(messages, options);
-                return result.response;
+                response = await generateText(messages, options);
+                response = response.response;
         }
+
+        // Broadcast the response to all connected clients
+        for (const [_, handleNewResponse] of connectedClients) {
+            handleNewResponse(response, { messages, model, ...options });
+        }
+
+        return response;
     } catch (error) {
         errorLog('Error generating text', error.message);
-        console.error(error.stack); // Print stack trace
+        console.error(error.stack);
         throw error;
     }
 }

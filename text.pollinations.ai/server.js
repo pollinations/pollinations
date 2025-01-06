@@ -19,6 +19,8 @@ import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
+import { generateTextOpenRouter } from './generateTextOpenRouter.js';
+import { generateDeepseek } from './generateDeepseek.js';
 const app = express();
 
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -34,15 +36,15 @@ let cache = {};
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
-const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
+// const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
 // Create custom instance of Midijourney
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextClaude);
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
 // Create custom instance of Rtist
 const rtist = wrapModelWithContext(rtistPrompt, generateText);
 // Create custom instance of Evil backed by Command-R
-const evilCommandR = wrapModelWithContext(evilPrompt, generateTextCommandR);
+const evilCommandR = wrapModelWithContext(evilPrompt, generateTextMistral);
 
 app.set('trust proxy', true);
 
@@ -136,12 +138,12 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         console.log(`Generated response for key: ${cacheKey}`);
         sendResponse(res, response);
-        await sleep(1000); // ensures one ip can only make one request per second
+        await sleep(3000); // ensures one ip can only make one request per second
     } catch (error) {
         console.error(`Error generating text for key: ${cacheKey}`, error.message);
         console.error(error.stack); // Print stack trace
         res.status(500).send(error.message);
-        await sleep(2000); // ensures one ip can only make one request per second
+        await sleep(3000); // ensures one ip can only make one request per second
     }
 }
 
@@ -167,7 +169,8 @@ function getRequestData(req, isPost = false) {
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     const referrer = data.referrer || req.get('referrer') || '';
     const isImagePollinationsReferrer = referrer.includes('image.pollinations.ai');
-
+    const isRobloxReferrer = req.headers.referer && req.headers.referer.toLowerCase().includes('roblox');
+    
     const messages = isPost ? data.messages : [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
@@ -181,7 +184,8 @@ function getRequestData(req, isPost = false) {
         temperature,
         type: isPost ? 'POST' : 'GET',
         cache: isPost ? data.cache !== false : true, // Default to true if not specified
-        isImagePollinationsReferrer
+        isImagePollinationsReferrer,
+        isRobloxReferrer
     };
 }
 
@@ -190,7 +194,7 @@ app.get('/*', async (req, res) => {
     const cacheKeyData = getRequestData(req);
     const ip = getIp(req);
     
-    if (cacheKeyData.isImagePollinationsReferrer) {
+    if (cacheKeyData.isImagePollinationsReferrer || cacheKeyData.isRobloxReferrer) {
         await handleRequest(req, res, cacheKeyData);
     } else {
         const queue = getQueue(ip);
@@ -208,7 +212,7 @@ app.post('/', async (req, res) => {
     const cacheKeyData = getRequestData(req, true);
     const ip = getIp(req);
 
-    if (cacheKeyData.isImagePollinationsReferrer) {
+    if (cacheKeyData.isImagePollinationsReferrer || cacheKeyData.isRobloxReferrer) {
         await handleRequest(req, res, cacheKeyData, cacheKeyData.cache);
     } else {
         const queue = getQueue(ip);
@@ -324,50 +328,50 @@ const connectedClients = new Map();
 
 // Modify generateTextBasedOnModel to broadcast responses
 async function generateTextBasedOnModel(messages, options) {
-    const { model = 'openai' } = options;
-    let response;
-    let fallback = false;
+    const model = options.model || 'openai';
+    console.log('Using model:', model);
 
-    if (model.startsWith('mistral')) {
-        response = await generateTextMistral(messages, options);
-    } else if (model === 'llama' || model === 'qwen' || model === 'qwen-coder') {
-        response = await generateTextHuggingface(messages, { ...options, model });
-    } else if (model === 'karma') {
-        response = await generateTextKarma(messages, options);
-    } else if (model === 'claude') {
-        response = await generateTextClaude(messages, options);
-    } else if (model === 'sur') {
-        response = await surOpenai(messages, options);
-    } else if (model === 'sur-mistral') {
-        response = await surMistral(messages, options);
-    } else if (model === 'command-r') {
-        response = await generateTextCommandR(messages, options);
-    } else if (model === 'unity') {
-        response = await unityMistralLarge(messages, options);
-    } else if (model === 'midijourney') {
-        response = await midijourney(messages, options);
-    } else if (model === 'rtist') {
-        response = await rtist(messages, options);
-    } else if (model === 'searchgpt') { // New model for web search
-        response = await generateText(messages, options, true);
-    } else if (model === 'evil') {
-        response = await evilCommandR(messages, options);
-    } else if (model === 'p1') {
-        response = await generateTextOptiLLM(messages, options);
-    } else {
-        const result = await generateTextWithMistralFallback(messages, options);
-        response = result.response;
-        fallback = result.fallback;
-    }
-
-    // Broadcast the response to all connected clients
-    if (!fallback) {
-        for (const [, handleNewResponse] of connectedClients) {
-            handleNewResponse(response, { model, messages, ...options });
+    try {
+        switch (model) {
+            case 'openai':
+                return await generateText(messages, options);
+            case 'deepseek':
+                return await generateDeepseek(messages, options);
+            case 'mistral':
+                return await generateTextMistral(messages, options);
+            case 'llama' || 'qwen' || 'qwen-coder':
+                return await generateTextHuggingface(messages, { ...options, model });
+            case 'karma':
+                return await generateTextKarma(messages, options);
+            case 'claude':
+                return await generateTextClaude(messages, options);
+            case 'sur':
+                return await surOpenai(messages, options);
+            case 'sur-mistral':
+                return await surMistral(messages, options);
+            // case 'command-r':
+            //     return await generateTextCommandR(messages, options);
+            case 'unity':
+                return await unityMistralLarge(messages, options);
+            case 'midijourney':
+                return await midijourney(messages, options);
+            case 'rtist':
+                return await rtist(messages, options);
+            case 'searchgpt': // New model for web search
+                return await generateText(messages, options, true);
+            case 'evil':
+                return await evilCommandR(messages, options);
+            case 'p1':
+                return await generateTextOptiLLM(messages, options);
+            default:
+                const result = await generateTextWithMistralFallback(messages, options);
+                return result.response;
         }
+    } catch (error) {
+        console.error(`Error generating text`, error.message);
+        console.error(error.stack); // Print stack trace
+        throw error;
     }
-
-    return response;
 }
 
 const generateTextWithMistralFallback = async (messages, options) => {

@@ -34,13 +34,13 @@ export const availableModels = [
         description: 'Mistral Nemo',
         baseModel: true,
     },
-    {
-        name: 'mistral-large',
-        type: 'chat',
-        censored: false,
-        description: 'Mistral Large (v2)',
-        baseModel: true,
-    },
+    // {
+    //     name: 'mistral-large',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Mistral Large (v2)',
+    //     baseModel: true,
+    // },
     {
         name: 'llama',
         type: 'completion',
@@ -55,13 +55,13 @@ export const availableModels = [
     //     description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)',
     //     baseModel: false,
     // },
-    {
-        name: 'command-r',
-        type: 'chat',
-        censored: false,
-        description: 'Command-R',
-        baseModel: false,
-    },
+    // {
+    //     name: 'command-r',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Command-R',
+    //     baseModel: false,
+    // },
     {
         name: 'unity',
         type: 'chat',
@@ -105,5 +105,19 @@ export const availableModels = [
         censored: false,
         description: 'Pollinations 1 (OptiLLM)',
         baseModel: false,
-    }
+    },
+    {
+        name: 'deepseek',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek-V3',
+        baseModel: true,
+    },
+    // {
+    //     name: 'mistral-large',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Mistral Large (v2)',
+    //     baseModel: true,
+    // },
 ];

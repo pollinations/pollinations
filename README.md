@@ -74,6 +74,7 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 - ⬜ Voice prompting
 - ⬜ Azure Open AI API Integration
 - ✅ Perplexity Integration (@meetpateltech)
+- ✅ AWS Bedrock Integration (@kunjabijukchhe)
 - ⬜ Vertex AI Integration
 
 ## Features

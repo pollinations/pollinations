@@ -17,6 +17,7 @@ import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
+import { generateText as generateTextRoblox } from './generateTextOpenaiRoblox.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
@@ -187,8 +188,8 @@ function getRequestData(req, isPost = false) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const referrer = data.referrer || req.get('referrer') || '';
-    const isImagePollinationsReferrer = referrer.includes('image.pollinations.ai');
+    const referer = data.referrer || req.get('referrer') || '';
+    const isImagePollinationsReferrer = referer.includes('image.pollinations.ai');
     const isRobloxReferrer = req.headers.referer && req.headers.referer.toLowerCase().includes('roblox');
     
     const messages = isPost ? data.messages : [{ role: 'user', content: req.params[0] }];
@@ -205,7 +206,8 @@ function getRequestData(req, isPost = false) {
         type: isPost ? 'POST' : 'GET',
         cache: isPost ? data.cache !== false : true, // Default to true if not specified
         isImagePollinationsReferrer,
-        isRobloxReferrer
+        isRobloxReferrer,
+        referer: req.headers.referer || ''  // Add the referer to the options
     };
 }
 
@@ -363,9 +365,12 @@ async function generateTextBasedOnModel(messages, options) {
     log('Using model:', model);
 
     try {
+        // Check if the request is from Roblox using the referer from options
+        const isRoblox = options.isRobloxReferrer || options.referer?.toLowerCase().includes('roblox');
+        
         switch (model) {
             case 'openai':
-                return await generateText(messages, options);
+                return await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
             case 'deepseek':
                 return await generateDeepseek(messages, options);
             case 'mistral':

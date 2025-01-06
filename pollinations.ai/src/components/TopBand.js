@@ -4,7 +4,7 @@ import { usePollinationsImage } from "@pollinations/react";
 import useRandomSeed from "../hooks/useRandomSeed";
 
 const topBandPrompt = encodeURIComponent(
-    "One horizontal centered row on almost white (#FAFAFA) background with 4-7 evenly spaced larger circular icons such as insects, flowers, pollen, bees, butterflies, (be creative with arrows) in black and white."
+    "A horizontal centered row on an almost white (#FAFAFA) background featuring 4-7 evenly spaced circular icons inspired by Egyptian hieroglyphs. The design should be elegant and minimal, incorporating elements that evoke a sense of mystery and ancient elegance, with subtle, refined lines in black and white."
 );
 
 const TopBand = () => {

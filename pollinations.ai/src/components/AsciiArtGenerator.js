@@ -16,7 +16,7 @@ const AsciiArtGenerator = ({ width = 600, height = 300, style }) => {
     const charWidth = Math.floor(width / 8); // Default to 30 characters wide if width is not provided
     const charHeight = Math.floor(height / 16); // Default to 10 characters tall if height is not provided
 
-    const prompt = `Unicode/ Ascii Art depicting digital pollination. ${charWidth} width x ${charHeight} height characters. Use fun unicode stuff but keep a lot of space empty. Return only the characters, no other text or quotes.`;
+    const prompt = `Unicode/Ascii Art inspired by elegant, minimal Egyptian gods and mystical pyramids. ${charWidth} width x ${charHeight} height characters. Incorporate hieroglyphs and maintain a lot of empty space. Return only the characters, no other text or quotes.`;
 
     useEffect(() => {
         const interval = setInterval(() => {

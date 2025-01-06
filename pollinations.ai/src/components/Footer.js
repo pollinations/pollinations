@@ -39,7 +39,7 @@ const Footer = () => {
               whiteText={false}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
-              customPrompt={`an image with the text "THOT" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to technology, digital circuitry, such as chips, circuits, and other tech forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. The text should take all the space without any margins.`}
+              customPrompt={`an image with the text "THOT Labs" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate elements related to pollinations, digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. Incorporate elements related to pollinations, digital circuitry, and organic forms into the design of the font. The text should take all the space without any margins.`}
             />
           </NavLink>
         </LogoContainer>

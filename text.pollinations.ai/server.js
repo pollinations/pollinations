@@ -2,6 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
+import debug from 'debug';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
@@ -23,6 +24,9 @@ import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 const app = express();
+
+const log = debug('pollinations:server');
+const errorLog = debug('pollinations:error');
 
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
@@ -106,6 +110,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
     const queue = getQueue(ip);
 
     if (queue.size >= 300) {
+        errorLog('Queue size limit exceeded for IP: %s', ip);
         return res.status(429).json({
             error: {
                 message: 'Too many requests in queue. Please try again later.',
@@ -122,10 +127,11 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
             if (cachedResponse instanceof Error) {
                 throw cachedResponse;
             }
+            log('Cache hit for key: %s', cacheKey);
             return sendResponse(res, cachedResponse);
         }
 
-        console.log(`Received request with data: ${JSON.stringify(cacheKeyData)}`);
+        log('Request data: %o', cacheKeyData);
 
         // Send analytics event for text generation request
         sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
@@ -140,17 +146,16 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
         try {
             response = await responsePromise;
         } catch (error) {
-            console.log(`Error generating text for key: ${cacheKey}`, error.message, "deleting cache");
+            errorLog('Error generating text for key %s: %s', cacheKey, error.message);
             delete cache[cacheKey];
             throw error;
         }
 
-        console.log(`Generated response for key: ${cacheKey}`);
+        log('Generated response for key: %s', cacheKey);
         sendResponse(res, response);
         await sleep(3000);
     } catch (error) {
-        console.error(`Error handling request for key: ${cacheKey}`, error);
-        console.error(error.stack);
+        errorLog('Request error for key %s: %s\n%s', cacheKey, error.message, error.stack);
         
         res.status(500).json({
             error: {
@@ -278,7 +283,7 @@ app.post('/openai*', async (req, res) => {
             return res.json(cachedResponse);
         }
 
-        console.log("endpoint: /openai", requestParams);
+        log("endpoint: /openai", requestParams);
 
         try {
             // Send analytics event for text generation request
@@ -315,11 +320,11 @@ app.post('/openai*', async (req, res) => {
             if (requestParams.cache) {
                 cache[cacheKey] = result;
             }
-            console.log("openai format result", JSON.stringify(result, null, 2));
+            log("openai format result", JSON.stringify(result, null, 2));
             res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
             res.json(result);
         } catch (error) {
-            console.error(`Error generating text`, error.message);
+            errorLog('Error generating text', error.message);
             console.error(error.stack); // Print stack trace
             res.status(500).send(error.message);
         }
@@ -355,7 +360,7 @@ const connectedClients = new Map();
 // Modify generateTextBasedOnModel to broadcast responses
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
-    console.log('Using model:', model);
+    log('Using model:', model);
 
     try {
         switch (model) {
@@ -394,7 +399,7 @@ async function generateTextBasedOnModel(messages, options) {
                 return result.response;
         }
     } catch (error) {
-        console.error(`Error generating text`, error.message);
+        errorLog('Error generating text', error.message);
         console.error(error.stack); // Print stack trace
         throw error;
     }
@@ -404,13 +409,13 @@ const generateTextWithMistralFallback = async (messages, options) => {
     try {
         return { response: await generateText(messages, options), fallback: false };
     } catch (error) {
-        console.error(`Error generating. Trying Mistral fallback`, error.message);
+        errorLog('Error generating. Trying Mistral fallback', error.message);
         return { response: await generateTextMistral(messages, options), fallback: true };
     }
 }
 
 app.use((req, res, next) => {
-    console.log(`Unhandled request: ${req.method} ${req.originalUrl}`);
+    log(`Unhandled request: ${req.method} ${req.originalUrl}`);
     next();
 });
 

@@ -1,6 +1,6 @@
 ---
 name: Epic
-about: Epics define long-term vision and capabilities of the software. They will never be finished but serve as umbrellas for features.
+about: Epics define long-term vision and capabilities of the software. They will never be finished but serve as umbrella for features.
 title: ''
 labels:
   - epic
@@ -9,7 +9,7 @@ assignees: ''
 
 # Strategic Impact
 
-<-- Why does this area matter? How is it integrated into the product or the development process? What would happen if we ignore it? -->
+<!-- Why does this area matter? How is it integrated into the product or the development process? What would happen if we ignore it? -->
 
 # Target Audience
 

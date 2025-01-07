@@ -368,8 +368,13 @@ async function generateTextBasedOnModel(messages, options) {
         // Check if the request is from Roblox using the referer from options
         const isRoblox = options.isRobloxReferrer || options.referer?.toLowerCase().includes('roblox');
         
+        // If it's a Roblox request, always use llamalight model
+        if (isRoblox) {
+            options.model = 'llamalight';
+        }
+        
         let response;
-        switch (model) {
+        switch (options.model || 'openai') {
             case 'openai':
                 response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
                 break;
@@ -381,6 +386,9 @@ async function generateTextBasedOnModel(messages, options) {
                 break;
             case 'llama' || 'qwen' || 'qwen-coder':
                 response = await generateTextHuggingface(messages, { ...options, model });
+                break;
+            case 'llamalight':
+                response = await generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" });
                 break;
             case 'karma':
                 response = await generateTextKarma(messages, options);
@@ -413,8 +421,8 @@ async function generateTextBasedOnModel(messages, options) {
                 response = await generateTextOptiLLM(messages, options);
                 break;
             default:
-                response = await generateText(messages, options);
-                response = response.response;
+                log('Invalid model specified, falling back to OpenAI');
+                response = await generateText(messages, { ...options, model: 'openai' });
         }
 
         // Broadcast the response to all connected clients

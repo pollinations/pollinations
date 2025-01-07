@@ -20,13 +20,13 @@ export const availableModels = [
         description: 'Qwen 2.5 Coder 32B',
         baseModel: true,
     },
-    {
-        name: 'llama',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3.3 70B',
-        baseModel: true,
-    },
+    // {
+    //     name: 'llama',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Llama 3.3 70B',
+    //     baseModel: true,
+    // },
     {
         name: 'mistral',
         type: 'chat',
@@ -41,13 +41,13 @@ export const availableModels = [
     //     description: 'Mistral Large (v2)',
     //     baseModel: true,
     // },
-    {
-        name: 'llama',
-        type: 'completion',
-        censored: true,
-        description: 'Llama 3.1',
-        baseModel: true,
-    },
+    // {
+    //     name: 'llama',
+    //     type: 'completion',
+    //     censored: true,
+    //     description: 'Llama 3.1',
+    //     baseModel: true,
+    // },
     // {
     //     name: 'karma',
     //     type: 'completion',
@@ -111,6 +111,13 @@ export const availableModels = [
         type: 'chat',
         censored: true,
         description: 'DeepSeek-V3',
+        baseModel: true,
+    },
+    {
+        name: 'llamalight',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.2 1B Instruct',
         baseModel: true,
     },
     // {

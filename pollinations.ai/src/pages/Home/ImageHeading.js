@@ -35,8 +35,9 @@ export const ImageURLHeading = styled(
     const backgroundColor = typeof whiteText === 'string' ? "black" : (whiteText ? "black" : "white");
 
     const translatedPrompt = usePollinationsText("Translate the following text to i18n: '" + navigator.language.split("-")[0] + "'. If the text is already in English, just return the text. Don't give any explanation. Text:" + children, { seed: 45 });
-
-    const defaultPrompt = `An image with the text "${translatedPrompt || children}" displayed in an elegant, minimal style inspired by Egyptian gods and mystical pyramids. The font should evoke a sense of mystery and ancient elegance, with subtle, refined lines. The text is in ${foregroundColor}, set against a solid ${backgroundColor} background, creating a harmonious and serene visual contrast. Incorporate elements that suggest the grandeur and mystique of Egyptian mythology, such as hieroglyphs, pyramids, and divine symbols, into the design of the font. Each letter should reflect a unique, mystical touch that enhances the overall theme.`;
+    
+    const defaultPrompt = `Create a refined, contemporary flat 2D design for the word "${translatedPrompt || children}" with letters in ${foregroundColor} on a solid ${backgroundColor} background, no 3D effects. Use large, hieroglyphic-inspired forms for each letter, featuring small Egyptian motifs (Ankhs, Eye of Horus, scarabs, lotus) with straight lines and a clean silhouette. Subtly incorporate additional hieroglyphs while keeping the overall style minimal, modern, and serious, using a strictly black-and-white palette.`;
+    
     const prompt = encodeURIComponent(customPrompt || defaultPrompt);
 
     const seed = useRandomSeed();

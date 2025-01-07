@@ -19,7 +19,7 @@ const Footer = () => {
             whiteText={false}
             width={250}
             height={100}
-            customPrompt={`an image with the text "Let's talk" displayed in an elegant, decorative serif font. The font has high contrast between thick and thin strokes, that give the text a sophisticated and stylized appearance. The text is in black, set against a solid white background, creating a striking and bold visual contrast. Incorporate many colorful elements related to communication, such as speech bubbles, chat icons, mouths, and other related forms into the design of the font. Each letter features unique, creative touches that make the typography stand out. The text should take all the space without any margins.`}
+            customPrompt={`Create a refined, contemporary flat 2D design for the word ‘THOT Labs’ in black on a solid white background, no 3D effects. Use large, hieroglyphic-inspired forms for each letter, featuring small Egyptian motifs (Ankhs, Eye of Horus, scarabs, lotus) with straight lines and a clean silhouette. Subtly incorporate additional hieroglyphs while keeping the overall style minimal, modern, and serious, using a strictly black-and-white palette.`}
             isMobile={isMobile}
           />
           {isMobile && <Spacer />}
@@ -39,7 +39,7 @@ const Footer = () => {
               whiteText={false}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
-              customPrompt={`an image with the text "THOT Labs" displayed in an elegant, minimal style inspired by Egyptian gods and mystical pyramids. The design should incorporate hieroglyphs and evoke a sense of mystery and ancient elegance. The text should be in black, set against a solid white background, creating a striking and bold visual contrast. Each letter should feature unique, creative touches that make the typography stand out, inspired by the mystique of ancient Egyptian art. The text should take all the space without any margins.`}
+              customPrompt={`Create a refined, contemporary flat 2D design for the word ‘THOT Labs’ in black on a solid white background, no 3D effects. Use large, hieroglyphic-inspired forms for each letter, featuring small Egyptian motifs (Ankhs, Eye of Horus, scarabs, lotus) with straight lines and a clean silhouette. Subtly incorporate additional hieroglyphs while keeping the overall style minimal, modern, and serious, using a strictly black-and-white palette.`}
             />
           </NavLink>
         </LogoContainer>

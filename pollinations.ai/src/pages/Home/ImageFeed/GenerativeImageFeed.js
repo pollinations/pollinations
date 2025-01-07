@@ -223,17 +223,12 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             </Grid>
           )}
           <Grid item xs={12} style={{ marginTop: "4em" }}>
-            {/*<ImageURLHeading
-              customPrompt={`A large, detailed arrow pointing downwards on a solid black background. The arrow is adorned with colorful, intricate insects, creating a striking and bold visual contrast. Incorporate elements related to pollinators and digital circuitry, such as flowers, chips, insects, wafers, and other organic forms into the design of the arrow. Each part of the arrow features unique, creative touches that make the design stand out. Make it very colorful with vibrant hues and gradients.`}
-              className={classes.scaledImageURLHeading}
-              width={isMobile ? 80 : 80}
-              height={isMobile ? 100 : 100}
-            ></ImageURLHeading>*/}
+
             <ImageURLHeading
-              customPrompt={`an image with the text "Integrate" displayed in an elegant, minimal style inspired by Egyptian gods and mystical pyramids. The design should incorporate hieroglyphs and evoke a sense of mystery and ancient elegance. The text should be in white, set against a solid black background, creating a striking and bold visual contrast. Each letter should feature unique, creative touches that make the typography stand out, inspired by the mystique of ancient Egyptian art.`}
               className={classes.scaledImageURLHeading}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
+              whiteText={false}
             >
               Integrations
             </ImageURLHeading>

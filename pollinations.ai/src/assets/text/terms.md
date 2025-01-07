@@ -62,4 +62,4 @@ We implement reasonable safeguards to protect your information against unauthori
 We may update this policy occasionally. Any changes will be communicated by updating the Privacy Policy on this page.
 
 ### Contact Us
-For questions about this Privacy Policy, reach out to us at hello@thot-labs.ai.
+For questions about this Privacy Policy, reach out to us at hello@thot-labs.com.

@@ -19,7 +19,7 @@ The need to design digital worlds is rising fast, but the power and skills to ac
 
 Do you need customized 3d objects, illustrations or unique NFTs at scale? Integrate with the **THOT-Labs API** and allow your users to create media with personalized looks and vibes that match your unique style.
 
-To learn more please get in touch at hello@thot-labs.ai.
+To learn more please get in touch at hello@thot-labs.com.
 
 &nbsp;
 

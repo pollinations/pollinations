@@ -28,7 +28,7 @@ export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) 
             letterSpacing: "0.1em",
           }}
         >
-          {isLoading ? "Cancel" : "Pollinate"}
+          {isLoading ? "Cancel" : "Create"}
         </Button>
       </CustomTooltip>
       {isLoading && (

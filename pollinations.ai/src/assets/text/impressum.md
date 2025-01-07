@@ -10,7 +10,7 @@ Köpenicker Chaussee, 26
 Berlin, Germany
 
 E-Mail:  
-help@thot-labs.ai
+help@thot-labs.com
 
 Haftungsausschluss – Disclaimer:
 

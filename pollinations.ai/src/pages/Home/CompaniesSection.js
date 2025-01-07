@@ -86,7 +86,7 @@ const CompaniesSection = () => {
   ]
 
   const generateImageUrl = (name, description) =>
-    `https://thot-labs.ai/p/${encodeURIComponent(
+    `https://thot-labs.com/p/${encodeURIComponent(
       `${logoPrefix} ${name} ${description}`
     )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 

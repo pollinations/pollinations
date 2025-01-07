@@ -423,7 +423,7 @@ export function CodeExamples({ image }) {
           );
         })}
       </>
-      <Box mt={2} textAlign="center">
+      {/* <Box mt={2} textAlign="center">
         <ImageURLHeading
           customPrompt={`Github logo that looks cool, on a black background`}
           width="100"
@@ -442,7 +442,7 @@ export function CodeExamples({ image }) {
         >
           GitHub
         </LinkStyle>
-      </Box>
+      </Box> */}
     </URLExplanation>
   );
 }

@@ -10,7 +10,7 @@ By integrating with THOT-Labs' API users can create all of this and much more **
 
 &nbsp;
 
-Music platforms, NFTs, articles about emerging technology, luxury hotels, 3D object stores and many more are getting a touch of magic with THOT-Labs' AI-power. Let us hear about your goals at hello@thot-labs.ai.
+Music platforms, NFTs, articles about emerging technology, luxury hotels, 3D object stores and many more are getting a touch of magic with THOT-Labs' AI-power. Let us hear about your goals at hello@thot-labs.com.
 
 &nbsp;
 
@@ -18,7 +18,7 @@ Music platforms, NFTs, articles about emerging technology, luxury hotels, 3D obj
 
 ##### Build community through AI art!
 
-Imagine that within Discord or Slack people can write a prompt to a bot and get the exact media they want. They can create challenges, NFTs, games and much more, making for a fun, interactive, artistic experience. To see what this looks like, send us a hello at hello@thot-labs.ai.
+Imagine that within Discord or Slack people can write a prompt to a bot and get the exact media they want. They can create challenges, NFTs, games and much more, making for a fun, interactive, artistic experience. To see what this looks like, send us a hello at hello@thot-labs.com.
 
 &nbsp;
 

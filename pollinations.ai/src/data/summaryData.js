@@ -14,7 +14,7 @@ export function getPostData(ipfs, cid, shortenPost = true) {
   const coverImageURL = coverImage ? coverImage[1] : null;
   const vid = getCoverVideo(ipfs.output);
   const videoURL = Array.isArray(vid) && vid[1] ? vid[1] : coverImageURL;
-  const url = `https://thot-labs.ai/p/${cid}/`;
+  const url = `https://thot-labs.com/p/${cid}/`;
 
   // Check if a text was output by the run. Otherwise use the input text
   // In the future we may want to refactor this to be more flexible. E.g. when we have image inputs

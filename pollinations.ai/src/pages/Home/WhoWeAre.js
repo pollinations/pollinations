@@ -41,14 +41,14 @@ const WhoWeAreContent = () => {
           <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
           <br />
           <StyledLink
-            href="mailto:hello@thot-labs.ai"
+            href="mailto:hello@thot-labs.com"
             onClick={(e) => {
               handleLinkClick(e);
               alert("Copied");
             }}
             style={{ userSelect: "text" }}
           >
-            <b>hello@thot-labs.ai</b>
+            <b>hello@thot-labs.com</b>
           </StyledLink>
         </p>
       </ContactWrapper>

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from '@remix-run/react';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
-import { db, deleteById, getAll } from '~/lib/persistence';
+import { db, deleteById, getAll, setMessages } from '~/lib/persistence';
 import { logStore } from '~/lib/stores/logs';
 import { classNames } from '~/utils/classNames';
+import type { Message } from 'ai';
 
 // List of supported providers that can have API keys
 const API_KEY_PROVIDERS = [
@@ -232,6 +233,76 @@ export default function DataTab() {
     event.target.value = '';
   };
 
+  const processChatData = (data: any): Array<{
+    id: string;
+    messages: Message[];
+    description: string;
+    urlId?: string;
+  }> => {
+    // Handle Bolt standard format (single chat)
+    if (data.messages && Array.isArray(data.messages)) {
+      const chatId = crypto.randomUUID();
+      return [{
+        id: chatId,
+        messages: data.messages,
+        description: data.description || 'Imported Chat',
+        urlId: chatId
+      }];
+    }
+
+      // Handle Bolt export format (multiple chats)
+      if (data.chats && Array.isArray(data.chats)) {
+        return data.chats.map((chat: { id?: string; messages: Message[]; description?: string; urlId?: string; }) => ({
+          id: chat.id || crypto.randomUUID(),
+          messages: chat.messages,
+          description: chat.description || 'Imported Chat',
+          urlId: chat.urlId,
+        }));
+      }
+
+    console.error('No matching format found for:', data);
+    throw new Error('Unsupported chat format');
+  };
+
+  const handleImportChats = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+
+      if (!file || !db) {
+        toast.error('Something went wrong');
+        return;
+      }
+
+      try {
+        const content = await file.text();
+        const data = JSON.parse(content);
+        const chatsToImport = processChatData(data);
+
+        for (const chat of chatsToImport) {
+          await setMessages(db, chat.id, chat.messages, chat.urlId, chat.description);
+        }
+
+        logStore.logSystem('Chats imported successfully', { count: chatsToImport.length });
+        toast.success(`Successfully imported ${chatsToImport.length} chat${chatsToImport.length > 1 ? 's' : ''}`);
+        window.location.reload();
+      } catch (error) {
+        if (error instanceof Error) {
+          logStore.logError('Failed to import chats:', error);
+          toast.error('Failed to import chats: ' + error.message);
+        } else {
+          toast.error('Failed to import chats');
+        }
+        console.error(error);
+      }
+    };
+
+    input.click();
+  };
+
   return (
     <div className="p-4 bg-bolt-elements-bg-depth-2 border border-bolt-elements-borderColor rounded-lg mb-4">
       <div className="mb-6">
@@ -247,6 +318,12 @@ export default function DataTab() {
                   className="px-4 py-2 bg-bolt-elements-button-primary-background hover:bg-bolt-elements-button-primary-backgroundHover text-bolt-elements-textPrimary rounded-lg transition-colors"
                 >
                   Export All Chats
+                </button>
+                <button
+                  onClick={handleImportChats}
+                  className="px-4 py-2 bg-bolt-elements-button-primary-background hover:bg-bolt-elements-button-primary-backgroundHover text-bolt-elements-textPrimary rounded-lg transition-colors"
+                >
+                  Import Chats
                 </button>
                 <button
                   onClick={handleDeleteAllChats}

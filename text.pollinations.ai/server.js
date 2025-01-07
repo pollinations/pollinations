@@ -370,7 +370,7 @@ async function generateTextBasedOnModel(messages, options) {
         
         // If it's a Roblox request, always use llamalight model
         if (isRoblox) {
-            options.model = 'llamalight';
+            options.model = 'openai';
         }
         
         let response;

@@ -1,11 +1,13 @@
 # Project management of bolt.diy
 
 First off: this sounds funny, we know. "Project management" comes from a world of enterprise stuff and this project is
-far from being enterprisy ;)
+far from being enterprisy- it's still anarchy all over the place 😉
 
 But we need to organize ourselves somehow, right?
 
-So here's how we structure long-term vision, mid-term capabilities of the software and short term improvements.
+> tl;dr: We've got a project board with epics and features. We use PRs as change log and as materialized features. Find it [here](https://github.com/orgs/stackblitz-labs/projects/4).
+
+Here's how we structure long-term vision, mid-term capabilities of the software and short term improvements.
 
 ## Strategic epics (long-term)
 
@@ -39,14 +41,17 @@ function, you name it).
 However, we intentionally describe features in a more vague manner. Why? Everybody loves crisp, well-defined
 acceptance-criteria, no? Well, every product owner loves it. because he knows what he’ll get once it’s done.
 
-But: **here is no owner of this product**. Therefore, we grant *maximum flexibility to the developer contributing a
-feature* – so that he can bring in his ideas and have most fun implementing it.
+But: **here is no owner of this product**. Therefore, we grant *maximum flexibility to the developer contributing a feature* – so that he can bring in his ideas and have most fun implementing it.
 
 The feature therefore tries to describe *what* should be improved but not in detail *how*.
 
 ## PRs as materialized features (short-term)
 
-Once a developer starts working on a feature, he/she can open a draft-PR asap to discuss / describe / share, how he/she
-is going to tackle the problem.
+Once a developer starts working on a feature, a draft-PR *can* be opened asap to share, describe and discuss, how the feature shall be implemented. But: this is not a must. It just helps to get early feedback and get other developers involved. Sometimes, the developer just wants to get started and then open a PR later. 
 
-Once it’s merged, a squashed commit contains the whole PR description which allows for a good change log.
+In a loosely organized project, it may as well happen that multiple PRs are opened for the same feature. This is no real issue: Usually, peoply being passionate about a solution are willing to join forces and get it done together. And if a second developer was just faster getting the same feature realized: Be happy that it's been done, close the PR and look out for the next feature to implement 🤓
+
+## PRs as change log
+
+Once a PR is merged, a squashed commit contains the whole PR description which allows for a good change log.
+All authors of commits in the PR are mentioned in the squashed commit message and become contributors 🙌

@@ -1,14 +1,14 @@
-import React from "react"
-import { Link, Grid, Typography } from "@material-ui/core"
-import { makeStyles } from "@material-ui/core/styles"
-import { ImageURLHeading } from "./ImageHeading"
-import { Colors, Fonts } from "../../styles/global"
-import { LinkStyle } from "./components"
-import { GenerativeImageURLContainer } from "./ImageHeading"
-import { EmojiRephrase } from "../../components/EmojiRephrase"
-import useRandomSeed from "../../hooks/useRandomSeed"
-import { usePollinationsImage } from "@pollinations/react"
-import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
+import React, { useState } from "react";
+import { Link, Grid, Typography, AppBar, ButtonGroup, Button } from "@material-ui/core";
+import { makeStyles } from "@material-ui/core/styles";
+import { ImageURLHeading } from "./ImageHeading";
+import { Colors, Fonts } from "../../styles/global";
+import { LinkStyle } from "./components";
+import { GenerativeImageURLContainer } from "./ImageHeading";
+import { EmojiRephrase } from "../../components/EmojiRephrase";
+import useRandomSeed from "../../hooks/useRandomSeed";
+import { usePollinationsImage } from "@pollinations/react";
+import useIsMobile from "../../hooks/useIsMobile"; // Import the new hook
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -52,11 +52,32 @@ const useStyles = makeStyles((theme) => ({
     width: "100%",
     maxWidth: "100%",
   },
-}))
+  callToActionContainer: {
+    backgroundColor: Colors.black,
+    padding: theme.spacing(4),
+    borderRadius: "8px",
+    textAlign: "center",
+    border: `1px solid ${Colors.lime}`,
+  },
+  callToActionText: {
+    color: Colors.white, 
+    fontSize: "1.5em",
+    maxWidth: "500px",
+    margin: "0 auto",
+  },
+  callToActionLink: {
+    color: Colors.white, 
+    fontSize: "1em",
+    textDecoration: "none",
+    '&:hover': {
+      textDecoration: "underline",
+    },
+  },
+}));
 
 const logoPrefix =
-  "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
-const imageDimension = 96
+  "minimalist colour logo design focuses on symbols and visuals, no text, solid black background";
+const imageDimension = 96;
 
 const projectCategories = [
   {
@@ -79,7 +100,7 @@ const projectCategories = [
     title: "Tutorials",
     key: "tutorials",
   },
-]
+];
 
 const projects = {
   apps: [
@@ -354,12 +375,14 @@ const projects = {
       repo: "https://routinehub.co/shortcut/19953/",
     },
   ],
-}
+};
 
 const ProjectsSection = () => {
-  const classes = useStyles()
-  const isMobile = useIsMobile() // Use the new hook
-  const seedValue = useRandomSeed()
+  const classes = useStyles();
+  const isMobile = useIsMobile(); // Use the new hook
+  const seedValue = useRandomSeed();
+  const [selectedCategory, setSelectedCategory] = useState("apps"); // Default category
+  const categoryKeys = projectCategories.map((category) => category.key);
 
   const renderProjects = (projectList) => (
     <Grid container spacing={4} className={classes.gridContainer}>
@@ -385,7 +408,7 @@ const ProjectsSection = () => {
               </div>
             )}
           </Grid>
-          <Grid item xs={1.1} style={{ textAlign: "right" }}>
+          <Grid item xs={1} style={{ textAlign: "right" }}>
             <ProjectImage name={project.name} />
           </Grid>
           <Grid item xs={isMobile ? 4 : 6} style={{ textAlign: "left" }}>
@@ -398,7 +421,7 @@ const ProjectsSection = () => {
         </Grid>
       ))}
     </Grid>
-  )
+  );
 
   const generateCustomPrompt = (
     text,
@@ -410,57 +433,110 @@ const ProjectsSection = () => {
       width,
       height,
       whiteText,
-    }
-  }
+    };
+  };
+
+  const buttonStyle = (isActive) => ({
+    backgroundColor: isActive ? Colors.lime : "transparent",
+    color: isActive ? Colors.offblack : Colors.lime,
+    fontSize: "1.3rem",
+    fontFamily: "Uncut-Sans-Variable",
+    fontStyle: "normal",
+    fontWeight: 600,
+    height: "60px",
+    position: "relative",
+    margin: "0.5em",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    letterSpacing: "0.1em",
+    borderRadius: "5px",
+    padding: "0 1em",
+    whiteSpace: "nowrap",
+    border: `1px solid ${Colors.lime}`,
+  });
 
   return (
     <GenerativeImageURLContainer
       style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px" }}
     >
       <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
-        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200} whiteText={true}>
+        <ImageURLHeading
+          width={isMobile ? 400 : 700}
+          height={isMobile ? 150 : 200}
+          whiteText={true}
+        >
           Integrations
         </ImageURLHeading>
       </GenerativeImageURLContainer>
-      {projectCategories.map((category) => (
-        <React.Fragment key={category.key}>
-          <ImageURLHeading
-            className={classes.scaledImageURLHeading}
-            {...generateCustomPrompt(category.title)}
-          >
-            {category.title}
-          </ImageURLHeading>
-          {renderProjects(projects[category.key])}
-        </React.Fragment>
-      ))}
-      <div style={{ position: "relative" }}>
-        <Typography
-          className={classes.listProjectText}
-          style={{ fontSize: "1.5em", maxWidth: "500px" }}
+
+      {/* Category Menu */}
+      <AppBar
+        position="static"
+        style={{
+          color: "white",
+          width: "auto",
+          boxShadow: "none",
+          backgroundColor: "transparent",
+          marginBottom: "1em", // Added margin under the category buttons
+        }}
+      >
+        <ButtonGroup
+          variant="contained"
+          aria-label="contained primary button group"
+          style={{
+            backgroundColor: "transparent",
+            flexWrap: "wrap",
+            justifyContent: "center",
+          }}
         >
-          <EmojiRephrase>
-            Have you created a project that integrates Pollinations? <br />
-            We'd love to feature it!
-          </EmojiRephrase>
-          <ImageURLHeading
-            width={100}
-            height={50}
-            className={classes.scaledImageURLHeading}
-            {...generateCustomPrompt("Get in touch")}
-          >
-            Get in touch
-          </ImageURLHeading>
-          <LinkStyle
-            href="mailto:hello@thot-labs.com"
-            style={{ color: Colors.lime, fontSize: "1em" }}
-          >
-            hello@thot-labs.com
-          </LinkStyle>
-        </Typography>
-      </div>
+          {projectCategories.map((category) => (
+            <Button
+              key={category.key}
+              onClick={() => setSelectedCategory(category.key)}
+              style={buttonStyle(selectedCategory === category.key)}
+            >
+              {category.title}
+            </Button>
+          ))}
+        </ButtonGroup>
+      </AppBar>
+
+      {/* Render selected category */}
+
+      {renderProjects(projects[selectedCategory])}
+
+    {/* Call-to-Action Section */}
+    <div className={classes.callToActionContainer}>
+      <Typography
+        className={classes.callToActionText}
+      >
+        <EmojiRephrase>
+          Have you created a project that integrates Pollinations? <br />
+          We'd love to feature it!
+        </EmojiRephrase>
+        <ImageURLHeading
+          width={100}
+          height={50}
+          className={classes.scaledImageURLHeading}
+          {...generateCustomPrompt("Get in touch")}
+        >
+          Get in touch
+        </ImageURLHeading>
+        <Link
+          href="mailto:hello@thot-labs.com"
+          style={{
+            color: Colors.lime,
+            fontWeight: "bold",
+          }}
+        >
+          hello@thot-labs.com
+        </Link>
+      </Typography>
+    </div>
     </GenerativeImageURLContainer>
-  )
-}
+  );
+};
 
 const renderProjectLink = (project) => {
   return (
@@ -484,8 +560,8 @@ const renderProjectLink = (project) => {
     >
       {project.name}
     </Link>
-  )
-}
+  );
+};
 
 const renderRepoLink = (repoUrl) => {
   return (
@@ -499,22 +575,28 @@ const renderRepoLink = (repoUrl) => {
     >
       GitHub
     </LinkStyle>
-  )
-}
+  );
+};
 
 const ProjectImage = ({ name }) => {
-  const seed = useRandomSeed()
-  const prompt = `${logoPrefix} ${name}`
+  const seed = useRandomSeed();
+  const prompt = `${logoPrefix} ${name}`;
   const imageUrl = usePollinationsImage(prompt, {
     width: imageDimension * 4,
     height: imageDimension * 4,
     nologo: true,
     seed,
-  })
+  });
 
-  return <img src={imageUrl} alt={name} style={{ width: imageDimension, height: imageDimension }} />
-}
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      style={{ width: imageDimension, height: imageDimension }}
+    />
+  );
+};
 
-export default ProjectsSection
+export default ProjectsSection;
 
 //      prompt: `The word "${text}" is written in elegant letters, standing atop a bed of tropical leaves and flowers, giving a natural feeling. The text is ${whiteText}, surrounded by a whole micro biosphere universe of small, colorful insects and tiny birds, with plants and insects crawling on top of the letters. The scene is set against a solid black background, creating a striking contrast. It's a vibrant micro biome.`,

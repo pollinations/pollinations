@@ -1,4 +1,4 @@
-import { createMuiTheme, ThemeProvider } from '@material-ui/core'
+import { createTheme, ThemeProvider } from '@material-ui/core'
 import CssBaseline from '@material-ui/core/CssBaseline'
 import React from 'react'
 import ReactDOM from 'react-dom'
@@ -8,7 +8,7 @@ import { BrowserRouter } from "react-router-dom"
 import './index.css'
 import ScrollToTop from './utils/ScrollToTop'
 
-const darkTheme = createMuiTheme({
+const darkTheme = createTheme({
   typography: {
     fontFamily: 'Uncut-Sans-Variable'
   },

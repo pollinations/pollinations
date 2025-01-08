@@ -3,6 +3,11 @@ on:
   issues:
     types: [labeled]
 
+permissions:
+  contents: write
+  issues: read
+  pull-requests: write
+
 jobs:
   generate:
     uses: pollinations/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@main
@@ -12,5 +17,4 @@ jobs:
       issue-number: ${{ github.event.issue.number }}
       base-branch: ${{ github.event.repository.default_branch }}
       model: deepseek
-    secrets: 
       openai_api_base: https://text.pollinations.ai/openai

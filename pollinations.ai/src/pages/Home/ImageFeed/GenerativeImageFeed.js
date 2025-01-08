@@ -185,7 +185,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               }}
             >
               <EmojiRephrase>
-                Real-time feed of our image API endpoint (minus the private ones). Pause it anytime to test our models.
+                Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime. 
               </EmojiRephrase>
             </Typography>
       </Grid>
@@ -248,7 +248,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             >
               Integrate
             </ImageURLHeading> */}
-            <hr style={{ border: `1px solid ${Colors.lime}`, marginBottom: "4em", marginTop: "2em" }} />
+            <hr style={{ border: `1px solid ${Colors.lime}`, marginBottom: "4em", marginTop: "2em", width:"95%" }} />
             <Typography
               style={{
                 color: Colors.white,

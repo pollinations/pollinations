@@ -6,6 +6,7 @@ import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
 import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
+import topLogo from "../assets/imgs/toplogo.jpeg"; // Import the toplogo image
 
 const TopBar = () => {
   const isMobile = useIsMobile(); // Use the new hook
@@ -18,14 +19,19 @@ const TopBar = () => {
           </CenteredSocialLinks> */}
           <LogoContainer isMobile={isMobile}>
             <NavLink to="/">
-              <ImageURLHeading
+              <img
+                src={topLogo}
+                alt="THOT Labs Logo"
+                style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "500px" }}
+              />
+              {/* <ImageURLHeading
                 whiteText={false}
                 width={400}
                 height={100}
                 style={{ userSelect: "none", maxWidth: "1000px" }} // Added to prevent selection and ensure max width
               >
                 THOT Labs
-              </ImageURLHeading>
+              </ImageURLHeading> */}
             </NavLink>
             {/* <AsciiArtContainer>
               <AsciiArtGenerator />
@@ -36,19 +42,16 @@ const TopBar = () => {
         <>
           <LogoContainer>
             <NavLink to="/">
-              <ImageURLHeading
-                whiteText={false}
-                width={500}
-                height={100}
-                style={{ userSelect: "none", maxWidth: "1000px" }} // Added to prevent selection and ensure max width
-              >
-                THOT Labs
-              </ImageURLHeading>
+              <img
+                src={topLogo}
+                alt="THOT Labs Logo"
+                style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "500px" }}
+              />
             </NavLink>
-              {/* <AsciiArtContainer width={500} height={100}>
-                <AsciiArtGenerator />
-              </AsciiArtContainer> */}
           </LogoContainer>
+          {/* <AsciiArtContainer width={500} height={100}>
+            <AsciiArtGenerator />
+          </AsciiArtContainer> */}
           {/* <NavBarStyle>
             <SocialLinks medium gap="1em" invert />
           </NavBarStyle> */}

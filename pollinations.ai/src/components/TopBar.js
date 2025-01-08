@@ -45,9 +45,9 @@ const TopBar = () => {
                 THOT Labs
               </ImageURLHeading>
             </NavLink>
-            <AsciiArtContainer width={500} height={100}>
+            {/* <AsciiArtContainer width={500} height={100}>
               <AsciiArtGenerator />
-            </AsciiArtContainer>
+            </AsciiArtContainer> */}
           </LogoContainer>
           {/* <NavBarStyle>
             <SocialLinks medium gap="1em" invert />

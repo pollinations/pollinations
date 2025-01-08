@@ -11,7 +11,7 @@ const Terms = () => {
     `, { seed });
 
     return (
-        <SmallContainer>
+        <SmallContainer style={{ maxWidth: '1000px' }}>
             <ReactMarkdown>{terms}</ReactMarkdown>
         </SmallContainer>
     );

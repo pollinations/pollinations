@@ -28,9 +28,9 @@ const Footer = () => {
             <b>hello@thot-labs.com</b>
           </StyledLink>
         </Box>
-        <AsciiArtContainer>
+        {/* <AsciiArtContainer>
           <AsciiArtGenerator />
-        </AsciiArtContainer>
+        </AsciiArtContainer> */}
         {/* <SocialContainer>
           <SocialLinks medium gap="1em" invert />
         </SocialContainer> */}

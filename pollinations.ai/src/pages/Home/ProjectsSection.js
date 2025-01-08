@@ -60,7 +60,7 @@ const useStyles = makeStyles((theme) => ({
     border: `1px solid ${Colors.lime}`,
   },
   callToActionText: {
-    color: Colors.white, 
+    color: Colors.lime, 
     fontSize: "1.5em",
     maxWidth: "500px",
     margin: "0 auto",
@@ -387,8 +387,8 @@ const ProjectsSection = () => {
   const renderProjects = (projectList) => (
     <Grid container spacing={4} className={classes.gridContainer}>
       {projectList.map((project, index) => (
-        <Grid container item xs={10} key={index} className={classes.gridItem}>
-          <Grid item xs={4} style={{ textAlign: "right" }}>
+        <Grid container key={index} className={classes.gridItem}>
+          <Grid item xs={3} style={{ textAlign: "right" }}>
             {renderProjectLink(project)}
             {project.author && (
               <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
@@ -408,7 +408,7 @@ const ProjectsSection = () => {
               </div>
             )}
           </Grid>
-          <Grid item xs={1} style={{ textAlign: "right" }}>
+          <Grid item xs={2} style={{ textAlign: "center" }}>
             <ProjectImage name={project.name} />
           </Grid>
           <Grid item xs={isMobile ? 4 : 6} style={{ textAlign: "left" }}>

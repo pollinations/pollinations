@@ -6,27 +6,24 @@ import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../st
 import { LinkStyle } from "../pages/Home/components"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator"
-import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
+import useIsMobile from "../hooks/useIsMobile" // Import the new hook
 
 const Footer = () => {
-  const isMobile = useIsMobile(); // Use the new hook
+  const isMobile = useIsMobile() // Use the new hook
 
   return (
     <OuterContainer>
       <FooterStyle>
-        <Box display="flex" flexDirection="column" alignItems={isMobile ? "center" : "flex-start"}>
-          <StyledImageURLHeading
-            whiteText={false}
-            width={250}
-            height={100}
-            isMobile={isMobile}
-          >
+        <Box
+          display="flex"
+          flexDirection="column"
+          alignItems={isMobile ? "center" : "flex-start"}
+          justifyContent="flex-end"
+        >
+          <StyledImageURLHeading whiteText={false} width={250} height={100} isMobile={isMobile}>
             Let's Talk!
           </StyledImageURLHeading>
           {isMobile && <Spacer />}
-          <StyledLink href="mailto:hello@thot-labs.com">
-            <b>hello@thot-labs.com</b>
-          </StyledLink>
         </Box>
         {/* <AsciiArtContainer>
           <AsciiArtGenerator />
@@ -43,14 +40,16 @@ const Footer = () => {
             >
               THOT Labs
             </ImageURLHeading>
-
           </NavLink>
         </LogoContainer>
-        <TermsLinkContainer>
+        <BottomLinksContainer>
+          <StyledLink href="mailto:hello@thot-labs.com">
+            <b>hello@thot-labs.com</b>
+          </StyledLink>
           <StyledNavLink to="/terms">
             <b>TERMS & CONDITIONS</b>
           </StyledNavLink>
-        </TermsLinkContainer>
+        </BottomLinksContainer>
       </FooterStyle>
     </OuterContainer>
   )
@@ -63,6 +62,7 @@ const OuterContainer = styled.div`
   justify-content: center;
   background-color: ${Colors.background_body};
 `
+
 const SocialContainer = styled.div`
   grid-area: social;
   justify-self: flex-start;
@@ -70,20 +70,23 @@ const SocialContainer = styled.div`
   @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
     justify-self: center;
     text-align: center;
-      margin-top: 2em;
-
+    margin-top: 2em;
   }
 `
+
 const LogoContainer = styled.div`
   grid-area: logo;
   justify-self: flex-end;
   display: flex;
+  align-items: flex-end; // Align bottom
 
   @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
     justify-self: center;
     text-align: center;
+    align-items: center; // Center align on mobile
   }
 `
+
 const AsciiArtContainer = styled.div`
   grid-area: ascii-art;
   position: absolute;
@@ -96,36 +99,38 @@ const AsciiArtContainer = styled.div`
     text-align: center;
   }
 `
-const TermsLinkContainer = styled.div`
-  grid-area: terms;
-  justify-self: flex-end;
-  margin-bottom: 2em;
-  color: ${Colors.offblack};
+
+const BottomLinksContainer = styled.div`
+  grid-area: bottom-links;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 2em;
   @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
-    justify-self: center;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
   }
 `
+
 const FooterStyle = styled(BaseContainer)`
   padding: 0em 3em 1em 3em;
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-
   grid-template-areas:
     "lets-talk ascii-art logo"
-    "social terms terms"
-    "navigation_footer navigation_footer navigation_footer";
+    "social social social"
+    "bottom-links bottom-links bottom-links";
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     grid-template-columns: 1fr;
     grid-template-areas:
       "logo"
-      "navigation_footer"
       "lets-talk"
       "ascii-art"
       "social"
-      "terms";
+      "bottom-links";
     padding: 0;
     margin-bottom: 2em;
     max-width: 414px;
@@ -159,8 +164,9 @@ const StyledNavLink = styled(NavLink)`
 `
 
 const StyledImageURLHeading = styled(ImageURLHeading)`
-  margin-bottom: ${props => (props.isMobile ? "0" : "0")};
-  text-align: ${props => (props.isMobile ? "center" : "left")};
+  margin-bottom: ${(props) => (props.isMobile ? "0" : "0")};
+  text-align: ${(props) => (props.isMobile ? "center" : "left")};
+  align-items: flex-end; // Align bottom
 `
 
 const Spacer = styled.div`

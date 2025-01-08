@@ -23,7 +23,7 @@ const WhoWeAreContent = () => {
   const prompt = "Shortly introduce 'THOT', a free and open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
   const markdownText = useResponsivePollinationsText(prompt, { seed });
   return (
-    <Box maxWidth="1000px" style={{ margin: "0 auto" }}>
+    <Box maxWidth="1000px" style={{ margin: "0 auto", textAlign: "left" }}>
       <h2 style={{ userSelect: "none" }}>
         <PromptTooltip title={prompt} seed={seed}>
           <ReactMarkdown
@@ -35,7 +35,7 @@ const WhoWeAreContent = () => {
           </ReactMarkdown>
         </PromptTooltip>
       </h2>
-      <ContactWrapper>
+      <ContactWrapper >
         <p style={{ userSelect: "none" }}>
           <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
           <br />
@@ -134,15 +134,17 @@ const ContactWrapper = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
+  max-width: 1000px;
   margin-bottom: 5em;
 
   p {
-    width: 45%; // Adjust this value as needed
+    width: 100%; // Adjust this value as needed
     margin: 0;
+    text-align: right; // Align text to the right for desktop
   }
 
   p:last-child {
-    text-align: right;
+    text-align: right; // Align text to the right for desktop
   }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {

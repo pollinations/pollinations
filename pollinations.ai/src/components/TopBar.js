@@ -22,7 +22,7 @@ const TopBar = () => {
                 whiteText={false}
                 width={400}
                 height={100}
-                style={{ userSelect: "none", maxWidth: "100%" }} // Added to prevent selection and ensure max width
+                style={{ userSelect: "none", maxWidth: "1000px" }} // Added to prevent selection and ensure max width
               >
                 THOT Labs
               </ImageURLHeading>
@@ -40,14 +40,14 @@ const TopBar = () => {
                 whiteText={false}
                 width={500}
                 height={100}
-                style={{ userSelect: "none", maxWidth: "100%" }} // Added to prevent selection and ensure max width
+                style={{ userSelect: "none", maxWidth: "1000px" }} // Added to prevent selection and ensure max width
               >
                 THOT Labs
               </ImageURLHeading>
             </NavLink>
-            {/* <AsciiArtContainer width={500} height={100}>
-              <AsciiArtGenerator />
-            </AsciiArtContainer> */}
+              {/* <AsciiArtContainer width={500} height={100}>
+                <AsciiArtGenerator />
+              </AsciiArtContainer> */}
           </LogoContainer>
           {/* <NavBarStyle>
             <SocialLinks medium gap="1em" invert />
@@ -105,6 +105,7 @@ const LogoContainer = styled.div`
   align-items: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   justify-content: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   width: 100%;
+  max-width: 1040px;
   position: relative; /* Added to position the AsciiArtContainer */
 `
 

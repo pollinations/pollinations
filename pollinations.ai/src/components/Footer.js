@@ -14,7 +14,7 @@ const Footer = () => {
   return (
     <OuterContainer>
       <FooterStyle>
-        <Box
+        {/* <Box
           display="flex"
           flexDirection="column"
           alignItems={isMobile ? "center" : "flex-start"}
@@ -24,14 +24,14 @@ const Footer = () => {
             Let's Talk!
           </StyledImageURLHeading>
           {isMobile && <Spacer />}
-        </Box>
+        </Box> */}
         {/* <AsciiArtContainer>
           <AsciiArtGenerator />
         </AsciiArtContainer> */}
         {/* <SocialContainer>
           <SocialLinks medium gap="1em" invert />
         </SocialContainer> */}
-        <LogoContainer>
+        {/* <LogoContainer>
           <NavLink to="/">
             <ImageURLHeading
               whiteText={false}
@@ -41,7 +41,7 @@ const Footer = () => {
               THOT Labs
             </ImageURLHeading>
           </NavLink>
-        </LogoContainer>
+        </LogoContainer> */}
         <BottomLinksContainer>
           <StyledLink href="mailto:hello@thot-labs.com">
             <b>hello@thot-labs.com</b>

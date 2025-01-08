@@ -182,7 +182,7 @@ const projects = {
       name: "Elixpo",
       url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
       description:
-        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.ai.",
+        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by THOT.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
     },
@@ -229,7 +229,7 @@ const projects = {
       url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
       description:
         "A web simulation tool that integrates **THOT** for generating AI-driven content. *Remix* the app with your own promots.",
-      author: "@thomash_pollinations",
+      author: "@thomash",
     },
     {
       name: "JCode Website Builder",

@@ -37,26 +37,26 @@ const CODE_EXAMPLES = {
     code: () => `## THOT-Labs Cheatsheet for Coding Assistants
 
 ### Image Generation
-Generate Image: \`GET https://image.pollinations.ai/prompt/{prompt}\`
+Generate Image: \`GET https://image.thot.ai/prompt/{prompt}\`
 
 ### Image Models
-List Models: \`GET https://image.pollinations.ai/models\`
+List Models: \`GET https://image.thot.ai/models\`
 
 ### Text Generation
-Generate (GET): \`GET https://text.pollinations.ai/{prompt}\`
+Generate (GET): \`GET https://text.thot.ai/{prompt}\`
 
 ### Text Generation (Advanced)
-Generate (POST): \`POST https://text.pollinations.ai/\`
+Generate (POST): \`POST https://text.thot.ai/\`
 
 ### OpenAI Compatible Endpoint
-OpenAI Compatible: \`POST https://text.pollinations.ai/openai\`
+OpenAI Compatible: \`POST https://text.thot.ai/openai\`
 
 ### Text Models
-List Models: \`GET https://text.pollinations.ai/models\`
+List Models: \`GET https://text.thot.ai/models\`
 
 ### Real-time Feeds
-Image Feed: \`GET https://image.pollinations.ai/feed\`
-Text Feed: \`GET https://text.pollinations.ai/feed\`
+Image Feed: \`GET https://image.thot.ai/feed\`
+Text Feed: \`GET https://text.thot.ai/feed\`
 *\\* required parameter*`,
     language: "markdown"
   },
@@ -65,7 +65,7 @@ Text Feed: \`GET https://text.pollinations.ai/feed\`
 I will describe an image to you, and you will create a prompt that could be used for image-generation. 
 Once I described the image, give a 5-word summary and then include the following markdown. 
   
-![Image](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
+![Image](https://image.thot.ai/prompt/{description}?width={width}&height={height})
   
 where {description} is:
 {sceneDetailed}%20{adjective}%20{charactersDetailed}%20{visualStyle}%20{genre}%20{artistReference}
@@ -107,7 +107,7 @@ Make sure the prompts in the URL are encoded. Don't quote the generated markdown
   - If the user specifies the /imagine command, return the parameters as an embedded markdown image with the prompt in italic underneath.
 
   ## Example:
-  ![{description}](https://image.pollinations.ai/prompt/{description}?width={width}&height={height})
+  ![{description}](https://image.thot.ai/prompt/{description}?width={width}&height={height})
   *{description}*
   `,
     language: "markdown"
@@ -127,8 +127,7 @@ Model: **${model || "flux"}**
   },
   react: {
     code: ({ prompt, width, height, seed, model }) => `
-// React code example using usePollinationsImage hook
-// For more details, visit: https://react-hooks.pollinations.ai/
+// React code example using useThotImage hook
 
 import React from 'react';
 import { usePollinationsImage } from '@pollinations/react';
@@ -175,7 +174,6 @@ export default GeneratedImageComponent;
   rust: {
     code: ({ prompt, width, height, seed, model }) => `
 // Rust code example for downloading an image
-// For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 use reqwest::blocking::get;
 use std::fs::File;
@@ -202,7 +200,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model = "${model || "flux"}"; // Using 'flux' as default if model is not provided
 
     let image_url = format!(
-      "https://pollinations.ai/p/{}?width={}&height={}&seed={}&model={}",
+      "https://thot.ai/p/{}?width={}&height={}&seed={}&model={}",
       prompt, width, height, seed, model
     );
 
@@ -221,7 +219,6 @@ reqwest = { version = "0.11", features =["blocking", "json"] }
   nodejs: {
     code: ({ prompt, width, height, seed, model }) => `
 // Node.js code example for downloading an image
-// For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 import fs from 'fs';
 import fetch from 'node-fetch';
@@ -244,7 +241,7 @@ const height = ${height};
 const seed = ${seed}; // Each seed generates a new image variation
 const model = '${model || "flux"}'; // Using 'flux' as default if model is not provided
 
-const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
+const imageUrl = \`https://thot.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);
 `,
@@ -253,7 +250,6 @@ downloadImage(imageUrl);
   python: {
     code: ({ prompt, width, height, seed, model }) => `
 # Python code example for downloading an image
-# For more details, visit: https://github.com/pollinations/pollinations/blob/master/APIDOCS.md
 
 import requests
 
@@ -273,16 +269,16 @@ height = ${height}
 seed = ${seed} # Each seed generates a new image variation
 model = '${model || "flux"}' # Using 'flux' as default if model is not provided
 
-image_url = f"https://pollinations.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
+image_url = f"https://thot.ai/p/{prompt}?width={width}&height={height}&seed={seed}&model={model}"
 
 download_image(image_url)
 
 
-# Using the pollinations pypi package
+# Using the thot pypi package
 
-## pip install pollinations
+## pip install thot
 
-import pollinations as ai
+import thot as ai
 
 model_obj = ai.Model()
 
@@ -305,14 +301,14 @@ print(image.url)
 
 ### Image Feed
 
-\`GET https://image.pollinations.ai/feed\`
+\`GET https://image.thot.ai/feed\`
 
 - **Description:** Provides a real-time stream of images generated by users.
 - **Usage:** Connect using an SSE-compatible client to receive continuous image data.
 - **Example:**
 
 \`\`\`javascript
-const eventSource = new EventSource('https://image.pollinations.ai/feed');
+const eventSource = new EventSource('https://image.thot.ai/feed');
 
 eventSource.onmessage = function(event) {
   const imageData = JSON.parse(event.data);
@@ -322,14 +318,14 @@ eventSource.onmessage = function(event) {
 
 ### Text Feed
 
-\`GET https://text.pollinations.ai/feed\`
+\`GET https://text.thot.ai/feed\`
 
 - **Description:** Provides a real-time stream of text generated by users.
 - **Usage:** Connect using an SSE-compatible client to receive continuous text data.
 - **Example:**
 
 \`\`\`javascript
-const eventSource = new EventSource('https://text.pollinations.ai/feed');
+const eventSource = new EventSource('https://text.thot.ai/feed');
 
 eventSource.onmessage = function(event) {
   const textData = JSON.parse(event.data);

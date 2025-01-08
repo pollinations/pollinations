@@ -242,7 +242,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               <ModelInfo
                 model={image["model"]}
                 wasPimped={image["wasPimped"]}
-                referrer={image["referrer"]}
+                // referrer={image["referrer"]}
               />
             </Grid>
           )}

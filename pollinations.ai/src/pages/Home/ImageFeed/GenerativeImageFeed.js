@@ -17,6 +17,8 @@ import { ImageDisplay } from "./ImageDisplay"
 import { ImageContext } from "../../../contexts/ImageContext"
 import { CodeExamples } from "../CodeExamples"
 import { EmojiRephrase } from "../../../components/EmojiRephrase"
+import imagefeed from "../../../assets/imgs/2025_imagefeed.jpeg" // Import the toplogo image
+import integrate from "../../../assets/imgs/2025_integrate.jpeg" // Import the toplogo image
 
 const log = debug("GenerativeImageFeed")
 
@@ -172,22 +174,28 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   return (
     <GenerativeImageURLContainer className={classes.container}>
       <Grid item className={classes.gridItem} style={{ marginTop: "2em" }}>
-        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
+        <img
+          src={imagefeed}
+          alt="Image Feed Logo"
+          style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
+        />
+        {/* <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Image Feed
-        </ImageURLHeading>
+        </ImageURLHeading> */}
         <Typography
-              style={{
-                color: Colors.white,
-                fontSize: "1.5em",
-                maxWidth: "750px",
-                margin: "2em auto 2em auto",
-                textAlign: "center",
-              }}
-            >
-              <EmojiRephrase>
-                Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime. 
-              </EmojiRephrase>
-            </Typography>
+          style={{
+            color: Colors.white,
+            fontSize: "1.5em",
+            maxWidth: "750px",
+            margin: "0em auto 2em auto",
+            textAlign: "center",
+          }}
+        >
+          <EmojiRephrase>
+            Real-time feed of our image API endpoint (minus the private ones). Try our models
+            pausing anytime.
+          </EmojiRephrase>
+        </Typography>
       </Grid>
       {!image["imageURL"] ? (
         <LoadingIndicator />
@@ -248,7 +256,19 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             >
               Integrate
             </ImageURLHeading> */}
-            <hr style={{ border: `1px solid ${Colors.lime}`, marginBottom: "4em", marginTop: "2em", width:"95%" }} />
+            <hr
+              style={{
+                border: `1px solid ${Colors.lime}`,
+                marginBottom: "0em",
+                marginTop: "0em",
+                width: "95%",
+              }}
+            />
+            <img
+              src={integrate}
+              alt="Integrate Logo"
+              style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
+            />
             <Typography
               style={{
                 color: Colors.white,
@@ -259,8 +279,8 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               }}
             >
               <EmojiRephrase>
-                Discover how to seamlessly integrate our free image and text generation API into your
-                projects. Below are code examples to help you get started.
+                Discover how to seamlessly integrate our free image and text generation API into
+                your projects. Below are code examples to help you get started.
               </EmojiRephrase>
             </Typography>
             <Box style={{ marginTop: "2em", marginBottom: "4em" }}>

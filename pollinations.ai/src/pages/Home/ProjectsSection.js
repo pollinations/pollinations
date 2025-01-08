@@ -12,6 +12,7 @@ import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 import { T } from "ramda"
 import styled from "@emotion/styled"
 import StyledLink from "../../components/StyledLink" // Updated import
+import projectsTitle from "../../assets/imgs/2025_projects.jpeg"
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -422,13 +423,11 @@ const ProjectsSection = () => {
               </div>
             )}
           </Grid>
-          
-            <Grid item xs={isMobile ? 1 : 2} style={{ textAlign: "center" }}>
-            {!isMobile && (
-              <ProjectImage name={project.name} />
-            )}
-            </Grid>
-          
+
+          <Grid item xs={isMobile ? 1 : 2} style={{ textAlign: "center" }}>
+            {!isMobile && <ProjectImage name={project.name} />}
+          </Grid>
+
           <Grid item xs={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
             <span style={{ color: Colors.white, fontSize: "1em" }}>
               <EmojiRephrase>{project.description}</EmojiRephrase>
@@ -490,10 +489,15 @@ const ProjectsSection = () => {
       <hr
         style={{
           border: `1px solid ${Colors.lime}`,
-          marginBottom: "4em",
+          marginBottom: "0em",
           marginTop: "2em",
           width: "95%",
         }}
+      />
+      <img
+        src={projectsTitle}
+        alt="Project Logo"
+        style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
       />
 
       <Typography
@@ -517,7 +521,6 @@ const ProjectsSection = () => {
           >
             Get in touch
           </ImageURLHeading> */}
-          
       </Typography>
       <p
         style={{ userSelect: "none", fontSize: "1.6em", textAlign: "center", marginBottom: "4em" }}
@@ -570,7 +573,6 @@ const ProjectsSection = () => {
 
       {/* Render selected category */}
       {renderProjects(projects[selectedCategory])}
-
     </GenerativeImageURLContainer>
   )
 }

@@ -6,7 +6,7 @@ import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
 import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
-import topLogo from "../assets/imgs/toplogo.jpeg"; // Import the toplogo image
+import topLogo from "../assets/imgs/2025_toplogo.jpeg"; // Import the toplogo image
 
 const TopBar = () => {
   const isMobile = useIsMobile(); // Use the new hook

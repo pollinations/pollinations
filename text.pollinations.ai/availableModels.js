@@ -117,7 +117,7 @@ export const availableModels = [
         name: 'llamalight',
         type: 'chat',
         censored: false,
-        description: 'Llama 3.2 1B Instruct',
+        description: 'Llama 3.2 3B Instruct',
         baseModel: true,
     },
     // {

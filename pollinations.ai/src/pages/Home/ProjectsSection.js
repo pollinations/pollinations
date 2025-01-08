@@ -402,7 +402,7 @@ const ProjectsSection = () => {
           }}
           className={classes.gridItem}
         >
-          <Grid item xs={3} style={{ textAlign: "right" }}>
+          <Grid item xs={4} style={{ textAlign: "right" }}>
             {renderProjectLink(project)}
             {project.author && (
               <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
@@ -422,10 +422,14 @@ const ProjectsSection = () => {
               </div>
             )}
           </Grid>
-          <Grid item xs={2} style={{ textAlign: "center" }}>
-            <ProjectImage name={project.name} />
-          </Grid>
-          <Grid item xs={isMobile ? 4 : 6} style={{ textAlign: "left" }}>
+          
+            <Grid item xs={isMobile ? 1 : 2} style={{ textAlign: "center" }}>
+            {!isMobile && (
+              <ProjectImage name={project.name} />
+            )}
+            </Grid>
+          
+          <Grid item xs={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
             <span style={{ color: Colors.white, fontSize: "1em" }}>
               <EmojiRephrase>{project.description}</EmojiRephrase>
             </span>

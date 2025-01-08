@@ -185,7 +185,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               }}
             >
               <EmojiRephrase>
-                Real-time feed of our image API endpoint, minus the private ones of course.
+                Real-time feed of our image API endpoint (minus the private ones). Pause it anytime to test our models.
               </EmojiRephrase>
             </Typography>
       </Grid>

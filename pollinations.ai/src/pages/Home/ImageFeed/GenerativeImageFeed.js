@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
-import { Grid, Box, useMediaQuery } from "@material-ui/core"
+import { Grid, Box, useMediaQuery, Typography } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles" // Import makeStyles
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
@@ -16,6 +16,7 @@ import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
 import { ImageContext } from "../../../contexts/ImageContext"
 import { CodeExamples } from "../CodeExamples"
+import { EmojiRephrase } from "../../../components/EmojiRephrase"
 
 const log = debug("GenerativeImageFeed")
 
@@ -78,13 +79,15 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   const [imageParams, setImageParams] = useState({})
   const imageParamsRef = useRef(imageParams) // Use useRef for imageParamsRef
   const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow()
-  const { updateImage, cancelLoading, image, isLoading } = useImageEditor({ stop, image: slideshowImage })
+  const { updateImage, cancelLoading, image, isLoading } = useImageEditor({
+    stop,
+    image: slideshowImage,
+  })
   const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
   const [isInputChanged, setIsInputChanged] = useState(false)
   const { setImage } = useContext(ImageContext)
   const [toggleValue, setToggleValue] = useState("feed")
-
 
   function switchToEditMode() {
     setToggleValue("edit")
@@ -110,16 +113,19 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
     setToggleValue(isStopped ? "edit" : "feed")
   }, [isStopped])
 
-  const handleParamChange = useCallback((param, value) => {
-    setIsInputChanged(true)
-    if (!isStopped) {
-      stop(true)
-    }
-    setImageParams((prevParams) => ({
-      ...prevParams,
-      [param]: value,
-    }))
-  }, [isStopped, stop])
+  const handleParamChange = useCallback(
+    (param, value) => {
+      setIsInputChanged(true)
+      if (!isStopped) {
+        stop(true)
+      }
+      setImageParams((prevParams) => ({
+        ...prevParams,
+        [param]: value,
+      }))
+    },
+    [isStopped, stop]
+  )
 
   const handleSubmit = useCallback(() => {
     const currentImageParams = imageParamsRef.current
@@ -134,8 +140,8 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   const handleButtonClick = () => {
     if (isLoading) {
       // Cancel the current generation
-      cancelLoading();
-      return;
+      cancelLoading()
+      return
     }
 
     if (!isInputChanged) {
@@ -166,12 +172,22 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
   return (
     <GenerativeImageURLContainer className={classes.container}>
       <Grid item className={classes.gridItem} style={{ marginTop: "2em" }}>
-        <ImageURLHeading
-          width={isMobile ? 400 : 700}
-          height={isMobile ? 150 : 200}
-        >
+        <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Image Feed
         </ImageURLHeading>
+        <Typography
+              style={{
+                color: Colors.white,
+                fontSize: "1.5em",
+                maxWidth: "750px",
+                margin: "2em auto 2em auto",
+                textAlign: "center",
+              }}
+            >
+              <EmojiRephrase>
+                Real-time feed of our image API endpoint, minus the private ones of course.
+              </EmojiRephrase>
+            </Typography>
       </Grid>
       {!image["imageURL"] ? (
         <LoadingIndicator />
@@ -185,7 +201,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             <Box className={classes.boxRelative}>
               <Box className={classes.boxCenter}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-                <Box mx={2} /> 
+                <Box mx={2} />
                 <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
@@ -222,16 +238,31 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               />
             </Grid>
           )}
-          <Grid item xs={12} style={{ marginTop: "4em" }}>
 
-            <ImageURLHeading
+          <Grid item xs={12} style={{ marginTop: "4em" }}>
+            {/* <ImageURLHeading
               className={classes.scaledImageURLHeading}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
               whiteText={true}
             >
               Integrate
-            </ImageURLHeading>
+            </ImageURLHeading> */}
+            <hr style={{ border: `1px solid ${Colors.lime}`, marginBottom: "4em", marginTop: "2em" }} />
+            <Typography
+              style={{
+                color: Colors.white,
+                fontSize: "1.5em",
+                maxWidth: "750px",
+                margin: "0 auto",
+                textAlign: "center",
+              }}
+            >
+              <EmojiRephrase>
+                Discover how to seamlessly integrate our free image and text generation API into your
+                projects. Below are code examples to help you get started.
+              </EmojiRephrase>
+            </Typography>
             <Box style={{ marginTop: "2em", marginBottom: "4em" }}>
               <CodeExamples image={image} />
             </Box>

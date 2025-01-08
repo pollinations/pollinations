@@ -13,7 +13,7 @@ export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image 
       <Typography variant="body1" component="span">
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
       </Typography>
-      <TimingInfo image={lastImage} />
+      {/* <TimingInfo image={lastImage} /> */}
     </Box>
   )
 }

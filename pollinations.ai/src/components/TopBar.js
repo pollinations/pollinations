@@ -27,9 +27,9 @@ const TopBar = () => {
                 THOT Labs
               </ImageURLHeading>
             </NavLink>
-            <AsciiArtContainer>
+            {/* <AsciiArtContainer>
               <AsciiArtGenerator />
-            </AsciiArtContainer>
+            </AsciiArtContainer> */}
           </LogoContainer>
         </MobileNavContainer>
       ) : (

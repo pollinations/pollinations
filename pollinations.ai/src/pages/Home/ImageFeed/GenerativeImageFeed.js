@@ -173,12 +173,12 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
 
   return (
     <GenerativeImageURLContainer className={classes.container}>
-      <Grid item className={classes.gridItem} style={{ marginTop: "2em" }}>
-        <img
-          src={imagefeed}
-          alt="Image Feed Logo"
-          style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
-        />
+      <img
+        src={imagefeed}
+        alt="Image Feed Logo"
+        style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
+      />
+      <Grid item className={classes.gridItem} style={{ marginTop: "0em" }}>
         {/* <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Image Feed
         </ImageURLHeading> */}

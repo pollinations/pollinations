@@ -1,0 +1,16 @@
+name: Auto-generate PR from Issues using Aider
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  generate:
+    uses: pollinations/aider-github-workflows/.github/workflows/aider-issue-to-pr.yml@main
+    # Check if the label is 'aider'
+    if: github.event.label.name == 'aider'
+    with:
+      issue-number: ${{ github.event.issue.number }}
+      base-branch: ${{ github.event.repository.default_branch }}
+      model: deepseek
+    secrets: 
+      openai_api_base: https://text.pollinations.ai/openai

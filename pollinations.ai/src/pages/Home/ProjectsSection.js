@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Link, Grid, Typography, AppBar, ButtonGroup, Button } from "@material-ui/core"
+import { Link, Grid, Typography, AppBar, ButtonGroup, Button, Box } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { ImageURLHeading } from "./ImageHeading"
 import { Colors, Fonts } from "../../styles/global"
@@ -11,9 +11,7 @@ import { usePollinationsImage } from "@pollinations/react"
 import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 import { T } from "ramda"
 import styled from "@emotion/styled"
-import StyledLink from "../../components/StyledLink"; // Updated import
-
-
+import StyledLink from "../../components/StyledLink" // Updated import
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -392,7 +390,18 @@ const ProjectsSection = () => {
   const renderProjects = (projectList) => (
     <Grid container spacing={4} className={classes.gridContainer}>
       {projectList.map((project, index) => (
-        <Grid container key={index} className={classes.gridItem}>
+        <Grid
+          container
+          key={index}
+          style={{
+            flexDirection: "row",
+            flexWrap: "nowrap",
+            alignContent: "center",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          className={classes.gridItem}
+        >
           <Grid item xs={3} style={{ textAlign: "right" }}>
             {renderProjectLink(project)}
             {project.author && (
@@ -463,9 +472,9 @@ const ProjectsSection = () => {
 
   return (
     <GenerativeImageURLContainer
-      style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px" }}
+      style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
     >
-      <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+      {/* <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
         <ImageURLHeading
           width={isMobile ? 400 : 700}
           height={isMobile ? 150 : 200}
@@ -473,7 +482,16 @@ const ProjectsSection = () => {
         >
           Integrations
         </ImageURLHeading>
-      </GenerativeImageURLContainer>
+      </GenerativeImageURLContainer> */}
+      <hr
+        style={{
+          border: `1px solid ${Colors.lime}`,
+          marginBottom: "4em",
+          marginTop: "2em",
+          width: "95%",
+        }}
+      />
+
       <Typography
         style={{
           color: Colors.white,
@@ -495,21 +513,24 @@ const ProjectsSection = () => {
           >
             Get in touch
           </ImageURLHeading> */}
+          
       </Typography>
-        <p style={{ userSelect: "none", fontSize: "1.2em", textAlign: "center", marginBottom: "4em" }}>
-          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
-          <br />
-          <StyledLink
-            href="mailto:hello@thot-labs.com"
-            onClick={(e) => {
-              handleLinkClick(e);
-              alert("Copied");
-            }}
-            style={{ userSelect: "text", fontSize: "1.2em" }}
-          >
-            <b>hello@thot-labs.com</b>
-          </StyledLink>
-        </p>
+      <p
+        style={{ userSelect: "none", fontSize: "1.6em", textAlign: "center", marginBottom: "4em" }}
+      >
+        <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
+        <br />
+        <StyledLink
+          href="mailto:hello@thot-labs.com"
+          onClick={(e) => {
+            handleLinkClick(e)
+            alert("Copied")
+          }}
+          style={{ userSelect: "text", fontSize: "1.6em" }}
+        >
+          <b>hello@thot-labs.com</b>
+        </StyledLink>
+      </p>
 
       {/* Category Menu */}
       <AppBar
@@ -519,7 +540,7 @@ const ProjectsSection = () => {
           width: "auto",
           boxShadow: "none",
           backgroundColor: "transparent",
-          marginBottom: "1em", // Added margin under the category buttons
+          marginBottom: "3em", // Added margin under the category buttons
         }}
       >
         <ButtonGroup
@@ -604,4 +625,3 @@ const ProjectImage = ({ name }) => {
 }
 
 export default ProjectsSection
-

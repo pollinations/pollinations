@@ -17,19 +17,19 @@ export default function Home() {
     <ImageContext.Provider value={{ image, setImage }}>
       <Style>
         <WhoWeAre />
-        <TopBand />
+        {/* <TopBand /> */}
         {/* <ImageURLHeading>Text Feed</ImageURLHeading>
         <TextFeed /> 
         <TopBand /> */}
         <GenerativeImageFeed />
-        <TopBand />
+        {/* <TopBand /> */}
         <ProjectsSection />
         {/* 
         <TopBand />
         <Discord />
         <TopBand />
          <CompaniesSection /> */}
-        <TopBand />
+        {/* <TopBand /> */}
       </Style>
     </ImageContext.Provider>
   );

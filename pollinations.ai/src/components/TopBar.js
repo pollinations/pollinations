@@ -17,12 +17,11 @@ const TopBar = () => {
           {/* <CenteredSocialLinks>
             <SocialLinks medium gap="1em" invert />
           </CenteredSocialLinks> */}
-          <LogoContainer isMobile={isMobile}>
             <NavLink to="/">
               <img
                 src={topLogo}
                 alt="THOT Labs Logo"
-                style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "500px" }}
+                style={{ width: "100%", userSelect: "none", maxWidth: "500px" }}
               />
               {/* <ImageURLHeading
                 whiteText={false}
@@ -36,7 +35,6 @@ const TopBar = () => {
             {/* <AsciiArtContainer>
               <AsciiArtGenerator />
             </AsciiArtContainer> */}
-          </LogoContainer>
         </MobileNavContainer>
       ) : (
         <>

@@ -267,7 +267,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             <img
               src={integrate}
               alt="Integrate Logo"
-              style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
+              style={{ width: "100%", userSelect: "none", maxWidth: "1000px" }}
             />
             <Typography
               style={{

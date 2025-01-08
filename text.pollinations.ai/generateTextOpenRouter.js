@@ -15,7 +15,7 @@ export async function generateTextOpenRouter(messages, options) {
 
     try {
         const requestBody = {
-            model: "deepseek/deepseek-chat",
+            model: options.model || "deepseek/deepseek-chat",
             messages,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             max_tokens: 4096,

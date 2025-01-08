@@ -4,6 +4,21 @@ import { availableModels } from '../availableModels.js';
 
 const baseUrl = 'https://text.pollinations.ai'; // Production server URL
 
+// Handle unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Don't exit the process, just log the error
+});
+
+// Add cleanup hook
+test.afterEach.always(t => {
+    // Close any potential event streams
+    if (global.EventSource) {
+        const sources = Object.values(global.EventSource.instances || {});
+        sources.forEach(source => source.close());
+    }
+});
+
 /**
  * Generates a random seed for consistent but varied responses.
  * @returns {number} A random integer between 0 and 999999.
@@ -60,8 +75,13 @@ availableModels.forEach(model => {
             t.is(response.status, 200, `Response status for ${model.name} should be 200`);
             t.truthy(response.data, `Response for ${model.name} should contain data`);
         } catch (error) {
+            // Only log the error message and status, not the full error object
             console.error(`Model ${model.name} failed with error:`, error.message);
-            throw error; // Re-throw the error to fail the test
+            if (error.response) {
+                console.error('Status:', error.response.status);
+                console.error('Data:', error.response.data);
+            }
+            t.fail(`Model ${model.name} test failed: ${error.message}`);
         }
     });
 });
@@ -220,13 +240,39 @@ test('POST /openai should return OpenAI-compatible format', async t => {
     t.timeout(60000);
     const response = await axios.post(`${baseUrl}/openai/chat/completions`, {
         messages: [{ role: 'user', content: 'Hello' }],
-        model: 'gpt-4',
+        model: 'openai',
+        cache: false
+    });
+    console.log("rrrr",response.data.choices);
+    t.is(response.status, 200, 'Response status should be 200');
+    t.truthy(response.data.choices, 'Response should contain a "choices" array');
+    t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');
+    t.truthy(response.data.choices[0].message.content, 'Message should have a "content" field');
+});
+
+/**
+ * Test: OpenAI API should handle invalid model gracefully
+ * 
+ * Purpose: Verify that the API handles invalid model input gracefully.
+ * 
+ * Steps:
+ * 1. Send a POST request to the OpenAI-compatible endpoint with an invalid model.
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK).
+ * 2. The response should contain a "choices" array.
+ * 3. The first choice should have a "message" object.
+ */
+test('OpenAI API should handle invalid model gracefully', async t => {
+    t.timeout(60000);
+    const response = await axios.post(`${baseUrl}/openai/chat/completions`, {
+        messages: [{ role: 'user', content: 'Hello' }],
+        model: 'non-existent-model',
         cache: false
     });
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.data.choices, 'Response should contain a "choices" array');
     t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');
-    t.truthy(response.data.choices[0].message.content, 'Message should have a "content" field');
 });
 
 /**

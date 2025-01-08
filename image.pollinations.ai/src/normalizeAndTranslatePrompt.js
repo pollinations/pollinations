@@ -26,7 +26,7 @@ export const normalizeAndTranslatePrompt = async (originalPrompt, req, timingInf
   logPrompt("promptRaw", prompt);
 
 
-  // Only set enhance=true if it's not explicitly set to false
+  // // Only set enhance=true if it's not explicitly set to false
   if (enhance !== false && prompt.length < 100) {
     enhance = true;
   }

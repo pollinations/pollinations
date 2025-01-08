@@ -20,9 +20,8 @@ const WhoWeAreContent = () => {
   }
 
   const seed = useRandomSeed();
-  const prompt = "Introduce the team of machine-learning specialists, artists and futurists and highlight that they are deeply engaged in the open source AI ecosystem. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
+  const prompt = "Shortly introduce 'THOT', a free and open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
   const markdownText = useResponsivePollinationsText(prompt, { seed });
-
   return (
     <Box maxWidth="1000px" style={{ margin: "0 auto" }}>
       <h2 style={{ userSelect: "none" }}>

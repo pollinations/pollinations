@@ -228,9 +228,9 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               className={classes.scaledImageURLHeading}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
-              whiteText={false}
+              whiteText={true}
             >
-              Integrations
+              Integrate
             </ImageURLHeading>
             <Box style={{ marginTop: "2em", marginBottom: "4em" }}>
               <CodeExamples image={image} />

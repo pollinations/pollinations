@@ -19,9 +19,10 @@ const Footer = () => {
             whiteText={false}
             width={250}
             height={100}
-            customPrompt={`Create a refined, contemporary flat 2D design for the word ‘THOT Labs’ in black on a solid white background, no 3D effects. Use large, hieroglyphic-inspired forms for each letter, featuring small Egyptian motifs (Ankhs, Eye of Horus, scarabs, lotus) with straight lines and a clean silhouette. Subtly incorporate additional hieroglyphs while keeping the overall style minimal, modern, and serious, using a strictly black-and-white palette.`}
             isMobile={isMobile}
-          />
+          >
+            Let's Talk!
+          </StyledImageURLHeading>
           {isMobile && <Spacer />}
           <StyledLink href="mailto:hello@thot-labs.com">
             <b>hello@thot-labs.com</b>
@@ -39,8 +40,10 @@ const Footer = () => {
               whiteText={false}
               width={isMobile ? 400 : 700}
               height={isMobile ? 150 : 200}
-              customPrompt={`Create a refined, contemporary flat 2D design for the word ‘THOT Labs’ in black on a solid white background, no 3D effects. Use large, hieroglyphic-inspired forms for each letter, featuring small Egyptian motifs (Ankhs, Eye of Horus, scarabs, lotus) with straight lines and a clean silhouette. Subtly incorporate additional hieroglyphs while keeping the overall style minimal, modern, and serious, using a strictly black-and-white palette.`}
-            />
+            >
+              THOT Labs
+            </ImageURLHeading>
+
           </NavLink>
         </LogoContainer>
         <TermsLinkContainer>

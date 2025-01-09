@@ -18,6 +18,7 @@
     "axios": "^1.7.7",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
+    "eventsource": "^3.0.2",
     "express": "^4.20.0",
     "express-rate-limit": "^7.4.0",
     "openai": "^4.58.2",

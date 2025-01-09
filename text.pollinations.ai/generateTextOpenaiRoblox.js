@@ -15,6 +15,11 @@ export async function generateText(messages, options) {
             ? 'Respond in simple json format'
             : 'You are a helpful assistant.';
         messages = [{ role: 'system', content: systemContent }, ...messages];
+    } else if (options.jsonMode) {
+        const systemMessage = messages.find(m => m.role === 'system');
+        if (!containsJSON(systemMessage.content)) {
+            systemMessage.content += ' Respond with JSON.';
+        }
     }
 
     console.log("calling openai with messages", messages);
@@ -41,4 +46,8 @@ export async function generateText(messages, options) {
 
 function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
+}
+
+function containsJSON(text) {
+    return text.toLowerCase().includes('json');
 }

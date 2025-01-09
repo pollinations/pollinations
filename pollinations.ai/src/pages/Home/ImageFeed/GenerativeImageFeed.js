@@ -201,41 +201,58 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
         <LoadingIndicator />
       ) : (
         <Grid container spacing={2} direction="column">
-                    <Grid item xs={12} className={classes.gridCenter}>
+          <Grid item xs={12} className={classes.gridCenter}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
           </Grid>
           <Grid item xs={12} className={classes.gridCenter}>
             <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+          </Grid>
+          {toggleValue === "edit" && (
+            <Grid item xs={12}>
+              <Box className={classes.boxColumn}>
+                <Box className={classes.boxFlex}>
+                  <TextPrompt
+                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                    stop={stop}
+                    switchToEditMode={switchToEditMode}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+          )}
+          <Grid item xs={12} className={classes.gridCenter}>
+            {toggleValue === "edit" && (
+              <Box className={classes.boxMarginTop}>
+                <ImageEditor
+                  image={imageParams}
+                  handleParamChange={handleParamChange}
+                  handleFocus={handleFocus}
+                  isLoading={isLoading} // Pass this prop
+                  setIsInputChanged={setIsInputChanged}
+                  handleButtonClick={handleButtonClick} // Pass this prop
+                  isInputChanged={isInputChanged} // Pass this prop
+                />
+              </Box>
+            )}
           </Grid>
 
           <Grid item xs={12} className={classes.gridCenter}>
             <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
           </Grid>
 
-          <Grid item xs={12}>
-            <Box className={classes.boxColumn}>
-              <Box className={classes.boxFlex}>
-                <TextPrompt
-                  {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
-                  stop={stop}
-                  switchToEditMode={switchToEditMode}
-                />
-              </Box>
-              {toggleValue === "edit" && (
-                <Box className={classes.boxMarginTop}>
-                  <ImageEditor
-                    image={imageParams}
-                    handleParamChange={handleParamChange}
-                    handleFocus={handleFocus}
-                    isLoading={isLoading} // Pass this prop
-                    setIsInputChanged={setIsInputChanged}
-                    handleButtonClick={handleButtonClick} // Pass this prop
-                    isInputChanged={isInputChanged} // Pass this prop
+          {toggleValue === "feed" && (
+            <Grid item xs={12}>
+              <Box className={classes.boxColumn}>
+                <Box className={classes.boxFlex}>
+                  <TextPrompt
+                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                    stop={stop}
+                    switchToEditMode={switchToEditMode}
                   />
                 </Box>
-              )}
-            </Box>
-          </Grid>
+              </Box>
+            </Grid>
+          )}
 
           {toggleValue === "feed" && (
             <Grid item xs={12} className={classes.gridCenter}>

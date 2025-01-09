@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "ava --verbose",
+    "test": "ava --verbose test/**/*.test.js",
     "start": "node startServer.js"
   },
   "keywords": [],

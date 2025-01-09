@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "center",
   },
   listProjectText: {
-    color: Colors.white,
+    color: Colors.offwhite,
     textAlign: "center",
     marginTop: theme.spacing(4),
     marginBottom: theme.spacing(4),
@@ -57,7 +57,7 @@ const useStyles = makeStyles((theme) => ({
     maxWidth: "100%",
   },
   callToActionContainer: {
-    backgroundColor: Colors.black,
+    backgroundColor: Colors.offblack,
     padding: theme.spacing(4),
     borderRadius: "8px",
     textAlign: "center",
@@ -70,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
     margin: "0 auto",
   },
   callToActionLink: {
-    color: Colors.white,
+    color: Colors.offwhite,
     fontSize: "1em",
     textDecoration: "none",
     "&:hover": {
@@ -80,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 const logoPrefix =
-  "minimalist colour logo design focuses on symbols and visuals, no text, solid black background"
+  "minimalist colour logo design focuses on symbols and visuals, no text, solid off white background"
 const imageDimension = 96
 
 const projectCategories = [
@@ -250,8 +250,7 @@ const projects = {
     {
       name: "SillyTavern",
       url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-      description:
-        "An **LLM frontend** for power users. THOT permits it to generate images.",
+      description: "An **LLM frontend** for power users. THOT permits it to generate images.",
       repo: "https://github.com/SillyTavern/SillyTavern",
     },
     {
@@ -323,23 +322,20 @@ const projects = {
     {
       name: "Discord Bot",
       url: "https://discord.gg/D9xGg8mq3D",
-      description:
-        "A **Discord bot** that uses THOT for generating images based on user prompts.",
+      description: "A **Discord bot** that uses THOT for generating images based on user prompts.",
       author: "@Zngzy",
       repo: "https://github.com/Zingzy/pollinations.ai-bot",
     },
     {
       name: "WhatsApp Group",
       url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-      description:
-        "A **WhatsApp group** for that allows you to generate images using THOT.",
+      description: "A **WhatsApp group** for that allows you to generate images using THOT.",
       author: "@dg_karma",
     },
     {
       name: "Telegram Bot",
       url: "http://t.me/pollinationsbot",
-      description:
-        "A **Telegram bot** that uses THOT for generating images based on user prompts.",
+      description: "A **Telegram bot** that uses THOT for generating images based on user prompts.",
       author: "Wong Wei Hao",
     },
     {
@@ -406,7 +402,7 @@ const ProjectsSection = () => {
           <Grid item xs={4} style={{ textAlign: "right" }}>
             {renderProjectLink(project)}
             {project.author && (
-              <div style={{ marginTop: "5px", color: Colors.white, fontSize: "1em" }}>
+              <div style={{ marginTop: "5px", color: Colors.offwhite, fontSize: "1em" }}>
                 by{" "}
                 {project.author.startsWith("@") ? (
                   <Link
@@ -429,7 +425,7 @@ const ProjectsSection = () => {
           </Grid>
 
           <Grid item xs={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
-            <span style={{ color: Colors.white, fontSize: "1em" }}>
+            <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
               <EmojiRephrase>{project.description}</EmojiRephrase>
             </span>
             <br />
@@ -474,10 +470,13 @@ const ProjectsSection = () => {
   })
 
   return (
-    <GenerativeImageURLContainer
-      style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
+    <Box
+      style={{ background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`, width: "100%" }}
     >
-      {/* <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
+      <GenerativeImageURLContainer
+        style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
+      >
+        {/* <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
         <ImageURLHeading
           width={isMobile ? 400 : 700}
           height={isMobile ? 150 : 200}
@@ -487,34 +486,34 @@ const ProjectsSection = () => {
         </ImageURLHeading>
       </GenerativeImageURLContainer> */}
 
-      <Typography
-        variant="h1"
-        style={{
-          color: Colors.lime,
-          fontSize: "8em",
-          fontWeight: "bold",
-          textAlign: "center",
-          margin: "0 auto",
-          userSelect: "none",
-        }}
-      >
-        Built with Us
-      </Typography>
+        <Typography
+          variant="h1"
+          style={{
+            color: Colors.lime,
+            fontSize: "8em",
+            fontWeight: "bold",
+            textAlign: "center",
+            margin: "0 auto",
+            userSelect: "none",
+          }}
+        >
+          Built with Us
+        </Typography>
 
-      <Typography
-        style={{
-          color: Colors.white,
-          fontSize: "1.5em",
-          maxWidth: "750px",
-          margin: "0 auto 2em auto",
-          textAlign: "center",
-        }}
-      >
-        <EmojiRephrase>
-          Have you created a project that integrates Thot? <br />
-          We'd love to feature it!. Our endpoints are free to use and open to the public.
-        </EmojiRephrase>
-        {/* <ImageURLHeading
+        <Typography
+          style={{
+            color: Colors.offwhite,
+            fontSize: "1.5em",
+            maxWidth: "750px",
+            margin: "0 auto 2em auto",
+            textAlign: "center",
+          }}
+        >
+          <EmojiRephrase>
+            Have you created a project that integrates Thot? <br />
+            We'd love to feature it!. Our endpoints are free to use and open to the public.
+          </EmojiRephrase>
+          {/* <ImageURLHeading
             width={100}
             height={50}
             className={classes.scaledImageURLHeading}
@@ -522,59 +521,67 @@ const ProjectsSection = () => {
           >
             Get in touch
           </ImageURLHeading> */}
-      </Typography>
-      <p
-        style={{ userSelect: "none", fontSize: "1.6em", textAlign: "center", marginBottom: "4em" }}
-      >
-        <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
-        <br />
-        <StyledLink
-          href="mailto:hello@thot-labs.com"
-          onClick={(e) => {
-            handleLinkClick(e)
-            alert("Copied")
-          }}
-          style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
-        >
-          <b>hello@thot-labs.com</b>
-        </StyledLink>
-      </p>
-
-      {/* Category Menu */}
-      <AppBar
-        position="static"
-        style={{
-          color: "white",
-          width: "auto",
-          boxShadow: "none",
-          backgroundColor: "transparent",
-          marginBottom: "3em", // Added margin under the category buttons
-        }}
-      >
-        <ButtonGroup
-          variant="contained"
-          aria-label="contained primary button group"
+        </Typography>
+        <p
           style={{
-            backgroundColor: "transparent",
-            flexWrap: "wrap",
-            justifyContent: "center",
+            userSelect: "none",
+            fontSize: "1.6em",
+            textAlign: "center",
+            marginBottom: "4em",
           }}
         >
-          {projectCategories.map((category) => (
-            <Button
-              key={category.key}
-              onClick={() => setSelectedCategory(category.key)}
-              style={buttonStyle(selectedCategory === category.key)}
-            >
-              {category.title}
-            </Button>
-          ))}
-        </ButtonGroup>
-      </AppBar>
+          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
+          <br />
+          <StyledLink
+            href="mailto:hello@thot-labs.com"
+            onClick={(e) => {
+              handleLinkClick(e)
+              alert("Copied")
+            }}
+            style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
+          >
+            <b>hello@thot-labs.com</b>
+          </StyledLink>
+        </p>
 
-      {/* Render selected category */}
-      {renderProjects(projects[selectedCategory])}
-    </GenerativeImageURLContainer>
+        {/* Category Menu */}
+        <AppBar
+          position="static"
+          style={{
+            color: "white",
+            
+            boxShadow: "none",
+            backgroundColor: "white",
+            marginBottom: "3em", // Added margin under the category buttons
+          }}
+        >
+          <ButtonGroup
+            variant="contained"
+            aria-label="contained primary button group"
+            style={{
+              backgroundColor: "transparent",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              boxShadow: "none",
+
+            }}
+          >
+            {projectCategories.map((category) => (
+              <Button
+                key={category.key}
+                onClick={() => setSelectedCategory(category.key)}
+                style={buttonStyle(selectedCategory === category.key)}
+              >
+                {category.title}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </AppBar>
+
+        {/* Render selected category */}
+        {renderProjects(projects[selectedCategory])}
+      </GenerativeImageURLContainer>
+    </Box>
   )
 }
 

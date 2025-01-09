@@ -9,6 +9,7 @@ import React from "react";
 import { LinkStyle } from "./components"
 import FileCopyIcon from '@material-ui/icons/FileCopy'
 import { EmojiRephrase } from "../../components/EmojiRephrase"
+import { max } from "ramda"
 
 // Common styles
 const buttonStyle = (isActive) => ({
@@ -358,7 +359,7 @@ export function CodeExamples({ image }) {
   };
 
   return (
-    <URLExplanation>
+    <URLExplanation style={{ margin: "0 auto", maxWidth: "1000px" }}>
       <AppBar
         position="static"
         style={{ color: "white", width: "auto", boxShadow: "none" }}
@@ -366,7 +367,7 @@ export function CodeExamples({ image }) {
         <ButtonGroup
           variant="contained"
           aria-label="contained primary button group"
-          style={{ backgroundColor: "transparent", flexWrap: "wrap", justifyContent: "center" }}
+          style={{ backgroundColor: "transparent", flexWrap: "wrap", justifyContent: "center", boxShadow: "none" }}
         >
           {codeExampleTabs.map((key, index) => (
             <Button
@@ -391,16 +392,17 @@ export function CodeExamples({ image }) {
               <CodeBlock
                 text={text}
                 language={language}
-                theme={irBlack}
+
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: "transparent",
+                  backgroundColor: "black",
                   color: Colors.offwhite,
                   scrollbarColor: "transparent transparent",
-                  border: `5px solid ${Colors.offblack}`,
+                  border: `0px`,
                   marginTop: "1em",
                   marginLeft: "10px",
                   marginRight: "10px",
+                  boxShadow: "none",
                 }}
               />
               <IconButton

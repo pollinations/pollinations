@@ -73,258 +73,256 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: "500px",
   },
 }))
-
-export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
-  const classes = useStyles() // Use the useStyles hook
-  const [lastImage, setLastImage] = useState(null)
-  const [imageParams, setImageParams] = useState({})
-  const imageParamsRef = useRef(imageParams) // Use useRef for imageParamsRef
-  const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow()
+export const GenerativeImageFeed = memo(() => {
+  const classes = useStyles();
+  const [lastImage, setLastImage] = useState(null);
+  const [imageParams, setImageParams] = useState({});
+  const imageParamsRef = useRef(imageParams);
+  const { image: slideshowImage, onNewImage, stop, isStopped } = useImageSlideshow();
   const { updateImage, cancelLoading, image, isLoading } = useImageEditor({
     stop,
     image: slideshowImage,
-  })
-  const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage)
-  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
-  const [isInputChanged, setIsInputChanged] = useState(false)
-  const { setImage } = useContext(ImageContext)
-  const [toggleValue, setToggleValue] = useState("feed")
+  });
+  const { imagesGenerated } = useFeedLoader(onNewImage, setLastImage);
+  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`);
+  const [isInputChanged, setIsInputChanged] = useState(false);
+  const { setImage } = useContext(ImageContext);
+  const [toggleValue, setToggleValue] = useState("feed");
 
-  function switchToEditMode() {
-    setToggleValue("edit")
-  }
-
-  useEffect(() => {
-    setImageParams(image)
-  }, [image])
+  const switchToEditMode = () => {
+    setToggleValue("edit");
+  };
 
   useEffect(() => {
-    stop(false)
-  }, [])
+    setImageParams(image);
+  }, [image]);
 
   useEffect(() => {
-    imageParamsRef.current = imageParams
-  }, [imageParams])
+    stop(false);
+  }, []);
 
   useEffect(() => {
-    setIsInputChanged(false)
-  }, [image.imageURL])
+    imageParamsRef.current = imageParams;
+  }, [imageParams]);
 
   useEffect(() => {
-    setToggleValue(isStopped ? "edit" : "feed")
-  }, [isStopped])
+    setIsInputChanged(false);
+  }, [image.imageURL]);
+
+  useEffect(() => {
+    setToggleValue(isStopped ? "edit" : "feed");
+  }, [isStopped]);
 
   const handleParamChange = useCallback(
     (param, value) => {
-      setIsInputChanged(true)
+      setIsInputChanged(true);
       if (!isStopped) {
-        stop(true)
+        stop(true);
       }
       setImageParams((prevParams) => ({
         ...prevParams,
         [param]: value,
-      }))
+      }));
     },
     [isStopped, stop]
-  )
+  );
 
   const handleSubmit = useCallback(() => {
-    const currentImageParams = imageParamsRef.current
-    const imageURL = getImageURL(currentImageParams)
-    console.log("Submitting with imageParams:", currentImageParams)
+    const currentImageParams = imageParamsRef.current;
+    const imageURL = getImageURL(currentImageParams);
+    console.log("Submitting with imageParams:", currentImageParams);
     updateImage({
       ...currentImageParams,
       imageURL,
-    })
-  }, [updateImage])
+    });
+  }, [updateImage]);
 
   const handleButtonClick = () => {
     if (isLoading) {
-      // Cancel the current generation
-      cancelLoading()
-      return
+      cancelLoading();
+      return;
     }
 
     if (!isInputChanged) {
       setImageParams((prevParams) => ({
         ...prevParams,
         seed: (prevParams.seed || 0) + 1,
-      }))
+      }));
     }
-    setTimeout(handleSubmit, 250)
-  }
+    setTimeout(handleSubmit, 250);
+  };
 
   const handleToggleChange = (event, newValue) => {
     if (newValue !== null) {
-      setToggleValue(newValue)
+      setToggleValue(newValue);
       if (newValue === "feed") {
-        stop(false) // Resume the feed
+        stop(false);
       } else if (newValue === "edit") {
-        stop(true) // Pause the feed
+        stop(true);
       }
     }
-  }
+  };
 
   const handleFocus = () => {
-    setToggleValue("edit")
-    stop(true)
-  }
+    setToggleValue("edit");
+    stop(true);
+  };
 
   return (
-    <GenerativeImageURLContainer className={classes.container}>
-      {/* <img
-        src={imagefeed}
-        alt="Image Feed Logo"
-        style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
-      /> */}
-
-      <Typography
-        variant="h1"
-        style={{
-          color: Colors.lime,
-          fontSize: "8em",
-          fontWeight: "bold",
-          textAlign: "center",
-          marginTop: "0.5em",
-          userSelect: "none",
-          letterSpacing: "0.1em",
-        }}
-      >
-        API Feed
-      </Typography>
-      <Grid item className={classes.gridItem} style={{ marginTop: "0em" }}>
-        {/* <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
-          Image Feed
-        </ImageURLHeading> */}
-        <Typography
-          style={{
-            color: Colors.white,
-            fontSize: "1.5em",
-            maxWidth: "750px",
-            margin: "0em auto 2em auto",
-            textAlign: "center",
-          }}
-        >
-          <EmojiRephrase>
-            Real-time feed of our image API endpoint (minus the private ones). Try our models
-            pausing anytime.
-          </EmojiRephrase>
-        </Typography>
-      </Grid>
-
-      {!image["imageURL"] ? (
-        <LoadingIndicator />
-      ) : (
-        <Grid container spacing={2} direction="column">
-          <Grid item xs={12} className={classes.gridCenter}>
-            <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-          </Grid>
-          <Grid item xs={12} className={classes.gridCenter}>
-            <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-          </Grid>
-          {toggleValue === "edit" && (
-            <Grid item xs={12}>
-              <Box className={classes.boxColumn}>
-                <Box className={classes.boxFlex}>
-                  <TextPrompt
-                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped, edit: true }}
-                    stop={stop}
-                    switchToEditMode={switchToEditMode}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-          )}
-          <Grid item xs={12} className={classes.gridCenter}>
-            {toggleValue === "edit" && (
-              <Box className={classes.boxMarginTop}>
-                <ImageEditor
-                  image={imageParams}
-                  handleParamChange={handleParamChange}
-                  handleFocus={handleFocus}
-                  isLoading={isLoading} // Pass this prop
-                  setIsInputChanged={setIsInputChanged}
-                  handleButtonClick={handleButtonClick} // Pass this prop
-                  isInputChanged={isInputChanged} // Pass this prop
-                />
-              </Box>
-            )}
-          </Grid>
-
-          <Grid item xs={12} className={classes.gridCenter}>
-            <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
-          </Grid>
-
-          {toggleValue === "feed" && (
-            <Grid item xs={12}>
-              <Box className={classes.boxColumn}>
-                <Box className={classes.boxFlex}>
-                  <TextPrompt
-                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped, edit: false}}
-                    stop={stop}
-                    switchToEditMode={switchToEditMode}
-                  />
-                </Box>
-              </Box>
-            </Grid>
-          )}
-
-          {toggleValue === "feed" && (
-            <Grid item xs={12} className={classes.gridCenter}>
-              <ModelInfo
-                model={image["model"]}
-                wasPimped={image["wasPimped"]}
-                // referrer={image["referrer"]}
-              />
-            </Grid>
-          )}
-
-          <Grid item xs={12} style={{ marginTop: "4em" }}>
-            {/* <ImageURLHeading
-              className={classes.scaledImageURLHeading}
-              width={isMobile ? 400 : 700}
-              height={isMobile ? 150 : 200}
-              whiteText={true}
-            >
-              Integrate
-            </ImageURLHeading> */}
-
-            <Typography
-              variant="h1"
-              style={{
-                color: Colors.lime,
-                fontSize: "8em",
-                fontWeight: "bold",
-                textAlign: "center",
-                margin: "0 auto",
-                userSelect: "none",
-              }}
-            >
-              Integrate API
-            </Typography>
+    <>
+      <Box style={{ backgroundColor: Colors.offblack, width: "100%" }}>
+        <GenerativeImageURLContainer className={classes.container}>
+          <Typography
+            variant="h1"
+            style={{
+              color: Colors.lime,
+              fontSize: "8em",
+              fontWeight: "bold",
+              textAlign: "center",
+              marginTop: "0.5em",
+              userSelect: "none",
+              letterSpacing: "0.1em",
+            }}
+          >
+            API Feed
+          </Typography>
+          <Grid item className={classes.gridItem} style={{ marginTop: "0em" }}>
             <Typography
               style={{
-                color: Colors.white,
+                color: Colors.offwhite,
                 fontSize: "1.5em",
                 maxWidth: "750px",
-                margin: "0 auto",
+                margin: "0em auto 2em auto",
                 textAlign: "center",
               }}
             >
               <EmojiRephrase>
-                Discover how to seamlessly integrate our free image and text generation API into
-                your projects. Below are code examples to help you get started.
+                Real-time feed of our image API endpoint (minus the private ones). Try our models
+                pausing anytime.
               </EmojiRephrase>
             </Typography>
-            <Box style={{ marginTop: "2em", marginBottom: "4em" }}>
-              <CodeExamples image={image} />
-            </Box>
           </Grid>
+
+          {!image["imageURL"] ? (
+            <LoadingIndicator />
+          ) : (
+            <Grid container spacing={2} direction="column">
+              <Grid item xs={12} className={classes.gridCenter}>
+                <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
+              </Grid>
+              <Grid item xs={12} className={classes.gridCenter}>
+                <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+              </Grid>
+              {toggleValue === "edit" && (
+                <Grid item xs={12}>
+                  <Box className={classes.boxColumn}>
+                    <Box className={classes.boxFlex}>
+                      <TextPrompt
+                        {...{
+                          imageParams,
+                          handleParamChange,
+                          handleFocus,
+                          isLoading,
+                          isStopped,
+                          edit: true,
+                        }}
+                        stop={stop}
+                        switchToEditMode={switchToEditMode}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+              <Grid item xs={12} className={classes.gridCenter}>
+                {toggleValue === "edit" && (
+                  <Box className={classes.boxMarginTop}>
+                    <ImageEditor
+                      image={imageParams}
+                      handleParamChange={handleParamChange}
+                      handleFocus={handleFocus}
+                      isLoading={isLoading}
+                      setIsInputChanged={setIsInputChanged}
+                      handleButtonClick={handleButtonClick}
+                      isInputChanged={isInputChanged}
+                    />
+                  </Box>
+                )}
+              </Grid>
+
+              <Grid item xs={12} className={classes.gridCenter} style={{ backgroundColor: "black" }}>
+                <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
+              </Grid>
+
+              {toggleValue === "feed" && (
+                <Grid item xs={12}>
+                  <Box className={classes.boxColumn}>
+                    <Box className={classes.boxFlex}>
+                      <TextPrompt
+                        {...{
+                          imageParams,
+                          handleParamChange,
+                          handleFocus,
+                          isLoading,
+                          isStopped,
+                          edit: false,
+                        }}
+                        stop={stop}
+                        switchToEditMode={switchToEditMode}
+                      />
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+
+              {toggleValue === "feed" && (
+                <Grid item xs={12} className={classes.gridCenter}>
+                  <ModelInfo
+                    model={image["model"]}
+                    wasPimped={image["wasPimped"]}
+                  />
+                </Grid>
+              )}
+            </Grid>
+          )}
+        </GenerativeImageURLContainer>
+      </Box>
+      <Box style={{ background: `linear-gradient(to bottom, ${Colors.offblack}, ${Colors.offblack2})`, width: "100%" }}>
+        <Grid item xs={12} style={{ marginTop: "4em" }}>
+          <Typography
+            variant="h1"
+            style={{
+              color: Colors.lime,
+              fontSize: "8em",
+              fontWeight: "bold",
+              textAlign: "center",
+              margin: "0 auto",
+              userSelect: "none",
+            }}
+          >
+            Integrate API
+          </Typography>
+          <Typography
+            style={{
+              color: Colors.offwhite,
+              fontSize: "1.5em",
+              maxWidth: "750px",
+              margin: "0 auto",
+              textAlign: "center",
+            }}
+          >
+            <EmojiRephrase>
+              Discover how to seamlessly integrate our free image and text generation API into
+              your projects. Below are code examples to help you get started.
+            </EmojiRephrase>
+          </Typography>
+          <Box style={{ marginTop: "2em", marginBottom: "4em" }}>
+            <CodeExamples image={image} />
+          </Box>
         </Grid>
-      )}
-    </GenerativeImageURLContainer>
-  )
-})
+      </Box>
+    </>
+  );
+});
 
 function getImageURL(newImage) {
   let imageURL = `https://pollinations.ai/p/${encodeURIComponent(newImage.prompt)}`

@@ -83,7 +83,7 @@ export const ImageEditor = memo(function ImageEditor({
             onClick={handleMenuOpen}
             onFocus={handleFocus}
             style={{
-              color: Colors.white,
+              color: Colors.offwhite,
               width: "100%",
               justifyContent: "flex-start",
               height: "56px",
@@ -120,7 +120,7 @@ export const ImageEditor = memo(function ImageEditor({
             onFocus={handleFocus}
             type="number"
             InputProps={{
-              style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
             }}
             style={{ width: "100%" }}
           />
@@ -136,7 +136,7 @@ export const ImageEditor = memo(function ImageEditor({
             onFocus={handleFocus}
             type="number"
             InputProps={{
-              style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
             }}
             style={{ width: "100%" }}
           />
@@ -153,7 +153,7 @@ export const ImageEditor = memo(function ImageEditor({
             onFocus={handleFocus}
             type="number"
             InputProps={{
-              style: { color: Colors.white, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
             }}
           />
         </Grid>

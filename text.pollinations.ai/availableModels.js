@@ -20,13 +20,13 @@ export const availableModels = [
         description: 'Qwen 2.5 Coder 32B',
         baseModel: true,
     },
-    // {
-    //     name: 'llama',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Llama 3.3 70B',
-    //     baseModel: true,
-    // },
+    {
+        name: 'llama',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.3 70B',
+        baseModel: true,
+    },
     {
         name: 'mistral',
         type: 'chat',

@@ -81,7 +81,6 @@ app.get('/models', (req, res) => {
     res.json(availableModels);
 });
 
-
 // SSE endpoint for streaming all responses
 app.get('/feed', (req, res) => {
     res.writeHead(200, {
@@ -126,11 +125,6 @@ async function handleRequest(req, res, requestData) {
 
     log('Request data: %o', requestData);
 
-    // // Check for suspicious patterns
-    // if (JSON.stringify(cacheKeyData).includes("Aim for a total length of 600-800 words")) {
-    //     logSuspiciousRequest(getIp(req), cacheKeyData);
-    // }
-
     // Send analytics event for text generation request
     sendToAnalytics(req, 'textGenerated', { messages: requestData.messages, model: requestData.model, options: requestData });
 
@@ -145,8 +139,6 @@ async function handleRequest(req, res, requestData) {
         errorLog('Error generating text: %s', error.message);
         throw error;
     }
-
-
 }
 
 function sendResponse(res, response) {
@@ -337,101 +329,50 @@ function createHashKey(data) {
     return crypto.createHash('sha256').update(JSON.stringify(deterministicData)).digest('hex');
 }
 
-
 // Map to store connected clients
 const connectedClients = new Map();
 
-// Modified generateTextBasedOnModel to store the response in a variable and broadcast it to all connected clients before returning it
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
     log('Using model:', model);
 
     try {
-        // Check if the request is from Roblox using the referer from options
-        const isRoblox = options.isRobloxReferrer;
-        
-        // If it's a Roblox request, always use llamalight model
-        if (isRoblox) {
+        // If it's a Roblox request, always use openai model
+        if (options.isRobloxReferrer) {
             options.model = 'openai';
         }
         
-        let response;
-        switch (options.model || 'openai') {
-            case 'openai':
-                try {
-                    response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
-                } catch (error) {
-                    response = await generateTextMistral(messages, options);
-                }
-                break;
-            case 'deepseek':
-                response = await generateDeepseek(messages, options);
-                break;
-            case 'mistral':
-                response = await generateTextMistral(messages, options);
-                break;
-            case 'qwen-coder':
-                response = await generateTextScaleway(messages, options);
-                break;
-            case 'qwen':
-                response = await generateTextHuggingface(messages, { ...options, model });
-                break;
-            case 'llama':
-                response = await generateTextHuggingface(messages, { ...options, model });
-                break;
-            case 'llamalight':
-                response = await generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" });
-                break;
-            case 'karma':
-                response = await generateTextKarma(messages, options);
-                break;
-            case 'sur':
-                response = await surOpenai(messages, options);
-                break;
-            case 'sur-mistral':
-                response = await surMistral(messages, options);
-                break;
-            case 'unity':
-                response = await unityMistralLarge(messages, options);
-                break;
-            case 'midijourney':
-                response = await midijourney(messages, options);
-                break;
-            case 'rtist':
-                response = await rtist(messages, options);
-                break;
-            case 'searchgpt':
-                response = await generateText(messages, options, true);
-                break;
-            case 'evil':
-                response = await evilCommandR(messages, options);
-                break;
-            case 'p1':
-                response = await generateTextOptiLLM(messages, options);
-                break;
-            default:
-                log('Invalid model specified, falling back to OpenAI');
-                try {
-                    response = await generateText(messages, { ...options, model: 'openai' });
-                } catch (error) {
-                    errorLog('Error generating. Trying Mistral fallback', error.message);
-                    response = await generateTextMistral(messages, options);
-                }
-        }
+        const modelHandlers = {
+            'deepseek': () => generateDeepseek(messages, options),
+            'mistral': () => generateTextScaleway(messages, options),
+            'qwen-coder': () => generateTextScaleway(messages, options),
+            'qwen': () => generateTextHuggingface(messages, { ...options, model }),
+            'llama': () => generateTextScaleway(messages, { ...options, model }),
+            'llamalight': () => generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" }),
+            // 'karma': () => generateTextKarma(messages, options),
+            'sur': () => surOpenai(messages, options),
+            'sur-mistral': () => surMistral(messages, options),
+            'unity': () => unityMistralLarge(messages, options),
+            'midijourney': () => midijourney(messages, options),
+            'rtist': () => rtist(messages, options),
+            'searchgpt': () => generateText(messages, options, true),
+            'evil': () => evilCommandR(messages, options)
+        };
 
+        const handler = modelHandlers[model] || (() => generateText(messages, options));
+        const response = await handler();
+        
         // Broadcast the response to all connected clients
         for (const [_, handleNewResponse] of connectedClients) {
             handleNewResponse(response, { messages, model, ...options });
         }
-
+        
         return response;
     } catch (error) {
-        errorLog('Error generating text', error.message);
-        console.error(error.stack);
+        errorLog('Error in generateTextBasedOnModel:', error);
         throw error;
     }
 }
-
 
 app.use((req, res, next) => {
     log(`Unhandled request: ${req.method} ${req.originalUrl}`);

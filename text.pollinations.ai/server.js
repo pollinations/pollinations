@@ -129,7 +129,7 @@ async function handleRequest(req, res, requestData) {
     log('Request data: %o', requestData);
 
     // Send analytics event for text generation request
-    sendToAnalytics(req, 'textGenerated', { messages: requestData.messages, model: requestData.model, options: requestData });
+    // sendToAnalytics(req, 'textGenerated', { messages: requestData.messages, model: requestData.model, options: requestData });
 
     try {
         const response = await generateTextBasedOnModel(requestData.messages, requestData);
@@ -234,9 +234,9 @@ app.post('/', async (req, res) => {
         return res.status(400).send('Invalid messages array. Received: ' + req.body.messages);
     }
 
-    const cacheKeyData = getRequestData(req, true);
+    const requestParams = getRequestData(req, true);
     try {
-        await processRequest(req, res, cacheKeyData);
+        await processRequest(req, res, requestParams);
     } catch (error) {
         errorLog('Error processing request', error.message);
         console.error(error.stack); // Print stack trace
@@ -268,8 +268,7 @@ app.post('/openai*', async (req, res) => {
         return res.status(400).send('Invalid messages array');
     }
 
-        
-    const requestParams = getRequestData(req, true);
+    const requestParams = getRequestData(req);
     const cacheKey = createHashKey(requestParams);
     const cachedResponse = await getCache(cacheKey);
     if (cachedResponse) {
@@ -287,39 +286,19 @@ app.post('/openai*', async (req, res) => {
 
         try {
             // Send analytics event for text generation request
-            sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
+            // sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
 
             const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
             cache[cacheKey] = response;
             
-            let choices;
             if (isStream) {
-                res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
-                res.setHeader('Cache-Control', 'no-cache');
-                res.setHeader('Connection', 'keep-alive');
-                res.flushHeaders();
-                res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
-                res.end();
+                sendAsStream(res, response);
                 await sleep(10000);
                 return;
-            } else {
-                choices = [{ 
-                    "message": { 
-                        "content": response, 
-                        "role": "assistant" 
-                    }, 
-                    "finish_reason": "stop", 
-                    "index": 0,
-                    "logprobs": null
-                }];
             }
-            const result = {
-                "created": Date.now(),
-                "id": crypto.randomUUID(),
-                "model": requestParams.model,
-                "object": isStream ? "chat.completion.chunk" : "chat.completion",
-                "choices": choices
-            };
+
+            const result = formatAsOpenAIResponse(response, requestParams, isStream);
+
             cache[cacheKey] = result;
             log("openai format result", JSON.stringify(result, null, 2));
             res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
@@ -344,6 +323,36 @@ app.post('/openai*', async (req, res) => {
         return;
     }
 })
+
+function formatAsOpenAIResponse(response, requestParams, isStream) {
+    const choices = [{
+        "message": {
+            "content": response,
+            "role": "assistant"
+        },
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null
+    }];
+
+    const result = {
+        "created": Date.now(),
+        "id": crypto.randomUUID(),
+        "model": requestParams.model,
+        "object": isStream ? "chat.completion.chunk" : "chat.completion",
+        "choices": choices
+    };
+    return result;
+}
+
+function sendAsStream(res, response) {
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
+    res.end();
+}
 
 // Helper function to get response from cache
 function getCache(cacheKey) {

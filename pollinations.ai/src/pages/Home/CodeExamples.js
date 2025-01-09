@@ -395,22 +395,27 @@ export function CodeExamples({ image }) {
 
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: "black",
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                   color: Colors.offwhite,
-                  scrollbarColor: "transparent transparent",
+                  height: "500px",
                   border: `0px`,
                   marginTop: "1em",
                   marginLeft: "10px",
                   marginRight: "10px",
+                  padding: "20px",
                   boxShadow: "none",
+                  borderRadius: "20px",
+                  overflowY: "scroll",
+                  scrollbarWidth: "thin", // For Firefox
+                  scrollbarColor: `${Colors.gray1} transparent`, // For Firefox
                 }}
               />
               <IconButton
                 onClick={() => handleCopy(text)}
                 style={{
                   position: "absolute",
-                  top: 0,
-                  right: 0,
+                  top: 5,
+                  right: 15,
                   color: Colors.lime,
                   marginRight: "10px",
                 }}

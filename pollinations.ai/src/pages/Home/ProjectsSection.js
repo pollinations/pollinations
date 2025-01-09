@@ -474,7 +474,7 @@ const ProjectsSection = () => {
       style={{ background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`, width: "100%" }}
     >
       <GenerativeImageURLContainer
-        style={{ marginTop: "0em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
+        style={{ marginTop: "4em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
       >
         {/* <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
         <ImageURLHeading
@@ -490,11 +490,12 @@ const ProjectsSection = () => {
           variant="h1"
           style={{
             color: Colors.lime,
-            fontSize: "8em",
+            fontSize: isMobile ? "4em" : "8em",
             fontWeight: "bold",
             textAlign: "center",
             margin: "0 auto",
             userSelect: "none",
+            maxWidth: "750px",
           }}
         >
           Built with Us
@@ -504,45 +505,16 @@ const ProjectsSection = () => {
           style={{
             color: Colors.offwhite,
             fontSize: "1.5em",
-            maxWidth: "750px",
-            margin: "0 auto 2em auto",
+            margin: "1em auto 2em auto",
             textAlign: "center",
+            maxWidth: "750px",
           }}
         >
           <EmojiRephrase>
-            Have you created a project that integrates Thot? <br />
-            We'd love to feature it!. Our endpoints are free to use and open to the public.
+            Here are some of the various implementations that our API is currently powering.
           </EmojiRephrase>
-          {/* <ImageURLHeading
-            width={100}
-            height={50}
-            className={classes.scaledImageURLHeading}
-            {...generateCustomPrompt("Get in touch")}
-          >
-            Get in touch
-          </ImageURLHeading> */}
         </Typography>
-        <p
-          style={{
-            userSelect: "none",
-            fontSize: "1.6em",
-            textAlign: "center",
-            marginBottom: "4em",
-          }}
-        >
-          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
-          <br />
-          <StyledLink
-            href="mailto:hello@thot-labs.com"
-            onClick={(e) => {
-              handleLinkClick(e)
-              alert("Copied")
-            }}
-            style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
-          >
-            <b>hello@thot-labs.com</b>
-          </StyledLink>
-        </p>
+
 
         {/* Category Menu */}
         <AppBar
@@ -580,6 +552,43 @@ const ProjectsSection = () => {
         {/* Render selected category */}
         {renderProjects(projects[selectedCategory])}
       </GenerativeImageURLContainer>
+      <Typography
+          style={{
+            color: Colors.offwhite,
+            fontSize: "1.5em",
+            margin: "1em auto 2em auto",
+            textAlign: "center",
+            maxWidth: "750px",
+          }}
+        >
+          <EmojiRephrase>
+            Have you created a project that integrates Thot? <br />
+            We'd love to feature it!. Our endpoints are free to use and open to the public.
+          </EmojiRephrase>
+        </Typography>
+        <p
+          style={{
+            userSelect: "none",
+            fontSize: "1.6em",
+            textAlign: "center",
+            marginBottom: "4em",
+            maxWidth: "750px",
+            margin: "0 auto",
+          }}
+        >
+          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
+          <br />
+          <StyledLink
+            href="mailto:hello@thot-labs.com"
+            onClick={(e) => {
+              handleLinkClick(e)
+              alert("Copied")
+            }}
+            style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
+          >
+            <b>hello@thot-labs.com</b>
+          </StyledLink>
+        </p>
     </Box>
   )
 }

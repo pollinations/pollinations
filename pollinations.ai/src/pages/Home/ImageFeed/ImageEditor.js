@@ -19,17 +19,22 @@ import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { CustomTooltip } from "../../../components/CustomTooltip"
 import discordLogo from "../../../assets/icons/discord.png"
 import { ImagineButton } from "../../../components/ImagineButton"
+import { TextPrompt } from "./TextPrompt"
 
 export const ImageEditor = memo(function ImageEditor({
-  image,
+  image = {}, // Default to an empty object to prevent undefined errors
   handleParamChange,
   handleFocus,
   isLoading,
   setIsInputChanged,
   handleButtonClick,
   isInputChanged,
+  imageParams, // Added imageParams as a prop
+  isStopped, // Added isStopped as a prop
+  stop, // Added stop as a prop
+  switchToEditMode, // Added switchToEditMode as a prop
 }) {
-  const { width, height, seed, enhance, nologo, model, prompt } = image
+  const { width, height, seed, enhance, nologo, model } = image
   const [anchorEl, setAnchorEl] = useState(null)
   const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
 
@@ -71,7 +76,6 @@ export const ImageEditor = memo(function ImageEditor({
       }}
     >
       <Grid container spacing={2} wrap={isMobile ? "wrap" : "nowrap"}>
-        {/* Model, Width, Height, Seed, Enhance, No Logo */}
         <Grid item xs={12} sm={6} md={3}>
           <Typography variant="body2" color="textSecondary">
             Model
@@ -169,34 +173,34 @@ export const ImageEditor = memo(function ImageEditor({
               </IconButton>
             </CustomTooltip>
           </Typography>
-<Checkbox
-  checked={isEnhanceChecked}
-  onChange={(e) => handleInputChange("enhance", e.target.checked)}
-  onFocus={handleFocus}
-  style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
-/>
-</Grid>
-<Grid item xs={3} sm={3} md={1}>
-  <Typography variant="body2" color="textSecondary">
-    No Logo
-    <CustomTooltip
-      title={<span>Disable watermark logo.</span>}
-      interactive
-      style={{ color: Colors.lime }}
-    >
-      <IconButton size="small">
-        <InfoIcon fontSize="small" />
-      </IconButton>
-    </CustomTooltip>
-  </Typography>
-  <Checkbox
-    checked={nologo}
-    onChange={(e) => handleInputChange("nologo", e.target.checked)}
-    onFocus={handleFocus}
-    style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
-  />
+          <Checkbox
+            checked={isEnhanceChecked}
+            onChange={(e) => handleInputChange("enhance", e.target.checked)}
+            onFocus={handleFocus}
+            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
+          />
         </Grid>
-        <Grid item xs={12} sm={6} md={2} style={{ marginTop: '16px' }}>
+        <Grid item xs={3} sm={3} md={1}>
+          <Typography variant="body2" color="textSecondary">
+            No Logo
+            <CustomTooltip
+              title={<span>Disable watermark logo.</span>}
+              interactive
+              style={{ color: Colors.lime }}
+            >
+              <IconButton size="small">
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </CustomTooltip>
+          </Typography>
+          <Checkbox
+            checked={nologo}
+            onChange={(e) => handleInputChange("nologo", e.target.checked)}
+            onFocus={handleFocus}
+            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={2} style={{ marginTop: "16px" }}>
           <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
         </Grid>
       </Grid>

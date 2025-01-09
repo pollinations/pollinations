@@ -4,72 +4,73 @@ import ReactMarkdown from "react-markdown"
 import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 
 export function TextPrompt({
-    imageParams,
-    handleParamChange,
-    handleFocus,
-    isLoading,
-    isStopped,
-    stop,
-    switchToEditMode,
-    edit, // New binary parameter to control border visibility
-  }) {
-    const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`);
-  
-    return (
-      <Grid item xs={12}>
-        {isStopped && (
-          <Typography variant="body2" style={{ color: '#f5f5f5', fontWeight: "normal" }}>
-            Prompt
-          </Typography>
-        )}
-        {isStopped ? (
-          <TextareaAutosize
-                    style={{
-                        width: "100%",
-                        height: "200px",
-                        backgroundColor: "transparent",
-                        border: edit ? `0.1px solid #4A4A4A` : "none", // Conditional border
-                        borderRadius: "5px",
-                        color: Colors.offwhite,
-                        paddingLeft: "15px",
-                        paddingRight: "15px",
-                        paddingTop: "10px",
-                        fontSize: isMobile ? "1.5rem" : "1.2rem",                    
-                        overflow: "auto",
-                        scrollbarWidth: "none", // For Firefox
-                        msOverflowStyle: "none", // For Internet Explorer and Edge
-                    }}
-                    value={imageParams.prompt}
-                    onChange={(e) => handleParamChange("prompt", e.target.value)}
-                    onFocus={handleFocus}
-                />
-            ) : (
-                <div
-                    style={{
-                        width: "100%",
-                        height: "160px",
-                        backgroundColor: "transparent",
-                        border: edit ? `0.1px solid ${Colors.offwhite}` : "none", 
-                        borderRadius: "5px",
-                        color: edit ? Colors.offwhite : Colors.grey, 
-                        paddingTop: "0px",
-                        paddingLeft: "15px",
-                        paddingRight: "15px",
-                        fontSize: edit ? "1.5rem" : "1.2rem",
-                        overflow: "auto",
-                        scrollbarWidth: "none", // For Firefox
-                        msOverflowStyle: "none", // For Internet Explorer and Edge
-                        textAlign: "center", // Center the text horizontally
-                        cursor: "pointer" // Indicate that the div is clickable
-                    }}
-                    onClick={() => {
-                        stop(true);              // Use the stop function to stop the slideshow
-                        switchToEditMode();  // Switch to edit mode when clicked
-                      }}
-                >
-                    <ReactMarkdown>{imageParams.prompt}</ReactMarkdown>
-                </div>
-            )}
-        </Grid>
-    )
+  imageParams,
+  handleParamChange,
+  handleFocus,
+  isLoading,
+  isStopped,
+  stop,
+  switchToEditMode,
+  edit,
+}) {
+  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`)
+
+  const scrollbarStyles = {
+    overflowY: "scroll",
+    scrollbarWidth: "thin",
+    scrollbarColor: `${Colors.gray1} transparent`,
+    msOverflowStyle: "none",
+  };
+
+  return (
+    <Grid item xs={12} >
+      {isStopped && (
+        <Typography variant="body2" style={{ color: "#f5f5f5", fontWeight: "normal" }}>
+          Prompt
+        </Typography>
+      )}
+      {isStopped ? (
+        <TextareaAutosize
+          style={{
+            width: "100%",
+            height: "150px",
+            backgroundColor: "transparent",
+            border: edit ? "none" : "none",
+            borderRadius: "5px",
+            color: Colors.offwhite,
+            fontSize: isMobile ? "1.5rem" : "1.2rem",
+            resize: "vertical",
+            overflow: "auto",
+
+            ...scrollbarStyles,
+          }}
+          value={imageParams.prompt}
+          onChange={(e) => handleParamChange("prompt", e.target.value)}
+          onFocus={handleFocus}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "150px",
+            backgroundColor: "transparent",
+            border: edit ? `0.1px solid ${Colors.offwhite}` : "none",
+            borderRadius: "5px",
+            color: edit ? Colors.offwhite : Colors.grey,
+            fontSize: edit ? "1.5rem" : "1.2rem",
+            textAlign: "center",
+            cursor: "pointer",
+            overflow: "auto",
+            ...scrollbarStyles,
+          }}
+          onClick={() => {
+            stop(true)
+            switchToEditMode()
+          }}
+        >
+          <ReactMarkdown>{imageParams.prompt}</ReactMarkdown>
+        </div>
+      )}
+    </Grid>
+  )
 }

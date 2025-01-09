@@ -13,6 +13,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 flexDirection: "column",
                 alignItems: "center",
                 position: "relative",
+                boxShadow: "none"
             }}
         >
             {image ? (

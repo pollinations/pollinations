@@ -74,6 +74,8 @@ export function getIp(req) {
     const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     if (!ip) return null;
     const ipSegments = ip.split('.').slice(0, 2).join('.');
+    if (ipSegments === "128.116")
+        throw new Error('Pollinations cloud credits exceeded. Please try again later.');
     return ipSegments;
 }
 
@@ -365,7 +367,7 @@ async function generateTextBasedOnModel(messages, options) {
     try {
         // If it's a Roblox request, always use openai model
         if (options.isRobloxReferrer) {
-            options.model = 'openai';
+            options.model = 'roblox';
         }
         
         const modelHandlers = {
@@ -382,7 +384,8 @@ async function generateTextBasedOnModel(messages, options) {
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
             'searchgpt': () => generateText(messages, options, true),
-            'evil': () => evilCommandR(messages, options)
+            'evil': () => evilCommandR(messages, options),
+            'roblox': () => generateTextRoblox(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

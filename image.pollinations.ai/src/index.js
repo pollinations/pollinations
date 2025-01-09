@@ -85,7 +85,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity} = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
     
@@ -97,13 +97,13 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
 
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, bufferAndMaturity });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, maturity });
 
     progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
     progress.stop();
 
     // Safety checks
-    if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
+    if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
       await sleep(8000);
@@ -117,15 +117,14 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     // Cache and feed updates
     progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
     if (!safeParams.nofeed) {
-      if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
-        await sendToFeedListeners({
+      if (!(maturity.isChild && maturity.isMature)) {
+        sendToFeedListeners({
           ...safeParams,
           concurrentRequests: countFluxJobs(),
           imageURL,
           prompt,
           originalPrompt,
-          nsfw: bufferAndMaturity.isMature,
-          isChild: bufferAndMaturity.isChild,
+          ...maturity,
           timingInfo: relativeTiming(timingInfo),
           ip: getIp(req),
           status: "end_generating",
@@ -140,7 +139,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.completeBar(requestId, 'Image generation complete');
     progress.stop();
     
-    return bufferAndMaturity;
+    return { buffer, ...maturity };
   } catch (error) {
     // Handle errors gracefully in progress bars
     progress.errorBar(requestId, 'Generation failed');
@@ -246,7 +245,6 @@ const checkCacheAndGenerate = async (req, res) => {
       return result;
     });
 
-    const sanitizedFileName = sanitizeFileName(originalPrompt) + '.png';
 
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',

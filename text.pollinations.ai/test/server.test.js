@@ -123,6 +123,79 @@ test('POST / should cache responses', async t => {
 });
 
 /**
+ * Test: POST /openai with streaming
+ * 
+ * Purpose: Verify that the /openai endpoint handles streaming requests correctly
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response should have correct headers for streaming
+ * 3. The response should contain properly formatted streaming data
+ */
+test('POST /openai should handle streaming requests', async t => {
+    const response = await request(app)
+        .post('/openai')
+        .send({ 
+            messages: [{ role: 'user', content: 'Hello' }],
+            stream: true 
+        });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+    t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Content-Type should be text/event-stream');
+    t.is(response.headers['cache-control'], 'no-cache', 'Cache-Control should be no-cache');
+    t.is(response.headers['connection'], 'keep-alive', 'Connection should be keep-alive');
+});
+
+/**
+ * Test: POST /openai response format
+ * 
+ * Purpose: Verify that the /openai endpoint returns responses in OpenAI format
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response should have the correct OpenAI API structure
+ */
+test('POST /openai should return OpenAI formatted responses', async t => {
+    const response = await request(app)
+        .post('/openai')
+        .send({ messages: [{ role: 'user', content: 'Hello' }] });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+    t.truthy(response.body.choices, 'Response should have choices array');
+    t.truthy(response.body.choices[0].message, 'Response should have message in first choice');
+    t.truthy(response.body.choices[0].message.content, 'Response should have content in message');
+});
+
+/**
+ * Test: POST /openai caching
+ * 
+ * Purpose: Verify that the /openai endpoint properly caches responses
+ * 
+ * Expected behavior:
+ * 1. Both responses should have status 200 (OK)
+ * 2. Both responses should be identical
+ * 3. Both responses should maintain OpenAI format
+ */
+test('POST /openai should cache responses', async t => {
+    const requestBody = {
+        messages: [{ role: 'user', content: 'Cache test openai' }]
+    };
+
+    const response1 = await request(app)
+        .post('/openai')
+        .send(requestBody);
+    t.is(response1.status, 200, 'First response status should be 200');
+
+    const response2 = await request(app)
+        .post('/openai')
+        .send(requestBody);
+    t.is(response2.status, 200, 'Second response status should be 200');
+
+    t.deepEqual(response1.body, response2.body, 'Cached responses should be identical');
+    t.truthy(response1.body.choices, 'Cached response should maintain OpenAI format');
+});
+
+/**
  * Test: GET /feed (SSE endpoint)
  *
  * Purpose: Verify that the /feed endpoint establishes a Server-Sent Events connection

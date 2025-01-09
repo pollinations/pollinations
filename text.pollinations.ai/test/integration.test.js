@@ -13,32 +13,8 @@ let server;
 let baseUrl;
 let axiosInstance;
 
-// Mock axios for API calls
-const mockApiResponse = {
-    data: {
-        choices: [{
-            message: {
-                content: "This is a test response"
-            }
-        }],
-        usage: {
-            prompt_tokens: 10,
-            completion_tokens: 20,
-            total_tokens: 30
-        }
-    }
-};
-
 // Start local server before tests
 test.before(async t => {
-    // Mock axios post
-    axios.post = async (url, data) => {
-        if (url.includes('invalid')) {
-            throw new Error('Invalid request');
-        }
-        return mockApiResponse;
-    };
-
     await new Promise((resolve, reject) => {
         server = http.createServer(app);
         server.listen(0, '127.0.0.1', () => {
@@ -48,7 +24,10 @@ test.before(async t => {
             // Create axios instance with base URL
             axiosInstance = axios.create({
                 baseURL: baseUrl,
-                validateStatus: status => true // Don't throw on any status
+                validateStatus: status => true, // Don't throw on any status
+                headers: {
+                    'Referer': 'roblox'
+                }
             });
             resolve();
         });

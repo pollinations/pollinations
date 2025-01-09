@@ -50,6 +50,7 @@ test('GET /:prompt should handle a valid prompt', async t => {
 test('POST / should handle a valid request', async t => {
     const response = await request(app)
         .post('/')
+        .set('Referer', 'roblox')
         .send({ messages: [{ role: 'user', content: 'Hello' }] });
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.text, 'Response should contain text');
@@ -67,6 +68,7 @@ test('POST / should handle a valid request', async t => {
 test('POST /openai should handle a valid request', async t => {
     const response = await request(app)
         .post('/openai')
+        .set('Referer', 'roblox')
         .send({ messages: [{ role: 'user', content: 'Hello' }] });
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.body, 'Response body should contain data');
@@ -84,6 +86,7 @@ test('POST /openai should handle a valid request', async t => {
 test('POST / should return 400 for invalid messages array', async t => {
     const response = await request(app)
         .post('/')
+        .set('Referer', 'roblox')
         .send({ messages: 'invalid' });
     t.is(response.status, 400, 'Response status should be 400');
     t.is(response.text, 'Invalid messages array. Received: invalid', 'Response should indicate invalid messages');
@@ -99,12 +102,24 @@ test('POST / should return 400 for invalid messages array', async t => {
  * 2. The response text for both requests should be identical
  */
 test('POST / should cache responses', async t => {
-    const messages = [{ role: 'user', content: 'Hello' }];
-    const response1 = await request(app).post('/').send({ messages });
-    const response2 = await request(app).post('/').send({ messages });
+    const requestBody = {
+        messages: [{ role: 'user', content: 'Cache test' }],
+        cache: true
+    };
+
+    const response1 = await request(app)
+        .post('/')
+        .set('Referer', 'roblox')
+        .send(requestBody);
     t.is(response1.status, 200, 'First response status should be 200');
+
+    const response2 = await request(app)
+        .post('/')
+        .set('Referer', 'roblox')
+        .send(requestBody);
     t.is(response2.status, 200, 'Second response status should be 200');
-    t.is(response1.text, response2.text, 'Responses should be identical due to caching');
+
+    t.is(response1.text, response2.text, 'Cached responses should be identical');
 });
 
 /**

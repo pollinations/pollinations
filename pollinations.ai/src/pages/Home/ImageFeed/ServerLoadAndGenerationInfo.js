@@ -7,10 +7,10 @@ export function ServerLoadAndGenerationInfo({ lastImage, imagesGenerated, image 
       display="flex"
       justifyContent="center"
       alignItems="center"
-      style={{ gap: "2em", marginBottom: "2em" }}
+      style={{ gap: "2em" }}
     >
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
-      <Typography variant="body1" component="span">
+      <Typography variant="body1" component="span" style={{ fontSize: "1.6em" }}>
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
       </Typography>
       {/* <TimingInfo image={lastImage} /> */}
@@ -23,7 +23,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2)
 
   return (
-    <span>
+    <span style={{ fontSize: "1.2em" }}>
       Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i>
     </span>
   )
@@ -35,7 +35,7 @@ function TimingInfo({ image }) {
   // console.log("image", image);
   const timeMs = image?.generationTime || image?.timingInfo?.[5]?.timestamp
   return (
-    <Typography variant="body2" component="i">
+    <Typography variant="body" component="i" style={{ fontSize: "1.2em" }}>
       Generation time:
       <span style={{ color: Colors.lime }}>
         <b> {Math.round(timeMs / 100) / 10} s</b>

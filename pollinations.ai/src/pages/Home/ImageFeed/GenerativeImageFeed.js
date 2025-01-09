@@ -196,22 +196,22 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
           </EmojiRephrase>
         </Typography>
       </Grid>
+
       {!image["imageURL"] ? (
         <LoadingIndicator />
       ) : (
-        <Grid container spacing={0} direction="column">
-          <Grid item xs={12}>
+        <Grid container spacing={2} direction="column">
+                    <Grid item xs={12} className={classes.gridCenter}>
             <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
+          </Grid>
+          <Grid item xs={12} className={classes.gridCenter}>
+            <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+          </Grid>
+
+          <Grid item xs={12} className={classes.gridCenter}>
             <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
           </Grid>
-          <Grid item xs={12} style={{ marginTop: "2em" }}>
-            <Box className={classes.boxRelative}>
-              <Box className={classes.boxCenter}>
-                <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-                <Box mx={2} />
-              </Box>
-            </Box>
-          </Grid>
+
           <Grid item xs={12}>
             <Box className={classes.boxColumn}>
               <Box className={classes.boxFlex}>

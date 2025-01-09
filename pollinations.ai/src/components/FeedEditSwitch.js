@@ -21,16 +21,16 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           style={{
             backgroundColor: toggleValue === 'feed' ? Colors.lime : 'transparent',
             color: toggleValue === 'feed' ? Colors.offblack : Colors.lime,
-            fontSize: '1.3rem',
+            fontSize: '1.5rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
             fontWeight: 600,
             height: '100%',
-            width: '100px',
+            width: '150px',
             border: `1px solid ${Colors.lime}`,
           }}
         >
-          Feed
+          WATCH
         </ToggleButton>
       </CustomTooltip>
       <CustomTooltip title="Create an alternative image, this will freeze the feed when enabled.">
@@ -40,16 +40,16 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           style={{
             backgroundColor: toggleValue === 'edit' ? Colors.lime : 'transparent',
             color: toggleValue === 'edit' ? Colors.offblack : Colors.lime,
-            fontSize: '1.3rem',
+            fontSize: '1.5rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
             fontWeight: 600,
             height: '100%',
-            width: '100px',
+            width: '150px',
             border: `1px solid ${Colors.lime}`,
           }}
         >
-          Edit
+          TRY
         </ToggleButton>
       </CustomTooltip>
     </ToggleButtonGroup>

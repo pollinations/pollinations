@@ -5,7 +5,7 @@ import { Colors } from "../styles/global";
 
 export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) {
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', display: 'block', width: '100%' }}>
       <CustomTooltip title="Generate an alternative image from the current prompt/settings.">
         <Button
           variant="contained"
@@ -19,7 +19,7 @@ export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) 
             fontStyle: 'normal',
             fontWeight: 600,
             height: "60px",
-            width: "160px",
+            width: "100%",
             position: "relative",
             marginTop: "0em",
             display: "flex",

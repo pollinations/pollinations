@@ -10,7 +10,6 @@ import { Colors, MOBILE_BREAKPOINT } from "../../../styles/global"
 import { ModelInfo } from "./ModelInfo"
 import { ImageEditor } from "./ImageEditor"
 import { FeedEditSwitch } from "../../../components/FeedEditSwitch"
-import { ImagineButton } from "../../../components/ImagineButton"
 import { TextPrompt } from "./TextPrompt"
 import { LoadingIndicator } from "./LoadingIndicator"
 import { ImageDisplay } from "./ImageDisplay"
@@ -210,7 +209,6 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               <Box className={classes.boxCenter}>
                 <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
                 <Box mx={2} />
-                <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
               </Box>
             </Box>
           </Grid>
@@ -229,8 +227,10 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
                     image={imageParams}
                     handleParamChange={handleParamChange}
                     handleFocus={handleFocus}
-                    handleSubmit={handleSubmit}
+                    isLoading={isLoading} // Pass this prop
                     setIsInputChanged={setIsInputChanged}
+                    handleButtonClick={handleButtonClick} // Pass this prop
+                    isInputChanged={isInputChanged} // Pass this prop
                   />
                 </Box>
               )}

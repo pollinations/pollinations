@@ -170,8 +170,8 @@ export const GenerativeImageFeed = memo(() => {
 
   return (
     <>
-      <Box style={{ backgroundColor: Colors.offblack, width: "100%" }}>
-        <GenerativeImageURLContainer className={classes.container}>
+      <Box style={{ background: `linear-gradient(to bottom, ${Colors.offblack2}, ${Colors.offblack})`, width: "100%" }}>
+      <GenerativeImageURLContainer className={classes.container}>
           <Typography
             variant="h1"
             style={{

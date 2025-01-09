@@ -10,7 +10,7 @@ export const Colors = {
   lime: '#FFE801',
   offwhite: '#FAFAFA',
   offblack: '#2A2C1C',
-  offblack2: '##0d0d0d',
+  offblack2: '#0d0d0d',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
   background_body: '#FEFEFE',

@@ -549,7 +549,6 @@ const ProjectsSection = () => {
           position="static"
           style={{
             color: "white",
-            
             boxShadow: "none",
             backgroundColor: "white",
             marginBottom: "3em", // Added margin under the category buttons

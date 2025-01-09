@@ -23,6 +23,7 @@ import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
+import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import fs from 'fs';
 import path from 'path';
@@ -169,7 +170,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         log('Generated response for key: %s', cacheKey);
         sendResponse(res, response);
-        await sleep(10000);
+        await sleep(5000);
     } catch (error) {
         errorLog('Request error for key %s: %s\n%s', cacheKey, error.message, error.stack);
         
@@ -397,9 +398,15 @@ async function generateTextBasedOnModel(messages, options) {
                 response = await generateDeepseek(messages, options);
                 break;
             case 'mistral':
-                response = await generateTextMistral(messages, options);
+                response = await generateTextScaleway(messages, options);
                 break;
-            case 'llama' || 'qwen' || 'qwen-coder':
+            case 'qwen-coder':
+                response = await generateTextScaleway(messages, options);
+                break;
+            case 'qwen':
+                response = await generateTextHuggingface(messages, { ...options, model });
+                break;
+            case 'llama':
                 response = await generateTextHuggingface(messages, { ...options, model });
                 break;
             case 'llamalight':

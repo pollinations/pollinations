@@ -73,7 +73,7 @@ function getQueue(ip) {
 export function getIp(req) {
     const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     if (!ip) return null;
-    const ipSegments = ip.split('.').slice(0, 3).join('.');
+    const ipSegments = ip.split('.').slice(0, 2).join('.');
     return ipSegments;
 }
 
@@ -95,8 +95,8 @@ app.get('/feed', (req, res) => {
     };
 
     // Function to handle new responses
-    const handleNewResponse = (response, parameters) => {
-        sendEvent({ response, parameters });
+    const handleNewResponse = (response, parameters, ip) => {
+        sendEvent({ response, parameters, ip });
     };
 
     // Add the client to a list of connected clients
@@ -137,7 +137,7 @@ async function handleRequest(req, res, requestData) {
         
         // Broadcast the response to all connected clients
         connectedClients.forEach((handler) => {
-            handler(response, requestData);
+            handler(response, requestData, ip);
         });
         
         sendResponse(res, response);

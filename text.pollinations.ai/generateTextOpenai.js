@@ -12,7 +12,32 @@ const openai = new AzureOpenAI({
     apiKey: process.env.AZURE_OPENAI_API_KEY,
 });
 
+function countMessageCharacters(messages) {
+    return messages.reduce((total, message) => {
+        if (typeof message.content === 'string') {
+            return total + message.content.length;
+        }
+        if (Array.isArray(message.content)) {
+            return total + message.content.reduce((sum, part) => {
+                if (part.type === 'text') {
+                    return sum + part.text.length;
+                }
+                return sum;
+            }, 0);
+        }
+        return total;
+    }, 0);
+}
+
 export async function generateText(messages, options, performSearch = false) {
+    const MAX_CHARS = 48000;
+    const totalChars = countMessageCharacters(messages);
+    
+    if (totalChars > MAX_CHARS) {
+        console.error(`!!!!!!!!!!! Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars}) !!!!!!!!!!!`);
+        throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
+    }
+
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'

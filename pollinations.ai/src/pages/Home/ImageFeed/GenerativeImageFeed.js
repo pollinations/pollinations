@@ -194,35 +194,39 @@ export const GenerativeImageFeed = memo(() => {
             <Grid item xs={12} className={classes.gridCenter} style={{ marginBottom: "2em" }}>
               <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
             </Grid>
-            <Typography
-              style={{
-                color: Colors.offwhite,
-                fontSize: "1.5em",
-                maxWidth: "750px",
-                textAlign: "center",
-                marginBottom: "2em",
-              }}
-            >
-              <EmojiRephrase>
-                Real-time feed of our image API endpoint (minus the private ones). Try our models
-                pausing anytime.
-              </EmojiRephrase>
-            </Typography>
+            <Grid item xs={12} className={classes.gridCenter}>
+              <Typography
+                style={{
+                  color: Colors.offwhite,
+                  fontSize: "1.5em",
+                  maxWidth: "750px",
+                  textAlign: "center",
+                }}
+              >
+                <EmojiRephrase>
+                  Real-time feed of our image API endpoint (minus the private ones). Try our models
+                  pausing anytime.
+                </EmojiRephrase>
+              </Typography>
+            </Grid>
+            <Grid item xs={12} className={classes.gridCenter} style={{ marginTop: "2em" }}>
+              <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+            </Grid>
           </Grid>
 
           {!image["imageURL"] ? (
             <LoadingIndicator />
           ) : (
-            <Grid container spacing={4} direction="column ">
+            <Grid container direction="column ">
               <Grid
                 container
                 direction="row"
                 spacing={0}
                 className={classes.gridCenter}
                 style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.55)",
+                  backgroundColor: "rgba(0, 0, 0, 0.3)",
                   borderRadius: "20px",
-                  marginBottom: "2em",
+                  marginTop: "2em",
                 }}
               >
                 <Grid
@@ -234,9 +238,6 @@ export const GenerativeImageFeed = memo(() => {
                     margin: "2em",
                   }}
                 >
-                  <Grid item xs={12} className={classes.gridCenter}>
-                    <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-                  </Grid>
                   <TextPrompt
                     {...{
                       imageParams,

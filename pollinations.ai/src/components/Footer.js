@@ -7,6 +7,8 @@ import { LinkStyle } from "../pages/Home/components"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator"
 import useIsMobile from "../hooks/useIsMobile" // Import the new hook
+import logo from "../assets/imgs/thot-labs_logo.svg"
+
 
 const Footer = () => {
   const isMobile = useIsMobile() // Use the new hook
@@ -43,9 +45,20 @@ const Footer = () => {
           </NavLink>
         </LogoContainer> */}
         <BottomLinksContainer>
+        <Box display="flex" alignItems="center">
+          {/* <img
+            src={logo}
+            alt="THOT Labs Logo"
+            style={{
+              height: "3em",
+              opacity: "1",
+              marginRight: "1em",
+            }}
+          /> */}
           <StyledLink href="mailto:hello@thot-labs.com">
             <b>hello@thot-labs.com</b>
           </StyledLink>
+        </Box>
           <StyledNavLink to="/terms">
             <b>TERMS & CONDITIONS</b>
           </StyledNavLink>

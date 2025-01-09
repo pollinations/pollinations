@@ -12,7 +12,6 @@ import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
 import { T } from "ramda"
 import styled from "@emotion/styled"
 import StyledLink from "../../components/StyledLink" // Updated import
-import projectsTitle from "../../assets/imgs/2025_projects.jpeg"
 
 const useStyles = makeStyles((theme) => ({
   root: {},
@@ -77,6 +76,14 @@ const useStyles = makeStyles((theme) => ({
       textDecoration: "underline",
     },
   },
+  projectsContainer: {
+    maxHeight: "600px",
+    overflowY: "auto",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    padding: "3em",
+    borderRadius: "10px",
+  },
+  
 }))
 
 const logoPrefix =
@@ -471,21 +478,14 @@ const ProjectsSection = () => {
 
   return (
     <Box
-      style={{ background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`, width: "100%" }}
+      style={{
+        background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`,
+        width: "100%",
+      }}
     >
       <GenerativeImageURLContainer
         style={{ marginTop: "4em", marginBottom: "4em", maxWidth: "1000px", width: "100%" }}
       >
-        {/* <GenerativeImageURLContainer style={{ marginTop: "2em" }}>
-        <ImageURLHeading
-          width={isMobile ? 400 : 700}
-          height={isMobile ? 150 : 200}
-          whiteText={true}
-        >
-          Integrations
-        </ImageURLHeading>
-      </GenerativeImageURLContainer> */}
-
         <Typography
           variant="h1"
           style={{
@@ -515,7 +515,6 @@ const ProjectsSection = () => {
           </EmojiRephrase>
         </Typography>
 
-
         {/* Category Menu */}
         <AppBar
           position="static"
@@ -523,7 +522,7 @@ const ProjectsSection = () => {
             color: "white",
             boxShadow: "none",
             backgroundColor: "white",
-            marginBottom: "3em", // Added margin under the category buttons
+            marginBottom: "1em", // Added margin under the category buttons
           }}
         >
           <ButtonGroup
@@ -534,7 +533,6 @@ const ProjectsSection = () => {
               flexWrap: "wrap",
               justifyContent: "center",
               boxShadow: "none",
-
             }}
           >
             {projectCategories.map((category) => (
@@ -550,45 +548,47 @@ const ProjectsSection = () => {
         </AppBar>
 
         {/* Render selected category */}
-        {renderProjects(projects[selectedCategory])}
+        <Box className={classes.projectsContainer}>
+          {renderProjects(projects[selectedCategory])}
+        </Box>
       </GenerativeImageURLContainer>
       <Typography
-          style={{
-            color: Colors.offwhite,
-            fontSize: "1.5em",
-            margin: "1em auto 4em auto",
-            textAlign: "center",
-            maxWidth: "750px",
+        style={{
+          color: Colors.offwhite,
+          fontSize: "1.5em",
+          margin: "1em auto 4em auto",
+          textAlign: "center",
+          maxWidth: "750px",
+        }}
+      >
+        <EmojiRephrase>
+          Have you created a project that integrates Thot? <br />
+          We'd love to feature it!.
+        </EmojiRephrase>
+      </Typography>
+      <p
+        style={{
+          userSelect: "none",
+          fontSize: "1.6em",
+          textAlign: "center",
+          paddingBottom: "3em",
+          maxWidth: "750px",
+          margin: "0 auto",
+        }}
+      >
+        <EmojiRephrase>Talk to us</EmojiRephrase>
+        <br />
+        <StyledLink
+          href="mailto:hello@thot-labs.com"
+          onClick={(e) => {
+            handleLinkClick(e)
+            alert("Copied")
           }}
+          style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
         >
-          <EmojiRephrase>
-            Have you created a project that integrates Thot? <br />
-            We'd love to feature it!. Our endpoints are free to use and open to the public.
-          </EmojiRephrase>
-        </Typography>
-        <p
-          style={{
-            userSelect: "none",
-            fontSize: "1.6em",
-            textAlign: "center",
-            paddingBottom: "3em",
-            maxWidth: "750px",
-            margin: "0 auto",
-          }}
-        >
-          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
-          <br />
-          <StyledLink
-            href="mailto:hello@thot-labs.com"
-            onClick={(e) => {
-              handleLinkClick(e)
-              alert("Copied")
-            }}
-            style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
-          >
-            <b>hello@thot-labs.com</b>
-          </StyledLink>
-        </p>
+          <b>hello@thot-labs.com</b>
+        </StyledLink>
+      </p>
     </Box>
   )
 }

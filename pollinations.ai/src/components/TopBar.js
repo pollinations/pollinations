@@ -6,20 +6,37 @@ import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
 import useIsMobile from "../hooks/useIsMobile" // Import the new hook
-import topLogo from "../assets/imgs/2025_toplogo.png" // Import the toplogo image
 import { Typography } from "@mui/material"
+import logo from "../assets/imgs/thot-labs_logo.svg"
 
 const TopBar = () => {
-  const isMobile = useIsMobile(); // Use the new hook
+  const isMobile = useIsMobile() // Use the new hook
   return (
     <TopContainer>
-      <LogoContainer>
-        <NavLink to="/" style={{ textDecoration: 'none' }}>
+      <LogoContainer isMobile={isMobile}>
+        <NavLink
+          to="/"
+          style={{
+            textDecoration: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isMobile ? "center" : "flex-start",
+          }}
+        >
+          {/* Logo
+          <img
+            src={logo}
+            alt="THOT Labs Logo"
+            style={{
+              height: isMobile ? "6em" : "8.5em", // Adjust size for mobile and desktop
+              marginRight: isMobile ? "0px" : "20px", // Space between logo and text
+              marginBottom: isMobile ? "10px" : "0px",
+            }}
+          /> */}
           <Typography
-            variant="h1"
             style={{
               color: Colors.offblack,
-              fontSize: "10em",
+              fontSize: isMobile ? "6em" : "10em", // Adjust font size for mobile and desktop
               fontWeight: "bold",
               textAlign: "center",
               margin: "0 auto",
@@ -37,8 +54,8 @@ const TopBar = () => {
         <SocialLinks medium gap="1em" invert />
       </NavBarStyle> */}
     </TopContainer>
-  );
-};
+  )
+}
 
 const OuterContainer = styled.div`
   width: 100%;

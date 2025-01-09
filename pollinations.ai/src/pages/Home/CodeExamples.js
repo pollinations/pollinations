@@ -395,7 +395,7 @@ export function CodeExamples({ image }) {
 
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  backgroundColor: "rgba(0, 0, 0, 0.3)",
                   color: Colors.offwhite,
                   height: "500px",
                   border: `0px`,

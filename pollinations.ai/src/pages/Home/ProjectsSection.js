@@ -486,14 +486,7 @@ const ProjectsSection = () => {
           Integrations
         </ImageURLHeading>
       </GenerativeImageURLContainer> */}
-      <hr
-        style={{
-          border: `1px solid ${Colors.lime}`,
-          marginBottom: "0em",
-          marginTop: "2em",
-          width: "95%",
-        }}
-      />
+
       <img
         src={projectsTitle}
         alt="Project Logo"

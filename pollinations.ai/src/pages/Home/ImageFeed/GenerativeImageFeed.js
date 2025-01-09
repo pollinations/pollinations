@@ -273,14 +273,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
             >
               Integrate
             </ImageURLHeading> */}
-            <hr
-              style={{
-                border: `1px solid ${Colors.lime}`,
-                marginBottom: "0em",
-                marginTop: "0em",
-                width: "95%",
-              }}
-            />
+
             <img
               src={integrate}
               alt="Integrate Logo"

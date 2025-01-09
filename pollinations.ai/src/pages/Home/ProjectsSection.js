@@ -487,11 +487,19 @@ const ProjectsSection = () => {
         </ImageURLHeading>
       </GenerativeImageURLContainer> */}
 
-      <img
-        src={projectsTitle}
-        alt="Project Logo"
-        style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
-      />
+      <Typography
+        variant="h1"
+        style={{
+          color: Colors.lime,
+          fontSize: "8em",
+          fontWeight: "bold",
+          textAlign: "center",
+          margin: "0 auto",
+          userSelect: "none",
+        }}
+      >
+        Built with Us
+      </Typography>
 
       <Typography
         style={{
@@ -526,7 +534,7 @@ const ProjectsSection = () => {
             handleLinkClick(e)
             alert("Copied")
           }}
-          style={{ userSelect: "text", fontSize: "1.6em" }}
+          style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
         >
           <b>hello@thot-labs.com</b>
         </StyledLink>

@@ -172,11 +172,26 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
 
   return (
     <GenerativeImageURLContainer className={classes.container}>
-      <img
+      {/* <img
         src={imagefeed}
         alt="Image Feed Logo"
         style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
-      />
+      /> */}
+
+<Typography
+        variant="h1"
+        style={{
+          color: Colors.lime,
+          fontSize: "8em",
+          fontWeight: "bold",
+          textAlign: "center",
+          marginTop: "0.5em",
+          userSelect: "none",
+          letterSpacing: "0.1em",
+        }}
+      >
+        API Feed
+      </Typography>
       <Grid item className={classes.gridItem} style={{ marginTop: "0em" }}>
         {/* <ImageURLHeading width={isMobile ? 400 : 700} height={isMobile ? 150 : 200}>
           Image Feed
@@ -274,11 +289,19 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               Integrate
             </ImageURLHeading> */}
 
-            <img
-              src={integrate}
-              alt="Integrate Logo"
-              style={{ width: "100%", userSelect: "none", maxWidth: "1000px" }}
-            />
+<Typography
+        variant="h1"
+        style={{
+          color: Colors.lime,
+          fontSize: "8em",
+          fontWeight: "bold",
+          textAlign: "center",
+          margin: "0 auto",
+          userSelect: "none",
+        }}
+      >
+        Integrate API
+      </Typography>
             <Typography
               style={{
                 color: Colors.white,

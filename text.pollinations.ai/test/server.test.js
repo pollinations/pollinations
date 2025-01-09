@@ -86,7 +86,7 @@ test('POST / should return 400 for invalid messages array', async t => {
         .post('/')
         .send({ messages: 'invalid' });
     t.is(response.status, 400, 'Response status should be 400');
-    t.is(response.text, 'Invalid messages array', 'Response should indicate invalid messages');
+    t.is(response.text, 'Invalid messages array. Received: invalid', 'Response should indicate invalid messages');
 });
 
 /**

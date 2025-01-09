@@ -51,7 +51,12 @@ const preMiddleware = async function (pathname, req, res) {
   }
 
   if (!pathname.startsWith("/prompt")) {
-    res.end('404: Not Found');
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Not Found',
+      message: 'The requested endpoint was not found',
+      path: pathname
+    }));
     return false;
   }
 
@@ -178,8 +183,9 @@ const checkCacheAndGenerate = async (req, res) => {
 
   sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
 
+  let timingInfo = [];  // Moved outside try block
+  
   try {
-    let timingInfo = [];
     // Cache the generated image
     const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
@@ -253,12 +259,23 @@ const checkCacheAndGenerate = async (req, res) => {
     sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
 
   } catch (error) {
-    logError("error", error);
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end(`500: Internal Server Error - ${error.message}`);
-
-    // Enhanced error analytics with the same base metadata
-    sendToAnalytics(req, "imageGenerationError", { req, originalPrompt, safeParams, referrer, error });
+    logError("Error generating image:", error);
+    progress.errorBar(requestId, error.message || 'Internal Server Error');
+    progress.stop();
+    
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Internal Server Error',
+      message: error.message || 'An error occurred while processing your request',
+      details: error.details || {},
+      timingInfo,
+      requestId,
+      requestParameters: {
+        prompt: originalPrompt,
+        ...safeParams,
+        referrer
+      }
+    }));
   }
 };
 

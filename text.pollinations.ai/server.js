@@ -24,6 +24,9 @@ import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
+import fs from 'fs';
+import path from 'path';
+
 const app = express();
 
 const log = debug('pollinations:server');
@@ -70,6 +73,13 @@ export function getIp(req) {
     if (!ip) return null;
     const ipSegments = ip.split('.').slice(0, 3).join('.');
     return ipSegments;
+}
+
+// Function to log suspicious requests
+function logSuspiciousRequest(ip, data) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `${timestamp} - IP: ${ip} - ${JSON.stringify(data)}\n`;
+    fs.appendFileSync(path.join(__dirname, 'suspicious_requests.log'), logEntry);
 }
 
 // GET /models request handler
@@ -134,6 +144,11 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         log('Request data: %o', cacheKeyData);
 
+        // Check for suspicious patterns
+        if (JSON.stringify(cacheKeyData).includes("Aim for a total length of 600-800 words")) {
+            logSuspiciousRequest(getIp(req), cacheKeyData);
+        }
+
         // Send analytics event for text generation request
         sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
 
@@ -154,7 +169,7 @@ async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
 
         log('Generated response for key: %s', cacheKey);
         sendResponse(res, response);
-        await sleep(3000);
+        await sleep(10000);
     } catch (error) {
         errorLog('Request error for key %s: %s\n%s', cacheKey, error.message, error.stack);
         
@@ -392,9 +407,6 @@ async function generateTextBasedOnModel(messages, options) {
                 break;
             case 'karma':
                 response = await generateTextKarma(messages, options);
-                break;
-            case 'claude':
-                response = await generateTextClaude(messages, options);
                 break;
             case 'sur':
                 response = await surOpenai(messages, options);

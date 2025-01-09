@@ -25,7 +25,7 @@ export async function generateText(messages, options, performSearch = false) {
         }
     }
 
-    console.log("calling openai with messages", messages);
+    // console.log("calling openai with messages", messages);
 
     let completion;
     let responseMessage;

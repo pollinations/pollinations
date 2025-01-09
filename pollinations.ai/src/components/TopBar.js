@@ -5,59 +5,40 @@ import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
 import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
-import useIsMobile from "../hooks/useIsMobile"; // Import the new hook
-import topLogo from "../assets/imgs/2025_toplogo.png"; // Import the toplogo image
+import useIsMobile from "../hooks/useIsMobile" // Import the new hook
+import topLogo from "../assets/imgs/2025_toplogo.png" // Import the toplogo image
+import { Typography } from "@mui/material"
 
 const TopBar = () => {
   const isMobile = useIsMobile(); // Use the new hook
   return (
     <TopContainer>
-      {isMobile ? (
-        <MobileNavContainer>
-          {/* <CenteredSocialLinks>
-            <SocialLinks medium gap="1em" invert />
-          </CenteredSocialLinks> */}
-            <NavLink to="/">
-              <img
-                src={topLogo}
-                alt="THOT Labs Logo"
-                style={{ width: "100%", userSelect: "none", maxWidth: "400px" }}
-              />
-              {/* <ImageURLHeading
-                whiteText={false}
-                width={400}
-                height={100}
-                style={{ userSelect: "none", maxWidth: "1000px" }} // Added to prevent selection and ensure max width
-              >
-                THOT Labs
-              </ImageURLHeading> */}
-            </NavLink>
-            {/* <AsciiArtContainer>
-              <AsciiArtGenerator />
-            </AsciiArtContainer> */}
-        </MobileNavContainer>
-      ) : (
-        <>
-          <LogoContainer>
-            <NavLink to="/">
-              <img
-                src={topLogo}
-                alt="THOT Labs Logo"
-                style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "400px" }}
-              />
-            </NavLink>
-          </LogoContainer>
-          {/* <AsciiArtContainer width={500} height={100}>
-            <AsciiArtGenerator />
-          </AsciiArtContainer> */}
-          {/* <NavBarStyle>
-            <SocialLinks medium gap="1em" invert />
-          </NavBarStyle> */}
-        </>
-      )}
+      <LogoContainer>
+        <NavLink to="/" style={{ textDecoration: 'none' }}>
+          <Typography
+            variant="h1"
+            style={{
+              color: Colors.offblack,
+              fontSize: "10em",
+              fontWeight: "bold",
+              textAlign: "center",
+              margin: "0 auto",
+              userSelect: "none",
+            }}
+          >
+            THOT Labs
+          </Typography>
+        </NavLink>
+      </LogoContainer>
+      {/* <AsciiArtContainer width={500} height={100}>
+        <AsciiArtGenerator />
+      </AsciiArtContainer> */}
+      {/* <NavBarStyle>
+        <SocialLinks medium gap="1em" invert />
+      </NavBarStyle> */}
     </TopContainer>
-  )
-}
+  );
+};
 
 const OuterContainer = styled.div`
   width: 100%;
@@ -73,7 +54,7 @@ const MobileNavContainer = styled.div`
 `
 
 const TopContainer = styled.div`
-  background-color: #fefefe;
+  background-color: ${Colors.offwhite};
   width: 100%;
   display: flex;
   justify-content: center;
@@ -95,7 +76,7 @@ const NavBarStyle = styled(BaseContainer)`
   padding: 1% 0 2%; /* Added padding-bottom here */
   @media (max-width: ${MOBILE_BREAKPOINT}) {
     grid-template-areas: ${({ isMobile }) =>
-    isMobile ? `"social" "logo"` : `"logo nav mobilebutton social"`};
+      isMobile ? `"social" "logo"` : `"logo nav mobilebutton social"`};
     justify-items: center;
   }
 `

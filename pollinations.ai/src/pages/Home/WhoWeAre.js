@@ -78,6 +78,7 @@ const PageLayout = styled(BaseContainer)`
   align-items: flex-start;
   justify-content: center;
   gap: 1em;
+  background-color: ${Colors.offwhite};
 
   h2 {
     initial: unset;

@@ -33,37 +33,8 @@ const app = express();
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
 
-// Custom JSON parsing middleware
-app.use((req, res, next) => {
-    let data = '';
-    req.on('data', chunk => {
-        data += chunk;
-    });
-    req.on('end', () => {
-        if (!data) {
-            next();
-            return;
-        }
-
-        try {
-            req.body = JSON.parse(data);
-            next();
-        } catch (e) {
-            res.status(400).json({
-                error: 'Invalid JSON',
-                message: e.message,
-                position: {
-                    line: e.message.match(/line (\d+)/)?.[1] || 'unknown',
-                    position: e.message.match(/position (\d+)/)?.[1] || 'unknown'
-                }
-            });
-        }
-    });
-});
-
-// Remove the default body-parser since we're handling it ourselves
-// app.use(bodyParser.json({ limit: '5mb' }));
-
+// Remove the custom JSON parsing middleware and use the standard bodyParser
+app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
 // New route handler for root path
@@ -163,16 +134,23 @@ async function handleRequest(req, res, requestData) {
         const cacheKey = createHashKey(requestData);
         cache[cacheKey] = response;
         log('Generated response', response);
+        
+        // Broadcast the response to all connected clients
+        connectedClients.forEach((handler) => {
+            handler(response, requestData);
+        });
+        
         sendResponse(res, response);
-        await sleep(5000);
+        await sleep(10000);
     } catch (error) {
         errorLog('Error generating text: %s', error.message);
-        return res.status(500).json({
+        res.status(500).json({
             error: {
                 message: error.message,
                 status: 500
             }
         });
+        await sleep(5000);
     }
 }
 
@@ -234,10 +212,10 @@ async function processRequest(req, res, requestData) {
     const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
-        return handleRequest(req, res, requestData);
+        await handleRequest(req, res, requestData);
     } else {
         const queue = getQueue(ip);
-        return queue.add(() => handleRequest(req, res, requestData));
+        await queue.add(() => handleRequest(req, res, requestData));
     }
 }
 
@@ -320,6 +298,7 @@ app.post('/openai*', async (req, res) => {
                 res.flushHeaders();
                 res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
                 res.end();
+                await sleep(10000);
                 return;
             } else {
                 choices = [{ 
@@ -343,10 +322,14 @@ app.post('/openai*', async (req, res) => {
             log("openai format result", JSON.stringify(result, null, 2));
             res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
             res.json(result);
+            await sleep(10000);
+            return;
         } catch (error) {
             errorLog('Error generating text', error.message);
             console.error(error.stack); // Print stack trace
-            return res.status(500).send(error.message);
+            res.status(500).send(error.message);
+            await sleep(5000);
+            return;
         }
     };
     try {
@@ -354,7 +337,9 @@ app.post('/openai*', async (req, res) => {
     } catch (error) {
         errorLog('Error processing request', error.message);
         console.error(error.stack); // Print stack trace
-        return res.status(500).send(error.message);
+        res.status(500).send(error.message);
+        await sleep(5000);
+        return;
     }
 })
 
@@ -405,6 +390,7 @@ async function generateTextBasedOnModel(messages, options) {
         
         // Broadcast the response to all connected clients
         for (const [_, handleNewResponse] of connectedClients) {
+            console.log('broadcasting response', response, "to", connectedClients.size );
             handleNewResponse(response, { messages, model, ...options });
         }
         

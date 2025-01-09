@@ -33,7 +33,37 @@ const app = express();
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
 
-app.use(bodyParser.json({ limit: '5mb' }));
+// Custom JSON parsing middleware
+app.use((req, res, next) => {
+    let data = '';
+    req.on('data', chunk => {
+        data += chunk;
+    });
+    req.on('end', () => {
+        if (!data) {
+            next();
+            return;
+        }
+
+        try {
+            req.body = JSON.parse(data);
+            next();
+        } catch (e) {
+            res.status(400).json({
+                error: 'Invalid JSON',
+                message: e.message,
+                position: {
+                    line: e.message.match(/line (\d+)/)?.[1] || 'unknown',
+                    position: e.message.match(/position (\d+)/)?.[1] || 'unknown'
+                }
+            });
+        }
+    });
+});
+
+// Remove the default body-parser since we're handling it ourselves
+// app.use(bodyParser.json({ limit: '5mb' }));
+
 app.use(cors());
 
 // New route handler for root path
@@ -137,7 +167,12 @@ async function handleRequest(req, res, requestData) {
         await sleep(5000);
     } catch (error) {
         errorLog('Error generating text: %s', error.message);
-        throw error;
+        return res.status(500).json({
+            error: {
+                message: error.message,
+                status: 500
+            }
+        });
     }
 }
 
@@ -220,7 +255,13 @@ app.post('/', async (req, res) => {
     }
 
     const cacheKeyData = getRequestData(req, true);
-    await processRequest(req, res, cacheKeyData);
+    try {
+        await processRequest(req, res, cacheKeyData);
+    } catch (error) {
+        errorLog('Error processing request', error.message);
+        console.error(error.stack); // Print stack trace
+        return res.status(500).send(error.message);
+    }
 });
 
 app.get('/openai/models', (req, res) => {

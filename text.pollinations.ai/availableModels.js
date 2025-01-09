@@ -9,14 +9,14 @@ export const availableModels = [
     {
         name: 'qwen',
         type: 'chat',
-        censored: false,
+        censored: true,
         description: 'Qwen 2.5 72B',
         baseModel: true,
     },
     {
         name: 'qwen-coder',
         type: 'chat',
-        censored: false,
+        censored: true,
         description: 'Qwen 2.5 Coder 32B',
         baseModel: true,
     },

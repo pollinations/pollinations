@@ -23,7 +23,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2)
 
   return (
-    <span style={{ fontSize: "1.2em" }}>
+    <span style={{ fontSize: "1.8em" }}>
       Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i>
     </span>
   )

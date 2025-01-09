@@ -556,7 +556,7 @@ const ProjectsSection = () => {
           style={{
             color: Colors.offwhite,
             fontSize: "1.5em",
-            margin: "1em auto 2em auto",
+            margin: "1em auto 4em auto",
             textAlign: "center",
             maxWidth: "750px",
           }}
@@ -571,7 +571,7 @@ const ProjectsSection = () => {
             userSelect: "none",
             fontSize: "1.6em",
             textAlign: "center",
-            marginBottom: "4em",
+            paddingBottom: "3em",
             maxWidth: "750px",
             margin: "0 auto",
           }}

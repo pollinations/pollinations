@@ -191,12 +191,16 @@ export const GenerativeImageFeed = memo(() => {
             API Feed
           </Typography>
           <Grid item className={classes.gridItem} style={{ marginTop: "2em", maxWidth: "750px" }}>
+            <Grid item xs={12} className={classes.gridCenter} style={{ marginBottom: "2em" }}>
+              <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
+            </Grid>
             <Typography
               style={{
                 color: Colors.offwhite,
                 fontSize: "1.5em",
                 maxWidth: "750px",
                 textAlign: "center",
+                marginBottom: "2em",
               }}
             >
               <EmojiRephrase>
@@ -210,12 +214,6 @@ export const GenerativeImageFeed = memo(() => {
             <LoadingIndicator />
           ) : (
             <Grid container spacing={4} direction="column ">
-              <Grid item xs={12} className={classes.gridCenter} style={{ marginTop: "2em" }}>
-                <ServerLoadAndGenerationInfo {...{ lastImage, imagesGenerated, image }} />
-              </Grid>
-              <Grid item xs={12} className={classes.gridCenter}>
-                <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-              </Grid>
               <Grid
                 container
                 direction="row"
@@ -236,6 +234,9 @@ export const GenerativeImageFeed = memo(() => {
                     margin: "2em",
                   }}
                 >
+                  <Grid item xs={12} className={classes.gridCenter}>
+                    <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+                  </Grid>
                   <TextPrompt
                     {...{
                       imageParams,
@@ -263,7 +264,17 @@ export const GenerativeImageFeed = memo(() => {
                 </Grid>
                 <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
                 {toggleValue === "feed" && (
-                  <ModelInfo model={image["model"]} wasPimped={image["wasPimped"]} />
+                  <Grid
+                    item
+                    xs={12}
+                    sm={12}
+                    md={12}
+                    style={{
+                      marginBottom: "1em",
+                    }}
+                  >
+                    <ModelInfo model={image["model"]} wasPimped={image["wasPimped"]} />
+                  </Grid>
                 )}
               </Grid>
             </Grid>

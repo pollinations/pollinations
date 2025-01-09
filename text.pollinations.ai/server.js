@@ -200,6 +200,7 @@ function getRequestData(req, isPost = false) {
                     (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
                     (typeof data.json === 'boolean' && data.json === true) ||
                     data.response_format?.type === 'json_object';
+                    
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
@@ -441,7 +442,12 @@ async function generateTextBasedOnModel(messages, options) {
                 break;
             default:
                 log('Invalid model specified, falling back to OpenAI');
-                response = await generateText(messages, { ...options, model: 'openai' });
+                try {
+                    response = await generateText(messages, { ...options, model: 'openai' });
+                } catch (error) {
+                    errorLog('Error generating. Trying Mistral fallback', error.message);
+                    response = await generateTextMistral(messages, options);
+                }
         }
 
         // Broadcast the response to all connected clients
@@ -459,10 +465,10 @@ async function generateTextBasedOnModel(messages, options) {
 
 const generateTextWithMistralFallback = async (messages, options) => {
     try {
-        return { response: await generateText(messages, options), fallback: false };
+        return await generateText(messages, options);
     } catch (error) {
         errorLog('Error generating. Trying Mistral fallback', error.message);
-        return { response: await generateTextMistral(messages, options), fallback: true };
+        return await generateTextMistral(messages, options);
     }
 }
 

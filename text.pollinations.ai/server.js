@@ -76,13 +76,6 @@ export function getIp(req) {
     return ipSegments;
 }
 
-// Function to log suspicious requests
-function logSuspiciousRequest(ip, data) {
-    const timestamp = new Date().toISOString();
-    const logEntry = `${timestamp} - IP: ${ip} - ${JSON.stringify(data)}\n`;
-    fs.appendFileSync(path.join(__dirname, 'suspicious_requests.log'), logEntry);
-}
-
 // GET /models request handler
 app.get('/models', (req, res) => {
     res.json(availableModels);
@@ -141,22 +134,19 @@ async function handleRequest(req, res, requestData) {
     // Send analytics event for text generation request
     sendToAnalytics(req, 'textGenerated', { messages: requestData.messages, model: requestData.model, options: requestData });
 
-    const responsePromise = generateTextBasedOnModel(requestData.messages, requestData);
-
-    cache[createHashKey(requestData)] = responsePromise;
-
-    let response;
     try {
-        response = await responsePromise;
+        const response = await generateTextBasedOnModel(requestData.messages, requestData);
+        const cacheKey = createHashKey(requestData);
+        cache[cacheKey] = response;
+        log('Generated response', response);
+        sendResponse(res, response);
+        await sleep(5000);
     } catch (error) {
-        errorLog('Error generating text for key %s: %s', cacheKey, error.message);
-        delete cache[cacheKey];
+        errorLog('Error generating text: %s', error.message);
         throw error;
     }
 
-    log('Generated response', response);
-    sendResponse(res, response);
-    await sleep(5000);
+
 }
 
 function sendResponse(res, response) {
@@ -286,10 +276,8 @@ app.post('/openai*', async (req, res) => {
             // Send analytics event for text generation request
             sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
 
-            const responsePromise = generateTextBasedOnModel(requestParams.messages, requestParams);
-            cache[cacheKey] = responsePromise;
-
-            const response = await responsePromise;
+            const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
+            cache[cacheKey] = response;
             
             let choices;
             if (isStream) {
@@ -318,33 +306,28 @@ app.post('/openai*', async (req, res) => {
                 "object": isStream ? "chat.completion.chunk" : "chat.completion",
                 "choices": choices
             };
-            if (requestParams.cache) {
-                cache[cacheKey] = result;
-            }
+            cache[cacheKey] = result;
             log("openai format result", JSON.stringify(result, null, 2));
             res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
             res.json(result);
         } catch (error) {
             errorLog('Error generating text', error.message);
             console.error(error.stack); // Print stack trace
-            res.status(500).send(error.message);
+            return res.status(500).send(error.message);
         }
     };
-
-    await queue.add(run);
-
+    try {
+        await queue.add(run);
+    } catch (error) {
+        errorLog('Error processing request', error.message);
+        console.error(error.stack); // Print stack trace
+        return res.status(500).send(error.message);
+    }
 })
 
 // Helper function to get response from cache
-async function getCache(cacheKey) {
-    if (cache[cacheKey]) {
-        const cachedResponse = await cache[cacheKey];
-        if (cachedResponse instanceof Error) {
-            throw cachedResponse; // Re-throw the cached error
-        }
-        return cachedResponse;
-    }
-    return null;
+function getCache(cacheKey) {
+    return cache[cacheKey] || null;
 }
 
 // Helper function to create a hash for the cache key
@@ -375,7 +358,11 @@ async function generateTextBasedOnModel(messages, options) {
         let response;
         switch (options.model || 'openai') {
             case 'openai':
-                response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
+                try {
+                    response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
+                } catch (error) {
+                    response = await generateTextMistral(messages, options);
+                }
                 break;
             case 'deepseek':
                 response = await generateDeepseek(messages, options);

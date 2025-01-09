@@ -149,14 +149,19 @@ availableModels.forEach(model => {
  * Purpose: Verify that the API handles errors appropriately.
  */
 test('should handle errors gracefully', async t => {
-    try {
-        await axiosInstance.post('/', {
+    const response = await fetch(`http://localhost:${server.address().port}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
             messages: 'invalid'
-        });
-    } catch (error) {
-        t.is(error.response.status, 400, 'Response status should be 400');
-        t.is(error.response.data, 'Invalid messages array. Received: invalid', 'Error message should indicate invalid messages');
-    }
+        })
+    });
+    
+    t.is(response.status, 400, 'Response status should be 400');
+    const errorText = await response.text();
+    t.is(errorText, 'Invalid messages array. Received: invalid', 'Error message should indicate invalid messages');
 });
 
 /**

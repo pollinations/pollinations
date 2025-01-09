@@ -386,6 +386,7 @@ async function generateTextBasedOnModel(messages, options) {
             'searchgpt': () => generateText(messages, options, true),
             'evil': () => evilCommandR(messages, options),
             'roblox': () => generateTextRoblox(messages, options),
+            'openai': () => generateText(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

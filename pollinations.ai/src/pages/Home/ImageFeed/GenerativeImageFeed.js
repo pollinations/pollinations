@@ -178,7 +178,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
         style={{ width: "100%", height: "100%", userSelect: "none", maxWidth: "1000px" }}
       /> */}
 
-<Typography
+      <Typography
         variant="h1"
         style={{
           color: Colors.lime,
@@ -227,7 +227,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               <Box className={classes.boxColumn}>
                 <Box className={classes.boxFlex}>
                   <TextPrompt
-                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped, edit: true }}
                     stop={stop}
                     switchToEditMode={switchToEditMode}
                   />
@@ -260,7 +260,7 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               <Box className={classes.boxColumn}>
                 <Box className={classes.boxFlex}>
                   <TextPrompt
-                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped }}
+                    {...{ imageParams, handleParamChange, handleFocus, isLoading, isStopped, edit: false}}
                     stop={stop}
                     switchToEditMode={switchToEditMode}
                   />
@@ -289,19 +289,19 @@ export const GenerativeImageFeed = memo(function GenerativeImageFeed() {
               Integrate
             </ImageURLHeading> */}
 
-<Typography
-        variant="h1"
-        style={{
-          color: Colors.lime,
-          fontSize: "8em",
-          fontWeight: "bold",
-          textAlign: "center",
-          margin: "0 auto",
-          userSelect: "none",
-        }}
-      >
-        Integrate API
-      </Typography>
+            <Typography
+              variant="h1"
+              style={{
+                color: Colors.lime,
+                fontSize: "8em",
+                fontWeight: "bold",
+                textAlign: "center",
+                margin: "0 auto",
+                userSelect: "none",
+              }}
+            >
+              Integrate API
+            </Typography>
             <Typography
               style={{
                 color: Colors.white,

@@ -11,6 +11,7 @@ export function TextPrompt({
     isStopped,
     stop,
     switchToEditMode,
+    edit, // New binary parameter to control border visibility
   }) {
     const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT})`);
   
@@ -27,7 +28,7 @@ export function TextPrompt({
                         width: "100%",
                         height: "200px",
                         backgroundColor: "transparent",
-                        border: `0.1px solid #4A4A4A`,
+                        border: edit ? `0.1px solid #4A4A4A` : "none", // Conditional border
                         borderRadius: "5px",
                         color: Colors.offwhite,
                         paddingLeft: "15px",
@@ -48,13 +49,13 @@ export function TextPrompt({
                         width: "100%",
                         height: "160px",
                         backgroundColor: "transparent",
-                        border: `0.1px solid #4A4A4A`,
+                        border: edit ? `0.1px solid ${Colors.offwhite}` : "none", 
                         borderRadius: "5px",
-                        color: Colors.offwhite,
+                        color: edit ? Colors.offwhite : Colors.grey, 
                         paddingTop: "0px",
                         paddingLeft: "15px",
                         paddingRight: "15px",
-                        fontSize: isMobile ? "1.5rem" : "1.5rem",
+                        fontSize: edit ? "1.5rem" : "1.2rem",
                         overflow: "auto",
                         scrollbarWidth: "none", // For Firefox
                         msOverflowStyle: "none", // For Internet Explorer and Edge

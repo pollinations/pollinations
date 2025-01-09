@@ -399,7 +399,7 @@ async function generateTextBasedOnModel(messages, options) {
                 response = await generateDeepseek(messages, options);
                 break;
             case 'mistral':
-                response = await generateTextScaleway(messages, options);
+                response = await generateTextMistral(messages, options);
                 break;
             case 'qwen-coder':
                 response = await generateTextScaleway(messages, options);

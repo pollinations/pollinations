@@ -32,6 +32,24 @@ export async function generateTextScaleway(messages, options) {
 
     console.log("calling scaleway with messages", messages);
 
+    // Log equivalent curl command
+    const requestBody = {
+        model: modelName,
+        messages,
+        ...(seed && { seed }),
+        temperature,
+        ...(jsonMode && { response_format: { type: 'json_object' } })
+    };
+    
+    // Escape any single quotes in the JSON content
+    const escapedJson = JSON.stringify(requestBody).replace(/'/g, "'\\''");
+    
+    const curlCommand = `curl '${process.env.SCALEWAY_BASE_URL}/chat/completions' \\
+  -H 'Authorization: Bearer ${process.env.SCALEWAY_API_KEY}' \\
+  -H 'Content-Type: application/json' \\
+  -d '${escapedJson}'`;
+    console.log("Equivalent curl command:", curlCommand);
+
     const completion = await openai.chat.completions.create({
         model: modelName,
         messages,

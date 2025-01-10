@@ -27,6 +27,9 @@ test.before(async t => {
                 validateStatus: status => true, // Don't throw on any status
                 headers: {
                     'Referer': 'roblox'
+                },
+                params: {
+                    code: 'BeesKnees'
                 }
             });
             resolve();

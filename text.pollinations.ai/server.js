@@ -114,9 +114,22 @@ async function handleRequest(req, res, requestData) {
     } catch (error) {
         sendErrorResponse(res, error);
     }
-    if (process.env.NODE_ENV !== 'test') {
-        await sleep(15000);
+    if (!shouldBypassDelay(req)) {
+        await sleep(8000);
     }
+}
+
+// Function to check if delay should be bypassed
+function shouldBypassDelay(req) {
+    const password = "BeesKnees";
+    // Check query parameter
+    if (req.query.code === password) return true;
+    // Check JSON body
+    if (req.body && req.body.code === password) return true;
+    // Check bearer token
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ') && authHeader.split(' ')[1] === password) return true;
+    return false;
 }
 
 // Helper function for consistent error responses
@@ -276,40 +289,7 @@ app.post('/openai*', async (req, res) => {
     } catch (error) {
         sendErrorResponse(res, error);
     }
-    // const ip = getIp(req);
-    // const queue = getQueue(ip);
-    // const isStream = req.body.stream;
 
-    // const run = async () => {
-
-    //     try {
-    //         // sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
-
-            
-    //         const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
-    //         if (isStream) {
-    //             sendAsOpenAIStream(res, response);
-    //             return;
-    //         }
-
-    //         const result = formatAsOpenAIResponse(response, requestParams, isStream);
-
-    //         setInCache(cacheKey, result);
-    //         log("openai format result", JSON.stringify(result, null, 2));
-    //         sendOpenAIResponse(res, result);
-    //     } catch (error) {
-    //         sendErrorResponse(res, error);
-    //     }
-    //     await sleep(5000);
-
-    // };
-    // try {
-    //     await queue.add(run);
-    // } catch (error) {
-    //     sendErrorResponse(res, error);
-    //     await sleep(5000);
-    //     return;
-    // }
 })
 
 function sendAsOpenAIStream(res, completion) {

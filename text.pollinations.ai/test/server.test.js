@@ -17,7 +17,7 @@ import app from '../server.js'; // Ensure this path is correct and matches the e
  * 3. The array should contain at least one model
  */
 test('GET /models should return available models', async t => {
-    const response = await request(app).get('/models');
+    const response = await request(app).get('/models?code=BeesKnees');
     t.is(response.status, 200, 'Response status should be 200');
     t.true(Array.isArray(response.body), 'Response body should be an array');
     t.true(response.body.length > 0, 'Array should contain at least one model');
@@ -33,7 +33,7 @@ test('GET /models should return available models', async t => {
  * 2. The response should contain text
  */
 test('GET /:prompt should handle a valid prompt', async t => {
-    const response = await request(app).get('/hello');
+    const response = await request(app).get('/hello?code=BeesKnees');
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.text, 'Response should contain text');
 });
@@ -50,8 +50,11 @@ test('GET /:prompt should handle a valid prompt', async t => {
 test('POST / should handle a valid request', async t => {
     const response = await request(app)
         .post('/')
-        .set('Referer', 'roblox')
-        .send({ messages: [{ role: 'user', content: 'Hello' }] });
+        .set('Content-Type', 'application/json')
+        .send({ 
+            messages: [{ role: 'user', content: 'Hello' }],
+            code: 'BeesKnees'
+        });
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.text, 'Response should contain text');
 });
@@ -67,7 +70,7 @@ test('POST / should handle a valid request', async t => {
  */
 test('POST /openai should handle a valid request', async t => {
     const response = await request(app)
-        .post('/openai')
+        .post('/openai?code=BeesKnees')
         .set('Referer', 'roblox')
         .send({ messages: [{ role: 'user', content: 'Hello' }] });
     t.is(response.status, 200, 'Response status should be 200');
@@ -86,8 +89,11 @@ test('POST /openai should handle a valid request', async t => {
 test('POST / should return 400 for invalid messages array', async t => {
     const response = await request(app)
         .post('/')
-        .set('Referer', 'roblox')
-        .send({ messages: 'invalid' });
+        .set('Content-Type', 'application/json')
+        .send({ 
+            messages: 'invalid',
+            code: 'BeesKnees'
+        });
     t.is(response.status, 400, 'Response status should be 400');
     t.is(response.text, 'Invalid messages array. Received: invalid', 'Response should indicate invalid messages');
 });
@@ -104,18 +110,19 @@ test('POST / should return 400 for invalid messages array', async t => {
 test('POST / should cache responses', async t => {
     const requestBody = {
         messages: [{ role: 'user', content: 'Cache test' }],
-        cache: true
+        cache: true,
+        code: 'BeesKnees'
     };
 
     const response1 = await request(app)
         .post('/')
-        .set('Referer', 'roblox')
+        .set('Content-Type', 'application/json')
         .send(requestBody);
     t.is(response1.status, 200, 'First response status should be 200');
 
     const response2 = await request(app)
         .post('/')
-        .set('Referer', 'roblox')
+        .set('Content-Type', 'application/json')
         .send(requestBody);
     t.is(response2.status, 200, 'Second response status should be 200');
 
@@ -134,7 +141,7 @@ test('POST / should cache responses', async t => {
  */
 test('POST /openai should handle streaming requests', async t => {
     const response = await request(app)
-        .post('/openai')
+        .post('/openai?code=BeesKnees')
         .send({ 
             messages: [{ role: 'user', content: 'Hello' }],
             stream: true 
@@ -157,7 +164,7 @@ test('POST /openai should handle streaming requests', async t => {
  */
 test('POST /openai should return OpenAI formatted responses', async t => {
     const response = await request(app)
-        .post('/openai')
+        .post('/openai?code=BeesKnees')
         .send({ messages: [{ role: 'user', content: 'Hello' }] });
     
     t.is(response.status, 200, 'Response status should be 200');
@@ -178,16 +185,17 @@ test('POST /openai should return OpenAI formatted responses', async t => {
  */
 test('POST /openai should cache responses', async t => {
     const requestBody = {
-        messages: [{ role: 'user', content: 'Cache test openai' }]
+        messages: [{ role: 'user', content: 'Cache test openai' }],
+        code: 'BeesKnees'
     };
 
     const response1 = await request(app)
-        .post('/openai')
+        .post('/openai?code=BeesKnees')
         .send(requestBody);
     t.is(response1.status, 200, 'First response status should be 200');
 
     const response2 = await request(app)
-        .post('/openai')
+        .post('/openai?code=BeesKnees')
         .send(requestBody);
     t.is(response2.status, 200, 'Second response status should be 200');
 
@@ -208,7 +216,7 @@ test('POST /openai should cache responses', async t => {
  * Consider implementing this test if a reliable method for testing SSE in your environment is available.
  */
 // test('GET /feed should establish SSE connection', async t => {
-//     const response = await request(app).get('/feed');
+//     const response = await request(app).get('/feed?code=BeesKnees');
 //     t.is(response.status, 200, 'Response status should be 200');
 //     t.is(response.headers['content-type'], 'text/event-stream', 'Content-Type should be text/event-stream');
 // });

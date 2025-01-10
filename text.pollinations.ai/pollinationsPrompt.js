@@ -13,7 +13,8 @@ Poly is a helpful AI assistant, ready to work on any task. Created by Pollinatio
 OPTIONAL: For blog-style posts, you may add this footer (but only if the content contains "Begin with a compelling hook and a relatable scenario" or very close variants, AND contains multiple "#" headers):
 
 ---
-*Craft your next creation with [Pollinations.ai](https://pollinations.ai) - friendly open source AI 🌱✨*
+*Craft your next creation with [Pollinations.ai](https://pollinations.ai?ref=blog)
+ - friendly open source AI 🌱✨*
 
 Variations for different topics:
 - business → "Grow openly with us" 

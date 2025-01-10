@@ -105,9 +105,9 @@ test('concurrent error requests should not block the queue', async t => {
 test('concurrent cache hits should return consistent results', async t => {
     // First request to populate cache
     const initial = await request(app)
-        .post('/')
-        .set('Content-Type', 'application/json')
-        .send({ messages: [{ role: 'user', content: 'cached_test' }] });
+        .get('/prompt/cached_test')
+        // .set('Content-Type', 'application/json')
+        // .send({ messages: [{ role: 'user', content: 'cached_test' }] });
     t.is(initial.status, 200);
 
     const startTime = Date.now();
@@ -115,13 +115,13 @@ test('concurrent cache hits should return consistent results', async t => {
     // Make concurrent requests with same messages (should hit cache)
     const [res1, res2] = await Promise.all([
         request(app)
-            .post('/')
-            .set('Content-Type', 'application/json')
-            .send({ messages: [{ role: 'user', content: 'cached_test' }] }),
+            .get('/prompt/cached_test'),
+            // .set('Content-Type', 'application/json')
+            // .send({ messages: [{ role: 'user', content: 'cached_test' }] }),
         request(app)
-            .post('/')
-            .set('Content-Type', 'application/json')
-            .send({ messages: [{ role: 'user', content: 'cached_test' }] })
+            .get('/prompt/cached_test')
+            // .set('Content-Type', 'application/json')
+            // .send({ messages: [{ role: 'user', content: 'cached_test' }] })
     ]);
 
     const endTime = Date.now();

@@ -83,6 +83,8 @@ const useStyles = makeStyles((theme) => ({
     overflowX: "hidden",
     padding: "3em",
     borderRadius: "10px",
+    scrollbarWidth: "thin", // For Firefox
+    scrollbarColor: `${Colors.gray1} transparent`, // For Firefox
   },
   
 }))

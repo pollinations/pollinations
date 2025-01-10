@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
-import { Grid, Box, useMediaQuery, Typography } from "@material-ui/core"
+import { Grid, Box, useMediaQuery, Typography, CircularProgress } from "@material-ui/core"
 import { makeStyles } from "@material-ui/core/styles"
 import { useFeedLoader } from "./useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "./useImageSlideshow"
@@ -210,13 +210,16 @@ export const GenerativeImageFeed = memo(() => {
               </Typography>
             </Grid>
             <Grid item xs={12} className={classes.gridCenter} style={{ marginTop: "2em" }}>
+            {!image["imageURL"] ? (
+            <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />
+          ) : (
               <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+                        )}
+
             </Grid>
           </Grid>
 
-          {!image["imageURL"] ? (
-            <LoadingIndicator />
-          ) : (
+
             <Grid container direction="column ">
               <Grid
                 container
@@ -282,7 +285,6 @@ export const GenerativeImageFeed = memo(() => {
                 )}
               </Grid>
             </Grid>
-          )}
         </GenerativeImageURLContainer>
       </Box>
       <Box

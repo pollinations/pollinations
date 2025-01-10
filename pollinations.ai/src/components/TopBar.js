@@ -23,7 +23,7 @@ const TopBar = () => {
           <Typography
             style={{
               color: Colors.offblack,
-              fontSize: isMobile ? "3em" : "5em",
+              fontSize: isMobile ? "3em" : "3em",
               fontWeight: "bold",
               margin: "0",
               userSelect: "none",
@@ -52,10 +52,10 @@ const MobileNavContainer = styled.div`
 `
 
 const TopContainer = styled.div`
-  background-color: ${Colors.offwhite};
+  background: linear-gradient(to bottom, ${Colors.gray2}, ${Colors.offwhite});
   width: 100%;
   display: flex;
-  padding-top: 2em;
+  padding-top: 0em;
   padding-bottom: 0em;
   margin: 0;
   justify-content: center;

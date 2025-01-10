@@ -73,7 +73,8 @@ const OuterContainer = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-  background-color: ${Colors.background_body};
+    background: linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite});
+
 `
 
 const SocialContainer = styled.div`
@@ -118,7 +119,7 @@ const BottomLinksContainer = styled.div`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  margin-top: 2em;
+  margin-top: 1em;
   @media only screen and (max-width: ${MOBILE_BREAKPOINT}) {
     flex-direction: column;
     align-items: center;

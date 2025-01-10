@@ -174,6 +174,7 @@ Pollinations.AI is used in various projects, including:
 
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
 | @pollinations/react 🆕 | React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks. | @pollinations | [NPM](https://www.npmjs.com/package/@pollinations/react) • [Docs](https://react-hooks.pollinations.ai/) |
 | pypollinations 🆕 | Comprehensive Python wrapper for Pollinations AI API with async support, image/text generation, and model management. | @KTS-o7 | [PyPI](https://pypi.org/project/pypollinations/) |
 | pollinations.ai Python SDK 🆕 | Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context. | @pollinations-ai | [GitHub](https://github.com/pollinations-ai/pollinations.ai) |
@@ -182,7 +183,6 @@ Pollinations.AI is used in various projects, including:
 
 | Application | Description | Creator | Links |
 |-------------|-------------|---------|-------|
-| Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
 | Free AI Chatbot & Image Generator | A mobile app offering unlimited AI chat and image generation powered by GPT-4 and Flux. | @andreas_11 | [Website](https://freeaichat.app) |
 | AI-Bloom 🆕 | A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations. | @diepdo1810 | [Website](https://ai-bloom.vercel.app/) • [GitHub](https://github.com/diepdo1810/AI-Bloom) |
 | Image Gen - Uncensored Edition 🆕 | A powerful image generation assistant on HuggingChat powered by Qwen 2.5 (72B). Features intelligent model selection across multiple diffusion models and uncensored capabilities. | @DeFactOfficial | [HuggingChat](https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2) |

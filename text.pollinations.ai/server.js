@@ -138,10 +138,12 @@ async function handleRequest(req, res, requestData) {
         log('Generated response', response);
         
         // Broadcast the response to all connected clients
-        connectedClients.forEach((handler) => {
-            handler(response, requestData, ip);
-        });
-        
+        // connectedClients.forEach((handler) => {
+        //     handler(response, requestData, ip);
+        // });
+        sendToFeedListeners(response, requestData, ip);
+
+
         sendResponse(res, response);
         await sleep(10000);
     } catch (error) {
@@ -298,10 +300,7 @@ app.post('/openai*', async (req, res) => {
             
                     
             // Broadcast the response to all connected clients
-            for (const [_, send] of connectedClients) {
-                console.log('broadcasting response', response, "to", connectedClients.size );
-                send(response, requestParams, ip);
-            }
+            sendToFeedListeners(response, requestParams, ip);
 
             if (isStream) {
                 sendAsStream(res, response);
@@ -335,6 +334,13 @@ app.post('/openai*', async (req, res) => {
         return;
     }
 })
+
+function sendToFeedListeners(response, requestParams, ip) {
+    for (const [_, send] of connectedClients) {
+        console.log('broadcasting response', response, "to", connectedClients.size);
+        send(response, requestParams, ip);
+    }
+}
 
 function formatAsOpenAIResponse(response, requestParams, isStream) {
     const choices = [{

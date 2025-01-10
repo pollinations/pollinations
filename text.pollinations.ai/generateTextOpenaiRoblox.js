@@ -15,30 +15,27 @@ export async function generateText(messages, options) {
             ? 'Respond in simple json format'
             : 'You are a helpful assistant.';
         messages = [{ role: 'system', content: systemContent }, ...messages];
+    } else if (options.jsonMode) {
+        const systemMessage = messages.find(m => m.role === 'system');
+        if (!containsJSON(systemMessage.content)) {
+            systemMessage.content += ' Respond with JSON.';
+        }
     }
 
-    console.log("calling openai with messages", messages);
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini-roblox',
+        messages,
+        seed: options.seed,
+        response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+    });
 
-    let completion;
-    let responseMessage;
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    do {
-        completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini-roblox',
-            messages,
-            seed: options.seed + attempts,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        });
-
-        responseMessage = completion.choices[0].message;
-        attempts++;
-    } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
-
-    return responseMessage.content;
+    return completion;
 }
 
 function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
+}
+
+function containsJSON(text) {
+    return text.toLowerCase().includes('json');
 }

@@ -28,9 +28,7 @@ export default async function generateTextOptiLLM(messages, options) {
         max_tokens: 1024,
     });
 
-    const responseMessage = completion.choices[0].message;
-
-    return responseMessage.content;
+    return completion;
 }
 
 function hasSystemMessage(messages) {

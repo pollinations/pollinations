@@ -9,7 +9,6 @@ import AsciiArtGenerator from "./AsciiArtGenerator"
 import useIsMobile from "../hooks/useIsMobile" // Import the new hook
 import logo from "../assets/imgs/thot-labs_logo.svg"
 
-
 const Footer = () => {
   const isMobile = useIsMobile() // Use the new hook
 
@@ -45,8 +44,8 @@ const Footer = () => {
           </NavLink>
         </LogoContainer> */}
         <BottomLinksContainer>
-        <Box display="flex" alignItems="center">
-          {/* <img
+          <Box display="flex" alignItems="center">
+            {/* <img
             src={logo}
             alt="THOT Labs Logo"
             style={{
@@ -55,10 +54,21 @@ const Footer = () => {
               marginRight: "1em",
             }}
           /> */}
-          <StyledLink href="mailto:hello@thot-labs.com">
-            <b>hello@thot-labs.com</b>
-          </StyledLink>
-        </Box>
+            <StyledLink
+              onClick={(e) => {
+                e.preventDefault();
+                navigator.clipboard.writeText("hello@thot-labs.com").then(() => {
+                  alert("Copied to clipboard");
+                }).catch(err => {
+                  console.error('Failed to copy: ', err);
+                });
+              }}
+              href="mailto:hello@thot-labs.com"
+              style={{ userSelect: "text" }}
+            >
+              <b>hello@thot-labs.com</b>
+            </StyledLink>
+          </Box>
           <StyledNavLink to="/terms">
             <b>TERMS & CONDITIONS</b>
           </StyledNavLink>
@@ -73,8 +83,7 @@ const OuterContainer = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
-    background: linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite});
-
+  background: linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite});
 `
 
 const SocialContainer = styled.div`

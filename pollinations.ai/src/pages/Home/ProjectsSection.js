@@ -478,6 +478,13 @@ const ProjectsSection = () => {
     border: `1px solid ${Colors.lime}`,
   })
 
+  const handleLinkClick = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText("hello@thot-labs.com").then(() => {
+      alert("Copied");
+    });
+  };
+
   return (
     <Box
       style={{
@@ -583,10 +590,7 @@ const ProjectsSection = () => {
         <br />
         <StyledLink
           href="mailto:hello@thot-labs.com"
-          onClick={(e) => {
-            handleLinkClick(e)
-            alert("Copied")
-          }}
+          onClick={handleLinkClick}
           style={{ userSelect: "text", fontSize: "1.6em", color: Colors.lime }}
         >
           <b>hello@thot-labs.com</b>

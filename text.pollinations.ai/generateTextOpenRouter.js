@@ -64,7 +64,6 @@ export async function generateTextOpenRouter(messages, options) {
         }
 
         const data = await response.json();
-        const responseMessage = data.choices[0].message;
         const completionTime = Date.now() - startTime;
 
         console.log(`[${requestId}] Successfully generated text`, {
@@ -76,7 +75,7 @@ export async function generateTextOpenRouter(messages, options) {
             totalTokens: data.usage?.total_tokens
         });
 
-        return responseMessage.content;
+        return data;
     } catch (error) {
         console.error(`[${requestId}] Error in text generation`, {
             timestamp: new Date().toISOString(),

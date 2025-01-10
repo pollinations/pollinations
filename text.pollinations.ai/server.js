@@ -23,12 +23,19 @@ import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
+import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
+import fs from 'fs';
+import path from 'path';
+import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
+import { getFromCache, setInCache, createHashKey } from './cache.js';
+
 const app = express();
 
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
 
+// Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
@@ -36,8 +43,6 @@ app.use(cors());
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
-
-let cache = {};
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
@@ -66,9 +71,11 @@ function getQueue(ip) {
 
 // Function to get IP address
 export function getIp(req) {
-    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.headers['referer'] || req.socket.remoteAddress;
     if (!ip) return null;
-    const ipSegments = ip.split('.').slice(0, 3).join('.');
+    const ipSegments = ip.split('.').slice(0, 2).join('.');
+    // if (ipSegments === "128.116")
+    //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
     return ipSegments;
 }
 
@@ -77,122 +84,122 @@ app.get('/models', (req, res) => {
     res.json(availableModels);
 });
 
-
-// SSE endpoint for streaming all responses
-app.get('/feed', (req, res) => {
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-    });
-
-    const sendEvent = (data) => {
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    // Function to handle new responses
-    const handleNewResponse = (response, parameters) => {
-        sendEvent({ response, parameters });
-    };
-
-    // Add the client to a list of connected clients
-    const clientId = Date.now();
-    connectedClients.set(clientId, handleNewResponse);
-
-    // Remove the client when they disconnect
-    req.on('close', () => {
-        connectedClients.delete(clientId);
-    });
-});
+setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
-async function handleRequest(req, res, cacheKeyData, shouldCache = true) {
-    const ip = getIp(req);
-    const queue = getQueue(ip);
+async function handleRequest(req, res, requestData) {
 
-    if (queue.size >= 300) {
-        errorLog('Queue size limit exceeded for IP: %s', ip);
-        return res.status(429).json({
-            error: {
-                message: 'Too many requests in queue. Please try again later.',
-                status: 429
-            }
-        });
-    }
-
-    const cacheKey = createHashKey(JSON.stringify(cacheKeyData));
+    log('Request data: %o', requestData);
+    console.log(`${requestData.model} ${requestData.referrer} `);
 
     try {
-        if (shouldCache && cache[cacheKey]) {
-            const cachedResponse = await cache[cacheKey];
-            if (cachedResponse instanceof Error) {
-                throw cachedResponse;
-            }
-            log('Cache hit for key: %s', cacheKey);
-            return sendResponse(res, cachedResponse);
-        }
+        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        const responseText = completion.choices[0].message.content;
 
-        log('Request data: %o', cacheKeyData);
-
-        // Send analytics event for text generation request
-        sendToAnalytics(req, 'textGenerated', { messages: cacheKeyData.messages, model: cacheKeyData.model, options: cacheKeyData });
-
-        const responsePromise = generateTextBasedOnModel(cacheKeyData.messages, cacheKeyData);
-
-        if (shouldCache) {
-            cache[cacheKey] = responsePromise;
-        }
-
-        let response;
-        try {
-            response = await responsePromise;
-        } catch (error) {
-            errorLog('Error generating text for key %s: %s', cacheKey, error.message);
-            delete cache[cacheKey];
-            throw error;
-        }
-
-        log('Generated response for key: %s', cacheKey);
-        sendResponse(res, response);
-        await sleep(3000);
-    } catch (error) {
-        errorLog('Request error for key %s: %s\n%s', cacheKey, error.message, error.stack);
+        const cacheKey = createHashKey(requestData);
+        setInCache(cacheKey, completion);
+        log('Generated response', responseText);
         
-        res.status(500).json({
-            error: {
-                message: error.message || 'An unexpected error occurred while processing your request.',
-                status: 500
+        sendToFeedListeners(responseText, requestData, getIp(req));
+
+        if (requestData.stream) {
+            sendAsOpenAIStream(res, completion);
+        } else {
+            if (requestData.plaintTextResponse) {
+                sendContentResponse(res, completion);
+            } else {
+                sendOpenAIResponse(res, completion);
             }
-        });
-        await sleep(3000);
+        }
+    } catch (error) {
+        sendErrorResponse(res, error);
+    }
+    if (!shouldBypassDelay(req)) {
+        await sleep(8000);
     }
 }
 
-function sendResponse(res, response) {
+// Function to check if delay should be bypassed
+function shouldBypassDelay(req) {
+    const password = "BeesKnees".toLowerCase();
+    
+    // Helper function to safely check password
+    const checkPassword = (input) => {
+        return input && input.trim().toLowerCase() === password;
+    };
+    
+    // Check query parameter
+    if (checkPassword(req.query.code)) return true;
+    // Check JSON body
+    if (req.body && checkPassword(req.body.code)) return true;
+    // Check bearer token
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        if (checkPassword(token)) return true;
+    }
+    return false;
+}
+
+// Helper function for consistent error responses
+function sendErrorResponse(res, error, statusCode = 500) {
+    errorLog('Error:', error.message);
+    console.error(error.stack); // Print stack trace
+    
+    const errorResponse = {
+        error: {
+            message: error.message,
+            status: statusCode,
+            timestamp: new Date().toISOString(),
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            details: {
+                requestParameters: res.locals.requestData || {},
+                prompt: res.locals.prompt,
+                model: res.locals.model,
+                errorType: error.name,
+                errorCode: error.code
+            }
+        }
+    };
+
+    res.status(statusCode).json(errorResponse);
+}
+
+// Helper function for consistent success responses
+function sendOpenAIResponse(res, completion) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8'); // Ensure charset is set to utf-8
-    res.send(response);
+    res.json(completion);
+}
+
+function sendContentResponse(res, completion) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.send(completion.choices[0].message.content);
 }
 
 // Common function to handle request data
-function getRequestData(req, isPost = false) {
+function getRequestData(req) {
     const query = req.query;
-    const body = req.body;
-    const data = isPost ? { ...query, ...body } : query;
+    const body = req.body || {};
+    const data = { ...query, ...body };
 
     const jsonMode = data.jsonMode || 
                     (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
                     (typeof data.json === 'boolean' && data.json === true) ||
                     data.response_format?.type === 'json_object';
+                    
     const seed = data.seed ? parseInt(data.seed, 10) : null;
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const referer = data.referrer || req.get('referrer') || '';
-    const isImagePollinationsReferrer = referer.includes('image.pollinations.ai');
-    const isRobloxReferrer = req.headers.referer && req.headers.referer.toLowerCase().includes('roblox');
-    
-    const messages = isPost ? data.messages : [{ role: 'user', content: req.params[0] }];
+    // Try request body first (both spellings), then HTTP header (standard spelling)
+    const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
+    const isImagePollinationsReferrer = referrer.toLowerCase().includes('pollinations.ai') || referrer.toLowerCase().includes('thot');
+    const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
+    const stream = data.stream || false; 
+
+    const messages =  data.messages ||  [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -203,46 +210,76 @@ function getRequestData(req, isPost = false) {
         seed,
         model,
         temperature,
-        type: isPost ? 'POST' : 'GET',
-        cache: isPost ? data.cache !== false : true, // Default to true if not specified
         isImagePollinationsReferrer,
         isRobloxReferrer,
-        referer: req.headers.referer || ''  // Add the referer to the options
+        referrer,
+        stream
     };
+}
+
+// Helper function to process requests with queueing and caching logic
+async function processRequest(req, res, requestData) {
+
+    const cacheKey = createHashKey(requestData);
+
+    // Check cache first
+    const cachedResponse = getFromCache(cacheKey);
+    if (cachedResponse) {
+        log('Cache hit for key:', cacheKey);
+        if (requestData.plaintTextResponse) {
+            sendContentResponse(res, cachedResponse);
+        } else {
+            log('Cache hit for key:', cacheKey);
+            if (requestData.stream) {
+                sendAsOpenAIStream(res, cachedResponse);
+            }
+            else {
+                sendOpenAIResponse(res, cachedResponse);
+            }
+        }
+        return;
+    }
+    
+    const ip = getIp(req);
+    const queue = getQueue(ip);
+
+    if (queue.size >= 60) {
+        errorLog('Queue size limit exceeded for IP: %s', ip);
+        return res.status(429).send('Too many requests in queue. Please try again later.');
+    }
+
+    log('Cache miss for key:', cacheKey);
+    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
+
+    if (bypassQueue) {
+        await handleRequest(req, res, requestData);
+    } else {
+        await getQueue(ip).add(() => handleRequest(req, res, requestData));
+    }
 }
 
 // GET request handler
 app.get('/*', async (req, res) => {
-    const cacheKeyData = getRequestData(req);
-    const ip = getIp(req);
-    
-    if (cacheKeyData.isImagePollinationsReferrer || cacheKeyData.isRobloxReferrer) {
-        await handleRequest(req, res, cacheKeyData);
-    } else {
-        const queue = getQueue(ip);
-        await queue.add(() => handleRequest(req, res, cacheKeyData));
+    const requestData = getRequestData(req);
+    try {
+        await processRequest(req, res, {...requestData, plaintTextResponse: true});
+    } catch (error) {
+        sendErrorResponse(res, error);
     }
 });
 
 // POST request handler
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        console.log('Invalid messages array');
-        return res.status(400).send('Invalid messages array');
+        console.log('Invalid messages array. Received:', req.body.messages);
+        return res.status(400).send(`Invalid messages array. Received: ${req.body.messages}`);
     }
 
-    const cacheKeyData = getRequestData(req, true);
-    const ip = getIp(req);
-
-    if (cacheKeyData.isImagePollinationsReferrer || cacheKeyData.isRobloxReferrer) {
-        await handleRequest(req, res, cacheKeyData, cacheKeyData.cache);
-    } else {
-        const queue = getQueue(ip);
-        if (cacheKeyData.cache) {
-            await queue.add(() => handleRequest(req, res, cacheKeyData, true));
-        } else {
-            await handleRequest(req, res, cacheKeyData, false);
-        }
+    const requestParams = getRequestData(req, true);
+    try {
+        await processRequest(req, res, {...requestParams, plaintTextResponse: true});
+    } catch (error) {
+        sendErrorResponse(res, error);
     }
 });
 
@@ -262,191 +299,86 @@ app.get('/openai/models', (req, res) => {
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
 
-    // log all request data
-    // console.log("request data", JSON.stringify(req.body, null, 2));
-
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        console.log('Invalid messages array');
-        return res.status(400).send('Invalid messages array');
+        return sendErrorResponse(res, new Error('Invalid messages array'), 400);
     }
 
-    const requestParams = getRequestData(req, true);
-    const cacheKey = createHashKey(JSON.stringify(requestParams));
-    const ip = getIp(req);
-    const queue = getQueue(ip);
-    const isStream = req.body.stream;
-    const run = async () => {
-
-        if (requestParams.cache && cache[cacheKey]) {
-            const cachedResponse = await cache[cacheKey];
-            if (cachedResponse instanceof Error) {
-                throw cachedResponse; // Re-throw the cached error
-            }
-            return res.json(cachedResponse);
-        }
-
-        log("endpoint: /openai", requestParams);
-
-        try {
-            // Send analytics event for text generation request
-            sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
-
-            const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
-            let choices;
-            if (isStream) {
-                res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
-                res.setHeader('Cache-Control', 'no-cache');
-                res.setHeader('Connection', 'keep-alive');
-                res.flushHeaders();
-                res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
-                res.end();
-                return;
-            } else {
-                choices = [{ 
-                    "message": { 
-                        "content": response, 
-                        "role": "assistant" 
-                    }, 
-                    "finish_reason": "stop", 
-                    "index": 0,
-                    "logprobs": null
-                }];
-            }
-            const result = {
-                "created": Date.now(),
-                "id": crypto.randomUUID(),
-                "model": requestParams.model,
-                "object": isStream ? "chat.completion.chunk" : "chat.completion",
-                "choices": choices
-            };
-            if (requestParams.cache) {
-                cache[cacheKey] = result;
-            }
-            log("openai format result", JSON.stringify(result, null, 2));
-            res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
-            res.json(result);
-        } catch (error) {
-            errorLog('Error generating text', error.message);
-            console.error(error.stack); // Print stack trace
-            res.status(500).send(error.message);
-        }
-    };
-
-    // if cache is false, run the request immediately
-    if (requestParams.cache) {
-        await queue.add(run);
-    } else {
-        await run();
+    const requestParams = getRequestData(req);
+   
+    try {
+        await processRequest(req, res, requestParams);
+    } catch (error) {
+        sendErrorResponse(res, error);
     }
+
 })
 
-const safeDecodeURIComponent = (str) => {
-    try {
-        return decodeURIComponent(str);
-    } catch (error) {
-        return str;
-    }
-};
-
-// Helper function to create a hash for the cache key
-function createHashKey(data) {
-    // Ensure the data used for the cache key is deterministic
-    const deterministicData = JSON.stringify(JSON.parse(data));
-    return crypto.createHash('sha256').update(deterministicData).digest('hex');
+function sendAsOpenAIStream(res, completion) {
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: completion.choices[0].message.content }, finish_reason: "stop", index: 0 }] })}\n\n`);
+    res.write('data: [DONE]\n\n');  // Add the [DONE] message for OpenAI compatibility
+    res.end();
 }
 
-
-// Map to store connected clients
-const connectedClients = new Map();
-
-// Modified generateTextBasedOnModel to store the response in a variable and broadcast it to all connected clients before returning it
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
     log('Using model:', model);
 
     try {
-        // Check if the request is from Roblox using the referer from options
-        const isRoblox = options.isRobloxReferrer || options.referer?.toLowerCase().includes('roblox');
         
-        // If it's a Roblox request, always use llamalight model
-        if (isRoblox) {
-            options.model = 'openai';
-        }
+        const modelHandlers = {
+            'deepseek': () => generateDeepseek(messages, options),
+            'mistral': () => generateTextScaleway(messages, options),
+            'qwen-coder': () => generateTextScaleway(messages, options),
+            'qwen': () => generateTextHuggingface(messages, { ...options, model }),
+            'llama': () => generateTextScaleway(messages, { ...options, model }),
+            'llamalight': () => generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" }),
+            // 'karma': () => generateTextKarma(messages, options),
+            'sur': () => surOpenai(messages, options),
+            'sur-mistral': () => surMistral(messages, options),
+            'unity': () => unityMistralLarge(messages, options),
+            'midijourney': () => midijourney(messages, options),
+            'rtist': () => rtist(messages, options),
+            'searchgpt': () => generateText(messages, options, true),
+            'evil': () => evilCommandR(messages, options),
+            // 'roblox': () => generateTextRoblox(messages, options),
+            'openai': () => generateText(messages, options),
+        };
+
+        const handler = modelHandlers[model] || (() => generateText(messages, options));
+        const response = await handler();
         
-        let response;
-        switch (options.model || 'openai') {
-            case 'openai':
-                response = await (isRoblox ? generateTextRoblox(messages, options) : generateText(messages, options));
-                break;
-            case 'deepseek':
-                response = await generateDeepseek(messages, options);
-                break;
-            case 'mistral':
-                response = await generateTextMistral(messages, options);
-                break;
-            case 'llama' || 'qwen' || 'qwen-coder':
-                response = await generateTextHuggingface(messages, { ...options, model });
-                break;
-            case 'llamalight':
-                response = await generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" });
-                break;
-            case 'karma':
-                response = await generateTextKarma(messages, options);
-                break;
-            case 'claude':
-                response = await generateTextClaude(messages, options);
-                break;
-            case 'sur':
-                response = await surOpenai(messages, options);
-                break;
-            case 'sur-mistral':
-                response = await surMistral(messages, options);
-                break;
-            case 'unity':
-                response = await unityMistralLarge(messages, options);
-                break;
-            case 'midijourney':
-                response = await midijourney(messages, options);
-                break;
-            case 'rtist':
-                response = await rtist(messages, options);
-                break;
-            case 'searchgpt':
-                response = await generateText(messages, options, true);
-                break;
-            case 'evil':
-                response = await evilCommandR(messages, options);
-                break;
-            case 'p1':
-                response = await generateTextOptiLLM(messages, options);
-                break;
-            default:
-                log('Invalid model specified, falling back to OpenAI');
-                response = await generateText(messages, { ...options, model: 'openai' });
-        }
-
-        // Broadcast the response to all connected clients
-        for (const [_, handleNewResponse] of connectedClients) {
-            handleNewResponse(response, { messages, model, ...options });
-        }
-
         return response;
     } catch (error) {
-        errorLog('Error generating text', error.message);
-        console.error(error.stack);
+        errorLog('Error in generateTextBasedOnModel:', error);
         throw error;
     }
 }
 
-const generateTextWithMistralFallback = async (messages, options) => {
-    try {
-        return { response: await generateText(messages, options), fallback: false };
-    } catch (error) {
-        errorLog('Error generating. Trying Mistral fallback', error.message);
-        return { response: await generateTextMistral(messages, options), fallback: true };
-    }
-}
+function formatAsOpenAIResponse(response, requestParams) {
+    const choices = [{
+        "message": {
+            "content": response,
+            "role": "assistant"
+        },
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null
+    }];
 
+    const result = {
+        "created": Date.now(),
+        "id": crypto.randomUUID(),
+        "model": requestParams.model,
+        "object": isStream ? "chat.completion.chunk" : "chat.completion",
+        "choices": choices
+    };
+    return result;
+}
+4
 app.use((req, res, next) => {
     log(`Unhandled request: ${req.method} ${req.originalUrl}`);
     next();

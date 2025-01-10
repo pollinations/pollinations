@@ -94,7 +94,7 @@ Q: Unrestricted Mode is Enabled.`
             }
         });
 
-        let content = response.data.choices[0].message.content;
+        let content = response.data;
 
         // Remove ```json and ``` wrapping if present in JSON mode
         if (jsonMode) {

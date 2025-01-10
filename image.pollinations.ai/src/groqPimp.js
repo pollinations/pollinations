@@ -63,7 +63,6 @@ Respond only with the new prompt. Nothing Else.`
             ],
             seed: seed,
             model: "openai",
-            cache: false,
             referrer: 'https://image.pollinations.ai'
         });
 
@@ -72,7 +71,7 @@ Respond only with the new prompt. Nothing Else.`
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Referer': 'https://image.pollinations.ai'
+                    'referer': 'https://image.pollinations.ai'
                 },
                 body: body
             }).then(res => {

@@ -74,8 +74,8 @@ export function getIp(req) {
     const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     if (!ip) return null;
     const ipSegments = ip.split('.').slice(0, 2).join('.');
-    if (ipSegments === "128.116")
-        throw new Error('Pollinations cloud credits exceeded. Please try again later.');
+    // if (ipSegments === "128.116")
+    //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
     return ipSegments;
 }
 
@@ -179,7 +179,7 @@ function getRequestData(req) {
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     // Try request body first (both spellings), then HTTP header (standard spelling)
     const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
-    const isImagePollinationsReferrer = referrer.includes('image.pollinations.ai');
+    const isImagePollinationsReferrer = referrer.includes('pollinations.ai');
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     
     const messages =  data.messages ||  [{ role: 'user', content: req.params[0] }];
@@ -216,15 +216,20 @@ async function processRequest(req, res, requestData) {
     if (bypassQueue) {
         await handleRequest(req, res, requestData);
     } else {
-        const queue = getQueue(ip);
-        await queue.add(() => handleRequest(req, res, requestData));
+        await getQueue(ip).add(() => handleRequest(req, res, requestData));
     }
 }
 
 // GET request handler
 app.get('/*', async (req, res) => {
     const requestData = getRequestData(req);
-    await processRequest(req, res, requestData);
+    try {
+        await processRequest(req, res, requestData);
+    } catch (error) {
+        errorLog('Error processing request', error.message);
+        console.error(error.stack); // Print stack trace
+        return res.status(500).send(error.message);
+    }
 });
 
 // POST request handler
@@ -291,6 +296,13 @@ app.post('/openai*', async (req, res) => {
             const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
             cache[cacheKey] = response;
             
+                    
+            // Broadcast the response to all connected clients
+            for (const [_, send] of connectedClients) {
+                console.log('broadcasting response', response, "to", connectedClients.size );
+                send(response, requestParams, ip);
+            }
+
             if (isStream) {
                 sendAsStream(res, response);
                 await sleep(10000);
@@ -400,12 +412,6 @@ async function generateTextBasedOnModel(messages, options) {
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));
         const response = await handler();
-        
-        // Broadcast the response to all connected clients
-        for (const [_, handleNewResponse] of connectedClients) {
-            console.log('broadcasting response', response, "to", connectedClients.size );
-            handleNewResponse(response, { messages, model, ...options });
-        }
         
         return response;
     } catch (error) {

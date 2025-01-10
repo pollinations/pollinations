@@ -90,24 +90,31 @@ setupFeedEndpoint(app);
 async function handleRequest(req, res, requestData) {
 
     log('Request data: %o', requestData);
+    console.log(`${requestData.model} ${requestData.referrer} `);
 
     try {
-        const response = await generateTextBasedOnModel(requestData.messages, requestData);
-        const cacheKey = createHashKey(requestData);
-        setInCache(cacheKey, response);
-        log('Generated response', response);
-        
-        sendToFeedListeners(response, requestData, getIp(req));
+        const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        const responseText = completion.choices[0].message.content;
 
-        if (requestData.isStream) {
-            sendAsStream(res, response);
+        const cacheKey = createHashKey(requestData);
+        setInCache(cacheKey, completion);
+        log('Generated response', responseText);
+        
+        sendToFeedListeners(responseText, requestData, getIp(req));
+
+        if (requestData.stream) {
+            sendAsOpenAIStream(res, completion);
         } else {
-            sendResponse(res, response);
+            if (requestData.plaintTextResponse) {
+                sendContentResponse(res, completion);
+            } else {
+                sendOpenAIResponse(res, completion);
+            }
         }
     } catch (error) {
         sendErrorResponse(res, error);
     }
-    await sleep(5000);
+    await sleep(15000);
 }
 
 // Helper function for consistent error responses
@@ -123,16 +130,16 @@ function sendErrorResponse(res, error, statusCode = 500) {
 }
 
 // Helper function for consistent success responses
-function sendSuccessResponse(res, data) {
+function sendOpenAIResponse(res, completion) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.json(data);
+    res.json(completion);
 }
 
-function sendResponse(res, response) {
+function sendContentResponse(res, completion) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(response);
+    res.send(completion.choices[0].message.content);
 }
 
 // Common function to handle request data
@@ -183,10 +190,16 @@ async function processRequest(req, res, requestData) {
     const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
         log('Cache hit for key:', cacheKey);
-        if (typeof cachedResponse === 'string') {
-            sendResponse(res, cachedResponse);
+        if (requestData.plaintTextResponse) {
+            sendContentResponse(res, cachedResponse);
         } else {
-            sendSuccessResponse(res, cachedResponse);
+            log('Cache hit for key:', cacheKey);
+            if (requestData.stream) {
+                sendAsOpenAIStream(res, cachedResponse);
+            }
+            else {
+                sendOpenAIResponse(res, cachedResponse);
+            }
         }
         return;
     }
@@ -213,7 +226,7 @@ async function processRequest(req, res, requestData) {
 app.get('/*', async (req, res) => {
     const requestData = getRequestData(req);
     try {
-        await processRequest(req, res, requestData);
+        await processRequest(req, res, {...requestData, plaintTextResponse: true});
     } catch (error) {
         sendErrorResponse(res, error);
     }
@@ -228,7 +241,7 @@ app.post('/', async (req, res) => {
 
     const requestParams = getRequestData(req, true);
     try {
-        await processRequest(req, res, requestParams);
+        await processRequest(req, res, {...requestParams, plaintTextResponse: true});
     } catch (error) {
         sendErrorResponse(res, error);
     }
@@ -255,65 +268,54 @@ app.post('/openai*', async (req, res) => {
     }
 
     const requestParams = getRequestData(req);
-    const cacheKey = createHashKey(requestParams);
-    const cachedResponse = getFromCache(cacheKey);
-    if (cachedResponse) {
-        log('Cache hit for key:', cacheKey);
-        if (requestParams.isStream) {
-            sendAsStream(res, cachedResponse);
-            return;
-        }
-        sendSuccessResponse(res, cachedResponse);
-        return;
-    }
-
-    log('Cache miss for key:', cacheKey);
-    const ip = getIp(req);
-    const queue = getQueue(ip);
-    const isStream = req.body.stream;
-
-    const run = async () => {
-
-
-        try {
-            // Send analytics event for text generation request
-            // sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
-
-            const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
-            if (isStream) {
-                sendAsStream(res, response);
-                await sleep(5000);
-                return;
-            }
-
-            const result = formatAsOpenAIResponse(response, requestParams, isStream);
-
-            setInCache(cacheKey, result);
-            log("openai format result", JSON.stringify(result, null, 2));
-            sendSuccessResponse(res, result);
-            await sleep(5000);
-            return;
-        } catch (error) {
-            sendErrorResponse(res, error);
-            await sleep(5000);
-            return;
-        }
-    };
+   
     try {
-        await queue.add(run);
+        await processRequest(req, res, requestParams);
     } catch (error) {
         sendErrorResponse(res, error);
-        await sleep(5000);
-        return;
     }
+    // const ip = getIp(req);
+    // const queue = getQueue(ip);
+    // const isStream = req.body.stream;
+
+    // const run = async () => {
+
+    //     try {
+    //         // sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
+
+            
+    //         const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
+    //         if (isStream) {
+    //             sendAsOpenAIStream(res, response);
+    //             return;
+    //         }
+
+    //         const result = formatAsOpenAIResponse(response, requestParams, isStream);
+
+    //         setInCache(cacheKey, result);
+    //         log("openai format result", JSON.stringify(result, null, 2));
+    //         sendOpenAIResponse(res, result);
+    //     } catch (error) {
+    //         sendErrorResponse(res, error);
+    //     }
+    //     await sleep(5000);
+
+    // };
+    // try {
+    //     await queue.add(run);
+    // } catch (error) {
+    //     sendErrorResponse(res, error);
+    //     await sleep(5000);
+    //     return;
+    // }
 })
 
-function sendAsStream(res, response) {
+function sendAsOpenAIStream(res, completion) {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
-    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: completion.choices[0].message.content }, finish_reason: "stop", index: 0 }] })}\n\n`);
     res.write('data: [DONE]\n\n');  // Add the [DONE] message for OpenAI compatibility
     res.end();
 }
@@ -353,7 +355,7 @@ async function generateTextBasedOnModel(messages, options) {
     }
 }
 
-function formatAsOpenAIResponse(response, requestParams, isStream) {
+function formatAsOpenAIResponse(response, requestParams) {
     const choices = [{
         "message": {
             "content": response,

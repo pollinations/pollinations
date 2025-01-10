@@ -315,13 +315,13 @@ test('OpenAI API should handle invalid model gracefully', async t => {
  * 1. The response status should be 200 (OK).
  * 2. The response content-type should be 'text/event-stream; charset=utf-8'.
  */
-// test('POST /openai should support streaming', async t => {
-//     const response = await axiosInstance.post('/openai/chat/completions', {
-//         messages: [{ role: 'user', content: 'Count to 5' }],
-//         model: 'gpt-4',
-//         stream: true,
-//         cache: false
-//     }, { responseType: 'stream' });
-//     t.is(response.status, 200, 'Response status should be 200');
-//     t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Content-Type should be text/event-stream');
-// });
+test('POST /openai should support streaming', async t => {
+    const response = await axiosInstance.post('/openai/chat/completions', {
+        messages: [{ role: 'user', content: 'Count to 5' }],
+        model: 'gpt-4',
+        stream: true,
+        cache: false
+    }, { responseType: 'stream' });
+    t.is(response.status, 200, 'Response status should be 200');
+    t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Content-Type should be text/event-stream');
+});

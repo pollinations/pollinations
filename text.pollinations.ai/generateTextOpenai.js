@@ -1,6 +1,6 @@
 import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
-import { imageGenerationPrompt } from './pollinationsPrompt.js';
+import { imageGenerationPrompt, spamTheSpammersPrompt } from './pollinationsPrompt.js';
 import { searchToolDefinition, performWebSearch } from './tools/searchTool.js';
 import { performWebScrape, scrapeToolDefinition } from './tools/scrapeTool.js';
 
@@ -30,7 +30,7 @@ function countMessageCharacters(messages) {
 }
 
 export async function generateText(messages, options, performSearch = false) {
-    const MAX_CHARS = 48000;
+    const MAX_CHARS = 56000;
     const totalChars = countMessageCharacters(messages);
     
     if (totalChars > MAX_CHARS) {
@@ -41,7 +41,8 @@ export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'
-            : 'You are a helpful assistant.\n\n' + imageGenerationPrompt();
+            : spamTheSpammersPrompt();
+            
         messages = [{ role: 'system', content: systemContent }, ...messages];
     } else if (options.jsonMode) {
         const systemMessage = messages.find(m => m.role === 'system');
@@ -50,38 +51,16 @@ export async function generateText(messages, options, performSearch = false) {
         }
     }
 
-    // console.log("calling openai with messages", messages);
+    let completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        seed: options.seed,
+        response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+        tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
+        tool_choice: performSearch ? "auto" : undefined,
+    });
 
-    let completion;
-    let responseMessage;
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    do {
-        try {
-            completion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
-                messages,
-                seed: options.seed + attempts,
-                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-                tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
-                tool_choice: performSearch ? "auto" : undefined,
-                // max_tokens: 1024,
-            });
-            responseMessage = completion.choices[0].message;
-        } catch (error) {
-            if (error.error?.code === 'content_filter') {
-                // Return a user-friendly error message for content filter violations
-                return {
-                    error: true,
-                    message: "Your request was flagged by content filters. Please modify your prompt to avoid sensitive content.",
-                    details: error.error.innererror?.content_filter_result || error.error
-                };
-            }
-            throw error; // Re-throw other errors
-        }
-        attempts++;
-    } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
+    let responseMessage = completion.choices[0].message;
 
     while (responseMessage.tool_calls) {
         const toolCalls = responseMessage.tool_calls;
@@ -111,36 +90,18 @@ export async function generateText(messages, options, performSearch = false) {
             }
         }
 
-        // Get next response after tool use
-        attempts = 0;
-        do {
-            try {
-                completion = await openai.chat.completions.create({
-                    model: 'gpt-4o-mini',
-                    messages,
-                    seed: options.seed + attempts,
-                    response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-                    tools: [searchToolDefinition, scrapeToolDefinition],
-                    tool_choice: "auto",
-                    max_tokens: 4096,
-                });
-                responseMessage = completion.choices[0].message;
-            } catch (error) {
-                if (error.error?.code === 'content_filter') {
-                    // Return a user-friendly error message for content filter violations
-                    return {
-                        error: true,
-                        message: "Your request was flagged by content filters. Please modify your prompt to avoid sensitive content.",
-                        details: error.error.innererror?.content_filter_result || error.error
-                    };
-                }
-                throw error; // Re-throw other errors
-            }
-            attempts++;
-        } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
+        completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages,
+            seed: options.seed,
+            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+            tools: [searchToolDefinition, scrapeToolDefinition],
+            tool_choice: "auto",
+            max_tokens: 4096,
+        });
+        responseMessage = completion.choices[0].message;
     }
-
-    return responseMessage.content;
+    return completion;
 }
 
 function hasSystemMessage(messages) {

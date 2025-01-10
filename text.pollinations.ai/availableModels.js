@@ -113,13 +113,13 @@ export const availableModels = [
         description: 'DeepSeek-V3',
         baseModel: true,
     },
-    {
-        name: 'llamalight',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3.2 3B Instruct',
-        baseModel: true,
-    },
+    // {
+    //     name: 'llamalight',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Llama 3.2 3B Instruct',
+    //     baseModel: true,
+    // },
     // {
     //     name: 'mistral-large',
     //     type: 'chat',

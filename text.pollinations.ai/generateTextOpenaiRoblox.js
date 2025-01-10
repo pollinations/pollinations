@@ -22,26 +22,14 @@ export async function generateText(messages, options) {
         }
     }
 
-    // console.log("calling openai with messages", messages);
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini-roblox',
+        messages,
+        seed: options.seed,
+        response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+    });
 
-    let completion;
-    let responseMessage;
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    do {
-        completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini-roblox',
-            messages,
-            seed: options.seed + attempts,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        });
-
-        responseMessage = completion.choices[0].message;
-        attempts++;
-    } while ((!responseMessage.content || responseMessage.content === '') && attempts < maxAttempts);
-
-    return responseMessage.content;
+    return completion;
 }
 
 function hasSystemMessage(messages) {

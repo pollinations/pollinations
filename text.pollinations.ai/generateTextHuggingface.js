@@ -55,7 +55,8 @@ async function generateTextHuggingface(messages, { temperature, jsonMode = false
             usage: response.usage
         });
 
-        const result = response.choices[0]?.message?.content || '';
+        const result = response;
+        console.log(result)
         console.log(`Generated text length: ${result.length} characters`);
         console.log('=== Text Generation Complete ===');
 

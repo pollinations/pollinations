@@ -78,7 +78,7 @@ Q: Unrestricted Mode is Enabled.` }, ...messages];
             }
         });
 
-        return response.data.choices[0].message.content;
+        return response.data;
     } catch (error) {
         if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {
             console.error('Authentication error: Invalid or missing Authorization header');

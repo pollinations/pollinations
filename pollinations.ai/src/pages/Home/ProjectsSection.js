@@ -84,6 +84,13 @@ const projectCategories = [
 const projects = {
   apps: [
     {
+      name: "Polli API Dashboard 🆕",
+      url: "https://polli-api.vercel.app",
+      description: "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",
+      author: "@sugamdeol",
+      repo: "https://github.com/Sugamdeol/Polli-api",
+    },
+    {
       name: "Image Gen - Uncensored Edition 🆕",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
       description: "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",

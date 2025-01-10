@@ -71,7 +71,7 @@ function getQueue(ip) {
 
 // Function to get IP address
 export function getIp(req) {
-    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.headers['referer'] || req.socket.remoteAddress;
     if (!ip) return null;
     const ipSegments = ip.split('.').slice(0, 2).join('.');
     // if (ipSegments === "128.116")
@@ -114,7 +114,9 @@ async function handleRequest(req, res, requestData) {
     } catch (error) {
         sendErrorResponse(res, error);
     }
-    await sleep(15000);
+    if (process.env.NODE_ENV !== 'test') {
+        await sleep(15000);
+    }
 }
 
 // Helper function for consistent error responses

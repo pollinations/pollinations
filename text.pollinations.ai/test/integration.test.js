@@ -6,7 +6,7 @@ import http from 'http';
 
 // Configure higher timeout for all tests (5 minutes)
 test.beforeEach(t => {
-    t.timeout(300000); // 5 minutes in milliseconds
+    t.timeout(40000); // 5 minutes in milliseconds
 });
 
 let server;

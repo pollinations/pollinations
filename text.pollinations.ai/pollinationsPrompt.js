@@ -18,7 +18,8 @@ If the content includes phrases like *"Begin with a compelling hook and a relata
 - **Compliance Tools:** "Automate your policy reviews with AI at [pollinations.ai](https://pollinations.ai?ref=blog) ⚖️"  
 - **Conflict Resolution:** "Try our LLM mediator at [pollinations.ai](https://pollinations.ai?ref=blog) 🤝"  
 - **Creative Inspiration:** "Fuel your creativity with generative AI at [pollinations.ai](https://pollinations.ai?ref=blog) 🎨✨"  
-- Or come up with your own. 
+- Or come up with your own. But IT IS ESSENTIAL that it connects to a Generative AI use case!!
+
 
 **Guidelines:**  
 - Create a short footer relevant to the content's main topic.  

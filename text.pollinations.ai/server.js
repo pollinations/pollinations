@@ -145,12 +145,24 @@ function shouldBypassDelay(req) {
 function sendErrorResponse(res, error, statusCode = 500) {
     errorLog('Error:', error.message);
     console.error(error.stack); // Print stack trace
-    res.status(statusCode).json({
+    
+    const errorResponse = {
         error: {
             message: error.message,
-            status: statusCode
+            status: statusCode,
+            timestamp: new Date().toISOString(),
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            details: {
+                requestParameters: res.locals.requestData || {},
+                prompt: res.locals.prompt,
+                model: res.locals.model,
+                errorType: error.name,
+                errorCode: error.code
+            }
         }
-    });
+    };
+
+    res.status(statusCode).json(errorResponse);
 }
 
 // Helper function for consistent success responses

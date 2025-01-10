@@ -23,14 +23,16 @@ function setupFeedEndpoint(app) {
         // Add the client to a list of connected clients
         const clientId = Date.now();
         connectedClients.set(clientId, (response, parameters, ip) => {
-            const data = JSON.stringify({ 
-                response, 
-                parameters, 
-                ip 
-            }, null, 2).replace(/[\u0080-\uFFFF]/g, char => {
-                return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
-            });
-            res.write(`data: ${data}\n\n`);
+            const eventData = {
+                response,
+                parameters,
+                ip
+            };
+            // Properly encode the data for SSE
+            const encodedData = JSON.stringify(eventData)
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
+            res.write(`data: ${encodedData}\n\n`);
         });
 
         // Remove the client when they disconnect

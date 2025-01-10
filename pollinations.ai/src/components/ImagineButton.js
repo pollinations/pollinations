@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button, CircularProgress } from "@material-ui/core";
-import { Colors } from "../styles/global";
+import { Colors } from "../config/global";
 
 export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) {
   return (

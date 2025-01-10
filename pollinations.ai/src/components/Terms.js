@@ -1,5 +1,5 @@
 import React from 'react';
-import { SmallContainer } from "../styles/global";
+import { SmallContainer } from "../config/global";
 import { usePollinationsText } from "@pollinations/react";
 import useRandomSeed from '../hooks/useRandomSeed';
 import ReactMarkdown from 'react-markdown';

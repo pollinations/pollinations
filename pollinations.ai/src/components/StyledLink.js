@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { Colors } from "../styles/global";
+import { Colors } from "../config/global";
 
 // Define LinkStyle if not available in global styles
 const LinkStyle = styled.a`

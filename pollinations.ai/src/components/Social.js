@@ -1,8 +1,8 @@
 import React from 'react'
 import { Link } from '@material-ui/core'
-import { SOCIAL_LINKS } from '../_globalConfig/socialLinks'
+import { SOCIAL_LINKS } from '../config/socialLinks'
 import styled from '@emotion/styled'
-import { Colors, MOBILE_BREAKPOINT } from '../styles/global'
+import { Colors, MOBILE_BREAKPOINT } from '../config/global'
 
 
 export const SocialLinks = ({ small, hideOnMobile, gap, invert }) => (

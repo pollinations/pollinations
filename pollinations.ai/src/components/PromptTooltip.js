@@ -1,8 +1,8 @@
 import React from "react"
 import { withStyles, Tooltip, Typography, Box } from "@material-ui/core"
-import { SHOW_PROMPT_TOOLTIP } from "../styles/global"
+import { SHOW_PROMPT_TOOLTIP } from "../config/global"
 
-import { Colors } from "../styles/global"
+import { Colors } from "../config/global"
 
 const StyledTooltip = withStyles({
   tooltip: {

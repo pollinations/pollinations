@@ -1,6 +1,6 @@
-import { textContent } from "../assets"
+import { textContent } from "../assets/text"
 import MarkDownContent from "./MarkDownContent"
-import { BackGroundImage, MarkDownStyle, SmallContainer } from "../styles/global"
+import { BackGroundImage, MarkDownStyle, SmallContainer } from "../config/global"
 import { SEOImage, SEOMetadata } from "./Helmet"
 import styled from "@emotion/styled"
 

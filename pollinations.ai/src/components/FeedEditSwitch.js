@@ -2,7 +2,7 @@ import React from 'react';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { CustomTooltip } from './CustomTooltip';
-import { Colors } from './../styles/global';
+import { Colors } from '../config/global';
 
 export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
   return (

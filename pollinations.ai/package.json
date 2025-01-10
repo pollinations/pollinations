@@ -35,6 +35,7 @@
     "react-scripts": "^5.0.1",
     "react-slick": "^0.29.0",
     "react-use": "^17.3.2",
+    "slick-carousel": "^1.8.1",
     "throttle-debounce": "^3.0.1",
     "use-debounce": "^10.0.0",
     "usehooks-ts": "^3.0.1"

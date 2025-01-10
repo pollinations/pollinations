@@ -25,7 +25,7 @@ export function TextPrompt({
   return (
     <Grid item xs={12} >
       {isStopped && (
-        <Typography variant="body2" style={{ color: "#f5f5f5", fontWeight: "normal" }}>
+        <Typography variant="body2" style={{ color: Colors.gray2, fontWeight: "normal" }}>
           Prompt
         </Typography>
       )}
@@ -56,9 +56,8 @@ export function TextPrompt({
             backgroundColor: "transparent",
             border: edit ? `0.1px solid ${Colors.offwhite}` : "none",
             borderRadius: "5px",
-            color: edit ? Colors.offwhite : Colors.grey,
+            color: Colors.lime,
             fontSize: edit ? "1.5rem" : "1.2rem",
-            textAlign: "center",
             cursor: "pointer",
             overflow: "auto",
             ...scrollbarStyles,

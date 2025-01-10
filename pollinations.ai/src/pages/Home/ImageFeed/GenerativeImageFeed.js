@@ -188,7 +188,7 @@ export const GenerativeImageFeed = memo(() => {
               letterSpacing: "0.1em",
             }}
           >
-            API Feed
+            Live Feed
           </Typography>
           <Grid item className={classes.gridItem} style={{ marginTop: "2em", maxWidth: "750px" }}>
             <Grid item xs={12} className={classes.gridCenter} style={{ marginBottom: "2em" }}>
@@ -224,7 +224,7 @@ export const GenerativeImageFeed = memo(() => {
                 spacing={0}
                 className={classes.gridCenter}
                 style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.3)",
+                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
                   borderRadius: "20px",
                   marginTop: "2em",
                 }}
@@ -235,7 +235,10 @@ export const GenerativeImageFeed = memo(() => {
                   sm={12}
                   md={12}
                   style={{
-                    margin: "2em",
+                    marginRight: "3em",
+                    marginLeft: "3em",
+                    marginBottom: "0em",
+                    marginTop: "1em",
                   }}
                 >
                   <TextPrompt
@@ -297,9 +300,10 @@ export const GenerativeImageFeed = memo(() => {
               fontWeight: "bold",
               textAlign: "center",
               userSelect: "none",
+              letterSpacing: "0.1em",
             }}
           >
-            Integrate API
+            Integrate
           </Typography>
           <Typography
             style={{

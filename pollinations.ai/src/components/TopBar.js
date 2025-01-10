@@ -4,55 +4,36 @@ import styled from "@emotion/styled"
 import { MOBILE_BREAKPOINT, BaseContainer, Colors } from "../styles/global"
 import { SocialLinks } from "./Social"
 import { ImageURLHeading } from "../pages/Home/ImageHeading"
-import AsciiArtGenerator from "./AsciiArtGenerator" // Import the AsciiArtGenerator
-import useIsMobile from "../hooks/useIsMobile" // Import the new hook
+import AsciiArtGenerator from "./AsciiArtGenerator"
+import useIsMobile from "../hooks/useIsMobile"
 import { Typography } from "@mui/material"
 import logo from "../assets/imgs/thot-labs_logo.svg"
 
 const TopBar = () => {
-  const isMobile = useIsMobile() // Use the new hook
+  const isMobile = useIsMobile();
   return (
     <TopContainer>
-      <LogoContainer isMobile={isMobile}>
+      < LogoContainer isMobile={isMobile}>
         <NavLink
           to="/"
           style={{
             textDecoration: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: isMobile ? "center" : "flex-start",
           }}
         >
-          {/* Logo
-          <img
-            src={logo}
-            alt="THOT Labs Logo"
-            style={{
-              height: isMobile ? "6em" : "8.5em", // Adjust size for mobile and desktop
-              marginRight: isMobile ? "0px" : "20px", // Space between logo and text
-              marginBottom: isMobile ? "10px" : "0px",
-            }}
-          /> */}
           <Typography
             style={{
               color: Colors.offblack,
-              fontSize: isMobile ? "6em" : "10em", // Adjust font size for mobile and desktop
+              fontSize: isMobile ? "3em" : "5em",
               fontWeight: "bold",
-              textAlign: "center",
-              margin: "0 auto",
+              margin: "0",
               userSelect: "none",
+              height: "auto",
             }}
           >
             THOT Labs
           </Typography>
         </NavLink>
       </LogoContainer>
-      {/* <AsciiArtContainer width={500} height={100}>
-        <AsciiArtGenerator />
-      </AsciiArtContainer> */}
-      {/* <NavBarStyle>
-        <SocialLinks medium gap="1em" invert />
-      </NavBarStyle> */}
     </TopContainer>
   )
 }
@@ -74,8 +55,11 @@ const TopContainer = styled.div`
   background-color: ${Colors.offwhite};
   width: 100%;
   display: flex;
+  padding-top: 2em;
+  padding-bottom: 0em;
+  margin: 0;
   justify-content: center;
-  padding: 30px;
+  align-items: flex-end;
 `
 
 const NavBarStyle = styled(BaseContainer)`
@@ -97,15 +81,14 @@ const NavBarStyle = styled(BaseContainer)`
     justify-items: center;
   }
 `
-
 const LogoContainer = styled.div`
   grid-area: logo;
   display: flex;
   align-items: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   justify-content: ${({ isMobile }) => (isMobile ? "center" : "flex-start")};
   width: 100%;
-  max-width: 1040px;
-  position: relative; /* Added to position the AsciiArtContainer */
+  max-width: 1000px;
+  position: relative;
 `
 
 const CenteredSocialLinks = styled.div`
@@ -124,7 +107,7 @@ const AsciiArtContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none; /* Ensure it doesn't interfere with other elements */
+  pointer-events: none;
 `
 
 export default TopBar

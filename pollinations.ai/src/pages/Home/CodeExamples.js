@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useLayoutEffect } from "react"
 import { AppBar, ButtonGroup, Button, Box, IconButton } from "@material-ui/core"
 import { CodeBlock, irBlack } from "react-code-blocks"
 import { ImageURLHeading, URLExplanation } from "./ImageHeading"
@@ -340,6 +340,19 @@ eventSource.onmessage = function(event) {
 
 export function CodeExamples({ image }) {
   const [tabValue, setTabValue] = useState(0); // Set initial tab to 0 (api_cheatsheet)
+  const [isMobile, setIsMobile] = useState(false);
+
+  useLayoutEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue);
@@ -392,10 +405,9 @@ export function CodeExamples({ image }) {
               <CodeBlock
                 text={text}
                 language={language}
-
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: "rgba(0, 0, 0, 0.3)",
+                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",                  
                   color: Colors.offwhite,
                   height: "500px",
                   border: `0px`,

@@ -4,6 +4,8 @@ export const GlobalSidePadding = '0 3%';
 export const MOBILE_BREAKPOINT = '680px';
 export const HUGE_BREAKPOINT = '2560px';
 
+export const SHOW_PROMPT_TOOLTIP = false; // Set to 'false' to deactivate tooltips
+
 export const Colors = {
   accent: 'rgb(233, 250, 41)',
   active_button: '#C93CD0',

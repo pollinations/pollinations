@@ -20,7 +20,7 @@ const WhoWeAreContent = () => {
   }
 
   const seed = useRandomSeed();
-  const prompt = "Shortly introduce 'THOT', a free and open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
+  const prompt = "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
   const markdownText = useResponsivePollinationsText(prompt, { seed });
   return (
     <Box maxWidth="1000px" style={{ margin: "0 auto", textAlign: "left" }}>
@@ -90,7 +90,7 @@ const PageLayout = styled(BaseContainer)`
     color: ${(props) => (props.dark ? Colors.offwhite : Colors.offblack)};
     letter-spacing: -0.02em;
     margin-bottom: 1.6em;
-    margin-top: 1em;
+    margin-top: 0.5em;
 
     @media (max-width: ${MOBILE_BREAKPOINT}) {
       font-size: 30px;

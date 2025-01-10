@@ -3,9 +3,11 @@ import { Typography } from "@material-ui/core"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../../../components/PromptTooltip"
 import styled from '@emotion/styled';
+import useIsMobile from "../../../hooks/useIsMobile";
 
 
 export const ImageDisplay = memo(function ImageDisplay({ image }) {
+    const isMobile = useIsMobile();
     return (
         <ImageContainer
             style={{
@@ -17,11 +19,17 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
             }}
         >
             {image ? (
-                <a href={image["imageURL"]} target="_blank" rel="noopener">
+                isMobile ? (
                     <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
                         <ImageStyle src={image["imageURL"]} alt="generative_image" />
                     </PromptTooltip>
-                </a>
+                ) : (
+                    <a href={image["imageURL"]} target="_blank" rel="noopener">
+                        <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
+                            <ImageStyle src={image["imageURL"]} alt="generative_image" />
+                        </PromptTooltip>
+                    </a>
+                )
             ) : (
                 <Typography variant="h6" color="textSecondary">
                     Loading image...

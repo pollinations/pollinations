@@ -8,8 +8,9 @@ import { GenerativeImageURLContainer } from "./ImageHeading"
 import { EmojiRephrase } from "../../components/EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import useIsMobile from "../../hooks/useIsMobile" // Import the new hook
-import { T } from "ramda"
+import { useTheme } from '@material-ui/core/styles';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { over, T } from "ramda"
 import styled from "@emotion/styled"
 import StyledLink from "../../components/StyledLink" // Updated import
 
@@ -79,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
   projectsContainer: {
     maxHeight: "600px",
     overflowY: "auto",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    overflowX: "hidden",
     padding: "3em",
     borderRadius: "10px",
   },
@@ -385,8 +386,9 @@ const projects = {
 }
 
 const ProjectsSection = () => {
-  const classes = useStyles()
-  const isMobile = useIsMobile() // Use the new hook
+  const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const seedValue = useRandomSeed()
   const [selectedCategory, setSelectedCategory] = useState("apps") // Default category
   const categoryKeys = projectCategories.map((category) => category.key)
@@ -427,8 +429,8 @@ const ProjectsSection = () => {
             )}
           </Grid>
 
-          <Grid item xs={isMobile ? 1 : 2} style={{ textAlign: "center" }}>
-            {!isMobile && <ProjectImage name={project.name} />}
+          <Grid item xs={isMobile ? 4 : 2} style={{ textAlign: "center" }}>
+            <ProjectImage name={project.name} />
           </Grid>
 
           <Grid item xs={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
@@ -496,9 +498,10 @@ const ProjectsSection = () => {
             margin: "0 auto",
             userSelect: "none",
             maxWidth: "750px",
+            letterSpacing: "0.1em",
           }}
         >
-          Built with Us
+          User Builds
         </Typography>
 
         <Typography
@@ -548,7 +551,7 @@ const ProjectsSection = () => {
         </AppBar>
 
         {/* Render selected category */}
-        <Box className={classes.projectsContainer}>
+        <Box className={classes.projectsContainer} style={{ backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)" }}>
           {renderProjects(projects[selectedCategory])}
         </Box>
       </GenerativeImageURLContainer>

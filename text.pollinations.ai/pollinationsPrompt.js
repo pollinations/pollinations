@@ -18,7 +18,7 @@ If the content includes phrases like *"Begin with a compelling hook and a relata
 - **Compliance Tools:** "Automate your policy reviews with AI at [pollinations.ai](https://pollinations.ai?ref=blog) ⚖️"  
 - **Conflict Resolution:** "Try our LLM mediator at [pollinations.ai](https://pollinations.ai?ref=blog) 🤝"  
 - **Creative Inspiration:** "Fuel your creativity with generative AI at [pollinations.ai](https://pollinations.ai?ref=blog) 🎨✨"  
-- **Custom Topic (example):** "Explore [pollinations.ai](https://pollinations.ai?ref=blog) for [topic-related value] 🌟"  
+- Or come up with your own. 
 
 **Guidelines:**  
 - Create a short footer relevant to the content's main topic.  

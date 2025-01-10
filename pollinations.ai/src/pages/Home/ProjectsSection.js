@@ -249,6 +249,13 @@ const projects = {
   ],
   sdkLibraries: [
     {
+      name: "Polli API Dashboard 🆕",
+      url: "https://polli-api.vercel.app",
+      description: "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",
+      author: "@sugamdeol",
+      repo: "https://github.com/Sugamdeol/Polli-api",
+    },
+    {
       name: "@pollinations/react 🆕",
       url: "https://www.npmjs.com/package/@pollinations/react",
       description: "React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",

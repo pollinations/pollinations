@@ -27,6 +27,8 @@ import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import fs from 'fs';
 import path from 'path';
+import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
+import { getFromCache, setInCache, createHashKey } from './cache.js';
 
 const app = express();
 
@@ -41,8 +43,6 @@ app.use(cors());
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
-
-let cache = {};
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
@@ -84,32 +84,7 @@ app.get('/models', (req, res) => {
     res.json(availableModels);
 });
 
-// SSE endpoint for streaming all responses
-app.get('/feed', (req, res) => {
-    res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-    });
-
-    const sendEvent = (data) => {
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    // Function to handle new responses
-    const handleNewResponse = (response, parameters, ip) => {
-        sendEvent({ response, parameters, ip });
-    };
-
-    // Add the client to a list of connected clients
-    const clientId = Date.now();
-    connectedClients.set(clientId, handleNewResponse);
-
-    // Remove the client when they disconnect
-    req.on('close', () => {
-        connectedClients.delete(clientId);
-    });
-});
+setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
@@ -128,21 +103,13 @@ async function handleRequest(req, res, requestData) {
 
     log('Request data: %o', requestData);
 
-    // Send analytics event for text generation request
-    // sendToAnalytics(req, 'textGenerated', { messages: requestData.messages, model: requestData.model, options: requestData });
-
     try {
         const response = await generateTextBasedOnModel(requestData.messages, requestData);
         const cacheKey = createHashKey(requestData);
-        cache[cacheKey] = response;
+        setInCache(cacheKey, response);
         log('Generated response', response);
         
-        // Broadcast the response to all connected clients
-        // connectedClients.forEach((handler) => {
-        //     handler(response, requestData, ip);
-        // });
         sendToFeedListeners(response, requestData, ip);
-
 
         sendResponse(res, response);
         await sleep(10000);
@@ -203,16 +170,18 @@ function getRequestData(req) {
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
-
+    const ip = getIp(req);
+    const queue = getQueue(ip);
     const cacheKey = createHashKey(requestData);
 
-    const cachedResponse = await getCache(cacheKey);
-    
+    // Check cache first
+    const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
-        return sendResponse(res, cachedResponse);
+        log('Cache hit for key:', cacheKey);
+        return res.json(cachedResponse);
     }
 
-    const ip = getIp(req);
+    log('Cache miss for key:', cacheKey);
     const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
@@ -277,15 +246,24 @@ app.post('/openai*', async (req, res) => {
 
     const requestParams = getRequestData(req);
     const cacheKey = createHashKey(requestParams);
-    const cachedResponse = await getCache(cacheKey);
+    const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
-        return res.json(cachedResponse);
+        log('Cache hit for key:', cacheKey);
+        if (requestParams.isStream) {
+            sendAsStream(res, cachedResponse);
+            await sleep(10000);
+            return;
+        }
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.json(cachedResponse);
+        await sleep(10000);
+        return;
     }
 
+    log('Cache miss for key:', cacheKey);
     const ip = getIp(req);
     const queue = getQueue(ip);
     const isStream = req.body.stream;
-
 
     const run = async () => {
 
@@ -296,12 +274,6 @@ app.post('/openai*', async (req, res) => {
             // sendToAnalytics(req, 'textGenerated', { messages: requestParams.messages, model: requestParams.model, options: requestParams });
 
             const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
-            cache[cacheKey] = response;
-            
-                    
-            // Broadcast the response to all connected clients
-            sendToFeedListeners(response, requestParams, ip);
-
             if (isStream) {
                 sendAsStream(res, response);
                 await sleep(10000);
@@ -310,7 +282,7 @@ app.post('/openai*', async (req, res) => {
 
             const result = formatAsOpenAIResponse(response, requestParams, isStream);
 
-            cache[cacheKey] = result;
+            setInCache(cacheKey, result);
             log("openai format result", JSON.stringify(result, null, 2));
             res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
             res.json(result);
@@ -335,34 +307,6 @@ app.post('/openai*', async (req, res) => {
     }
 })
 
-function sendToFeedListeners(response, requestParams, ip) {
-    for (const [_, send] of connectedClients) {
-        console.log('broadcasting response', response, "to", connectedClients.size);
-        send(response, requestParams, ip);
-    }
-}
-
-function formatAsOpenAIResponse(response, requestParams, isStream) {
-    const choices = [{
-        "message": {
-            "content": response,
-            "role": "assistant"
-        },
-        "finish_reason": "stop",
-        "index": 0,
-        "logprobs": null
-    }];
-
-    const result = {
-        "created": Date.now(),
-        "id": crypto.randomUUID(),
-        "model": requestParams.model,
-        "object": isStream ? "chat.completion.chunk" : "chat.completion",
-        "choices": choices
-    };
-    return result;
-}
-
 function sendAsStream(res, response) {
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
     res.setHeader('Cache-Control', 'no-cache');
@@ -371,21 +315,6 @@ function sendAsStream(res, response) {
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
     res.end();
 }
-
-// Helper function to get response from cache
-function getCache(cacheKey) {
-    return cache[cacheKey] || null;
-}
-
-// Helper function to create a hash for the cache key
-function createHashKey(data) {
-    // Ensure the data used for the cache key is deterministic
-    const deterministicData = JSON.parse(JSON.stringify(data));
-    return crypto.createHash('sha256').update(JSON.stringify(deterministicData)).digest('hex');
-}
-
-// Map to store connected clients
-const connectedClients = new Map();
 
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
@@ -424,6 +353,27 @@ async function generateTextBasedOnModel(messages, options) {
         errorLog('Error in generateTextBasedOnModel:', error);
         throw error;
     }
+}
+
+function formatAsOpenAIResponse(response, requestParams, isStream) {
+    const choices = [{
+        "message": {
+            "content": response,
+            "role": "assistant"
+        },
+        "finish_reason": "stop",
+        "index": 0,
+        "logprobs": null
+    }];
+
+    const result = {
+        "created": Date.now(),
+        "id": crypto.randomUUID(),
+        "model": requestParams.model,
+        "object": isStream ? "chat.completion.chunk" : "chat.completion",
+        "choices": choices
+    };
+    return result;
 }
 
 app.use((req, res, next) => {

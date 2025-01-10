@@ -147,7 +147,6 @@ async function generateText() {
         { role: 'user', content: 'What is artificial intelligence?' }
       ],
       seed: 42,
-      jsonMode: true,
       model: 'mistral'
     }),
   });

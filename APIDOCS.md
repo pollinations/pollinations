@@ -100,7 +100,8 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
     {"role": "user", "content": "What is artificial intelligence?"}
   ],
   "model": "openai",
-  "seed": 42
+  "seed": 42,
+  "jsonMode": true  // Optional: Forces the response to be valid JSON
 }
 ```
 

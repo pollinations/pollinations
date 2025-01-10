@@ -9,7 +9,6 @@ function generateTextContextWrapper(systemMessage, generatorFunction = generateT
             { role: 'system', content: systemMessage },
             ...filteredMessages
         ];
-        console.log('calling wrapper with messages', messagesWithSystem);
         // Call the provided generator function with the modified messages
 
         return generatorFunction(messagesWithSystem, options);

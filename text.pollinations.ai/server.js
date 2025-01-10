@@ -88,46 +88,48 @@ setupFeedEndpoint(app);
 
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
-    const ip = getIp(req);
-    const queue = getQueue(ip);
-
-    if (queue.size >= 30) {
-        errorLog('Queue size limit exceeded for IP: %s', ip);
-        return res.status(429).json({
-            error: {
-                message: 'Too many requests in queue. Please try again later.',
-                status: 429
-            }
-        });
-    }
 
     log('Request data: %o', requestData);
 
     try {
         const response = await generateTextBasedOnModel(requestData.messages, requestData);
-        const cacheKey = createHashKey(requestData);
-        setInCache(cacheKey, response);
+            const cacheKey = createHashKey(requestData);
+            setInCache(cacheKey, response);
         log('Generated response', response);
         
-        sendToFeedListeners(response, requestData, ip);
+        sendToFeedListeners(response, requestData, getIp(req));
 
         sendResponse(res, response);
-        await sleep(10000);
+
+        await sleep(5000);
     } catch (error) {
-        errorLog('Error generating text: %s', error.message);
-        res.status(500).json({
-            error: {
-                message: error.message,
-                status: 500
-            }
-        });
+        sendErrorResponse(res, error);
         await sleep(5000);
     }
 }
 
-function sendResponse(res, response) {
+// Helper function for consistent error responses
+function sendErrorResponse(res, error, statusCode = 500) {
+    errorLog('Error:', error.message);
+    console.error(error.stack); // Print stack trace
+    res.status(statusCode).json({
+        error: {
+            message: error.message,
+            status: statusCode
+        }
+    });
+}
+
+// Helper function for consistent success responses
+function sendSuccessResponse(res, data) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8'); // Ensure charset is set to utf-8
+    res.json(data);
+}
+
+function sendResponse(res, response) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(response);
 }
 
@@ -148,9 +150,10 @@ function getRequestData(req) {
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     // Try request body first (both spellings), then HTTP header (standard spelling)
     const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
-    const isImagePollinationsReferrer = referrer.includes('pollinations.ai');
+    const isImagePollinationsReferrer = referrer.toLowerCase().includes('pollinations.ai') || referrer.toLowerCase().includes('thot');
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
-    
+    const stream = data.stream || false; 
+
     const messages =  data.messages ||  [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
@@ -164,21 +167,34 @@ function getRequestData(req) {
         temperature,
         isImagePollinationsReferrer,
         isRobloxReferrer,
-        referrer
+        referrer,
+        stream
     };
 }
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
-    const ip = getIp(req);
-    const queue = getQueue(ip);
+
     const cacheKey = createHashKey(requestData);
 
     // Check cache first
     const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
         log('Cache hit for key:', cacheKey);
-        return res.json(cachedResponse);
+        if (typeof cachedResponse === 'string') {
+            sendResponse(res, cachedResponse);
+        } else {
+            sendSuccessResponse(res, cachedResponse);
+        }
+        return;
+    }
+    
+    const ip = getIp(req);
+    const queue = getQueue(ip);
+
+    if (queue.size >= 60) {
+        errorLog('Queue size limit exceeded for IP: %s', ip);
+        return res.status(429).send('Too many requests in queue. Please try again later.');
     }
 
     log('Cache miss for key:', cacheKey);
@@ -197,9 +213,7 @@ app.get('/*', async (req, res) => {
     try {
         await processRequest(req, res, requestData);
     } catch (error) {
-        errorLog('Error processing request', error.message);
-        console.error(error.stack); // Print stack trace
-        return res.status(500).send(error.message);
+        sendErrorResponse(res, error);
     }
 });
 
@@ -207,16 +221,14 @@ app.get('/*', async (req, res) => {
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
         console.log('Invalid messages array. Received:', req.body.messages);
-        return res.status(400).send('Invalid messages array. Received: ' + req.body.messages);
+        return res.status(400).send(`Invalid messages array. Received: ${req.body.messages}`);
     }
 
     const requestParams = getRequestData(req, true);
     try {
         await processRequest(req, res, requestParams);
     } catch (error) {
-        errorLog('Error processing request', error.message);
-        console.error(error.stack); // Print stack trace
-        return res.status(500).send(error.message);
+        sendErrorResponse(res, error);
     }
 });
 
@@ -236,12 +248,8 @@ app.get('/openai/models', (req, res) => {
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
 
-    // log all request data
-    // console.log("request data", JSON.stringify(req.body, null, 2));
-
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        console.log('Invalid messages array');
-        return res.status(400).send('Invalid messages array');
+        return sendErrorResponse(res, new Error('Invalid messages array'), 400);
     }
 
     const requestParams = getRequestData(req);
@@ -251,12 +259,9 @@ app.post('/openai*', async (req, res) => {
         log('Cache hit for key:', cacheKey);
         if (requestParams.isStream) {
             sendAsStream(res, cachedResponse);
-            await sleep(10000);
             return;
         }
-        res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        res.json(cachedResponse);
-        await sleep(10000);
+        sendSuccessResponse(res, cachedResponse);
         return;
     }
 
@@ -267,7 +272,6 @@ app.post('/openai*', async (req, res) => {
 
     const run = async () => {
 
-        log("endpoint: /openai", requestParams);
 
         try {
             // Send analytics event for text generation request
@@ -276,7 +280,7 @@ app.post('/openai*', async (req, res) => {
             const response = await generateTextBasedOnModel(requestParams.messages, requestParams);
             if (isStream) {
                 sendAsStream(res, response);
-                await sleep(10000);
+                await sleep(5000);
                 return;
             }
 
@@ -284,14 +288,11 @@ app.post('/openai*', async (req, res) => {
 
             setInCache(cacheKey, result);
             log("openai format result", JSON.stringify(result, null, 2));
-            res.setHeader('Content-Type', 'application/json; charset=utf-8'); // Ensure charset is set to utf-8
-            res.json(result);
-            await sleep(10000);
+            sendSuccessResponse(res, result);
+            await sleep(5000);
             return;
         } catch (error) {
-            errorLog('Error generating text', error.message);
-            console.error(error.stack); // Print stack trace
-            res.status(500).send(error.message);
+            sendErrorResponse(res, error);
             await sleep(5000);
             return;
         }
@@ -299,20 +300,19 @@ app.post('/openai*', async (req, res) => {
     try {
         await queue.add(run);
     } catch (error) {
-        errorLog('Error processing request', error.message);
-        console.error(error.stack); // Print stack trace
-        res.status(500).send(error.message);
+        sendErrorResponse(res, error);
         await sleep(5000);
         return;
     }
 })
 
 function sendAsStream(res, response) {
-    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); // Ensure charset is set to utf-8
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: response }, finish_reason: "stop", index: 0 }] })}\n\n`);
+    res.write('data: [DONE]\n\n');  // Add the [DONE] message for OpenAI compatibility
     res.end();
 }
 
@@ -321,10 +321,6 @@ async function generateTextBasedOnModel(messages, options) {
     log('Using model:', model);
 
     try {
-        // If it's a Roblox request, always use openai model
-        if (options.isRobloxReferrer) {
-            options.model = 'roblox';
-        }
         
         const modelHandlers = {
             'deepseek': () => generateDeepseek(messages, options),
@@ -341,7 +337,7 @@ async function generateTextBasedOnModel(messages, options) {
             'rtist': () => rtist(messages, options),
             'searchgpt': () => generateText(messages, options, true),
             'evil': () => evilCommandR(messages, options),
-            'roblox': () => generateTextRoblox(messages, options),
+            // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
         };
 
@@ -375,7 +371,7 @@ function formatAsOpenAIResponse(response, requestParams, isStream) {
     };
     return result;
 }
-
+4
 app.use((req, res, next) => {
     log(`Unhandled request: ${req.method} ${req.originalUrl}`);
     next();

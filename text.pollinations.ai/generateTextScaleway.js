@@ -32,10 +32,7 @@ export async function generateTextScaleway(messages, options) {
             : { role: 'system', content: SYSTEM_PROMPTS[options.model] || SYSTEM_PROMPTS.mistral };
         messages = [systemMessage, ...messages];
     }
-
-    console.log("calling scaleway with messages", messages);
     
-
     const completion = await openai.chat.completions.create({
         model: modelName,
         messages,

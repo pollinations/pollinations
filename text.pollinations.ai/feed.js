@@ -5,16 +5,6 @@ const log = debug('pollinations:feed');
 // Map to store connected clients
 const connectedClients = new Map();
 
-
-// Function to handle new responses
-function handleNewResponse(response, parameters, ip) {
-    res.write(`data: ${JSON.stringify({ 
-        response, 
-        parameters, 
-        ip 
-    })}\n\n`);
-}
-
 function sendToFeedListeners(response, requestParams, ip) {
     for (const [_, send] of connectedClients) {
         log('broadcasting response', response, "to", connectedClients.size);
@@ -32,7 +22,13 @@ function setupFeedEndpoint(app) {
 
         // Add the client to a list of connected clients
         const clientId = Date.now();
-        connectedClients.set(clientId, handleNewResponse.bind(null, res));
+        connectedClients.set(clientId, (response, parameters, ip) => {
+            res.write(`data: ${JSON.stringify({ 
+                response, 
+                parameters, 
+                ip 
+            })}\n\n`);
+        });
 
         // Remove the client when they disconnect
         req.on('close', () => {

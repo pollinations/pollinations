@@ -15,7 +15,7 @@ function sendToFeedListeners(response, requestParams, ip) {
 function setupFeedEndpoint(app) {
     app.get('/feed', (req, res) => {
         res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
+            'Content-Type': 'text/event-stream; charset=utf-8',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive'
         });
@@ -23,11 +23,14 @@ function setupFeedEndpoint(app) {
         // Add the client to a list of connected clients
         const clientId = Date.now();
         connectedClients.set(clientId, (response, parameters, ip) => {
-            res.write(`data: ${JSON.stringify({ 
+            const data = JSON.stringify({ 
                 response, 
                 parameters, 
                 ip 
-            })}\n\n`);
+            }, null, 2).replace(/[\u0080-\uFFFF]/g, char => {
+                return '\\u' + ('0000' + char.charCodeAt(0).toString(16)).slice(-4);
+            });
+            res.write(`data: ${data}\n\n`);
         });
 
         // Remove the client when they disconnect

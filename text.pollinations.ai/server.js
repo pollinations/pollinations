@@ -121,14 +121,23 @@ async function handleRequest(req, res, requestData) {
 
 // Function to check if delay should be bypassed
 function shouldBypassDelay(req) {
-    const password = "BeesKnees";
+    const password = "BeesKnees".toLowerCase();
+    
+    // Helper function to safely check password
+    const checkPassword = (input) => {
+        return input && input.trim().toLowerCase() === password;
+    };
+    
     // Check query parameter
-    if (req.query.code === password) return true;
+    if (checkPassword(req.query.code)) return true;
     // Check JSON body
-    if (req.body && req.body.code === password) return true;
+    if (req.body && checkPassword(req.body.code)) return true;
     // Check bearer token
     const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ') && authHeader.split(' ')[1] === password) return true;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        if (checkPassword(token)) return true;
+    }
     return false;
 }
 

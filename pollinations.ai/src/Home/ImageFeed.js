@@ -13,8 +13,8 @@ import { FeedEditSwitch } from "../components/FeedEditSwitch"
 import { TextPrompt } from "../components/TextPrompt"
 import { ImageDisplay } from "../components/ImageDisplay"
 import { ImageContext } from "../utils/ImageContext"
-import { CodeExamples } from "../components/CodeExamples"
 import { EmojiRephrase } from "../components/EmojiRephrase"
+import { SectionContainer } from "../config/style"
 
 const log = debug("GenerativeImageFeed")
 
@@ -27,47 +27,10 @@ const useStyles = makeStyles((theme) => ({
   gridItem: {
     margin: "0em 0",
   },
-  boxRelative: {
-    position: "relative",
-  },
-  boxCenter: {
-    display: "flex",
-    justifyContent: "center",
-  },
-  boxColumn: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    bgcolor: "rgba(42, 44, 28, 0.1)",
-    borderRadius: "8px",
-    padding: theme.spacing(2),
-    border: "none",
-  },
-  boxFlex: {
-    display: "flex",
-    alignItems: "center",
-    marginLeft: theme.spacing(1.5),
-    marginRight: theme.spacing(1.5),
-    width: "100%",
-  },
-  boxMarginTop: {
-    width: "100%",
-    marginTop: theme.spacing(2),
-  },
   gridCenter: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-  },
-  scaledImageURLHeading: {
-    transform: "scale(1)",
-    transformOrigin: "center",
-    width: "100%",
-    maxWidth: "100%",
-  },
-  boxBottom: {
-    maxWidth: "100%",
-    marginBottom: "500px",
   },
 }))
 
@@ -167,166 +130,132 @@ export const ImageFeed = memo(() => {
   }
 
   return (
-    <>
-      <Box
-        style={{
-          background: `linear-gradient(to bottom, ${Colors.offblack2}, ${Colors.offblack})`,
-          width: "100%",
-        }}
-      >
-        <GenerativeImageURLContainer className={classes.container}>
-          <Typography
-            variant="h1"
+    <SectionContainer
+      style={{
+        background: `linear-gradient(to bottom, ${Colors.offblack2}, ${Colors.offblack})`,
+      }}
+    >
+      <GenerativeImageURLContainer className={classes.container}>
+        <Typography
+          variant="h1"
+          style={{
+            color: Colors.lime,
+            fontSize: isMobile ? "4em" : "8em",
+            fontWeight: "bold",
+            textAlign: "center",
+            marginTop: "0.5em",
+            userSelect: "none",
+            letterSpacing: "0.1em",
+          }}
+        >
+          Live Feed
+        </Typography>
+        <Grid item className={classes.gridItem} style={{ marginTop: "2em", maxWidth: "750px" }}>
+          <Grid item xs={12} className={classes.gridCenter} style={{ marginBottom: "2em" }}>
+            <ServerLoadInfo {...{ lastImage, imagesGenerated, image }} />
+          </Grid>
+          <Grid item xs={12} className={classes.gridCenter}>
+            <Typography
+              style={{
+                color: Colors.offwhite,
+                fontSize: "1.5em",
+                maxWidth: "750px",
+                textAlign: "center",
+              }}
+            >
+              <EmojiRephrase>
+                Real-time feed of our image API endpoint (minus the private ones). Try our models
+                pausing anytime.
+              </EmojiRephrase>
+            </Typography>
+          </Grid>
+          <Grid item xs={12} className={classes.gridCenter} style={{ marginTop: "4em" }}>
+            {!image?.imageURL ? null : (
+              <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
+            )}
+          </Grid>
+        </Grid>
+
+        <Grid container direction="column">
+          <Grid
+            container
+            direction="row"
+            spacing={0}
+            className={classes.gridCenter}
             style={{
-              color: Colors.lime,
-              fontSize: isMobile ? "4em" : "8em",
-              fontWeight: "bold",
-              textAlign: "center",
-              marginTop: "0.5em",
-              userSelect: "none",
-              letterSpacing: "0.1em",
+              backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
+              borderRadius: "20px",
+              marginTop: "2em",
             }}
           >
-            Live Feed
-          </Typography>
-          <Grid item className={classes.gridItem} style={{ marginTop: "2em", maxWidth: "750px" }}>
-            <Grid item xs={12} className={classes.gridCenter} style={{ marginBottom: "2em" }}>
-              <ServerLoadInfo {...{ lastImage, imagesGenerated, image }} />
-            </Grid>
-            <Grid item xs={12} className={classes.gridCenter}>
-              <Typography
-                style={{
-                  color: Colors.offwhite,
-                  fontSize: "1.5em",
-                  maxWidth: "750px",
-                  textAlign: "center",
+            <Grid
+              item
+              xs={12}
+              style={{
+                marginRight: "3em",
+                marginLeft: "3em",
+                marginBottom: "0em",
+                marginTop: "1em",
+              }}
+            >
+              <TextPrompt
+                {...{
+                  imageParams,
+                  handleParamChange,
+                  handleFocus,
+                  isLoading,
+                  isStopped,
+                  edit: isStopped,
                 }}
-              >
-                <EmojiRephrase>
-                  Real-time feed of our image API endpoint (minus the private ones). Try our models
-                  pausing anytime.
-                </EmojiRephrase>
-              </Typography>
+                stop={stop}
+                switchToEditMode={switchToEditMode}
+              />
+              <Box style={{ height: "1em" }}></Box>
+              {toggleValue === "edit" && (
+                <ImageEditor
+                  image={imageParams}
+                  handleParamChange={handleParamChange}
+                  handleFocus={handleFocus}
+                  isLoading={isLoading}
+                  setIsInputChanged={setIsInputChanged}
+                  handleButtonClick={handleButtonClick}
+                  isInputChanged={isInputChanged}
+                />
+              )}
             </Grid>
-            <Grid item xs={12} className={classes.gridCenter} style={{ marginTop: "2em" }}>
-            {!image["imageURL"] ? (
-            <CircularProgress color={"inherit"} style={{ color: Colors.offwhite, position: "absolute" }} />
-          ) : (
-              <FeedEditSwitch {...{ toggleValue, handleToggleChange, isLoading }} />
-                        )}
-
-            </Grid>
-          </Grid>
-
-
-            <Grid container direction="column">
+            {!image?.imageURL ? (
               <Grid
-                container
-                direction="row"
-                spacing={0}
-                className={classes.gridCenter}
+                item
+                xs={12}
                 style={{
-                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
-                  borderRadius: "20px",
-                  marginTop: "2em",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "16%",
                 }}
               >
-                <Grid
-                  item
-                  xs={12}
-                  sm={12}
-                  md={12}
-                  style={{
-                    marginRight: "3em",
-                    marginLeft: "3em",
-                    marginBottom: "0em",
-                    marginTop: "1em",
-                  }}
-                >
-                  <TextPrompt
-                    {...{
-                      imageParams,
-                      handleParamChange,
-                      handleFocus,
-                      isLoading,
-                      isStopped,
-                      edit: isStopped,
-                    }}
-                    stop={stop}
-                    switchToEditMode={switchToEditMode}
-                  />
-                  <Box style={{ height: "1em" }}></Box>
-                  {toggleValue === "edit" && (
-                    <ImageEditor
-                      image={imageParams}
-                      handleParamChange={handleParamChange}
-                      handleFocus={handleFocus}
-                      isLoading={isLoading}
-                      setIsInputChanged={setIsInputChanged}
-                      handleButtonClick={handleButtonClick}
-                      isInputChanged={isInputChanged}
-                    />
-                  )}
-                </Grid>
-                <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
-                {toggleValue === "feed" && (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={12}
-                    md={12}
-                    style={{
-                      marginBottom: "1em",
-                    }}
-                  >
-                    <ModelInfo model={image["model"]} wasPimped={image["wasPimped"]} />
-                  </Grid>
+                <CircularProgress style={{ color: Colors.lime }} />
+              </Grid>
+            ) : (
+              <ImageDisplay image={image} isMobile={isMobile} isLoading={isLoading} />
+            )}
+            {toggleValue === "feed" && (
+              <Grid
+                item
+                xs={12}
+                style={{
+                  marginBottom: "1em",
+                }}
+              >
+                {!image?.imageURL ? null : (
+                  <ModelInfo model={image["model"]} wasPimped={image["wasPimped"]} />
                 )}
               </Grid>
-            </Grid>
-        </GenerativeImageURLContainer>
-      </Box>
-      <Box
-        style={{
-          background: `linear-gradient(to bottom, ${Colors.offblack}, ${Colors.offblack2})`,
-          width: "100%",
-        }}
-      >
-        <Grid item xs={12} style={{ marginTop: "5em" }}>
-          <Typography
-            variant="h1"
-            style={{
-              color: Colors.lime,
-              fontSize: isMobile ? "4em" : "8em",
-              fontWeight: "bold",
-              textAlign: "center",
-              userSelect: "none",
-              letterSpacing: "0.1em",
-            }}
-          >
-            Integrate
-          </Typography>
-          <Typography
-            style={{
-              color: Colors.offwhite,
-              fontSize: "1.5em",
-              margin: "0 auto",
-              marginTop: "1em",
-              textAlign: "center",
-              maxWidth: "750px",
-            }}
-          >
-            <EmojiRephrase>
-              Discover how to seamlessly integrate our free image and text generation API into your
-              projects. Below are code examples to help you get started.
-            </EmojiRephrase>
-          </Typography>
-          <Box style={{ marginTop: "2em", marginBottom: "4em" }}>
-            <CodeExamples image={image} />
-          </Box>
+            )}
+          </Grid>
         </Grid>
-      </Box>
-    </>
+      </GenerativeImageURLContainer>
+    </SectionContainer>
   )
 })
 

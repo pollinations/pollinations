@@ -5,6 +5,7 @@ export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {
   return (
     <Box
       display="flex"
+      flexDirection={{ xs: "column", sm: "row" }}
       justifyContent="center"
       alignItems="center"
       style={{ gap: "2em" }}

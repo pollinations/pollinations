@@ -338,8 +338,8 @@ eventSource.onmessage = function(event) {
   }
 };
 
-export function CodeExamples({ image }) {
-  const [tabValue, setTabValue] = useState(0); // Set initial tab to 0 (api_cheatsheet)
+export function CodeExamples({ image = {} }) {
+  const [tabValue, setTabValue] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
 
   useLayoutEffect(() => {
@@ -352,7 +352,6 @@ export function CodeExamples({ image }) {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue);
@@ -370,6 +369,19 @@ export function CodeExamples({ image }) {
     navigator.clipboard.writeText(text);
     alert("Code copied to clipboard!");
   };
+
+  // Default values for when image is not available
+  const defaultImage = {
+    prompt: "A beautiful landscape",
+    width: 1024,
+    height: 1024,
+    seed: 42,
+    model: "flux",
+    imageURL: "https://image.thot.ai/prompt/A%20beautiful%20landscape"
+  };
+
+  // Use either the provided image or default values
+  const imageToUse = image?.imageURL ? image : defaultImage;
 
   return (
     <URLExplanation style={{ margin: "0 auto", maxWidth: "1000px" }}>
@@ -395,10 +407,10 @@ export function CodeExamples({ image }) {
       </AppBar>
       <>
         {codeExampleTabs.map((key, index) => {
-          if (tabValue !== index || !image || !image.imageURL) return null;
+          if (tabValue !== index) return null;
 
           const { code, language } = CODE_EXAMPLES[key];
-          const text = code(image);
+          const text = code(imageToUse);
 
           return (
             <Box key={key} position="relative">
@@ -438,26 +450,6 @@ export function CodeExamples({ image }) {
           );
         })}
       </>
-      {/* <Box mt={2} textAlign="center">
-        <ImageURLHeading
-          customPrompt={`Github logo that looks cool, on a black background`}
-          width="100"
-          height="100"
-        />
-        <span style={{ color: Colors.offwhite, fontFamily: Fonts.body, fontStyle: "normal", fontWeight: "500", fontSize: "1.4em", maxWidth: "400px" }}>
-          <EmojiRephrase>
-            Check the API documentation
-          </EmojiRephrase>
-        </span><br />
-        <LinkStyle
-          href="https://github.com/pollinations/pollinations/blob/master/APIDOCS.md"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: Colors.lime, fontSize: "1.4em" }}
-        >
-          GitHub
-        </LinkStyle>
-      </Box> */}
     </URLExplanation>
   );
 }

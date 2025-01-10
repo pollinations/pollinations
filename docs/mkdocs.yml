@@ -66,3 +66,11 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.mark
   - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - admonition
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true

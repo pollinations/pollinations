@@ -233,7 +233,9 @@ export default function DataTab() {
     event.target.value = '';
   };
 
-  const processChatData = (data: any): Array<{
+  const processChatData = (
+    data: any,
+  ): Array<{
     id: string;
     messages: Message[];
     description: string;
@@ -242,23 +244,25 @@ export default function DataTab() {
     // Handle Bolt standard format (single chat)
     if (data.messages && Array.isArray(data.messages)) {
       const chatId = crypto.randomUUID();
-      return [{
-        id: chatId,
-        messages: data.messages,
-        description: data.description || 'Imported Chat',
-        urlId: chatId
-      }];
+      return [
+        {
+          id: chatId,
+          messages: data.messages,
+          description: data.description || 'Imported Chat',
+          urlId: chatId,
+        },
+      ];
     }
 
-      // Handle Bolt export format (multiple chats)
-      if (data.chats && Array.isArray(data.chats)) {
-        return data.chats.map((chat: { id?: string; messages: Message[]; description?: string; urlId?: string; }) => ({
-          id: chat.id || crypto.randomUUID(),
-          messages: chat.messages,
-          description: chat.description || 'Imported Chat',
-          urlId: chat.urlId,
-        }));
-      }
+    // Handle Bolt export format (multiple chats)
+    if (data.chats && Array.isArray(data.chats)) {
+      return data.chats.map((chat: { id?: string; messages: Message[]; description?: string; urlId?: string }) => ({
+        id: chat.id || crypto.randomUUID(),
+        messages: chat.messages,
+        description: chat.description || 'Imported Chat',
+        urlId: chat.urlId,
+      }));
+    }
 
     console.error('No matching format found for:', data);
     throw new Error('Unsupported chat format');
@@ -296,6 +300,7 @@ export default function DataTab() {
         } else {
           toast.error('Failed to import chats');
         }
+
         console.error(error);
       }
     };

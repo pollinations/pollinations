@@ -93,19 +93,21 @@ async function handleRequest(req, res, requestData) {
 
     try {
         const response = await generateTextBasedOnModel(requestData.messages, requestData);
-            const cacheKey = createHashKey(requestData);
-            setInCache(cacheKey, response);
+        const cacheKey = createHashKey(requestData);
+        setInCache(cacheKey, response);
         log('Generated response', response);
         
         sendToFeedListeners(response, requestData, getIp(req));
 
-        sendResponse(res, response);
-
-        await sleep(5000);
+        if (requestData.isStream) {
+            sendAsStream(res, response);
+        } else {
+            sendResponse(res, response);
+        }
     } catch (error) {
         sendErrorResponse(res, error);
-        await sleep(5000);
     }
+    await sleep(5000);
 }
 
 // Helper function for consistent error responses

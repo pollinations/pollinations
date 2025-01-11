@@ -47,9 +47,9 @@ const PromptTooltip = ({ title, children, seed = null }) => {
             enterNextDelay={1500}
             leaveDelay={200} // Delay before hiding tooltip
         >
-            <Box component="span" style={{ margin: '0px', padding: '0px' }}>
+            <span style={{ display: 'inline-block', margin: '0px', padding: '0px' }}>
                 {children}
-            </Box>
+            </span>
         </StyledTooltip>
     );
 };

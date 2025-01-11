@@ -6,6 +6,25 @@ import styled from '@emotion/styled';
 
 
 export const ImageDisplay = memo(function ImageDisplay({ image }) {
+    if (!image) {
+        return (
+            <ImageContainer
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    position: "relative",
+                }}
+            >
+                <div>
+                    <Typography variant="h6" color="textSecondary">
+                        Loading image...
+                    </Typography>
+                </div>
+            </ImageContainer>
+        );
+    }
+
     return (
         <ImageContainer
             style={{
@@ -15,19 +34,17 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 position: "relative",
             }}
         >
-            {image ? (
-                <a href={image["imageURL"]} target="_blank" rel="noopener">
-                    <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
-                        <ImageStyle src={image["imageURL"]} alt="generative_image" />
-                    </PromptTooltip>
-                </a>
-            ) : (
-                <Typography variant="h6" color="textSecondary">
-                    Loading image...
-                </Typography>
-            )}
+            <div>
+                {image.imageURL && (
+                    <a href={image.imageURL} target="_blank" rel="noopener noreferrer">
+                        <PromptTooltip title={image.prompt || ''} seed={image.seed}>
+                            <ImageStyle src={image.imageURL} alt={image.prompt || 'Generated image'} />
+                        </PromptTooltip>
+                    </a>
+                )}
+            </div>
         </ImageContainer>
-    )
+    );
 })
 
 

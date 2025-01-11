@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 import { useMemo } from "react"
 import { Colors, MOBILE_BREAKPOINT, Fonts } from "../config/global"
-import { LinkStyle, Container as ContainerBase } from "../config/style"
+import { StyledLink, Container as ContainerBase } from "../config/style"
 import { Link } from "react-router-dom"
 import { GenerativeImageURLContainer, ImageURLHeading } from "../components/ImageHeading"
 import discordLogo from "../assets/icons/discord_logo.png"
@@ -40,9 +40,9 @@ const DiscordSection = (props) => {
 
         <Logo src={discordLogo} alt="Discord Logo" />
         <br />
-        <LinkStyle href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
+        <StyledLink href="https://discord.gg/k9F7SyTgqn" style={{ zIndex: 10 }}>
           <b>join our discord</b>
-        </LinkStyle>
+        </StyledLink>
       </Body>
     </Container>
   )

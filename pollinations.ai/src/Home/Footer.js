@@ -2,17 +2,21 @@ import styled from "@emotion/styled"
 import { NavLink } from "react-router-dom"
 import { Box } from "@material-ui/core"
 import { SocialLinks } from "../components/Social"
-import { Colors, MOBILE_BREAKPOINT, HUGE_BREAKPOINT, BaseContainer } from "../config/global"
-import { LinkStyle } from "../config/style"
+import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../config/global"
+import StyledLink from "../components/StyledLink"
 import { ImageURLHeading } from "../components/ImageHeading"
 import AsciiArtGenerator from "../components/AsciiArtGenerator"
 import useIsMobile from "../hooks/useIsMobile" // Import the new hook
+import { SectionContainer } from "../components/SectionContainer"
 
 const Footer = () => {
   const isMobile = useIsMobile() // Use the new hook
 
   return (
-    <OuterContainer>
+    <SectionContainer
+    style={{
+      background: `linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite})`,
+    }}>
       <FooterStyle>
         {/* <Box
           display="flex"
@@ -44,20 +48,10 @@ const Footer = () => {
         </LogoContainer> */}
         <BottomLinksContainer>
           <Box display="flex" alignItems="center">
-            {/* <img
-            src={logo}
-            alt="THOT Labs Logo"
-            style={{
-              height: "3em",
-              opacity: "1",
-              marginRight: "1em",
-            }}
-          /> */}
             <StyledLink
               onClick={(e) => {
                 e.preventDefault();
                 navigator.clipboard.writeText("hello@thot-labs.com").then(() => {
-                  alert("Copied to clipboard");
                 }).catch(err => {
                   console.error('Failed to copy: ', err);
                 });
@@ -73,17 +67,10 @@ const Footer = () => {
           </StyledNavLink>
         </BottomLinksContainer>
       </FooterStyle>
-    </OuterContainer>
+    </SectionContainer>
   )
 }
 export default Footer
-
-const OuterContainer = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  background: linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite});
-`
 
 const SocialContainer = styled.div`
   grid-area: social;
@@ -171,12 +158,6 @@ const FooterStyle = styled(BaseContainer)`
   }
 `
 
-const StyledLink = styled(LinkStyle)`
-  transition: color 0.3s ease;
-  &:hover {
-    color: ${Colors.primary};
-  }
-`
 
 const StyledNavLink = styled(NavLink)`
   transition: color 0.3s ease;

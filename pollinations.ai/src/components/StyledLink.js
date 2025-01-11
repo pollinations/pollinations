@@ -1,17 +1,18 @@
 import styled from "@emotion/styled";
-import { Colors } from "../config/global";
+import { Colors, Fonts } from "../config/global";
 
-// Define LinkStyle if not available in global styles
-const LinkStyle = styled.a`
+const StyledLink = styled.a`
+  font-family: ${Fonts.body};
+  font-style: normal;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 22px;
+  text-decoration-line: none;
+  text-transform: uppercase;
   color: inherit;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const StyledLink = styled(LinkStyle)`
   transition: color 0.3s ease;
   &:hover {
+    text-decoration: underline;
     color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
   }
 `;

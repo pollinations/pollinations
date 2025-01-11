@@ -11,7 +11,6 @@ import {
   Checkbox,
   IconButton,
   Button,
-  Link,
   useMediaQuery,
 } from "@material-ui/core"
 import InfoIcon from "@material-ui/icons/Info"

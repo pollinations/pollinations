@@ -1,7 +1,7 @@
 import React from "react"
 import { Grid, CircularProgress } from "@material-ui/core"
-import { ImageURLHeading } from "../pages/ImageHeading"
-import { Colors } from "../config/global"
+import { ImageURLHeading } from "../ImageHeading"
+import { Colors } from "../../../config/global"
 
 export function LoadingIndicator() {
     return (

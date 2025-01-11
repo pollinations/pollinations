@@ -1,7 +1,7 @@
 import React from "react"
 import { Box, Typography } from "@mui/material"
 import { Colors } from "../config/global"
-import { SectionContainer } from "../config/style"
+import { SectionContainer } from "../components/SectionContainer"
 import { NavLink } from "react-router-dom"
 
 const Header = () => {

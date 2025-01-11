@@ -7,7 +7,6 @@ export function TextPrompt({
   imageParams,
   handleParamChange,
   handleFocus,
-  isLoading,
   isStopped,
   stop,
   switchToEditMode,
@@ -17,8 +16,8 @@ export function TextPrompt({
 
   const scrollbarStyles = {
     overflowY: "scroll",
-    scrollbarWidth: "thin",
-    scrollbarColor: `${Colors.gray1} transparent`,
+    scrollbarWidth: "auto",
+    scrollbarColor: `${isStopped ? Colors.gray2 : Colors.lime} transparent`,
     msOverflowStyle: "none",
   };
 
@@ -30,24 +29,27 @@ export function TextPrompt({
         </Typography>
       )}
       {isStopped ? (
-        <TextareaAutosize
-          style={{
-            width: "100%",
-            height: "150px",
-            backgroundColor: "transparent",
-            border: edit ? "none" : "none",
-            borderRadius: "5px",
-            color: Colors.offwhite,
-            fontSize: isMobile ? "1.5rem" : "1.2rem",
-            resize: "vertical",
-            overflow: "auto",
-
-            ...scrollbarStyles,
-          }}
-          value={imageParams.prompt}
-          onChange={(e) => handleParamChange("prompt", e.target.value)}
-          onFocus={handleFocus}
-        />
+            // Start of Selection
+            <TextareaAutosize
+              variant="outlined"
+              style={{
+                width: "100%",
+                height: "150px",
+                backgroundColor: "transparent",
+                border: `0.1px solid ${Colors.gray1}60`,
+                borderRadius: "5px",
+                color: Colors.offwhite,
+                fontSize: isMobile ? "1.5rem" : "1.2rem",
+                padding: "10px",
+                resize: "vertical",
+                overflow: "auto",
+                padding: "15px",
+                ...scrollbarStyles,
+              }}
+              value={imageParams.prompt}
+              onChange={(e) => handleParamChange("prompt", e.target.value)}
+              onFocus={handleFocus}
+            />
       ) : (
         <div
           style={{
@@ -59,6 +61,8 @@ export function TextPrompt({
             cursor: "pointer",
             overflowY: "auto",
             overflowX: "hidden", // Prevent horizontal overflow
+            padding: "15px",
+
 
             ...scrollbarStyles,
           }}

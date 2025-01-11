@@ -1,15 +1,14 @@
 import { useState, useLayoutEffect } from "react"
 import { AppBar, ButtonGroup, Button, Box, IconButton } from "@material-ui/core"
-import { CodeBlock, irBlack } from "react-code-blocks"
-import { ImageURLHeading, URLExplanation } from "./ImageHeading"
-import { Colors, Fonts } from "../config/global"
+import { CodeBlock } from "react-code-blocks"
+import { URLExplanation } from "./ImageHeading"
+import { Colors } from "../config/global"
 import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../hooks/useRandomSeed"
 import React from "react";
-import { LinkStyle } from "../config/style"
+import { SectionBgBox } from "./SectionBgBox"
 import FileCopyIcon from '@material-ui/icons/FileCopy'
-import { EmojiRephrase } from "./EmojiRephrase"
-import { max } from "ramda"
+
 
 // Common styles
 const buttonStyle = (isActive) => ({
@@ -414,24 +413,24 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative">
+              <SectionBgBox style={{padding: "10px", marginTop: "1em"}}>
               <CodeBlock
                 text={text}
                 language={language}
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
+                  backgroundColor: "transparent",
                   color: Colors.offwhite,
+                  width: "100%",
                   height: "auto",
                   border: `0px`,
-                  marginTop: "1em",
-                  paddingTop: "10px",
-                  paddingBottom: "10px",
+                  paddingTop: "0px",
+                  paddingBottom: "0px",
                   boxShadow: "none",
-                  borderRadius: "20px",
                   overflowX: "hidden", // Prevent horizontal overflow
-                  whiteSpace: "pre-wrap", // Enable text wrapping
                 }}
               />
+              </SectionBgBox>
               <IconButton
                 onClick={() => handleCopy(text)}
                 style={{

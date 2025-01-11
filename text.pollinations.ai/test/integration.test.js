@@ -307,6 +307,130 @@ test('OpenAI API should handle invalid model gracefully', async t => {
 });
 
 /**
+ * Test: Function Calling Support
+ * 
+ * Purpose: Verify that the API supports function calling while maintaining searchgpt compatibility
+ */
+test('should support basic function calling', async t => {
+    const tools = [{
+        type: "function",
+        function: {
+            name: "get_current_weather",
+            description: "Get the current weather in a given location",
+            parameters: {
+                type: "object",
+                properties: {
+                    location: {
+                        type: "string",
+                        description: "The city and state, e.g. San Francisco, CA"
+                    },
+                    unit: {
+                        type: "string",
+                        enum: ["celsius", "fahrenheit"]
+                    }
+                },
+                required: ["location"],
+                additionalProperties: false
+            }
+        }
+    }];
+
+    const response = await axiosInstance.post('/openai/chat/completions', {
+        messages: [{ role: 'user', content: "What's the weather like in San Francisco?" }],
+        model: 'openai',
+        tools,
+        cache: false
+    });
+
+    t.is(response.status, 200, 'Response status should be 200');
+    t.truthy(response.data.choices[0].message.tool_calls, 'Response should include tool calls');
+    const toolCall = response.data.choices[0].message.tool_calls[0];
+    t.is(toolCall.function.name, 'get_current_weather', 'Should call the weather function');
+    
+    const args = JSON.parse(toolCall.function.arguments);
+    t.is(args.location, 'San Francisco', 'Should extract correct location');
+});
+
+/**
+ * Test: SearchGPT Compatibility
+ * 
+ * Purpose: Verify that searchgpt functionality remains intact when function calling is enabled
+ */
+test('should maintain searchgpt functionality with function calling', async t => {
+    // First test regular function calling
+    const customTools = [{
+        type: "function",
+        function: {
+            name: "custom_function",
+            description: "A custom function",
+            parameters: {
+                type: "object",
+                properties: {
+                    param: { type: "string" }
+                },
+                required: ["param"],
+                additionalProperties: false
+            }
+        }
+    }];
+
+    const regularResponse = await axiosInstance.post('/openai/chat/completions', {
+        messages: [{ role: 'user', content: "Call the custom function with 'test'" }],
+        model: 'openai',
+        tools: customTools,
+        cache: false
+    });
+
+    t.is(regularResponse.status, 200, 'Regular function call response status should be 200');
+    t.truthy(regularResponse.data.choices[0].message.tool_calls, 'Should include custom tool calls');
+
+    // Then test searchgpt
+    const searchResponse = await axiosInstance.post('/', {
+        messages: [{ role: 'user', content: "What's the latest news about AI?" }],
+        model: 'searchgpt',
+        cache: false
+    });
+
+    t.is(searchResponse.status, 200, 'SearchGPT response status should be 200');
+    const content = searchResponse.data;
+    t.truthy(content.includes('search') || content.includes('found'), 'Response should indicate search was performed');
+});
+
+/**
+ * Test: Function Calling with Streaming
+ * 
+ * Purpose: Verify that function calling works with streaming responses
+ */
+test('should support function calling with streaming', async t => {
+    const tools = [{
+        type: "function",
+        function: {
+            name: "get_current_weather",
+            description: "Get the current weather",
+            parameters: {
+                type: "object",
+                properties: {
+                    location: { type: "string" }
+                },
+                required: ["location"],
+                additionalProperties: false
+            }
+        }
+    }];
+
+    const response = await axiosInstance.post('/openai/chat/completions', {
+        messages: [{ role: 'user', content: "What's the weather in Paris?" }],
+        model: 'openai',
+        tools,
+        stream: true,
+        cache: false
+    });
+
+    t.is(response.status, 200, 'Response status should be 200');
+    t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Should use SSE content type');
+});
+
+/**
  * Test: Streaming Responses (Commented Out)
  *
  * Purpose: Verify that the API supports streaming responses for the OpenAI-compatible endpoint.

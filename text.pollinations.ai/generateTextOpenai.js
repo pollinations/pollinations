@@ -51,14 +51,29 @@ export async function generateText(messages, options, performSearch = false) {
         }
     }
 
+    // Determine which tools to use
+    let tools = [];
+    if (performSearch) {
+        tools = [searchToolDefinition, scrapeToolDefinition];
+    }
+    if (options.tools && Array.isArray(options.tools)) {
+        tools = performSearch ? [...tools, ...options.tools] : options.tools;
+    }
+
     let completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
-        tool_choice: performSearch ? "auto" : undefined,
+        tools: tools.length > 0 ? tools : undefined,
+        tool_choice: tools.length > 0 ? options.tool_choice || "auto" : undefined,
+        stream: options.stream,
     });
+
+    // If streaming is enabled, return the completion directly
+    if (options.stream) {
+        return completion;
+    }
 
     let responseMessage = completion.choices[0].message;
 
@@ -67,27 +82,31 @@ export async function generateText(messages, options, performSearch = false) {
         messages.push(responseMessage);
 
         for (const toolCall of toolCalls) {
+            let toolResponse;
+
+            // Handle built-in search tools
             if (toolCall.function.name === 'web_search') {
                 const args = JSON.parse(toolCall.function.arguments);
-                const searchResponse = await performWebSearch(args);
-                
-                messages.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: searchResponse
-                });
+                toolResponse = await performWebSearch(args);
             } else if (toolCall.function.name === 'web_scrape') {
                 const args = JSON.parse(toolCall.function.arguments);
-                const scrapeResponse = await performWebScrape(args);
-                
-                messages.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: scrapeResponse
-                });
+                toolResponse = await performWebScrape(args);
             }
+            // Handle custom tool calls
+            else if (options.tool_handlers && typeof options.tool_handlers[toolCall.function.name] === 'function') {
+                const args = JSON.parse(toolCall.function.arguments);
+                toolResponse = await options.tool_handlers[toolCall.function.name](args);
+            } else {
+                console.warn(`No handler found for tool: ${toolCall.function.name}`);
+                toolResponse = `Function ${toolCall.function.name} is not implemented`;
+            }
+            
+            messages.push({
+                tool_call_id: toolCall.id,
+                role: "tool",
+                name: toolCall.function.name,
+                content: typeof toolResponse === 'string' ? toolResponse : JSON.stringify(toolResponse)
+            });
         }
 
         completion = await openai.chat.completions.create({
@@ -95,8 +114,8 @@ export async function generateText(messages, options, performSearch = false) {
             messages,
             seed: options.seed,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-            tools: [searchToolDefinition, scrapeToolDefinition],
-            tool_choice: "auto",
+            tools: tools.length > 0 ? tools : undefined,
+            tool_choice: tools.length > 0 ? options.tool_choice || "auto" : undefined,
             max_tokens: 4096,
         });
         responseMessage = completion.choices[0].message;

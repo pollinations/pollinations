@@ -23,11 +23,11 @@ const CopyEmailButton = () => {
         fontWeight: "bold",
         lineHeight: "40px",
         fontSize: { xs: "20px", sm: "28px" },
-        backgroundColor: `${Colors.lime}80`,
+        backgroundColor: `${Colors.lime}`,
         borderRadius: "5px",
         padding: "0.3em 0.6em",
         "&:hover": {
-          backgroundColor: `${Colors.lime}`,
+          backgroundColor: `${Colors.lime}80`,
         },
       }}
     >

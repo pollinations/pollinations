@@ -186,6 +186,7 @@ export const ImageFeed = memo(() => {
               backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
               borderRadius: "20px",
               marginTop: "2em",
+              marginBottom: "5em",
             }}
           >
             <Grid

@@ -9,12 +9,10 @@ import useRandomSeed from "../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { useTheme } from "@material-ui/core/styles"
 import useMediaQuery from "@material-ui/core/useMediaQuery"
-import StyledLink from "../components/StyledLink"
 import { logoPrefix, projectCategories, projects, imageDimension } from "../config/userBuiltText"
 import CopyEmailButton from "../components/CopyEmailButton"
 
 const useStyles = makeStyles((theme) => ({
-  root: {},
   gridContainer: {
     marginBottom: "2em",
     justifyContent: "center",
@@ -25,62 +23,11 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     alignItems: "center",
   },
-  projectImage: {
-    width: "48px",
-    height: "48px",
-    objectFit: "cover",
-    margin: "10px",
-  },
-  sectionHeading: {
-    color: Colors.lime,
-    fontFamily: Fonts.body,
-    fontStyle: "normal",
-    fontWeight: "500",
-    fontSize: "1.1em",
-    lineHeight: "22px",
-    marginTop: theme.spacing(4),
-    marginBottom: theme.spacing(2),
-    textAlign: "center",
-  },
-  listProjectText: {
-    color: Colors.offwhite,
-    textAlign: "center",
-    marginTop: theme.spacing(4),
-    marginBottom: theme.spacing(4),
-    fontSize: "1.1em",
-  },
-  scaledImageURLHeading: {
-    transform: "scale(1)",
-    transformOrigin: "center",
-    width: "100%",
-    maxWidth: "100%",
-  },
-  callToActionContainer: {
-    backgroundColor: Colors.offblack,
-    padding: theme.spacing(4),
-    borderRadius: "8px",
-    textAlign: "center",
-    border: `1px solid ${Colors.lime}`,
-  },
-  callToActionText: {
-    color: Colors.lime,
-    fontSize: "1.5em",
-    maxWidth: "500px",
-    margin: "0 auto",
-  },
-  callToActionLink: {
-    color: Colors.offwhite,
-    fontSize: "1em",
-    textDecoration: "none",
-    "&:hover": {
-      textDecoration: "underline",
-    },
-  },
   projectsContainer: {
     maxHeight: "600px",
     overflowY: "auto",
     overflowX: "hidden",
-    padding: "3em",
+    padding: "1.5em",
     borderRadius: "10px",
     scrollbarWidth: "thin",
     scrollbarColor: `${Colors.gray1} transparent`,
@@ -95,8 +42,14 @@ const UserBuilt = () => {
   const [selectedCategory, setSelectedCategory] = useState("apps")
   const categoryKeys = projectCategories.map((category) => category.key)
 
+
+
+
+
+
+
   const renderProjects = (projectList) => (
-    <Grid container spacing={4} className={classes.gridContainer}>
+    <Grid container spacing={4} className={classes.gridContainer} >
       {projectList.map((project, index) => (
         <Grid
           container
@@ -167,12 +120,6 @@ const UserBuilt = () => {
     border: `1px solid ${Colors.lime}`,
   })
 
-  const handleLinkClick = (e) => {
-    e.preventDefault()
-    navigator.clipboard.writeText("hello@thot-labs.com").then(() => {
-      alert("Copied")
-    })
-  }
 
   return (
     <Box
@@ -247,7 +194,10 @@ const UserBuilt = () => {
 
         <Box
           className={classes.projectsContainer}
-          style={{ backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)" }}
+          style={{ 
+            backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
+            borderRadius: "20px",
+          }}
         >
           {renderProjects(projects[selectedCategory])}
         </Box>
@@ -341,7 +291,11 @@ const ProjectImage = ({ name }) => {
     seed,
   })
 
-  return <img src={imageUrl} alt={name} style={{ width: imageDimension, height: imageDimension }} />
+  return <img src={imageUrl} alt={name} style={{ width: imageDimension, height: imageDimension, borderRadius: "1em" }} />
 }
 
 export default UserBuilt
+
+
+
+

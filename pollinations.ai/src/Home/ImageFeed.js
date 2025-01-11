@@ -193,8 +193,8 @@ export const ImageFeed = memo(() => {
               item
               xs={12}
               style={{
-                marginRight: "3em",
-                marginLeft: "3em",
+                marginRight: "1em",
+                marginLeft: "1em",
                 marginBottom: "0em",
                 marginTop: "1em",
               }}

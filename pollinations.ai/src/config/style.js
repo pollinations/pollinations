@@ -4,7 +4,7 @@ import styled from "@emotion/styled"
 export const LinkStyle = styled.a`
   font-family: ${Fonts.body};
   font-style: normal;
-  font-weight: 900;
+  font-weight: 600;
   font-size: 18px;
   line-height: 22px;
   text-decoration-line: underline;

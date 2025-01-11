@@ -24,7 +24,6 @@ const useStyles = makeStyles((theme) => ({
     alignItems: "center",
   },
   projectsContainer: {
-    maxHeight: "600px",
     overflowY: "auto",
     overflowX: "hidden",
     padding: "1.5em",
@@ -92,7 +91,7 @@ const UserBuilt = () => {
             <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
               <EmojiRephrase>{project.description}</EmojiRephrase>
             </span>
-            <br />
+     
             {project.repo && renderRepoLink(project.repo)}
           </Grid>
         </Grid>

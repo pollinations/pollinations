@@ -419,32 +419,30 @@ export function CodeExamples({ image = {} }) {
                 language={language}
                 showLineNumbers={text.split("\n").length > 1}
                 customStyle={{
-                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",                  
+                  backgroundColor: isMobile ? "transparent" : "rgba(0, 0, 0, 0.3)",
                   color: Colors.offwhite,
-                  height: "500px",
+                  height: "auto",
                   border: `0px`,
                   marginTop: "1em",
-                  marginLeft: "10px",
-                  marginRight: "10px",
-                  padding: "20px",
+                  paddingTop: "10px",
+                  paddingBottom: "10px",
                   boxShadow: "none",
                   borderRadius: "20px",
-                  overflowY: "scroll",
-                  scrollbarWidth: "thin", // For Firefox
-                  scrollbarColor: `${Colors.gray1} transparent`, // For Firefox
+                  overflowX: "hidden", // Prevent horizontal overflow
+                  whiteSpace: "pre-wrap", // Enable text wrapping
                 }}
               />
               <IconButton
                 onClick={() => handleCopy(text)}
                 style={{
                   position: "absolute",
-                  top: 5,
+                  top: 15,
                   right: 15,
                   color: Colors.lime,
                   marginRight: "10px",
                 }}
               >
-                <FileCopyIcon />
+                <FileCopyIcon fontSize="large" />
               </IconButton>
             </Box>
           );

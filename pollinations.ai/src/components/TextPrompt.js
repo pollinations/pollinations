@@ -54,12 +54,12 @@ export function TextPrompt({
             width: "100%",
             height: "150px",
             backgroundColor: "transparent",
-            border: edit ? `0.1px solid ${Colors.offwhite}` : "none",
-            borderRadius: "5px",
             color: Colors.lime,
             fontSize: edit ? "1.5rem" : "1.2rem",
             cursor: "pointer",
-            overflow: "auto",
+            overflowY: "auto",
+            overflowX: "hidden", // Prevent horizontal overflow
+
             ...scrollbarStyles,
           }}
           onClick={() => {

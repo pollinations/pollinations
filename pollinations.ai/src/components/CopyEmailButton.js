@@ -15,7 +15,6 @@ const CopyEmailButton = () => {
   return (
     <Button
       onClick={handleLinkClick}
-      variant="contained"
       sx={{
         color: Colors.offblack,
         userSelect: "none",
@@ -27,7 +26,7 @@ const CopyEmailButton = () => {
         borderRadius: "5px",
         padding: "0.3em 0.6em",
         "&:hover": {
-          backgroundColor: `${Colors.lime}80`,
+          backgroundColor: `${Colors.lime}90`,
         },
       }}
     >

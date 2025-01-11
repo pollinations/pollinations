@@ -143,9 +143,6 @@ function shouldBypassDelay(req) {
 
 // Helper function for consistent error responses
 function sendErrorResponse(res, error, statusCode = 500) {
-    errorLog('Error:', error.message);
-    console.error(error.stack); // Print stack trace
-    
     const errorResponse = {
         error: {
             message: error.message,
@@ -161,6 +158,11 @@ function sendErrorResponse(res, error, statusCode = 500) {
             }
         }
     };
+
+    // Log detailed error information to stderr
+    console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
+    console.error('Stack trace:', error.stack);
+    errorLog('Error:', error.message);
 
     res.status(statusCode).json(errorResponse);
 }

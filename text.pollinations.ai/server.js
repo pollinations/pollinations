@@ -46,16 +46,16 @@ app.get('/', (req, res) => {
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
-const surMistral = wrapModelWithContext(surSystemPrompt, generateTextMistral);
+const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway,"mistral");
 // const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
-const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextMistral);
+const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
 // Create custom instance of Midijourney
 const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
 // Create custom instance of Rtist
 const rtist = wrapModelWithContext(rtistPrompt, generateText);
 // Create custom instance of Evil backed by Command-R
-const evilCommandR = wrapModelWithContext(evilPrompt, generateTextMistral);
+const evilCommandR = wrapModelWithContext(evilPrompt,  generateTextScaleway, "mistral");
 
 app.set('trust proxy', true);
 

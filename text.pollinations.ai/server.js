@@ -285,7 +285,7 @@ function getRequestData(req) {
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     // Try request body first (both spellings), then HTTP header (standard spelling)
     const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
-    const isImagePollinationsReferrer = referrer.toLowerCase().includes('pollinations.ai') || referrer.toLowerCase().includes('thot');
+    const isImagePollinationsReferrer = referrer.toLowerCase().includes('pollinations.ai') || referrer.toLowerCase().includes('thot') || referrer.toLowerCase().includes('ai-ministries.com');
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     const stream = data.stream || false; 
 

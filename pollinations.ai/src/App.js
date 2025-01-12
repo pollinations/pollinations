@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from "react-router"
 import { SEOMetadata } from "./components/Helmet"
-import MarkdownTemplate from "./components/MarkdownTemplate"
 import Header from "./Home/Header"
 import Footer from "./Home/Footer"
 import Home from "./Home"
@@ -13,12 +12,7 @@ const AppRoutes = [
     element: <Home />,
     key: "home",
   },
-  {
-    exact: true,
-    path: "/impressum",
-    element: <MarkdownTemplate label="impressum" />,
-    key: "impressum",
-  },
+
   {
     exact: true,
     path: "/terms",

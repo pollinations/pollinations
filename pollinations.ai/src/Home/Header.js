@@ -18,7 +18,6 @@ const Header = () => {
           alignItems: { xs: "center", md: "flex-start" },
           justifyContent: { xs: "center", md: "flex-start" },
           width: "100%",
-          maxWidth: "1000px",
           marginLeft: { xs: "0em", md: "3em" },
           position: "relative",
         }}

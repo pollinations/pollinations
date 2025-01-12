@@ -1,7 +1,7 @@
 import React from "react"
-import { Box, Link, useMediaQuery } from "@material-ui/core"
+import { Box, Link, useMediaQuery } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
-import { useTheme } from "@material-ui/core/styles"
+import { useTheme } from "@mui/material/styles"
 
 export function ModelInfo({ model, wasPimped, referrer }) {
   const theme = useTheme()

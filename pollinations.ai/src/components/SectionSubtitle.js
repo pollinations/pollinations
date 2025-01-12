@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
 import { Colors } from "../config/global";
 import { EmojiRephrase } from "./EmojiRephrase";
 

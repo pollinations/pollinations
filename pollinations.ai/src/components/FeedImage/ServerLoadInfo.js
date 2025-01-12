@@ -1,4 +1,4 @@
-import { Typography, Box } from "@material-ui/core"
+import { Typography, Box } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
 
 export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {

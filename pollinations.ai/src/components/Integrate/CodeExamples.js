@@ -1,5 +1,5 @@
 import { useState, useLayoutEffect } from "react"
-import { AppBar, ButtonGroup, Button, Box, IconButton } from "@material-ui/core"
+import { AppBar, ButtonGroup, Button, Box, IconButton } from "@mui/material"
 import { CodeBlock } from "react-code-blocks"
 import { URLExplanation } from "../ImageHeading"
 import { Colors } from "../../config/global"
@@ -7,7 +7,7 @@ import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
 import { SectionBgBox } from "../SectionBgBox"
-import FileCopyIcon from '@material-ui/icons/FileCopy'
+import FileCopyIcon from '@mui/icons-material/FileCopy'
 import CODE_EXAMPLES from '../../config/codeExamplesText';
 
 

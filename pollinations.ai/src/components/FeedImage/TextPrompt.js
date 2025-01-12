@@ -1,5 +1,5 @@
 import React from "react"
-import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@material-ui/core"
+import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@mui/material"
 import ReactMarkdown from "react-markdown"
 import { Colors, MOBILE_BREAKPOINT } from "../../config/global"
 

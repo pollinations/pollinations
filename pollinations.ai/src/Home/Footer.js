@@ -1,6 +1,6 @@
 import styled from "@emotion/styled"
 import { NavLink } from "react-router-dom"
-import { Box } from "@material-ui/core"
+import { Box } from "@mui/material"
 import { SocialLinks } from "../components/Social"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../config/global"
 import StyledLink from "../components/StyledLink"

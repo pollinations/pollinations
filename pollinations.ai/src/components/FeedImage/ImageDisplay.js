@@ -1,5 +1,5 @@
 import React, { memo } from "react"
-import { Typography } from "@material-ui/core"
+import { Typography } from "@mui/material"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../PromptTooltip"
 import styled from '@emotion/styled';

@@ -12,8 +12,8 @@ import {
   IconButton,
   Button,
   useMediaQuery,
-} from "@material-ui/core"
-import InfoIcon from "@material-ui/icons/Info"
+} from "@mui/material"
+import InfoIcon from "@mui/icons-material/Info"
 import { Colors, MOBILE_BREAKPOINT, Fonts } from "../../config/global"
 import { CustomTooltip } from "../CustomTooltip"
 import discordLogo from "../../assets/icons/discord.png"

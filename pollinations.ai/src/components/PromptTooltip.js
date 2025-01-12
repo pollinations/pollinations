@@ -1,5 +1,6 @@
 import React from "react"
-import { withStyles, Tooltip, Typography, Box } from "@material-ui/core"
+import { Tooltip, Typography, Box } from "@mui/material"
+import { withStyles } from "@mui/styles" 
 import { SHOW_PROMPT_TOOLTIP } from "../config/global"
 
 import { Colors } from "../config/global"

@@ -1,4 +1,4 @@
-import { useMediaQuery } from "@material-ui/core";
+import { useMediaQuery } from "@mui/material";
 import { MOBILE_BREAKPOINT } from "../config/global";
 
 const useIsMobile = () => {

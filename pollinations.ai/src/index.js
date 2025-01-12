@@ -1,5 +1,5 @@
-import { createTheme, ThemeProvider } from "@material-ui/core";
-import CssBaseline from "@material-ui/core/CssBaseline";
+import { createTheme, ThemeProvider } from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
 import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";

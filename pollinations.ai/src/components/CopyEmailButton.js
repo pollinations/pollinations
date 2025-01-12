@@ -1,6 +1,6 @@
 import React from "react"
 import { Button } from "@mui/material"
-import FileCopyIcon from "@material-ui/icons/FileCopy"
+import FileCopyIcon from "@mui/icons-material/FileCopy"
 import { Colors } from "../config/global"
 
 const CopyEmailButton = () => {

@@ -1,10 +1,10 @@
-import Typography from "@material-ui/core/Typography"
+import Typography from "@mui/material/Typography"
 import Markdown from "markdown-to-jsx"
 import { range, zipObj } from "ramda"
 import useFetchText from "../hooks/useFetchText"
 import useMarkdown from "../hooks/useMarkdown"
-import { useTheme } from "@material-ui/core/styles"
-import useMediaQuery from "@material-ui/core/useMediaQuery"
+import { useTheme } from "@mui/material/styles"
+import useMediaQuery from "@mui/material/useMediaQuery"
 import styled from "@emotion/styled"
 
 // replacements allow replacing dynamic content in the markdown

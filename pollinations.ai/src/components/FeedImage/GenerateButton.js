@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from "@material-ui/core";
+import { Button } from "@mui/material";
 import { Colors } from "../../config/global";
 import { styled } from '@mui/material/styles';
 

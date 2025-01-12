@@ -1,5 +1,7 @@
 import React, { useState } from "react"
-import { useMediaQuery, useTheme, makeStyles } from "@material-ui/core"
+import { useMediaQuery, useTheme } from "@mui/material"
+import { makeStyles } from '@mui/styles';
+
 
 import { Colors } from "../config/global"
 import { projects } from "../config/projectText"

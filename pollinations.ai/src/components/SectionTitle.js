@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, useMediaQuery } from "@material-ui/core";
+import { Typography, useMediaQuery } from "@mui/material";
 import { Colors } from "../config/global";
 
 function SectionTitle({ title }) {

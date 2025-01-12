@@ -1,5 +1,5 @@
 import React from "react"
-import { Grid, Link } from "@material-ui/core"
+import { Grid, Link } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
 import StyledLink from "../StyledLink"
 import { EmojiRephrase } from "../EmojiRephrase"

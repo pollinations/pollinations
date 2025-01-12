@@ -1,5 +1,5 @@
 import React from "react"
-import { AppBar, ButtonGroup, Button } from "@material-ui/core"
+import { AppBar, ButtonGroup, Button } from "@mui/material"
 import { projectCategories } from "../../config/projectText"
 import { Colors } from "../../config/global"
 

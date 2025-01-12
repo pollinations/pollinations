@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { makeStyles } from "@material-ui/core/styles"
+import { makeStyles } from '@mui/styles';
 import { ImageURLHeading } from "../components/ImageHeading"
 import { Colors, Fonts } from "../config/global"
 import { GenerativeImageURLContainer } from "../components/ImageHeading"

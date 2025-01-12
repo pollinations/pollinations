@@ -1,5 +1,5 @@
 import styled from "@emotion/styled"
-import { Box, Container, Paper } from "@material-ui/core"
+import { Box, Container, Paper } from "@mui/material"
 import { Colors, Fonts, MOBILE_BREAKPOINT } from "../config/global"
 import { useMemo, useState, useEffect } from "react"
 import useRandomSeed from "../hooks/useRandomSeed"

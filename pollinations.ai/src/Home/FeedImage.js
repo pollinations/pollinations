@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
-import { Grid, Box, useMediaQuery, CircularProgress } from "@material-ui/core"
+import { Grid, Box, useMediaQuery, CircularProgress } from "@mui/material"
 import { useFeedLoader } from "../utils/useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow"
 import debug from "debug"

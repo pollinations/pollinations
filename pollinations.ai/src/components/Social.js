@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link } from '@material-ui/core'
+import { Link } from '@mui/material'
 import { SOCIAL_LINKS } from '../config/socialLinks'
 import styled from '@emotion/styled'
 import { Colors, MOBILE_BREAKPOINT } from '../config/global'

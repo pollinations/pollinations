@@ -1,7 +1,7 @@
 import React from "react";
 import useRandomSeed from "../hooks/useRandomSeed";
 import ReactMarkdown from "react-markdown";
-import { Typography } from "@material-ui/core";
+import { Typography } from "@mui/material";
 import StyledLink from "./StyledLink";
 import useResponsivePollinationsText from "../hooks/useResponsivePollinationsText";
 import PromptTooltip from "./PromptTooltip";

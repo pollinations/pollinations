@@ -26,6 +26,7 @@ const Footer = () => {
         </SocialContainer> */}
       <Box
         display="flex"
+        flexDirection={isMobile ? "column" : "row"}
         alignItems="center"
         justifyContent="space-between"
         width="100%"

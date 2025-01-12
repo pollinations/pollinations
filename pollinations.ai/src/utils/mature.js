@@ -1,4 +1,4 @@
-import { words } from "../data/matureWords.js";
+import { words } from "../config/matureWords.js";
 
 const wordsSet = new Set([...words, ...words.map(word => word + "s")]);
 

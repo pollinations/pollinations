@@ -3,6 +3,8 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import crypto from 'crypto';
 import debug from 'debug';
+import { promises as fs } from 'fs';
+import path from 'path';
 import generateTextMistral from './generateTextMistral.js';
 import generateTextKarma from './generateTextKarma.js';
 import generateTextClaude from './generateTextClaude.js';
@@ -25,15 +27,79 @@ import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
-import fs from 'fs';
-import path from 'path';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
+
+const BANNED_PHRASES = [
+    "600-800 words"
+];
+
+const blockedIPs = new Set();
+
+async function blockIP(ip) {
+    // Only proceed if IP isn't already blocked
+    if (!blockedIPs.has(ip)) {
+        blockedIPs.add(ip);
+        log('IP blocked:', ip);
+        
+        try {
+            // Append IP to log file with newline
+            await fs.appendFile(BLOCKED_IPS_LOG, `${ip}\n`, 'utf8');
+        } catch (error) {
+            errorLog('Failed to write blocked IP to log file:', error);
+        }
+    }
+}
+
+function isIPBlocked(ip) {
+    return blockedIPs.has(ip);
+}
+
+async function checkBannedPhrases(messages, ip) {
+    const messagesString = JSON.stringify(messages).toLowerCase();
+    for (const phrase of BANNED_PHRASES) {
+        if (messagesString.includes(phrase.toLowerCase())) {
+            await blockIP(ip);
+            throw new Error(`Message contains banned phrase. IP has been blocked.`);
+        }
+    }
+}
 
 const app = express();
 
 const log = debug('pollinations:server');
 const errorLog = debug('pollinations:error');
+const BLOCKED_IPS_LOG = path.join(process.cwd(), 'blocked_ips.txt');
+
+// Load blocked IPs from file on startup
+async function loadBlockedIPs() {
+    try {
+        const data = await fs.readFile(BLOCKED_IPS_LOG, 'utf8');
+        const ips = data.split('\n').filter(ip => ip.trim());
+        for (const ip of ips) {
+            blockedIPs.add(ip.trim());
+        }
+        log(`Loaded ${blockedIPs.size} blocked IPs from file`);
+    } catch (error) {
+        if (error.code !== 'ENOENT') {
+            errorLog('Error loading blocked IPs:', error);
+        }
+    }
+}
+
+// Load blocked IPs before starting server
+loadBlockedIPs().catch(error => {
+    errorLog('Failed to load blocked IPs:', error);
+});
+
+// Middleware to block IPs
+app.use((req, res, next) => {
+    const ip = getIp(req);
+    if (isIPBlocked(ip)) {
+        return res.status(403).end();
+    }
+    next();
+});
 
 // Remove the custom JSON parsing middleware and use the standard bodyParser
 app.use(bodyParser.json({ limit: '5mb' }));
@@ -73,7 +139,7 @@ function getQueue(ip) {
 export function getIp(req) {
     const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.headers['referer'] || req.socket.remoteAddress;
     if (!ip) return null;
-    const ipSegments = ip.split('.').slice(0, 2).join('.');
+    const ipSegments = ip.split('.').slice(0, 4).join('.');
     // if (ipSegments === "128.116")
     //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
     return ipSegments;
@@ -112,7 +178,7 @@ async function handleRequest(req, res, requestData) {
             }
         }
     } catch (error) {
-        sendErrorResponse(res, error);
+        sendErrorResponse(res, error, requestData);
     }
     if (!shouldBypassDelay(req)) {
         await sleep(8000);
@@ -142,14 +208,16 @@ function shouldBypassDelay(req) {
 }
 
 // Helper function for consistent error responses
-function sendErrorResponse(res, error, statusCode = 500) {
+function sendErrorResponse(res, error, requestData, statusCode = 500) {
     const errorResponse = {
         error: {
             message: error.message,
             status: statusCode,
+            ip: getIp(res.req),
             timestamp: new Date().toISOString(),
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
             details: {
+                requestData: requestData,
                 requestParameters: res.locals.requestData || {},
                 prompt: res.locals.prompt,
                 model: res.locals.model,
@@ -221,6 +289,14 @@ function getRequestData(req) {
 
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
+    const ip = getIp(req);
+    
+    // Check for banned phrases first
+    try {
+        await checkBannedPhrases(requestData.messages, ip);
+    } catch (error) {
+        return sendErrorResponse(res, error, requestData, 403);
+    }
 
     const cacheKey = createHashKey(requestData);
 
@@ -242,16 +318,47 @@ async function processRequest(req, res, requestData) {
         return;
     }
     
-    const ip = getIp(req);
+    if (isIPBlocked(ip)) {
+        errorLog('Blocked IP:', ip);
+        const errorResponse = {
+            error: 'Forbidden',
+            status: 403,
+            details: {
+                blockedIp: ip,
+                timestamp: new Date().toISOString()
+            }
+        };
+        return res.status(403).json(errorResponse);
+    }
+
     const queue = getQueue(ip);
 
     if (queue.size >= 60) {
         errorLog('Queue size limit exceeded for IP: %s', ip);
-        return res.status(429).send('Too many requests in queue. Please try again later.');
+        const errorResponse = {
+            error: 'Too Many Requests',
+            status: 429,
+            details: {
+                queueSize: queue.size,
+                maxQueueSize: 60,
+                currentIp: ip,
+                timestamp: new Date().toISOString(),
+                retryAfter: '60', // Suggested retry after 60 seconds
+                activeRequests: queue.pending,
+                isPending: queue.isPaused,
+                isPollinationsReferrer: requestData.isImagePollinationsReferrer,
+                requestPath: req.path,
+                requestMethod: req.method
+            },
+            message: 'Too many requests in queue. Please try again later.',
+            suggestion: 'Consider reducing request frequency or waiting for your previous requests to complete.'
+        };
+        return res.status(429)
+                 .set('Retry-After', '60')
+                 .json(errorResponse);
     }
-
-    log('Cache miss for key:', cacheKey);
-    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
+    
+    const bypassQueue = true;//requestData.isImagePollinationsReferrer;// || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
         await handleRequest(req, res, requestData);
@@ -266,7 +373,7 @@ app.get('/*', async (req, res) => {
     try {
         await processRequest(req, res, {...requestData, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error);
+        sendErrorResponse(res, error, requestData);
     }
 });
 
@@ -281,7 +388,7 @@ app.post('/', async (req, res) => {
     try {
         await processRequest(req, res, {...requestParams, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error);
+        sendErrorResponse(res, error, requestParams);
     }
 });
 
@@ -302,7 +409,7 @@ app.get('/openai/models', (req, res) => {
 app.post('/openai*', async (req, res) => {
 
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        return sendErrorResponse(res, new Error('Invalid messages array'), 400);
+        return sendErrorResponse(res, new Error('Invalid messages array'), req.body, 400);
     }
 
     const requestParams = getRequestData(req);
@@ -310,7 +417,7 @@ app.post('/openai*', async (req, res) => {
     try {
         await processRequest(req, res, requestParams);
     } catch (error) {
-        sendErrorResponse(res, error);
+        sendErrorResponse(res, error, requestParams);
     }
 
 })

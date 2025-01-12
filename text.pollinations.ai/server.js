@@ -34,6 +34,12 @@ const BANNED_PHRASES = [
     "600-800 words"
 ];
 
+const WHITELISTED_DOMAINS = [
+    'pollinations.ai',
+    'thot',
+    'ai-ministries.com'
+];
+
 const blockedIPs = new Set();
 
 async function blockIP(ip) {
@@ -285,7 +291,7 @@ function getRequestData(req) {
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
     // Try request body first (both spellings), then HTTP header (standard spelling)
     const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
-    const isImagePollinationsReferrer = referrer.toLowerCase().includes('pollinations.ai') || referrer.toLowerCase().includes('thot') || referrer.toLowerCase().includes('ai-ministries.com');
+    const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     const stream = data.stream || false; 
 

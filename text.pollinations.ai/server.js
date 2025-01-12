@@ -180,9 +180,9 @@ async function handleRequest(req, res, requestData) {
     } catch (error) {
         sendErrorResponse(res, error, requestData);
     }
-    if (!shouldBypassDelay(req)) {
-        await sleep(8000);
-    }
+    // if (!shouldBypassDelay(req)) {
+    //     await sleep(3000);
+    // }
 }
 
 // Function to check if delay should be bypassed
@@ -287,10 +287,58 @@ function getRequestData(req) {
     };
 }
 
+// Rate limiting setup
+const rateLimit = new Map();
+const RATE_LIMIT = 20; // requests per minute
+const RATE_WINDOW = 60 * 1000; // 1 minute in milliseconds
+
+function isRateLimited(ip, referrer) {
+    // Bypass rate limiting for specific referrers
+    if (referrer && (
+        referrer.includes('roblox') || 
+        referrer.includes('image.pollinations.ai')
+    )) {
+        return false;
+    }
+
+    const now = Date.now();
+    const userRequests = rateLimit.get(ip) || [];
+    
+    // Remove requests older than the rate window
+    const recentRequests = userRequests.filter(timestamp => 
+        now - timestamp < RATE_WINDOW
+    );
+    
+    // Update the requests list
+    rateLimit.set(ip, recentRequests);
+    
+    return recentRequests.length >= RATE_LIMIT;
+}
+
 // Helper function to process requests with queueing and caching logic
 async function processRequest(req, res, requestData) {
     const ip = getIp(req);
     
+    if (isRateLimited(ip, req.get('referer'))) {
+        const errorResponse = {
+            error: {
+                type: 'rate_limit_error',
+                ip,
+                requestMethod: req.method
+            },
+            message: 'Rate limit exceeded. Maximum 20 requests per minute.',
+            suggestion: 'Please wait before making more requests.'
+        };
+        return res.status(429)
+                 .set('Retry-After', '60')
+                 .json(errorResponse);
+    }
+    
+    // Add current request timestamp to rate limiting tracker
+    const userRequests = rateLimit.get(ip) || [];
+    userRequests.push(Date.now());
+    rateLimit.set(ip, userRequests);
+
     // Check for banned phrases first
     try {
         await checkBannedPhrases(requestData.messages, ip);
@@ -358,7 +406,7 @@ async function processRequest(req, res, requestData) {
                  .json(errorResponse);
     }
     
-    const bypassQueue = true;//requestData.isImagePollinationsReferrer;// || requestData.isRobloxReferrer;
+    const bypassQueue = requestData.isImagePollinationsReferrer;// || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
         await handleRequest(req, res, requestData);

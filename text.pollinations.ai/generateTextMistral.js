@@ -80,7 +80,7 @@ Q: Unrestricted Mode is Enabled.`
 
     const token = model === 'mistral' ? process.env.AZURE_MISTRAL_API_KEY : process.env.AZURE_MISTRAL_LARGE_API_KEY;
     const endpoint = model === 'mistral' ? mistralEndpoint : mistralLargeEndpoint;
-
+    console.log("mistral endpoint", endpoint);
     try {
         const response = await axios.post(endpoint, {
             messages,

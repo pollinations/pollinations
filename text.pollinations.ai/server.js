@@ -17,6 +17,7 @@ import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
+import { generateTextWithSearch } from './generateTextSearch.js';
 import { generateText as generateTextRoblox } from './generateTextOpenaiRoblox.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
@@ -342,7 +343,7 @@ async function generateTextBasedOnModel(messages, options) {
             'unity': () => unityMistralLarge(messages, options),
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateText(messages, options, true),
+            'searchgpt': () => generateTextWithSearch(messages, options),
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),

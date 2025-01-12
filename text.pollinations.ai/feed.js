@@ -26,7 +26,7 @@ function setupFeedEndpoint(app) {
             const eventData = {
                 response,
                 parameters,
-                ip
+                // ip
             };
             // Properly encode the data for SSE
             const encodedData = JSON.stringify(eventData)

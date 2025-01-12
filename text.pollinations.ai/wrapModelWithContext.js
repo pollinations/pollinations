@@ -1,6 +1,6 @@
 import generateTextClaude from './generateTextClaude.js';
 
-function generateTextContextWrapper(systemMessage, generatorFunction = generateTextClaude) {
+function generateTextContextWrapper(systemMessage, generatorFunction, overrideModelName=null) {
     return async function (messages, options) {
         // Remove any existing system messages
         const filteredMessages = messages.filter(message => message.role !== 'system');
@@ -11,7 +11,7 @@ function generateTextContextWrapper(systemMessage, generatorFunction = generateT
         ];
         // Call the provided generator function with the modified messages
 
-        return generatorFunction(messagesWithSystem, options);
+        return generatorFunction(messagesWithSystem, {...options, model: overrideModelName || options.model});
     };
 }
 

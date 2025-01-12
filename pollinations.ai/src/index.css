@@ -1,10 +1,6 @@
 @import url(//fonts.googleapis.com/css?family=Open+Sans);
 
 @font-face {
-  font-family: SERAFIN;
-  src: url(./assets/fonts/SERAFIN.otf);
-}
-@font-face {
   font-family: Uncut-Sans-Variable;
   src: url(./assets/fonts/Uncut-Sans-Variable.ttf);
 }
@@ -16,10 +12,10 @@
   font-family: Uncut-Sans-Variable;
 }
 ::selection {
-  background: #485ea4; /* WebKit/Blink Browsers */
+  background: #a4487f; /* WebKit/Blink Browsers */
 }
 ::-moz-selection {
-  background: #485ea4; /* Gecko Browsers */
+  background: #780c52; /* Gecko Browsers */
 }
 
 body::-webkit-scrollbar {
@@ -64,9 +60,7 @@ error {
   font-weight: bold;
   font-size: large;
 }
-.video_container {
-  width: 100%;
-}
+
 .MuiBackdrop-root {
   background-color: rgba(0, 0, 0, 0) !important;
 }
@@ -74,25 +68,8 @@ error {
   background-color: rgba(0, 0, 0, 0) !important;
 }
 
-.feed-button {
-  position: relative;
-  overflow: hidden;
-}
 
-.feed-button::before {
-  content: ":";
-  position: absolute;
-  top: 50%;
-  left: 80%;
-  transform: translate(-50%, -50%) rotate(0deg);
-  font-size: 24px;
-  color: rgba(0, 0, 0);
-  animation: rotate 2s linear infinite;
-}
 
-.feed-button-off::before {
-  content: ""
-}
 
 @keyframes rotate {
   from {

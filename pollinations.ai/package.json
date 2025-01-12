@@ -4,11 +4,13 @@
   "version": "0.4.8",
   "private": false,
   "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "^4.11.2",
-    "@mui/material": "^6.1.0",
+    "@mui/icons-material": "^6.3.1",
+    "@mui/material": "^6.3.1",
+    "@mui/styles": "^6.3.1",
     "@pollinations/react": "^2.0.6",
     "debug": "^4.3.2",
     "front-matter": "^4.0.2",
@@ -41,7 +43,8 @@
     "usehooks-ts": "^3.0.1"
   },
   "devDependencies": {
-    "react-devtools": "^4.28.0"
+    "react-devtools": "^4.28.0",
+    "react-error-overlay": "^6.0.11"
   },
   "scripts": {
     "start": "react-scripts start",

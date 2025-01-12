@@ -23,7 +23,6 @@ export const Colors = {
 
 export const Fonts = {
   body: 'Uncut-Sans-Variable',
-  headline: 'SERAFIN'
 }
 
 export const MarkDownStyle = styled.div`

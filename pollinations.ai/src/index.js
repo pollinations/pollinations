@@ -4,6 +4,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
+import { startReportingRuntimeErrors } from "react-error-overlay";
 
 import "./index.css";
 import ScrollToTop from "./utils/ScrollToTop";
@@ -21,3 +22,9 @@ ReactDOM.render(
   </ThemeProvider>,
   document.getElementById("root")
 );
+
+startReportingRuntimeErrors({
+  onError: (error) => {
+    // Custom error handling logic if needed
+  },
+});

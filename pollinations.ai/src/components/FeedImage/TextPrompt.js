@@ -1,7 +1,7 @@
 import React from "react"
 import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@material-ui/core"
 import ReactMarkdown from "react-markdown"
-import { Colors, MOBILE_BREAKPOINT } from "../config/global"
+import { Colors, MOBILE_BREAKPOINT } from "../../config/global"
 
 export function TextPrompt({
   imageParams,

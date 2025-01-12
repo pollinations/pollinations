@@ -1,11 +1,11 @@
 import React from "react"
 import { Grid, Link } from "@material-ui/core"
-import { Colors, Fonts } from "../config/global"
-import StyledLink from "../components/StyledLink"
-import { EmojiRephrase } from "./EmojiRephrase"
-import useRandomSeed from "../hooks/useRandomSeed"
+import { Colors, Fonts } from "../../config/global"
+import StyledLink from "../StyledLink"
+import { EmojiRephrase } from "../EmojiRephrase"
+import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import { logoPrefix, imageDimension } from "../config/ProjectsText"
+import { logoPrefix, imageDimension } from "../../config/projectText"
 
 const ProjectRender = (projectList, classes, isMobile) => (
   <Grid container spacing={4} className={classes.gridContainer}>

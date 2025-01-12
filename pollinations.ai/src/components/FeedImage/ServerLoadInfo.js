@@ -1,5 +1,5 @@
 import { Typography, Box } from "@material-ui/core"
-import { Colors } from "../config/global"
+import { Colors, Fonts } from "../../config/global"
 
 export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {
   return (
@@ -11,9 +11,9 @@ export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {
       style={{ gap: "2em" }}
     >
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
-      <Typography variant="body1" component="span" style={{ fontSize: "1.6em" }}>
+      <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.body }}>
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
-      </Typography>
+      </Box>
       {/* <TimingInfo image={lastImage} /> */}
     </Box>
   )
@@ -24,9 +24,9 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2)
 
   return (
-    <span style={{ fontSize: "1.8em" }}>
+    <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.body }}>
       Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i>
-    </span>
+    </Box>
   )
 }
 const formatImagesGenerated = (num) => {

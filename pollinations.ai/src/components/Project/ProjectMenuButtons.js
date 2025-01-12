@@ -1,7 +1,7 @@
 import React from "react"
 import { AppBar, ButtonGroup, Button } from "@material-ui/core"
-import { projectCategories } from "../config/ProjectsText"
-import { Colors } from "../config/global"
+import { projectCategories } from "../../config/projectText"
+import { Colors } from "../../config/global"
 
 
 function CodeTypeSelector({ setSelectedCategory, selectedCategory }) {

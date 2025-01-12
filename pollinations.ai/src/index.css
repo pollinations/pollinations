@@ -21,12 +21,19 @@
 ::-moz-selection {
   background: #485ea4; /* Gecko Browsers */
 }
+
+body::-webkit-scrollbar {
+  display: none; /* For Chrome, Safari, and Opera */
+}
+
 body {
   margin: 20px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: black !important;
+
+
 }
 .MuiAccordionSummary-root {
   padding: 0 !important;

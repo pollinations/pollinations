@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from "@material-ui/core";
-import { Colors } from "../config/global";
+import { Colors } from "../../config/global";
 import { styled } from '@mui/material/styles';
 
 const StyledButton = styled(Button)(({ theme, isLoading, isInputChanged }) => ({
   backgroundColor: isLoading ? 'orange' : Colors.lime,
-  color: isInputChanged ? null : Colors.offblack,
+  color: isInputChanged ? Colors.offblack : Colors.offblack,
   fontSize: '1.5rem',
   fontFamily: 'Uncut-Sans-Variable',
   fontStyle: 'normal',
@@ -25,7 +25,7 @@ const StyledButton = styled(Button)(({ theme, isLoading, isInputChanged }) => ({
 }));
 
 
-export function ImagineButton({ handleButtonClick, isLoading, isInputChanged }) {
+export function GenerateButton({ handleButtonClick, isLoading, isInputChanged }) {
   return (
     <div style={{ position: 'relative', display: 'block', width: '100%' }}>
       <StyledButton

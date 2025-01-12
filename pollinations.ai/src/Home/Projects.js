@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { useMediaQuery, useTheme, makeStyles } from "@material-ui/core"
 
 import { Colors } from "../config/global"
-import { projects } from "../config/ProjectsText"
+import { projects } from "../config/projectText"
 import {
   APPLICATION_TITLE,
   APPLICATION_SUBTITLE,
@@ -16,8 +16,8 @@ import SectionSubtitle from "../components/SectionSubtitle"
 import { SectionContainer } from "../components/SectionContainer"
 import { SectionSubContainer } from "../components/SectionSubContainer"
 import { SectionBgBox } from "../components/SectionBgBox"
-import { renderProjects } from "../components/ProjectRender"
-import { CodeTypeSelector, buttonStyle } from "../components/ProjectMenuButtons"
+import { renderProjects } from "../components/Project/ProjectRender"
+import { CodeTypeSelector, buttonStyle } from "../components/Project/ProjectMenuButtons"
 
 const useStyles = makeStyles((theme) => ({
   gridContainer: {

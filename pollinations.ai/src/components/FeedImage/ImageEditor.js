@@ -14,23 +14,23 @@ import {
   useMediaQuery,
 } from "@material-ui/core"
 import InfoIcon from "@material-ui/icons/Info"
-import { Colors, MOBILE_BREAKPOINT } from "../config/global"
-import { CustomTooltip } from "./CustomTooltip"
-import discordLogo from "../assets/icons/discord.png"
-import { ImagineButton } from "./ImagineButton"
+import { Colors, MOBILE_BREAKPOINT, Fonts } from "../../config/global"
+import { CustomTooltip } from "../CustomTooltip"
+import discordLogo from "../../assets/icons/discord.png"
+import { GenerateButton } from "./GenerateButton"
 
 export const ImageEditor = memo(function ImageEditor({
-  image = {}, // Default to an empty object to prevent undefined errors
+  image = {},
   handleParamChange,
   handleFocus,
   isLoading,
   setIsInputChanged,
   handleButtonClick,
   isInputChanged,
-  imageParams, // Added imageParams as a prop
-  isStopped, // Added isStopped as a prop
-  stop, // Added stop as a prop
-  switchToEditMode, // Added switchToEditMode as a prop
+  imageParams,
+  isStopped,
+  stop,
+  switchToEditMode,
 }) {
   const { width, height, seed, enhance, nologo, model } = image
   const [anchorEl, setAnchorEl] = useState(null)
@@ -58,7 +58,7 @@ export const ImageEditor = memo(function ImageEditor({
 
   if (!image.imageURL) {
     return (
-      <Typography variant="body2" color="textSecondary">
+      <Typography variant="body2" style={{ color: Colors.offwhite }}>
         Loading...
       </Typography>
     )
@@ -71,11 +71,12 @@ export const ImageEditor = memo(function ImageEditor({
         border: "none",
         boxShadow: "none",
         backgroundColor: "transparent",
+        
       }}
     >
       <Grid container spacing={2} wrap={isMobile ? "wrap" : "nowrap"}>
         <Grid item xs={12} sm={6} md={3}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             Model
           </Typography>
           <Button
@@ -90,6 +91,7 @@ export const ImageEditor = memo(function ImageEditor({
               justifyContent: "flex-start",
               height: "56px",
               fontSize: isMobile ? "1.5rem" : "1.1rem",
+              border: "solid 0.1px " + Colors.gray2,
             }}
           >
             {model || "flux"}
@@ -112,7 +114,7 @@ export const ImageEditor = memo(function ImageEditor({
           </Menu>
         </Grid>
         <Grid item xs={6} sm={6} md={2}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             Width
           </Typography>
           <TextField
@@ -121,14 +123,14 @@ export const ImageEditor = memo(function ImageEditor({
             onChange={(e) => handleInputChange("width", parseInt(e.target.value))}
             onFocus={handleFocus}
             type="number"
-            InputProps={{
-              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+             InputProps={{
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem",  border: "solid 0.1px " + Colors.gray2, borderRadius: "4px" },
             }}
             style={{ width: "100%" }}
           />
         </Grid>
         <Grid item xs={6} sm={6} md={2}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             Height
           </Typography>
           <TextField
@@ -137,14 +139,14 @@ export const ImageEditor = memo(function ImageEditor({
             onChange={(e) => handleInputChange("height", parseInt(e.target.value))}
             onFocus={handleFocus}
             type="number"
-            InputProps={{
-              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+             InputProps={{
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem",  border: "solid 0.1px " + Colors.gray2, borderRadius: "4px" },
             }}
             style={{ width: "100%" }}
           />
         </Grid>
         <Grid item xs={6} sm={6} md={2}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             Seed
           </Typography>
           <TextField
@@ -154,13 +156,13 @@ export const ImageEditor = memo(function ImageEditor({
             onChange={(e) => handleInputChange("seed", parseInt(e.target.value))}
             onFocus={handleFocus}
             type="number"
-            InputProps={{
-              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem" },
+             InputProps={{
+              style: { color: Colors.offwhite, fontSize: isMobile ? "1.5rem" : "1.1rem",  border: "solid 0.1px " + Colors.gray2, borderRadius: "4px" },
             }}
           />
         </Grid>
         <Grid item xs={3} sm={3} md={1}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             Enhance
             <CustomTooltip
               title="AI prompt enhancer that helps create better images by improving your text prompt."
@@ -175,11 +177,11 @@ export const ImageEditor = memo(function ImageEditor({
             checked={isEnhanceChecked}
             onChange={(e) => handleInputChange("enhance", e.target.checked)}
             onFocus={handleFocus}
-            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
+            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.offwhite }}
           />
         </Grid>
         <Grid item xs={3} sm={3} md={1}>
-          <Typography variant="body2" color="textSecondary">
+          <Typography variant="body2" style={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}>
             No Logo
             <CustomTooltip
               title={<span>Disable watermark logo.</span>}
@@ -195,11 +197,11 @@ export const ImageEditor = memo(function ImageEditor({
             checked={nologo}
             onChange={(e) => handleInputChange("nologo", e.target.checked)}
             onFocus={handleFocus}
-            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.lime }}
+            style={{ fontSize: isMobile ? "1.5rem" : "1.1rem", color: Colors.offwhite }}
           />
         </Grid>
         <Grid item xs={12} sm={6} md={2} style={{ marginTop: "16px" }}>
-          <ImagineButton {...{ handleButtonClick, isLoading, isInputChanged }} />
+          <GenerateButton {...{ handleButtonClick, isLoading, isInputChanged }} />
         </Grid>
       </Grid>
     </Box>

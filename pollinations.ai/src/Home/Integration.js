@@ -1,6 +1,6 @@
 import React from "react"
 import { Colors } from "../config/global"
-import { CodeExamples } from "../components/CodeExamples"
+import { CodeExamples } from "../components/Integrate/CodeExamples"
 import { SectionContainer } from "../components/SectionContainer"
 import { INTEGRATION_TITLE, INTEGRATION_SUBTITLE } from "../config/copywrite"
 import SectionTitle from "../components/SectionTitle"

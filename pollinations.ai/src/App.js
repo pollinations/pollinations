@@ -4,7 +4,7 @@ import MarkdownTemplate from "./components/MarkdownTemplate"
 import Header from "./Home/Header"
 import Footer from "./Home/Footer"
 import Home from "./Home"
-import Terms from "./components/Terms"
+import Terms from "./Home/Terms"
 
 const AppRoutes = [
   {

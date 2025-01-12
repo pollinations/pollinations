@@ -25,6 +25,7 @@ const Hero = () => {
             textAlign: { xs: "center", sm: "left" },
             maxWidth: "90%",
             paddingBottom: "1em",
+            paddingTop: "1em",
           }}
         >
           <EmojiRephrase>{HERO_INTRO}</EmojiRephrase>

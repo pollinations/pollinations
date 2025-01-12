@@ -43,7 +43,7 @@ const MultiLineText = styled.div`
   white-space: pre-wrap;
 `;
 
-export function TextFeed() {
+export function FeedText() {
     const [lastEntry, setLastEntry] = useState(null);
 
     useEffect(() => {

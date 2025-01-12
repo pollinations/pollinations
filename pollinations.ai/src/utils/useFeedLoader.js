@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isMature } from '../../../utils/mature';
+import { isMature } from '../utils/mature';
 
 
 export function useFeedLoader(onNewImage, setLastImage) {

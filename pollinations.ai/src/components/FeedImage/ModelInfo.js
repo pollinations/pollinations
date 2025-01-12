@@ -1,6 +1,6 @@
 import React from "react"
-import { Typography, Link, useMediaQuery } from "@material-ui/core"
-import { Colors } from "../config/global"
+import { Box, Link, useMediaQuery } from "@material-ui/core"
+import { Colors, Fonts } from "../../config/global"
 import { useTheme } from "@material-ui/core/styles"
 
 export function ModelInfo({ model, wasPimped, referrer }) {
@@ -14,7 +14,7 @@ export function ModelInfo({ model, wasPimped, referrer }) {
   }
 
   const renderModelInfo = (modelName, modelLink, loraLink) => (
-    <Typography variant="body1" color="textSecondary" style={{ textAlign: "center", fontSize: "1.2rem" }}>
+    <Box style={{ color: Colors.offwhite, fontSize: "1.2em", fontFamily: Fonts.body }}>
       {isMobile ? (
         <>
           Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link><br />
@@ -54,7 +54,7 @@ export function ModelInfo({ model, wasPimped, referrer }) {
           )}
         </>
       )}
-    </Typography>
+    </Box>
   )
 
   if (model === "turbo") {

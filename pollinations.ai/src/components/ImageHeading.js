@@ -5,7 +5,7 @@ import { useMemo, useState, useEffect } from "react"
 import useRandomSeed from "../hooks/useRandomSeed"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
 import PromptTooltip from "./PromptTooltip"
-import { getDefaultPrompt } from "../utils/stylePrompt";
+import { getDefaultPrompt } from "../config/stylePrompt";
 
 export const ImageStyle = styled.img`
   height: 600px;

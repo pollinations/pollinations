@@ -1,7 +1,7 @@
 import { useState } from "react"
 import styled from "@emotion/styled"
 import Hero from "./Hero"
-import { ImageFeed } from "./ImageFeed"
+import { FeedImage } from "./FeedImage"
 import Projects from "./Projects"
 import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
@@ -18,7 +18,7 @@ export default function Home() {
       <Style>
         <Hero />
         {/* <TextFeed />  */}
-        <ImageFeed />
+        <FeedImage />
         <Integration image={image} />
         <Projects />
         {/* <Discord /> */}

@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
 import { Grid, Box, useMediaQuery, CircularProgress } from "@material-ui/core"
-import { useFeedLoader } from "../components/useFeedLoader"
-import { useImageEditor, useImageSlideshow } from "../components/useImageSlideshow"
+import { useFeedLoader } from "../utils/useFeedLoader"
+import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow"
 import debug from "debug"
-import { ServerLoadInfo } from "../components/ServerLoadInfo"
+import { ServerLoadInfo } from "../components/FeedImage/ServerLoadInfo"
 import { Colors, MOBILE_BREAKPOINT } from "../config/global"
-import { ModelInfo } from "../components/ModelInfo"
-import { ImageEditor } from "../components/ImageEditor"
-import { FeedEditSwitch } from "../components/FeedEditSwitch"
-import { TextPrompt } from "../components/TextPrompt"
-import { ImageDisplay } from "../components/ImageDisplay"
+import { ModelInfo } from "../components/FeedImage/ModelInfo"
+import { ImageEditor } from "../components/FeedImage/ImageEditor"
+import { FeedEditSwitch } from "../components/FeedImage/FeedEditSwitch"
+import { TextPrompt } from "../components/FeedImage/TextPrompt"
+import { ImageDisplay } from "../components/FeedImage/ImageDisplay"
 import { ImageContext } from "../utils/ImageContext"
 import { SectionContainer } from "../components/SectionContainer"
 import { SectionBgBox } from "../components/SectionBgBox"
@@ -20,7 +20,7 @@ import { getImageURL } from "../utils/getImageURL"
 
 const log = debug("GenerativeImageFeed")
 
-export const ImageFeed = memo(() => {
+export const FeedImage = memo(() => {
   // State variables
   const [lastImage, setLastImage] = useState(null)
   const [imageParams, setImageParams] = useState({})

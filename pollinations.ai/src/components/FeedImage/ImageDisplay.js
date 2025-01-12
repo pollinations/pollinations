@@ -1,9 +1,9 @@
 import React, { memo } from "react"
 import { Typography } from "@material-ui/core"
-import { ImageContainer } from "./ImageHeading"
-import PromptTooltip from "./PromptTooltip"
+import { ImageContainer } from "../ImageHeading"
+import PromptTooltip from "../PromptTooltip"
 import styled from '@emotion/styled';
-import useIsMobile from "../hooks/useIsMobile";
+import useIsMobile from "../../hooks/useIsMobile";
 
 
 export const ImageDisplay = memo(function ImageDisplay({ image }) {

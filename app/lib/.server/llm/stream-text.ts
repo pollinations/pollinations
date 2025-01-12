@@ -226,7 +226,7 @@ export async function streamText(props: {
 
   logger.info(`Sending llm call to ${provider.name} with model ${modelDetails.name}`);
 
-  return _streamText({
+  return await _streamText({
     model: provider.getModelInstance({
       model: currentModel,
       serverEnv,

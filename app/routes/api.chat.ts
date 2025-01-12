@@ -122,6 +122,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         return;
       },
     };
+    const totalMessageContent = messages.reduce((acc, message) => acc + message.content, '');
+    logger.debug(`Total message length: ${totalMessageContent.split(' ').length}, words`);
 
     const result = await streamText({
       messages,
@@ -134,13 +136,27 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       contextOptimization,
     });
 
+    (async () => {
+      for await (const part of result.fullStream) {
+        if (part.type === 'error') {
+          const error: any = part.error;
+          logger.error(`${error}`);
+
+          return;
+        }
+      }
+    })();
+
     stream.switchSource(result.toDataStream());
 
+    // return createrespo
     return new Response(stream.readable, {
       status: 200,
       headers: {
-        contentType: 'text/event-stream',
-        connection: 'keep-alive',
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        Connection: 'keep-alive',
+        'Cache-Control': 'no-cache',
+        'Text-Encoding': 'chunked',
       },
     });
   } catch (error: any) {

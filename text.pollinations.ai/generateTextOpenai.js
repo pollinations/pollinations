@@ -55,6 +55,7 @@ export async function generateText(messages, options = {}) {
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
         stream: options.stream,
+        max_tokens: options.max_tokens || 4096,
     };
 
     if (options.tools?.length > 0) {
@@ -65,47 +66,7 @@ export async function generateText(messages, options = {}) {
         }
     }
 
-    let completion = await openai.chat.completions.create(completionOptions);
-
-    if (options.stream) {
-        return completion;
-    }
-
-    let responseMessage = completion.choices[0].message;
-
-    while (responseMessage.tool_calls || 
-           (options.tool_choice && options.tool_choice !== "none" && 
-            responseMessage.finish_reason === "stop")) {
-        const toolCalls = responseMessage.tool_calls || [];
-        messages.push(responseMessage);
-
-        for (const toolCall of toolCalls) {
-            let toolResponse;
-            const args = JSON.parse(toolCall.function.arguments);
-
-            if (options.tool_handlers?.[toolCall.function.name]) {
-                toolResponse = await options.tool_handlers[toolCall.function.name](args);
-            } else {
-                console.warn(`No handler found for tool: ${toolCall.function.name}`);
-                toolResponse = `Function ${toolCall.function.name} is not implemented`;
-            }
-            
-            messages.push({
-                tool_call_id: toolCall.id,
-                role: "tool",
-                name: toolCall.function.name,
-                content: typeof toolResponse === 'string' ? toolResponse : JSON.stringify(toolResponse)
-            });
-        }
-
-        completion = await openai.chat.completions.create({
-            ...completionOptions,
-            messages,
-            max_tokens: 4096,
-        });
-        responseMessage = completion.choices[0].message;
-    }
-    return completion;
+    return openai.chat.completions.create(completionOptions);
 }
 
 function hasSystemMessage(messages) {

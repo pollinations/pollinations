@@ -105,6 +105,26 @@ app.use((req, res, next) => {
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
+// Rate limiting setup
+const limiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 20, // 20 requests per windowMs
+    message: {
+        error: {
+            type: 'rate_limit_error',
+            message: 'Rate limit exceeded. Maximum 20 requests per minute.',
+            suggestion: 'Please wait before making more requests.'
+        }
+    },
+    skip: (req) => {
+        const requestData = getRequestData(req);
+        return requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
+    }
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
+
 // New route handler for root path
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');

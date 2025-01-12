@@ -24,7 +24,7 @@ const MarkDownContent = ({ url, ...replacements }) => {
 
   // elements to override the header tags with
   const overrideElements = tags.map((tag) => ({ children }) => (
-    <Typography variant={tag} children={children} style={{ fontSize: '2em', marginTop: '2em' }} />
+    <Typography component="div" variant={tag} children={children} style={{ fontSize: '2em', marginTop: '2em' }} />
   ))
 
   let overrides = zipObj(tags, overrideElements)

@@ -8,7 +8,7 @@ const Header = () => {
   return (
     <SectionContainer
       style={{
-        background: `linear-gradient(to bottom, ${Colors.gray2}, ${Colors.offwhite})`
+        background: `linear-gradient(to bottom, ${Colors.gray2}, ${Colors.offwhite})`,
       }}
     >
       <Box
@@ -29,6 +29,7 @@ const Header = () => {
           }}
         >
           <Typography
+            component="div"
             style={{
               color: Colors.offblack,
               fontSize: "3em",

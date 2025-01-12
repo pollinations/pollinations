@@ -17,6 +17,7 @@ const Hero = () => {
     >
       <SectionSubContainer>
         <Typography
+          component="div"
           sx={{
             userSelect: "none",
             fontFamily: "Uncut-Sans-Variable, sans-serif",

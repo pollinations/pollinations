@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, memo, useCallback } from "react"
-import { Grid, Box, useMediaQuery, CircularProgress } from "@mui/material"
+import { Box, useMediaQuery, CircularProgress } from "@mui/material"
 import { useFeedLoader } from "../utils/useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow"
 import debug from "debug"
@@ -17,6 +17,8 @@ import SectionTitle from "../components/SectionTitle"
 import SectionSubtitle from "../components/SectionSubtitle"
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite"
 import { getImageURL } from "../utils/getImageURL"
+import Grid from '@mui/material/Grid';
+
 
 const log = debug("GenerativeImageFeed")
 

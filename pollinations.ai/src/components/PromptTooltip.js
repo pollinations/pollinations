@@ -30,6 +30,7 @@ const PromptTooltip = ({ title, children, seed = null }) => {
         <Box>
           <Typography
             variant="body2"
+            component="div"
             style={{
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -43,7 +44,7 @@ const PromptTooltip = ({ title, children, seed = null }) => {
             <strong>Prompt:</strong> {title}
           </Typography>
           {seed !== null && (
-            <Typography variant="caption" style={{ fontStyle: "italic", marginTop: "0.3em" }}>
+            <Typography component="div" variant="caption" style={{ fontStyle: "italic", marginTop: "0.3em" }}>
               <strong>Seed:</strong> {seed}
             </Typography>
           )}

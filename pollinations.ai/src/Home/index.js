@@ -19,7 +19,7 @@ export default function Home() {
         <Hero />
         {/* <TextFeed />  */}
         <FeedImage />
-        <Integration image={image} />
+        <Integration />
         <Projects />
         {/* <Discord /> */}
         {/* <Supporter /> */}

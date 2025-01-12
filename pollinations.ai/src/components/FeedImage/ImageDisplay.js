@@ -31,7 +31,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                     </a>
                 )
             ) : (
-                <Typography variant="h6" color="textSecondary">
+                <Typography component="div" variant="h6" color="textSecondary">
                     Loading image...
                 </Typography>
             )}

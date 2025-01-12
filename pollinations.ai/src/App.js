@@ -31,8 +31,8 @@ const App = () => (
     <SEOMetadata />
     <Header />
     <Routes>
-      {AppRoutes.map((route) => (
-        <Route {...route} />
+      {AppRoutes.map(({ key, ...route }) => (
+        <Route key={key} {...route} />
       ))}
     </Routes>
     <Footer />

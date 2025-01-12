@@ -1,11 +1,17 @@
-import React from "react";
-import { Typography } from "@mui/material";
-import { Colors } from "../config/global";
-import { EmojiRephrase } from "./EmojiRephrase";
+import React from "react"
+import { Typography } from "@mui/material"
+import { Colors } from "../config/global"
+import { EmojiRephrase } from "./EmojiRephrase"
 
-function SectionSubtitle({ subtitle, color = Colors.offwhite, textAlign = "center", size = "1.5em" }) {
+function SectionSubtitle({
+  subtitle,
+  color = Colors.offwhite,
+  textAlign = "center",
+  size = "1.5em",
+}) {
   return (
     <Typography
+      component="div" 
       style={{
         color: color,
         fontSize: size,
@@ -13,11 +19,9 @@ function SectionSubtitle({ subtitle, color = Colors.offwhite, textAlign = "cente
         textAlign: textAlign,
       }}
     >
-      <EmojiRephrase>
-        {subtitle}
-      </EmojiRephrase>
+      <EmojiRephrase>{subtitle}</EmojiRephrase>
     </Typography>
-  );
+  )
 }
 
-export default SectionSubtitle;
+export default SectionSubtitle

@@ -1,30 +1,32 @@
-import { createTheme, ThemeProvider } from "@mui/material";
-import CssBaseline from "@mui/material/CssBaseline";
-import React from "react";
-import ReactDOM from "react-dom";
-import App from "./App";
-import { BrowserRouter } from "react-router-dom";
-import { startReportingRuntimeErrors } from "react-error-overlay";
+import { createTheme, ThemeProvider } from "@mui/material"
+import CssBaseline from "@mui/material/CssBaseline"
+import React from "react"
+import { createRoot } from "react-dom/client" // Import createRoot
+import App from "./App"
+import { BrowserRouter } from "react-router-dom"
+import { startReportingRuntimeErrors } from "react-error-overlay"
 
-import "./index.css";
-import ScrollToTop from "./utils/ScrollToTop";
+import "./index.css"
+import ScrollToTop from "./utils/ScrollToTop"
 
-const theme = createTheme();
+const theme = createTheme()
 
-ReactDOM.render(
+const container = document.getElementById("root")
+const root = createRoot(container) // Create a root
+
+root.render(
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ScrollToTop>
         <App />
       </ScrollToTop>
     </BrowserRouter>
-  </ThemeProvider>,
-  document.getElementById("root")
-);
+  </ThemeProvider>
+)
 
 startReportingRuntimeErrors({
   onError: (error) => {
     // Custom error handling logic if needed
   },
-});
+})

@@ -78,7 +78,7 @@ export function CodeExamples({ image = {} }) {
   const imageToUse = image?.imageURL ? image : defaultImage;
 
   return (
-    <URLExplanation style={{ margin: "0 auto", maxWidth: "1000px" }}>
+    <URLExplanation style={{ margin: "0 auto", maxWidth: "1000px", width: "100%" }}>
       <AppBar
         position="static"
         style={{ color: "white", width: "auto", boxShadow: "none" }}

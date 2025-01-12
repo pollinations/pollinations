@@ -7,6 +7,7 @@ function SectionTitle({ title }) {
   const fontSize = isSmallScreen ? "6em" : "8em";
   return (
     <Typography
+      component="div"
       style={{
         color: Colors.lime,
         fontSize: fontSize,

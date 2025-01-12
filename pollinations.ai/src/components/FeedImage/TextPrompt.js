@@ -1,7 +1,8 @@
 import React from "react"
-import { Grid, Typography, TextareaAutosize, useMediaQuery } from "@mui/material"
+import { Typography, TextareaAutosize, useMediaQuery } from "@mui/material"
 import ReactMarkdown from "react-markdown"
 import { Colors, MOBILE_BREAKPOINT } from "../../config/global"
+import Grid from '@mui/material/Grid';
 
 export function TextPrompt({
   imageParams,
@@ -24,7 +25,7 @@ export function TextPrompt({
   return (
     <Grid item xs={12} >
       {isStopped && (
-        <Typography variant="body2" style={{ color: Colors.gray2, fontWeight: "normal" }}>
+        <Typography component="div" variant="body2" style={{ color: Colors.gray2, fontWeight: "normal" }}>
           Prompt
         </Typography>
       )}

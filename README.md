@@ -8,6 +8,10 @@
 
 [Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
 
+## 🎉 NEW: AI-Powered Development
+
+We're excited to announce our latest innovation: **OpenHands AI Coding Assistant**! Now anyone can contribute to Pollinations.AI by simply creating a GitHub issue. Our AI assistant automatically implements new features based on your descriptions - no coding required! [Create an issue now](https://github.com/pollinations/pollinations/issues/new) to try it out.
+
 ## 🚀 Key Features
 
 - 🔓 **100% Open Source**

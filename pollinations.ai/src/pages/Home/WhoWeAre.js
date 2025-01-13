@@ -68,10 +68,73 @@ const WhoWeAreContent = () => {
   )
 }
 
+const pulse = keyframes`
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+`
+
+const NewBadge = styled.span`
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2em 0.6em;
+  border-radius: 20px;
+  margin-right: 0.5em;
+  animation: ${pulse} 2s infinite ease-in-out;
+`
+
+const AnnouncementBanner = styled.div`
+  background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+  color: white;
+  padding: 1.5em;
+  margin: 1em auto 2.5em;
+  border-radius: 15px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  animation: ${fadeIn} 0.5s ease-out;
+  max-width: 90%;
+  font-size: 1.1em;
+  line-height: 1.5;
+
+  a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.3em 0.8em;
+    border-radius: 25px;
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin: 0 0.3em;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    margin: 1em;
+    font-size: 0.95em;
+    padding: 1.2em;
+  }
+`
+
 export default function WhoWeAre() {
   return (
     <Style>
       <PageLayout long={false}>
+        <AnnouncementBanner>
+          🎉 <NewBadge><b>NEW!</b></NewBadge> Want to improve Pollinations? Create a{" "}
+          <StyledLink 
+            href="https://github.com/pollinations/pollinations/issues/new"
+            style={{ color: "white" }}
+          >
+            GitHub issue
+          </StyledLink>{" "}
+          and our AI coding assistant will implement it automatically!
+        </AnnouncementBanner>
         <WhoWeAreContent />
       </PageLayout>
     </Style>

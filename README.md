@@ -27,6 +27,13 @@ bolt.diy was originally started by [Cole Medin](https://www.youtube.com/@ColeMed
 
 [Join the bolt.diy community here, in the oTTomator Think Tank!](https://thinktank.ottomator.ai)
 
+## Project management
+
+Bolt.diy is a community effort! Still, the core team of contributors aims at organizing the project in way that allows
+you to understand where the current areas of focus are.
+
+If you want to know what we are working on, what we are planning to work on, or if you want to contribute to the
+project, please check the [project management guide](./PROJECT.md) to get started easily.
 
 ## Requested Additions
 

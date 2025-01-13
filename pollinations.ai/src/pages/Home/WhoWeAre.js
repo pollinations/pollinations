@@ -38,46 +38,51 @@ const WhoWeAreContent = () => {
         </PromptTooltip>
       </h2>
       <ContactWrapper>
-        <p style={{ userSelect: "none" }}>
-          <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
-          <br />
-          <StyledLink href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">
-            <b>Discord</b>
-          </StyledLink>{" "}
-          <span className="mobile-break">or at </span>
-          <StyledLink
-            href="mailto:hello@pollinations.ai"
-            onClick={(e) => {
-              handleLinkClick(e);
-              alert("Copied");
-            }}
-            style={{ userSelect: "text" }}
-          >
-            <b>hello@pollinations.ai</b>
-          </StyledLink>
-        </p>
-        <p style={{ userSelect: "none" }}>
-          <StyledLink href="https://github.com/pollinations/pollinations/#readme">
-            <b>README</b>
-            <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle" }} />{" "}
-          </StyledLink>{" "}
-          to learn more.
-        </p>
-        <NewsBox>
-          <NewsIcon>🆕</NewsIcon>
+        <div>
           <p style={{ userSelect: "none" }}>
-            Want a new feature? Create a{" "}
-            <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
-              <b>GitHub issue</b>
+            <EmojiRephrase>Talk to us, reach out</EmojiRephrase>
+            <br />
+            <StyledLink href="https://discord.gg/k9F7SyTgqn" target="_blank" rel="noopener noreferrer">
+              <b>Discord</b>
             </StyledLink>{" "}
-            and our{" "}
-            <StyledLink href="https://github.com/All-Hands-AI/OpenHands">
-              <b>OpenHands AI assistant</b>
-            </StyledLink>{" "}
-            will implement it!
+            <span className="mobile-break">or at </span>
+            <StyledLink
+              href="mailto:hello@pollinations.ai"
+              onClick={(e) => {
+                handleLinkClick(e);
+                alert("Copied");
+              }}
+              style={{ userSelect: "text" }}
+            >
+              <b>hello@pollinations.ai</b>
+            </StyledLink>
           </p>
-        </NewsBox>
+        </div>
+        <div>
+          <p style={{ userSelect: "none", textAlign: "right" }}>
+            <StyledLink href="https://github.com/pollinations/pollinations/#readme">
+              <b>README</b>
+              <DescriptionIcon style={{ fontSize: "inherit", verticalAlign: "middle", marginLeft: "4px" }} />
+            </StyledLink>{" "}
+            to learn more.
+          </p>
+        </div>
       </ContactWrapper>
+
+      <AnnouncementBox>
+        <AnnouncementIcon>🆕</AnnouncementIcon>
+        <AnnouncementText>
+          Want a new feature? Create a{" "}
+          <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
+            <b>GitHub issue</b>
+          </StyledLink>{" "}
+          and our{" "}
+          <StyledLink href="https://github.com/All-Hands-AI/OpenHands">
+            <b>OpenHands AI assistant</b>
+          </StyledLink>{" "}
+          will implement it!
+        </AnnouncementText>
+      </AnnouncementBox>
     </Box>
   )
 }
@@ -156,73 +161,33 @@ const Style = styled.div`
   }
 `
 
-const NewsBox = styled.div`
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12px;
-  padding: 1.5em;
-  margin-top: 3em;
-  width: 100%;
-  position: relative;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-
-  p {
-    margin: 0;
-    text-align: center;
-    font-size: 1.2em !important;
-  }
-
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    margin-top: 2em;
-    padding: 1em;
-  }
-`
-
-const NewsIcon = styled.span`
-  position: absolute;
-  top: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: ${Colors.background_body};
-  padding: 0 10px;
-  font-size: 1.5em;
-  line-height: 1;
-`
-
 const ContactWrapper = styled.div`
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  justify-content: space-between;
   width: 100%;
-  margin-bottom: 5em;
+  margin-bottom: 2em;
 
-  p {
-    width: 100%;
-    margin: 0;
-  }
-
-  p:nth-of-type(1), p:nth-of-type(2) {
-    display: inline-block;
+  > div {
     width: 45%;
   }
 
-  p:nth-of-type(2) {
-    float: right;
-    text-align: right;
+  p {
+    font-size: 24px;
+    line-height: 34px;
+    margin: 0;
   }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {
+    flex-direction: column;
     align-items: center;
+    gap: 1em;
 
-    p, p:nth-of-type(1), p:nth-of-type(2) {
+    > div {
       width: 100%;
-      text-align: center;
-      float: none;
     }
 
-    p:nth-of-type(2) {
-      margin-top: 1em;
+    p {
+      text-align: center !important;
     }
 
     .mobile-break {
@@ -233,4 +198,36 @@ const ContactWrapper = styled.div`
   .mobile-break {
     display: inline;
   }
+`
+
+const AnnouncementBox = styled.div`
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5em;
+  margin-bottom: 5em;
+  width: 100%;
+  position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+`
+
+const AnnouncementText = styled.p`
+  margin: 0;
+  text-align: center;
+  font-size: 24px !important;
+  line-height: 34px;
+  user-select: none;
+  color: ${Colors.offwhite};
+`
+
+const AnnouncementIcon = styled.span`
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: ${Colors.background_body};
+  padding: 0 10px;
+  font-size: 1.5em;
+  line-height: 1;
 `

@@ -2,6 +2,10 @@
 
 *Your Engine for Personalized Synthetic Media*
 
+## 🆕 NEWS: OpenHands AI Assistant
+
+We're excited to announce OpenHands, our autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and OpenHands will analyze and implement it. Learn more about [OpenHands](https://github.com/All-Hands-AI/OpenHands).
+
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 
 ## 🌟 Introduction
@@ -236,11 +240,17 @@ We're committed to developing AI technology that serves humanity while respectin
 
 ## 🤝 Community and Development
 
-We believe in community-driven development. You can contribute to Pollinations.AI in two ways:
+We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
 
-1. **OpenHands Coding Assistant**: Simply create a GitHub issue describing the feature you'd like to see implemented. Our autonomous coding assistant will analyze your request and implement it directly! This makes contributing as easy as describing what you want.
+1. **OpenHands Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. Our [OpenHands AI assistant](https://github.com/All-Hands-AI/OpenHands) will analyze your request and implement it directly! No coding required - just describe what you want.
 
-2. **Traditional Contributions**: Join our vibrant community on Discord to share your creations, get support, and collaborate with fellow AI enthusiasts.
+2. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the OpenHands assistant will review it.
+
+3. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/k9F7SyTgqn) to:
+   - Share your creations
+   - Get support and help others
+   - Collaborate with fellow AI enthusiasts
+   - Discuss feature ideas before creating issues
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 

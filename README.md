@@ -17,6 +17,7 @@
 - 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
+- 🤖 **Autonomous Development:** Features implemented by our OpenHands coding assistant through GitHub issues
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
  <picture>
@@ -233,9 +234,13 @@ Pollinations.AI envisions a future where AI technology is:
 
 We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
 
-## 🤝 Community and Support
+## 🤝 Community and Development
 
-Join our vibrant community on Discord to share your creations, get support, and collaborate with fellow AI enthusiasts. 
+We believe in community-driven development. You can contribute to Pollinations.AI in two ways:
+
+1. **OpenHands Coding Assistant**: Simply create a GitHub issue describing the feature you'd like to see implemented. Our autonomous coding assistant will analyze your request and implement it directly! This makes contributing as easy as describing what you want.
+
+2. **Traditional Contributions**: Join our vibrant community on Discord to share your creations, get support, and collaborate with fellow AI enthusiasts.
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 

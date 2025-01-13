@@ -63,6 +63,13 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           to learn more.
         </p>
+        <p style={{ userSelect: "none", marginTop: "1em" }}>
+          Want a new feature? Create a{" "}
+          <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
+            <b>GitHub issue</b>
+          </StyledLink>{" "}
+          and our AI coding assistant will implement it!
+        </p>
       </ContactWrapper>
     </Box>
   )
@@ -144,31 +151,43 @@ const Style = styled.div`
 
 const ContactWrapper = styled.div`
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: flex-start;
   width: 100%;
   margin-bottom: 5em;
 
   p {
-    width: 45%; // Adjust this value as needed
+    width: 100%;
     margin: 0;
   }
 
-  p:last-child {
+  p:nth-of-type(1), p:nth-of-type(2) {
+    display: inline-block;
+    width: 45%;
+  }
+
+  p:nth-of-type(2) {
+    float: right;
     text-align: right;
   }
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
-    flex-direction: column;
-    align-items: center; /* Center all items horizontally on mobile */
+  p:nth-of-type(3) {
+    clear: both;
+    text-align: center;
+    margin-top: 2em;
+  }
 
-    p {
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    align-items: center;
+
+    p, p:nth-of-type(1), p:nth-of-type(2) {
       width: 100%;
-      text-align: center; /* Center text horizontally on mobile */
+      text-align: center;
+      float: none;
     }
 
-    p:last-child {
-      text-align: center; /* Center text horizontally on mobile */
+    p:nth-of-type(2) {
+      margin-top: 1em;
     }
 
     .mobile-break {

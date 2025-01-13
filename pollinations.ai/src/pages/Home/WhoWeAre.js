@@ -63,13 +63,20 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           to learn more.
         </p>
-        <p style={{ userSelect: "none", marginTop: "1em" }}>
-          Want a new feature? Create a{" "}
-          <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
-            <b>GitHub issue</b>
-          </StyledLink>{" "}
-          and our AI coding assistant will implement it!
-        </p>
+        <NewsBox>
+          <NewsIcon>🆕</NewsIcon>
+          <p style={{ userSelect: "none" }}>
+            Want a new feature? Create a{" "}
+            <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
+              <b>GitHub issue</b>
+            </StyledLink>{" "}
+            and our{" "}
+            <StyledLink href="https://github.com/All-Hands-AI/OpenHands">
+              <b>OpenHands AI assistant</b>
+            </StyledLink>{" "}
+            will implement it!
+          </p>
+        </NewsBox>
       </ContactWrapper>
     </Box>
   )
@@ -149,6 +156,40 @@ const Style = styled.div`
   }
 `
 
+const NewsBox = styled.div`
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1.5em;
+  margin-top: 3em;
+  width: 100%;
+  position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+  p {
+    margin: 0;
+    text-align: center;
+    font-size: 1.2em !important;
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    margin-top: 2em;
+    padding: 1em;
+  }
+`
+
+const NewsIcon = styled.span`
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: ${Colors.background_body};
+  padding: 0 10px;
+  font-size: 1.5em;
+  line-height: 1;
+`
+
 const ContactWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -169,12 +210,6 @@ const ContactWrapper = styled.div`
   p:nth-of-type(2) {
     float: right;
     text-align: right;
-  }
-
-  p:nth-of-type(3) {
-    clear: both;
-    text-align: center;
-    margin-top: 2em;
   }
 
   @media (max-width: ${MOBILE_BREAKPOINT}) {

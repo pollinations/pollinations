@@ -63,13 +63,20 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           to learn more.
         </p>
-        <p style={{ userSelect: "none", marginTop: "1em" }}>
-          Want a new feature? Create a{" "}
-          <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
-            <b>GitHub issue</b>
-          </StyledLink>{" "}
-          and our AI coding assistant will implement it!
-        </p>
+        <AnnouncementBox>
+          <NewBadge>NEW</NewBadge>
+          <p>
+            Want a new feature? Create a{" "}
+            <StyledLink href="https://github.com/pollinations/pollinations/issues/new">
+              <b>GitHub issue</b>
+            </StyledLink>{" "}
+            and our{" "}
+            <StyledLink href="https://github.com/All-Hands-AI/OpenHands">
+              <b>OpenHands AI assistant</b>
+            </StyledLink>{" "}
+            will implement it!
+          </p>
+        </AnnouncementBox>
       </ContactWrapper>
     </Box>
   )
@@ -146,6 +153,45 @@ const Style = styled.div`
   position: relative;
   background-color: ${(props) => (props.dark ? "black" : Colors.background_body)};
   @media (max-width: ${MOBILE_BREAKPOINT}) {
+  }
+`
+
+const NewBadge = styled.span`
+  background-color: ${Colors.accent};
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: bold;
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+`
+
+const AnnouncementBox = styled.div`
+  position: relative;
+  background: ${props => props.dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'};
+  border: 2px solid ${Colors.accent};
+  border-radius: 12px;
+  padding: 1.5em;
+  margin-top: 3em;
+  width: 100%;
+  text-align: center;
+
+  p {
+    margin: 0;
+    font-size: 22px !important;
+    line-height: 1.5;
+  }
+
+  @media (max-width: ${MOBILE_BREAKPOINT}) {
+    margin-top: 2em;
+    padding: 1em;
+    
+    p {
+      font-size: 20px !important;
+    }
   }
 `
 

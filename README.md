@@ -141,10 +141,14 @@ graph LR
     E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
     
     C[text.pollinations.ai - AWS EC2 CPU] --> P[karma.yt - Realtime News]
+    C --> SC[Scaleway API]
+    C --> DS[Deepseek API]
     C --> G[Azure-hosted Serverless LLMs]
-    G  --> H[OpenAI]
-    G --> I[Mistral]
-    G --> J[Llama]
+    SC --> MI[Mistral Models]
+    SC --> QW[Qwen Models]
+    SC --> LL[Llama Models]
+    DS --> DM[Deepseek Models]
+    G --> H[OpenAI]
     G --> K[Claude]
 
 ```

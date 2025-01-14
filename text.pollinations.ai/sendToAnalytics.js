@@ -1,9 +1,7 @@
 import 'dotenv/config';
 import crypto from 'crypto';
-import dotenv from 'dotenv';
 import debug from 'debug';
-
-dotenv.config();
+import fetch from 'node-fetch';
 
 const measurementId = process.env.GA_MEASUREMENT_ID;
 const apiSecret = process.env.GA_API_SECRET;
@@ -48,30 +46,27 @@ export async function sendToAnalytics(request, name, metadata) {
         }
 
         const clientId = generateClientId(request);
+        const referrer = request.headers?.referer;
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
-        const timestamp = Date.now();
+        const queryParams = request.query;
 
         const analyticsData = {
             client_id: clientId,
-            timestamp_micros: timestamp * 1000,
-            non_personalized_ads: true,
             events: [{
                 name: name,
                 params: {
-                    engagement_time_msec: 100,
-                    session_id: request.sessionID,
+                    referrer,
+                    userAgent,
+                    language,
+                    queryParams,
                     page_location: request.originalUrl,
-                    page_referrer: request.headers?.referer,
-                    user_agent: userAgent,
-                    language: language,
                     ...metadata
                 }
             }]
         };
 
         logAnalytics('Sending analytics payload:', JSON.stringify(analyticsData, null, 2));
-        logAnalytics('Using measurement ID:', measurementId);
 
         const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
             method: "POST",
@@ -88,8 +83,6 @@ export async function sendToAnalytics(request, name, metadata) {
 
         if (!response.ok) {
             logError('Analytics request failed:', response.status, responseText);
-            
-            // If it's a validation error, log the request body for debugging
             if (response.status === 400) {
                 logError('Request body:', JSON.stringify(analyticsData, null, 2));
             }

@@ -37,7 +37,9 @@ const BANNED_PHRASES = [
 const WHITELISTED_DOMAINS = [
     'pollinations.ai',
     'thot',
-    'ai-ministries.com'
+    'ai-ministries.com',
+    'localhost',
+    'pollinations.github.io'
 ];
 
 const blockedIPs = new Set();
@@ -114,7 +116,7 @@ app.use(cors());
 // Rate limiting setup
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 20, // 20 requests per windowMs
+    max: 40, // 20 requests per windowMs
     message: {
         error: {
             type: 'rate_limit_error',

@@ -1,16 +1,13 @@
 import React, { memo } from "react"
-import { Typography } from "@mui/material"
+import { Typography, Link, Box } from "@mui/material"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../PromptTooltip"
 import styled from '@emotion/styled';
-import useIsMobile from "../../hooks/useIsMobile";
-
 
 export const ImageDisplay = memo(function ImageDisplay({ image }) {
-    const isMobile = useIsMobile();
     return (
         <ImageContainer
-            style={{
+            sx={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -19,17 +16,22 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
             }}
         >
             {image ? (
-                isMobile ? (
-                    <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
-                        <ImageStyle src={image["imageURL"]} alt="generative_image" />
-                    </PromptTooltip>
-                ) : (
-                    <a href={image["imageURL"]} target="_blank" rel="noopener">
+                <>
+                    {/* Mobile View */}
+                    <Box sx={{ display: { xs: 'block', md: 'none' } }}>
                         <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
                             <ImageStyle src={image["imageURL"]} alt="generative_image" />
                         </PromptTooltip>
-                    </a>
-                )
+                    </Box>
+                    {/* Desktop View */}
+                    <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                        <Link href={image["imageURL"]} target="_blank" rel="noopener">
+                            <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
+                                <ImageStyle src={image["imageURL"]} alt="generative_image" />
+                            </PromptTooltip>
+                        </Link>
+                    </Box>
+                </>
             ) : (
                 <Typography component="div" variant="h6" color="textSecondary">
                     Loading image...

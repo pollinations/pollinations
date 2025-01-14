@@ -146,15 +146,15 @@ const FeaturedApp = (props) => {
 
   return (
     <Flex AlignItems="center" gap="5em">
-      <Grid item xs={12}>
+      <Grid size={12}>
         <ImageURLHeading>Image Feed</ImageURLHeading>
       </Grid>
       <Grid container spacing={4}>
-        <Grid item xs={gridItemSize}>
+        <Grid size={gridItemSize}>
           <Headline>{title}</Headline>
           <SubHeadline>{subtitle}</SubHeadline>
         </Grid>
-        <Grid item xs={gridItemSize}>
+        <Grid size={gridItemSize}>
           <FeaturedAppStyle>
             <p>{description}</p>
           </FeaturedAppStyle>

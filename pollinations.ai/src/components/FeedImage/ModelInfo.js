@@ -1,12 +1,8 @@
 import React from "react"
-import { Box, Link, useMediaQuery } from "@mui/material"
+import { Box, Link } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
-import { useTheme } from "@mui/material/styles"
 
 export function ModelInfo({ model, wasPimped, referrer }) {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-
   const formatReferrer = (url) => {
     if (!url) return "-"
     const domain = url.replace(/^https?:\/\//, "").split("/")[0]
@@ -14,45 +10,66 @@ export function ModelInfo({ model, wasPimped, referrer }) {
   }
 
   const renderModelInfo = (modelName, modelLink, loraLink) => (
-    <Box style={{ color: Colors.offwhite, fontSize: "1.2em", fontFamily: Fonts.body }}>
-      {isMobile ? (
-        <>
-          Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link><br />
-          {loraLink && (
-            <>
-              LoRA: <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link><br />
-            </>
-          )}
-          {wasPimped && (
-            <>
-              Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link><br />
-            </>
-          )}
-          {referrer && (
-            <>
-              Referrer: <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link>
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          Model: <Link href={modelLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{modelName}</Link>&nbsp;&nbsp;
-          {loraLink && (
-            <>
-              LoRA: <Link href={loraLink} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>DMD2</Link>&nbsp;&nbsp;
-            </>
-          )}
-          {wasPimped && (
-            <>
-              Prompt Enhancer: <Link href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js" target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>Groq</Link>&nbsp;&nbsp;
-            </>
-          )}
-          {referrer && (
-            <>
-              Referrer: <Link href={referrer} target="_blank" rel="noopener noreferrer" style={{ color: Colors.lime, fontSize: "1.2rem" }}>{formatReferrer(referrer)}</Link>
-            </>
-          )}
-        </>
+    <Box
+      sx={{
+        color: Colors.offwhite,
+        fontSize: "1.2em",
+        fontFamily: Fonts.body,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        flexWrap: "wrap",
+        gap: { xs: 1, md: 2 },
+      }}
+    >
+      <Box>
+        Model:{" "}
+        <Link
+          href={modelLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ color: Colors.lime, fontSize: "1.2rem" }}
+        >
+          {modelName}
+        </Link>
+      </Box>
+      {loraLink && (
+        <Box>
+          LoRA:{" "}
+          <Link
+            href={loraLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ color: Colors.lime, fontSize: "1.2rem" }}
+          >
+            DMD2
+          </Link>
+        </Box>
+      )}
+      {wasPimped && (
+        <Box>
+          Prompt Enhancer:{" "}
+          <Link
+            href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js"
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ color: Colors.lime, fontSize: "1.2rem" }}
+          >
+            Groq
+          </Link>
+        </Box>
+      )}
+      {referrer && (
+        <Box>
+          Referrer:{" "}
+          <Link
+            href={referrer}
+            target="_blank"
+            rel="noopener noreferrer"
+            sx={{ color: Colors.lime, fontSize: "1.2rem" }}
+          >
+            {formatReferrer(referrer)}
+          </Link>
+        </Box>
       )}
     </Box>
   )

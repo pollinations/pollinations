@@ -9,7 +9,6 @@ import { ImageContext } from "../utils/ImageContext"
 // import Supporter from "./Supporter"
 // import { TextFeed } from "./TextFeed"
 
-
 export default function Home() {
   const [image, setImage] = useState(null)
 
@@ -18,7 +17,7 @@ export default function Home() {
       <Style>
         <Hero />
         {/* <TextFeed />  */}
-        <FeedImage />
+          <FeedImage />
         <Integration />
         <Projects />
         {/* <Discord /> */}

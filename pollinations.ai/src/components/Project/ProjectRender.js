@@ -6,7 +6,7 @@ import { EmojiRephrase } from "../EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { logoPrefix, imageDimension } from "../../config/projectText"
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 
 const ProjectRender = (projectList, classes, isMobile) => (
   <Grid container spacing={4} className={classes.gridContainer}>
@@ -23,7 +23,7 @@ const ProjectRender = (projectList, classes, isMobile) => (
         }}
         className={classes.gridItem}
       >
-        <Grid item xs={4} style={{ textAlign: "right" }}>
+        <Grid size={4} style={{ textAlign: "right" }}>
           {renderProjectLink(project)}
           {project.author && (
             <div style={{ marginTop: "5px", color: Colors.offwhite, fontSize: "1em" }}>
@@ -44,11 +44,11 @@ const ProjectRender = (projectList, classes, isMobile) => (
           )}
         </Grid>
 
-        <Grid item xs={isMobile ? 4 : 2} style={{ textAlign: "center" }}>
+        <Grid size={isMobile ? 4 : 2} style={{ textAlign: "center" }}>
           <ProjectImage name={project.name} />
         </Grid>
 
-        <Grid item xs={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
+        <Grid size={isMobile ? 3 : 6} style={{ textAlign: "left" }}>
           <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
             <EmojiRephrase>{project.description}</EmojiRephrase>
           </span>

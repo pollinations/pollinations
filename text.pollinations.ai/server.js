@@ -351,6 +351,18 @@ async function processRequest(req, res, requestData) {
     const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
         log('Cache hit for key:', cacheKey);
+        
+        // Track cache hit in analytics
+        await sendToAnalytics(req, 'textCached', {
+            ...requestData,
+            success: true,
+            cached: true,
+            responseLength: cachedResponse.choices[0].message.content.length,
+            streamMode: requestData.stream,
+            plainTextMode: requestData.plaintTextResponse,
+            cacheKey: cacheKey
+        });
+
         if (requestData.plaintTextResponse) {
             sendContentResponse(res, cachedResponse);
         } else {

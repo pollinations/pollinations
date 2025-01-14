@@ -214,7 +214,7 @@ async function handleRequest(req, res, requestData) {
             }
         }
     } catch (error) {
-        sendErrorResponse(res, error, requestData);
+        sendErrorResponse(res, req, error, requestData);
     }
     // if (!shouldBypassDelay(req)) {
     //     await sleep(3000);
@@ -244,12 +244,12 @@ function shouldBypassDelay(req) {
 }
 
 // Helper function for consistent error responses
-function sendErrorResponse(res, error, requestData, statusCode = 500) {
+async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
         error: {
             message: error.message,
             status: statusCode,
-            ip: getIp(res.req),
+            ip: getIp(req),
             timestamp: new Date().toISOString(),
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
             details: {
@@ -340,7 +340,7 @@ async function processRequest(req, res, requestData) {
     try {
         await checkBannedPhrases(requestData.messages, ip);
     } catch (error) {
-        return sendErrorResponse(res, error, requestData, 403);
+        return sendErrorResponse(res, req, error, requestData, 403);
     }
 
     const cacheKey = createHashKey(requestData);
@@ -418,7 +418,7 @@ app.get('/*', async (req, res) => {
     try {
         await processRequest(req, res, {...requestData, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error, requestData);
+        sendErrorResponse(res, req, error, requestData);
     }
 });
 
@@ -433,7 +433,7 @@ app.post('/', async (req, res) => {
     try {
         await processRequest(req, res, {...requestParams, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error, requestParams);
+        sendErrorResponse(res, req, error, requestParams);
     }
 });
 
@@ -454,7 +454,7 @@ app.get('/openai/models', (req, res) => {
 app.post('/openai*', async (req, res) => {
 
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        return sendErrorResponse(res, new Error('Invalid messages array'), req.body, 400);
+        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
     }
 
     const requestParams = getRequestData(req);
@@ -462,7 +462,7 @@ app.post('/openai*', async (req, res) => {
     try {
         await processRequest(req, res, requestParams);
     } catch (error) {
-        sendErrorResponse(res, error, requestParams);
+        sendErrorResponse(res, req, error, requestParams);
     }
 
 })

@@ -77,8 +77,8 @@ const WhoWeAreContent = () => {
             <b>GitHub issue</b>
           </StyledLink>{" "}
           and our{" "}
-          <StyledLink href="https://github.com/All-Hands-AI/OpenHands">
-            <b>OpenHands AI assistant</b>
+          <StyledLink href="https://mentat.ai/">
+            <b>MentatBot AI assistant</b>
           </StyledLink>{" "}
           will implement it!
         </AnnouncementText>

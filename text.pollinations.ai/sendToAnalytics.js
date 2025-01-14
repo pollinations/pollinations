@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import crypto from 'crypto';
 import debug from 'debug';
 import fetch from 'node-fetch';
 
@@ -9,93 +8,75 @@ const apiSecret = process.env.GA_API_SECRET;
 const logError = debug('pollinations:error');
 const logAnalytics = debug('pollinations:analytics');
 
-function generateClientId(request) {
-    const clientIP = request.headers?.["x-real-ip"] || 
-                    request.headers?.['x-forwarded-for'] || 
-                    request?.connection?.remoteAddress || 
-                    'unknown';
-    
-    // Create a consistent hash of the IP address
-    return crypto
-        .createHash('sha256')
-        .update(clientIP + (request.headers?.['user-agent'] || ''))
-        .digest('hex')
-        .slice(0, 32); // GA4 client_id should not be too long
-}
-
-function validateEventName(name) {
-    // GA4 event name requirements
-    return name.length <= 40 && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(name);
-}
-
 export async function sendToAnalytics(request, name, metadata) {
     try {
         if (!request || !name) {
-            logError('Missing required parameters');
+            logAnalytics('Analytics skipped: Missing required parameters', { request: !!request, name });
             return;
         }
-        
+
         if (!measurementId || !apiSecret) {
-            logError('Missing analytics credentials');
+            logAnalytics('Analytics skipped: Missing credentials', { hasMeasurementId: !!measurementId, hasApiSecret: !!apiSecret });
             return;
         }
 
-        if (!validateEventName(name)) {
-            logError('Invalid event name:', name);
-            return;
-        }
-
-        const clientId = generateClientId(request);
-        const referrer = request.headers?.referer || 
-                        request.body?.referrer || 
-                        request.body?.referer || 
-                        request.query?.referrer || 
-                        request.query?.referer;
-                        
+        const referrer = request.headers?.referer;
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
+        const clientIP = request.headers?.["x-real-ip"] || request.headers?.['x-forwarded-for'] || request?.connection?.remoteAddress;
         const queryParams = request.query;
 
+        // Match the exact structure of the working image API
         const analyticsData = {
-            client_id: clientId,
-            events: [{
-                name: name,
-                params: {
-                    referrer,
-                    userAgent,
-                    language,
-                    queryParams,
-                    page_location: request.originalUrl,
-                    ...metadata
-                }
-            }]
+            endpoint: `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}`,
+            eventName: name,
+            metadata: {
+                ...metadata,
+                referrer: undefined,
+                ip: clientIP
+            },
+            headers: {
+                referrer,
+                userAgent: userAgent?.substring(0, 50),
+                language,
+                clientIP
+            },
+            queryParams
         };
 
-        logAnalytics('Sending analytics payload:', JSON.stringify(analyticsData, null, 2));
+        logAnalytics('Sending analytics data:', analyticsData);
 
-        const response = await fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`, {
+        // Send the actual analytics data in GA4 format
+        const response = await fetch(`${analyticsData.endpoint}&api_secret=${apiSecret}`, {
             method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': userAgent || 'Pollinations-Server/1.0'
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(analyticsData)
+            body: JSON.stringify({
+                client_id: analyticsData.headers.clientIP || 'unknown',
+                events: [{
+                    name: analyticsData.eventName,
+                    params: analyticsData.metadata
+                }]
+            })
         });
 
         const responseText = await response.text();
-        logAnalytics('Analytics response status:', response.status);
-        logAnalytics('Analytics response body:', responseText);
+        logAnalytics('Analytics response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: responseText || '(empty response)',
+            headers: Object.fromEntries(response.headers)
+        });
 
-        if (!response.ok) {
-            logError('Analytics request failed:', response.status, responseText);
-            if (response.status === 400) {
-                logError('Request body:', JSON.stringify(analyticsData, null, 2));
-            }
-        }
-
-        return response.ok;
+        return responseText;
     } catch (error) {
-        logError('Error sending analytics:', error);
-        return false;
+        logError('Error sending analytics:', {
+            error: error.message,
+            stack: error.stack,
+            name,
+            metadata
+        });
+        return;
     }
 }

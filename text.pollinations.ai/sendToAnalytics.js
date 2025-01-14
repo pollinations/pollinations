@@ -20,12 +20,15 @@ export async function sendToAnalytics(request, name, metadata) {
             return;
         }
 
-        const referrer = request.headers?.referer || request.body?.referrer || request.headers?.referrer || request.query?.referrer;
+        const referrer = request.headers?.referer || request.body?.referrer || request.headers?.referer || request.query?.referrer;
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
         const clientIP = request.headers?.["x-real-ip"] || request.headers?.['x-forwarded-for'] || request?.connection?.remoteAddress;
         const queryParams = request.query || {};
 
+        // Extract all headers for logging
+        const headers = { ...request.headers };
+        
         // Match the exact structure of the working image API
         const analyticsData = {
             endpoint: `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}`,
@@ -34,7 +37,14 @@ export async function sendToAnalytics(request, name, metadata) {
                 ...queryParams,
                 ...metadata,
                 referrer,
-                ip: clientIP
+                ip: clientIP,
+                method: request.method,
+                path: request.path,
+                originalUrl: request.originalUrl,
+                protocol: request.protocol,
+                host: request.get('host'),
+                headers: headers,
+                timestamp: new Date().toISOString()
             },
             headers: {
                 referrer,

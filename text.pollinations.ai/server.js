@@ -198,7 +198,7 @@ async function handleRequest(req, res, requestData) {
         
         // Track successful completion
         await sendToAnalytics(req, 'textGenerated', {
-            model: requestData.model,
+            ...requestData,
             success: true,
             cached: false,
             responseLength: responseText.length,

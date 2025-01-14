@@ -20,7 +20,7 @@ export async function sendToAnalytics(request, name, metadata) {
             return;
         }
 
-        const referrer = request.headers?.referer || request.body?.referrer || request.headers?.referer || request.query?.referrer;
+        const referrer = metadata?.referrer || request.headers?.referer || request.body?.referrer || request.headers?.referer || request.query?.referrer;
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
         const clientIP = request.headers?.["x-real-ip"] || request.headers?.['x-forwarded-for'] || request?.connection?.remoteAddress;

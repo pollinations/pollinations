@@ -78,7 +78,7 @@ const WhoWeAreContent = () => {
           </StyledLink>{" "}
           and our{" "}
           <StyledLink href="https://mentat.ai/">
-            <b>MentatBot AI assistant</b>
+            <b>AI assistant</b>
           </StyledLink>{" "}
           will implement it!
         </AnnouncementText>

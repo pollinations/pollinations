@@ -10,11 +10,7 @@ import { HERO_INTRO as HERO_INTRO, HERO_CTO_1 as HERO_CTO_1 } from "../config/co
 
 const Hero = () => {
   return (
-    <SectionContainer
-      style={{
-        background: `linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite})`,
-      }}
-    >
+    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <Typography
           component="div"

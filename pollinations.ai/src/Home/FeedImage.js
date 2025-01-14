@@ -112,14 +112,11 @@ export const FeedImage = memo(() => {
   }
 
   return (
-    <SectionContainer
-    style={{
-      background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`,
-    }}    >
+    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <Grid
         size={12}
         sx={{
-          maxWidth: "750px" ,
+          maxWidth: "750px",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",

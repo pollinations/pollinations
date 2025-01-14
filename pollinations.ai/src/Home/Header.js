@@ -6,11 +6,7 @@ import { NavLink } from "react-router-dom"
 
 const Header = () => {
   return (
-    <SectionContainer
-      style={{
-        background: `linear-gradient(to bottom, ${Colors.gray2}, ${Colors.offwhite})`,
-      }}
-    >
+    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <Box
         sx={{
           gridArea: "logo",

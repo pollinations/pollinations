@@ -5,7 +5,6 @@ import { SocialLinks } from "../components/Social"
 import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { ImageURLHeading } from "../components/ImageHeading"
-import AsciiArtGenerator from "../components/AsciiArtGenerator"
 import useIsMobile from "../hooks/useIsMobile" // Import the new hook
 import { SectionContainer } from "../components/SectionContainer"
 
@@ -13,14 +12,7 @@ const Footer = () => {
   const isMobile = useIsMobile() // Use the new hook
 
   return (
-    <SectionContainer
-      style={{
-        background: `linear-gradient(to top, ${Colors.gray2}, ${Colors.offwhite})`,
-      }}
-    >
-      {/* <AsciiArtContainer>
-          <AsciiArtGenerator />
-        </AsciiArtContainer> */}
+    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       {/* <SocialContainer>
           <SocialLinks medium gap="1em" invert />
         </SocialContainer> */}

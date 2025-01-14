@@ -5,7 +5,7 @@ import { FeedImage } from "./FeedImage"
 import Projects from "./Projects"
 import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
-// import Discord from "./Discord"
+import Discord from "./Discord"
 // import Supporter from "./Supporter"
 // import { TextFeed } from "./TextFeed"
 
@@ -17,10 +17,10 @@ export default function Home() {
       <Style>
         <Hero />
         {/* <TextFeed />  */}
-          <FeedImage />
+        <FeedImage />
         <Integration />
+        <Discord />
         <Projects />
-        {/* <Discord /> */}
         {/* <Supporter /> */}
       </Style>
     </ImageContext.Provider>

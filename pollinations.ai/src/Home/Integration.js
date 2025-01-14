@@ -12,12 +12,7 @@ export const Integration = () => {
   const { image } = useContext(ImageContext)
 
   return (
-    <SectionContainer
-      style={{
-        background: `linear-gradient(to bottom, ${Colors.offblack}, ${Colors.offblack2})`,
-      }}
-    >
-      {" "}
+    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATION_TITLE} />
         <SectionSubtitle subtitle={INTEGRATION_SUBTITLE} />

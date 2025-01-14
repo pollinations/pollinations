@@ -40,12 +40,7 @@ const Projects = () => {
   const [selectedCategory, setSelectedCategory] = useState("apps")
 
   return (
-    <SectionContainer
-      style={{
-        background: `linear-gradient(to top, ${Colors.offblack}, ${Colors.offblack2})`,
-        paddingBottom: "2em",
-      }}
-    >
+    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={APPLICATION_TITLE} />
         <SectionSubtitle subtitle={APPLICATION_SUBTITLE} />

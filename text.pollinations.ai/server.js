@@ -37,7 +37,9 @@ const BANNED_PHRASES = [
 const WHITELISTED_DOMAINS = [
     'pollinations.ai',
     'thot',
-    'ai-ministries.com'
+    'ai-ministries.com',
+    'localhost',
+    'pollinations.github.io'
 ];
 
 const blockedIPs = new Set();
@@ -114,7 +116,7 @@ app.use(cors());
 // Rate limiting setup
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 20, // 20 requests per windowMs
+    max: 40, // 20 requests per windowMs
     message: {
         error: {
             type: 'rate_limit_error',
@@ -193,6 +195,16 @@ async function handleRequest(req, res, requestData) {
         log('Generated response', responseText);
         
         sendToFeedListeners(responseText, requestData, getIp(req));
+        
+        // Track successful completion
+        await sendToAnalytics(req, 'textGenerated', {
+            ...requestData,
+            success: true,
+            cached: false,
+            responseLength: responseText.length,
+            streamMode: requestData.stream,
+            plainTextMode: requestData.plaintTextResponse
+        });
 
         if (requestData.stream) {
             sendAsOpenAIStream(res, completion);
@@ -204,7 +216,7 @@ async function handleRequest(req, res, requestData) {
             }
         }
     } catch (error) {
-        sendErrorResponse(res, error, requestData);
+        sendErrorResponse(res, req, error, requestData);
     }
     // if (!shouldBypassDelay(req)) {
     //     await sleep(3000);
@@ -234,12 +246,12 @@ function shouldBypassDelay(req) {
 }
 
 // Helper function for consistent error responses
-function sendErrorResponse(res, error, requestData, statusCode = 500) {
+async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
         error: {
             message: error.message,
             status: statusCode,
-            ip: getIp(res.req),
+            ip: getIp(req),
             timestamp: new Date().toISOString(),
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
             details: {
@@ -257,6 +269,15 @@ function sendErrorResponse(res, error, requestData, statusCode = 500) {
     console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
     console.error('Stack trace:', error.stack);
     errorLog('Error:', error.message);
+
+    // Track error event
+    await sendToAnalytics(req, 'textGenerationError', {
+        error: error.message,
+        errorType: error.name,
+        errorCode: error.code,
+        statusCode,
+        model: requestData?.model
+    });
 
     res.status(statusCode).json(errorResponse);
 }
@@ -321,7 +342,7 @@ async function processRequest(req, res, requestData) {
     try {
         await checkBannedPhrases(requestData.messages, ip);
     } catch (error) {
-        return sendErrorResponse(res, error, requestData, 403);
+        return sendErrorResponse(res, req, error, requestData, 403);
     }
 
     const cacheKey = createHashKey(requestData);
@@ -330,6 +351,18 @@ async function processRequest(req, res, requestData) {
     const cachedResponse = getFromCache(cacheKey);
     if (cachedResponse) {
         log('Cache hit for key:', cacheKey);
+        
+        // Track cache hit in analytics
+        await sendToAnalytics(req, 'textCached', {
+            ...requestData,
+            success: true,
+            cached: true,
+            responseLength: cachedResponse.choices[0].message.content.length,
+            streamMode: requestData.stream,
+            plainTextMode: requestData.plaintTextResponse,
+            cacheKey: cacheKey
+        });
+
         if (requestData.plaintTextResponse) {
             sendContentResponse(res, cachedResponse);
         } else {
@@ -399,7 +432,7 @@ app.get('/*', async (req, res) => {
     try {
         await processRequest(req, res, {...requestData, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error, requestData);
+        sendErrorResponse(res, req, error, requestData);
     }
 });
 
@@ -414,7 +447,7 @@ app.post('/', async (req, res) => {
     try {
         await processRequest(req, res, {...requestParams, plaintTextResponse: true});
     } catch (error) {
-        sendErrorResponse(res, error, requestParams);
+        sendErrorResponse(res, req, error, requestParams);
     }
 });
 
@@ -435,7 +468,7 @@ app.get('/openai/models', (req, res) => {
 app.post('/openai*', async (req, res) => {
 
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        return sendErrorResponse(res, new Error('Invalid messages array'), req.body, 400);
+        return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
     }
 
     const requestParams = getRequestData(req);
@@ -443,7 +476,7 @@ app.post('/openai*', async (req, res) => {
     try {
         await processRequest(req, res, requestParams);
     } catch (error) {
-        sendErrorResponse(res, error, requestParams);
+        sendErrorResponse(res, req, error, requestParams);
     }
 
 })

@@ -193,6 +193,16 @@ async function handleRequest(req, res, requestData) {
         log('Generated response', responseText);
         
         sendToFeedListeners(responseText, requestData, getIp(req));
+        
+        // Track successful completion
+        await sendToAnalytics(req, 'textGenerated', {
+            model: requestData.model,
+            success: true,
+            cached: false,
+            responseLength: responseText.length,
+            streamMode: requestData.stream,
+            plainTextMode: requestData.plaintTextResponse
+        });
 
         if (requestData.stream) {
             sendAsOpenAIStream(res, completion);
@@ -257,6 +267,15 @@ function sendErrorResponse(res, error, requestData, statusCode = 500) {
     console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
     console.error('Stack trace:', error.stack);
     errorLog('Error:', error.message);
+
+    // Track error event
+    await sendToAnalytics(req, 'textGenerationError', {
+        error: error.message,
+        errorType: error.name,
+        errorCode: error.code,
+        statusCode,
+        model: requestData?.model
+    });
 
     res.status(statusCode).json(errorResponse);
 }

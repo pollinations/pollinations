@@ -46,7 +46,12 @@ export async function sendToAnalytics(request, name, metadata) {
         }
 
         const clientId = generateClientId(request);
-        const referrer = request.headers?.referer;
+        const referrer = request.headers?.referer || 
+                        request.body?.referrer || 
+                        request.body?.referer || 
+                        request.query?.referrer || 
+                        request.query?.referer;
+                        
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
         const queryParams = request.query;

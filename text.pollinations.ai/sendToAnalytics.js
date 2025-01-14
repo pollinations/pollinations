@@ -20,19 +20,20 @@ export async function sendToAnalytics(request, name, metadata) {
             return;
         }
 
-        const referrer = request.headers?.referer;
+        const referrer = request.headers?.referer || request.body?.referrer || request.headers?.referrer || request.query?.referrer;
         const userAgent = request.headers?.['user-agent'];
         const language = request.headers?.['accept-language'];
         const clientIP = request.headers?.["x-real-ip"] || request.headers?.['x-forwarded-for'] || request?.connection?.remoteAddress;
-        const queryParams = request.query;
+        const queryParams = request.query || {};
 
         // Match the exact structure of the working image API
         const analyticsData = {
             endpoint: `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}`,
             eventName: name,
             metadata: {
+                ...queryParams,
                 ...metadata,
-                referrer: undefined,
+                referrer,
                 ip: clientIP
             },
             headers: {

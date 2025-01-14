@@ -8,6 +8,20 @@ const apiSecret = process.env.GA_API_SECRET;
 const logError = debug('pollinations:error');
 const logAnalytics = debug('pollinations:analytics');
 
+// Helper function to filter out complex values
+function filterSimpleValues(obj) {
+    return Object.fromEntries(
+        Object.entries(obj).filter(([_, value]) => {
+            const type = typeof value;
+            return value !== null && 
+                   value !== undefined && 
+                   (type === 'string' || 
+                    type === 'number' || 
+                    type === 'boolean');
+        })
+    );
+}
+
 export async function sendToAnalytics(request, name, metadata) {
     try {
         if (!request || !name) {
@@ -33,7 +47,7 @@ export async function sendToAnalytics(request, name, metadata) {
         const analyticsData = {
             endpoint: `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}`,
             eventName: name,
-            metadata: {
+            metadata: filterSimpleValues({
                 ...queryParams,
                 ...metadata,
                 referrer,
@@ -43,16 +57,15 @@ export async function sendToAnalytics(request, name, metadata) {
                 originalUrl: request.originalUrl,
                 protocol: request.protocol,
                 host: request.get('host'),
-                headers: headers,
                 timestamp: new Date().toISOString()
-            },
-            headers: {
+            }),
+            headers: filterSimpleValues({
                 referrer,
                 userAgent: userAgent?.substring(0, 50),
                 language,
                 clientIP
-            },
-            queryParams
+            }),
+            queryParams: filterSimpleValues(queryParams)
         };
 
         logAnalytics('Sending analytics data:', analyticsData);

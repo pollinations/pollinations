@@ -2,9 +2,9 @@
 
 *Your Engine for Personalized Synthetic Media*
 
-## 🆕 NEWS: OpenHands AI Assistant
+## 🆕 NEWS: MentatBot AI Assistant
 
-We're excited to announce OpenHands, our autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and OpenHands will analyze and implement it. Learn more about [OpenHands](https://github.com/All-Hands-AI/OpenHands).
+We're excited to announce MentatBot, our autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. Learn more about [MentatBot](https://mentat.ai/).
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 
@@ -21,7 +21,7 @@ We're excited to announce OpenHands, our autonomous AI coding assistant that imp
 - 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
-- 🤖 **Autonomous Development:** Features implemented by our OpenHands coding assistant through GitHub issues
+- 🤖 **Autonomous Development:** Features implemented by our MentatBot coding assistant through GitHub issues
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
  <picture>
@@ -242,9 +242,9 @@ We're committed to developing AI technology that serves humanity while respectin
 
 We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
 
-1. **OpenHands Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. Our [OpenHands AI assistant](https://github.com/All-Hands-AI/OpenHands) will analyze your request and implement it directly! No coding required - just describe what you want.
+1. **MentatBot Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. Our [MentatBot AI assistant](https://mentat.ai/) will analyze your request and implement it directly! No coding required - just describe what you want.
 
-2. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the OpenHands assistant will review it.
+2. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
 
 3. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/k9F7SyTgqn) to:
    - Share your creations

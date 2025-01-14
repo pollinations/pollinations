@@ -27,12 +27,12 @@ const Footer = () => {
         <StyledLink
           onClick={(e) => {
             e.preventDefault()
-            navigator.clipboard.writeText("hello@thot-labs.com").then(() => {})
+            navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
           }}
-          href="mailto:hello@thot-labs.com"
+          href="mailto:hello@pollinations.ai"
           style={{ userSelect: "text" }}
         >
-          <b>hello@thot-labs.com</b>
+          <b>hello@pollinations.ai</b>
         </StyledLink>
 
         <StyledLink to="/terms" as={NavLink}>

@@ -5,7 +5,7 @@ import Debug from "debug";
 
 const debug = Debug("Helmet");
 
-const DESCRIPTION = 'THOT-Labs is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.';
+const DESCRIPTION = 'Pollinations.AI is a platform to generate media with the help of AI. Here you can create customized, royalty-free pieces of audio, images, 3D objects and soon fully immersive 3D environments on the fly.';
 
 export const SEOImage = ({ url }) => {
 
@@ -19,7 +19,7 @@ export const SEOImage = ({ url }) => {
 };
 
 export const SEOMetadata = ({ title, description, url }) => {
-    title = title ? `THOT-Labs - ${title}` : 'THOT-Labs';
+    title = title ? `Pollinations.AI - ${title}` : 'Pollinations.AI';
 
     // não é a coisa mais bonita do mundo mas é o que temos de melhor
     url = url ? url : window.location.href;
@@ -33,7 +33,7 @@ export const SEOMetadata = ({ title, description, url }) => {
         <meta property="og:description" content={description} />
         <meta property="og:description" content={description} />
         <meta name="description" content={description} />
-        <meta property="twitter:creator" content="thot_labs" />
+        <meta property="twitter:creator" content="pollinations.ai" />
         <meta property="twitter:description" content={description} />
         <meta property="og:url" content={url} />
     </Helmet>;

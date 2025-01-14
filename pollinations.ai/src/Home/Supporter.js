@@ -85,7 +85,7 @@ const Supporter = () => {
   ]
 
   const generateImageUrl = (name, description) =>
-    `https://thot-labs.com/p/${encodeURIComponent(
+    `https://pollinations.ai/p/${encodeURIComponent(
       `${logoPrefix} ${name} ${description}`
     )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 

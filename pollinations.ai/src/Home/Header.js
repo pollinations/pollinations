@@ -33,7 +33,7 @@ const Header = () => {
               userSelect: "none",
             }}
           >
-            THOT Labs
+            Pollinations.AI
           </Typography>
         </NavLink>
       </Box>

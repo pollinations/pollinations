@@ -23,15 +23,15 @@ const CopyEmailButton = () => {
         lineHeight: "40px",
         fontSize: { xs: "20px", sm: "28px" },
         backgroundColor: `${Colors.lime}`,
-        borderRadius: "5px",
-        padding: "0.3em 0.6em",
+        borderRadius: "15px",
+        padding: "0.5em 1em",
         "&:hover": {
           backgroundColor: `${Colors.lime}90`,
         },
       }}
     >
       <FileCopyIcon fontSize="large" style={{ marginRight: "0.5em" }} />
-      hello@thot-labs.com
+      hello@pollinations.ai
     </Button>
   )
 }

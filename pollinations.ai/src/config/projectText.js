@@ -70,10 +70,10 @@ export const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
-      name: "Thot Gallery 🆕",
+      name: "Pollinations.AI Gallery 🆕",
       url: "https://deng-xian-sheng.github.io/pollinations-img-page/",
       description:
-        "A clean and simple gallery showcasing the community's AI-generated images using Thot' image feed interface.",
+        "A clean and simple gallery showcasing the community's AI-generated images using Pollinations.AI' image feed interface.",
       author: "@deng-xian-sheng",
     },
     {
@@ -88,21 +88,21 @@ export const projects = {
       name: "Rangrez AI",
       url: "https://rangrezai.com",
       description:
-        "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by THOT and GroqCloud.",
+        "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations.AI and GroqCloud.",
       author: "@saadaryf",
     },
     {
       name: "JustBuildThings",
       url: "https://justbuildthings.com",
       description:
-        "A collection of AI tools for image generation, character chat, and writing powered by THOT.",
+        "A collection of AI tools for image generation, character chat, and writing powered by Pollinations.AI.",
       author: "rasit",
     },
     {
       name: "Elixpo",
       url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
       description:
-        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by THOT.",
+        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.AI.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
     },
@@ -110,7 +110,7 @@ export const projects = {
       name: "Own-AI",
       url: "https://own-ai.pages.dev/",
       description:
-        "An AI text-to-image generator powered by THOT. Users can describe the images they want, generate them, and share them.",
+        "An AI text-to-image generator powered by Pollinations.AI. Users can describe the images they want, generate them, and share them.",
       author: "Sujal Goswami",
       repo: "https://github.com/sujal-goswami/Own-AI",
     },
@@ -126,7 +126,7 @@ export const projects = {
       name: "POLLIPAPER",
       url: "https://github.com/Tolerable/POLLIPAPER",
       description:
-        "A dynamic wallpaper app that uses THOT to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
+        "A dynamic wallpaper app that uses Pollinations.AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
       author: "@intolerant0ne",
       repo: "https://github.com/Tolerable/",
     },
@@ -134,7 +134,7 @@ export const projects = {
       name: "StorySight",
       url: "https://github.com/abiral-manandhar/storySight",
       description:
-        "An app to help children with learning disabilities by visualizing abstract concepts. Made using **Django** and **THOT**. Submitted to: [Devpost](https://devpost.com/software/storysight)",
+        "An app to help children with learning disabilities by visualizing abstract concepts. Made using **Django** and **Pollinations.AI**. Submitted to: [Devpost](https://devpost.com/software/storysight)",
     },
     {
       name: "StoryWeaver",
@@ -148,20 +148,20 @@ export const projects = {
       name: "Websim",
       url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
       description:
-        "A web simulation tool that integrates **THOT** for generating AI-driven content. *Remix* the app with your own promots.",
+        "A web simulation tool that integrates **Pollinations.AI** for generating AI-driven content. *Remix* the app with your own promots.",
       author: "@thomash",
     },
     {
       name: "JCode Website Builder",
       url: "https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories",
-      description: "A website generator using THOT text API.",
+      description: "A website generator using Pollinations.AI text API.",
       author: "@rtxpower",
     },
     {
       name: "AI-Bloom 🆕",
       url: "https://ai-bloom.vercel.app/",
       description:
-        "A minimal yet creative showcase of AI-powered visual and interactive content generation using THOT.",
+        "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.AI.",
       author: "@diepdo1810",
       repoUrl: "https://github.com/diepdo1810/AI-Bloom",
     },
@@ -170,7 +170,7 @@ export const projects = {
     {
       name: "SillyTavern",
       url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-      description: "An **LLM frontend** for power users. THOT permits it to generate images.",
+      description: "An **LLM frontend** for power users. Pollinations.AI permits it to generate images.",
       repo: "https://github.com/SillyTavern/SillyTavern",
     },
     {
@@ -214,26 +214,26 @@ export const projects = {
   ],
   sdkLibraries: [
     {
-      name: "@thot/react 🆕",
+      name: "@pollinations/react 🆕",
       url: "https://www.npmjs.com/package/@pollinations/react",
       description:
-        "React hooks for easy integration of THOT' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
+        "React hooks for easy integration of Pollinations.AI' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
       author: "@pollinations",
       repoUrl: "https://react-hooks.pollinations.ai/",
     },
     {
-      name: "pythot 🆕",
+      name: "pypollinations 🆕",
       url: "https://pypi.org/project/pypollinations/",
       description:
-        "A comprehensive Python wrapper for accessing THOT API endpoints. Features async support, image/text generation, and model management.",
+        "A comprehensive Python wrapper for accessing Pollinations.AI API endpoints. Features async support, image/text generation, and model management.",
       author: "@KTS-o7",
       repoUrl: "https://pypi.org/project/pypollinations/",
     },
     {
-      name: "THOT AI Python SDK 🆕",
+      name: "Pollinations.AI AI Python SDK 🆕",
       url: "https://github.com/pollinations-ai/pollinations.ai",
       description:
-        "Official Python SDK for working with THOT generative models. Supports both image and text generation with conversation context.",
+        "Official Python SDK for working with Pollinations.AI generative models. Supports both image and text generation with conversation context.",
       author: "@pollinations-ai",
       repoUrl: "https://github.com/pollinations-ai/pollinations.ai",
     },
@@ -242,34 +242,34 @@ export const projects = {
     {
       name: "Discord Bot",
       url: "https://discord.gg/D9xGg8mq3D",
-      description: "A **Discord bot** that uses THOT for generating images based on user prompts.",
+      description: "A **Discord bot** that uses Pollinations.AI for generating images based on user prompts.",
       author: "@Zngzy",
       repo: "https://github.com/Zingzy/pollinations.ai-bot",
     },
     {
       name: "WhatsApp Group",
       url: "https://chat.whatsapp.com/KI37JqT5aYdL9WBYMyyjDV",
-      description: "A **WhatsApp group** for that allows you to generate images using THOT.",
+      description: "A **WhatsApp group** for that allows you to generate images using Pollinations.AI.",
       author: "@dg_karma",
     },
     {
       name: "Telegram Bot",
       url: "http://t.me/pollinationsbot",
-      description: "A **Telegram bot** that uses THOT for generating images based on user prompts.",
+      description: "A **Telegram bot** that uses Pollinations.AI for generating images based on user prompts.",
       author: "Wong Wei Hao",
     },
     {
       name: "Anyai",
       url: "https://discord.gg/anyai",
       description:
-        "A **Discord bot** and community that leverages **THOT** for generating AI-driven content.",
+        "A **Discord bot** and community that leverages **Pollinations.AI** for generating AI-driven content.",
       author: "@meow_18838",
     },
     {
       name: "OpenHive",
       url: "https://discord.gg/Zv3SXTF5xy",
       description:
-        "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using THOT AI!",
+        "A **Discord server** that bridges the gap between Discord and AI. With Beebot, access dozens of ChatGPT prompts and generate images using Pollinations.AI AI!",
       author: "@creativegpt",
     },
   ],
@@ -278,19 +278,19 @@ export const projects = {
       name: "Proyecto Descartes 🆕",
       url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html?page=102",
       description:
-        "An educational initiative integrating THOT AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
+        "An educational initiative integrating Pollinations.AI AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
     },
     {
       name: "Tutorial",
       url: "https://guiadehospedagem.com.br/pollinations-ai/",
-      description: "An in-depth Portuguese tutorial on using THOT AI.",
+      description: "An in-depth Portuguese tutorial on using Pollinations.AI AI.",
       author: "Janderson de Sales",
     },
     {
       name: "Apple Shortcuts Guide",
       url: "https://www.youtube.com/watch?v=-bS41VTzh_s",
       description:
-        "A step-by-step video guide on creating AI images using Apple Shortcuts and Thot.",
+        "A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations.AI.",
       author: "RoutineHub",
       repo: "https://routinehub.co/shortcut/19953/",
     },

@@ -71,7 +71,7 @@ export function CodeExamples({ image = {} }) {
     height: 1024,
     seed: 42,
     model: "flux",
-    imageURL: "https://image.thot.ai/prompt/A%20beautiful%20landscape"
+    imageURL: "https://image.pollinations.ai/prompt/A%20beautiful%20landscape"
   };
 
   // Use either the provided image or default values

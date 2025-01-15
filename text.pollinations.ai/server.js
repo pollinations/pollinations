@@ -167,7 +167,7 @@ function getQueue(ip) {
 export function getIp(req) {
     const ip = req.headers["x-bb-ip"] || req.headers["x-nf-client-connection-ip"] || req.headers["x-real-ip"] || req.headers['x-forwarded-for'] || req.headers['referer'] || req.socket.remoteAddress;
     if (!ip) return null;
-    const ipSegments = ip.split('.').slice(0, 4).join('.');
+    const ipSegments = ip.split('.').slice(0, 3).join('.');
     // if (ipSegments === "128.116")
     //     throw new Error('Pollinations cloud credits exceeded. Please try again later.');
     return ipSegments;

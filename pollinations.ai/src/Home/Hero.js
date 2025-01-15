@@ -56,36 +56,41 @@ const Hero = () => {
           flexDirection="column"
           alignItems={{ xs: "center", sm: "flex-end" }}
           width="100%"
-          gap="1em"
+          gap="0em"
           maxWidth="90%"
         >
           <SectionSubtitle subtitle={HERO_CTO} color={Colors.offblack} size="3em" />
-          <Grid container spacing={2}>
+          <Grid
+            container
+            spacing={3}
+            marginTop="0em"
+            justifyContent={{ xs: "center", md: "flex-end" }}
+          >
             <Grid>
               <TextEmojiButton
                 subtitle={HERO_EMAIL_BUTTON}
                 onClick={handleEmailButtonClick}
-                textColor={Colors.offblack}
+                textColor={Colors.offwhite}
                 textSize="2em"
-                backgroundColor={Colors.lime}
-              />
-            </Grid>
-            <Grid>
-              <TextEmojiButton
-                subtitle={HERO_GITHUB_LINK}
-                onClick={handleGithubButtonClick}
-                textColor={Colors.offblack}
-                textSize="2em"
-                backgroundColor={Colors.lime}
+                backgroundColor={Colors.offblack}
               />
             </Grid>
             <Grid>
               <TextEmojiButton
                 subtitle={HERO_DISCORD_LINK}
                 onClick={handleDiscordButtonClick}
-                textColor={Colors.offblack}
+                textColor={Colors.offwhite}
                 textSize="2em"
-                backgroundColor={Colors.lime}
+                backgroundColor={Colors.offblack}
+              />
+            </Grid>
+            <Grid>
+              <TextEmojiButton
+                subtitle={HERO_GITHUB_LINK}
+                onClick={handleGithubButtonClick}
+                textColor={Colors.offwhite}
+                textSize="2em"
+                backgroundColor={Colors.offblack}
               />
             </Grid>
           </Grid>

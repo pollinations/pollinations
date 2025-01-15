@@ -12,10 +12,9 @@ import {
 } from "../config/copywrite.js"
 import SectionSubtitle from "../components/SectionSubtitle.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
-import Box from "@mui/material/Box"
 import SectionTitle from "../components/SectionTitle.js"
 import FollowLinkButton from "../components/FollowLinkButton.js"
-
+import TextEmojiButton from "../components/TextEmojiButton.js"
 const Discord = () => {
   const handleDiscordButtonClick = (e) => {
     e.preventDefault()
@@ -72,9 +71,13 @@ const Discord = () => {
                   padding: 2,
                 }}
               >
-                <FollowLinkButton
+                <TextEmojiButton
                   onClick={handleDiscordButtonClick}
                   subtitle={COMMUNITY_DISCORD_CTO}
+                  textColor={Colors.offblack}
+                  textSize="2em"
+                  backgroundColor={Colors.offwhite}
+                  textWeight={Colors.offblack}
                 />
               </Grid>
             </Grid>
@@ -95,7 +98,7 @@ const Discord = () => {
             </Grid>
           </Grid>
 
-          {/* === DISCORD BOX === */}
+          {/* === GITHUB BOX === */}
           <Grid size={{ xs: 12, md: 6 }}>
             <Grid
               container
@@ -132,13 +135,17 @@ const Discord = () => {
                   padding: 2,
                 }}
               >
-                <FollowLinkButton
+                <TextEmojiButton
                   onClick={handleGithubButtonClick}
                   subtitle={COMMUNITY_GITHUB_CTO}
+                  textColor={Colors.offblack}
+                  textSize="2em"
+                  backgroundColor={Colors.offwhite}
+                  textWeight={Colors.offblack}
                 />
               </Grid>
             </Grid>
-            <Grid
+              <Grid
               sx={{
                 display: "flex",
                 alignItems: "center",
@@ -156,7 +163,7 @@ const Discord = () => {
           </Grid>
         </Grid>
 
-        <AsciiArtGenerator width={"100px"}  />
+        <AsciiArtGenerator width={"100px"} />
       </SectionSubContainer>
     </SectionContainer>
   )

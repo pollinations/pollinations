@@ -38,7 +38,7 @@ const WHITELISTED_DOMAINS = [
     'pollinations.ai',
     'thot',
     'ai-ministries.com',
-    'localhost',
+    // 'localhost',
     'pollinations.github.io'
 ];
 
@@ -116,7 +116,7 @@ app.use(cors());
 // Rate limiting setup
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 40, // 20 requests per windowMs
+    max: 40, // 40 requests per windowMs
     message: {
         error: {
             type: 'rate_limit_error',
@@ -158,7 +158,7 @@ const queues = new Map();
 
 function getQueue(ip) {
     if (!queues.has(ip)) {
-        queues.set(ip, new PQueue({ concurrency: 1 }));
+        queues.set(ip, new PQueue({ concurrency: 1, interval: 3000, intervalCap: 1 }));
     }
     return queues.get(ip);
 }

@@ -14,7 +14,6 @@
     import InfoIcon from "@mui/icons-material/Info"
     import { Colors, Fonts } from "../../config/global"
     import { CustomTooltip } from "../CustomTooltip"
-    import discordLogo from "../../assets/icons/discord.png"
     import { GenerateButton } from "./GenerateButton"
     import Grid from "@mui/material/Grid2"
     

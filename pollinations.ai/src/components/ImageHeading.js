@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
-import { Box, Container, Paper } from "@mui/material"
-import { Colors, Fonts, MOBILE_BREAKPOINT } from "../config/global"
-import { useMemo, useState, useEffect } from "react"
+import { Box, Paper } from "@mui/material"
+import { MOBILE_BREAKPOINT } from "../config/global"
+import { useState, useEffect } from "react"
 import useRandomSeed from "../hooks/useRandomSeed"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
 import PromptTooltip from "./PromptTooltip"
@@ -13,17 +13,7 @@ export const ImageStyle = styled.img`
   object-fit: contain;
 `
 
-export const GenerativeImageURLContainer = styled(Container)`
-  color: ${Colors.offwhite};
-  margin: 0em auto;
-  padding: 0em;
-  max-width: 960px;
-  border-radius: 0px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`
+
 
 export const ImageHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {

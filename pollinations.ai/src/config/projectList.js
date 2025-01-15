@@ -1,8 +1,3 @@
-export const logoPrefix =
-  "minimalist colour logo design focuses on symbols and visuals, no text, solid off white background"
-
-export const imageDimension = 96
-
 export const projectCategories = [
   {
     title: "Mobile & Web Apps",

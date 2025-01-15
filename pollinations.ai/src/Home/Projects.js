@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { makeStyles } from "@mui/styles";
 
 import { Colors } from "../config/global";
-import { projects } from "../config/projectText";
+import { projects } from "../config/projectList";
 import {
   PROJECT_TITLE,
   PROJECT_SUBTITLE,

@@ -6,7 +6,7 @@ import Projects from "./Projects"
 import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
 import Discord from "./Community"
-// import Supporter from "./Supporter"
+import Supporter from "./Supporter"
 // import { TextFeed } from "./TextFeed"
 
 export default function Home() {
@@ -21,7 +21,7 @@ export default function Home() {
         <Integration />
         <Discord />
         <Projects />
-        {/* <Supporter /> */}
+        <Supporter />
       </Style>
     </ImageContext.Provider>
   )

@@ -5,7 +5,7 @@ import StyledLink from "../StyledLink"
 import { EmojiRephrase } from "../EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import { logoPrefix, imageDimension } from "../../config/projectText"
+import { PROJECT_LOGO_STYLE, PROJECT_LOGO_SIZE } from "../../config/copywrite"
 import Grid from "@mui/material/Grid2"
 
 const ProjectsRender = ({ projectList, classes }) => (
@@ -102,10 +102,10 @@ const renderRepoLink = (repoUrl) => {
 
 const ProjectImage = ({ name }) => {
   const seed = useRandomSeed()
-  const prompt = `${logoPrefix} ${name}`
+  const prompt = `${PROJECT_LOGO_STYLE} ${name}`
   const imageUrl = usePollinationsImage(prompt, {
-    width: imageDimension * 4,
-    height: imageDimension * 4,
+    width: PROJECT_LOGO_SIZE * 4,
+    height: PROJECT_LOGO_SIZE * 4,
     nologo: true,
     seed,
   })
@@ -114,7 +114,7 @@ const ProjectImage = ({ name }) => {
     <img
       src={imageUrl}
       alt={name}
-      style={{ width: imageDimension, height: imageDimension, borderRadius: "1em" }}
+      style={{ width: PROJECT_LOGO_SIZE, height: PROJECT_LOGO_SIZE, borderRadius: "1em" }}
     />
   )
 }

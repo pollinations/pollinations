@@ -58,6 +58,7 @@ export async function generateText(messages, options, performSearch = false) {
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
         tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
         tool_choice: performSearch ? "auto" : undefined,
+        temperature: options.temperature,
     });
 
     let responseMessage = completion.choices[0].message;

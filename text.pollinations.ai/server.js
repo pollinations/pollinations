@@ -194,16 +194,27 @@ async function handleRequest(req, res, requestData) {
         setInCache(cacheKey, completion);
         log('Generated response', responseText);
         
-        sendToFeedListeners(responseText, requestData, getIp(req));
+        // Extract token usage data
+        const tokenUsage = completion.usage || {};
         
-        // Track successful completion
+        sendToFeedListeners(responseText, {
+            ...requestData,
+            prompt_tokens: tokenUsage.prompt_tokens,
+            completion_tokens: tokenUsage.completion_tokens,
+            total_tokens: tokenUsage.total_tokens
+        }, getIp(req));
+        
+        // Track successful completion with token usage
         await sendToAnalytics(req, 'textGenerated', {
             ...requestData,
             success: true,
             cached: false,
             responseLength: responseText.length,
             streamMode: requestData.stream,
-            plainTextMode: requestData.plaintTextResponse
+            plainTextMode: requestData.plaintTextResponse,
+            prompt_tokens: tokenUsage.prompt_tokens,
+            completion_tokens: tokenUsage.completion_tokens,
+            total_tokens: tokenUsage.total_tokens
         });
 
         if (requestData.stream) {
@@ -352,7 +363,10 @@ async function processRequest(req, res, requestData) {
     if (cachedResponse) {
         log('Cache hit for key:', cacheKey);
         
-        // Track cache hit in analytics
+        // Extract token usage data from cached response
+        const cachedTokenUsage = cachedResponse.usage || {};
+        
+        // Track cache hit in analytics with token usage
         await sendToAnalytics(req, 'textCached', {
             ...requestData,
             success: true,
@@ -360,7 +374,10 @@ async function processRequest(req, res, requestData) {
             responseLength: cachedResponse.choices[0].message.content.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
-            cacheKey: cacheKey
+            cacheKey: cacheKey,
+            prompt_tokens: cachedTokenUsage.prompt_tokens,
+            completion_tokens: cachedTokenUsage.completion_tokens,
+            total_tokens: cachedTokenUsage.total_tokens
         });
 
         if (requestData.plaintTextResponse) {

@@ -3,16 +3,16 @@ import { MarkDownStyle } from "../config/global";
 import { usePollinationsText } from "@pollinations/react";
 import useRandomSeed from '../hooks/useRandomSeed';
 import ReactMarkdown from 'react-markdown';
-import { TERMS_CONDITIONS } from '../config/copywrite';
+import { FOOTER_TERMS_CONDITIONS } from '../config/copywrite';
 import styled from '@emotion/styled';
 
 const Terms = () => {
     const seed = useRandomSeed();
-    const terms = usePollinationsText(TERMS_CONDITIONS, { seed });
+    const terms = usePollinationsText(FOOTER_TERMS_CONDITIONS, { seed });
 
     return (
         <TermsBox >
-            <MarkDownStyle>
+            <MarkDownStyle> 
                 <ReactMarkdown>{terms}</ReactMarkdown>
             </MarkDownStyle>
         </TermsBox>

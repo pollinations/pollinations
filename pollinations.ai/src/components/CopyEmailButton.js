@@ -3,7 +3,7 @@ import { Button } from "@mui/material"
 import FileCopyIcon from "@mui/icons-material/FileCopy"
 import { Colors } from "../config/global"
 
-const CopyEmailButton = () => {
+const CopyEmailButton = ({ buttonText }) => {
   const handleLinkClick = (e) => {
     e.preventDefault()
     const link = e.currentTarget.textContent
@@ -31,7 +31,7 @@ const CopyEmailButton = () => {
       }}
     >
       <FileCopyIcon fontSize="large" style={{ marginRight: "0.5em" }} />
-      hello@pollinations.ai
+      {buttonText}
     </Button>
   )
 }

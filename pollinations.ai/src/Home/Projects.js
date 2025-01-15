@@ -1,27 +1,26 @@
-import React, { useState } from "react"
-import { useMediaQuery, useTheme } from "@mui/material"
-import { makeStyles } from '@mui/styles';
+import React, { useState } from "react";
+import { makeStyles } from "@mui/styles";
 
-
-import { Colors } from "../config/global"
-import { projects } from "../config/projectText"
+import { Colors } from "../config/global";
+import { projects } from "../config/projectText";
 import {
-  APPLICATION_TITLE,
-  APPLICATION_SUBTITLE,
-  APPLICATION_CTO_1,
-  APPLICATION_CTO_2,
-} from "../config/copywrite"
+  PROJECT_TITLE,
+  PROJECT_SUBTITLE,
+  PROJECT_CTO_1,
+  PROJECT_CTO_2,
+  PROJECT_BUTTON,
+} from "../config/copywrite";
 
-import CopyEmailButton from "../components/CopyEmailButton"
-import SectionTitle from "../components/SectionTitle"
-import SectionSubtitle from "../components/SectionSubtitle"
-import { SectionContainer } from "../components/SectionContainer"
-import { SectionSubContainer } from "../components/SectionSubContainer"
-import { SectionBgBox } from "../components/SectionBgBox"
-import { renderProjects } from "../components/Project/ProjectRender"
-import { CodeTypeSelector, buttonStyle } from "../components/Project/ProjectMenuButtons"
+import CopyEmailButton from "../components/CopyEmailButton";
+import SectionTitle from "../components/SectionTitle";
+import SectionSubtitle from "../components/SectionSubtitle";
+import { SectionContainer } from "../components/SectionContainer";
+import { SectionSubContainer } from "../components/SectionSubContainer";
+import { SectionBgBox } from "../components/SectionBgBox";
+import ProjectsRender from "../components/Project/ProjectRender";
+import { CodeTypeSelector } from "../components/Project/ProjectMenuButtons";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   gridContainer: {
     justifyContent: "center",
   },
@@ -31,32 +30,33 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     alignItems: "center",
   },
-}))
+}));
 
 const Projects = () => {
-  const classes = useStyles()
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const [selectedCategory, setSelectedCategory] = useState("apps")
+  const classes = useStyles();
+  const [selectedCategory, setSelectedCategory] = useState("apps");
 
   return (
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
-        <SectionTitle title={APPLICATION_TITLE} />
-        <SectionSubtitle subtitle={APPLICATION_SUBTITLE} />
+        <SectionTitle title={PROJECT_TITLE} />
+        <SectionSubtitle subtitle={PROJECT_SUBTITLE} />
         <CodeTypeSelector
           setSelectedCategory={setSelectedCategory}
           selectedCategory={selectedCategory}
         />
         <SectionBgBox style={{ padding: "2em" }}>
-          {renderProjects(projects[selectedCategory], classes, isMobile)}
+          <ProjectsRender
+            projectList={projects[selectedCategory]}
+            classes={classes}
+          />
         </SectionBgBox>
-        <SectionSubtitle subtitle={APPLICATION_CTO_1} />
-        <SectionSubtitle subtitle={APPLICATION_CTO_2} />
-        <CopyEmailButton />
+        <SectionSubtitle subtitle={PROJECT_CTO_1} />
+        <SectionSubtitle subtitle={PROJECT_CTO_2} />
+        <CopyEmailButton buttonText={PROJECT_BUTTON}/>
       </SectionSubContainer>
     </SectionContainer>
-  )
-}
+  );
+};
 
-export default Projects
+export default Projects;

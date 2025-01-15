@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from '@mui/material'
-import { SOCIAL_LINKS } from '../config/socialLinks'
+import { SOCIAL_LINKS } from '../config/socialLinksList'
 import styled from '@emotion/styled'
 import { Colors, MOBILE_BREAKPOINT } from '../config/global'
 

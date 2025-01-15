@@ -8,6 +8,7 @@ function SectionSubtitle({
   color = Colors.offwhite,
   textAlign = "center",
   size = "1.5em",
+  sx = {},
 }) {
   return (
     <Typography
@@ -17,6 +18,7 @@ function SectionSubtitle({
         fontSize: size,
         maxWidth: "750px",
         textAlign: textAlign,
+        ...sx,
       }}
     >
       <EmojiRephrase>{subtitle}</EmojiRephrase>

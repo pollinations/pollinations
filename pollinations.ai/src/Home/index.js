@@ -5,7 +5,7 @@ import { FeedImage } from "./FeedImage"
 import Projects from "./Projects"
 import { Integration } from "./Integration"
 import { ImageContext } from "../utils/ImageContext"
-import Discord from "./Discord"
+import Discord from "./Community"
 // import Supporter from "./Supporter"
 // import { TextFeed } from "./TextFeed"
 

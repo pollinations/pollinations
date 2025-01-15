@@ -1,26 +1,26 @@
-import React from "react";
-import { Typography, useMediaQuery } from "@mui/material";
-import { Colors } from "../config/global";
+import React from "react"
+import { Typography, useMediaQuery } from "@mui/material"
+import { Colors } from "../config/global"
 
-function SectionTitle({ title }) {
-  const isSmallScreen = useMediaQuery("(max-width:600px)");
-  const fontSize = isSmallScreen ? "6em" : "8em";
+function SectionTitle({ title, color = Colors.lime }) {
+  const isSmallScreen = useMediaQuery("(max-width:600px)")
+  const fontSize = isSmallScreen ? "6em" : "8em"
   return (
     <Typography
       component="div"
       style={{
-        color: Colors.lime,
+        color: color,
         fontSize: fontSize,
         fontWeight: "bold",
-        textAlign: "center",
         marginTop: "0.5em",
         userSelect: "none",
         letterSpacing: "0.1em",
+        textAlign: "center",
       }}
     >
       {title}
     </Typography>
-  );
+  )
 }
 
-export default SectionTitle;
+export default SectionTitle

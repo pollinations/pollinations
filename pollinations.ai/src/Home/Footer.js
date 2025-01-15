@@ -1,46 +1,60 @@
-import styled from "@emotion/styled"
 import { NavLink } from "react-router-dom"
 import { Box } from "@mui/material"
-import { SocialLinks } from "../components/Social"
-import { Colors, MOBILE_BREAKPOINT, BaseContainer } from "../config/global"
+import { SocialLinks } from "../components/SocialLinks"
+import { Colors } from "../config/global"
 import StyledLink from "../components/StyledLink"
-import { ImageURLHeading } from "../components/ImageHeading"
-import useIsMobile from "../hooks/useIsMobile" // Import the new hook
 import { SectionContainer } from "../components/SectionContainer"
+import Grid from "@mui/material/Grid2"
+import SectionSubtitle from "../components/SectionTitle"
+import { FOOTER_INFO } from "../config/copywrite"
 
 const Footer = () => {
-  const isMobile = useIsMobile() // Use the new hook
-
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
-      {/* <SocialContainer>
-          <SocialLinks medium gap="1em" invert />
-        </SocialContainer> */}
       <Box
-        display="flex"
-        flexDirection={isMobile ? "column" : "row"}
-        alignItems="center"
-        justifyContent="space-between"
         width="100%"
+        display="flex"
+        flexDirection={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
         padding="1em"
+        maxWidth="95%"
       >
-        <StyledLink
-          onClick={(e) => {
-            e.preventDefault()
-            navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
+        <Grid
+          size={{ xs: 12, md: 6 }}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: { xs: "center", md: "flex-start" },
           }}
-          href="mailto:hello@pollinations.ai"
-          style={{ userSelect: "text" }}
         >
-          <b>hello@pollinations.ai</b>
-        </StyledLink>
-
-        <StyledLink to="/terms" as={NavLink}>
-          <b>TERMS & CONDITIONS</b>
-        </StyledLink>
+          <StyledLink
+            onClick={(e) => {
+              e.preventDefault()
+              navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
+            }}
+            href="mailto:hello@pollinations.ai"
+            sx={{ userSelect: "text" }}
+          >
+            <b>hello@pollinations.ai</b>
+          </StyledLink>
+          <SocialLinks medium gap="1em" invert />
+        </Grid>
+        <Grid
+          size={{ xs: 12, md: 6 }}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: { xs: "center", md: "flex-end" },
+          }}
+        >
+          <StyledLink to="/terms" component={NavLink}>
+            <b>TERMS & CONDITIONS </b>
+          </StyledLink>
+            <SectionSubtitle subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
+        </Grid>
       </Box>
     </SectionContainer>
   )
 }
-export default Footer
 
+export default Footer

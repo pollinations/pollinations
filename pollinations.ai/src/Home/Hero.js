@@ -6,7 +6,7 @@ import { SectionContainer } from "../components/SectionContainer"
 import { SectionSubContainer } from "../components/SectionSubContainer"
 import SectionSubtitle from "../components/SectionSubtitle"
 import CopyEmailButton from "../components/CopyEmailButton"
-import { HERO_INTRO as HERO_INTRO, HERO_CTO_1 as HERO_CTO_1 } from "../config/copywrite"
+import { HERO_INTRO , HERO_CTO, HERO_BUTTON } from "../config/copywrite"
 
 const Hero = () => {
   return (
@@ -35,8 +35,8 @@ const Hero = () => {
           gap="1em"
           maxWidth="90%"
         >
-          <SectionSubtitle subtitle={HERO_CTO_1} color={Colors.offblack} size="2em" />
-          <CopyEmailButton />
+          <SectionSubtitle subtitle={HERO_CTO} color={Colors.offblack} size="2em" />
+          <CopyEmailButton buttonText={HERO_BUTTON}/>
         </Box>
       </SectionSubContainer>
     </SectionContainer>

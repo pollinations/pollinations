@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from "@mui/material";
 import { Colors } from "../../config/global";
 import { styled, keyframes } from '@mui/material/styles';
+import { IMAGE_EDIT_BUTTON_ON, IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite";
 
 // Define the animation
 const smoothBlink = keyframes`
@@ -48,7 +49,7 @@ export function GenerateButton({ handleButtonClick, isLoading }) {
         onClick={handleButtonClick}
         isLoading={isLoading} // This prop is now excluded from the DOM
       >
-        {isLoading ? "Wait" : "Create"}
+        {isLoading ? IMAGE_EDIT_BUTTON_ON : IMAGE_EDIT_BUTTON_OFF}
       </StyledButton>
     </div>
   );

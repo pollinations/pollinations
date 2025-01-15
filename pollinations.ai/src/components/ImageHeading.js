@@ -25,7 +25,7 @@ export const GenerativeImageURLContainer = styled(Container)`
   align-items: center;
 `
 
-export const ImageURLHeading = styled(
+export const ImageHeading = styled(
   ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
     const originalWidth = width
     const originalHeight = height

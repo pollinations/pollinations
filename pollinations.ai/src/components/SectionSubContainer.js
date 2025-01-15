@@ -2,8 +2,8 @@ import styled from "@emotion/styled"
 
 export const SectionSubContainer = styled.div`
         display: flex;
-        flex-direction: column;
-        align-items: center;   
+        flex-direction: ${props => props.flexDirection || 'column'};
+        align-items: ${props => props.alignItems || 'center'};   
         gap: 2em;
         max-width: 1000px;
         margin-left: auto;

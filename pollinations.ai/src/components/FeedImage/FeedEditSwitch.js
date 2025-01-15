@@ -3,6 +3,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { CustomTooltip } from '../CustomTooltip';
 import { Colors } from '../../config/global';
+import { IMAGE_FEED_MODE1, IMAGE_FEED_MODE2 } from "../../config/copywrite"
 
 export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
   return (
@@ -30,7 +31,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
             border: `1px solid ${Colors.lime}`,
           }}
         >
-          WATCH
+          {IMAGE_FEED_MODE1}
         </ToggleButton>
       </CustomTooltip>
       <CustomTooltip title="Create an alternative image, this will freeze the feed when enabled.">
@@ -49,7 +50,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
             border: `1px solid ${Colors.lime}`,
           }}
         >
-          TRY
+          {IMAGE_FEED_MODE2}
         </ToggleButton>
       </CustomTooltip>
     </ToggleButtonGroup>

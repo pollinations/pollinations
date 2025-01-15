@@ -1,7 +1,7 @@
 import React from "react"
 import Button from "@mui/material/Button"
 import { Colors } from "../config/global"
-import SectionSubtitle from "./SectionSubtitle"
+import TextEmojiText from "./TextEmojiText"
 import { EmojiRephrase } from "./EmojiRephrase"
 
 const FollowLinkButton = ({ onClick, subtitle }) => {
@@ -23,7 +23,7 @@ const FollowLinkButton = ({ onClick, subtitle }) => {
       }}
     >
 
-      <SectionSubtitle
+      <TextEmojiText
         color={Colors.offblack}
         subtitle={subtitle}
         size={"1.8em"}

@@ -5,7 +5,7 @@ import { Colors } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
-import SectionSubtitle from "../components/SectionTitle"
+import TextEmojiText from "../components/SectionTitle"
 import { FOOTER_INFO } from "../config/copywrite"
 
 const Footer = () => {
@@ -50,7 +50,7 @@ const Footer = () => {
           <StyledLink to="/terms" component={NavLink}>
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
-            <SectionSubtitle subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
+            <TextEmojiText subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
         </Grid>
       </Box>
     </SectionContainer>

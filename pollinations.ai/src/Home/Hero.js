@@ -3,7 +3,7 @@ import { Box, Typography } from "@mui/material"
 import { Colors } from "../config/global"
 import { EmojiRephrase } from "../components/EmojiRephrase"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
-import SectionSubtitle from "../components/SectionSubtitle"
+import TextEmojiText from "../components/TextEmojiText"
 import {
   HERO_INTRO,
   HERO_CTO,
@@ -45,8 +45,6 @@ const Hero = () => {
             color: Colors.offblack,
             textAlign: { xs: "center", sm: "left" },
             maxWidth: "90%",
-            paddingBottom: "1em",
-            paddingTop: "1em",
           }}
         >
           <EmojiRephrase>{HERO_INTRO}</EmojiRephrase>
@@ -59,10 +57,10 @@ const Hero = () => {
           gap="0em"
           maxWidth="90%"
         >
-          <SectionSubtitle subtitle={HERO_CTO} color={Colors.offblack} size="3em" />
+          <TextEmojiText subtitle={HERO_CTO} color={Colors.offblack} size="3em" />
           <Grid
             container
-            spacing={3}
+            spacing={2}
             marginTop="0em"
             justifyContent={{ xs: "center", md: "flex-end" }}
           >
@@ -70,27 +68,30 @@ const Hero = () => {
               <TextEmojiButton
                 subtitle={HERO_EMAIL_BUTTON}
                 onClick={handleEmailButtonClick}
-                textColor={Colors.offwhite}
-                textSize="2em"
-                backgroundColor={Colors.offblack}
+                textColor={Colors.offblack}
+                borderColor={Colors.offblack}
+                textSize="1.8em"
+                backgroundColor={`${Colors.offblack}100`}
               />
             </Grid>
             <Grid>
               <TextEmojiButton
                 subtitle={HERO_DISCORD_LINK}
                 onClick={handleDiscordButtonClick}
-                textColor={Colors.offwhite}
-                textSize="2em"
-                backgroundColor={Colors.offblack}
+                textColor={Colors.offblack}
+                borderColor={Colors.offblack}
+                textSize="1.8em"
+                backgroundColor={`${Colors.offblack}100`}
               />
             </Grid>
             <Grid>
               <TextEmojiButton
                 subtitle={HERO_GITHUB_LINK}
                 onClick={handleGithubButtonClick}
-                textColor={Colors.offwhite}
-                textSize="2em"
-                backgroundColor={Colors.offblack}
+                textColor={Colors.offblack}
+                borderColor={Colors.offblack}
+                textSize="1.8em"
+                backgroundColor={`${Colors.offblack}100`}
               />
             </Grid>
           </Grid>

@@ -3,7 +3,7 @@ import { Typography } from "@mui/material"
 import { Colors } from "../config/global"
 import { EmojiRephrase } from "./EmojiRephrase"
 
-function SectionSubtitle({
+function TextEmojiText({
   subtitle,
   color = Colors.offwhite,
   textAlign = "center",
@@ -26,4 +26,4 @@ function SectionSubtitle({
   )
 }
 
-export default SectionSubtitle
+export default TextEmojiText

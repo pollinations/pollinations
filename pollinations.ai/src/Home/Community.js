@@ -10,7 +10,7 @@ import {
   COMMUNITY_GITHUB_SUBTITLE,
   COMMUNITY_GITHUB_CTO,
 } from "../config/copywrite.js"
-import SectionSubtitle from "../components/SectionSubtitle.js"
+import TextEmojiText from "../components/TextEmojiText.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
 import SectionTitle from "../components/SectionTitle.js"
 import FollowLinkButton from "../components/FollowLinkButton.js"
@@ -30,12 +30,10 @@ const Discord = () => {
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.offblack} />
-        <SectionSubtitle color={Colors.offblack} subtitle={COMMUNITY_SUBTITLE} size="2em" />
-
-        {/* Main row: Box1 (Discord) and Box2 (GitHub) */}
-        <Grid container spacing={4}>
+        <TextEmojiText color={Colors.offblack} subtitle={COMMUNITY_SUBTITLE} size="2em" />
+        <Grid container spacing={4} justifyContent="center">
           {/* === DISCORD BOX === */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Grid
               container
               direction="column"
@@ -56,7 +54,7 @@ const Discord = () => {
                   fill={Colors.offwhite}
                   viewBox="0 0 1024 1024"
                   style={{
-                    height: "250px",
+                    height: "200px",
                     objectFit: "contain",
                   }}
                 >
@@ -75,7 +73,7 @@ const Discord = () => {
                   onClick={handleDiscordButtonClick}
                   subtitle={COMMUNITY_DISCORD_CTO}
                   textColor={Colors.offblack}
-                  textSize="2em"
+                  textSize="1.3em"
                   backgroundColor={Colors.offwhite}
                   textWeight={Colors.offblack}
                 />
@@ -87,10 +85,9 @@ const Discord = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 textAlign: "center",
-                mt: 3,
               }}
             >
-              <SectionSubtitle
+              <TextEmojiText
                 color={Colors.offblack}
                 subtitle={COMMUNITY_DISCORD_SUBTITLE}
                 size="1.5em"
@@ -99,7 +96,7 @@ const Discord = () => {
           </Grid>
 
           {/* === GITHUB BOX === */}
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
             <Grid
               container
               direction="column"
@@ -120,7 +117,7 @@ const Discord = () => {
                   fill={Colors.offwhite}
                   viewBox="0 0 1024 1024"
                   style={{
-                    height: "250px",
+                    height: "200px",
                     objectFit: "contain",
                   }}
                 >
@@ -139,22 +136,21 @@ const Discord = () => {
                   onClick={handleGithubButtonClick}
                   subtitle={COMMUNITY_GITHUB_CTO}
                   textColor={Colors.offblack}
-                  textSize="2em"
+                  textSize="1.3em"
                   backgroundColor={Colors.offwhite}
                   textWeight={Colors.offblack}
                 />
               </Grid>
             </Grid>
-              <Grid
+            <Grid
               sx={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 textAlign: "center",
-                mt: 3,
               }}
             >
-              <SectionSubtitle
+              <TextEmojiText
                 color={Colors.offblack}
                 subtitle={COMMUNITY_GITHUB_SUBTITLE}
                 size="1.5em"

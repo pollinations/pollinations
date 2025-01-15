@@ -13,7 +13,7 @@ import { ImageDisplay } from "../components/FeedImage/ImageDisplay"
 import { ImageContext } from "../utils/ImageContext"
 import { SectionContainer, SectionBgBox } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
-import SectionSubtitle from "../components/SectionSubtitle"
+import TextEmojiText from "../components/TextEmojiText"
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite"
 import { getImageURL } from "../utils/getImageURL"
 import Grid from "@mui/material/Grid2"
@@ -126,7 +126,7 @@ export const FeedImage = memo(() => {
       >
         <SectionTitle title={IMAGE_FEED_TITLE} />
         <ServerLoadInfo lastImage={lastImage} imagesGenerated={imagesGenerated} image={image} />
-        <SectionSubtitle subtitle={IMAGE_FEED_SUBTITLE} />
+        <TextEmojiText subtitle={IMAGE_FEED_SUBTITLE} />
         {image?.imageURL && (
           <FeedEditSwitch
             toggleValue={toggleValue}

@@ -4,7 +4,7 @@ import { CodeExamples } from "../components/Integrate/CodeExamples"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
 import { INTEGRATION_TITLE, INTEGRATION_SUBTITLE } from "../config/copywrite"
 import SectionTitle from "../components/SectionTitle"
-import SectionSubtitle from "../components/SectionSubtitle"
+import TextEmojiText from "../components/TextEmojiText.js"
 import { ImageContext } from "../utils/ImageContext"
 
 export const Integration = () => {
@@ -14,7 +14,7 @@ export const Integration = () => {
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATION_TITLE} />
-        <SectionSubtitle subtitle={INTEGRATION_SUBTITLE} />
+        <TextEmojiText subtitle={INTEGRATION_SUBTITLE} />
         <CodeExamples image={image} />
       </SectionSubContainer>
     </SectionContainer>

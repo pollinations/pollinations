@@ -2,7 +2,7 @@ import React from "react"
 import Button from "@mui/material/Button"
 import { EmojiRephrase } from "./EmojiRephrase"
 
-const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundColor }) => {
+const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundColor, borderColor }) => {
   return (
     <Button
       onClick={onClick}
@@ -21,6 +21,9 @@ const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundCol
         color: textColor,
         textTransform: "none",
         textDecoration: "none",
+        borderColor: borderColor,
+        borderWidth: "1px",
+        borderStyle: "solid",
         "&:hover": {
           backgroundColor: `${backgroundColor}90`,
         },

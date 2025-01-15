@@ -2,7 +2,7 @@ import React from "react"
 import { Colors } from "../config/global"
 import { SectionContainer, SectionSubContainer, SectionBgBox } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
-import SectionSubtitle from "../components/SectionSubtitle"
+import TextEmojiText from "../components/TextEmojiText"
 import { SUPPORTER_TITLE, SUPPORTER_SUBTITLE, SUPPORTER_LOGO_STYLE } from "../config/copywrite"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
@@ -25,9 +25,9 @@ const Supporter = () => {
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
-        <SectionSubtitle subtitle={SUPPORTER_SUBTITLE} />
+        <TextEmojiText subtitle={SUPPORTER_SUBTITLE} />
       <SectionBgBox style={{ padding: "2em" }}>
-        <Grid container spacing={8} >
+        <Grid container spacing={12} >
           {SUPPORTER_LIST.map((company) => (
             <Grid             
               key={company.name}
@@ -47,7 +47,7 @@ const Supporter = () => {
               </StyledLink>
               <br />
               {isMdUp && (
-                <SectionSubtitle subtitle={company.description} color={Colors.offwhite} size="1em" />
+                <TextEmojiText subtitle={company.description} color={Colors.offwhite} size="1em" />
               )}
             </Grid>
           ))}

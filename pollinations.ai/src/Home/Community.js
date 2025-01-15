@@ -1,8 +1,7 @@
 import { Colors } from "../config/global.js"
 import { ICONS } from "../assets/icons/icons.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
-import { SectionContainer } from "../components/SectionContainer.js"
-import { SectionSubContainer } from "../components/SectionSubContainer.js"
+import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
 import {
   COMMUNITY_SUBTITLE,
   COMMUNITY_DISCORD_CTO,

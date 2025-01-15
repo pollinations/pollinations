@@ -6,9 +6,9 @@ import { Colors } from "../../config/global"
 import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
-import { SectionBgBox } from "../SectionBgBox"
 import FileCopyIcon from '@mui/icons-material/FileCopy'
 import CODE_EXAMPLES from '../../config/codeExamplesText';
+import { SectionBgBox } from "../SectionContainer"
 
 
 // Common styles

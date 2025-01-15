@@ -1,8 +1,6 @@
 import React from "react";
 import useRandomSeed from "../hooks/useRandomSeed";
 import ReactMarkdown from "react-markdown";
-import { Typography } from "@mui/material";
-import StyledLink from "./StyledLink";
 import useResponsivePollinationsText from "../hooks/useResponsivePollinationsText";
 import PromptTooltip from "./PromptTooltip";
 
@@ -13,15 +11,9 @@ export function EmojiRephrase({ children }) {
 
     return (
         <PromptTooltip title={prompt} seed={seed}>
-            <Typography component="div" style={{ fontSize: "1.2em" }}>
-                <ReactMarkdown
-                    components={{
-                        p: ({ node, ...props }) => <span {...props} />,
-                        a: ({ node, ...props }) => <StyledLink {...props} />
-                    }}>
-                    {rephrase}
+                <ReactMarkdown>
+                    {rephrase}  
                 </ReactMarkdown>
-            </Typography>
         </PromptTooltip>
     );
 }

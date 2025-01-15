@@ -1,15 +1,13 @@
 import React from "react"
 import { Colors } from "../config/global"
-import { SectionContainer } from "../components/SectionContainer"
+import { SectionContainer, SectionSubContainer, SectionBgBox } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import SectionSubtitle from "../components/SectionSubtitle"
-import { SectionBgBox } from "../components/SectionBgBox"
 import { SUPPORTER_TITLE, SUPPORTER_SUBTITLE, SUPPORTER_LOGO_STYLE } from "../config/copywrite"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
-import { SectionSubContainer } from "../components/SectionSubContainer"
 
 const Supporter = () => {
   const theme = useTheme()
@@ -31,8 +29,7 @@ const Supporter = () => {
       <SectionBgBox style={{ padding: "2em" }}>
         <Grid container spacing={8} >
           {SUPPORTER_LIST.map((company) => (
-            <Grid
-              item
+            <Grid             
               key={company.name}
               size={{ xs: 12, sm: 3 }}
               style={{ textAlign: "center" }}

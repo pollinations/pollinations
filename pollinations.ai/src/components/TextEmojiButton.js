@@ -1,36 +1,31 @@
 import React from "react"
 import Button from "@mui/material/Button"
 import { Colors } from "../config/global"
-import SectionSubtitle from "./SectionSubtitle"
 import { EmojiRephrase } from "./EmojiRephrase"
 
-const FollowLinkButton = ({ onClick, subtitle }) => {
+const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundColor }) => {
   return (
     <Button
       onClick={onClick}
       sx={{
         userSelect: "none",
-        backgroundColor: `${Colors.lime}`,
+        backgroundColor: `${backgroundColor}`,
         borderRadius: "15px",
         display: "flex",
+        fontSize: textSize,
         alignItems: "center",
         justifyContent: "center",
         alignSelf: "flex-end",
-        width: "100%" ,
+        width: "100%",
+        color: textColor,
         "&:hover": {
-          backgroundColor: `${Colors.lime}90`,
+          backgroundColor: `${backgroundColor}90`,
         },
       }}
     >
-
-      <SectionSubtitle
-        color={Colors.offblack}
-        subtitle={subtitle}
-        size={"1.8em"}
-      />
-      <EmojiRephrase>{subtitle}</EmojiRephrase>
+      <EmojiRephrase  >{subtitle}</EmojiRephrase>
     </Button>
   )
 }
 
-export default FollowLinkButton 
+export default TextEmojiButton

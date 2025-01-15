@@ -2,11 +2,35 @@ import React from "react"
 import { Box, Typography } from "@mui/material"
 import { Colors } from "../config/global"
 import { EmojiRephrase } from "../components/EmojiRephrase"
-import { SectionContainer } from "../components/SectionContainer"
-import { SectionSubContainer } from "../components/SectionSubContainer"
+import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
 import SectionSubtitle from "../components/SectionSubtitle"
-import CopyEmailButton from "../components/CopyEmailButton"
-import { HERO_INTRO , HERO_CTO, HERO_BUTTON } from "../config/copywrite"
+import {
+  HERO_INTRO,
+  HERO_CTO,
+  HERO_EMAIL_BUTTON,
+  HERO_GITHUB_LINK,
+  HERO_DISCORD_LINK,
+} from "../config/copywrite"
+import TextEmojiButton from "../components/TextEmojiButton"
+import Grid from "@mui/material/Grid2"
+
+const handleDiscordButtonClick = (e) => {
+  e.preventDefault()
+  window.open("https://discord.gg/k9F7SyTgqn", "_blank")
+}
+
+const handleGithubButtonClick = (e) => {
+  e.preventDefault()
+  window.open("https://github.com/pollinations/pollinations", "_blank")
+}
+
+const handleEmailButtonClick = (e) => {
+  e.preventDefault()
+  const email = "hello@pollinations.ai"
+  navigator.clipboard.writeText(email).then(() => {
+    console.log(`Copied to clipboard: ${email}`)
+  })
+}
 
 const Hero = () => {
   return (
@@ -35,8 +59,36 @@ const Hero = () => {
           gap="1em"
           maxWidth="90%"
         >
-          <SectionSubtitle subtitle={HERO_CTO} color={Colors.offblack} size="2em" />
-          <CopyEmailButton buttonText={HERO_BUTTON}/>
+          <SectionSubtitle subtitle={HERO_CTO} color={Colors.offblack} size="3em" />
+          <Grid container spacing={2}>
+            <Grid>
+              <TextEmojiButton
+                subtitle={HERO_EMAIL_BUTTON}
+                onClick={handleEmailButtonClick}
+                textColor={Colors.offblack}
+                textSize="2em"
+                backgroundColor={Colors.lime}
+              />
+            </Grid>
+            <Grid>
+              <TextEmojiButton
+                subtitle={HERO_GITHUB_LINK}
+                onClick={handleGithubButtonClick}
+                textColor={Colors.offblack}
+                textSize="2em"
+                backgroundColor={Colors.lime}
+              />
+            </Grid>
+            <Grid>
+              <TextEmojiButton
+                subtitle={HERO_DISCORD_LINK}
+                onClick={handleDiscordButtonClick}
+                textColor={Colors.offblack}
+                textSize="2em"
+                backgroundColor={Colors.lime}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </SectionSubContainer>
     </SectionContainer>

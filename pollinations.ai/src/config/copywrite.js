@@ -3,7 +3,9 @@ export const HEADER_LOGO = "Pollinations.AI"
 export const HERO_INTRO =
   "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence. Format with emojis. Use italics and bold to make the text more engaging."
 export const HERO_CTO = "Talk to us, reach out"
-export const HERO_BUTTON = "hello@pollinations.ai"
+export const HERO_EMAIL_BUTTON = "Use only the text 'Email' and add url link and email related emojis"
+export const HERO_GITHUB_LINK = "Use only the text 'Github' and add url link and coding related emojis"
+export const HERO_DISCORD_LINK = "Use only the text 'Discord' and add url link and social media, gaming related emojis"
 
 export const IMAGE_FEED_SUBTITLE =
   "Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime."

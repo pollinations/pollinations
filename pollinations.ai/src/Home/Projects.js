@@ -14,9 +14,7 @@ import {
 import CopyEmailButton from "../components/CopyEmailButton";
 import SectionTitle from "../components/SectionTitle";
 import SectionSubtitle from "../components/SectionSubtitle";
-import { SectionContainer } from "../components/SectionContainer";
-import { SectionSubContainer } from "../components/SectionSubContainer";
-import { SectionBgBox } from "../components/SectionBgBox";
+import { SectionContainer, SectionSubContainer, SectionBgBox } from "../components/SectionContainer";
 import ProjectsRender from "../components/Project/ProjectRender";
 import { CodeTypeSelector } from "../components/Project/ProjectMenuButtons";
 

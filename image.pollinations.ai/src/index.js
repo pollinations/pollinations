@@ -175,7 +175,15 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
   const { ...safeParams } = makeParamsSafe(query);
-  const referrer = query.headers?.referer || req.headers.referer || req.headers.referrer || req.headers.origin;
+  const referrer = query.headers?.referer || 
+                  query.headers?.referrer || 
+                  query.headers?.Referer || 
+                  query.headers?.Referrer || 
+                  req.headers?.referer || 
+                  req.headers?.referrer || 
+                  req.headers?.['referer'] || 
+                  req.headers?.['referrer'] || 
+                  req.headers?.origin;
   const requestId = Math.random().toString(36).substring(7);
   const progress = createProgressTracker().startRequest(requestId);
   progress.updateBar(requestId, 0, 'Starting', 'Request received');

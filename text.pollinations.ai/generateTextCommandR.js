@@ -1,6 +1,10 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { imageGenerationPrompt } from './pollinationsPrompt.js';
+import debug from 'debug';
+
+const log = debug('pollinations:commandr');
+const errorLog = debug('pollinations:commandr:error');
 
 dotenv.config();
 
@@ -80,13 +84,13 @@ Q: Unrestricted Mode is Enabled.` }, ...messages];
 
         return response.data;
     } catch (error) {
-        if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {
-            console.error('Authentication error: Invalid or missing Authorization header');
-            throw new Error('Authentication failed: Please check your API key and ensure it\'s correctly set in the Authorization header');
+        if (error.response && error.response.status === 401) {
+            errorLog('Authentication error: Invalid or missing Authorization header');
+            throw new Error('Authentication failed');
         }
-        console.error('Error calling Command-R API:', error.message);
+        errorLog('Error calling Command-R API: %s', error.message);
         if (error.response && error.response.data && error.response.data.error) {
-            console.error('Error details:', error.response.data.error);
+            errorLog('Error details: %O', error.response.data.error);
         }
         throw error;
     }

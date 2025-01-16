@@ -1,20 +1,23 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import debug from 'debug';
+
+const log = debug('pollinations:claude');
 
 dotenv.config();
 
 const claudeEndpoint = 'https://api.anthropic.com/v1/messages';
 
-async function generateTextClaude(messages, { jsonMode = false, seed = null, temperature }) {
-    console.log('generateTextClaude called with messages:', messages);
-    console.log('Options:', { jsonMode, seed, temperature });
+async function generateTextClaude(messages, { jsonMode = false, seed = null, temperature } = {}) {
+    log('generateTextClaude called with messages: %O', messages);
+    log('Options: %O', { jsonMode, seed, temperature });
 
     const { messages: processedMessages, systemMessage } = extractSystemMessage(messages, jsonMode, seed);
-    console.log('extracted system message:', systemMessage);
-    console.log('processed messages:', processedMessages);
+    log('extracted system message: %s', systemMessage);
+    log('processed messages: %O', processedMessages);
 
     const alternatingMessages = ensureAlternatingRoles(processedMessages);
-    console.log('alternating messages:', alternatingMessages);
+    log('alternating messages: %O', alternatingMessages);
 
     // Ensure the first message is a user message
     if (alternatingMessages.length === 0 || alternatingMessages[0].role !== 'user') {
@@ -23,7 +26,7 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
 
     try {
         const convertedMessages = await convertToClaudeFormat(alternatingMessages);
-        console.log('converted messages:', convertedMessages);
+        log('converted messages: %O', convertedMessages);
 
         // Ensure temperature is a valid number between 0 and 1
         if (typeof temperature !== 'number' || temperature < 0 || temperature > 1) {
@@ -45,19 +48,19 @@ async function generateTextClaude(messages, { jsonMode = false, seed = null, tem
             }
         });
 
-        console.log('Claude API response:', response.data);
+        log('Claude API response: %O', response.data);
         return response.data.content[0]?.text;
     } catch (error) {
-        console.error('Error calling Claude API:', error.message);
+        log('Error calling Claude API: %s', error.message);
         if (error.response && error.response.data && error.response.data.error) {
-            console.error('Error details:', error.response.data.error);
+            log('Error details: %s', error.response.data.error);
         }
         throw error;
     }
 }
 
 function extractSystemMessage(messages, jsonMode, seed) {
-    console.log('extractSystemMessage called with messages:', messages);
+    log('extractSystemMessage called with messages: %O', messages);
     let systemMessage = undefined;
     messages = messages.map(message => {
         if (message.role === 'system') {
@@ -71,8 +74,8 @@ function extractSystemMessage(messages, jsonMode, seed) {
         systemMessage = 'Respond in simple JSON format';
     }
 
-    console.log('extracted system message:', systemMessage);
-    console.log('filtered messages:', messages);
+    log('extracted system message: %s', systemMessage);
+    log('filtered messages: %O', messages);
 
     return {
         messages,
@@ -81,7 +84,7 @@ function extractSystemMessage(messages, jsonMode, seed) {
 }
 
 function ensureAlternatingRoles(messages) {
-    console.log('ensureAlternatingRoles called with messages:', messages);
+    log('ensureAlternatingRoles called with messages: %O', messages);
     const alternatingMessages = [];
     let lastRole = null;
 
@@ -94,12 +97,12 @@ function ensureAlternatingRoles(messages) {
         lastRole = message.role;
     });
 
-    console.log('ensured alternating messages:', alternatingMessages);
+    log('ensured alternating messages: %O', alternatingMessages);
     return alternatingMessages;
 }
 
 async function convertToClaudeFormat(messages) {
-    console.log('convertToClaudeFormat called with messages:', messages);
+    log('convertToClaudeFormat called with messages: %O', messages);
     return Promise.all(messages.map(async message => {
         if (Array.isArray(message.content)) {
             const convertedContent = await Promise.all(message.content.map(async item => {
@@ -136,13 +139,13 @@ async function convertToClaudeFormat(messages) {
                                 }
                             };
                         } catch (error) {
-                            console.error('Error fetching image:', error);
+                            log('Error fetching image: %s', error);
                             throw new Error('Failed to fetch and convert image to base64');
                         }
                     }
                 }
             }));
-            console.log('converted content:', convertedContent);
+            log('converted content: %O', convertedContent);
             return {
                 role: message.role,
                 content: convertedContent

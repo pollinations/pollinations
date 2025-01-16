@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import debug from 'debug';
 
 dotenv.config();
 
@@ -8,6 +9,9 @@ const BING_API_KEY = process.env.BING_API_KEY;
 
 // Add timeout constant
 const SEARCH_TIMEOUT = 20000; // 10 seconds timeout for search
+
+const log = debug('pollinations:search');
+const errorLog = debug('pollinations:search:error');
 
 export const searchToolDefinition = {
     type: "function",
@@ -34,7 +38,7 @@ export const searchToolDefinition = {
 
 export async function performWebSearch({ query, num_results = 20 }) {
     try {
-        console.log("Performing web search with query", query, "and num_results", num_results);
+        log("Performing web search with query", query, "and num_results", num_results);
         
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
             params: { q: query, count: num_results },
@@ -58,7 +62,7 @@ export async function performWebSearch({ query, num_results = 20 }) {
             ? 'Search timed out' 
             : error.response?.data?.error || error.message;
             
-        console.error('Search API error:', errorMessage);
+        errorLog('Search API error: %s', errorMessage);
         return JSON.stringify({ 
             error: 'Failed to perform web search',
             details: errorMessage

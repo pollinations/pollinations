@@ -317,16 +317,8 @@ export function getRequestData(req) {
 
 // Helper function to get referrer from request
 export function getReferrer(req, data) {
-    const referer = req.headers.referer;
-    if (!referer) return data.referrer || 'unknown';
-    
-    if (referer.includes('roblox.com')) {
-        return 'roblox';
-    } else if (referer.includes('pollinations.ai')) {
-        return 'pollinations';
-    } else {
-        return new URL(referer).hostname;
-    }
+    const referer = req.headers.referer || req.headers.referrer || data.referrer || 'unknown';
+    return referer;
 }
 
 // Helper function to process requests with queueing and caching logic

@@ -199,9 +199,7 @@ async function handleRequest(req, res, requestData) {
         
         sendToFeedListeners(responseText, {
             ...requestData,
-            prompt_tokens: tokenUsage.prompt_tokens,
-            completion_tokens: tokenUsage.completion_tokens,
-            total_tokens: tokenUsage.total_tokens
+            ...tokenUsage
         }, getIp(req));
         
         // Track successful completion with token usage
@@ -212,9 +210,7 @@ async function handleRequest(req, res, requestData) {
             responseLength: responseText.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
-            prompt_tokens: tokenUsage.prompt_tokens,
-            completion_tokens: tokenUsage.completion_tokens,
-            total_tokens: tokenUsage.total_tokens
+            ...tokenUsage
         });
 
         if (requestData.stream) {
@@ -375,9 +371,7 @@ async function processRequest(req, res, requestData) {
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
             cacheKey: cacheKey,
-            prompt_tokens: cachedTokenUsage.prompt_tokens,
-            completion_tokens: cachedTokenUsage.completion_tokens,
-            total_tokens: cachedTokenUsage.total_tokens
+            ...cachedTokenUsage
         });
 
         if (requestData.plaintTextResponse) {

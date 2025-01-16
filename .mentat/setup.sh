@@ -1,3 +1,5 @@
+apt update
+apt install -y python3-venv
 python3 -m venv venv
 . venv/bin/activate
 pip3 install -r image.pollinations.ai/image_gen_dmd2/requirements.txt

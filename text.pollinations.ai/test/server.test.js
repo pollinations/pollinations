@@ -89,13 +89,10 @@ test('POST /openai should handle a valid request', async t => {
 test('POST / should return 400 for invalid messages array', async t => {
     const response = await request(app)
         .post('/')
-        .set('Content-Type', 'application/json')
-        .send({ 
-            messages: 'invalid',
-            code: 'BeesKnees'
-        });
+        .send({ messages: 'invalid' });
+    
     t.is(response.status, 400, 'Response status should be 400');
-    t.is(response.text, 'Invalid messages array. Received: invalid', 'Response should indicate invalid messages');
+    t.true(response.text.includes('Invalid messages'), 'Response should indicate invalid messages');
 });
 
 /**

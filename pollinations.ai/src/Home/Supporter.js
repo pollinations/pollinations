@@ -26,7 +26,7 @@ const Supporter = () => {
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
         <TextEmojiText subtitle={SUPPORTER_SUBTITLE} />
-      <SectionBgBox style={{ padding: "2em" }}>
+      <SectionBgBox style={{ padding: "2em" }} backgroundcolor={Colors.offblack}>
         <Grid container spacing={12} >
           {SUPPORTER_LIST.map((company) => (
             <Grid             

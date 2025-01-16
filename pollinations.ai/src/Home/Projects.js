@@ -52,7 +52,7 @@ const Projects = () => {
           setSelectedCategory={setSelectedCategory}
           selectedCategory={selectedCategory}
         />
-        <SectionBgBox style={{ padding: "2em" }}>
+        <SectionBgBox style={{ padding: "2em" }} backgroundcolor={Colors.offblack}>
           <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
         </SectionBgBox>
         <TextEmojiText subtitle={PROJECT_CTO_1} />
@@ -61,7 +61,7 @@ const Projects = () => {
           <TextEmojiButton
             subtitle={PROJECT_BUTTON}
             onClick={handleEmailButtonClick}
-            textColor={Colors.offwhite}
+            textColor={Colors.lime}
             borderColor={Colors.offwhite}
             textSize="2em"
             backgroundColor={`${Colors.offblack}`}

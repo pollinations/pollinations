@@ -5,7 +5,7 @@ import { SectionContainer } from "../components/SectionContainer"
 import { NavLink } from "react-router-dom"
 import { SocialLinks } from "../components/SocialLinks"
 import { ImageHeading } from "../components/ImageHeading"
-import { HEADER_LOGO } from "../config/copywrite"
+import { HEADER_LOGO, HEADER_WHITE_BG } from "../config/copywrite"
 
 const Header = () => {
   return (
@@ -27,7 +27,7 @@ const Header = () => {
             textDecoration: "none",
           }}
         >
-          <ImageHeading whiteText={false} width={400} height={100}>
+          <ImageHeading isWhiteBG={HEADER_WHITE_BG} width={500} height={130}>
             {HEADER_LOGO}
           </ImageHeading>
         </NavLink>

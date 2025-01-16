@@ -42,7 +42,7 @@ const Team = () => {
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.offblack} />
-        <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} size="2em" />
+        <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} size="1.8em" />
         <Grid container spacing={4} justifyContent="center">
           {teamMembers.map((member, index) => (
             <Grid key={index} item xs={12} sm={6} md={4} lg={3}>

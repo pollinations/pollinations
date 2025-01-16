@@ -1,8 +1,15 @@
 import React from "react"
 import Button from "@mui/material/Button"
-import { EmojiRephrase } from "./EmojiRephrase"
+import { TextRephraseTranslate } from "./TextRephraseTranslate"
 
-const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundColor, borderColor }) => {
+const TextEmojiButton = ({
+  onClick,
+  subtitle,
+  textColor,
+  textSize,
+  backgroundColor,
+  borderColor = "transparent",
+}) => {
   return (
     <Button
       onClick={onClick}
@@ -17,15 +24,16 @@ const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundCol
         justifyContent: "center",
         alignSelf: "flex-end",
         width: "100%",
-        height: "80%",
         color: textColor,
         textTransform: "none",
         textDecoration: "none",
         borderColor: borderColor,
         borderWidth: "1px",
         borderStyle: "solid",
+        lineHeight: "1.5em",
         "&:hover": {
           backgroundColor: `${backgroundColor}90`,
+          borderColor: `${borderColor}90`,
         },
         "& a": {
           textDecoration: "none",
@@ -41,7 +49,7 @@ const TextEmojiButton = ({ onClick, subtitle, textColor, textSize, backgroundCol
         },
       }}
     >
-      <EmojiRephrase>{subtitle}</EmojiRephrase>
+      <TextRephraseTranslate>{subtitle}</TextRephraseTranslate>
     </Button>
   )
 }

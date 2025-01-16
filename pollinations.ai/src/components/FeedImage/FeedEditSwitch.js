@@ -22,12 +22,12 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           style={{
             backgroundColor: toggleValue === 'feed' ? Colors.lime : 'transparent',
             color: toggleValue === 'feed' ? Colors.offblack : Colors.lime,
-            fontSize: '1.5rem',
+            fontSize: '1.8rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
             fontWeight: 600,
             height: '100%',
-            width: '150px',
+            width: '200px',
             border: `1px solid ${Colors.lime}`,
           }}
         >
@@ -41,12 +41,12 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           style={{
             backgroundColor: toggleValue === 'edit' ? Colors.lime : 'transparent',
             color: toggleValue === 'edit' ? Colors.offblack : Colors.lime,
-            fontSize: '1.5rem',
+            fontSize: '1.8rem',
             fontFamily: 'Uncut-Sans-Variable',
             fontStyle: 'normal',
             fontWeight: 600,
             height: '100%',
-            width: '150px',
+            width: '200px',
             border: `1px solid ${Colors.lime}`,
           }}
         >

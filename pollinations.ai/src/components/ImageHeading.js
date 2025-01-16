@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import useRandomSeed from "../hooks/useRandomSeed"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
 import PromptTooltip from "./PromptTooltip"
-import { getDefaultPrompt } from "../config/stylePrompt";
+import { getDefaultPrompt } from "../config/stylePrompt"
+import { Colors } from "../config/global"
 
 export const ImageStyle = styled.img`
   height: 600px;
@@ -12,17 +13,19 @@ export const ImageStyle = styled.img`
   object-fit: contain;
 `
 
-
-
 export const ImageHeading = styled(
-  ({ children, className, whiteText = true, width = 500, height = 150, customPrompt }) => {
+  ({
+    children,
+    className,
+    isWhiteBG = true,
+    width = 150,
+    height = 150,
+    customPrompt,
+  }) => {
     const originalWidth = width
     const originalHeight = height
     width = width * 3
     height = height * 3
-    const foregroundColor =
-      typeof whiteText === "string" ? whiteText : whiteText ? "white" : "black"
-    const backgroundColor = typeof whiteText === "string" ? "black" : whiteText ? "black" : "white"
 
     const translatedPrompt = usePollinationsText(
       "Translate the following text to i18n: '" +
@@ -32,9 +35,8 @@ export const ImageHeading = styled(
       { seed: 45 }
     )
 
-    const promptText = getDefaultPrompt(translatedPrompt || children, whiteText);
-    const prompt = encodeURIComponent(customPrompt || promptText);
-
+    const promptText = getDefaultPrompt(translatedPrompt || children, isWhiteBG)
+    const prompt = encodeURIComponent(customPrompt || promptText)
 
     const seed = useRandomSeed()
 
@@ -87,7 +89,7 @@ export const ImageHeading = styled(
     height: auto;
   }
 
-  ${({ theme }) => theme.breakpoints.down('md')} {
+  ${({ theme }) => theme.breakpoints.down("md")} {
     margin: 0px 0;
   }
 `

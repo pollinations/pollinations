@@ -26,7 +26,7 @@ export const SectionSubContainer = styled.div`
 
 export const SectionBgBox = styled.div`
   background-color: ${(props) => props.backgroundcolor || `${Colors.offblack2}70`};
-  border-radius: 20px;
+  border-radius: 0px;
   max-width: 1000px;
   width: 100%;
   display: flex;

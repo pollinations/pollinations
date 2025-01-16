@@ -1,7 +1,7 @@
 import React from "react"
 import { Box, Typography } from "@mui/material"
 import { Colors } from "../config/global"
-import { EmojiRephrase } from "../components/EmojiRephrase"
+import { TextRephraseTranslate } from "../components/TextRephraseTranslate"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
 import TextEmojiText from "../components/TextEmojiText"
 import {
@@ -47,7 +47,7 @@ const Hero = () => {
             maxWidth: "90%",
           }}
         >
-          <EmojiRephrase>{HERO_INTRO}</EmojiRephrase>
+          <TextRephraseTranslate>{HERO_INTRO}</TextRephraseTranslate>
         </Typography>
         <Box
           display="flex"
@@ -57,11 +57,10 @@ const Hero = () => {
           gap="0em"
           maxWidth="90%"
         >
-          <TextEmojiText subtitle={HERO_CTO} color={Colors.offblack} size="3em" />
+          <TextEmojiText subtitle={HERO_CTO} color={Colors.offblack} size="2em" />
           <Grid
             container
             spacing={2}
-            marginTop="0em"
             justifyContent={{ xs: "center", md: "flex-end" }}
           >
             <Grid>

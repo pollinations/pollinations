@@ -46,10 +46,10 @@ const Community = () => {
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.offblack} />
-        <TextEmojiText color={Colors.offblack} subtitle={COMMUNITY_SUBTITLE} size="2em" />
-        <Grid container spacing={8} justifyContent="center">
+        <TextEmojiText color={Colors.offblack} subtitle={COMMUNITY_SUBTITLE} size="1.8em" />
+        <Grid container spacing={4} justifyContent="center">
           {communityPlatforms.map((platform, index) => (
-            <Grid key={index} size={{ xs: 12, md: 6 }}>
+            <Grid key={index} size={{ xs: 6, md: 4 }}>
               <Grid
                 container
                 direction="column"
@@ -96,16 +96,14 @@ const Community = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 2,
                   }}
                 >
                   <TextEmojiButton
                     onClick={platform.buttonClickHandler}
                     subtitle={platform.cto}
-                    textColor={Colors.offwhite}
-                    textSize="1.3em"
+                    textColor={Colors.lime}
+                    textSize="1.5em"
                     backgroundColor={Colors.offblack}
-                    textWeight={Colors.offwhite}
                   />
                 </Grid>
               </Grid>

@@ -1,6 +1,17 @@
 import test from 'ava';
 import request from 'supertest';
-import app, { getIp, getReferrer, getRequestData, shouldBypassDelay } from '../server.js'; // Ensure this path is correct and matches the export
+import app, {
+    getIp,
+    getReferrer,
+    getRequestData,
+    shouldBypassDelay,
+    sendErrorResponse,
+    sendOpenAIResponse,
+    sendContentResponse,
+    processRequest,
+    getQueue
+} from '../server.js';
+import { setInCache, createHashKey } from '../cache.js';
 
 // Increase timeout for all tests
 test.beforeEach(t => {
@@ -598,3 +609,127 @@ test('shouldBypassDelay should handle Roblox referrer', t => {
         t.is(result, expected);
     });
 });
+
+test('sendErrorResponse should format error responses correctly', async t => {
+    const res = {
+        status: function(code) {
+            t.is(code, 500);
+            return this;
+        },
+        json: function(data) {
+            t.deepEqual(data, {
+                error: 'Test error',
+                status: 500,
+                details: { foo: 'bar' }
+            });
+        }
+    };
+    const error = new Error('Test error');
+    error.response = { data: { foo: 'bar' } };
+    
+    await sendErrorResponse(res, {}, error, { model: 'test' });
+});
+
+test('sendOpenAIResponse should set headers and send JSON response', t => {
+    const res = {
+        setHeader: function(name, value) {
+            t.pass();
+        },
+        json: function(data) {
+            t.deepEqual(data, { foo: 'bar' });
+        }
+    };
+    
+    sendOpenAIResponse(res, { foo: 'bar' });
+});
+
+test('sendContentResponse should set headers and send text response', t => {
+    const res = {
+        setHeader: function(name, value) {
+            t.pass();
+        },
+        send: function(data) {
+            t.is(data, 'test content');
+        }
+    };
+    
+    sendContentResponse(res, {
+        choices: [{ message: { content: 'test content' } }]
+    });
+});
+
+// test('processRequest should handle cached responses', async t => {
+//     const res = {
+//         status: function(code) {
+//             return this;
+//         },
+//         json: function(data) {
+//             t.deepEqual(data.choices[0].message.content, 'cached response');
+//         },
+//         setHeader: function(name, value) {
+//             return this;
+//         },
+//         send: function(data) {
+//             return this;
+//         }
+//     };
+//     const req = {
+//         headers: {},
+//         query: {},
+//         body: { messages: [{ role: 'user', content: 'test' }] },
+//         socket: { remoteAddress: '127.0.0.1' }
+//     };
+//     const requestData = {
+//         messages: [{ role: 'user', content: 'test' }],
+//         model: 'test'
+//     };
+    
+//     // Mock cache hit
+//     const cachedResponse = {
+//         choices: [{ message: { content: 'cached response' } }],
+//         usage: { total_tokens: 10 }
+//     };
+//     setInCache(createHashKey(requestData), cachedResponse);
+    
+//     await processRequest(req, res, requestData);
+// });
+
+// test('processRequest should handle queue size limit', async t => {
+//     const res = {
+//         status: function(code) {
+//             t.is(code, 429);
+//             return this;
+//         },
+//         json: function(data) {
+//             t.is(data.status, 429);
+//             t.is(data.error, 'Too Many Requests');
+//             t.true(data.details.queueSize >= 60);
+//             t.is(data.details.maxQueueSize, 60);
+//             t.true(data.details.timestamp !== undefined);
+//         },
+//         setHeader: function(name, value) {
+//             return this;
+//         },
+//         send: function(data) {
+//             return this;
+//         }
+//     };
+//     const req = {
+//         headers: {},
+//         query: {},
+//         body: { messages: [{ role: 'user', content: 'test' }] },
+//         socket: { remoteAddress: '127.0.0.1' }
+//     };
+//     const requestData = {
+//         messages: [{ role: 'user', content: 'test' }],
+//         model: 'test'
+//     };
+    
+//     // Mock a full queue
+//     const queue = getQueue(getIp(req));
+//     for (let i = 0; i < 60; i++) {
+//         queue.add(() => Promise.resolve());
+//     }
+    
+//     await processRequest(req, res, requestData);
+// });

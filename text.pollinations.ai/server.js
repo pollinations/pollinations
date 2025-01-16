@@ -153,7 +153,7 @@ app.set('trust proxy', true);
 // Queue setup per IP address
 const queues = new Map();
 
-function getQueue(ip) {
+export function getQueue(ip) {
     if (!queues.has(ip)) {
         queues.set(ip, new PQueue({ concurrency: 1, interval: 3000, intervalCap: 1 }));
     }
@@ -234,7 +234,7 @@ export function shouldBypassDelay(req) {
 }
 
 // Helper function for consistent error responses
-async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
+export async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
         error: error.message || 'An error occurred',
         status: statusCode
@@ -264,13 +264,13 @@ async function sendErrorResponse(res, req, error, requestData, statusCode = 500)
 }
 
 // Helper function for consistent success responses
-function sendOpenAIResponse(res, completion) {
+export function sendOpenAIResponse(res, completion) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.json(completion);
 }
 
-function sendContentResponse(res, completion) {
+export function sendContentResponse(res, completion) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(completion.choices[0].message.content);
@@ -330,7 +330,7 @@ export function getReferrer(req, data) {
 }
 
 // Helper function to process requests with queueing and caching logic
-async function processRequest(req, res, requestData) {
+export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
     
     // Check for banned phrases first
@@ -399,21 +399,10 @@ async function processRequest(req, res, requestData) {
             details: {
                 queueSize: queue.size,
                 maxQueueSize: 60,
-                currentIp: ip,
-                timestamp: new Date().toISOString(),
-                retryAfter: '60', // Suggested retry after 60 seconds
-                activeRequests: queue.pending,
-                isPending: queue.isPaused,
-                isPollinationsReferrer: requestData.isImagePollinationsReferrer,
-                requestPath: req.path,
-                requestMethod: req.method
-            },
-            message: 'Too many requests in queue. Please try again later.',
-            suggestion: 'Consider reducing request frequency or waiting for your previous requests to complete.'
+                timestamp: new Date().toISOString()
+            }
         };
-        return res.status(429)
-                 .set('Retry-After', '60')
-                 .json(errorResponse);
+        return res.status(429).json(errorResponse);
     }
     
     const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);

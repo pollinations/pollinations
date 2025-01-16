@@ -1,13 +1,16 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import debug from 'debug';
 
 dotenv.config();
+
+const log = debug('pollinations:openrouter');
 
 export async function generateTextOpenRouter(messages, options) {
     const startTime = Date.now();
     const requestId = Math.random().toString(36).substring(7);
     
-    console.log(`[${requestId}] Starting text generation request`, {
+    log(`[${requestId}] Starting text generation request`, {
         timestamp: new Date().toISOString(),
         messageCount: messages.length,
         options
@@ -26,14 +29,14 @@ export async function generateTextOpenRouter(messages, options) {
             tool_choice: options.tool_choice
         };
 
-        console.log(`[${requestId}] Sending request to OpenRouter API`, {
+        log(`[${requestId}] Sending request to OpenRouter API`, {
             timestamp: new Date().toISOString(),
             model: requestBody.model,
             maxTokens: requestBody.max_tokens,
             temperature: requestBody.temperature
         });
-        console.log('messages', messages);
-        console.log('API Key', process.env.OPENROUTER_API_KEY);
+        log('messages', messages);
+        log('API Key', process.env.OPENROUTER_API_KEY);
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -45,7 +48,7 @@ export async function generateTextOpenRouter(messages, options) {
             body: JSON.stringify(requestBody)
         });
 
-        console.log(`[${requestId}] Received response from OpenRouter API`, {
+        log(`[${requestId}] Received response from OpenRouter API`, {
             timestamp: new Date().toISOString(),
             status: response.status,
             statusText: response.statusText,
@@ -54,7 +57,7 @@ export async function generateTextOpenRouter(messages, options) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[${requestId}] OpenRouter API error`, {
+            log(`[${requestId}] OpenRouter API error`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
@@ -66,7 +69,7 @@ export async function generateTextOpenRouter(messages, options) {
         const data = await response.json();
         const completionTime = Date.now() - startTime;
 
-        console.log(`[${requestId}] Successfully generated text`, {
+        log(`[${requestId}] Successfully generated text`, {
             timestamp: new Date().toISOString(),
             completionTimeMs: completionTime,
             modelUsed: data.model,
@@ -77,7 +80,7 @@ export async function generateTextOpenRouter(messages, options) {
 
         return data;
     } catch (error) {
-        console.error(`[${requestId}] Error in text generation`, {
+        log(`[${requestId}] Error in text generation`, {
             timestamp: new Date().toISOString(),
             error: error.message,
             stack: error.stack,

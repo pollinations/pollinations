@@ -1,4 +1,7 @@
 import * as EventSource from 'eventsource';
+import debug from 'debug';
+
+const log = debug('pollinations:monitor');
 
 const FEED_URL = 'https://text.pollinations.ai/feed';
 const modelStats = new Map();
@@ -13,9 +16,9 @@ function updateStats(data) {
         const model = parameters.model || 'undefined';
         const referer = parameters.referrer || 'undefined';
 
-        console.log(referer)
+        log('referer: %s', referer);
         
-        console.log(`Model: ${model}, Referer: ${referer}, IP: ${ip}`);
+        log('Model: %s, Referer: %s, IP: %s', model, referer, ip);
         
         modelStats.set(model, (modelStats.get(model) || 0) + 1);
         refererStats.set(referer, (refererStats.get(referer) || 0) + 1);
@@ -28,29 +31,29 @@ function updateStats(data) {
         
         // Clear screen and show updated stats
         // console.clear();
-        console.log(`Last updated: ${new Date().toLocaleTimeString()}`);
-        console.log(`Total entries: ${totalEntries}\n`);
+        log('Last updated: %s', new Date().toLocaleTimeString());
+        log('Total entries: %d\n', totalEntries);
         
         // Models table
-        console.log('Models:');
+        log('Models:');
         const modelTable = Array.from(modelStats.entries()).map(([model, count]) => ({
             model,
             count,
             percentage: ((count / totalEntries) * 100).toFixed(1) + '%'
         }));
-        console.table(modelTable);
+        log('%O', modelTable);
         
         // Referers table
-        console.log('\nReferers:');
+        log('\nReferers:');
         const refererTable = Array.from(refererStats.entries()).map(([referer, count]) => ({
             referer,
             count,
             percentage: ((count / totalEntries) * 100).toFixed(1) + '%'
         }));
-        console.table(refererTable);
+        log('%O', refererTable);
 
         // IP addresses table (top 10)
-        console.log('\nTop 10 IP Addresses:');
+        log('\nTop 10 IP Addresses:');
         const ipTable = Array.from(ipStats.entries())
             .sort((a, b) => b[1] - a[1])
             .slice(0, 10)
@@ -59,7 +62,7 @@ function updateStats(data) {
                 count,
                 percentage: ((count / totalEntries) * 100).toFixed(1) + '%'
             }));
-        console.table(ipTable);
+        log('%O', ipTable);
 }
 
 // Connect to SSE feed
@@ -70,7 +73,7 @@ eventSource.onmessage = (event) => {
 };
 
 eventSource.onerror = (error) => {
-    console.error('EventSource failed:', error);
+    log('EventSource failed: %O', error);
 };
 
-console.log('Connecting to feed...');
+log('Connecting to feed...');

@@ -38,7 +38,7 @@ const WHITELISTED_DOMAINS = [
     'pollinations.ai',
     'thot',
     'ai-ministries.com',
-    // 'localhost',
+    'localhost',
     'pollinations.github.io'
 ];
 
@@ -183,8 +183,8 @@ setupFeedEndpoint(app);
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
 
+    log('Request: model=%s referrer=%s', requestData.model, requestData.referrer);
     log('Request data: %o', requestData);
-    console.log(`${requestData.model} ${requestData.referrer} `);
 
     try {
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
@@ -207,7 +207,7 @@ async function handleRequest(req, res, requestData) {
             ...requestData,
             success: true,
             cached: false,
-            responseLength: responseText.length,
+            responseLength: responseText?.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
             ...tokenUsage
@@ -255,27 +255,20 @@ function shouldBypassDelay(req) {
 // Helper function for consistent error responses
 async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
-        error: {
-            message: error.message,
-            status: statusCode,
-            ip: getIp(req),
-            timestamp: new Date().toISOString(),
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-            details: {
-                requestData: requestData,
-                requestParameters: res.locals.requestData || {},
-                prompt: res.locals.prompt,
-                model: res.locals.model,
-                errorType: error.name,
-                errorCode: error.code
-            }
-        }
+        error: error.message || 'An error occurred',
+        status: statusCode
     };
 
+    if (error.response?.data) {
+        errorResponse.details = error.response.data;
+    }
+
+    errorLog('Error occurred: %O', errorResponse);
+    errorLog('Stack trace: %s', error.stack);
+
     // Log detailed error information to stderr
-    console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
-    console.error('Stack trace:', error.stack);
-    errorLog('Error:', error.message);
+    // console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
+    // console.error('Stack trace:', error.stack);
 
     // Track error event
     await sendToAnalytics(req, 'textGenerationError', {
@@ -304,7 +297,7 @@ function sendContentResponse(res, completion) {
 
 // Common function to handle request data
 function getRequestData(req) {
-    const query = req.query;
+    const query = req.query || {};
     const body = req.body || {};
     const data = { ...query, ...body };
 
@@ -317,13 +310,13 @@ function getRequestData(req) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    // Try request body first (both spellings), then HTTP header (standard spelling)
-    const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
+
+    const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     const stream = data.stream || false; 
 
-    const messages =  data.messages ||  [{ role: 'user', content: req.params[0] }];
+    const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -339,6 +332,19 @@ function getRequestData(req) {
         referrer,
         stream
     };
+}
+
+// Helper function to get referrer from request
+function getReferrer(req, data) {
+    // Check body/query params first
+    if (data.referrer) return data.referrer;
+    if (data.referer) return data.referer;
+    
+    // Then check headers - express normalizes headers to lowercase
+    const referer = req.headers.referer || req.headers.referrer;
+    if (referer) return referer;
+    
+    return 'undefined';
 }
 
 // Helper function to process requests with queueing and caching logic
@@ -367,7 +373,7 @@ async function processRequest(req, res, requestData) {
             ...requestData,
             success: true,
             cached: true,
-            responseLength: cachedResponse.choices[0].message.content.length,
+            responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
             cacheKey: cacheKey,
@@ -428,7 +434,7 @@ async function processRequest(req, res, requestData) {
                  .json(errorResponse);
     }
     
-    const bypassQueue = requestData.isImagePollinationsReferrer;// || requestData.isRobloxReferrer;
+    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
         await handleRequest(req, res, requestData);
@@ -450,8 +456,8 @@ app.get('/*', async (req, res) => {
 // POST request handler
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        console.log('Invalid messages array. Received:', req.body.messages);
-        return res.status(400).send(`Invalid messages array. Received: ${req.body.messages}`);
+        errorLog('Invalid messages array. Received: %O', req.body.messages);
+        return res.status(400).json({ error: 'Invalid messages array' });
     }
 
     const requestParams = getRequestData(req, true);

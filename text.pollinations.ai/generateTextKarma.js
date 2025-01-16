@@ -1,9 +1,12 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import debug from 'debug';
 
 dotenv.config();
 
 const { KARMA_ENDPOINT } = process.env
+const log = debug('pollinations:karma');
+const errorLog = debug('pollinations:karma:error');
 
 async function generateTextKarma(messages, { jsonMode = false }) {
 
@@ -27,16 +30,16 @@ async function generateTextKarma(messages, { jsonMode = false }) {
         'Authorization': `Bearer ${process.env.KARMA_API_KEY}`
       }
     });
-    console.log("karma response", response.data);
+    log("karma response", response.data);
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {
-      console.error('Authentication error: Invalid or missing Authorization header');
+      errorLog('Authentication error: Invalid or missing Authorization header');
       throw new Error('Authentication failed: Please check your API key and ensure it\'s correctly set in the Authorization header');
     }
-    console.error('Error calling Karma API:', error.message);
+    errorLog('Error calling Karma API: %s', error.message);
     if (error.response && error.response.data && error.response.data.error) {
-      console.error('Error details:', error.response.data.error);
+      errorLog('Error details: %O', error.response.data.error);
     }
     throw error;
   }

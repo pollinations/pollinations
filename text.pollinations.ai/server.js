@@ -5,9 +5,6 @@ import crypto from 'crypto';
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
-import generateTextMistral from './generateTextMistral.js';
-import generateTextKarma from './generateTextKarma.js';
-import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import unityPrompt from './personas/unity.js';
@@ -15,11 +12,9 @@ import midijourneyPrompt from './personas/midijourney.js';
 import rtistPrompt from './personas/rtist.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
-import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
-import { generateText as generateTextRoblox } from './generateTextOpenaiRoblox.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
@@ -158,7 +153,7 @@ app.set('trust proxy', true);
 // Queue setup per IP address
 const queues = new Map();
 
-function getQueue(ip) {
+export function getQueue(ip) {
     if (!queues.has(ip)) {
         queues.set(ip, new PQueue({ concurrency: 1, interval: 3000, intervalCap: 1 }));
     }
@@ -233,29 +228,13 @@ async function handleRequest(req, res, requestData) {
 }
 
 // Function to check if delay should be bypassed
-function shouldBypassDelay(req) {
-    const password = "BeesKnees".toLowerCase();
-    
-    // Helper function to safely check password
-    const checkPassword = (input) => {
-        return input && input.trim().toLowerCase() === password;
-    };
-    
-    // Check query parameter
-    if (checkPassword(req.query.code)) return true;
-    // Check JSON body
-    if (req.body && checkPassword(req.body.code)) return true;
-    // Check bearer token
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        if (checkPassword(token)) return true;
-    }
-    return false;
+export function shouldBypassDelay(req) {
+    const requestData = getRequestData(req);
+    return requestData.isRobloxReferrer;
 }
 
 // Helper function for consistent error responses
-async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
+export async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
         error: error.message || 'An error occurred',
         status: statusCode
@@ -285,20 +264,20 @@ async function sendErrorResponse(res, req, error, requestData, statusCode = 500)
 }
 
 // Helper function for consistent success responses
-function sendOpenAIResponse(res, completion) {
+export function sendOpenAIResponse(res, completion) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.json(completion);
 }
 
-function sendContentResponse(res, completion) {
+export function sendContentResponse(res, completion) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.send(completion.choices[0].message.content);
 }
 
 // Common function to handle request data
-function getRequestData(req) {
+export function getRequestData(req) {
     const query = req.query || {};
     const body = req.body || {};
     const data = { ...query, ...body };
@@ -337,20 +316,21 @@ function getRequestData(req) {
 }
 
 // Helper function to get referrer from request
-function getReferrer(req, data) {
-    // Check body/query params first
-    if (data.referrer) return data.referrer;
-    if (data.referer) return data.referer;
+export function getReferrer(req, data) {
+    const referer = req.headers.referer;
+    if (!referer) return data.referrer || 'unknown';
     
-    // Then check headers - express normalizes headers to lowercase
-    const referer = req.headers.referer || req.headers.referrer;
-    if (referer) return referer;
-    
-    return 'undefined';
+    if (referer.includes('roblox.com')) {
+        return 'roblox';
+    } else if (referer.includes('pollinations.ai')) {
+        return 'pollinations';
+    } else {
+        return new URL(referer).hostname;
+    }
 }
 
 // Helper function to process requests with queueing and caching logic
-async function processRequest(req, res, requestData) {
+export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
     
     // Check for banned phrases first
@@ -419,21 +399,10 @@ async function processRequest(req, res, requestData) {
             details: {
                 queueSize: queue.size,
                 maxQueueSize: 60,
-                currentIp: ip,
-                timestamp: new Date().toISOString(),
-                retryAfter: '60', // Suggested retry after 60 seconds
-                activeRequests: queue.pending,
-                isPending: queue.isPaused,
-                isPollinationsReferrer: requestData.isImagePollinationsReferrer,
-                requestPath: req.path,
-                requestMethod: req.method
-            },
-            message: 'Too many requests in queue. Please try again later.',
-            suggestion: 'Consider reducing request frequency or waiting for your previous requests to complete.'
+                timestamp: new Date().toISOString()
+            }
         };
-        return res.status(429)
-                 .set('Retry-After', '60')
-                 .json(errorResponse);
+        return res.status(429).json(errorResponse);
     }
     
     const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);
@@ -444,16 +413,6 @@ async function processRequest(req, res, requestData) {
         await getQueue(ip).add(() => handleRequest(req, res, requestData));
     }
 }
-
-// GET request handler
-app.get('/*', async (req, res) => {
-    const requestData = getRequestData(req);
-    try {
-        await processRequest(req, res, {...requestData, plaintTextResponse: true});
-    } catch (error) {
-        sendErrorResponse(res, req, error, requestData);
-    }
-});
 
 // POST request handler
 app.post('/', async (req, res) => {
@@ -543,30 +502,15 @@ async function generateTextBasedOnModel(messages, options) {
     }
 }
 
-function formatAsOpenAIResponse(response, requestParams) {
-    const choices = [{
-        "message": {
-            "content": response,
-            "role": "assistant"
-        },
-        "finish_reason": "stop",
-        "index": 0,
-        "logprobs": null
-    }];
 
-    const result = {
-        "created": Date.now(),
-        "id": crypto.randomUUID(),
-        "model": requestParams.model,
-        "object": isStream ? "chat.completion.chunk" : "chat.completion",
-        "choices": choices
-    };
-    return result;
-}
-4
-app.use((req, res, next) => {
-    log(`Unhandled request: ${req.method} ${req.originalUrl}`);
-    next();
+export default app;
+
+// GET request handler (catch-all)
+app.get('/*', async (req, res) => {
+    const requestData = getRequestData(req);
+    try {
+        await processRequest(req, res, {...requestData, plaintTextResponse: true});
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestData);
+    }
 });
-
-export default app; // Add this line to export the app instance

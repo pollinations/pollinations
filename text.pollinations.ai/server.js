@@ -228,25 +228,9 @@ async function handleRequest(req, res, requestData) {
 }
 
 // Function to check if delay should be bypassed
-function shouldBypassDelay(req) {
-    const password = "BeesKnees".toLowerCase();
-    
-    // Helper function to safely check password
-    const checkPassword = (input) => {
-        return input && input.trim().toLowerCase() === password;
-    };
-    
-    // Check query parameter
-    if (checkPassword(req.query.code)) return true;
-    // Check JSON body
-    if (req.body && checkPassword(req.body.code)) return true;
-    // Check bearer token
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.split(' ')[1];
-        if (checkPassword(token)) return true;
-    }
-    return false;
+export function shouldBypassDelay(req) {
+    const requestData = getRequestData(req);
+    return requestData.isRobloxReferrer;
 }
 
 // Helper function for consistent error responses
@@ -293,7 +277,7 @@ function sendContentResponse(res, completion) {
 }
 
 // Common function to handle request data
-function getRequestData(req) {
+export function getRequestData(req) {
     const query = req.query || {};
     const body = req.body || {};
     const data = { ...query, ...body };
@@ -332,16 +316,17 @@ function getRequestData(req) {
 }
 
 // Helper function to get referrer from request
-function getReferrer(req, data) {
-    // Check body/query params first
-    if (data.referrer) return data.referrer;
-    if (data.referer) return data.referer;
+export function getReferrer(req, data) {
+    const referer = req.headers.referer;
+    if (!referer) return data.referrer || 'unknown';
     
-    // Then check headers - express normalizes headers to lowercase
-    const referer = req.headers.referer || req.headers.referrer;
-    if (referer) return referer;
-    
-    return 'undefined';
+    if (referer.includes('roblox.com')) {
+        return 'roblox';
+    } else if (referer.includes('pollinations.ai')) {
+        return 'pollinations';
+    } else {
+        return new URL(referer).hostname;
+    }
 }
 
 // Helper function to process requests with queueing and caching logic

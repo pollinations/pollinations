@@ -15,6 +15,13 @@ test.afterEach(async () => {
     await waitForPromises();
 });
 
+// Add cleanup after all tests
+test.after.always(async () => {
+    await waitForPromises();
+    // Force Node to exit after a reasonable timeout if something is still hanging
+    setTimeout(() => process.exit(0), 1000);
+});
+
 // OpenAI Tests
 test('generateTextOpenai should handle basic text generation', async t => {
     try {
@@ -257,6 +264,69 @@ test('generateTextScaleway should handle temperature parameter', async t => {
     try {
         const messages = [{ role: 'user', content: 'Hello' }];
         const response = await generateTextScaleway(messages, { temperature: 0.7 });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should handle qwen-coder model', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Write a simple hello world in Python' }];
+        const response = await generateTextScaleway(messages, { model: 'qwen-coder' });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should handle llama model', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateTextScaleway(messages, { model: 'llama' });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should handle seed parameter', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateTextScaleway(messages, { seed: 42 });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should handle jsonMode without system message', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateTextScaleway(messages, { jsonMode: true });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should handle jsonMode with existing system message', async t => {
+    try {
+        const messages = [
+            { role: 'system', content: 'Be helpful' },
+            { role: 'user', content: 'Hello' }
+        ];
+        const response = await generateTextScaleway(messages, { jsonMode: true });
+        t.truthy(response, 'Response should not be empty');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextScaleway should use default model when invalid model specified', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateTextScaleway(messages, { model: 'invalid-model' });
         t.truthy(response, 'Response should not be empty');
     } catch (error) {
         t.fail(error.message);

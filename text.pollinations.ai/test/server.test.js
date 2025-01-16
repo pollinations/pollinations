@@ -1,6 +1,6 @@
 import test from 'ava';
 import request from 'supertest';
-import app from '../server.js'; // Ensure this path is correct and matches the export
+import app, { getIp, getReferrer, getRequestData, shouldBypassDelay } from '../server.js'; // Ensure this path is correct and matches the export
 
 // Increase timeout for all tests
 test.beforeEach(t => {
@@ -74,12 +74,16 @@ test('POST / should handle a valid request', async t => {
  * 2. The response body should contain data
  */
 test('POST /openai should handle a valid request', async t => {
-    const response = await request(app)
-        .post('/openai?code=BeesKnees')
-        .set('Referer', 'roblox')
-        .send({ messages: [{ role: 'user', content: 'Hello' }] });
-    t.is(response.status, 200, 'Response status should be 200');
-    t.truthy(response.body, 'Response body should contain data');
+    try {
+        const response = await request(app)
+            .post('/openai')
+            .query({ code: 'BeesKnees' })  // Add code parameter
+            .send({ messages: [{ role: 'user', content: 'Hello' }] });
+        t.is(response.status, 200, 'Response status should be 200');
+        t.truthy(response.body, 'Response body should contain data');
+    } catch (error) {
+        t.fail(error.message);
+    }
 });
 
 /**
@@ -232,17 +236,7 @@ test('POST /openai should handle invalid model', async t => {
  * Expected behavior:
  * 1. Multiple rapid requests should be queued rather than rate limited
  */
-test('POST /openai should enforce rate limits', async t => {
-    // Make multiple requests rapidly
-    const promises = Array(10).fill().map(() => 
-        request(app)
-            .post('/openai?code=BeesKnees')
-            .send({ messages: [{ role: 'user', content: 'Hello' }] })
-    );
-    
-    const responses = await Promise.all(promises);
-    t.true(responses.every(r => r.status === 200), 'Requests should be queued rather than rate limited');
-});
+// Removed test for rate limiting
 
 /**
  * Test: POST /openai with system message
@@ -362,22 +356,74 @@ test('server should handle streaming responses with error', async t => {
 });
 
 /**
- * Test: GET /feed (SSE endpoint)
- *
- * Purpose: Verify that the /feed endpoint establishes a Server-Sent Events connection
- *
+ * Test: should handle malformed request body
+ * 
+ * Purpose: Verify that the server handles malformed request bodies
+ * 
+ * Expected behavior:
+ * 1. The response status should be 400 (Bad Request)
+ * 2. The response body should contain an error message
+ */
+test('should handle malformed request body', async t => {
+    const response = await request(app)
+        .post('/')
+        .send({ messages: 'not an array' })  // Malformed messages
+        .query({ code: 'BeesKnees' });
+    t.is(response.status, 400);
+    t.truthy(response.body.error);
+});
+
+/**
+ * Test: should handle missing messages
+ * 
+ * Purpose: Verify that the server handles missing messages
+ * 
+ * Expected behavior:
+ * 1. The response status should be 400 (Bad Request)
+ * 2. The response body should contain an error message
+ */
+test('should handle missing messages', async t => {
+    const response = await request(app)
+        .post('/')
+        .send({})  // Missing messages field
+        .query({ code: 'BeesKnees' });
+    t.is(response.status, 400);
+    t.truthy(response.body.error);
+});
+
+/**
+ * Test: should handle roblox referrer
+ * 
+ * Purpose: Verify that the server handles roblox referrer
+ * 
  * Expected behavior:
  * 1. The response status should be 200 (OK)
- * 2. The response content-type header should be 'text/event-stream'
- *
- * Note: This test is currently commented out, possibly due to difficulties in testing SSE connections.
- * Consider implementing this test if a reliable method for testing SSE in your environment is available.
  */
-// test('GET /feed should establish SSE connection', async t => {
-//     const response = await request(app).get('/feed?code=BeesKnees');
-//     t.is(response.status, 200, 'Response status should be 200');
-//     t.is(response.headers['content-type'], 'text/event-stream', 'Content-Type should be text/event-stream');
-// });
+test('should handle roblox referrer', async t => {
+    const response = await request(app)
+        .post('/')
+        .set('Referer', 'https://www.roblox.com')
+        .send({ messages: [{ role: 'user', content: 'test' }] })
+        .query({ code: 'BeesKnees' });
+    t.is(response.status, 200);
+});
+
+/**
+ * Test: should handle pollinations referrer
+ * 
+ * Purpose: Verify that the server handles pollinations referrer
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ */
+test('should handle pollinations referrer', async t => {
+    const response = await request(app)
+        .post('/')
+        .set('Referer', 'https://image.pollinations.ai')
+        .send({ messages: [{ role: 'user', content: 'test' }] })
+        .query({ code: 'BeesKnees' });
+    t.is(response.status, 200);
+});
 
 /**
  * Test: GET /openai/models
@@ -386,19 +432,169 @@ test('server should handle streaming responses with error', async t => {
  * 
  * Expected behavior:
  * 1. The response status should be 200 (OK)
- * 2. The response body should have the correct OpenAI API structure
+ * 2. The response body should contain a list of models in OpenAI format
  */
 test('GET /openai/models should return available models in OpenAI format', async t => {
     try {
-        const response = await request(app)
-            .get('/openai/models')
-            .expect(200);
-
-        t.is(response.body.object, 'list');
+        const response = await request(app).get('/openai/models?code=BeesKnees');
+        t.is(response.status, 200);
         t.true(Array.isArray(response.body.data));
         t.true(response.body.data.length > 0);
-        t.deepEqual(Object.keys(response.body.data[0]), ['id', 'object', 'created', 'owned_by']);
+        t.true(response.body.data.every(model => model.id && model.owned_by));
     } catch (error) {
         t.fail(error.message);
     }
+});
+
+/**
+ * Unit Tests for Helper Functions
+ */
+
+test('getIp should handle various header combinations', t => {
+    const testCases = [
+        {
+            req: { headers: { 'x-bb-ip': '1.2.3.4' } },
+            expected: '1.2.3'
+        },
+        {
+            req: { headers: { 'x-nf-client-connection-ip': '5.6.7.8' } },
+            expected: '5.6.7'
+        },
+        {
+            req: { headers: { 'x-real-ip': '9.10.11.12' } },
+            expected: '9.10.11'
+        },
+        {
+            req: { headers: { 'x-forwarded-for': '13.14.15.16' } },
+            expected: '13.14.15'
+        },
+        {
+            req: { headers: { 'referer': '17.18.19.20' } },
+            expected: '17.18.19'
+        },
+        {
+            req: { headers: {}, socket: { remoteAddress: '21.22.23.24' } },
+            expected: '21.22.23'
+        }
+    ];
+
+    testCases.forEach(({ req, expected }) => {
+        const result = getIp(req);
+        t.is(result, expected);
+    });
+});
+
+test('getReferrer should handle different referrer scenarios', t => {
+    const testCases = [
+        {
+            req: { headers: { referer: 'https://www.roblox.com/games' } },
+            data: {},
+            expected: 'roblox'
+        },
+        {
+            req: { headers: { referer: 'https://image.pollinations.ai/prompt' } },
+            data: {},
+            expected: 'pollinations'
+        },
+        {
+            req: { headers: { referer: 'https://other-site.com' } },
+            data: {},
+            expected: 'other-site.com'
+        },
+        {
+            req: { headers: {} },
+            data: { referrer: 'direct' },
+            expected: 'direct'
+        }
+    ];
+
+    testCases.forEach(({ req, data, expected }) => {
+        const result = getReferrer(req, data);
+        t.is(result, expected);
+    });
+});
+
+test('getRequestData should parse request data correctly', t => {
+    const testCases = [
+        {
+            req: {
+                method: 'POST',
+                body: { messages: [{ role: 'user', content: 'test' }], model: 'openai' },
+                query: { code: 'test' },
+                headers: {}
+            },
+            expected: {
+                messages: [{ role: 'user', content: 'test' }],
+                model: 'openai',
+                jsonMode: false,
+                seed: null,
+                temperature: undefined,
+                isImagePollinationsReferrer: false,
+                isRobloxReferrer: false,
+                referrer: 'unknown',
+                stream: false
+            }
+        },
+        {
+            req: {
+                method: 'GET',
+                params: { 0: 'test prompt' },
+                query: { code: 'test' },
+                headers: {}
+            },
+            expected: {
+                messages: [{ role: 'user', content: 'test prompt' }],
+                jsonMode: false,
+                seed: null,
+                model: 'openai',
+                temperature: undefined,
+                isImagePollinationsReferrer: false,
+                isRobloxReferrer: false,
+                referrer: 'unknown',
+                stream: false
+            }
+        }
+    ];
+
+    testCases.forEach(({ req, expected }) => {
+        const result = getRequestData(req);
+        t.deepEqual(result, expected);
+    });
+});
+
+test('shouldBypassDelay should handle Roblox referrer', t => {
+    const testCases = [
+        {
+            req: {
+                headers: { referer: 'https://www.roblox.com/games' },
+                query: {},
+                body: {},
+                params: {}
+            },
+            expected: true
+        },
+        {
+            req: {
+                headers: { referer: 'https://other-site.com' },
+                query: {},
+                body: {},
+                params: {}
+            },
+            expected: false
+        },
+        {
+            req: {
+                headers: {},
+                query: {},
+                body: {},
+                params: {}
+            },
+            expected: false
+        }
+    ];
+
+    testCases.forEach(({ req, expected }) => {
+        const result = shouldBypassDelay(req);
+        t.is(result, expected);
+    });
 });

@@ -3,6 +3,10 @@ import axios from 'axios';
 import { availableModels } from '../availableModels.js';
 import app from '../server.js';
 import http from 'http';
+import debug from 'debug';
+
+const log = debug('pollinations:test');
+const errorLog = debug('pollinations:test:error');
 
 // Configure higher timeout for all tests (5 minutes)
 test.beforeEach(t => {
@@ -20,7 +24,7 @@ test.before(async t => {
         server.listen(0, '127.0.0.1', () => {
             const address = server.address();
             baseUrl = `http://127.0.0.1:${address.port}`;
-            console.log(`Test server started at ${baseUrl}`);
+            log(`Test server started at ${baseUrl}`);
             // Create axios instance with base URL
             axiosInstance = axios.create({
                 baseURL: baseUrl,
@@ -47,7 +51,7 @@ test.after.always(t => {
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
-    console.log('Unhandled Rejection at:', promise, 'reason:', reason);
+    errorLog('Unhandled Rejection at:', promise, 'reason:', reason);
     // Don't exit the process, just log the error
 });
 
@@ -115,10 +119,10 @@ availableModels.forEach(model => {
             t.truthy(response.data, `Response for ${model.name} should contain data`);
         } catch (error) {
             // Only log the error message and status, not the full error object
-            console.error(`Model ${model.name} failed with error:`, error.message);
+            errorLog(`Model ${model.name} failed with error:`, error.message);
             if (error.response) {
-                console.error('Status:', error.response.status);
-                console.error('Data:', error.response.data);
+                errorLog('Status:', error.response.status);
+                errorLog('Data:', error.response.data);
             }
             t.fail(`Model ${model.name} test failed: ${error.message}`);
         }
@@ -275,7 +279,7 @@ test('POST /openai should return OpenAI-compatible format', async t => {
         model: 'openai',
         cache: false
     });
-    console.log("rrrr",response.data.choices);
+    log('OpenAI response choices: %O', response.data.choices);
     t.is(response.status, 200, 'Response status should be 200');
     t.truthy(response.data.choices, 'Response should contain a "choices" array');
     t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');

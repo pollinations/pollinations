@@ -183,8 +183,8 @@ setupFeedEndpoint(app);
 // Helper function to handle both GET and POST requests
 async function handleRequest(req, res, requestData) {
 
+    log('Request: model=%s referrer=%s', requestData.model, requestData.referrer);
     log('Request data: %o', requestData);
-    console.log(`${requestData.model} ${requestData.referrer} `);
 
     try {
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
@@ -297,7 +297,7 @@ function sendContentResponse(res, completion) {
 
 // Common function to handle request data
 function getRequestData(req) {
-    const query = req.query;
+    const query = req.query || {};
     const body = req.body || {};
     const data = { ...query, ...body };
 
@@ -310,13 +310,21 @@ function getRequestData(req) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    // Try request body first (both spellings), then HTTP header (standard spelling)
-    const referrer = req.headers.referer || data.referrer || data.referer || req.get('referrer') || req.get('referer') || 'undefined';
+
+    // Get referer in a case-insensitive way
+    const referrer = 
+        data.referrer || 
+        data.referer || 
+        Object.keys(req.headers)
+            .find(key => key.toLowerCase() === 'referer')
+            ?.map(key => req.headers[key])?.[0] ||
+        'undefined';
+
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     const stream = data.stream || false; 
 
-    const messages =  data.messages ||  [{ role: 'user', content: req.params[0] }];
+    const messages = data.messages || [{ role: 'user', content: req.params[0] }];
     if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
     }
@@ -443,8 +451,8 @@ app.get('/*', async (req, res) => {
 // POST request handler
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        console.log('Invalid messages array. Received:', req.body.messages);
-        return res.status(400).send(`Invalid messages array. Received: ${req.body.messages}`);
+        errorLog('Invalid messages array. Received: %O', req.body.messages);
+        return res.status(400).json({ error: 'Invalid messages array' });
     }
 
     const requestParams = getRequestData(req, true);

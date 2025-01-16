@@ -1,7 +1,9 @@
 import fetch from 'node-fetch';
 import TurndownService from 'turndown';
+import debug from 'debug';
 
 const turndownService = new TurndownService();
+const log = debug('pollinations:scrape');
 
 // Assuming ~4 chars per token, and wanting to stay well under the 128k token limit
 const MAX_TOTAL_CHARS = 100000; // ~25k tokens total
@@ -55,7 +57,7 @@ export async function performWebScrape({ urls }) {
             });
         }
 
-        console.log("Performing web scrape for URLs:", urls);
+        log('Performing web scrape for URLs: %O', urls);
         const limitedUrls = urls.slice(0, 2);
         const results = [];
         

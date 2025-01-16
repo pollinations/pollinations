@@ -120,14 +120,16 @@ const limiter = rateLimit({
     message: {
         error: {
             type: 'rate_limit_error',
-            message: 'Rate limit exceeded. Maximum 20 requests per minute.',
+            message: 'Rate limit exceeded. Maximum 40 requests per minute.',
             suggestion: 'Please wait before making more requests.'
         }
     },
     skip: (req) => {
         const requestData = getRequestData(req);
-        return requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
-    }
+        return requestData.isRobloxReferrer;
+    },
+    // Use X-Forwarded-For header but validate it's from our trusted proxy
+    trustProxy: false
 });
 
 // Apply rate limiting to all routes
@@ -456,7 +458,6 @@ app.get('/*', async (req, res) => {
 // POST request handler
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
-        errorLog('Invalid messages array. Received: %O', req.body.messages);
         return res.status(400).json({ error: 'Invalid messages array' });
     }
 
@@ -483,8 +484,7 @@ app.get('/openai/models', (req, res) => {
 
 // POST /openai/* request handler
 app.post('/openai*', async (req, res) => {
-
-    if (!req.body.messages || !Array.isArray(req.body.messages)) {
+    if (!req.body.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
         return sendErrorResponse(res, req, new Error('Invalid messages array'), req.body, 400);
     }
 

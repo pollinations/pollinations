@@ -5,8 +5,10 @@ import StyledLink from "../StyledLink"
 import { EmojiRephrase } from "../EmojiRephrase"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import { PROJECT_LOGO_STYLE, PROJECT_LOGO_SIZE } from "../../config/copywrite"
+import { PROJECT_LOGO_STYLE } from "../../config/copywrite"
 import Grid from "@mui/material/Grid2"
+
+const PROJECT_LOGO_SIZE = 96
 
 const ProjectsRender = ({ projectList, classes }) => (
   <Grid container spacing={4} className={classes.gridContainer}>

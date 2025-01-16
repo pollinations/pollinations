@@ -57,13 +57,13 @@ const Projects = () => {
         </SectionBgBox>
         <TextEmojiText subtitle={PROJECT_CTO_1} />
         <TextEmojiText subtitle={PROJECT_CTO_2} />
-        <Box sx={{ width: "460px", height: "100px" }}>
+        <Box sx={{ width: "auto", height: "100px" }}>
           <TextEmojiButton
             subtitle={PROJECT_BUTTON}
             onClick={handleEmailButtonClick}
-          textColor={Colors.offwhite}
-          borderColor={Colors.offwhite}
-          textSize="2em"
+            textColor={Colors.offwhite}
+            borderColor={Colors.offwhite}
+            textSize="2em"
             backgroundColor={`${Colors.offblack}`}
           />
         </Box>

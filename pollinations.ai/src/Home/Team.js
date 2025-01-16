@@ -1,165 +1,86 @@
 import { Colors } from "../config/global.js"
-import { ICONS } from "../assets/icons/icons.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
 import {
   TEAM_SUBTITLE,
-  TEAM_DISCORD_CTO,
   TEAM_TITLE,
-  TEAM_DISCORD_SUBTITLE,
-  TEAM_GITHUB_SUBTITLE,
-  TEAM_GITHUB_CTO,
+  TEAM_1_NAME,
+  TEAM_1_FUNCTION,
+  TEAM_2_NAME,
+  TEAM_2_FUNCTION,
+  TEAM_3_NAME,
+  TEAM_3_FUNCTION,
+  TEAM_4_NAME,
+  TEAM_4_FUNCTION,
+  TEAM_5_NAME,
+  TEAM_5_FUNCTION,
+  TEAM_6_NAME,
+  TEAM_6_FUNCTION,
+  TEAM_1_IMAGE,
+  TEAM_2_IMAGE,
+  TEAM_3_IMAGE,
+  TEAM_4_IMAGE,
+  TEAM_5_IMAGE,
+  TEAM_6_IMAGE,
 } from "../config/copywrite.js"
 import TextEmojiText from "../components/TextEmojiText.js"
-import Grid from "@mui/material/Grid2" // v5 Grid2
+import Grid from "@mui/material/Grid2"
 import SectionTitle from "../components/SectionTitle.js"
-import TextEmojiButton from "../components/TextEmojiButton.js"
+
+const teamMembers = [
+  { name: TEAM_1_NAME, function: TEAM_1_FUNCTION, image: TEAM_1_IMAGE },
+  { name: TEAM_2_NAME, function: TEAM_2_FUNCTION, image: TEAM_2_IMAGE },
+  { name: TEAM_3_NAME, function: TEAM_3_FUNCTION, image: TEAM_3_IMAGE },
+  { name: TEAM_4_NAME, function: TEAM_4_FUNCTION, image: TEAM_4_IMAGE },
+  { name: TEAM_5_NAME, function: TEAM_5_FUNCTION, image: TEAM_5_IMAGE },
+  { name: TEAM_6_NAME, function: TEAM_6_FUNCTION, image: TEAM_6_IMAGE },
+
+];
 
 const Team = () => {
-  const handleDiscordButtonClick = (e) => {
-    e.preventDefault()
-    window.open("https://discord.gg/k9F7SyTgqn", "_blank")
-  }
-
-  const handleGithubButtonClick = (e) => {
-    e.preventDefault()
-    window.open("https://github.com/pollinations/pollinations", "_blank")
-  }
-
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.offblack} />
         <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} size="2em" />
         <Grid container spacing={4} justifyContent="center">
-          {/* === DISCORD BOX === */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Grid
-              container
-              direction="column"
-              sx={{
-                borderRadius: "15px",
-                backgroundColor: Colors.offblack,
-              }}
-            >
+          {teamMembers.map((member, index) => (
+            <Grid key={index} item xs={12} sm={6} md={4} lg={3}>
               <Grid
+                container
+                direction="column"
+                alignItems="center"
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill={Colors.offwhite}
-                  viewBox="0 0 1024 1024"
-                  style={{
-                    height: "200px",
-                    objectFit: "contain",
-                  }}
-                >
-                  <path d={ICONS.discord} />
-                </svg>
-              </Grid>
-              <Grid
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  borderRadius: "15px",
+                  backgroundColor: Colors.offwhite,
                   padding: 2,
                 }}
               >
-                <TextEmojiButton
-                  onClick={handleDiscordButtonClick}
-                  subtitle={TEAM_DISCORD_CTO}
-                  textColor={Colors.offblack}
-                  textSize="1.3em"
-                  backgroundColor={Colors.offwhite}
-                  textWeight={Colors.offblack}
-                />
-              </Grid>
-            </Grid>
-            <Grid
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-              }}
-            >
-              <TextEmojiText
-                color={Colors.offblack}
-                subtitle={TEAM_DISCORD_SUBTITLE}
-                size="1.5em"
-              />
-            </Grid>
-          </Grid>
-
-          {/* === GITHUB BOX === */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Grid
-              container
-              direction="column"
-              sx={{
-                borderRadius: "15px",
-                backgroundColor: Colors.offblack,
-              }}
-            >
-              <Grid
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill={Colors.offwhite}
-                  viewBox="0 0 1024 1024"
+                <img
+                  src={process.env.PUBLIC_URL + member.image}
+                  alt={member.name}
                   style={{
-                    height: "200px",
-                    objectFit: "contain",
+                    width: "180px",
+                    height: "180px",
+                    borderRadius: "15%",
+                    objectFit: "cover",
+                    marginBottom: "10px",
                   }}
-                >
-                  <path d={ICONS.github} />
-                </svg>
-              </Grid>
-              <Grid
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 2,
-                }}
-              >
-                <TextEmojiButton
-                  onClick={handleGithubButtonClick}
-                  subtitle={TEAM_GITHUB_CTO}
-                  textColor={Colors.offblack}
-                  textSize="1.3em"
-                  backgroundColor={Colors.offwhite}
-                  textWeight={Colors.offblack}
+                />
+                <TextEmojiText
+                  color={Colors.offblack}
+                  subtitle={member.name}
+                  size="1.2em"
+                />
+                <TextEmojiText
+                  color={Colors.offblack}
+                  subtitle={member.function}
+                  size="1em"
                 />
               </Grid>
             </Grid>
-            <Grid
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-              }}
-            >
-              <TextEmojiText
-                color={Colors.offblack}
-                subtitle={TEAM_GITHUB_SUBTITLE}
-                size="1.5em"
-              />
-            </Grid>
-          </Grid>
+          ))}
         </Grid>
-
-        <AsciiArtGenerator width={"100px"} />
       </SectionSubContainer>
     </SectionContainer>
   )

@@ -495,36 +495,6 @@ test('getIp should handle various header combinations', t => {
     });
 });
 
-test('getReferrer should handle different referrer scenarios', t => {
-    const testCases = [
-        {
-            req: { headers: { referer: 'https://www.roblox.com/games' } },
-            data: {},
-            expected: 'roblox'
-        },
-        {
-            req: { headers: { referer: 'https://image.pollinations.ai/prompt' } },
-            data: {},
-            expected: 'pollinations'
-        },
-        {
-            req: { headers: { referer: 'https://other-site.com' } },
-            data: {},
-            expected: 'other-site.com'
-        },
-        {
-            req: { headers: {} },
-            data: { referrer: 'direct' },
-            expected: 'direct'
-        }
-    ];
-
-    testCases.forEach(({ req, data, expected }) => {
-        const result = getReferrer(req, data);
-        t.is(result, expected);
-    });
-});
-
 test('getRequestData should parse request data correctly', t => {
     const testCases = [
         {

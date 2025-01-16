@@ -7,15 +7,16 @@ python3 -m venv venv
 pip3 install -r image.pollinations.ai/image_gen_dmd2/requirements.txt
 pip3 install -e .
 
-npm install -g gyp
+npm install -g node-pre-gyp
+npm config set node_gyp $(which node-gyp)
+export NODE_GYP_FORCE_PYTHON=/usr/bin/python3
 
 if [ -d "text.pollinations.ai" ]; then
     (cd text.pollinations.ai && npm ci)
 fi
 
-npm config set python /usr/bin/python3
 if [ -d "image.pollinations.ai" ]; then
-    (cd image.pollinations.ai && npm ci)
+    (cd image.pollinations.ai && NODE_GYP_FORCE_PYTHON=/usr/bin/python3 npm ci)
 fi
 
 if [ -d "pollinations.ai" ]; then

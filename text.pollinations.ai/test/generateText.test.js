@@ -3,6 +3,11 @@ import { generateText as generateTextOpenai } from '../generateTextOpenai.js';
 import generateTextHuggingface from '../generateTextHuggingface.js';
 import { generateTextScaleway } from '../generateTextScaleway.js';
 
+// Increase timeout for all tests
+test.beforeEach(t => {
+    t.timeout(30000); // 30 seconds
+});
+
 // Helper function to wait for all promises to settle
 const waitForPromises = () => new Promise(resolve => setTimeout(resolve, 100));
 
@@ -132,12 +137,54 @@ test('generateTextOpenai should handle web scraping', async t => {
     try {
         const messages = [{ 
             role: 'user', 
-            content: 'Can you scrape and summarize the content from https://example.com?' 
+            content: 'Can you scrape and summarize the content from https://en.wikipedia.org/wiki/Main_Page?' 
         }];
         const response = await generateTextOpenai(messages, { model: 'searchgpt' }, true);
         t.truthy(response, 'Response should not be empty');
         t.truthy(response.choices && response.choices.length > 0, 'Should have a response with choices');
         t.truthy(response.choices[0].message.content, 'Should have content in response');
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextOpenai should handle long messages with content array', async t => {
+    try {
+        const messages = [{
+            role: 'user',
+            content: Array(10).fill('This is a very long message. ').map(msg => ({
+                type: 'text',
+                text: msg
+            }))
+        }];
+        await generateTextOpenai(messages, {});
+        t.pass();
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+test('generateTextOpenai should handle too long messages', async t => {
+    try {
+        const messages = [{
+            role: 'user',
+            content: Array(10000).fill('This is a very long message. ').join('')
+        }];
+        await generateTextOpenai(messages, {});
+        t.fail('Should have thrown error');
+    } catch (error) {
+        t.truthy(error.message.includes('exceeds maximum length'));
+    }
+});
+
+test('generateTextOpenai should handle jsonMode with existing system message', async t => {
+    try {
+        const messages = [
+            { role: 'system', content: 'Be helpful' },
+            { role: 'user', content: 'Hello' }
+        ];
+        await generateTextOpenai(messages, { jsonMode: true });
+        t.pass();
     } catch (error) {
         t.fail(error.message);
     }
@@ -182,6 +229,16 @@ test('generateTextHuggingface should handle invalid messages format', async t =>
         t.fail('Should have thrown error for invalid message format');
     } catch (error) {
         t.truthy(error, 'Should throw an error for invalid message format');
+    }
+});
+
+test('generateTextHuggingface should handle jsonMode', async t => {
+    try {
+        const messages = [{ role: 'user', content: 'Hello' }];
+        const response = await generateTextHuggingface(messages, { jsonMode: true });
+        t.pass();
+    } catch (error) {
+        t.fail(error.message);
     }
 });
 

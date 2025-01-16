@@ -440,16 +440,6 @@ async function processRequest(req, res, requestData) {
     }
 }
 
-// GET request handler
-app.get('/*', async (req, res) => {
-    const requestData = getRequestData(req);
-    try {
-        await processRequest(req, res, {...requestData, plaintTextResponse: true});
-    } catch (error) {
-        sendErrorResponse(res, req, error, requestData);
-    }
-});
-
 // POST request handler
 app.post('/', async (req, res) => {
     if (!req.body.messages || !Array.isArray(req.body.messages)) {
@@ -538,30 +528,15 @@ async function generateTextBasedOnModel(messages, options) {
     }
 }
 
-function formatAsOpenAIResponse(response, requestParams) {
-    const choices = [{
-        "message": {
-            "content": response,
-            "role": "assistant"
-        },
-        "finish_reason": "stop",
-        "index": 0,
-        "logprobs": null
-    }];
-
-    const result = {
-        "created": Date.now(),
-        "id": crypto.randomUUID(),
-        "model": requestParams.model,
-        "object": isStream ? "chat.completion.chunk" : "chat.completion",
-        "choices": choices
-    };
-    return result;
-}
-4
-app.use((req, res, next) => {
-    log(`Unhandled request: ${req.method} ${req.originalUrl}`);
-    res.status(404).json({ error: 'Not Found' });
-});
 
 export default app;
+
+// GET request handler (catch-all)
+app.get('/*', async (req, res) => {
+    const requestData = getRequestData(req);
+    try {
+        await processRequest(req, res, {...requestData, plaintTextResponse: true});
+    } catch (error) {
+        sendErrorResponse(res, req, error, requestData);
+    }
+});

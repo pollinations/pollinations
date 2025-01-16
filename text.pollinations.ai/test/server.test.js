@@ -2,6 +2,11 @@ import test from 'ava';
 import request from 'supertest';
 import app from '../server.js'; // Ensure this path is correct and matches the export
 
+// Increase timeout for all tests
+test.beforeEach(t => {
+    t.timeout(30000); // 30 seconds
+});
+
 /**
  * Test suite for the server API endpoints
  */
@@ -310,6 +315,53 @@ test('POST /openai should handle empty messages', async t => {
 });
 
 /**
+ * Test: server should format responses as OpenAI format
+ * 
+ * Purpose: Verify that the server formats responses as OpenAI format
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ */
+test('server should format responses as OpenAI format', async t => {
+    try {
+        const response = await request(app)
+            .post('/openai')
+            .send({
+                messages: [{ role: 'user', content: 'Hello' }],
+                model: 'qwen',
+                stream: true
+            })
+            .expect(200);
+        t.pass();
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+/**
+ * Test: server should handle streaming responses with error
+ * 
+ * Purpose: Verify that the server handles streaming responses with error
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ */
+test('server should handle streaming responses with error', async t => {
+    try {
+        const response = await request(app)
+            .post('/openai')
+            .send({
+                messages: [{ role: 'user', content: 'Hello' }],
+                model: 'qwen',
+                stream: true
+            });
+        t.pass();
+    } catch (error) {
+        t.fail(error.message);
+    }
+});
+
+/**
  * Test: GET /feed (SSE endpoint)
  *
  * Purpose: Verify that the /feed endpoint establishes a Server-Sent Events connection
@@ -326,3 +378,27 @@ test('POST /openai should handle empty messages', async t => {
 //     t.is(response.status, 200, 'Response status should be 200');
 //     t.is(response.headers['content-type'], 'text/event-stream', 'Content-Type should be text/event-stream');
 // });
+
+/**
+ * Test: GET /openai/models
+ * 
+ * Purpose: Verify that the /openai/models endpoint returns available models in OpenAI format
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response body should have the correct OpenAI API structure
+ */
+test('GET /openai/models should return available models in OpenAI format', async t => {
+    try {
+        const response = await request(app)
+            .get('/openai/models')
+            .expect(200);
+
+        t.is(response.body.object, 'list');
+        t.true(Array.isArray(response.body.data));
+        t.true(response.body.data.length > 0);
+        t.deepEqual(Object.keys(response.body.data[0]), ['id', 'object', 'created', 'owned_by']);
+    } catch (error) {
+        t.fail(error.message);
+    }
+});

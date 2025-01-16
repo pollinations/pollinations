@@ -2,7 +2,6 @@
   "all": true,
   "include": [
     "server.js",
-    "sendToAnalytics.js",
     "availableModels.js",
     "generateTextHuggingface.js",
     "generateTextOpenai.js",

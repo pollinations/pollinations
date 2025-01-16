@@ -38,7 +38,7 @@ const WHITELISTED_DOMAINS = [
     'pollinations.ai',
     'thot',
     'ai-ministries.com',
-    // 'localhost',
+    'localhost',
     'pollinations.github.io'
 ];
 
@@ -207,7 +207,7 @@ async function handleRequest(req, res, requestData) {
             ...requestData,
             success: true,
             cached: false,
-            responseLength: responseText.length,
+            responseLength: responseText?.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
             ...tokenUsage
@@ -360,7 +360,7 @@ async function processRequest(req, res, requestData) {
             ...requestData,
             success: true,
             cached: true,
-            responseLength: cachedResponse.choices[0].message.content.length,
+            responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
             streamMode: requestData.stream,
             plainTextMode: requestData.plaintTextResponse,
             cacheKey: cacheKey,

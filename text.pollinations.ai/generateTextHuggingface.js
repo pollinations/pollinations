@@ -65,10 +65,6 @@ async function generateTextHuggingface(messages, { temperature, jsonMode = false
         log('Error Type: %s', error.constructor.name);
         log('Error Message: %s', error.message);
         log('Error Stack: %s', error.stack);
-        if (error.response) {
-            log('API Response Status: %s', error.response.status);
-            log('API Response Data: %O', error.response.data);
-        }
         throw error;
     }
 }

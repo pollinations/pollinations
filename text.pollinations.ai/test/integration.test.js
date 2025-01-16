@@ -306,6 +306,164 @@ test('OpenAI API should handle invalid model gracefully', async t => {
 });
 
 /**
+ * Test Suite: Message Validation
+ * 
+ * Purpose: Verify that the API properly validates message format and content
+ */
+test('POST /openai should validate message format', async t => {
+    const testCases = [
+        {
+            messages: [],
+            expectedStatus: 400,
+            description: 'Empty messages array'
+        },
+        {
+            messages: [{ content: 'Missing role' }],
+            expectedStatus: 400,
+            description: 'Message missing role'
+        },
+        {
+            messages: [{ role: 'invalid', content: 'Invalid role' }],
+            expectedStatus: 400,
+            description: 'Invalid role'
+        },
+        {
+            messages: [{ role: 'user', content: 'x'.repeat(10000) }],
+            expectedStatus: 400,
+            description: 'Message too long'
+        }
+    ];
+
+    for (const testCase of testCases) {
+        const response = await axiosInstance.post('/openai/chat/completions', {
+            messages: testCase.messages,
+            model: 'openai'
+        }).catch(error => error.response);
+        
+        t.is(response.status, testCase.expectedStatus, 
+            `${testCase.description} should return ${testCase.expectedStatus}`);
+    }
+});
+
+/**
+ * Test Suite: Special Character Handling
+ * 
+ * Purpose: Verify that the API properly handles various types of special characters
+ * and potentially dangerous input
+ */
+test('POST /openai should handle special characters', async t => {
+    const testCases = [
+        {
+            content: '🌟 Hello World! 🌍',
+            description: 'Emojis'
+        },
+        {
+            content: '안녕하세요 नमस्ते Здравствуйте',
+            description: 'Unicode characters'
+        },
+        {
+            content: '<script>alert("test")</script>',
+            description: 'HTML tags'
+        },
+        {
+            content: "SELECT * FROM users; DROP TABLE users;",
+            description: 'SQL injection attempt'
+        }
+    ];
+
+    for (const testCase of testCases) {
+        const response = await axiosInstance.post('/openai/chat/completions', {
+            messages: [{ role: 'user', content: testCase.content }],
+            model: 'openai'
+        });
+        
+        t.is(response.status, 200, 
+            `${testCase.description} should be handled successfully`);
+        t.truthy(response.data.choices[0].message.content,
+            `${testCase.description} should return a response`);
+    }
+});
+
+/**
+ * Test Suite: Rate Limiting
+ * 
+ * Purpose: Verify that rate limiting is working correctly
+ */
+test('Rate limiting should work correctly', async t => {
+    const responses = [];
+
+    // Make multiple requests quickly
+    for (let i = 0; i < 10; i++) {
+        const response = await axiosInstance.post('/openai/chat/completions', {
+            messages: [{ role: 'user', content: 'Test ' + i }],
+            model: 'openai'
+        }).catch(error => error.response);
+        
+        responses.push(response);
+    }
+
+    // Some requests should be rate limited
+    t.true(responses.some(r => r.status === 429), 
+        'Some requests should be rate limited');
+});
+
+/**
+ * Test Suite: Seed Behavior Across Models
+ * 
+ * Purpose: Verify that different seeds produce different responses while keeping
+ * other parameters constant for each model.
+ */
+
+const chatModels = availableModels.filter(model => 
+    model.type === 'chat' && model.baseModel === true
+);
+
+for (const modelConfig of chatModels) {
+    test(`Seed behavior for ${modelConfig.name} model`, async t => {
+        const prompt = 'Tell me a random number between 1 and 100. Also list 5 random colors.';
+        const seeds = [123, 456, 789]; // Different seeds
+        const responses = [];
+        const consistencyCheck = []; // For checking if same seed gives same response
+
+        // Make requests with different seeds
+        for (const seed of seeds) {
+            const response = await axiosInstance.post('/openai/chat/completions', {
+                messages: [{ role: 'user', content: prompt }],
+                model: modelConfig.name,
+                seed: seed,
+                temperature: 1, // Use high temperature to ensure variation
+                cache: false
+            });
+            
+            t.is(response.status, 200, 'Response status should be 200');
+            responses.push(response.data.choices[0].message.content);
+
+            // Make a second request with the same seed to check consistency
+            const secondResponse = await axiosInstance.post('/openai/chat/completions', {
+                messages: [{ role: 'user', content: prompt }],
+                model: modelConfig.name,
+                seed: seed,
+                temperature: 1,
+                cache: false
+            });
+            
+            consistencyCheck.push(secondResponse.data.choices[0].message.content);
+        }
+
+        // Verify all responses are different from each other
+        const uniqueResponses = new Set(responses);
+        t.is(uniqueResponses.size, seeds.length, 
+            'Each seed should produce a unique response');
+
+        // Verify that same seeds produce same responses
+        for (let i = 0; i < seeds.length; i++) {
+            t.is(responses[i], consistencyCheck[i], 
+                `Same seed (${seeds[i]}) should produce same response`);
+        }
+    });
+}
+
+/**
  * Test: Streaming Responses (Commented Out)
  *
  * Purpose: Verify that the API supports streaming responses for the OpenAI-compatible endpoint.

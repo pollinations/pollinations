@@ -434,7 +434,7 @@ async function processRequest(req, res, requestData) {
                  .json(errorResponse);
     }
     
-    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
+    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);
 
     if (bypassQueue) {
         await handleRequest(req, res, requestData);

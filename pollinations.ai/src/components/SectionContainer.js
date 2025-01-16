@@ -20,8 +20,8 @@ export const SectionSubContainer = styled.div`
         margin-left: auto;
         margin-right: auto;
         width: 100%;
-        padding-bottom: 4em;
-        padding-top: 2em;
+        padding-bottom: 2em;
+        padding-top: 0em;
 `;
 
 export const SectionBgBox = styled.div`

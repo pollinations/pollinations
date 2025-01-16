@@ -10,8 +10,6 @@ import styled from "@emotion/styled"
 // replacements allow replacing dynamic content in the markdown
 // the syntax is {[key]} which will be matched with the props passed to this object
 
-const MOBILE_BREAKPOINT = "768px"
-
 const MarkDownContent = ({ url, ...replacements }) => {
   const raw = useFetchText(url)
   const { body } = useMarkdown(raw)
@@ -64,7 +62,7 @@ const applyReplacements = (replacements, content) =>
 const replaceOne = (content, [key, replacement]) => content.replaceAll(`{${key}}`, replacement)
 
 const StyledMarkdownContent = styled.div`
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  ${({ theme }) => theme.breakpoints.down('md')} {
     h1,
     h2,
     h3,

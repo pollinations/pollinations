@@ -1,6 +1,5 @@
 import styled from "@emotion/styled"
 import { Box, Paper } from "@mui/material"
-import { MOBILE_BREAKPOINT } from "../config/global"
 import { useState, useEffect } from "react"
 import useRandomSeed from "../hooks/useRandomSeed"
 import { usePollinationsImage, usePollinationsText } from "@pollinations/react"
@@ -88,7 +87,7 @@ export const ImageHeading = styled(
     height: auto;
   }
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  ${({ theme }) => theme.breakpoints.down('md')} {
     margin: 0px 0;
   }
 `

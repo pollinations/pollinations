@@ -1,4 +1,5 @@
-import { useState, useLayoutEffect } from "react"
+/* Start of Selection */
+import { useState } from "react"
 import { AppBar, ButtonGroup, Button, Box, IconButton } from "@mui/material"
 import { CodeBlock } from "react-code-blocks"
 import { URLExplanation } from "../ImageHeading"
@@ -9,7 +10,18 @@ import React from "react";
 import FileCopyIcon from '@mui/icons-material/FileCopy'
 import CODE_EXAMPLES from '../../config/codeExamplesText';
 import { SectionBgBox } from "../SectionContainer"
+import styled from '@emotion/styled'
 
+// Use styled to handle container styles and breakpoints
+const StyledURLExplanation = styled(URLExplanation)(({ theme }) => ({
+  margin: "0 auto",
+  maxWidth: "1000px",
+  width: "100%",
+  [theme.breakpoints.down('md')]: {
+    // Example breakpoint usage
+    maxWidth: "90%",
+  },
+}));
 
 // Common styles
 const buttonStyle = (isActive) => ({
@@ -34,18 +46,6 @@ const buttonStyle = (isActive) => ({
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useLayoutEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue);
@@ -78,7 +78,7 @@ export function CodeExamples({ image = {} }) {
   const imageToUse = image?.imageURL ? image : defaultImage;
 
   return (
-    <URLExplanation style={{ margin: "0 auto", maxWidth: "1000px", width: "100%" }}>
+    <StyledURLExplanation>
       <AppBar
         position="static"
         style={{ color: "white", width: "auto", boxShadow: "none" }}
@@ -108,23 +108,23 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative">
-              <SectionBgBox style={{padding: "10px", marginTop: "1em"}}>
-              <CodeBlock
-                text={text}
-                language={language}
-                showLineNumbers={text.split("\n").length > 1}
-                customStyle={{
-                  backgroundColor: "transparent",
-                  color: Colors.offwhite,
-                  width: "100%",
-                  height: "auto",
-                  border: `0px`,
-                  paddingTop: "0px",
-                  paddingBottom: "0px",
-                  boxShadow: "none",
-                  overflowX: "hidden", // Prevent horizontal overflow
-                }}
-              />
+              <SectionBgBox style={{ padding: "10px", marginTop: "1em" }}>
+                <CodeBlock
+                  text={text}
+                  language={language}
+                  showLineNumbers={text.split("\n").length > 1}
+                  customStyle={{
+                    backgroundColor: "transparent",
+                    color: Colors.offwhite,
+                    width: "100%",
+                    height: "auto",
+                    border: `0px`,
+                    paddingTop: "0px",
+                    paddingBottom: "0px",
+                    boxShadow: "none",
+                    overflowX: "hidden", 
+                  }}
+                />
               </SectionBgBox>
               <IconButton
                 onClick={() => handleCopy(text)}
@@ -142,7 +142,6 @@ export function CodeExamples({ image = {} }) {
           );
         })}
       </>
-    </URLExplanation>
+    </StyledURLExplanation>
   );
 }
-

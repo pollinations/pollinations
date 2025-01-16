@@ -100,7 +100,7 @@ const Headline = styled.p`
     color: ${Colors.lime};
   }
 
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  ${({ theme }) => theme.breakpoints.down('md')} {
     max-width: 600px;
     font-size: 58px;
     line-height: 55px;
@@ -120,7 +120,7 @@ const SubHeadline = styled.p`
 
   margin: 0;
   margin-bottom: 2em;
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  ${({ theme }) => theme.breakpoints.down('md')} {
     max-width: 600px;
     font-size: 18px;
     line-height: 15px;
@@ -198,7 +198,7 @@ const FeaturedAppStyle = styled.div`
     margin: 0;
 
     color: ${Colors.offblack};
-    @media (max-width: ${MOBILE_BREAKPOINT}) {
+    ${({ theme }) => theme.breakpoints.down('md')} {
       max-width: 600px;
       font-size: 18px;
       line-height: 18px;

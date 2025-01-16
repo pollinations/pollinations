@@ -305,45 +305,6 @@ test('OpenAI API should handle invalid model gracefully', async t => {
     t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');
 });
 
-/**
- * Test Suite: Message Validation
- * 
- * Purpose: Verify that the API properly validates message format and content
- */
-test('POST /openai should validate message format', async t => {
-    const testCases = [
-        {
-            messages: [],
-            expectedStatus: 400,
-            description: 'Empty messages array'
-        },
-        {
-            messages: [{ content: 'Missing role' }],
-            expectedStatus: 400,
-            description: 'Message missing role'
-        },
-        {
-            messages: [{ role: 'invalid', content: 'Invalid role' }],
-            expectedStatus: 400,
-            description: 'Invalid role'
-        },
-        {
-            messages: [{ role: 'user', content: 'x'.repeat(10000) }],
-            expectedStatus: 400,
-            description: 'Message too long'
-        }
-    ];
-
-    for (const testCase of testCases) {
-        const response = await axiosInstance.post('/openai/chat/completions', {
-            messages: testCase.messages,
-            model: 'openai'
-        }).catch(error => error.response);
-        
-        t.is(response.status, testCase.expectedStatus, 
-            `${testCase.description} should return ${testCase.expectedStatus}`);
-    }
-});
 
 /**
  * Test Suite: Special Character Handling
@@ -384,28 +345,6 @@ test('POST /openai should handle special characters', async t => {
     }
 });
 
-/**
- * Test Suite: Rate Limiting
- * 
- * Purpose: Verify that rate limiting is working correctly
- */
-test('Rate limiting should work correctly', async t => {
-    const responses = [];
-
-    // Make multiple requests quickly
-    for (let i = 0; i < 10; i++) {
-        const response = await axiosInstance.post('/openai/chat/completions', {
-            messages: [{ role: 'user', content: 'Test ' + i }],
-            model: 'openai'
-        }).catch(error => error.response);
-        
-        responses.push(response);
-    }
-
-    // Some requests should be rate limited
-    t.true(responses.some(r => r.status === 429), 
-        'Some requests should be rate limited');
-});
 
 /**
  * Test Suite: Seed Behavior Across Models

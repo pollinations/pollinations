@@ -1,8 +1,12 @@
 import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
+import debug from 'debug';
 import { imageGenerationPrompt, spamTheSpammersPrompt } from './pollinationsPrompt.js';
 import { searchToolDefinition, performWebSearch } from './tools/searchTool.js';
 import { performWebScrape, scrapeToolDefinition } from './tools/scrapeTool.js';
+
+const log = debug('pollinations:openai');
+const errorLog = debug('pollinations:openai:error');
 
 dotenv.config();
 
@@ -34,7 +38,7 @@ export async function generateText(messages, options, performSearch = false) {
     const totalChars = countMessageCharacters(messages);
     
     if (totalChars > MAX_CHARS) {
-        console.error(`!!!!!!!!!!! Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars}) !!!!!!!!!!!`);
+        errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
         throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
     }
 

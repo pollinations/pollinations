@@ -311,15 +311,7 @@ function getRequestData(req) {
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
 
-    // Get referer in a case-insensitive way
-    const referrer = 
-        data.referrer || 
-        data.referer || 
-        Object.keys(req.headers)
-            .find(key => key.toLowerCase() === 'referer')
-            ?.map(key => req.headers[key])?.[0] ||
-        'undefined';
-
+    const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
     const stream = data.stream || false; 
@@ -340,6 +332,19 @@ function getRequestData(req) {
         referrer,
         stream
     };
+}
+
+// Helper function to get referrer from request
+function getReferrer(req, data) {
+    // Check body/query params first
+    if (data.referrer) return data.referrer;
+    if (data.referer) return data.referer;
+    
+    // Then check headers - express normalizes headers to lowercase
+    const referer = req.headers.referer || req.headers.referrer;
+    if (referer) return referer;
+    
+    return 'undefined';
 }
 
 // Helper function to process requests with queueing and caching logic

@@ -1,3 +1,11 @@
-cd text.pollinations.ai && npm test && cd ..
-cd image.pollinations.ai && npm test && cd ..
-cd pollinations.ai && npm test && cd ..
+if [ -d "text.pollinations.ai" ]; then
+    (cd text.pollinations.ai && npm test)
+fi
+
+if [ -d "image.pollinations.ai" ]; then
+    (cd image.pollinations.ai && npm test)
+fi
+
+if [ -d "pollinations.ai" ]; then
+    (cd pollinations.ai && npm test)
+fi

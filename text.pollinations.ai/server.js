@@ -5,9 +5,6 @@ import crypto from 'crypto';
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
-import generateTextMistral from './generateTextMistral.js';
-import generateTextKarma from './generateTextKarma.js';
-import generateTextClaude from './generateTextClaude.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 import surSystemPrompt from './personas/sur.js';
 import unityPrompt from './personas/unity.js';
@@ -15,11 +12,9 @@ import midijourneyPrompt from './personas/midijourney.js';
 import rtistPrompt from './personas/rtist.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
-import generateTextCommandR from './generateTextCommandR.js';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
-import { generateText as generateTextRoblox } from './generateTextOpenaiRoblox.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
@@ -566,7 +561,7 @@ function formatAsOpenAIResponse(response, requestParams) {
 4
 app.use((req, res, next) => {
     log(`Unhandled request: ${req.method} ${req.originalUrl}`);
-    next();
+    res.status(404).json({ error: 'Not Found' });
 });
 
-export default app; // Add this line to export the app instance
+export default app;

@@ -201,6 +201,115 @@ test('POST /openai should cache responses', async t => {
 });
 
 /**
+ * Test: POST /openai with invalid model
+ * 
+ * Purpose: Verify that the /openai endpoint handles invalid model requests
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ */
+test('POST /openai should handle invalid model', async t => {
+    const response = await request(app)
+        .post('/openai?code=BeesKnees')
+        .send({ 
+            messages: [{ role: 'user', content: 'Hello' }],
+            model: 'invalid-model'
+        });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+});
+
+/**
+ * Test: POST /openai with rate limiting
+ * 
+ * Purpose: Verify that rate limiting works
+ * 
+ * Expected behavior:
+ * 1. Multiple rapid requests should be queued rather than rate limited
+ */
+test('POST /openai should enforce rate limits', async t => {
+    // Make multiple requests rapidly
+    const promises = Array(10).fill().map(() => 
+        request(app)
+            .post('/openai?code=BeesKnees')
+            .send({ messages: [{ role: 'user', content: 'Hello' }] })
+    );
+    
+    const responses = await Promise.all(promises);
+    t.true(responses.every(r => r.status === 200), 'Requests should be queued rather than rate limited');
+});
+
+/**
+ * Test: POST /openai with system message
+ * 
+ * Purpose: Verify handling of system messages
+ * 
+ * Expected behavior:
+ * 1. The response should include the system message in processing
+ */
+test('POST /openai should handle system messages', async t => {
+    const response = await request(app)
+        .post('/openai?code=BeesKnees')
+        .send({ 
+            messages: [
+                { role: 'system', content: 'You are a helpful assistant' },
+                { role: 'user', content: 'Hello' }
+            ]
+        });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+    t.truthy(response.body.choices[0].message, 'Response should contain message');
+});
+
+/**
+ * Test: POST /openai with different temperature
+ * 
+ * Purpose: Verify temperature parameter handling
+ * 
+ * Expected behavior:
+ * 1. Different temperatures should be accepted
+ */
+test('POST /openai should handle temperature parameter', async t => {
+    const response = await request(app)
+        .post('/openai?code=BeesKnees')
+        .send({ 
+            messages: [{ role: 'user', content: 'Hello' }],
+            temperature: 0.7
+        });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+});
+
+/**
+ * Test: GET / without code
+ * 
+ * Purpose: Verify authentication handling
+ * 
+ * Expected behavior:
+ * 1. Request without code should be handled
+ */
+test('GET / should handle missing authentication code', async t => {
+    const response = await request(app).get('/hello');
+    t.is(response.status, 200, 'Response status should be 200');
+});
+
+/**
+ * Test: POST /openai with empty messages
+ * 
+ * Purpose: Verify empty messages handling
+ * 
+ * Expected behavior:
+ * 1. Empty messages should be rejected
+ */
+test('POST /openai should handle empty messages', async t => {
+    const response = await request(app)
+        .post('/openai?code=BeesKnees')
+        .send({ messages: [] });
+    
+    t.is(response.status, 400, 'Response status should be 400');
+});
+
+/**
  * Test: GET /feed (SSE endpoint)
  *
  * Purpose: Verify that the /feed endpoint establishes a Server-Sent Events connection

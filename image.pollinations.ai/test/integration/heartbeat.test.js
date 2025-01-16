@@ -7,8 +7,8 @@ import HeartbeatRunner from '../utils/run_with_heartbeat.js';
 describe('Heartbeat Integration Tests', () => {
     let masterServer;
     let registeredServers = [];
-    const masterPort = 3001;
-    const workerPort = 3002;
+    const masterPort = 30010;
+    const workerPort = 30020;
 
     beforeAll(async () => {
         // Setup mock master server

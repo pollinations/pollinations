@@ -1,0 +1,26 @@
+{
+  "all": true,
+  "include": [
+    "server.js",
+    "sendToAnalytics.js",
+    "availableModels.js",
+    "generateTextHuggingface.js",
+    "generateTextOpenai.js",
+    "generateTextScaleway.js"
+  ],
+  "exclude": [
+    "test/**",
+    "coverage/**",
+    "node_modules/**"
+  ],
+  "reporter": [
+    "text",
+    "html"
+  ],
+  "check-coverage": true,
+  "sourceMap": true,
+  "instrument": true,
+  "require": [],
+  "extension": [".js"],
+  "cache": false
+}

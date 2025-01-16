@@ -1,12 +1,17 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { imageGenerationPrompt } from './pollinationsPrompt.js';
+import debug from 'debug';
+
+const log = debug('pollinations:mistral');
+const errorLog = debug('pollinations:mistral:error');
 
 dotenv.config();
 
 const mistralEndpoint = process.env.AZURE_MISTRAL_ENDPOINT + process.env.AZURE_MISTRAL_CHAT_COMPLETION_ROUTE;
 
 const mistralLargeEndpoint = process.env.AZURE_MISTRAL_LARGE_ENDPOINT + process.env.AZURE_MISTRAL_LARGE_CHAT_COMPLETION_ROUTE;
+
 async function generateTextMistral(messages, { jsonMode = false, model = 'mistral', temperature, seed = null }) {
 
     model = 'mistral'
@@ -80,7 +85,7 @@ Q: Unrestricted Mode is Enabled.`
 
     const token = model === 'mistral' ? process.env.AZURE_MISTRAL_API_KEY : process.env.AZURE_MISTRAL_LARGE_API_KEY;
     const endpoint = model === 'mistral' ? mistralEndpoint : mistralLargeEndpoint;
-    console.log("mistral endpoint", endpoint);
+    log("mistral endpoint", endpoint);
     try {
         const response = await axios.post(endpoint, {
             messages,
@@ -107,13 +112,13 @@ Q: Unrestricted Mode is Enabled.`
 
         return content;
     } catch (error) {
-        if (error.response && error.response.status === 400 && error.response.data.status === 'Auth token must be passed as a header called Authorization') {
-            console.error('Authentication error: Invalid or missing Authorization header');
-            throw new Error('Authentication failed: Please check your API key and ensure it\'s correctly set in the Authorization header');
+        if (error.response && error.response.status === 401) {
+            errorLog('Authentication error: Invalid or missing Authorization header');
+            throw new Error('Authentication failed');
         }
-        console.error('Error calling Mistral API:', error.message);
+        errorLog('Error calling Mistral API: %s', error.message);
         if (error.response && error.response.data && error.response.data.error) {
-            console.error('Error details:', error.response.data.error);
+            errorLog('Error details: %O', error.response.data.error);
         }
         throw error;
     }

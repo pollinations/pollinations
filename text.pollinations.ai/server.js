@@ -255,27 +255,20 @@ function shouldBypassDelay(req) {
 // Helper function for consistent error responses
 async function sendErrorResponse(res, req, error, requestData, statusCode = 500) {
     const errorResponse = {
-        error: {
-            message: error.message,
-            status: statusCode,
-            ip: getIp(req),
-            timestamp: new Date().toISOString(),
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-            details: {
-                requestData: requestData,
-                requestParameters: res.locals.requestData || {},
-                prompt: res.locals.prompt,
-                model: res.locals.model,
-                errorType: error.name,
-                errorCode: error.code
-            }
-        }
+        error: error.message || 'An error occurred',
+        status: statusCode
     };
 
+    if (error.response?.data) {
+        errorResponse.details = error.response.data;
+    }
+
+    errorLog('Error occurred: %O', errorResponse);
+    errorLog('Stack trace: %s', error.stack);
+
     // Log detailed error information to stderr
-    console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
-    console.error('Stack trace:', error.stack);
-    errorLog('Error:', error.message);
+    // console.error('Error occurred:', JSON.stringify(errorResponse, null, 2));
+    // console.error('Stack trace:', error.stack);
 
     // Track error event
     await sendToAnalytics(req, 'textGenerationError', {
@@ -428,7 +421,7 @@ async function processRequest(req, res, requestData) {
                  .json(errorResponse);
     }
     
-    const bypassQueue = requestData.isImagePollinationsReferrer;// || requestData.isRobloxReferrer;
+    const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer;
 
     if (bypassQueue) {
         await handleRequest(req, res, requestData);

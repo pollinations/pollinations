@@ -7,6 +7,13 @@ export const availableModels = [
         baseModel: true,
     },
     {
+        name: 'openai-large',
+        type: 'chat',
+        censored: true,
+        description: 'OpenAI GPT-4o Large',
+        baseModel: true,
+    },
+    {
         name: 'qwen',
         type: 'chat',
         censored: true,

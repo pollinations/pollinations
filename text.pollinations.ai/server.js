@@ -15,6 +15,7 @@ import PQueue from 'p-queue';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
+import { generateTextLarge } from './generateTextOpenaiLarge.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
@@ -482,6 +483,7 @@ async function generateTextBasedOnModel(messages, options) {
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
+            'openai-large': () => generateTextLarge(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

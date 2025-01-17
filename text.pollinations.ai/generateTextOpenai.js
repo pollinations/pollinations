@@ -45,7 +45,7 @@ export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'
-            : spamTheSpammersPrompt();
+            : performSearch ? 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' : spamTheSpammersPrompt();
             
         messages = [{ role: 'system', content: systemContent }, ...messages];
     } else if (options.jsonMode) {

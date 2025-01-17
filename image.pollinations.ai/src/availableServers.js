@@ -184,7 +184,7 @@ export const handleRegisterEndpoint = (req, res) => {
             }
         });
     } else if (req.method === 'GET') {
-        const availableServers = Object.values(SERVERS).flat();
+        const availableServers = Object.entries(SERVERS).map(([type, servers]) => servers.map(server => ({ ...server, type }))).flat();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(availableServers.map(server => ({
             url: server.url,
@@ -192,7 +192,8 @@ export const handleRegisterEndpoint = (req, res) => {
             totalRequests: server.totalRequests,
             errors: server.errors,
             errorRate: ((server.errors / server.totalRequests) * 100 || 0).toFixed(2) + '%',
-            requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2)
+            requestsPerSecond: (server.totalRequests / ((Date.now() - server.startTime) / 1000)).toFixed(2),
+            type: server.type
         }))));
     } else {
         res.writeHead(405, { 'Content-Type': 'application/json' });

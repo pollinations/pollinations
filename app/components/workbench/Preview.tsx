@@ -1,11 +1,24 @@
-import { useStore } from '@nanostores/react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { useStore } from '@nanostores/react';
 import { IconButton } from '~/components/ui/IconButton';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { PortDropdown } from './PortDropdown';
 import { ScreenshotSelector } from './ScreenshotSelector';
 
 type ResizeSide = 'left' | 'right' | null;
+
+interface WindowSize {
+  name: string;
+  width: number;
+  height: number;
+}
+
+const WINDOW_SIZES: WindowSize[] = [
+  { name: 'Mobile (375x667)', width: 375, height: 667 },
+  { name: 'Tablet (768x1024)', width: 768, height: 1024 },
+  { name: 'Laptop (1366x768)', width: 1366, height: 768 },
+  { name: 'Desktop (1920x1080)', width: 1920, height: 1080 },
+];
 
 export const Preview = memo(() => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -15,6 +28,7 @@ export const Preview = memo(() => {
   const [activePreviewIndex, setActivePreviewIndex] = useState(0);
   const [isPortDropdownOpen, setIsPortDropdownOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPreviewOnly, setIsPreviewOnly] = useState(false);
   const hasSelectedPreview = useRef(false);
   const previews = useStore(workbenchStore.previews);
   const activePreview = previews[activePreviewIndex];
@@ -27,7 +41,7 @@ export const Preview = memo(() => {
   const [isDeviceModeOn, setIsDeviceModeOn] = useState(false);
 
   // Use percentage for width
-  const [widthPercent, setWidthPercent] = useState<number>(37.5); // 375px assuming 1000px window width initially
+  const [widthPercent, setWidthPercent] = useState<number>(37.5);
 
   const resizingState = useRef({
     isResizing: false,
@@ -37,8 +51,10 @@ export const Preview = memo(() => {
     windowWidth: window.innerWidth,
   });
 
-  // Define the scaling factor
-  const SCALING_FACTOR = 2; // Adjust this value to increase/decrease sensitivity
+  const SCALING_FACTOR = 2;
+
+  const [isWindowSizeDropdownOpen, setIsWindowSizeDropdownOpen] = useState(false);
+  const [selectedWindowSize, setSelectedWindowSize] = useState<WindowSize>(WINDOW_SIZES[0]);
 
   useEffect(() => {
     if (!activePreview) {
@@ -79,7 +95,6 @@ export const Preview = memo(() => {
     [],
   );
 
-  // When previews change, display the lowest port if user hasn't selected a preview
   useEffect(() => {
     if (previews.length > 1 && !hasSelectedPreview.current) {
       const minPortIndex = previews.reduce(findMinPortIndex, 0);
@@ -122,7 +137,6 @@ export const Preview = memo(() => {
       return;
     }
 
-    // Prevent text selection
     document.body.style.userSelect = 'none';
 
     resizingState.current.isResizing = true;
@@ -134,7 +148,7 @@ export const Preview = memo(() => {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
 
-    e.preventDefault(); // Prevent any text selection on mousedown
+    e.preventDefault();
   };
 
   const onMouseMove = (e: MouseEvent) => {
@@ -145,7 +159,6 @@ export const Preview = memo(() => {
     const dx = e.clientX - resizingState.current.startX;
     const windowWidth = resizingState.current.windowWidth;
 
-    // Apply scaling factor to increase sensitivity
     const dxPercent = (dx / windowWidth) * 100 * SCALING_FACTOR;
 
     let newWidthPercent = resizingState.current.startWidthPercent;
@@ -156,7 +169,6 @@ export const Preview = memo(() => {
       newWidthPercent = resizingState.current.startWidthPercent - dxPercent;
     }
 
-    // Clamp the width between 10% and 90%
     newWidthPercent = Math.max(10, Math.min(newWidthPercent, 90));
 
     setWidthPercent(newWidthPercent);
@@ -168,17 +180,12 @@ export const Preview = memo(() => {
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
 
-    // Restore text selection
     document.body.style.userSelect = '';
   };
 
-  // Handle window resize to ensure widthPercent remains valid
   useEffect(() => {
     const handleWindowResize = () => {
-      /*
-       * Optional: Adjust widthPercent if necessary
-       * For now, since widthPercent is relative, no action is needed
-       */
+      // Optional: Adjust widthPercent if necessary
     };
 
     window.addEventListener('resize', handleWindowResize);
@@ -188,7 +195,6 @@ export const Preview = memo(() => {
     };
   }, []);
 
-  // A small helper component for the handle's "grip" icon
   const GripIcon = () => (
     <div
       style={{
@@ -213,8 +219,33 @@ export const Preview = memo(() => {
     </div>
   );
 
+  const openInNewWindow = (size: WindowSize) => {
+    if (activePreview?.baseUrl) {
+      const match = activePreview.baseUrl.match(/^https?:\/\/([^.]+)\.local-credentialless\.webcontainer-api\.io/);
+
+      if (match) {
+        const previewId = match[1];
+        const previewUrl = `/webcontainer/preview/${previewId}`;
+        const newWindow = window.open(
+          previewUrl,
+          '_blank',
+          `noopener,noreferrer,width=${size.width},height=${size.height},menubar=no,toolbar=no,location=no,status=no`,
+        );
+
+        if (newWindow) {
+          newWindow.focus();
+        }
+      } else {
+        console.warn('[Preview] Invalid WebContainer URL:', activePreview.baseUrl);
+      }
+    }
+  };
+
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col relative">
+    <div
+      ref={containerRef}
+      className={`w-full h-full flex flex-col relative ${isPreviewOnly ? 'fixed inset-0 z-50 bg-white' : ''}`}
+    >
       {isPortDropdownOpen && (
         <div className="z-iframe-overlay w-full h-full absolute" onClick={() => setIsPortDropdownOpen(false)} />
       )}
@@ -225,10 +256,7 @@ export const Preview = memo(() => {
           onClick={() => setIsSelectionMode(!isSelectionMode)}
           className={isSelectionMode ? 'bg-bolt-elements-background-depth-3' : ''}
         />
-        <div
-          className="flex items-center gap-1 flex-grow bg-bolt-elements-preview-addressBar-background border border-bolt-elements-borderColor text-bolt-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-bolt-elements-preview-addressBar-backgroundHover hover:focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:bg-bolt-elements-preview-addressBar-backgroundActive
-        focus-within-border-bolt-elements-borderColorActive focus-within:text-bolt-elements-preview-addressBar-textActive"
-        >
+        <div className="flex items-center gap-1 flex-grow bg-bolt-elements-preview-addressBar-background border border-bolt-elements-borderColor text-bolt-elements-preview-addressBar-text rounded-full px-3 py-1 text-sm hover:bg-bolt-elements-preview-addressBar-backgroundHover hover:focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within:bg-bolt-elements-preview-addressBar-backgroundActive focus-within-border-bolt-elements-borderColorActive focus-within:text-bolt-elements-preview-addressBar-textActive">
           <input
             title="URL"
             ref={inputRef}
@@ -261,26 +289,65 @@ export const Preview = memo(() => {
           />
         )}
 
-        {/* Device mode toggle button */}
         <IconButton
           icon="i-ph:devices"
           onClick={toggleDeviceMode}
           title={isDeviceModeOn ? 'Switch to Responsive Mode' : 'Switch to Device Mode'}
         />
 
-        {/* Fullscreen toggle button */}
+        <IconButton
+          icon="i-ph:layout-light"
+          onClick={() => setIsPreviewOnly(!isPreviewOnly)}
+          title={isPreviewOnly ? 'Show Full Interface' : 'Show Preview Only'}
+        />
+
         <IconButton
           icon={isFullscreen ? 'i-ph:arrows-in' : 'i-ph:arrows-out'}
           onClick={toggleFullscreen}
           title={isFullscreen ? 'Exit Full Screen' : 'Full Screen'}
         />
+
+        <div className="relative">
+          <IconButton
+            icon="i-ph:arrow-square-out"
+            onClick={() => openInNewWindow(selectedWindowSize)}
+            title={`Open Preview in ${selectedWindowSize.name} Window`}
+          />
+          <IconButton
+            icon="i-ph:caret-down"
+            onClick={() => setIsWindowSizeDropdownOpen(!isWindowSizeDropdownOpen)}
+            className="ml-1"
+            title="Select Window Size"
+          />
+
+          {isWindowSizeDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-50" onClick={() => setIsWindowSizeDropdownOpen(false)} />
+              <div className="absolute right-0 top-full mt-1 z-50 bg-bolt-elements-background-depth-2 rounded-lg shadow-lg border border-bolt-elements-borderColor overflow-hidden">
+                {WINDOW_SIZES.map((size) => (
+                  <button
+                    key={size.name}
+                    className="w-full px-4 py-2 text-left hover:bg-bolt-elements-background-depth-3 text-sm whitespace-nowrap"
+                    onClick={() => {
+                      setSelectedWindowSize(size);
+                      setIsWindowSizeDropdownOpen(false);
+                      openInNewWindow(size);
+                    }}
+                  >
+                    {size.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 border-t border-bolt-elements-borderColor flex justify-center items-center overflow-auto">
         <div
           style={{
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
-            height: '100%', // Always full height
+            height: '100%',
             overflow: 'visible',
             background: '#fff',
             position: 'relative',
@@ -294,7 +361,8 @@ export const Preview = memo(() => {
                 title="preview"
                 className="border-none w-full h-full bg-white"
                 src={iframeUrl}
-                allowFullScreen
+                sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
+                allow="cross-origin-isolated"
               />
               <ScreenshotSelector
                 isSelectionMode={isSelectionMode}
@@ -308,7 +376,6 @@ export const Preview = memo(() => {
 
           {isDeviceModeOn && (
             <>
-              {/* Left handle */}
               <div
                 onMouseDown={(e) => startResizing(e, 'left')}
                 style={{
@@ -333,7 +400,6 @@ export const Preview = memo(() => {
                 <GripIcon />
               </div>
 
-              {/* Right handle */}
               <div
                 onMouseDown={(e) => startResizing(e, 'right')}
                 style={{

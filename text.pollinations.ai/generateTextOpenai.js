@@ -10,11 +10,18 @@ const errorLog = debug('pollinations:openai:error');
 
 dotenv.config();
 
-const openai = new AzureOpenAI({
-    apiVersion: process.env.AZURE_OPENAI_API_VERSION,
-    endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-    apiKey: process.env.AZURE_OPENAI_API_KEY,
-});
+const azureInstances = {
+    'gpt-4o-mini': new AzureOpenAI({
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+        endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiKey: process.env.AZURE_OPENAI_API_KEY,
+    }),
+    'gpt-4o': new AzureOpenAI({
+        apiVersion: process.env.AZURE_OPENAI_LARGE_API_VERSION,
+        endpoint: process.env.AZURE_OPENAI_LARGE_ENDPOINT,
+        apiKey: process.env.AZURE_OPENAI_LARGE_API_KEY,
+    })
+};
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {
@@ -55,8 +62,11 @@ export async function generateText(messages, options, performSearch = false) {
         }
     }
 
-    let completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+    const modelName = options.model === 'openai-large' ? 'gpt-4o' : 'gpt-4o-mini';
+    const azureInstance = azureInstances[modelName];
+    
+    let completion = await azureInstance.chat.completions.create({
+        model: modelName,
         messages,
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
@@ -95,8 +105,8 @@ export async function generateText(messages, options, performSearch = false) {
             }
         }
 
-        completion = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+        completion = await azureInstance.chat.completions.create({
+            model: modelName,
             messages,
             seed: options.seed,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,

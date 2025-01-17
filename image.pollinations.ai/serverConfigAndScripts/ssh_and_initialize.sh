@@ -11,13 +11,14 @@ HOST=$1
 ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
   sudo rm -r /home/ubuntu/ComfyUI
   cd /home/ubuntu/pollinations
-  git pull
   git fetch origin
+  git pull
   git reset --hard origin/master
+  git pull
   git clean -fd
   git checkout master
   git pull
   cd /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts
-  bash install-services.sh
+  bash "install-services.sh"
   sudo reboot
 EOF

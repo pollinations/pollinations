@@ -34,7 +34,8 @@ const WHITELISTED_DOMAINS = [
     'thot',
     'ai-ministries.com',
     'localhost',
-    'pollinations.github.io'
+    'pollinations.github.io',
+    '127.0.0.1',
 ];
 
 const blockedIPs = new Set();
@@ -482,6 +483,7 @@ async function generateTextBasedOnModel(messages, options) {
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
+            'openai-large': () => generateText(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

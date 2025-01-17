@@ -3,15 +3,17 @@ export const availableModels = [
         name: 'openai',
         type: 'chat',
         censored: true,
-        description: 'OpenAI GPT-4o',
+        description: 'OpenAI GPT-4o-mini',
         baseModel: true,
+        vision: true
     },
     {
         name: 'openai-large',
         type: 'chat',
         censored: true,
-        description: 'OpenAI GPT-4o Large',
+        description: 'OpenAI GPT-4o',
         baseModel: true,
+        vision: true
     },
     {
         name: 'qwen',

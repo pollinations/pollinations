@@ -83,7 +83,7 @@ export class LLMManager {
 
     let enabledProviders = Array.from(this._providers.values()).map((p) => p.name);
 
-    if (providerSettings) {
+    if (providerSettings && Object.keys(providerSettings).length > 0) {
       enabledProviders = enabledProviders.filter((p) => providerSettings[p].enabled);
     }
 

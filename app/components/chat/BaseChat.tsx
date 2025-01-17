@@ -3,13 +3,13 @@
  * Preventing TS checks with files presented in the video for a better presentation.
  */
 import type { Message } from 'ai';
-import React, { type RefCallback, useCallback, useEffect, useState } from 'react';
+import React, { type RefCallback, useEffect, useState } from 'react';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import { classNames } from '~/utils/classNames';
-import { MODEL_LIST, PROVIDER_LIST, initializeModelList } from '~/utils/constants';
+import { PROVIDER_LIST } from '~/utils/constants';
 import { Messages } from './Messages.client';
 import { SendButton } from './SendButton.client';
 import { APIKeyManager, getApiKeysFromCookies } from './APIKeyManager';
@@ -25,13 +25,13 @@ import GitCloneButton from './GitCloneButton';
 import FilePreview from './FilePreview';
 import { ModelSelector } from '~/components/chat/ModelSelector';
 import { SpeechRecognitionButton } from '~/components/chat/SpeechRecognition';
-import type { IProviderSetting, ProviderInfo } from '~/types/model';
+import type { ProviderInfo } from '~/types/model';
 import { ScreenshotStateManager } from './ScreenshotStateManager';
 import { toast } from 'react-toastify';
 import StarterTemplates from './StarterTemplates';
 import type { ActionAlert } from '~/types/actions';
 import ChatAlert from './ChatAlert';
-import { LLMManager } from '~/lib/modules/llm/manager';
+import type { ModelInfo } from '~/lib/modules/llm/types';
 
 const TEXTAREA_MIN_HEIGHT = 76;
 
@@ -102,35 +102,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
   ) => {
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
-    const [modelList, setModelList] = useState(MODEL_LIST);
+    const [modelList, setModelList] = useState<ModelInfo[]>([]);
     const [isModelSettingsCollapsed, setIsModelSettingsCollapsed] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const [transcript, setTranscript] = useState('');
     const [isModelLoading, setIsModelLoading] = useState<string | undefined>('all');
 
-    const getProviderSettings = useCallback(() => {
-      let providerSettings: Record<string, IProviderSetting> | undefined = undefined;
-
-      try {
-        const savedProviderSettings = Cookies.get('providers');
-
-        if (savedProviderSettings) {
-          const parsedProviderSettings = JSON.parse(savedProviderSettings);
-
-          if (typeof parsedProviderSettings === 'object' && parsedProviderSettings !== null) {
-            providerSettings = parsedProviderSettings;
-          }
-        }
-      } catch (error) {
-        console.error('Error loading Provider Settings from cookies:', error);
-
-        // Clear invalid cookie data
-        Cookies.remove('providers');
-      }
-
-      return providerSettings;
-    }, []);
     useEffect(() => {
       console.log(transcript);
     }, [transcript]);
@@ -169,7 +147,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
     useEffect(() => {
       if (typeof window !== 'undefined') {
-        const providerSettings = getProviderSettings();
         let parsedApiKeys: Record<string, string> | undefined = {};
 
         try {
@@ -177,17 +154,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           setApiKeys(parsedApiKeys);
         } catch (error) {
           console.error('Error loading API keys from cookies:', error);
-
-          // Clear invalid cookie data
           Cookies.remove('apiKeys');
         }
+
         setIsModelLoading('all');
-        initializeModelList({ apiKeys: parsedApiKeys, providerSettings })
-          .then((modelList) => {
-            setModelList(modelList);
+        fetch('/api/models')
+          .then((response) => response.json())
+          .then((data) => {
+            const typedData = data as { modelList: ModelInfo[] };
+            setModelList(typedData.modelList);
           })
           .catch((error) => {
-            console.error('Error initializing model list:', error);
+            console.error('Error fetching model list:', error);
           })
           .finally(() => {
             setIsModelLoading(undefined);
@@ -200,29 +178,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       setApiKeys(newApiKeys);
       Cookies.set('apiKeys', JSON.stringify(newApiKeys));
 
-      const provider = LLMManager.getInstance(import.meta.env || process.env || {}).getProvider(providerName);
+      setIsModelLoading(providerName);
 
-      if (provider && provider.getDynamicModels) {
-        setIsModelLoading(providerName);
+      let providerModels: ModelInfo[] = [];
 
-        try {
-          const providerSettings = getProviderSettings();
-          const staticModels = provider.staticModels;
-          const dynamicModels = await provider.getDynamicModels(
-            newApiKeys,
-            providerSettings,
-            import.meta.env || process.env || {},
-          );
-
-          setModelList((preModels) => {
-            const filteredOutPreModels = preModels.filter((x) => x.provider !== providerName);
-            return [...filteredOutPreModels, ...staticModels, ...dynamicModels];
-          });
-        } catch (error) {
-          console.error('Error loading dynamic models:', error);
-        }
-        setIsModelLoading(undefined);
+      try {
+        const response = await fetch(`/api/models/${encodeURIComponent(providerName)}`);
+        const data = await response.json();
+        providerModels = (data as { modelList: ModelInfo[] }).modelList;
+      } catch (error) {
+        console.error('Error loading dynamic models for:', providerName, error);
       }
+
+      // Only update models for the specific provider
+      setModelList((prevModels) => {
+        const otherModels = prevModels.filter((model) => model.provider !== providerName);
+        return [...otherModels, ...providerModels];
+      });
+      setIsModelLoading(undefined);
     };
 
     const startListening = () => {

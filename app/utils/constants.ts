@@ -1,7 +1,4 @@
-import type { IProviderSetting } from '~/types/model';
-
 import { LLMManager } from '~/lib/modules/llm/manager';
-import type { ModelInfo } from '~/lib/modules/llm/types';
 import type { Template } from '~/types/template';
 
 export const WORK_DIR_NAME = 'project';
@@ -17,43 +14,13 @@ const llmManager = LLMManager.getInstance(import.meta.env);
 export const PROVIDER_LIST = llmManager.getAllProviders();
 export const DEFAULT_PROVIDER = llmManager.getDefaultProvider();
 
-let MODEL_LIST = llmManager.getModelList();
-
-const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {};
+export const providerBaseUrlEnvKeys: Record<string, { baseUrlKey?: string; apiTokenKey?: string }> = {};
 PROVIDER_LIST.forEach((provider) => {
   providerBaseUrlEnvKeys[provider.name] = {
     baseUrlKey: provider.config.baseUrlKey,
     apiTokenKey: provider.config.apiTokenKey,
   };
 });
-
-// Export the getModelList function using the manager
-export async function getModelList(options: {
-  apiKeys?: Record<string, string>;
-  providerSettings?: Record<string, IProviderSetting>;
-  serverEnv?: Record<string, string>;
-}) {
-  return await llmManager.updateModelList(options);
-}
-
-async function initializeModelList(options: {
-  env?: Record<string, string>;
-  providerSettings?: Record<string, IProviderSetting>;
-  apiKeys?: Record<string, string>;
-}): Promise<ModelInfo[]> {
-  const { providerSettings, apiKeys, env } = options;
-  const list = await getModelList({
-    apiKeys,
-    providerSettings,
-    serverEnv: env,
-  });
-  MODEL_LIST = list || MODEL_LIST;
-
-  return list;
-}
-
-// initializeModelList({})
-export { initializeModelList, providerBaseUrlEnvKeys, MODEL_LIST };
 
 // starter Templates
 

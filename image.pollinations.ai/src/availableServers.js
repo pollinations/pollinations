@@ -103,7 +103,7 @@ export const registerServer = (url, type = 'flux') => {
  */
 export const getNextServerUrl = async (type = 'flux') => {
     const servers = SERVERS[type] || [];
-    if (!IS_MAIN_SERVER && servers.length === 0) {
+    if (servers.length === 0) {
         await fetchServersFromMainServer();
     }
 

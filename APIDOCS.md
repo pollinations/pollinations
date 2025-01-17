@@ -107,6 +107,30 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 
 **Return:** Generated text
 
+#### Vision Capabilities
+Our OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API. You can pass images either as URLs or base64-encoded data in the messages. See the [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision) for detailed documentation.
+
+Example message format with image:
+```json
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "What's in this image?"},
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/image.jpg"
+          }
+        }
+      ]
+    }
+  ],
+  "model": "gpt-4o-mini"
+}
+```
+
 #### Example Usage (GET)
 
 ```
@@ -128,6 +152,35 @@ def download_image(prompt, width=768, height=768, model='flux', seed=None):
     print('Image downloaded!')
 
 download_image("A beautiful sunset over the ocean", width=1280, height=720, model='flux', seed=42)
+```
+
+### Python (Vision)
+
+```python
+import base64
+import requests
+
+def analyze_image(image_url):
+    response = requests.post('https://text.pollinations.ai/openai', json={
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": image_url}
+                    }
+                ]
+            }
+        ],
+        "model": "gpt-4o-mini"
+    })
+    return response.json()
+
+# Example usage
+result = analyze_image("https://example.com/image.jpg")
+print(result['choices'][0]['message']['content'])
 ```
 
 ### JavaScript (Text Generation)

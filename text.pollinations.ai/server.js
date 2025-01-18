@@ -24,6 +24,7 @@ import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
+import { detectLanguage, translateIfNecessary } from './translateService.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -185,8 +186,30 @@ async function handleRequest(req, res, requestData) {
     log('Request data: %o', requestData);
 
     try {
+        // Handle translation if needed
+        const messages = [...requestData.messages];
+        const lastUserMessage = messages.findLast(m => m.role === 'user');
+        if (lastUserMessage) {
+            const detectedLang = await detectLanguage(lastUserMessage.content);
+            if (detectedLang && detectedLang !== 'en') {
+                requestData.originalLang = detectedLang;
+                lastUserMessage.content = await translateIfNecessary(lastUserMessage.content);
+            }
+        }
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
-        const responseText = completion.choices[0].message.content;
+        let responseText = completion.choices[0].message.content;
+
+        // Translate response back if needed
+        if (requestData.originalLang) {
+            try {
+                const translatedResponse = await translateIfNecessary(responseText, requestData.originalLang);
+                responseText = translatedResponse;
+                completion.choices[0].message.content = responseText;
+            } catch (error) {
+                log('Translation error:', error);
+                // Continue with untranslated response if translation fails
+            }
+        }
 
         const cacheKey = createHashKey(requestData);
         setInCache(cacheKey, completion);

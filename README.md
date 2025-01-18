@@ -1,4 +1,5 @@
 # bolt.diy (Previously oTToDev)
+
 [![bolt.diy: AI-Powered Full-Stack Web Development in the Browser](./public/social_preview_index.jpg)](https://bolt.diy)
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
@@ -65,7 +66,7 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 - ✅ Together Integration (@mouimet-infinisoft)
 - ✅ Mobile friendly (@qwikode)
 - ✅ Better prompt enhancing (@SujalXplores)
-- ✅ Attach images to prompts (@atrokhym)
+- ✅ Attach images to prompts (@atrokhym)(@stijnus)
 - ✅ Added Git Clone button (@thecodacus)
 - ✅ Git Import from url (@thecodacus)
 - ✅ PromptLibrary to have different variations of prompts for different use cases (@thecodacus)
@@ -86,8 +87,9 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 - ⬜ Voice prompting
 - ⬜ Azure Open AI API Integration
 - ⬜ Vertex AI Integration
-- ⬜ Granite Integration 
-- ⬜ Popout Window for Web Container
+- ⬜ Granite Integration
+- ✅ Popout Window for Web Container(@stijnus)
+- ✅ Ability to change Popout window size (@stijnus)
 
 ## Features
 
@@ -99,20 +101,17 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 - **Download projects as ZIP** for easy portability.
 - **Integration-ready Docker support** for a hassle-free setup.
 
-## Setup 
+## Setup
 
-If you're new to installing software from GitHub, don't worry! If you encounter any issues, feel free to submit an "issue" using the provided links or improve this documentation by forking the repository, editing the instructions, and submitting a pull request. The following instruction will help you get the stable branch up and running on your local machine in no time.  
+If you're new to installing software from GitHub, don't worry! If you encounter any issues, feel free to submit an "issue" using the provided links or improve this documentation by forking the repository, editing the instructions, and submitting a pull request. The following instruction will help you get the stable branch up and running on your local machine in no time.
 
 Let's get you up and running with the stable version of Bolt.DIY!
 
 ## Quick Download
 
-[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest) ← Click here to go the the latest release version! 
+[![Download Latest Release](https://img.shields.io/github/v/release/stackblitz-labs/bolt.diy?label=Download%20Bolt&sort=semver)](https://github.com/stackblitz-labs/bolt.diy/releases/latest) ← Click here to go the the latest release version!
 
 - Next **click source.zip**
-
-
-
 
 ## Prerequisites
 
@@ -146,16 +145,19 @@ You have two options for running Bolt.DIY: directly on your machine or using Doc
 ### Option 1: Direct Installation (Recommended for Beginners)
 
 1. **Install Package Manager (pnpm)**:
+
    ```bash
    npm install -g pnpm
    ```
 
 2. **Install Project Dependencies**:
+
    ```bash
    pnpm install
    ```
 
 3. **Start the Application**:
+
    ```bash
    pnpm run dev
    ```
@@ -167,11 +169,13 @@ You have two options for running Bolt.DIY: directly on your machine or using Doc
 This option requires some familiarity with Docker but provides a more isolated environment.
 
 #### Additional Prerequisite
+
 - Install Docker: [Download Docker](https://www.docker.com/)
 
 #### Steps:
 
 1. **Build the Docker Image**:
+
    ```bash
    # Using npm script:
    npm run dockerbuild
@@ -184,9 +188,6 @@ This option requires some familiarity with Docker but provides a more isolated e
    ```bash
    docker-compose --profile development up
    ```
-
-
-
 
 ## Configuring API Keys and Providers
 
@@ -216,6 +217,7 @@ For providers that support custom base URLs (such as Ollama or LM Studio), follo
 > **Note**: Custom base URLs are particularly useful when running local instances of AI models or using custom API endpoints.
 
 ### Supported Providers
+
 - Ollama
 - LM Studio
 - OpenAILike
@@ -223,23 +225,27 @@ For providers that support custom base URLs (such as Ollama or LM Studio), follo
 ## Setup Using Git (For Developers only)
 
 This method is recommended for developers who want to:
+
 - Contribute to the project
 - Stay updated with the latest changes
 - Switch between different versions
 - Create custom modifications
 
 #### Prerequisites
+
 1. Install Git: [Download Git](https://git-scm.com/downloads)
 
 #### Initial Setup
 
 1. **Clone the Repository**:
+
    ```bash
    # Using HTTPS
    git clone https://github.com/stackblitz-labs/bolt.diy.git
    ```
 
 2. **Navigate to Project Directory**:
+
    ```bash
    cd bolt.diy
    ```
@@ -249,6 +255,7 @@ This method is recommended for developers who want to:
    git checkout main
    ```
 4. **Install Dependencies**:
+
    ```bash
    pnpm install
    ```
@@ -263,16 +270,19 @@ This method is recommended for developers who want to:
 To get the latest changes from the repository:
 
 1. **Save Your Local Changes** (if any):
+
    ```bash
    git stash
    ```
 
 2. **Pull Latest Updates**:
+
    ```bash
    git pull origin main
    ```
 
 3. **Update Dependencies**:
+
    ```bash
    pnpm install
    ```
@@ -287,6 +297,7 @@ To get the latest changes from the repository:
 If you encounter issues:
 
 1. **Clean Installation**:
+
    ```bash
    # Remove node modules and lock files
    rm -rf node_modules pnpm-lock.yaml

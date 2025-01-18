@@ -3,8 +3,10 @@
 
 Welcome to bolt.diy, the official open source version of Bolt.new (previously known as oTToDev and bolt.new ANY LLM), which allows you to choose the LLM that you use for each prompt! Currently, you can use OpenAI, Anthropic, Ollama, OpenRouter, Gemini, LMStudio, Mistral, xAI, HuggingFace, DeepSeek, or Groq models - and it is easily extended to use any other model supported by the Vercel AI SDK! See the instructions below for running this locally and extending it to include more models.
 
-Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more information.
+-----
+Check the [bolt.diy Docs](https://stackblitz-labs.github.io/bolt.diy/) for more offical installation instructions and more informations.
 
+-----
 Also [this pinned post in our community](https://thinktank.ottomator.ai/t/videos-tutorial-helpful-content/3243) has a bunch of incredible resources for running and deploying bolt.diy yourself!
 
 We have also launched an experimental agent called the "bolt.diy Expert" that can answer common questions about bolt.diy. Find it here on the [oTTomator Live Agent Studio](https://studio.ottomator.ai/).
@@ -91,7 +93,7 @@ project, please check the [project management guide](./PROJECT.md) to get starte
 
 ## Features
 
-- **AI-powered full-stack web development** directly in your browser.
+- **AI-powered full-stack web development** for **NodeJS based applications** directly in your browser.
 - **Support for multiple LLMs** with an extensible architecture to integrate additional models.
 - **Attach images to prompts** for better contextual understanding.
 - **Integrated terminal** to view output of LLM-run commands.

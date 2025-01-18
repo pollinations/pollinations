@@ -156,7 +156,7 @@ Once you've configured your keys, the application will be ready to use the selec
 2. **Run the Container**:  
    Use Docker Compose profiles to manage environments:  
    ```bash  
-   docker-compose --profile development up 
+   docker compose --profile development up 
    ```  
 
    - With the development profile, changes to your code will automatically reflect in the running container (hot reloading).  
@@ -188,7 +188,7 @@ To keep your local version of bolt.diy up to date with the latest changes, follo
 
    - **If using Docker**, ensure you rebuild the Docker image to avoid using a cached version:  
      ```bash  
-     docker-compose --profile development up --build  
+     docker compose --profile development up --build  
      ```  
 
    - **If not using Docker**, you can start the application as usual with:  

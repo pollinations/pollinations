@@ -144,7 +144,7 @@ docker build . --target bolt-ai-development
 
 **Option 3: Docker Compose Profile**  
 ```bash
-docker-compose --profile development up
+docker compose --profile development up
 ```
 
 #### Running the Development Container  
@@ -171,7 +171,7 @@ docker build . --target bolt-ai-production
 
 **Option 3: Docker Compose Profile**  
 ```bash
-docker-compose --profile production up
+docker compose --profile production up
 ```
 
 #### Running the Production Container  

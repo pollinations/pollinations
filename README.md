@@ -184,7 +184,7 @@ This option requires some familiarity with Docker but provides a more isolated e
 
 2. **Run the Container**:
    ```bash
-   docker-compose --profile development up
+   docker compose --profile development up
    ```
 
 

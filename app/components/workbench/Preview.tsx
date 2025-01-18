@@ -328,11 +328,11 @@ export const Preview = memo(() => {
             {isWindowSizeDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-50" onClick={() => setIsWindowSizeDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-2 z-50 min-w-[240px] bg-bolt-elements-background-depth-2 rounded-xl shadow-2xl border border-bolt-elements-borderColor overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 z-50 min-w-[240px] bg-white dark:bg-black rounded-xl shadow-2xl border border-[#E5E7EB] dark:border-[rgba(255,255,255,0.1)] overflow-hidden">
                   {WINDOW_SIZES.map((size) => (
                     <button
                       key={size.name}
-                      className="w-full px-4 py-3.5 text-left hover:bg-bolt-elements-item-backgroundAccent text-bolt-elements-textSecondary text-sm whitespace-nowrap transition-all duration-200 flex items-center gap-3 group"
+                      className="w-full px-4 py-3.5 text-left text-[#111827] dark:text-gray-300 text-sm whitespace-nowrap flex items-center gap-3 group hover:bg-[#F5EEFF] dark:hover:bg-gray-900 bg-white dark:bg-black"
                       onClick={() => {
                         setSelectedWindowSize(size);
                         setIsWindowSizeDropdownOpen(false);
@@ -340,13 +340,13 @@ export const Preview = memo(() => {
                       }}
                     >
                       <div
-                        className={`${size.icon} w-5 h-5 text-bolt-elements-textSecondary group-hover:text-bolt-elements-item-contentAccent transition-colors duration-200`}
+                        className={`${size.icon} w-5 h-5 text-[#6B7280] dark:text-gray-400 group-hover:text-[#6D28D9] dark:group-hover:text-[#6D28D9] transition-colors duration-200`}
                       />
                       <div className="flex flex-col">
-                        <span className="font-medium text-bolt-elements-textPrimary group-hover:text-bolt-elements-item-contentAccent transition-colors duration-200">
+                        <span className="font-medium group-hover:text-[#6D28D9] dark:group-hover:text-[#6D28D9] transition-colors duration-200">
                           {size.name}
                         </span>
-                        <span className="text-xs text-bolt-elements-textSecondary group-hover:text-bolt-elements-textPrimary transition-colors duration-200">
+                        <span className="text-xs text-[#6B7280] dark:text-gray-400 group-hover:text-[#6D28D9] dark:group-hover:text-[#6D28D9] transition-colors duration-200">
                           {size.width} × {size.height}
                         </span>
                       </div>
@@ -365,7 +365,7 @@ export const Preview = memo(() => {
             width: isDeviceModeOn ? `${widthPercent}%` : '100%',
             height: '100%',
             overflow: 'visible',
-            background: '#fff',
+            background: 'var(--bolt-elements-background-depth-1)',
             position: 'relative',
             display: 'flex',
           }}
@@ -375,7 +375,7 @@ export const Preview = memo(() => {
               <iframe
                 ref={iframeRef}
                 title="preview"
-                className="border-none w-full h-full bg-white"
+                className="border-none w-full h-full bg-bolt-elements-background-depth-1"
                 src={iframeUrl}
                 sandbox="allow-scripts allow-forms allow-popups allow-modals allow-storage-access-by-user-activation allow-same-origin"
                 allow="cross-origin-isolated"
@@ -387,7 +387,9 @@ export const Preview = memo(() => {
               />
             </>
           ) : (
-            <div className="flex w-full h-full justify-center items-center bg-white">No preview available</div>
+            <div className="flex w-full h-full justify-center items-center bg-bolt-elements-background-depth-1 text-bolt-elements-textPrimary">
+              No preview available
+            </div>
           )}
 
           {isDeviceModeOn && (

@@ -1,99 +1,211 @@
+import React, { useState, useEffect, memo } from "react"
+import {
+  Box,
+  Paper,
+  Typography,
+  Menu,
+  MenuItem,
+  TextField,
+  Checkbox,
+  Button,
+  TextareaAutosize,
+} from "@mui/material"
+import { Colors, Fonts } from "../../config/global"
+import { CustomTooltip } from "../CustomTooltip"
+import { GeneralButton } from "../GeneralButton"
+import Grid from "@mui/material/Grid2"
+import { FEED_ENANCER_TOOLTIP, FEED_LOGO_WATERMARK } from "../../config/copywrite"
+import ReactMarkdown from "react-markdown"
+import { keyframes } from "@emotion/react"
+import CheckIcon from "@mui/icons-material/Check"
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
 
-    import React, { useState, useEffect, memo } from "react"
-    import {
-      Box,
-      Paper,
-      Typography,
-      Menu,
-      MenuItem,
-      TextField,
-      Checkbox,
-      IconButton,
-      Button,
-    } from "@mui/material"
-    import InfoIcon from "@mui/icons-material/Info"
-    import { Colors, Fonts } from "../../config/global"
-    import { CustomTooltip } from "../CustomTooltip"
-    import { GenerateButton } from "./GenerateButton"
-    import Grid from "@mui/material/Grid2"
-    
-    export const ImageEditor = memo(function ImageEditor({
-      image = {},
-      handleParamChange,
-      handleFocus,
-      isLoading,
-      setIsInputChanged,
-      handleButtonClick,
-      isInputChanged,
-      imageParams,
-      isStopped,
-      stop,
-      switchToEditMode,
-    }) {
-      // Local state
-      const [anchorEl, setAnchorEl] = useState(null)
+export const ImageEditor = memo(function ImageEditor({
+  image,
+  handleParamChange,
+  handleFocus,
+  isLoading,
+  setIsInputChanged,
+  handleButtonClick,
+  isInputChanged,
+  imageParams,
+  isStopped,
+  stop,
+  toggleValue,
+}) {
+  // Styling Constants
+  const labelColor = Colors.gray2
+  const labelFont = Fonts.parameter
+  const labelSize = "1em"
+  const paramTextColor = Colors.offwhite
+  const paramTextSize = { xs: "1.5em", md: "1.1em" }
+  const paramBorderColor = Colors.gray2
+  const checkboxColorOn = Colors.lime
+  const checkboxColorOff = Colors.offblack
 
-      // If needed, close menu or reset local state when the image changes
-      useEffect(() => {
-        // Example: If new image arrives, close menu just in case
-        setAnchorEl(null)
-      }, [image])
+  // Local state
+  const [anchorEl, setAnchorEl] = useState(null)
 
-      const { width, height, seed, enhance = false, nologo = true, model } = image
-    
-      const handleMenuOpen = (event) => {
-        setAnchorEl(event.currentTarget)
-      }
-    
-      const handleMenuClose = (value) => {
-        setAnchorEl(null)
-        if (value) {
-          handleInputChange("model", value)
-        }
-      }
-    
-      const handleInputChange = (param, value) => {
-        let newValue
-        if (param === "model") {
-          newValue = value
-        } else {
-          const parsedValue = parseInt(value, 10)
-          newValue = isNaN(parsedValue) ? "" : parsedValue
-        }
-    
-        if (image[param] !== newValue) {
-          setIsInputChanged(true)
-        }
-        handleParamChange(param, newValue)
-      }
-    
-      const isEnhanceChecked = enhance !== false
-      const isLogoChecked = !nologo
-    
-      if (!image.imageURL) {
-        return (
-          <Typography component="div" variant="body2" style={{ color: Colors.offwhite }}>
-            Loading...
-          </Typography>
-        )
-      }
-    
-      return (
-        <Box
-          component={Paper}
-          sx={{
-            border: "none",
-            boxShadow: "none",
-            backgroundColor: "transparent",
-          }}
-        >
-          <Grid container spacing={2}>
+  // If needed, close menu or reset local state when the image changes
+  useEffect(() => {
+    setAnchorEl(null)
+  }, [image])
+
+  if (!imageParams?.imageURL) {
+    return (
+      <Typography component="div" variant="body" style={{ color: Colors.offwhite }}>
+        Loading...
+      </Typography>
+    )
+  }
+
+  const { width, height, seed, enhance = false, nologo = false, model } = imageParams
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = (value) => {
+    setAnchorEl(null)
+    if (value) {
+      handleInputChange("model", value)
+    }
+  }
+
+  const handleInputChange = (param, value) => {
+    let newValue
+
+    // Handle special cases first
+    if (param === "model" || param === "nologo" || param === "enhance") {
+      newValue = value
+    } else {
+      const parsedValue = parseInt(value, 10)
+      newValue = isNaN(parsedValue) ? "" : parsedValue
+    }
+
+    if (imageParams[param] !== newValue) {
+      setIsInputChanged(true)
+    }
+    handleParamChange(param, newValue)
+  }
+
+  const isEnhanceChecked = enhance
+  const isLogoChecked = !nologo
+
+  // Extracted Styles
+  const typographyStyles = {
+    label: {
+      color: labelColor,
+      fontSize: labelSize,
+      fontFamily: labelFont,
+    },
+  }
+
+  const buttonStyles = {
+    base: {
+      color: Colors.offwhite,
+      width: "100%",
+      justifyContent: "flex-start",
+      height: "56px",
+      border: `solid 0.5px ${paramBorderColor}`,
+    },
+    responsiveFontSize: {
+      fontSize: paramTextSize,
+    },
+  }
+
+  const menuItemHover = {
+    "&:hover": {
+      backgroundColor: Colors.offwhite,
+      color: checkboxColorOff,
+    },
+  }
+
+  const blinkAnimation = keyframes`
+        0%, 100% { background-color: ${Colors.offblack}; color: ${Colors.lime}; }
+        50% { background-color: ${Colors.lime}; color: ${Colors.offblack}; }
+      `
+
+  const models = [
+    "flux",
+    "flux-pro",
+    "flux-realism",
+    "flux-anime",
+    "flux-3d",
+    "flux-cablyai",
+    "turbo",
+  ]
+
+  const sharedTextAreaStyle = {
+    width: "100%",
+    backgroundColor: "transparent",
+    border: `0.1px solid ${paramBorderColor}`,
+    fontFamily: Fonts.parameter,
+    fontSize: paramTextSize,
+    color: paramTextColor,
+    padding: "15px",
+    resize: "vertical",
+    maxHeight: "100px",
+    overflowY: "auto",
+    scrollbarWidth: "auto",
+    scrollbarColor: `${Colors.gray2}99 transparent`,
+    msOverflowStyle: "auto",
+  }
+
+  return (
+    <Box
+      component={Paper}
+      sx={{
+        border: "none",
+        boxShadow: "none",
+        backgroundColor: "transparent",
+      }}
+    >
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 12 }}>
+          <Box>
+            <Typography component="div" variant="body" sx={typographyStyles.label}>
+              Prompt
+            </Typography>
+            <Box>
+              {isStopped ? (
+                // Edit mode: Text area (no Markdown)
+                <TextareaAutosize
+                  style={sharedTextAreaStyle}
+                  value={imageParams.prompt}
+                  onChange={(e) => handleParamChange("prompt", e.target.value)}
+                  onFocus={handleFocus}
+                />
+              ) : (
+                // Read-only mode with Markdown
+                <Box style={sharedTextAreaStyle}>
+                  <ReactMarkdown
+                    components={{
+                      // override <p> styling
+                      p: ({ node, ...props }) => (
+                        <p
+                          style={{
+                            margin: 0,
+                            fontFamily: Fonts.parameter,
+                            fontSize: paramTextSize.md, // or paramTextSize.xs if you prefer
+                            color: Colors.offwhite,
+                          }}
+                          {...props}
+                        />
+                      ),
+                    }}
+                  >
+                    {imageParams.prompt}
+                  </ReactMarkdown>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Grid>
+        {toggleValue === "edit" && (
+          <>
             <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
-              >
+              <Typography component="div" variant="body" sx={typographyStyles.label}>
                 Model
               </Typography>
               <Button
@@ -103,12 +215,10 @@
                 onClick={handleMenuOpen}
                 onFocus={handleFocus}
                 sx={{
-                  color: Colors.offwhite,
-                  width: "100%",
-                  justifyContent: "flex-start",
-                  height: "56px",
-                  fontSize: { xs: "1.5rem", md: "1.1rem" },
-                  border: `solid 0.1px ${Colors.gray2}`,
+                  ...buttonStyles.base,
+                  ...buttonStyles.responsiveFontSize,
+                  borderRadius: "0px",
+                  height: "60px",
                 }}
               >
                 {model || "flux"}
@@ -123,109 +233,27 @@
                   sx: {
                     textAlign: "left",
                     backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
+                    color: paramTextColor,
                   },
                 }}
               >
-                <MenuItem
-                  onClick={() => handleMenuClose("flux")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("flux-pro")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux-Pro
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("flux-realism")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux-Realism
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("flux-anime")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux-Anime
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("flux-3d")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux-3D
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("flux-cablyai")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Flux-CablyAI
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handleMenuClose("turbo")}
-                  sx={{
-                    backgroundColor: Colors.offblack,
-                    color: Colors.offwhite,
-                    "&:hover": {
-                      backgroundColor: Colors.offwhite,
-                      color: Colors.offblack,
-                    },
-                  }}
-                >
-                  Turbo
-                </MenuItem>
+                {models.map((modelName) => (
+                  <MenuItem
+                    key={modelName}
+                    onClick={() => handleMenuClose(modelName)}
+                    sx={{
+                      color: paramTextColor,
+                      backgroundColor: Colors.offblack,
+                      ...menuItemHover,
+                    }}
+                  >
+                    {modelName.charAt(0).toUpperCase() + modelName.slice(1)}
+                  </MenuItem>
+                ))}
               </Menu>
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
-              >
+              <Typography component="div" variant="body" sx={typographyStyles.label}>
                 Width
               </Typography>
               <TextField
@@ -236,21 +264,17 @@
                 type="number"
                 InputProps={{
                   sx: {
-                    color: Colors.offwhite,
-                    fontSize: { xs: "1.5rem", md: "1.1rem" },
-                    border: `solid 0.1px ${Colors.gray2}`,
-                    borderRadius: "4px",
+                    color: paramTextColor,
+                    fontSize: paramTextSize,
+                    borderRadius: "0px",
+                    border: `solid 0.1px ${paramBorderColor}`,
                   },
                 }}
                 sx={{ width: "100%" }}
               />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
-              >
+              <Typography component="div" variant="body" sx={typographyStyles.label}>
                 Height
               </Typography>
               <TextField
@@ -261,21 +285,17 @@
                 type="number"
                 InputProps={{
                   sx: {
-                    color: Colors.offwhite,
-                    fontSize: { xs: "1.5rem", md: "1.1rem" },
-                    border: `solid 0.1px ${Colors.gray2}`,
-                    borderRadius: "4px",
+                    color: paramTextColor,
+                    fontSize: paramTextSize,
+                    border: `solid 0.1px ${paramBorderColor}`,
+                    borderRadius: "0px",
                   },
                 }}
                 sx={{ width: "100%" }}
               />
             </Grid>
             <Grid size={{ xs: 4, sm: 4, md: 2 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
-              >
+              <Typography component="div" variant="body" sx={typographyStyles.label}>
                 Seed
               </Typography>
               <TextField
@@ -287,73 +307,98 @@
                 type="number"
                 InputProps={{
                   sx: {
-                    color: Colors.offwhite,
-                    fontSize: { xs: "1.5rem", md: "1.1rem" },
-                    border: `solid 0.1px ${Colors.gray2}`,
-                    borderRadius: "4px",
+                    color: paramTextColor,
+                    fontSize: paramTextSize,
+                    border: `solid 0.1px ${paramBorderColor}`,
+                    borderRadius: "0px",
                   },
                 }}
               />
             </Grid>
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
+              <CustomTooltip
+                title={FEED_ENANCER_TOOLTIP}
+                interactive
+                sx={typographyStyles.tooltipIcon}
               >
-                Enhance
-                <CustomTooltip
-                  title="AI prompt enhancer that helps create better images by improving your text prompt."
-                  interactive="true"
-                  sx={{ color: Colors.lime }}
-                >
-                  <IconButton size="small">
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </CustomTooltip>
-              </Typography>
-              <Checkbox
-                checked={isEnhanceChecked}
-                onChange={(e) => handleInputChange("enhance", e.target.checked)}
-                onFocus={handleFocus}
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Enhance
+                </Typography>
+              </CustomTooltip>
+              <Box
                 sx={{
-                  color: Colors.offwhite,
-                  "& .MuiSvgIcon-root": { fontSize: { xs: "1.5rem", md: "1.1rem" } },
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "60px",
+                  width: "100%",
+                  border: `solid 0.1px ${paramBorderColor}`,
                 }}
-              />
+              >
+                <Checkbox
+                  checked={isEnhanceChecked}
+                  onChange={(e) => handleInputChange("enhance", e.target.checked)}
+                  onFocus={handleFocus}
+                  icon={<CheckBoxOutlineBlankIcon sx={{ color: Colors.offwhite }} />}
+                  checkedIcon={<CheckIcon sx={{ color: Colors.offwhite }} />}
+                  sx={{
+                    color: "transparent",
+                    "&.Mui-checked": {
+                      color: Colors.lime,
+                    },
+                  }}
+                />
+              </Box>
             </Grid>
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
-              <Typography
-                component="div"
-                variant="body2"
-                sx={{ color: Colors.gray2, fontSize: "1.1em", fontFamily: Fonts.body }}
+              <CustomTooltip
+                title={FEED_LOGO_WATERMARK}
+                interactive
+                sx={typographyStyles.tooltipIcon}
               >
-                Logo
-                <CustomTooltip
-                  title={<span>Enable watermark logo.</span>}
-                  interactive="true"
-                  sx={{ color: Colors.lime }}
-                >
-                  <IconButton size="small">
-                    <InfoIcon fontSize="small" />
-                  </IconButton>
-                </CustomTooltip>
-              </Typography>
-              <Checkbox
-                checked={isLogoChecked}
-                onChange={(e) => handleInputChange("nologo", !e.target.checked)}
-                onFocus={handleFocus}
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Logo
+                </Typography>
+              </CustomTooltip>
+              <Box
                 sx={{
-                  color: Colors.offwhite,
-                  "& .MuiSvgIcon-root": { fontSize: { xs: "1.5rem", md: "1.1rem" } },
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "60px",
+                  width: "100%",
+                  border: `solid 0.1px ${paramBorderColor}`,
                 }}
-              />
+              >
+                <Checkbox
+                  checked={isLogoChecked}
+                  onChange={(e) => handleInputChange("nologo", !e.target.checked)}
+                  onFocus={handleFocus}
+                  icon={<CheckBoxOutlineBlankIcon sx={{ color: Colors.offwhite }} />}
+                  checkedIcon={<CheckIcon sx={{ color: Colors.offwhite }} />}
+                />
+              </Box>
             </Grid>
             <Grid size={{ xs: 12, sm: 4, md: 2 }} style={{ marginTop: "24px" }}>
-              <GenerateButton {...{ handleButtonClick, isLoading, isInputChanged }} />
+              <GeneralButton
+                handleClick={handleButtonClick}
+                isLoading={isLoading}
+                isInputChanged={isInputChanged}
+                borderColor={Colors.lime}
+                backgroundColor="transparent"
+                textColor={Colors.lime}
+                fontSize="1.5em"
+                style={{
+                  width: "100%",
+                  animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",
+                }}
+              >
+                Create
+              </GeneralButton>
             </Grid>
-          </Grid>
-        </Box>
-      )
-    })
-
+          </>
+        )}
+      </Grid>
+    </Box>
+  )
+})

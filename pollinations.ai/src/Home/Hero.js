@@ -1,6 +1,7 @@
 import React from "react"
 import { Box, Typography } from "@mui/material"
-import { Colors } from "../config/global"
+import { Colors, Fonts } from "../config/global"
+import { GeneralButton } from "../components/GeneralButton"
 import { TextRephraseTranslate } from "../components/TextRephraseTranslate"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
 import TextEmojiText from "../components/TextEmojiText"
@@ -11,7 +12,6 @@ import {
   HERO_GITHUB_LINK,
   HERO_DISCORD_LINK,
 } from "../config/copywrite"
-import TextEmojiButton from "../components/TextEmojiButton"
 import Grid from "@mui/material/Grid2"
 
 const handleDiscordButtonClick = (e) => {
@@ -40,7 +40,7 @@ const Hero = () => {
           component="div"
           sx={{
             userSelect: "none",
-            fontFamily: "Uncut-Sans-Variable, sans-serif",
+            fontFamily: Fonts.headline,
             fontSize: { xs: "28px", sm: "32px" },
             color: Colors.offblack,
             textAlign: { xs: "center", sm: "left" },
@@ -49,49 +49,68 @@ const Hero = () => {
         >
           <TextRephraseTranslate>{HERO_INTRO}</TextRephraseTranslate>
         </Typography>
+      </SectionSubContainer>
+      <SectionSubContainer>
         <Box
           display="flex"
           flexDirection="column"
           alignItems={{ xs: "center", sm: "flex-end" }}
           width="100%"
-          gap="0em"
+          gap="1em"
           maxWidth="90%"
         >
           <TextEmojiText subtitle={HERO_CTO} color={Colors.offblack} size="2em" />
-          <Grid
-            container
-            spacing={2}
-            justifyContent={{ xs: "center", md: "flex-end" }}
-          >
+          <Grid container spacing={2} justifyContent={{ xs: "center", md: "flex-end" }}>
             <Grid>
-              <TextEmojiButton
-                subtitle={HERO_EMAIL_BUTTON}
-                onClick={handleEmailButtonClick}
-                textColor={Colors.offblack}
+              <GeneralButton
+                handleClick={handleEmailButtonClick}
+                isLoading={false}
                 borderColor={Colors.offblack}
-                textSize="1.8em"
                 backgroundColor={`${Colors.offblack}100`}
-              />
+                textColor={Colors.offblack}
+                style={{
+                  width: "100%",
+                  fontSize: "1.8rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
+              >
+                <TextRephraseTranslate>{HERO_EMAIL_BUTTON}</TextRephraseTranslate>
+              </GeneralButton>
             </Grid>
             <Grid>
-              <TextEmojiButton
-                subtitle={HERO_DISCORD_LINK}
-                onClick={handleDiscordButtonClick}
-                textColor={Colors.offblack}
+              <GeneralButton
+                handleClick={handleDiscordButtonClick}
+                isLoading={false}
                 borderColor={Colors.offblack}
-                textSize="1.8em"
                 backgroundColor={`${Colors.offblack}100`}
-              />
+                textColor={Colors.offblack}
+                style={{
+                  width: "100%",
+                  fontSize: "1.8rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
+              >
+                <TextRephraseTranslate>{HERO_DISCORD_LINK}</TextRephraseTranslate>
+              </GeneralButton>
             </Grid>
             <Grid>
-              <TextEmojiButton
-                subtitle={HERO_GITHUB_LINK}
-                onClick={handleGithubButtonClick}
-                textColor={Colors.offblack}
+              <GeneralButton
+                handleClick={handleGithubButtonClick}
+                isLoading={false}
                 borderColor={Colors.offblack}
-                textSize="1.8em"
                 backgroundColor={`${Colors.offblack}100`}
-              />
+                textColor={Colors.offblack}
+                style={{
+                  width: "100%",
+                  fontSize: "1.8rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
+              >
+                <TextRephraseTranslate>{HERO_GITHUB_LINK}</TextRephraseTranslate>
+              </GeneralButton>
             </Grid>
           </Grid>
         </Box>

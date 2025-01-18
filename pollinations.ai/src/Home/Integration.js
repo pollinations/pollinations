@@ -14,9 +14,11 @@ export const Integration = () => {
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATION_TITLE} />
-        <TextEmojiText subtitle={INTEGRATION_SUBTITLE} />
-        <CodeExamples image={image} />
       </SectionSubContainer>
+      <SectionSubContainer>
+        <TextEmojiText subtitle={INTEGRATION_SUBTITLE} />
+      </SectionSubContainer>
+      <CodeExamples image={image} />
     </SectionContainer>
   )
 }

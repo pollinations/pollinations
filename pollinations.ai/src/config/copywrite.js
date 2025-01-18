@@ -1,43 +1,36 @@
-
-import { Colors } from "./global"
-
 // Style prompts
-export const EMOJI_STYLE = "Format with related emojis. Use italics and bold to make the text more engaging."
-
-
-export const PROJECT_DESCRIPTION_STYLE = `Format with related emojis. Use italics and bold to make the text more engaging. Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website.`
-
-
-
+export const EMOJI_STYLE = "Incorporate relevant emojis and use a combination of italics, normal, and bold styles to enhance text engagement."
+export const PROJECT_DESCRIPTION_STYLE = "Format with related emojis. Use italics and bold to make the text more engaging. Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website."
+export const SUPPORTER_DESCRIPTION_STYLE = "Format with related emojis. Use italics and bold to make the text more engaging. Keep it very short, a few words"
 
 // Copy prompts
 export const HEADER_LOGO = "Pollinations"
 export const HERO_INTRO =
-  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence." + EMOJI_STYLE
-export const HERO_CTO = "Talk to us, reach out" + EMOJI_STYLE
-export const HERO_EMAIL_BUTTON = "Use only the text 'Email'" + EMOJI_STYLE
-export const HERO_GITHUB_LINK = "Use only the text 'Github'" + EMOJI_STYLE
-export const HERO_DISCORD_LINK = "Use only the text 'Discord'" + EMOJI_STYLE
+  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence!" + EMOJI_STYLE
+export const HERO_CTO = "Express this in one sentence: Talk to us, reach out" + EMOJI_STYLE
+export const HERO_EMAIL_BUTTON = "Only the word: 'Email'"
+export const HERO_GITHUB_LINK = "Use only the text 'Github'" 
+export const HERO_DISCORD_LINK = "Use only the text 'Discord'"
 
 export const IMAGE_FEED_SUBTITLE =
-  "Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." + EMOJI_STYLE
+  "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." + EMOJI_STYLE
 export const IMAGE_FEED_TITLE = "Live Feed"
-export const IMAGE_FEED_MODE1 = "WATCH"
-export const IMAGE_FEED_MODE2 = "TRY"
+export const IMAGE_FEED_MODE1 = "Use only the text 'Watch'"
+export const IMAGE_FEED_MODE2 = "Use only the text 'Try'" 
 
 export const IMAGE_EDIT_BUTTON_ON = "Wait"
 export const IMAGE_EDIT_BUTTON_OFF = "Create"
 export const INTEGRATION_TITLE = "Integrate"
 export const INTEGRATION_SUBTITLE =
-  "Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started." + EMOJI_STYLE
+  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started." + EMOJI_STYLE
 
 export const PROJECT_TITLE = "User Builds"
 export const PROJECT_SUBTITLE =
-  "Here are some of the various implementations that our API is currently powering." + EMOJI_STYLE
+  "Express this in one sentence: Here are some of the various implementations that our API is currently powering." + EMOJI_STYLE
 export const PROJECT_CTO_1 =  
-  "Have you created a project that integrates Pollinations.AI? We'd love to feature it!" + EMOJI_STYLE  
-export const PROJECT_CTO_2 = "Talk to us" + EMOJI_STYLE
-export const PROJECT_BUTTON = "Write only the text 'hello@pollinations.ai'" + EMOJI_STYLE
+  "Question if they have created a project that integrates Pollinations.AI? Say that we'd love to feature it!" + EMOJI_STYLE
+export const PROJECT_CTO_2 = "Express this in one very very short sentence: Talk to us" + EMOJI_STYLE
+export const PROJECT_BUTTON = "Write only the text: 'hello@pollinations.ai'."
 export const PROJECT_LOGO_STYLE =
   "minimalist colour logo design focuses on symbols and visuals, no text, solid off white background"
 
@@ -45,30 +38,34 @@ export const COMMUNITY_TITLE = "Contribute"
 export const COMMUNITY_SUBTITLE =
   "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate." + EMOJI_STYLE
 export const COMMUNITY_DISCORD_SUBTITLE =
-  "Introduce our Discord channel, make it just a few words. Don't cite Discord. In two short sentences. " +
+  "Introduce our Discord channel, make it just a few words. Don't cite Discord. In a single very short sentence." +
   EMOJI_STYLE
-export const COMMUNITY_DISCORD_CTO = "Write only the text 'Join our Discord'" + EMOJI_STYLE
+export const COMMUNITY_DISCORD_CTO = "Write only the text 'Join our Discord'"
 export const COMMUNITY_GITHUB_SUBTITLE =
-  "Highlight our GitHub repository as a hub for collaboration and contribution. Encourage participation in a single sentence. " +
+  "Highlight our GitHub repository as a hub for collaboration and contribution. Encourage participation in a single very short sentence. " +
   EMOJI_STYLE
-export const COMMUNITY_GITHUB_CTO = "Write only the text 'Visit our GitHub'" + EMOJI_STYLE
+export const COMMUNITY_GITHUB_CTO = "Write only the text 'Visit our GitHub'"
+
+export const ASCII_APP_TOOLTIP = "Try out our ASCII art generator!"
+
+export const TEAM_JOB_TITLE_STYLE = "One short poetic sentence, Format with related emojis."
 
 export const TEAM_TITLE = "Team"
 export const TEAM_SUBTITLE =
-  "Introducing our team: We are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions." + EMOJI_STYLE
+  "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions." + EMOJI_STYLE
 export const TEAM_GITHUB_CTO = "Write only the text 'Visit our GitHub'" + EMOJI_STYLE
-export const TEAM_1_NAME = "Write only the text 'Alex Johnson' in bold and all caps" 
-export const TEAM_1_FUNCTION = "Write the text 'CEO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
-export const TEAM_2_NAME = "Write only the text 'Samantha Lee' in bold and all caps"
-export const TEAM_2_FUNCTION = "Write the text 'CTO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
-export const TEAM_3_NAME = "Write only the text 'Michael Chen' in bold and all caps" 
-export const TEAM_3_FUNCTION = "Write the text 'COO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
-export const TEAM_4_NAME = "Write only the text 'Jessica Gomez' in bold and all caps" 
-export const TEAM_4_FUNCTION = "Write the text 'CMO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
-export const TEAM_5_NAME = "Write only the text 'David Brown' in bold and all caps" 
-export const TEAM_5_FUNCTION = "Write the text 'CFO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
-export const TEAM_6_NAME = "Write only the text 'John Doe' in bold and all caps" 
-export const TEAM_6_FUNCTION = "Write the text 'CFO' but play with the letter fonts, weird characters and spacing, keep it very very short" + EMOJI_STYLE
+export const TEAM_1_NAME = "Write only the text 'Thomas Haferlach' in bold and all caps" 
+export const TEAM_1_FUNCTION = "Write the text 'CEO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_2_NAME = "Write only the text 'Elliot Fouchy' in bold and all caps"
+export const TEAM_2_FUNCTION = "Write the text 'CTO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_3_NAME = "Write only the text 'Laurent Pacoud' in bold and all caps" 
+export const TEAM_3_FUNCTION = "Write the text 'COO'Write" + TEAM_JOB_TITLE_STYLE
+export const TEAM_4_NAME = "Write only the text 'Nicolas Pellerin' in bold and all caps" 
+export const TEAM_4_FUNCTION = "Write the text 'CMO'Write" + TEAM_JOB_TITLE_STYLE
+export const TEAM_5_NAME = "Write only the text 'Portrait XO' in bold and all caps" 
+export const TEAM_5_FUNCTION = "Write the text 'CFO'Write" + TEAM_JOB_TITLE_STYLE
+export const TEAM_6_NAME = "Write only the text 'Kalam Ali' in bold and all caps" 
+export const TEAM_6_FUNCTION = "Write the text 'CFO'Write" + TEAM_JOB_TITLE_STYLE
 
 import team1 from "../assets/team/alex_johnson.png"
 import team2 from "../assets/team/samantha_lee.png"
@@ -95,3 +92,6 @@ export const FOOTER_TERMS_CONDITIONS =
 export const FOOTER_INFO = "© 2025 Pollinations.AI All Rights Reserved"
 
 export const HEADER_WHITE_BG = false
+
+export const FEED_ENANCER_TOOLTIP = "AI prompt enhancer that helps create better images by improving your text prompt."
+export const FEED_LOGO_WATERMARK = "Enable watermark logo."

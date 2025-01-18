@@ -3,7 +3,12 @@ import { Colors } from "../config/global"
 import { SectionContainer, SectionSubContainer, SectionBgBox } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import TextEmojiText from "../components/TextEmojiText"
-import { SUPPORTER_TITLE, SUPPORTER_SUBTITLE, SUPPORTER_LOGO_STYLE } from "../config/copywrite"
+import {
+  SUPPORTER_TITLE,
+  SUPPORTER_SUBTITLE,
+  SUPPORTER_LOGO_STYLE,
+  SUPPORTER_DESCRIPTION_STYLE,
+} from "../config/copywrite"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
@@ -25,15 +30,14 @@ const Supporter = () => {
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
+      </SectionSubContainer>
+      <SectionSubContainer>
         <TextEmojiText subtitle={SUPPORTER_SUBTITLE} />
-      <SectionBgBox style={{ padding: "2em" }} backgroundcolor={Colors.offblack}>
-        <Grid container spacing={12} >
+      </SectionSubContainer>
+      <SectionSubContainer>
+        <Grid container spacing={1}>
           {SUPPORTER_LIST.map((company) => (
-            <Grid             
-              key={company.name}
-              size={{ xs: 12, sm: 3 }}
-              style={{ textAlign: "center" }}
-            >
+            <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img
                 src={generateImageUrl(company.name, company.description)}
                 alt={company.name}
@@ -41,20 +45,23 @@ const Supporter = () => {
                 height={imageDimension}
                 style={{ borderRadius: "15px" }}
               />
-              <br /><br />
+              <br />
+              <br />
               <StyledLink href={company.url} style={{ color: Colors.lime }}>
                 <strong>{company.name}</strong>
               </StyledLink>
               <br />
               {isMdUp && (
-                <TextEmojiText subtitle={company.description} color={Colors.offwhite} size="1em" />
+                <TextEmojiText
+                  subtitle={company.description + SUPPORTER_DESCRIPTION_STYLE}
+                  color={Colors.offwhite}
+                  fontSize="1em"
+                />
               )}
             </Grid>
           ))}
         </Grid>
-      </SectionBgBox>
       </SectionSubContainer>
-
     </SectionContainer>
   )
 }

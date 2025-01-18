@@ -1,6 +1,6 @@
 /* Start of Selection */
 import { useState } from "react"
-import { AppBar, ButtonGroup, Button, Box, IconButton } from "@mui/material"
+import { AppBar, ButtonGroup, Box, IconButton } from "@mui/material"
 import { CodeBlock } from "react-code-blocks"
 import { URLExplanation } from "../ImageHeading"
 import { Colors } from "../../config/global"
@@ -9,40 +9,11 @@ import useRandomSeed from "../../hooks/useRandomSeed"
 import React from "react";
 import FileCopyIcon from '@mui/icons-material/FileCopy'
 import CODE_EXAMPLES from '../../config/codeExamplesText';
-import { SectionBgBox } from "../SectionContainer"
+import { SectionSubContainer } from "../SectionContainer"
 import styled from '@emotion/styled'
+import { GeneralButton } from "../GeneralButton"
 
-// Use styled to handle container styles and breakpoints
-const StyledURLExplanation = styled(URLExplanation)(({ theme }) => ({
-  margin: "0 auto",
-  maxWidth: "1000px",
-  width: "100%",
-  [theme.breakpoints.down('md')]: {
-    // Example breakpoint usage
-    maxWidth: "90%",
-  },
-}));
 
-// Common styles
-const buttonStyle = (isActive) => ({
-  backgroundColor: isActive ? Colors.lime : "transparent",
-  color: isActive ? Colors.offblack : Colors.lime,
-  fontSize: '1.3rem',
-  fontFamily: 'Uncut-Sans-Variable',
-  fontStyle: 'normal',
-  fontWeight: 600,
-  height: "60px",
-  position: "relative",
-  margin: "0.5em",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  letterSpacing: "0.1em",
-  borderRadius: "5px",
-  padding: "0 1em",
-  whiteSpace: "nowrap",
-  border: `1px solid ${Colors.lime}`,
-});
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0);
@@ -78,24 +49,33 @@ export function CodeExamples({ image = {} }) {
   const imageToUse = image?.imageURL ? image : defaultImage;
 
   return (
-    <StyledURLExplanation>
+    <SectionSubContainer style={{ backgroundColor: Colors.offblack2, paddingBottom: "0em" }} >
       <AppBar
         position="static"
-        style={{ color: "white", width: "auto", boxShadow: "none" }}
+        style={{ backgroundColor: "transparent", boxShadow: "none" }}
       >
         <ButtonGroup
-          variant="contained"
           aria-label="contained primary button group"
-          style={{ backgroundColor: "transparent", flexWrap: "wrap", justifyContent: "center", boxShadow: "none" }}
+          style={{ backgroundColor: "transparent", flexWrap: "wrap", justifyContent: "space-between", boxShadow: "none" }}
         >
           {codeExampleTabs.map((key, index) => (
-            <Button
+            <GeneralButton
               key={key}
-              onClick={() => handleChange(null, index)}
-              style={buttonStyle(tabValue === index)}
+              handleClick={() => handleChange(null, index)}
+              backgroundColor={tabValue === index ? Colors.lime : "transparent"}
+              textColor={tabValue === index ? Colors.offblack : Colors.lime}
+              fontSize="1.3rem"
+              style={{
+                fontStyle: "normal",
+                fontWeight: 600,
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
               {key}
-            </Button>
+            </GeneralButton>
           ))}
         </ButtonGroup>
       </AppBar>
@@ -107,8 +87,8 @@ export function CodeExamples({ image = {} }) {
           const text = code(imageToUse);
 
           return (
-            <Box key={key} position="relative">
-              <SectionBgBox style={{ padding: "10px", marginTop: "1em" }}>
+            <Box key={key} position="relative" style={{ width: "100%" }}>
+              <SectionSubContainer>
                 <CodeBlock
                   text={text}
                   language={language}
@@ -125,7 +105,6 @@ export function CodeExamples({ image = {} }) {
                     overflowX: "hidden", 
                   }}
                 />
-              </SectionBgBox>
               <IconButton
                 onClick={() => handleCopy(text)}
                 style={{
@@ -133,15 +112,18 @@ export function CodeExamples({ image = {} }) {
                   top: 15,
                   right: 15,
                   color: Colors.lime,
-                  marginRight: "10px",
+                  marginRight: "0.5em",
+                  marginTop: "0.5em",
                 }}
               >
                 <FileCopyIcon fontSize="large" />
               </IconButton>
+              </SectionSubContainer>
+
             </Box>
           );
         })}
       </>
-    </StyledURLExplanation>
+    </SectionSubContainer>
   );
 }

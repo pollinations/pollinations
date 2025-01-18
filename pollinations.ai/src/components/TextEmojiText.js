@@ -1,31 +1,21 @@
 import React from "react"
-import { Typography } from "@mui/material"
 import { Colors } from "../config/global"
 import { TextRephraseTranslate } from "./TextRephraseTranslate"
+import { SectionHeadlineStyle } from "./SectionContainer"
 
-function TextEmojiText({
-  subtitle,
-  color = Colors.offwhite,
-  textAlign = "center",
-  size = "1.8em",
-  sx = {},
-}) {
+function TextEmojiText({ subtitle, color, textAlign, fontSize, sx = {} }) {
   return (
-    <Typography
-      component="div" 
-      sx={{
-        color: color,
-        fontSize: size,
-        maxWidth: "750px",
+    <SectionHeadlineStyle
+      fontSize={fontSize}
+      color={color}
+      style={{
         textAlign: textAlign,
+        maxWidth: "750px",
         ...sx,
-        '& a': {
-          color: Colors.yellow, // Apply yellow color to links
-        },
       }}
     >
       <TextRephraseTranslate>{subtitle}</TextRephraseTranslate>
-    </Typography>
+    </SectionHeadlineStyle>
   )
 }
 

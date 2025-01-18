@@ -4,13 +4,9 @@ import React from "react"
 import { createRoot } from "react-dom/client" // Import createRoot
 import App from "./App"
 import { BrowserRouter } from "react-router-dom"
-import { startReportingRuntimeErrors } from "react-error-overlay"
-
-import "./index.css"
 import ScrollToTop from "./utils/ScrollToTop"
 
 const theme = createTheme()
-
 const container = document.getElementById("root")
 const root = createRoot(container) // Create a root
 
@@ -24,9 +20,3 @@ root.render(
     </BrowserRouter>
   </ThemeProvider>
 )
-
-startReportingRuntimeErrors({
-  onError: (error) => {
-    // Custom error handling logic if needed
-  },
-})

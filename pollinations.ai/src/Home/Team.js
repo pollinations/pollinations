@@ -42,29 +42,30 @@ const Team = () => {
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.offblack} />
-        <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} size="1.8em" />
+        <SectionSubContainer>
+          <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} />
+        </SectionSubContainer>
         <Grid container spacing={4} justifyContent="center">
           {teamMembers.map((member, index) => (
-            <Grid key={index} item xs={12} sm={6} md={4} lg={3}>
+            <Grid key={index} size={{ xs: 4, md: 2 }}>
               <Grid
                 container
                 direction="column"
                 alignItems="center"
+                maxWidth="160px"
                 sx={{
                   borderRadius: "15px",
                   backgroundColor: Colors.offwhite,
-                  padding: 2,
                 }}
               >
                 <img
                   src={process.env.PUBLIC_URL + member.image}
                   alt={member.name}
                   style={{
-                    width: "180px",
-                    height: "180px",
+                    width: "150px",
+                    height: "150px",
                     borderRadius: "15%",
                     objectFit: "cover",
-                    marginBottom: "10px",
                   }}
                 />
                 <TextEmojiText
@@ -75,7 +76,8 @@ const Team = () => {
                 <TextEmojiText
                   color={Colors.offblack}
                   subtitle={member.function}
-                  size="1em"
+                  fontSize="1em"
+                  
                 />
               </Grid>
             </Grid>

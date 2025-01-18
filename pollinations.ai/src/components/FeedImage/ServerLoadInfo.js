@@ -9,6 +9,11 @@ export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {
       justifyContent="center"
       alignItems="center"
       style={{ gap: "2em" }}
+      sx={{
+        color: Colors.offwhite,
+        fontSize: "1.em",
+        fontFamily: Fonts.body
+      }}
     >
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
       <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.body }}>
@@ -37,7 +42,7 @@ function TimingInfo({ image }) {
   const timeMs = image?.generationTime || image?.timingInfo?.[5]?.timestamp
   return (
     <Typography variant="body" component="i" style={{ fontSize: "1.2em" }}>
-      Generation time:
+      Generation time: 
       <span style={{ color: Colors.lime }}>
         <b> {Math.round(timeMs / 100) / 10} s</b>
       </span>

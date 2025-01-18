@@ -1,7 +1,11 @@
 export const projectCategories = [
   {
-    title: "Mobile & Web Apps",
-    key: "apps",
+    title: "Mobile Apps",
+    key: "mobileApps",
+  },
+  {
+    title: "Web Apps",
+    key: "webApps",
   },
   {
     title: "AI Chat / LLMs",
@@ -22,7 +26,23 @@ export const projectCategories = [
 ]
 
 export const projects = {
-  apps: [
+  mobileApps: [
+    {
+      name: "Free AI Chatbot & Image Generator",
+      url: "https://freeaichat.app",
+      description:
+        "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
+      author: "@andreas_11",
+    },
+    {
+      name: "Pollinator Android App",
+      url: "https://github.com/g-aggarwal/Pollinator",
+      description:
+        "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+      author: "@gaurav_87680",
+    },
+  ],
+  webApps: [
     {
       name: "Image Gen - Uncensored Edition 🆕",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
@@ -42,20 +62,6 @@ export const projects = {
       url: "https://www.roblox.com/games/108463136689847",
       description:
         "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
-    },
-    {
-      name: "Free AI Chatbot & Image Generator",
-      url: "https://freeaichat.app",
-      description:
-        "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
-      author: "@andreas_11",
-    },
-    {
-      name: "Pollinator Android App",
-      url: "https://github.com/g-aggarwal/Pollinator",
-      description:
-        "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
-      author: "@gaurav_87680",
     },
     {
       name: "MIDIjourney",

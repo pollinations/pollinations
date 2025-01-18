@@ -1,6 +1,7 @@
 import React from "react"
 import Button from "@mui/material/Button"
 import { TextRephraseTranslate } from "./TextRephraseTranslate"
+import { Fonts } from "../config/global"
 
 const TextEmojiButton = ({
   onClick,
@@ -16,7 +17,8 @@ const TextEmojiButton = ({
       sx={{
         userSelect: "none",
         backgroundColor: backgroundColor,
-        borderRadius: "15px",
+        fontFamily: Fonts.body,
+        borderRadius: "0px",
         display: "flex",
         padding: "0em 1em",
         fontSize: textSize,
@@ -24,6 +26,7 @@ const TextEmojiButton = ({
         justifyContent: "center",
         alignSelf: "flex-end",
         width: "100%",
+        height: "60px",
         color: textColor,
         textTransform: "none",
         textDecoration: "none",

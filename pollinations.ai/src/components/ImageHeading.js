@@ -81,7 +81,7 @@ export const ImageHeading = styled(
   }
 )`
   text-align: center;
-  margin: 10px auto;
+  margin: 0px auto;
 
   img {
     width: 100%;

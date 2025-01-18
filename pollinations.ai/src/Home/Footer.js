@@ -25,6 +25,7 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: { xs: "center", md: "flex-start" },
+            gap: "1em", 
           }}
         >
           <StyledLink

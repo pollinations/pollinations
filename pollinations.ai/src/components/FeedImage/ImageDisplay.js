@@ -1,10 +1,19 @@
 import React, { memo } from "react"
-import { Typography, Link, Box } from "@mui/material"
+import { Typography, Link, Box, useMediaQuery, useTheme } from "@mui/material"
 import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../PromptTooltip"
 import styled from '@emotion/styled';
-
+import { Colors } from "../../config/global"
 export const ImageDisplay = memo(function ImageDisplay({ image }) {
+    const theme = useTheme();
+    const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+
+    const ImageContent = (
+        <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
+            <ImageStyle src={image["imageURL"]} alt="generative_image" />
+        </PromptTooltip>
+    );
+
     return (
         <ImageContainer
             sx={{
@@ -12,26 +21,18 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 flexDirection: "column",
                 alignItems: "center",
                 position: "relative",
-                boxShadow: "none"
+                boxShadow: "none",
+                backgroundColor: Colors.offblack2
             }}
         >
             {image ? (
-                <>
-                    {/* Mobile View */}
-                    <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-                        <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
-                            <ImageStyle src={image["imageURL"]} alt="generative_image" />
-                        </PromptTooltip>
-                    </Box>
-                    {/* Desktop View */}
-                    <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                        <Link href={image["imageURL"]} target="_blank" rel="noopener">
-                            <PromptTooltip title={image["prompt"]} seed={image["seed"]}>
-                                <ImageStyle src={image["imageURL"]} alt="generative_image" />
-                            </PromptTooltip>
-                        </Link>
-                    </Box>
-                </>
+                isDesktop ? (
+                    <Link href={image["imageURL"]} target="_blank" rel="noopener">
+                        {ImageContent}
+                    </Link>
+                ) : (
+                    ImageContent
+                )
             ) : (
                 <Typography component="div" variant="h6" color="textSecondary">
                     Loading image...

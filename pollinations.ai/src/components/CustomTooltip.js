@@ -1,14 +1,11 @@
-import { withStyles } from '@mui/styles';
-import Tooltip from '@mui/material/Tooltip';
+import React from 'react';
+import { Tooltip } from '@mui/material';
 
-export const CustomTooltip = withStyles({
-  tooltip: {
-    // Your custom styles here
-    fontSize: '1em',
-    backgroundColor: '#333',
-    color: '#fff',
-  },
-  popper: {
-    transitionDelay: '500ms', // Appear after fixed mouse on top
-  },
-})(Tooltip);
+export const CustomTooltip = React.forwardRef(function CustomTooltip({ children, ...props }, ref) {
+  // Clone the child element and attach a ref so Tooltip can track focus, etc.
+  return (
+    <Tooltip {...props}>
+      {React.cloneElement(children, { ref })}
+    </Tooltip>
+  );
+});

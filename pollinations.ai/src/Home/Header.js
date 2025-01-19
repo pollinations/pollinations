@@ -1,3 +1,4 @@
+
 import React from "react"
 import { Box } from "@mui/material"
 import { Colors } from "../config/global"
@@ -13,13 +14,13 @@ const Header = () => {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          justifyContent: { xs: "center", md: "space-between" },
+          flexDirection: { xs: "column-reverse", md: "row" },
           alignItems: "center",
+          gap: "2em",
+          justifyContent: { xs: "center", md: "space-between" },
           width: "100%",
-          padding: { xs: "1em 1em", md: "0 3em" },
           position: "relative",
-          gap: "1em",
+          paddingBottom: "2em",
         }}
       >
         <NavLink
@@ -27,13 +28,14 @@ const Header = () => {
           style={{
             textDecoration: "none",
             display: "flex",
-            alignItems: "center",
+            alignItems: "left",
           }}
         >
           <LogoIconBlack width={100} height="auto" style={{ marginRight: "2em" }} />
           <PollinationsLogo
             width={{ xs: 300, md: 500 }}
             height={{ xs: 80, md: 130 }}
+            style={{ marginTop: "5px" }}
           />
         </NavLink>
         <Box

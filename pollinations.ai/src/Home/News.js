@@ -10,15 +10,16 @@ import { TextRephraseTranslate } from "../components/TextRephraseTranslate"
 
 export default function News() {
   return (
-    <Accordion style={{ width: "100%", backgroundColor: "Color.lime", margin: 0, padding: 0 }}>
+    <Accordion style={{ width: "100%", backgroundColor: Colors.lime, margin: 0, padding: 0 }}>
       <AccordionSummary
         expandIcon={<ArrowDownwardIcon />}
         aria-controls="panel1-content"
         id="panel1-header"
+        style={{ fontFamily: Fonts.body, fontSize: "1.5em" }}
       >
         <TextRephraseTranslate>{NEWS_TITLE}</TextRephraseTranslate>
       </AccordionSummary>
-      <AccordionDetails>
+      <AccordionDetails style={{ fontFamily: Fonts.body, fontSize: "1.5em" }}>
         <TextRephraseTranslate>{NEWS_SUBTITLE}</TextRephraseTranslate>
       </AccordionDetails>
     </Accordion>

@@ -35,7 +35,7 @@ const Supporter = () => {
         <TextEmojiText subtitle={SUPPORTER_SUBTITLE} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <Grid container spacing={1}>
+        <Grid container spacing={4}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img

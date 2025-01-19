@@ -1,50 +1,40 @@
-import React, { useState } from 'react'
-import styled from '@emotion/styled'
-import { Link } from '@mui/material'
-import { SOCIAL_LINKS } from '../config/socialLinksList'
-import { Colors } from '../config/global'
+import React, { useState } from "react"
+import styled from "@emotion/styled"
+import { Link } from "@mui/material"
+import { SOCIAL_LINKS } from "../config/socialLinksList"
+import { Colors } from "../config/global"
 
 // Container styling
-const SocialLinksContainer = styled('div')(({ gap, theme }) => ({
-  gridArea: 'social',
-  alignSelf: 'center',
-  display: 'flex',
-  justifyContent: 'flex-end',
-  alignItems: 'center',
-  gap: gap || '0em',
+const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
+  gridArea: "social",
+  alignSelf: "center",
+  display: "flex",
+  justifyContent: "flex-end",
+  alignItems: "center",
+  gap: gap || "0em",
 }))
 
 // Link styling with responsive sizes
 const LinkItem = styled(Link)(({ theme, isHovered }) => ({
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  borderRadius: '50%',
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  borderRadius: "50%",
   border: `1px solid ${Colors.offblack}`,
   backgroundColor: isHovered ? Colors.offblack : Colors.offwhite,
-  width: '47px',
-  height: '47px',
-  transition: 'background-color 0.3s, filter 0.3s',
-  textDecoration: 'none',
-  [theme.breakpoints.down('xs')]: {
-    width: '30px',
-    height: '30px',
-  },
+  width: theme.breakpoints.down("xs") ? "30px" : "47px",
+  height: theme.breakpoints.down("xs") ? "30px" : "47px",
+  transition: "background-color 0.3s, filter 0.3s",
+  textDecoration: "none",
 }))
 
 // Icon image styling with responsive sizes and conditional filters
-const IconImage = styled('img')(({ theme, isHovered, invert }) => ({
-  width: '24px',
-  height: 'auto',
-  filter: isHovered
-    ? invert
-      ? 'none'
-      : 'invert(100%)'
-    : invert
-      ? 'invert(100%)'
-      : 'none',
-  [theme.breakpoints.down('xs')]: {
-    width: '16px',
+const IconImage = styled("img")(({ theme, isHovered, invert }) => ({
+  width: theme.breakpoints.down("xs") ? "16px" : "24px",
+  height: "auto",
+  filter: isHovered ? (invert ? "none" : "invert(100%)") : invert ? "invert(100%)" : "none",
+  [theme.breakpoints.down("xs")]: {
+    width: "16px",
   },
 }))
 

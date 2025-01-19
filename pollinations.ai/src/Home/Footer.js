@@ -25,7 +25,7 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: { xs: "center", md: "flex-start" },
-            gap: "1em", 
+            gap: "1em",
           }}
         >
           <StyledLink
@@ -51,7 +51,7 @@ const Footer = () => {
           <StyledLink to="/terms" component={NavLink}>
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
-            <TextEmojiText subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
+          <TextEmojiText subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
         </Grid>
       </Box>
     </SectionContainer>

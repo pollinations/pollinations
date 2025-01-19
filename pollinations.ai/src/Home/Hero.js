@@ -13,6 +13,7 @@ import {
   HERO_DISCORD_LINK,
 } from "../config/copywrite"
 import Grid from "@mui/material/Grid2"
+import { ICONS } from "../assets/icons/icons" // Import the ICONS
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -41,7 +42,7 @@ const Hero = () => {
           sx={{
             userSelect: "none",
             fontFamily: Fonts.headline,
-            fontSize: { xs: "28px", sm: "32px" },
+            fontSize: { xs: "20px", sm: "24px" },
             color: Colors.offblack,
             textAlign: { xs: "center", sm: "left" },
             maxWidth: "90%",
@@ -70,7 +71,7 @@ const Hero = () => {
                 textColor={Colors.offblack}
                 style={{
                   width: "100%",
-                  fontSize: "1.8rem",
+                  fontSize: "1.5rem",
                   fontFamily: Fonts.body,
                   fontWeight: 600,
                 }}
@@ -87,12 +88,24 @@ const Hero = () => {
                 textColor={Colors.offblack}
                 style={{
                   width: "100%",
-                  fontSize: "1.8rem",
-                  fontFamily: Fonts.body,
+                  fontSize: "1.5rem",
+                  fontFamily: Fonts.body, 
                   fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                <TextRephraseTranslate>{HERO_DISCORD_LINK}</TextRephraseTranslate>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 1024 1024"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{ marginRight: "8px" }}
+                >
+                  <path d={ICONS.discord} />
+                </svg>
+                {HERO_DISCORD_LINK}
               </GeneralButton>
             </Grid>
             <Grid>
@@ -104,12 +117,24 @@ const Hero = () => {
                 textColor={Colors.offblack}
                 style={{
                   width: "100%",
-                  fontSize: "1.8rem",
+                  fontSize: "1.5rem",
                   fontFamily: Fonts.body,
                   fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                <TextRephraseTranslate>{HERO_GITHUB_LINK}</TextRephraseTranslate>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 1024 1024"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{ marginRight: "8px" }}
+                >
+                  <path d={ICONS.github} />
+                </svg>
+                {HERO_GITHUB_LINK}
               </GeneralButton>
             </Grid>
           </Grid>

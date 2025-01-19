@@ -5,15 +5,13 @@ export const PROJECT_DESCRIPTION_STYLE =
   "Format with related emojis. Use italics and bold to make the text more engaging. Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website."
 export const SUPPORTER_DESCRIPTION_STYLE =
   "Format with related emojis. Use italics and bold to make the text more engaging. Keep it very short, a few words"
-  
-// Copy prompts
-export const HEADER_LOGO = "Pollinations"
-export const HEADER_WHITE_BG = false
 
+// Copy prompts
 export const HERO_INTRO =
-  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence!" + EMOJI_STYLE
+  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence!" +
+  EMOJI_STYLE
 export const HERO_CTO = "Express this in one sentence: Talk to us, reach out. " + EMOJI_STYLE
-export const HERO_EMAIL_BUTTON = "hello@pollinations.ai'" 
+export const HERO_EMAIL_BUTTON = "hello@pollinations.ai'"
 export const HERO_GITHUB_LINK = "Readme.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
@@ -22,7 +20,8 @@ export const NEWS_SUBTITLE =
   "Want a new feature? Create a <a href='https://github.com/pollinations/pollinations/issues/new' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>GitHub issue</a> and our <a href='https://mentat.ai/' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>AI assistant</a> will implement it!"
 
 export const IMAGE_FEED_SUBTITLE =
-  "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." + EMOJI_STYLE
+  "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." +
+  EMOJI_STYLE
 export const IMAGE_FEED_TITLE = "Live Feed"
 export const IMAGE_FEED_MODE1 = "DO NOT REPHRASE, Use only the text 'Watch'"
 export const IMAGE_FEED_MODE2 = "DO NOT REPHRASE, write the text 'Try' only"
@@ -53,6 +52,8 @@ export const COMMUNITY_TITLE = "Contribute"
 export const COMMUNITY_SUBTITLE =
   "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate." +
   EMOJI_STYLE
+export const COMMUNITY_DISCORD_LOGO_PROMPT = "Discord logo that looks cool"
+export const COMMUNITY_GITHUB_LOGO_PROMPT = "GitHub logo that looks cool"
 export const COMMUNITY_DISCORD_SUBTITLE =
   "Introduce our Discord channel, make it just a few words. Don't cite Discord. In a single very short sentence." +
   EMOJI_STYLE

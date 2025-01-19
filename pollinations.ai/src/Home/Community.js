@@ -8,6 +8,8 @@ import {
   COMMUNITY_DISCORD_SUBTITLE,
   COMMUNITY_GITHUB_SUBTITLE,
   COMMUNITY_GITHUB_CTO,
+  COMMUNITY_DISCORD_LOGO_PROMPT,
+  COMMUNITY_GITHUB_LOGO_PROMPT,
 } from "../config/copywrite.js"
 import TextEmojiText from "../components/TextEmojiText.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
@@ -37,13 +39,13 @@ const Community = () => {
 
   const communityPlatforms = [
     {
-      imagePrompt: "Discord Community Logo",
+      imagePrompt: COMMUNITY_DISCORD_LOGO_PROMPT,
       buttonClickHandler: handleDiscordButtonClick,
       cto: COMMUNITY_DISCORD_CTO,
       subtitle: COMMUNITY_DISCORD_SUBTITLE,
     },
     {
-      imagePrompt: "GitHub Community Logo",
+      imagePrompt: COMMUNITY_GITHUB_LOGO_PROMPT,
       buttonClickHandler: handleGithubButtonClick,
       cto: COMMUNITY_GITHUB_CTO,
       subtitle: COMMUNITY_GITHUB_SUBTITLE,
@@ -51,7 +53,7 @@ const Community = () => {
   ]
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+    <SectionContainer style={{ backgroundColor: Colors.lime }}>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.offblack} />
       </SectionSubContainer>
@@ -68,7 +70,7 @@ const Community = () => {
                 gap={"1em"}
                 sx={{
                   borderRadius: "15px",
-                  backgroundColor: Colors.offwhite,
+                  backgroundColor: "transparent",
                 }}
               >
                 <Grid
@@ -126,6 +128,7 @@ const Community = () => {
                     backgroundColor={Colors.offwhite}
                     textColor={Colors.offblack}
                     borderColor={Colors.offblack}
+                    height="60px"
                   >
                     <TextRephraseTranslate>{platform.cto}</TextRephraseTranslate>
                   </GeneralButton>

@@ -34,7 +34,7 @@ const ProjectsRender = ({ classes }) => {
         <ButtonGroup
           aria-label="contained primary button group"
           style={{
-            backgroundColor: Colors.offblack2,
+            backgroundColor: "transparent",
             flexWrap: "wrap",
             justifyContent: "space-between",
             boxShadow: "none",

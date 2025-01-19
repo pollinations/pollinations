@@ -49,7 +49,7 @@ export function CodeExamples({ image = {} }) {
   const imageToUse = image?.imageURL ? image : defaultImage;
 
   return (
-    <SectionSubContainer style={{ backgroundColor: Colors.offblack2, paddingBottom: "0em" }} >
+    <SectionSubContainer style={{ backgroundColor: "transparent", paddingBottom: "0em" }} >
       <AppBar
         position="static"
         style={{ backgroundColor: "transparent", boxShadow: "none" }}
@@ -88,7 +88,7 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative" style={{ width: "100%" }}>
-              <SectionSubContainer>
+              <SectionSubContainer style={{ backgroundColor: Colors.offblack2 }}>
                 <CodeBlock
                   text={text}
                   language={language}

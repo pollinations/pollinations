@@ -39,7 +39,7 @@ const teamMembers = [
 
 const Team = () => {
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+    <SectionContainer style={{ backgroundColor: Colors.lime }}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.offblack} />
         <SectionSubContainer>
@@ -54,7 +54,7 @@ const Team = () => {
                 alignItems="center"
                 sx={{
                   borderRadius: "15px",
-                  backgroundColor: Colors.offwhite,
+                  backgroundColor: "transparent",
                 }}
               >
                 <img

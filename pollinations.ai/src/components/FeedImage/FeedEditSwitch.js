@@ -16,7 +16,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           borderColor={Colors.lime}
           backgroundColor={toggleValue === 'feed' ? Colors.lime : 'transparent'}
           textColor={toggleValue === 'feed' ? Colors.offblack : Colors.lime}
-          style={{ width: '200px', fontSize: '1.8rem', fontFamily: Fonts.body, fontWeight: 600 }}
+          style={{ height: '80px', width: '200px', fontSize: '1.8rem', fontFamily: Fonts.body, fontWeight: 600 }}
         >
           <TextRephraseTranslate>{IMAGE_FEED_MODE1}</TextRephraseTranslate>
         </GeneralButton>

@@ -16,7 +16,7 @@ import { useTheme } from "@mui/material/styles"
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down('md')) ? 80 : 96
-  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key) // Default to index 1
 
   const displayProjects = selectedCategory
     ? projects[selectedCategory] || []

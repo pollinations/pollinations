@@ -1,14 +1,17 @@
 
 import React from "react"
-import { Box } from "@mui/material"
+import { Box, useTheme } from "@mui/material"
 import { Colors } from "../config/global"
 import { SectionContainer } from "../components/SectionContainer"
 import { NavLink } from "react-router-dom"
 import { SocialLinks } from "../components/SocialLinks"
 import { ReactComponent as PollinationsLogo } from "../assets/logo/logo-text.svg"
 import { ReactComponent as LogoIconBlack } from "../assets/logo/logo-icon-black.svg"
+import { useMediaQuery } from "@mui/material"
 
 const Header = () => {
+  const theme = useTheme(); // Use the useTheme hook to access the theme
+
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <Box
@@ -31,7 +34,7 @@ const Header = () => {
             alignItems: "left",
           }}
         >
-          <LogoIconBlack width={100} height="auto" style={{ marginRight: "2em" }} />
+          <LogoIconBlack width={100} height="auto" style={{ marginRight: useMediaQuery(theme.breakpoints.down('md')) ? "0em" : "2em" }} />
           <PollinationsLogo
             width={{ xs: 300, md: 500 }}
             height={{ xs: 80, md: 130 }}

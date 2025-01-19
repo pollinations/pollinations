@@ -14,6 +14,7 @@ import {
 } from "../config/copywrite"
 import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons" // Import the ICONS
+import ContentCopyIcon from '@mui/icons-material/ContentCopy' // Import the Material UI copy icon
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -74,8 +75,11 @@ const Hero = () => {
                   fontSize: "1.5rem",
                   fontFamily: Fonts.body,
                   fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
+                <ContentCopyIcon style={{ marginRight: "8px" }} />
                 <TextRephraseTranslate>{HERO_EMAIL_BUTTON}</TextRephraseTranslate>
               </GeneralButton>
             </Grid>

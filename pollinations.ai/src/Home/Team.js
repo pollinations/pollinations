@@ -47,12 +47,11 @@ const Team = () => {
         </SectionSubContainer>
         <Grid container spacing={4} justifyContent="center">
           {teamMembers.map((member, index) => (
-            <Grid key={index} size={{ xs: 4, md: 2 }}>
+            <Grid key={index} size={{ xs: 6, md: 2 }}>
               <Grid
                 container
                 direction="column"
                 alignItems="center"
-                maxWidth="160px"
                 sx={{
                   borderRadius: "15px",
                   backgroundColor: Colors.offwhite,

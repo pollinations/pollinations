@@ -311,6 +311,7 @@ export const ImageEditor = memo(function ImageEditor({
                     fontSize: paramTextSize,
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
+                    height: "60px",
                   },
                 }}
               />
@@ -391,6 +392,7 @@ export const ImageEditor = memo(function ImageEditor({
                 style={{
                   width: "100%",
                   animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",
+                  height: "60px",
                 }}
               >
                 Create

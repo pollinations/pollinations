@@ -102,7 +102,9 @@ export function CodeExamples({ image = {} }) {
                     paddingTop: "0px",
                     paddingBottom: "0px",
                     boxShadow: "none",
-                    overflowX: "hidden", 
+                    overflowX: "auto", 
+                    wordWrap:   "break-word",
+                    wrapLongLines: true,
                   }}
                 />
               <IconButton

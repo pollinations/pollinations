@@ -8,6 +8,7 @@ import { ImageContext } from "../utils/ImageContext"
 import Discord from "./Community"
 import Supporter from "./Supporter"
 import Team from "./Team"
+import News from "./News"
 // import { TextFeed } from "./TextFeed"
 
 export default function Home() {
@@ -17,7 +18,7 @@ export default function Home() {
     <ImageContext.Provider value={{ image, setImage }}>
       <Style>
         <Hero />
-        {/* <TextFeed />  */}
+        <News />
         <FeedImage />
         <Integration />
         <Discord />

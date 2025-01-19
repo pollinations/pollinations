@@ -12,6 +12,9 @@ export const HERO_EMAIL_BUTTON = "Only the word: 'Email'"
 export const HERO_GITHUB_LINK = "Use only the text 'Github'" 
 export const HERO_DISCORD_LINK = "Use only the text 'Discord'"
 
+export const NEWS_TITLE = "News: Latest Updates"
+export const NEWS_SUBTITLE = "Want a new feature? Create a <a href='https://github.com/pollinations/pollinations/issues/new' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>GitHub issue</a> and our <a href='https://mentat.ai/' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>AI assistant</a> will implement it!"
+
 export const IMAGE_FEED_SUBTITLE =
   "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." + EMOJI_STYLE
 export const IMAGE_FEED_TITLE = "Live Feed"

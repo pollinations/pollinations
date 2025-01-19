@@ -105,7 +105,6 @@ const Community = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     textAlign: "center",
-                    maxWidth: "500px",
                   }}
                 >
                   <TextEmojiText
@@ -137,17 +136,20 @@ const Community = () => {
         </Grid>
 
         <CustomTooltip title={ASCII_APP_TOOLTIP} interactive>
+          <SectionSubContainer>
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
+              maxWidth: "300px",
             }}
             onClick={handleAsciiArtClick}
           >
             <AsciiArtGenerator width={"100px"} />
-          </Box>
+            </Box>
+          </SectionSubContainer>
         </CustomTooltip>
       </SectionSubContainer>
     </SectionContainer>

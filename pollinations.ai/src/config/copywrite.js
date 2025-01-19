@@ -24,8 +24,8 @@ export const NEWS_SUBTITLE =
 export const IMAGE_FEED_SUBTITLE =
   "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." + EMOJI_STYLE
 export const IMAGE_FEED_TITLE = "Live Feed"
-export const IMAGE_FEED_MODE1 = "Use only the text 'Watch'"
-export const IMAGE_FEED_MODE2 = "Use only the text 'Try'"
+export const IMAGE_FEED_MODE1 = "DO NOT REPHRASE, Use only the text 'Watch'"
+export const IMAGE_FEED_MODE2 = "DO NOT REPHRASE, write the text 'Try' only"
 export const IMAGE_EDIT_BUTTON_ON = "Wait"
 export const IMAGE_EDIT_BUTTON_OFF = "Create"
 export const INTEGRATION_TITLE = "Integrate"

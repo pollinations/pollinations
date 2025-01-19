@@ -21,7 +21,7 @@ export const SectionSubContainer = styled.div`
   max-width: 1000px;
   margin: 0;
   width: 100%;
-  padding-bottom: 3em;
+  padding-bottom: ${(props) => props.paddingBottom || "3em"};
   padding-top: 0em;
   justify-content: center;
   align-items: center;

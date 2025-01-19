@@ -45,6 +45,7 @@ const Footer = () => {
           sx={{
             display: "flex",
             flexDirection: "column",
+            marginTop: "1em",
             alignItems: { xs: "center", md: "flex-end" },
           }}
         >

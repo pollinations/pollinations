@@ -23,7 +23,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     backgroundColor: backgroundColor || "transparent",
     color: textColor || borderColor || "transparent",
     fontSize: fontSize || "1.5em",
-    height: height || "60px",
+    height: height || "auto",
     borderRadius: "0px",
     padding: "0px 1em",
     transition: "background-color 0.3s, border-color 0.3s",

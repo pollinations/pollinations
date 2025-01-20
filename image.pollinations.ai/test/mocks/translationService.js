@@ -7,7 +7,8 @@ const mockTranslations = {
   "Ein großer blauer Wal": "A large blue whale",
   "Une belle fleur rouge": "A beautiful red flower",
   "Ein blauer Schmetterling": "A blue butterfly",
-  "Una montaña nevada": "A snowy mountain"
+  "Una montaña nevada": "A snowy mountain",
+  "یک پرنده قرمز زیبا در پنجره کلیسا": "A beautiful red bird in the church window"
 }
 
 export const mockTranslate = async (text) => {
@@ -23,7 +24,8 @@ export const mockTranslate = async (text) => {
 export const setupTranslationMock = () => {
   // Mock translateIfNecessary
   vi.mock('../../src/translateIfNecessary.js', () => ({
-    translateIfNecessary: async (text) => mockTranslate(text)
+    translateIfNecessary: async (text) => mockTranslate(text),
+    sanitizeString: (str) => str // Simple pass-through implementation for testing
   }))
   
   // Mock normalizeAndTranslatePrompt

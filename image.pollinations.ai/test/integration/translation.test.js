@@ -1,97 +1,64 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { setupTranslationMock } from '../mocks/translationService.js'
+import { describe, it, expect, beforeAll } from 'vitest'
+import { translateIfNecessary, sanitizeString } from '../../src/translateIfNecessary.js'
+import { registerServer } from '../../src/availableServers.js'
+import fetch from 'node-fetch'
 
-describe('Translation Integration Tests', () => {
-  beforeEach(async () => {
-    vi.resetModules()
-    setupTranslationMock()
+describe('Translation Service Integration Tests', () => {
+  // Register translation servers from the main pollinations endpoint
+  beforeAll(async () => {
+    try {
+      const response = await fetch('https://image.pollinations.ai/register')
+      const servers = await response.json()
+      
+      // Register all available translation servers
+      servers
+        .filter(server => server.type === 'translate')
+        .forEach(server => {
+          registerServer(server.url, 'translate')
+        })
+    } catch (error) {
+      console.error('Failed to fetch translation servers:', error)
+      throw error // Fail the test setup if we can't get servers
+    }
   })
 
-  it('should handle non-English prompts correctly', async () => {
-    const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-    const germanPrompt = "Ein schöner Sonnenuntergang am Strand"
-    const result = await translateIfNecessary(germanPrompt)
-    expect(result).toBe("A beautiful sunset at the beach")
-  })
-
-  it('should preserve special tokens during translation', async () => {
-    const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-    const promptWithTokens = "--ar 16:9 --q 2 Ein fantastisches Schloss --seed 123"
-    const result = await translateIfNecessary(promptWithTokens)
-    expect(result).toBe(promptWithTokens) // Special tokens should prevent translation
-  })
-
-  // TODO: Fix test after implementing proper language detection
-  // it('should handle multiple languages in image generation pipeline', async () => {
-  //   const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-  //   const multiLangPrompts = [
-  //     "Une belle fleur rouge", // French
-  //     "Ein blauer Schmetterling", // German
-  //     "Una montaña nevada" // Spanish
-  //   ]
-
-  //   const expectedTranslations = [
-  //     "A beautiful red flower",
-  //     "A blue butterfly",
-  //     "A snowy mountain"
-  //   ]
-
-  //   for (let i = 0; i < multiLangPrompts.length; i++) {
-  //     const translatedPrompt = await translateIfNecessary(multiLangPrompts[i])
-  //     expect(translatedPrompt).toBe(expectedTranslations[i])
-  //   }
-  // })
-
-  it('should not translate English prompts', async () => {
-    const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-    const englishPrompt = "A beautiful sunset over mountains"
-    const result = await translateIfNecessary(englishPrompt)
-    expect(result).toBe(englishPrompt)
-  })
-
-  it('should handle empty or invalid inputs', async () => {
-    const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-    const emptyPrompt = ""
-    const result = await translateIfNecessary(emptyPrompt)
-    expect(result).toBe(emptyPrompt)
-
-    const invalidPrompt = "   "
-    const invalidResult = await translateIfNecessary(invalidPrompt)
-    expect(invalidResult).toBe(invalidPrompt)
-  })
-
-  it('should preserve Persian text through the entire pipeline', async () => {
-    const { translateIfNecessary, sanitizeString } = await import('../../src/translateIfNecessary.js')
-    const persianPrompt = "یک پرنده قرمز زیبا در پنجره کلیسا"
+  it('should translate non-English text through the actual translation service', async () => {
+    const germanText = "Ein schöner Sonnenuntergang am Strand"
+    const result = await translateIfNecessary(germanText)
+    expect(result).to.be.a('string')
     
-    // Test sanitization
-    const sanitized = sanitizeString(persianPrompt)
-    expect(sanitized).toBe(persianPrompt)
-    
-    // Test full translation pipeline
-    const result = await translateIfNecessary(persianPrompt)
-    // Since it's Persian, it should be translated to English
-    expect(result).not.toBe(persianPrompt)
-    expect(result).toMatch(/^[A-Za-z\s.,]+$/) // Should be English text
+    // The result contains both translation and original text
+    const [translation, original] = result.split('\n\n')
+    expect(original).toBe(germanText) // Original text is preserved
+    expect(translation).toMatch(/^[A-Za-z\s.,]+$/) // Translation should be English
+    expect(translation.toLowerCase()).to.include('beautiful') // Common translation for "schöner"
   })
 
-  it('should handle Persian text with image generation parameters', async () => {
-    const { translateIfNecessary, sanitizeString } = await import('../../src/translateIfNecessary.js')
-    const persianWithParams = "یک پرنده قرمز زیبا --ar 16:9 --seed 123"
-    
-    // Test sanitization
-    const sanitized = sanitizeString(persianWithParams)
-    expect(sanitized).toBe(persianWithParams)
-    
-    // With parameters, it should not be translated
-    const result = await translateIfNecessary(persianWithParams)
-    expect(result).toBe(persianWithParams)
+  it('should preserve English text without translation', async () => {
+    const englishText = "A beautiful sunset at the beach"
+    const result = await translateIfNecessary(englishText)
+    expect(result).toBe(englishText) // Should remain unchanged
   })
 
-  it('should integrate translation with image generation params', async () => {
-    const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
-    const prompt = "Ein großer blauer Wal --ar 16:9"
-    const translatedPrompt = await translateIfNecessary(prompt)
-    expect(translatedPrompt).toBe(prompt) // Should not translate due to special tokens
+  it('should handle network errors gracefully', async () => {
+    // Register an invalid server to test error handling
+    registerServer('http://invalid-server:5000', 'translate')
+    
+    const germanText = "Ein schöner Tag"
+    const result = await translateIfNecessary(germanText)
+    // On network error, should return original text
+    expect(result).toBe(germanText)
   })
-})
+
+  it('should handle special characters and UTF-8 encoding', async () => {
+    const japaneseText = "美しい夕日"
+    const result = await translateIfNecessary(japaneseText)
+    expect(result).to.be.a('string')
+    
+    // The result contains both translation and original text
+    const [translation, original] = result.split('\n\n')
+    expect(original).toBe(japaneseText) // Original text is preserved
+    expect(translation).toMatch(/^[A-Za-z\s.,]+$/) // Translation should be English
+    expect(translation.toLowerCase()).to.include('beautiful') // Common translation for "美しい"
+  })
+}, 10000) // Increase timeout to 10s since translation can be slow

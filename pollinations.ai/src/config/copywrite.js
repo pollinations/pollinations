@@ -1,16 +1,15 @@
 // Style prompts
 export const EMOJI_STYLE =
-  "Incorporate relevant emojis and use a combination of italics, normal, and bold styles to enhance text engagement."
+  "Theses are instructions only, never use them in the text: Enhance the text with strategic use of relevant emojis, varying text styles (italics, bold, and normal) to increase engagement while maintaining a serious and streamlined tone. Avoid overly friendly or humorous wording. Keep the information dense, clear, and professional without over-polishing."
 export const PROJECT_DESCRIPTION_STYLE =
-  "Format with related emojis. Use italics and bold to make the text more engaging. Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website."
-export const SUPPORTER_DESCRIPTION_STYLE =
-  "Format with related emojis. Use italics and bold to make the text more engaging. Keep it very short, a few words"
+  "Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website." + EMOJI_STYLE
+export const SUPPORTER_DESCRIPTION_STYLE = "Keep it very short, a few words" + EMOJI_STYLE
 
 // Copy prompts
 export const HERO_INTRO =
-  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence!" +
+  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. In one sentence of about 150 characters!" +
   EMOJI_STYLE
-export const HERO_CTO = "Express this in one sentence: Talk to us, reach out. " + EMOJI_STYLE
+export const HERO_CTO = "Express this in one very very short sentence: Talk to us, reach out. " + EMOJI_STYLE
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai'"
 export const HERO_GITHUB_LINK = "Readme.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
@@ -20,7 +19,7 @@ export const NEWS_SUBTITLE =
   "Want a new feature? Create a <a href='https://github.com/pollinations/pollinations/issues/new' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>GitHub issue</a> and our <a href='https://mentat.ai/' target='_blank' rel='noopener noreferrer' style={{ textDecoration: 'underline' }}>AI assistant</a> will implement it!"
 
 export const IMAGE_FEED_SUBTITLE =
-  "Express this in one sentence: Real-time feed of our image API endpoint (minus the private ones). Try our models pausing anytime." +
+  "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime." +
   EMOJI_STYLE
 export const IMAGE_FEED_TITLE = "Live Feed"
 export const IMAGE_FEED_MODE1 = "DO NOT REPHRASE, Use only the text 'Watch'"
@@ -29,8 +28,7 @@ export const IMAGE_EDIT_BUTTON_ON = "Wait"
 export const IMAGE_EDIT_BUTTON_OFF = "Create"
 export const INTEGRATION_TITLE = "Integrate"
 export const INTEGRATION_SUBTITLE =
-  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started." +
-  EMOJI_STYLE
+  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started." + EMOJI_STYLE
 export const FEED_ENANCER_TOOLTIP =
   "AI prompt enhancer that helps create better images by improving your text prompt."
 export const FEED_LOGO_WATERMARK = "Enable watermark logo."

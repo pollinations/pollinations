@@ -14,8 +14,10 @@ const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
   gap: gap || "0em",
 }))
 
-// Link styling with responsive sizes
-const LinkItem = styled(Link)(({ theme, isHovered }) => ({
+const LinkItem = styled(Link, {
+  // Prevent forwarding isHovered to the DOM
+  shouldForwardProp: (prop) => prop !== "isHovered",
+  })(({ theme, isHovered }) => ({
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -26,17 +28,26 @@ const LinkItem = styled(Link)(({ theme, isHovered }) => ({
   height: theme.breakpoints.down("xs") ? "30px" : "47px",
   transition: "background-color 0.3s, filter 0.3s",
   textDecoration: "none",
-}))
-
-// Icon image styling with responsive sizes and conditional filters
-const IconImage = styled("img")(({ theme, isHovered, invert }) => ({
+  }))
+  const IconImage = styled("img", { 
+  // Prevent forwarding isHovered and invert to the DOM
+  shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
+  })(({ theme, isHovered, invert }) => ({
   width: theme.breakpoints.down("xs") ? "16px" : "24px",
   height: "auto",
-  filter: isHovered ? (invert ? "none" : "invert(100%)") : invert ? "invert(100%)" : "none",
+  filter: isHovered
+  ? invert
+  ? "none"
+  : "invert(100%)"
+  : invert
+  ? "invert(100%)"
+  : "none",
   [theme.breakpoints.down("xs")]: {
-    width: "16px",
+  width: "16px",
   },
-}))
+  }))
+
+
 
 export const SocialLinks = ({ gap, invert }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null)

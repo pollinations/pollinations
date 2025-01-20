@@ -2,7 +2,6 @@
 import { useState } from "react"
 import { AppBar, ButtonGroup, Box, IconButton } from "@mui/material"
 import { CodeBlock } from "react-code-blocks"
-import { URLExplanation } from "../ImageHeading"
 import { Colors } from "../../config/global"
 import { usePollinationsText } from "@pollinations/react"
 import useRandomSeed from "../../hooks/useRandomSeed"
@@ -10,7 +9,6 @@ import React from "react";
 import FileCopyIcon from '@mui/icons-material/FileCopy'
 import CODE_EXAMPLES from '../../config/codeExamplesText';
 import { SectionSubContainer } from "../SectionContainer"
-import styled from '@emotion/styled'
 import { GeneralButton } from "../GeneralButton"
 
 
@@ -103,7 +101,7 @@ export function CodeExamples({ image = {} }) {
                     paddingBottom: "0px",
                     boxShadow: "none",
                     overflowX: "auto", 
-                    wordWrap:   "break-word",
+                    wordWrap: "break-word",
                     wrapLongLines: true,
                   }}
                 />

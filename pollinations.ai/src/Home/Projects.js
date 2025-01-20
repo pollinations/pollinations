@@ -64,7 +64,7 @@ const Projects = () => {
             onClick={handleEmailButtonClick}
             textColor={Colors.lime}
             borderColor={Colors.offwhite}
-            textSize="2em"
+            fontSize="2em"
             backgroundColor={Colors.offblack}
             style={{
               width: "100%",

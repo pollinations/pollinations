@@ -17,7 +17,7 @@ export async function detectLanguage(promptAnyLanguage) {
     setTimeout(() => {
       controller.abort();
       resolve(null);
-    }, 1000);
+    }, 5000);
   });
 
   return Promise.race([detectPromise, timeoutPromise]);
@@ -43,7 +43,7 @@ export async function translateIfNecessary(promptAnyLanguage) {
         setTimeout(() => {
           controller.abort();
           resolve(null);
-        }, 1000);
+        }, 5000);
       });
 
       const result = await Promise.race([translatePromise, timeoutPromise]);

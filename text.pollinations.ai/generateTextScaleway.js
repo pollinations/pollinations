@@ -1,7 +1,11 @@
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
+import debug from 'debug';
 
 dotenv.config();
+
+const log = debug('pollinations:scaleway');
+const errorLog = debug('pollinations:error');
 
 const openai = new OpenAI({
     apiKey: process.env.SCALEWAY_API_KEY,
@@ -26,6 +30,9 @@ const SYSTEM_PROMPTS = {
 export async function generateTextScaleway(messages, options) {
     const { jsonMode = false, seed = null, temperature } = options;
     const modelName = MODEL_MAP[options.model] || MODEL_MAP.mistral;
+    
+    log('Generating text with Scaleway model: %s', modelName);
+    log('Options: %o', { jsonMode, seed, temperature });
 
     // Only add a system message if none exists
     if (!messages.some(message => message.role === 'system')) {
@@ -33,15 +40,22 @@ export async function generateTextScaleway(messages, options) {
             ? { role: 'system', content: 'Respond in simple JSON format' }
             : { role: 'system', content: SYSTEM_PROMPTS[options.model] || SYSTEM_PROMPTS.mistral };
         messages = [systemMessage, ...messages];
+        log('Added system message: %o', systemMessage);
     }
 
-    const completion = await openai.chat.completions.create({
-        model: modelName,
-        messages,
-        seed: seed || undefined,
-        temperature: temperature,
-        response_format: jsonMode ? { type: 'json_object' } : undefined,
-    });
-
-    return completion;
+    try {
+        log('Sending request to Scaleway API');
+        const completion = await openai.chat.completions.create({
+            model: modelName,
+            messages,
+            seed: seed || undefined,
+            temperature: temperature,
+            response_format: jsonMode ? { type: 'json_object' } : undefined,
+        });
+        log('Received response from Scaleway API');
+        return completion;
+    } catch (error) {
+        errorLog('Error generating text with Scaleway: %o', error);
+        throw error;
+    }
 }

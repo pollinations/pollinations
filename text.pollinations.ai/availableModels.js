@@ -22,13 +22,13 @@ export const availableModels = [
         description: 'Qwen 2.5 72B',
         baseModel: true,
     },
-    // {
-    //     name: 'qwen-coder',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Qwen 2.5 Coder 32B',
-    //     baseModel: true,
-    // },
+    {
+        name: 'qwen-coder',
+        type: 'chat',
+        censored: true,
+        description: 'Qwen 2.5 Coder 32B',
+        baseModel: true,
+    },
     {
         name: 'llama',
         type: 'chat',

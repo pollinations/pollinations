@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Function for timestamped logging
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+log "Starting instance check script..."
+log "----------------------------------------"
+
+# Get the list of running g6e.* instances from AWS
+log "Querying AWS for running g6e.* instances..."
+running_instances=$(aws ec2 describe-instances \
+    --filters "Name=instance-type,Values=g6e.*" "Name=instance-state-name,Values=running" \
+    --query 'Reservations[*].Instances[*].[PublicIpAddress]' \
+    --output text)
+
+if [ -z "$running_instances" ]; then
+    log "WARNING: No running g6e.* instances found in AWS!"
+else
+    log "Found the following AWS instances:"
+    echo "$running_instances" | while read -r ip; do
+        log "  - $ip"
+    done
+fi
+
+log "----------------------------------------"
+log "Fetching registered servers from image.pollinations.ai/register..."
+
+# Get the list of IPs from image.pollinations.ai/register and extract unique IPs
+registered_response=$(curl -s https://image.pollinations.ai/register)
+if [ $? -ne 0 ]; then
+    log "ERROR: Failed to fetch data from image.pollinations.ai/register"
+    exit 1
+fi
+
+registered_ips=$(echo "$registered_response" | jq -r '.[] | select(.type=="flux") | .url' | cut -d/ -f3 | cut -d: -f1 | sort -u)
+if [ -z "$registered_ips" ]; then
+    log "WARNING: No registered flux IPs found from image.pollinations.ai!"
+else
+    log "Found the following registered flux IPs:"
+    echo "$registered_ips" | while read -r ip; do
+        log "  - $ip"
+    done
+fi
+
+log "----------------------------------------"
+log "Comparing AWS instances with registered servers..."
+
+# Convert the lists to arrays
+IFS=$'\n' read -r -d '' -a aws_ips <<< "$running_instances"
+IFS=$'\n' read -r -d '' -a reg_ips <<< "$registered_ips"
+
+log "Total AWS instances: ${#aws_ips[@]}"
+log "Total registered IPs: ${#reg_ips[@]}"
+
+# Find IPs that are in AWS but not in the registered list
+unregistered_count=0
+for aws_ip in "${aws_ips[@]}"; do
+    [ -z "$aws_ip" ] && continue  # Skip empty lines
+    
+    log "Checking AWS IP: $aws_ip"
+    found=0
+    for reg_ip in "${reg_ips[@]}"; do
+        [ -z "$reg_ip" ] && continue  # Skip empty lines
+        
+        if [ "$aws_ip" = "$reg_ip" ]; then
+            log "  IP $aws_ip is already registered"
+            found=1
+            break
+        fi
+    done
+    
+    if [ $found -eq 0 ]; then
+        log "  ! Found unregistered instance: $aws_ip"
+        log "  → Running initialization script for $aws_ip..."
+        ./ssh_and_initialize.sh "$aws_ip"
+        if [ $? -eq 0 ]; then
+            log "  Successfully initialized $aws_ip"
+        else
+            log "  Failed to initialize $aws_ip"
+        fi
+        ((unregistered_count++))
+    fi
+done
+
+log "----------------------------------------"
+log "Script completed!"
+log "Found $unregistered_count unregistered instance(s)"
+log "----------------------------------------"

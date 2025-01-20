@@ -18,19 +18,22 @@ import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
+
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
+import generateTextClaude from './generateTextClaude.js';
+
 
 const BANNED_PHRASES = [
     "600-800 words"
 ];
 
 const WHITELISTED_DOMAINS = [
-    'pollinations.ai',
+    'pollinations',
     'thot',
     'ai-ministries.com',
     'localhost',
@@ -112,7 +115,7 @@ app.use(cors());
 // Rate limiting setup
 const limiter = rateLimit({
     windowMs: 60 * 1000, // 1 minute
-    max: 40, // 40 requests per windowMs
+    max: 200, // 40 requests per windowMs
     message: {
         error: {
             type: 'rate_limit_error',
@@ -135,6 +138,7 @@ app.use(limiter);
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
+
 
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
@@ -472,18 +476,20 @@ async function generateTextBasedOnModel(messages, options) {
             'qwen-coder': () => generateTextScaleway(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextScaleway(messages, { ...options, model }),
-            'llamalight': () => generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" }),
+            'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),
             'sur': () => surOpenai(messages, options),
             'sur-mistral': () => surMistral(messages, options),
             'unity': () => unityMistralLarge(messages, options),
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateText(messages, options, true),
+            'searchgpt': () => generateText(messages, {...options, model: 'openai-large' } , true),
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
             'openai-large': () => generateText(messages, options),
+            'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
+            'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

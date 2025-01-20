@@ -123,6 +123,20 @@ export const availableModels = [
         baseModel: true,
     },
     {
+        name: 'claude-hybridspace',
+        type: 'chat',
+        censored: true,
+        description: 'Claude Hybridspace',
+        baseModel: true,
+    },
+    // {
+    //     name: 'llamalight',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Llama 3.2 3B Instruct',
+    //     baseModel: true,
+    // },
+    {
         name: 'llamalight',
         type: 'chat',
         censored: false,

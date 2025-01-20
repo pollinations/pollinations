@@ -60,6 +60,34 @@ describe('Translation Integration Tests', () => {
     expect(invalidResult).toBe(invalidPrompt)
   })
 
+  it('should preserve Persian text through the entire pipeline', async () => {
+    const { translateIfNecessary, sanitizeString } = await import('../../src/translateIfNecessary.js')
+    const persianPrompt = "یک پرنده قرمز زیبا در پنجره کلیسا"
+    
+    // Test sanitization
+    const sanitized = sanitizeString(persianPrompt)
+    expect(sanitized).toBe(persianPrompt)
+    
+    // Test full translation pipeline
+    const result = await translateIfNecessary(persianPrompt)
+    // Since it's Persian, it should be translated to English
+    expect(result).not.toBe(persianPrompt)
+    expect(result).toMatch(/^[A-Za-z\s.,]+$/) // Should be English text
+  })
+
+  it('should handle Persian text with image generation parameters', async () => {
+    const { translateIfNecessary, sanitizeString } = await import('../../src/translateIfNecessary.js')
+    const persianWithParams = "یک پرنده قرمز زیبا --ar 16:9 --seed 123"
+    
+    // Test sanitization
+    const sanitized = sanitizeString(persianWithParams)
+    expect(sanitized).toBe(persianWithParams)
+    
+    // With parameters, it should not be translated
+    const result = await translateIfNecessary(persianWithParams)
+    expect(result).toBe(persianWithParams)
+  })
+
   it('should integrate translation with image generation params', async () => {
     const { translateIfNecessary } = await import('../../src/translateIfNecessary.js')
     const prompt = "Ein großer blauer Wal --ar 16:9"

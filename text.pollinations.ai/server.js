@@ -22,6 +22,7 @@ import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
+import { createModelWithFallback } from './modelWrapper.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
@@ -469,14 +470,38 @@ async function generateTextBasedOnModel(messages, options) {
     log('Using model:', model);
 
     try {
+        // Create wrapped versions of Scaleway models with OpenAI fallbacks
+        const mistralWithFallback = createModelWithFallback(
+            (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'mistral' }),
+            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
+            { primaryName: 'mistral', fallbackName: 'openai', timeout: 45000 }
+        );
+
+        const qwenCoderWithFallback = createModelWithFallback(
+            (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'qwen-coder' }),
+            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
+            { primaryName: 'qwen-coder', fallbackName: 'openai', timeout: 45000 }
+        );
+
+        const llamaWithFallback = createModelWithFallback(
+            (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'llama' }),
+            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
+            { primaryName: 'llama', fallbackName: 'openai', timeout: 45000 }
+        );
+
+        const llamalightWithFallback = createModelWithFallback(
+            (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'llamalight' }),
+            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
+            { primaryName: 'llamalight', fallbackName: 'openai', timeout: 45000 }
+        );
         
         const modelHandlers = {
             'deepseek': () => generateDeepseek(messages, options),
-            'mistral': () => generateTextScaleway(messages, options),
-            'qwen-coder': () => generateTextScaleway(messages, options),
+            'mistral': () => mistralWithFallback(messages, options),
+            'qwen-coder': () => qwenCoderWithFallback(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
-            'llama': () => generateTextScaleway(messages, { ...options, model }),
-            'llamalight': () => generateTextScaleway(messages, options),
+            'llama': () => llamaWithFallback(messages, options),
+            'llamalight': () => llamalightWithFallback(messages, options),
             // 'karma': () => generateTextKarma(messages, options),
             'sur': () => surOpenai(messages, options),
             'sur-mistral': () => surMistral(messages, options),

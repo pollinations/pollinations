@@ -483,12 +483,13 @@ async function generateTextBasedOnModel(messages, options) {
             'unity': () => unityMistralLarge(messages, options),
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateText(messages, options, true),
+            'searchgpt': () => generateText(messages, {...options, model: 'openai-large' } , true),
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
             'openai-large': () => generateText(messages, options),
-            // 'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
+            'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
+            'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

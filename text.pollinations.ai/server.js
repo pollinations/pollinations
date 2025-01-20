@@ -472,7 +472,7 @@ async function generateTextBasedOnModel(messages, options) {
             'qwen-coder': () => generateTextScaleway(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextScaleway(messages, { ...options, model }),
-            'llamalight': () => generateTextOpenRouter(messages, { ...options, model: "nousresearch/hermes-2-pro-llama-3-8b" }),
+            'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),
             'sur': () => surOpenai(messages, options),
             'sur-mistral': () => surMistral(messages, options),

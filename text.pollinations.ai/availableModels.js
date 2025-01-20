@@ -122,6 +122,13 @@ export const availableModels = [
         description: 'DeepSeek-V3',
         baseModel: true,
     },
+    {
+        name: 'claude-hybridspace',
+        type: 'chat',
+        censored: true,
+        description: 'Claude Hybridspace',
+        baseModel: true,
+    }
     // {
     //     name: 'llamalight',
     //     type: 'chat',

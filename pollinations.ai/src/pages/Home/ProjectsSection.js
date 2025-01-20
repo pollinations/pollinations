@@ -312,6 +312,12 @@ const projects = {
   ],
   tutorials: [
     {
+      name: "Artistic Styles Book 🆕",
+      url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
+      description: "An interactive book showcasing over 90 different artistic styles generated using Pollinations.ai. Available in HTML and PDF formats.",
+      repo: "https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf",
+    },
+    {
       name: "Proyecto Descartes 🆕",
       url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html?page=102",
       description: "An educational initiative integrating Pollinations AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",

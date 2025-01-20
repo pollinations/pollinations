@@ -22,13 +22,13 @@ export const availableModels = [
         description: 'Qwen 2.5 72B',
         baseModel: true,
     },
-    // {
-    //     name: 'qwen-coder',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Qwen 2.5 Coder 32B',
-    //     baseModel: true,
-    // },
+    {
+        name: 'qwen-coder',
+        type: 'chat',
+        censored: true,
+        description: 'Qwen 2.5 Coder 32B',
+        baseModel: true,
+    },
     {
         name: 'llama',
         type: 'chat',
@@ -122,6 +122,13 @@ export const availableModels = [
         description: 'DeepSeek-V3',
         baseModel: true,
     },
+    {
+        name: 'claude-hybridspace',
+        type: 'chat',
+        censored: true,
+        description: 'Claude Hybridspace',
+        baseModel: true,
+    },
     // {
     //     name: 'llamalight',
     //     type: 'chat',
@@ -129,6 +136,13 @@ export const availableModels = [
     //     description: 'Llama 3.2 3B Instruct',
     //     baseModel: true,
     // },
+    {
+        name: 'llamalight',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3.1 8B Instruct',
+        baseModel: true,
+    },
     // {
     //     name: 'mistral-large',
     //     type: 'chat',

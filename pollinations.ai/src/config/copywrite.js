@@ -40,10 +40,12 @@ EMOJI +
 "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
 
 export const IMAGE_FEED_TITLE = TRANSLATE + "Live Feed"
-export const IMAGE_FEED_MODE1 = "DO NOT REPHRASE, Use only the text 'Watch'"
-export const IMAGE_FEED_MODE2 = "DO NOT REPHRASE, write the text 'Try' only"
-export const IMAGE_EDIT_BUTTON_ON = "Wait"
-export const IMAGE_EDIT_BUTTON_OFF = "Create"
+export const IMAGE_FEED_MODE1 = TRANSLATE + "Translate the word 'Watch, meaning looking at a live feed"
+export const IMAGE_FEED_MODE2 = TRANSLATE + "Translate the word 'Try'"
+export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Translate the word 'Wait'"
+export const IMAGE_EDIT_BUTTON_OFF = 
+TRANSLATE +
+"Translate the word 'Create'"
 
 export const INTEGRATION_TITLE = TRANSLATE + "Integrate"
 export const INTEGRATION_SUBTITLE =

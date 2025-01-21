@@ -14,11 +14,12 @@ import { Colors, Fonts } from "../../config/global"
 import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
 import Grid from "@mui/material/Grid2"
-import { FEED_ENANCER_TOOLTIP, FEED_LOGO_WATERMARK } from "../../config/copywrite"
+import { FEED_ENANCER_TOOLTIP, FEED_LOGO_WATERMARK, IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite"
 import ReactMarkdown from "react-markdown"
 import { keyframes } from "@emotion/react"
 import CheckIcon from "@mui/icons-material/Check"
 import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank"
+import { LLMTextManipulator } from "../../components/LLMTextManipulator"
 
 export const ImageEditor = memo(function ImageEditor({
   image,
@@ -396,7 +397,7 @@ export const ImageEditor = memo(function ImageEditor({
                   height: "60px",
                 }}
               >
-                Create
+                <LLMTextManipulator>{IMAGE_EDIT_BUTTON_OFF}</LLMTextManipulator>
               </GeneralButton>
             </Grid>
           </>

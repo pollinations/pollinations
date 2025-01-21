@@ -1,14 +1,11 @@
 import React from "react"
-import { Box, Typography } from "@mui/material"
 import { Colors, Fonts } from "../config/global"
 import { GeneralButton } from "../components/GeneralButton"
-import { TextRephraseTranslate } from "../components/TextRephraseTranslate"
 import {
   SectionContainer,
   SectionSubContainer,
   SectionHeadlineStyle,
 } from "../components/SectionContainer"
-import TextEmojiText from "../components/TextEmojiText"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import {
   HERO_INTRO,

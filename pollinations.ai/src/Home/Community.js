@@ -144,11 +144,12 @@ const Community = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 cursor: "pointer",
-                maxWidth: "300px",
+                maxWidth: "400px",
+                
               }}
               onClick={handleAsciiArtClick}
             >
-              <AsciiArtGenerator width="100px" />
+              <AsciiArtGenerator width="100px" style={{fontWeight: "bold"}} />
             </Box>
           </SectionSubContainer>
         </CustomTooltip>

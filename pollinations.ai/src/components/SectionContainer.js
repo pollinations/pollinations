@@ -24,7 +24,6 @@ export const SectionSubContainer = styled.div`
   padding-bottom: ${(props) => props.paddingBottom || "3em"};
   padding-top: 0em;
   justify-content: center;
-  align-items: center;
 `
 
 export const SectionBgBox = styled.div`

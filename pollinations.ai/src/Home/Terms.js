@@ -1,45 +1,40 @@
-    // Start of Selection
-    import React from 'react';
-    import { usePollinationsText } from "@pollinations/react";
-    import useRandomSeed from '../hooks/useRandomSeed';
-    import ReactMarkdown from 'react-markdown';
-    import { FOOTER_TERMS_CONDITIONS } from '../config/copywrite';
-    import styled from '@emotion/styled';
-    
-    const Terms = () => {
-        const seed = useRandomSeed();
-        const terms = usePollinationsText(FOOTER_TERMS_CONDITIONS, { seed });
-    
-        return (
-            <TermsBox>
-                <MarkDownStyle> 
+import React from 'react';
+import { usePollinationsText } from "@pollinations/react";
+import useRandomSeed from '../hooks/useRandomSeed';
+import ReactMarkdown from 'react-markdown';
+import { FOOTER_TERMS_CONDITIONS } from '../config/copywrite';
+import styled from '@emotion/styled';
+import { SectionContainer, SectionSubContainer } from '../components/SectionContainer';
+import { Colors } from '../config/global';
+
+const Terms = () => {
+    const seed = useRandomSeed();
+    const terms = usePollinationsText(FOOTER_TERMS_CONDITIONS, { seed });
+
+    return (
+        <SectionContainer style={{ backgroundColor: Colors.offblack }}>
+            <SectionSubContainer style={{ backgroundColor: Colors.offblack }}>
+                <MarkDownStyle>
                     <ReactMarkdown>{terms}</ReactMarkdown>
                 </MarkDownStyle>
-            </TermsBox>
-        );
+            </SectionSubContainer>
+        </SectionContainer>
+    );
+}
+
+export default Terms;
+
+const MarkDownStyle = styled.div`
+    h1, h2, h3, h4, h5, h6, p, li, blockquote {
+        color: ${Colors.offwhite};
     }
-    
-    export default Terms;
-    
-    
-    const TermsBox = styled.div`
-        min-width: 20%;
-        max-width: 1000px;
-        margin: auto;
-        margin-bottom: 7em;
-        padding: 1em;
-    `;
-    
-    const MarkDownStyle = styled.div`
-        h6 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            line-height: 1.6;
-            color: #fdfdfd;
-        }
-        p {
-            font-size: 1.1rem;
-            line-height: 1.43;
-            color: #fdfdfd;
-        }
-    `;
+    h6 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.6;
+    }
+    p {
+        font-size: 1.1rem;
+        line-height: 1.43;
+    }
+`;

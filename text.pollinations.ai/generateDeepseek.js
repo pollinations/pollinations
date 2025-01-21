@@ -19,7 +19,7 @@ export async function generateDeepseek(messages, options) {
 
     try {
         const requestBody = {
-            model: "deepseek-chat",
+            model: options.model,
             messages,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             max_tokens: 4096,
@@ -69,7 +69,8 @@ export async function generateDeepseek(messages, options) {
             modelUsed: data.model,
             promptTokens: data.usage?.prompt_tokens,
             completionTokens: data.usage?.completion_tokens,
-            totalTokens: data.usage?.total_tokens
+            totalTokens: data.usage?.total_tokens,
+            reasoningContent: data.choices[0]?.message?.reasoning_content
         });
 
         return data;

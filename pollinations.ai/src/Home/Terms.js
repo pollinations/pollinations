@@ -1,26 +1,44 @@
+
 import React from 'react';
-import { usePollinationsText } from "@pollinations/react";
-import useRandomSeed from '../hooks/useRandomSeed';
-import ReactMarkdown from 'react-markdown';
-import { FOOTER_TERMS_CONDITIONS } from '../config/copywrite';
 import styled from '@emotion/styled';
 import { SectionContainer, SectionSubContainer } from '../components/SectionContainer';
 import { Colors } from '../config/global';
+import { CircularProgress, Box } from '@mui/material';
+import { NavLink } from 'react-router-dom';
+import { FOOTER_TERMS_CONDITIONS, FOOTER_CLOSE } from '../config/copywrite';
+import { LLMTextManipulator } from '../components/LLMTextManipulator';
 
 const Terms = () => {
-    const seed = useRandomSeed();
-    const terms = usePollinationsText(FOOTER_TERMS_CONDITIONS, { seed });
-
     return (
-        <SectionContainer style={{ backgroundColor: Colors.offblack }}>
-            <SectionSubContainer style={{ backgroundColor: Colors.offblack }}>
+        <SectionContainer style={{ backgroundColor: Colors.offblack, position: 'relative' }}>
+            <NavLink
+                to="/"
+                style={{
+                    position: 'absolute',
+                    top: '30px',
+                    right: '30px',
+                    color: Colors.lime,
+                    textDecoration: 'none',
+                }}
+            >
                 <MarkDownStyle>
-                    <ReactMarkdown>{terms}</ReactMarkdown>
+                    <LLMTextManipulator>{FOOTER_CLOSE}</LLMTextManipulator>
                 </MarkDownStyle>
+            </NavLink>
+            <SectionSubContainer style={{ backgroundColor: Colors.offblack }}>
+                {FOOTER_TERMS_CONDITIONS ? (
+                    <MarkDownStyle>
+                        <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS}</LLMTextManipulator>
+                    </MarkDownStyle>
+                ) : (
+                    <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+                        <CircularProgress sx={{ color: Colors.offwhite }} />
+                    </Box>
+                )}
             </SectionSubContainer>
         </SectionContainer>
     );
-}
+};
 
 export default Terms;
 
@@ -38,3 +56,4 @@ const MarkDownStyle = styled.div`
         line-height: 1.43;
     }
 `;
+

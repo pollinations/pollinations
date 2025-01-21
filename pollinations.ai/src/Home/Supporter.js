@@ -1,8 +1,8 @@
 import React from "react"
 import { Colors } from "../config/global"
-import { SectionContainer, SectionSubContainer, SectionBgBox } from "../components/SectionContainer"
+import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
-import TextEmojiText from "../components/TextEmojiText"
+import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import {
   SUPPORTER_TITLE,
   SUPPORTER_SUBTITLE,
@@ -32,7 +32,9 @@ const Supporter = () => {
         <SectionTitle title={SUPPORTER_TITLE} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText subtitle={SUPPORTER_SUBTITLE} />
+        <SectionHeadlineStyle>
+          <LLMTextManipulator>{SUPPORTER_SUBTITLE}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <Grid container spacing={4}>
@@ -52,11 +54,11 @@ const Supporter = () => {
               </StyledLink>
               <br />
               {isMdUp && (
-                <TextEmojiText
-                  subtitle={company.description + SUPPORTER_DESCRIPTION_STYLE}
-                  color={Colors.offwhite}
-                  fontSize="1em"
-                />
+                <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
+                  <LLMTextManipulator>
+                    {SUPPORTER_DESCRIPTION_STYLE + company.description}
+                  </LLMTextManipulator>
+                </span>
               )}
             </Grid>
           ))}

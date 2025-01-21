@@ -20,8 +20,12 @@ import { GeneralButton } from "../components/GeneralButton.js"
 import { CustomTooltip } from "../components/CustomTooltip.js"
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
 import { ICONS } from "../assets/icons/icons.js" // Import ICONS
+import { useTheme, useMediaQuery } from "@mui/material"
 
 const Community = () => {
+  const theme = useTheme()
+  const isXs = useMediaQuery(theme.breakpoints.only("xs"))
+
   const handleDiscordButtonClick = (e) => {
     e.preventDefault()
     window.open("https://discord.gg/k9F7SyTgqn", "_blank")
@@ -104,12 +108,12 @@ const Community = () => {
                     isLoading={false}
                     backgroundColor={Colors.offblack}
                     textColor={Colors.offwhite}
-                    fontSize="1.8em"
+                    fontSize={isXs ? "1.5em" : "2.5em"}
                     borderColor={Colors.offwhite}
                   >
                     <svg
-                      width="48"
-                      height="48"
+                      width={isXs ? "40" : "50"}
+                      height={isXs ? "40" : "50"}
                       viewBox="0 0 1024 1024"
                       fill="currentColor"
                       xmlns="http://www.w3.org/2000/svg"

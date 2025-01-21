@@ -22,7 +22,6 @@ import {
   TEAM_5_IMAGE,
   TEAM_6_IMAGE,
 } from "../config/copywrite.js"
-import TextEmojiText from "../components/TextEmojiText.js"
 import Grid from "@mui/material/Grid2"
 import SectionTitle from "../components/SectionTitle.js"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
@@ -73,7 +72,7 @@ const Team = () => {
                 <SectionHeadlineStyle color={Colors.offblack}>
                   <LLMTextManipulator>{member.name}</LLMTextManipulator>
                 </SectionHeadlineStyle>
-                <SectionHeadlineStyle color={Colors.offblack}>
+                <SectionHeadlineStyle color={Colors.offblack} fontSize="1em">
                   <LLMTextManipulator>{member.function}</LLMTextManipulator>
                 </SectionHeadlineStyle>
               </Grid>

@@ -12,8 +12,7 @@ import {
 } from "../config/copywrite"
 
 import SectionTitle from "../components/SectionTitle"
-import TextEmojiText from "../components/TextEmojiText"
-import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
+import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
@@ -49,16 +48,22 @@ const Projects = () => {
         <SectionTitle title={PROJECT_TITLE} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText subtitle={PROJECT_SUBTITLE} />
+        <SectionHeadlineStyle>
+          <LLMTextManipulator>{PROJECT_SUBTITLE}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <ProjectsRender projectList={projects[selectedCategory]} classes={classes} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText subtitle={PROJECT_CTO_1} />
+        <SectionHeadlineStyle>
+          <LLMTextManipulator>{PROJECT_CTO_1}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText subtitle={PROJECT_CTO_2} />
+        <SectionHeadlineStyle>
+          <LLMTextManipulator>{PROJECT_CTO_2}</LLMTextManipulator>
+        </SectionHeadlineStyle>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton
             onClick={handleEmailButtonClick}

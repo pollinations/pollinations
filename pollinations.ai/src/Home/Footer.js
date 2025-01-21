@@ -29,6 +29,7 @@ const Footer = () => {
           }}
         >
           <StyledLink
+            isExternal
             onClick={(e) => {
               e.preventDefault()
               navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
@@ -51,7 +52,7 @@ const Footer = () => {
             height: "100%",
           }}
         >
-          <StyledLink to="/terms" component={NavLink}>
+          <StyledLink to="/terms">
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
           <LLMTextManipulator>{FOOTER_INFO}</LLMTextManipulator>

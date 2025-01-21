@@ -29,6 +29,7 @@ const Footer = () => {
           }}
         >
           <StyledLink
+            isExternal
             onClick={(e) => {
               e.preventDefault()
               navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
@@ -49,7 +50,7 @@ const Footer = () => {
             alignItems: { xs: "center", md: "flex-end" },
           }}
         >
-          <StyledLink to="/terms" component={NavLink}>
+          <StyledLink to="/terms">
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
           <TextEmojiText subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />

@@ -1,21 +1,38 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import debug from 'debug';
 
 dotenv.config();
+
+const log = debug('pollinations:openrouter');
+
+// Model mapping for OpenRouter
+const MODEL_MAPPING = {
+    'claude-email': 'anthropic/claude-3-sonnet',  // Map to Claude 3
+    'deepseek': 'deepseek/deepseek-chat',
+    'qwen': 'qwen/qwen1.5-72b',
+    'qwen-coder': 'qwen/qwen1.5-72b-chat',
+    'llama': 'meta-llama/llama-3-70b-chat',
+    'mistral': 'mistralai/mistral-7b-instruct',
+    'mistral-large': 'mistralai/mistral-large',
+    'llamalight': 'meta-llama/llama-3-8b-chat'
+};
 
 export async function generateTextOpenRouter(messages, options) {
     const startTime = Date.now();
     const requestId = Math.random().toString(36).substring(7);
     
-    console.log(`[${requestId}] Starting text generation request`, {
+    log(`[${requestId}] Starting text generation request`, {
         timestamp: new Date().toISOString(),
         messageCount: messages.length,
         options
     });
 
     try {
+        const modelName = MODEL_MAPPING[options.model] || MODEL_MAPPING['deepseek'];
+        
         const requestBody = {
-            model: "deepseek/deepseek-chat",
+            model: modelName,
             messages,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             max_tokens: 4096,
@@ -26,14 +43,13 @@ export async function generateTextOpenRouter(messages, options) {
             tool_choice: options.tool_choice
         };
 
-        console.log(`[${requestId}] Sending request to OpenRouter API`, {
+        log(`[${requestId}] Sending request to OpenRouter API`, {
             timestamp: new Date().toISOString(),
             model: requestBody.model,
             maxTokens: requestBody.max_tokens,
             temperature: requestBody.temperature
         });
-        console.log('messages', messages);
-        console.log('API Key', process.env.OPENROUTER_API_KEY);
+        log('messages', messages);
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -45,7 +61,7 @@ export async function generateTextOpenRouter(messages, options) {
             body: JSON.stringify(requestBody)
         });
 
-        console.log(`[${requestId}] Received response from OpenRouter API`, {
+        log(`[${requestId}] Received response from OpenRouter API`, {
             timestamp: new Date().toISOString(),
             status: response.status,
             statusText: response.statusText,
@@ -53,21 +69,30 @@ export async function generateTextOpenRouter(messages, options) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`[${requestId}] OpenRouter API error`, {
+            const errorData = await response.json().catch(() => null);
+            log(`[${requestId}] OpenRouter API error`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
-                error: errorText
+                error: errorData || 'Failed to parse error response'
             });
-            throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} - ${errorText}`);
+            
+            return {
+                error: {
+                    message: errorData?.error?.message || `OpenRouter API error: ${response.status} ${response.statusText}`,
+                    code: response.status,
+                    metadata: {
+                        raw: errorData,
+                        provider_name: 'OpenRouter'
+                    }
+                }
+            };
         }
 
         const data = await response.json();
-        const responseMessage = data.choices[0].message;
         const completionTime = Date.now() - startTime;
 
-        console.log(`[${requestId}] Successfully generated text`, {
+        log(`[${requestId}] Successfully generated text`, {
             timestamp: new Date().toISOString(),
             completionTimeMs: completionTime,
             modelUsed: data.model,
@@ -76,9 +101,9 @@ export async function generateTextOpenRouter(messages, options) {
             totalTokens: data.usage?.total_tokens
         });
 
-        return responseMessage.content;
+        return data;
     } catch (error) {
-        console.error(`[${requestId}] Error in text generation`, {
+        log(`[${requestId}] Error in text generation`, {
             timestamp: new Date().toISOString(),
             error: error.message,
             stack: error.stack,

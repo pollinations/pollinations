@@ -1,5 +1,8 @@
 import { HfInference } from "@huggingface/inference";
 import dotenv from 'dotenv';
+import debug from 'debug';
+
+const log = debug('pollinations:huggingface');
 
 dotenv.config();
 
@@ -13,26 +16,22 @@ const DEFAULT_MODEL = MODEL_MAP['qwen-coder'];
 const inference = new HfInference(process.env.HUGGINGFACE_TOKEN);
 
 async function generateTextHuggingface(messages, { temperature, jsonMode = false, seed=null, model='qwen-coder' }) {
-    console.log('=== Starting Text Generation ===');
+    log('=== Starting Text Generation ===');
     const selectedModel = MODEL_MAP[model] || DEFAULT_MODEL;
-    console.log(`Parameters received:
-    - Model: ${model} (${selectedModel})
-    - Temperature: ${temperature || 0.7}
-    - JSON Mode: ${jsonMode}
-    - Seed: ${seed}
-    - Number of messages: ${messages.length}`);
+    log('Parameters received:\n    - Model: %s\n    - Temperature: %s\n    - JSON Mode: %s\n    - Seed: %s\n    - Number of messages: %s',
+        model, temperature || 0.7, jsonMode, seed, messages.length);
     
-    console.log('Input Messages:', JSON.stringify(messages, null, 2));
+    log('Input Messages: %O', messages);
 
     // If jsonMode and no system message, add one
     if (jsonMode && !messages.some(m => m.role === 'system')) {
-        console.log('Adding JSON system message');
+        log('Adding JSON system message');
         messages = [{ role: 'system', content: 'Respond in simple JSON format' }, ...messages];
     }
 
     try {
-        console.log(`Making API call to model: ${selectedModel}`);
-        console.time('API Call Duration');
+        log('Making API call to model: %s', selectedModel);
+        log('API Call Duration');
         
         const requestParams = {
             model: selectedModel,
@@ -43,32 +42,29 @@ async function generateTextHuggingface(messages, { temperature, jsonMode = false
             max_tokens: 16384,
             max_length: 16384,
         };
-        console.log('Request Parameters:', JSON.stringify(requestParams, null, 2));
+        log('Request Parameters: %O', requestParams);
 
         // For non-streaming response
         const response = await inference.chatCompletion(requestParams);
-        console.timeEnd('API Call Duration');
+        log('API Call Duration');
 
-        console.log('Response received:', {
+        log('Response received: %O', {
             choices_length: response.choices?.length,
             first_choice_length: response.choices[0]?.message?.content?.length,
             usage: response.usage
         });
 
-        const result = response.choices[0]?.message?.content || '';
-        console.log(`Generated text length: ${result.length} characters`);
-        console.log('=== Text Generation Complete ===');
+        const result = response;
+        log(result)
+        log('Generated text length: %s characters', result.length);
+        log('=== Text Generation Complete ===');
 
         return result;
     } catch (error) {
-        console.error('=== Error in Text Generation ===');
-        console.error('Error Type:', error.constructor.name);
-        console.error('Error Message:', error.message);
-        console.error('Error Stack:', error.stack);
-        if (error.response) {
-            console.error('API Response Status:', error.response.status);
-            console.error('API Response Data:', error.response.data);
-        }
+        log('=== Error in Text Generation ===');
+        log('Error Type: %s', error.constructor.name);
+        log('Error Message: %s', error.message);
+        log('Error Stack: %s', error.stack);
         throw error;
     }
 }

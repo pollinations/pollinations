@@ -1,5 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
+import debug from 'debug';
 
 dotenv.config();
 
@@ -8,6 +9,10 @@ const BING_API_KEY = process.env.BING_API_KEY;
 
 // Add timeout constant
 const SEARCH_TIMEOUT = 20000; // 10 seconds timeout for search
+
+const log = debug('pollinations:search');
+const errorLog = debug('pollinations:search:error');
+const perfLog = debug('pollinations:search:perf');
 
 export const searchToolDefinition = {
     type: "function",
@@ -33,15 +38,20 @@ export const searchToolDefinition = {
 };
 
 export async function performWebSearch({ query, num_results = 20 }) {
+    const startTime = performance.now();
     try {
-        console.log("Performing web search with query", query, "and num_results", num_results);
+        log("Starting web search with query: '%s', requesting %d results", query, num_results);
         
+        perfLog("Initiating Bing API request at %d ms", performance.now() - startTime);
         const response = await axios.get(BING_SEARCH_ENDPOINT, {
             params: { q: query, count: num_results },
             headers: { "Ocp-Apim-Subscription-Key": BING_API_KEY },
             timeout: SEARCH_TIMEOUT
         });
+        perfLog("Bing API response received after %d ms", performance.now() - startTime);
 
+        log("Received %d results from Bing API", response.data.webPages?.value?.length || 0);
+        
         const results = response.data.webPages.value.map(result => ({
             title: result.name,
             snippet: result.snippet,
@@ -52,16 +62,18 @@ export async function performWebSearch({ query, num_results = 20 }) {
             thumbnailUrl: result.thumbnailUrl
         }));
 
+        perfLog("Search completed in %d ms", performance.now() - startTime);
         return JSON.stringify(results);
     } catch (error) {
         const errorMessage = error.code === 'ECONNABORTED' 
-            ? 'Search timed out' 
+            ? `Search timed out after ${SEARCH_TIMEOUT}ms` 
             : error.response?.data?.error || error.message;
             
-        console.error('Search API error:', errorMessage);
+        errorLog('Search API error after %d ms: %s', performance.now() - startTime, errorMessage);
         return JSON.stringify({ 
             error: 'Failed to perform web search',
-            details: errorMessage
+            details: errorMessage,
+            timeElapsed: Math.round(performance.now() - startTime)
         });
     }
 }

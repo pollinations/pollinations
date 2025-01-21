@@ -2,6 +2,10 @@
 
 *Your Engine for Personalized Synthetic Media*
 
+## 🆕 NEWS: MentatBot AI Assistant
+
+We're excited to announce MentatBot, our autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. Learn more about [MentatBot](https://mentat.ai/).
+
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 
 ## 🌟 Introduction
@@ -17,6 +21,7 @@
 - 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
+- 🤖 **Autonomous Development:** Features implemented by our MentatBot coding assistant through GitHub issues
 
 <a href="https://star-history.com/#pollinations/pollinations&Date">
  <picture>
@@ -136,10 +141,14 @@ graph LR
     E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
     
     C[text.pollinations.ai - AWS EC2 CPU] --> P[karma.yt - Realtime News]
+    C --> SC[Scaleway API]
+    C --> DS[Deepseek API]
     C --> G[Azure-hosted Serverless LLMs]
-    G  --> H[OpenAI]
-    G --> I[Mistral]
-    G --> J[Llama]
+    SC --> MI[Mistral Models]
+    SC --> QW[Qwen Models]
+    SC --> LL[Llama Models]
+    DS --> DM[Deepseek Models]
+    G --> H[OpenAI]
     G --> K[Claude]
 
 ```
@@ -174,6 +183,7 @@ Pollinations.AI is used in various projects, including:
 
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
+| Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
 | @pollinations/react 🆕 | React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks. | @pollinations | [NPM](https://www.npmjs.com/package/@pollinations/react) • [Docs](https://react-hooks.pollinations.ai/) |
 | pypollinations 🆕 | Comprehensive Python wrapper for Pollinations AI API with async support, image/text generation, and model management. | @KTS-o7 | [PyPI](https://pypi.org/project/pypollinations/) |
 | pollinations.ai Python SDK 🆕 | Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context. | @pollinations-ai | [GitHub](https://github.com/pollinations-ai/pollinations.ai) |
@@ -202,9 +212,10 @@ Pollinations.AI is used in various projects, including:
 | JustBuildThings | A collection of AI tools for image generation, character chat, and writing. | rasit | [Website](https://justbuildthings.com) |
 
 ### Tutorials
-1. [Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html): 🆕 An educational initiative integrating Pollinations AI into interactive STEM learning resources, with a focus on mathematics and sciences. Created by Juan Gmo. Rivera.
-2. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.
-3. [Apple Shortcuts Guide](https://www.youtube.com/watch?v=-bS41VTzh_s): A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations. Created by RoutineHub. [Shortcut](https://routinehub.co/shortcut/19953/)
+1. [Artistic Styles Book](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html): 🆕 An interactive book showcasing over 90 different artistic styles generated using Pollinations.ai. Available in [HTML](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html) and [PDF](https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf) formats.
+2. [Proyecto Descartes](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html): 🆕 An educational initiative integrating Pollinations AI into interactive STEM learning resources, with a focus on mathematics and sciences. Created by Juan Gmo. Rivera.
+3. [Tutorial](https://guiadehospedagem.com.br/pollinations-ai/): An in-depth Portuguese tutorial on using Pollinations AI. Created by Janderson de Sales.
+4. [Apple Shortcuts Guide](https://www.youtube.com/watch?v=-bS41VTzh_s): A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations. Created by RoutineHub. [Shortcut](https://routinehub.co/shortcut/19953/)
 
 Have you created a project using Pollinations.AI? Email us at hello@pollinations.ai to get it listed here!
 
@@ -232,9 +243,19 @@ Pollinations.AI envisions a future where AI technology is:
 
 We're committed to developing AI technology that serves humanity while respecting ethical boundaries and promoting responsible innovation. Join us in shaping the future of AI.
 
-## 🤝 Community and Support
+## 🤝 Community and Development
 
-Join our vibrant community on Discord to share your creations, get support, and collaborate with fellow AI enthusiasts. 
+We believe in community-driven development. You can contribute to Pollinations.AI in several ways:
+
+1. **MentatBot Coding Assistant**: The easiest way to contribute! Just [create a GitHub issue](https://github.com/pollinations/pollinations/issues/new) describing the feature you'd like to see implemented. Our [MentatBot AI assistant](https://mentat.ai/) will analyze your request and implement it directly! No coding required - just describe what you want.
+
+2. **Feature Requests & Bug Reports**: Have an idea or found a bug? [Open an issue](https://github.com/pollinations/pollinations/issues/new) and let us know. Our team and the MentatBot assistant will review it.
+
+3. **Community Engagement**: Join our vibrant [Discord community](https://discord.gg/k9F7SyTgqn) to:
+   - Share your creations
+   - Get support and help others
+   - Collaborate with fellow AI enthusiasts
+   - Discuss feature ideas before creating issues
 
 For any questions or support, please visit our [Discord channel](https://discord.gg/k9F7SyTgqn) or create an issue on our [GitHub repository](https://github.com/pollinations/pollinations).
 

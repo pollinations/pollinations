@@ -45,7 +45,7 @@ export function calculateScaledDimensions(width, height) {
 
 async function fetchFromTurboServer(params) {
   const host = await getNextTurboServerUrl();
-  return fetch(`${host}`, params);
+  return fetch(`${host}/generate`, params);
 }
 
 /**

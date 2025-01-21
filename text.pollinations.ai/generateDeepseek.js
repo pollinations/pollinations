@@ -1,13 +1,17 @@
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import debug from 'debug';
 
 dotenv.config();
+
+const log = debug('pollinations:deepseek');
+const errorLog = debug('pollinations:deepseek:error');
 
 export async function generateDeepseek(messages, options) {
     const startTime = Date.now();
     const requestId = Math.random().toString(36).substring(7);
     
-    console.log(`[${requestId}] Starting DeepSeek generation request`, {
+    log(`[${requestId}] Starting DeepSeek generation request`, {
         timestamp: new Date().toISOString(),
         messageCount: messages.length,
         options
@@ -15,7 +19,7 @@ export async function generateDeepseek(messages, options) {
 
     try {
         const requestBody = {
-            model: "deepseek-chat",
+            model: options.model,
             messages,
             response_format: options.jsonMode ? { type: 'json_object' } : undefined,
             max_tokens: 4096,
@@ -24,7 +28,7 @@ export async function generateDeepseek(messages, options) {
             tool_choice: options.tool_choice
         };
 
-        console.log(`[${requestId}] Sending request to DeepSeek API`, {
+        log(`[${requestId}] Sending request to DeepSeek API`, {
             timestamp: new Date().toISOString(),
             model: requestBody.model,
             maxTokens: requestBody.max_tokens
@@ -39,16 +43,15 @@ export async function generateDeepseek(messages, options) {
             body: JSON.stringify(requestBody)
         });
 
-        console.log(`[${requestId}] Received response from DeepSeek API`, {
+        log(`[${requestId}] Received response from DeepSeek API`, {
             timestamp: new Date().toISOString(),
             status: response.status,
             statusText: response.statusText,
-            headers: Object.fromEntries(response.headers)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[${requestId}] DeepSeek API error`, {
+            errorLog(`[${requestId}] DeepSeek API error`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
@@ -58,21 +61,21 @@ export async function generateDeepseek(messages, options) {
         }
 
         const data = await response.json();
-        const responseMessage = data.choices[0].message;
         const completionTime = Date.now() - startTime;
 
-        console.log(`[${requestId}] Successfully generated text`, {
+        log(`[${requestId}] Successfully generated text`, {
             timestamp: new Date().toISOString(),
             completionTimeMs: completionTime,
             modelUsed: data.model,
             promptTokens: data.usage?.prompt_tokens,
             completionTokens: data.usage?.completion_tokens,
-            totalTokens: data.usage?.total_tokens
+            totalTokens: data.usage?.total_tokens,
+            reasoningContent: data.choices[0]?.message?.reasoning_content
         });
 
-        return responseMessage.content;
+        return data;
     } catch (error) {
-        console.error(`[${requestId}] Error in text generation`, {
+        errorLog(`[${requestId}] Error in text generation`, {
             timestamp: new Date().toISOString(),
             error: error.message,
             stack: error.stack,

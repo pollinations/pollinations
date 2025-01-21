@@ -51,7 +51,12 @@ const preMiddleware = async function (pathname, req, res) {
   }
 
   if (!pathname.startsWith("/prompt")) {
-    res.end('404: Not Found');
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Not Found',
+      message: 'The requested endpoint was not found',
+      path: pathname
+    }));
     return false;
   }
 
@@ -80,7 +85,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const bufferAndMaturity = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity} = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
     
@@ -92,13 +97,13 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
 
     progress.updateBar(requestId, 95, 'Finalizing', 'Processing complete');
     timingInfo.push({ step: 'Generation completed.', timestamp: Date.now() });
-    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, bufferAndMaturity });
+    sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip, status: "done", concurrentRequests, timingInfo: relativeTiming(timingInfo), referrer, maturity });
 
     progress.updateBar(requestId, 100, 'Complete', 'Generation successful');
     progress.stop();
 
     // Safety checks
-    if (bufferAndMaturity.isChild && bufferAndMaturity.isMature) {
+    if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
       await sleep(8000);
@@ -112,15 +117,14 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     // Cache and feed updates
     progress.updateBar(requestId, 95, 'Cache', 'Updating feed...');
     if (!safeParams.nofeed) {
-      if (!(bufferAndMaturity.isChild && bufferAndMaturity.isMature)) {
-        await sendToFeedListeners({
+      if (!(maturity.isChild && maturity.isMature)) {
+        sendToFeedListeners({
           ...safeParams,
           concurrentRequests: countFluxJobs(),
           imageURL,
           prompt,
           originalPrompt,
-          nsfw: bufferAndMaturity.isMature,
-          isChild: bufferAndMaturity.isChild,
+          ...maturity,
           timingInfo: relativeTiming(timingInfo),
           ip: getIp(req),
           status: "end_generating",
@@ -135,11 +139,22 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.completeBar(requestId, 'Image generation complete');
     progress.stop();
     
-    return bufferAndMaturity;
+    return { buffer, ...maturity };
   } catch (error) {
     // Handle errors gracefully in progress bars
     progress.errorBar(requestId, 'Generation failed');
     progress.stop();
+    
+    // Log detailed error information
+    console.error('Image generation failed:', {
+      error: error.message,
+      stack: error.stack,
+      requestId,
+      prompt: originalPrompt,
+      params: safeParams,
+      referrer
+    });
+    
     throw error;
   }
 };
@@ -160,15 +175,24 @@ const checkCacheAndGenerate = async (req, res) => {
 
   const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
   const { ...safeParams } = makeParamsSafe(query);
-  const referrer = query.headers?.referer || req.headers.referer || req.headers.referrer || req.headers.origin;
+  const referrer = query.headers?.referer || 
+                  query.headers?.referrer || 
+                  query.headers?.Referer || 
+                  query.headers?.Referrer || 
+                  req.headers?.referer || 
+                  req.headers?.referrer || 
+                  req.headers?.['referer'] || 
+                  req.headers?.['referrer'] || 
+                  req.headers?.origin;
   const requestId = Math.random().toString(36).substring(7);
   const progress = createProgressTracker().startRequest(requestId);
   progress.updateBar(requestId, 0, 'Starting', 'Request received');
 
   sendToAnalytics(req, "imageRequested", { req, originalPrompt, safeParams, referrer });
 
+  let timingInfo = [];  // Moved outside try block
+  
   try {
-    let timingInfo = [];
     // Cache the generated image
     const bufferAndMaturity = await cacheImage(originalPrompt, safeParams, async () => {
       const ip = getIp(req);
@@ -202,7 +226,7 @@ const checkCacheAndGenerate = async (req, res) => {
           }
 
           progress.setQueued(queueSize);
-          await sleep(500 * queueSize);
+          await sleep(500);
         }
         
         progress.setProcessing();
@@ -229,7 +253,6 @@ const checkCacheAndGenerate = async (req, res) => {
       return result;
     });
 
-    const sanitizedFileName = sanitizeFileName(originalPrompt) + '.png';
 
     res.writeHead(200, {
       'Content-Type': 'image/jpeg',
@@ -242,12 +265,23 @@ const checkCacheAndGenerate = async (req, res) => {
     sendToAnalytics(req, "imageGenerated", { req, originalPrompt, safeParams, referrer, bufferAndMaturity, timingInfo });
 
   } catch (error) {
-    logError("error", error);
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end(`500: Internal Server Error - ${error.message}`);
-
-    // Enhanced error analytics with the same base metadata
-    sendToAnalytics(req, "imageGenerationError", { req, originalPrompt, safeParams, referrer, error });
+    logError("Error generating image:", error);
+    progress.errorBar(requestId, error.message || 'Internal Server Error');
+    progress.stop();
+    
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      error: 'Internal Server Error',
+      message: error.message || 'An error occurred while processing your request',
+      details: error.details || {},
+      timingInfo,
+      requestId,
+      requestParameters: {
+        prompt: originalPrompt,
+        ...safeParams,
+        referrer
+      }
+    }));
   }
 };
 

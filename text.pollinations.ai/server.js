@@ -190,6 +190,13 @@ async function handleRequest(req, res, requestData) {
 
     try {
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
+        log("completion: %o", completion);
+        
+        // Check if completion contains an error
+        if (completion.error) {
+            throw new Error(completion.error.message || 'Unknown error from provider');
+        }
+        
         const responseText = completion.choices[0].message.content;
 
         const cacheKey = createHashKey(requestData);
@@ -471,7 +478,8 @@ async function generateTextBasedOnModel(messages, options) {
     try {
         
         const modelHandlers = {
-            'deepseek': () => generateDeepseek(messages, options),
+            'deepseek': () => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
+            'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),

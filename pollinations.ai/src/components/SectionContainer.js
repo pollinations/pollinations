@@ -49,7 +49,9 @@ export const SectionTitleStyle = styled.div`
   font-family: ${Fonts.title};
   font-weight: bold;
   letter-spacing: 0.1em;
+  line-height: 1em;
   text-align: center;
+  margin-top: 0.5em;
   ${({ theme }) => theme.breakpoints.down('md')} {
     font-size: ${(props) => props.fontSize || "3.5em"};
   }
@@ -59,7 +61,7 @@ export const SectionHeadlineStyle = styled.div`
   font-size: ${(props) => props.fontSize || "1.5em"};
   color: ${(props) => props.color || Colors.offwhite};
   font-family: ${Fonts.headline};
-  text-align: center;
+  text-align: ${(props) => props.textAlign || "center"};
   ${({ theme }) => theme.breakpoints.down('md')} {
     font-size: ${(props) => props.fontSize || "1.5em"};
   }

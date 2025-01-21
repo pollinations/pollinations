@@ -2,7 +2,7 @@ import React, { useState } from "react"
 import { Link, AppBar, ButtonGroup, Box } from "@mui/material"
 import { Colors, Fonts } from "../../config/global"
 import StyledLink from "../StyledLink"
-import { TextRephraseTranslate } from "../TextRephraseTranslate"
+import { LLMTextManipulator } from "../LLMTextManipulator"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION_STYLE } from "../../config/copywrite"
@@ -15,7 +15,7 @@ import { useTheme } from "@mui/material/styles"
 
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
-  const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down('md')) ? 80 : 96
+  const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
   const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key) // Default to index 1
 
   const displayProjects = selectedCategory
@@ -75,7 +75,7 @@ const ProjectsRender = ({ classes }) => {
                   justifyContent: "space-between",
                   alignItems: "center",
                   border: `0px solid ${Colors.offwhite}`,
-
+                  width: "100%",
                 }}
                 className={classes.gridItem}
               >
@@ -108,18 +108,14 @@ const ProjectsRender = ({ classes }) => {
 
                 <Grid size={{ xs: 3, md: 6 }} style={{ textAlign: "left" }}>
                   <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
-                    <TextRephraseTranslate>
-                      {project.description + PROJECT_DESCRIPTION_STYLE}
-                    </TextRephraseTranslate>
+                    <LLMTextManipulator>
+                      {PROJECT_DESCRIPTION_STYLE + project.description}
+                    </LLMTextManipulator>
                   </span>
-
                   {project.repo && renderRepoLink(project.repo)}
                 </Grid>
               </Grid>
             </SectionSubContainer>
-            {/* {index < displayProjects.length - 1 && (
-                  <hr style={{ width: "100%", borderColor: Colors.offblack2, borderWidth: "2px", margin: "0em 0" }} />
-                )} */}
           </React.Fragment>
         ))}
       </Grid>

@@ -75,9 +75,11 @@ export const ImageEditor = memo(function ImageEditor({
   const handleInputChange = (param, value) => {
     let newValue
 
-    // Handle special cases first
-    if (param === "model" || param === "nologo" || param === "enhance") {
+    if (param === "model") {
       newValue = value
+    } else if (param === "enhance" || param === "nologo") {
+      // Force the value for CheckBox to be a boolean
+      newValue = Boolean(value)
     } else {
       const parsedValue = parseInt(value, 10)
       newValue = isNaN(parsedValue) ? "" : parsedValue
@@ -175,6 +177,7 @@ export const ImageEditor = memo(function ImageEditor({
                   value={imageParams.prompt}
                   onChange={(e) => handleParamChange("prompt", e.target.value)}
                   onFocus={handleFocus}
+                  
                 />
               ) : (
                 // Read-only mode with Markdown
@@ -319,7 +322,6 @@ export const ImageEditor = memo(function ImageEditor({
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
               <CustomTooltip
                 title={FEED_ENANCER_TOOLTIP}
-                interactive
                 sx={typographyStyles.tooltipIcon}
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -354,7 +356,6 @@ export const ImageEditor = memo(function ImageEditor({
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
               <CustomTooltip
                 title={FEED_LOGO_WATERMARK}
-                interactive
                 sx={typographyStyles.tooltipIcon}
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>

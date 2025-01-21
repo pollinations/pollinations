@@ -14,10 +14,10 @@ import {
 import SectionTitle from "../components/SectionTitle"
 import TextEmojiText from "../components/TextEmojiText"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
-import { TextRephraseTranslate } from "../components/TextRephraseTranslate"
 import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
+import { LLMTextManipulator } from "../components/LLMTextManipulator"
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -74,7 +74,7 @@ const Projects = () => {
               marginTop: "1em",
             }}
           >
-            <TextRephraseTranslate>{PROJECT_BUTTON}</TextRephraseTranslate>
+            <LLMTextManipulator>{PROJECT_BUTTON}</LLMTextManipulator>
           </GeneralButton>
         </Box>
       </SectionSubContainer>

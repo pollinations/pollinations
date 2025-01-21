@@ -160,7 +160,7 @@ export const FeedImage = memo(() => {
         {toggleValue === "feed" && (
           <SectionSubContainer>
             <br />
-            {image?.imageURL && <ModelInfo model={image["model"]} wasPimped={image["wasPimped"]} />}
+            {image?.imageURL && <ModelInfo model={image["model"]} referrer={image["referrer"]} />}
           </SectionSubContainer>
         )}
       </SectionSubContainer>

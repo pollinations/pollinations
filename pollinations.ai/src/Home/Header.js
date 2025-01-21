@@ -1,4 +1,3 @@
-
 import React from "react"
 import { Box, useTheme } from "@mui/material"
 import { Colors } from "../config/global"
@@ -10,7 +9,7 @@ import { ReactComponent as LogoIconBlack } from "../assets/logo/logo-icon-black.
 import { useMediaQuery } from "@mui/material"
 
 const Header = () => {
-  const theme = useTheme(); // Use the useTheme hook to access the theme
+  const theme = useTheme() // Use the useTheme hook to access the theme
 
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
@@ -30,26 +29,41 @@ const Header = () => {
           to="/"
           style={{
             textDecoration: "none",
-            display: "flex",
-            alignItems: "left",
           }}
         >
-          <LogoIconBlack width={100} height="auto" style={{ marginRight: useMediaQuery(theme.breakpoints.down('md')) ? "0em" : "2em" }} />
-          <PollinationsLogo
-            width={{ xs: 300, md: 500 }}
-            height={{ xs: 80, md: 130 }}
-            style={{ marginTop: "5px" }}
-          />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column-reverse", md: "row" },
+              alignItems: "center",
+            }}
+          >
+            <LogoIconBlack
+              style={{
+                width: "100px",
+                height: "100px",
+                marginRight: useMediaQuery(theme.breakpoints.down("md")) ? "0em" : "2em",
+              }}
+            />
+            <PollinationsLogo
+              style={{
+                width: useMediaQuery(theme.breakpoints.down("md")) ? "300px" : "500px",
+                height: useMediaQuery(theme.breakpoints.down("md")) ? "80px" : "130px",
+                marginTop: "5px",
+              }}
+            />
+          </Box>
         </NavLink>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <SocialLinks medium gap="1em" invert />
-        </Box>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <SocialLinks medium gap="1em" invert />
       </Box>
+      </Box>
+
     </SectionContainer>
   )
 }

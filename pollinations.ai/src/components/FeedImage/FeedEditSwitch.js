@@ -8,7 +8,7 @@ import { TextRephraseTranslate } from '../../components/TextRephraseTranslate';
 
 export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
   return (
-    <Box style={{ display: 'flex'}}>
+    <Box style={{ display: 'flex', width: '100%'}}>
       <CustomTooltip title="Activate real-time generated image feed.">
         <GeneralButton
           handleClick={() => handleToggleChange(null, 'feed')}
@@ -16,7 +16,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           borderColor={Colors.lime}
           backgroundColor={toggleValue === 'feed' ? Colors.lime : 'transparent'}
           textColor={toggleValue === 'feed' ? Colors.offblack : Colors.lime}
-          style={{ height: '80px', width: '200px', fontSize: '1.8rem', fontFamily: Fonts.body, fontWeight: 600 }}
+          style={{ height: '75px',width: "100%", fontSize: {xs: '1.5em', md: '1.8em'}, fontFamily: Fonts.body, fontWeight: 600, padding: '0 1em'  }}
         >
           <TextRephraseTranslate>{IMAGE_FEED_MODE1}</TextRephraseTranslate>
         </GeneralButton>
@@ -28,7 +28,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           borderColor={Colors.lime}
           backgroundColor={toggleValue === 'edit' ? Colors.lime : 'transparent'}
           textColor={toggleValue === 'edit' ? Colors.offblack : Colors.lime}
-          style={{ width: '200px', fontSize: '1.8rem', fontFamily: Fonts.body, fontWeight: 600 }}
+          style={{ width: "100%", fontSize: {xs: '1.5em', md: '1.8em'}, fontFamily: Fonts.body, fontWeight: 600, padding: '0 1em'  }}
         >
           <TextRephraseTranslate>{IMAGE_FEED_MODE2}</TextRephraseTranslate>
         </GeneralButton>

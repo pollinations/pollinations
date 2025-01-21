@@ -13,6 +13,7 @@ export const GeneralButton = React.forwardRef(function GeneralButton(
     height,
     style,
     children,
+    isInputChanged,
     ...rest
   },
   ref

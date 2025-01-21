@@ -112,7 +112,7 @@ const Community = () => {
                   <TextEmojiText
                     color={Colors.offblack}
                     subtitle={platform.subtitle}
-                    size="1.5em"
+                    fontSize="1.2em"
                   />
                 </Grid>
                 <Grid
@@ -125,9 +125,8 @@ const Community = () => {
                   <GeneralButton
                     handleClick={platform.buttonClickHandler}
                     isLoading={false}
-                    backgroundColor={Colors.offwhite}
-                    textColor={Colors.offblack}
-                    borderColor={Colors.offblack}
+                    backgroundColor={Colors.offblack}
+                    textColor={Colors.offwhite}
                     height="60px"
                   >
                     <TextRephraseTranslate>{platform.cto}</TextRephraseTranslate>

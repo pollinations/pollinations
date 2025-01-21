@@ -9,11 +9,11 @@ import { ModelInfo } from "../components/FeedImage/ModelInfo"
 import { ImageEditor } from "../components/FeedImage/ImageEditor"
 import { FeedEditSwitch } from "../components/FeedImage/FeedEditSwitch"
 import { ImageDisplay } from "../components/FeedImage/ImageDisplay"
-import { SectionContainer, SectionSubContainer } from "../components/SectionContainer"
+import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
-import TextEmojiText from "../components/TextEmojiText"
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite"
 import { getImageURL } from "../utils/getImageURL"
+import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
 
 const log = debug("GenerativeImageFeed")
 
@@ -110,10 +110,14 @@ export const FeedImage = memo(() => {
     <SectionContainer style={{ backgroundColor: Colors.offblack }}>
       <SectionSubContainer>
         <SectionTitle title={IMAGE_FEED_TITLE} />
+      </SectionSubContainer>
+      <SectionSubContainer>
         <ServerLoadInfo lastImage={lastImage} imagesGenerated={imagesGenerated} image={image} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText subtitle={IMAGE_FEED_SUBTITLE} />
+        <SectionHeadlineStyle>
+          <LLMTextManipulator>{IMAGE_FEED_SUBTITLE}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         {image?.imageURL && (

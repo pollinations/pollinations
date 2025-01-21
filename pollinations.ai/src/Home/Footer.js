@@ -5,8 +5,8 @@ import { Colors } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
-import TextEmojiText from "../components/SectionTitle"
 import { FOOTER_INFO } from "../config/copywrite"
+import { LLMTextManipulator } from "../components/LLMTextManipulator"
 
 const Footer = () => {
   return (
@@ -45,14 +45,16 @@ const Footer = () => {
           sx={{
             display: "flex",
             flexDirection: "column",
+            justifyContent: "flex-end",
             marginTop: "1em",
             alignItems: { xs: "center", md: "flex-end" },
+            height: "100%",
           }}
         >
           <StyledLink to="/terms" component={NavLink}>
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
-          <TextEmojiText subtitle={FOOTER_INFO} color={Colors.offblack} size="10em" />
+          <LLMTextManipulator>{FOOTER_INFO}</LLMTextManipulator>
         </Grid>
       </Box>
     </SectionContainer>

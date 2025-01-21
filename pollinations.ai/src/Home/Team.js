@@ -1,6 +1,5 @@
 import { Colors } from "../config/global.js"
-import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
-import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
+import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer.js"
 import {
   TEAM_SUBTITLE,
   TEAM_TITLE,
@@ -26,7 +25,7 @@ import {
 import TextEmojiText from "../components/TextEmojiText.js"
 import Grid from "@mui/material/Grid2"
 import SectionTitle from "../components/SectionTitle.js"
-
+import { LLMTextManipulator } from "../components/LLMTextManipulator"
 const teamMembers = [
   { name: TEAM_1_NAME, function: TEAM_1_FUNCTION, image: TEAM_1_IMAGE },
   { name: TEAM_2_NAME, function: TEAM_2_FUNCTION, image: TEAM_2_IMAGE },
@@ -42,8 +41,12 @@ const Team = () => {
     <SectionContainer style={{ backgroundColor: Colors.lime }}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.offblack} />
+      </SectionSubContainer>
+      <SectionSubContainer>
         <SectionSubContainer>
-          <TextEmojiText color={Colors.offblack} subtitle={TEAM_SUBTITLE} />
+          <SectionHeadlineStyle color={Colors.offblack}>
+            <LLMTextManipulator>{TEAM_SUBTITLE}</LLMTextManipulator>
+          </SectionHeadlineStyle>
         </SectionSubContainer>
         <Grid container spacing={4} justifyContent="center">
           {teamMembers.map((member, index) => (
@@ -67,17 +70,12 @@ const Team = () => {
                     objectFit: "cover",
                   }}
                 />
-                <TextEmojiText
-                  color={Colors.offblack}
-                  subtitle={member.name}
-                  size="1.2em"
-                />
-                <TextEmojiText
-                  color={Colors.offblack}
-                  subtitle={member.function}
-                  fontSize="1em"
-                  
-                />
+                <SectionHeadlineStyle color={Colors.offblack}>
+                  <LLMTextManipulator>{member.name}</LLMTextManipulator>
+                </SectionHeadlineStyle>
+                <SectionHeadlineStyle color={Colors.offblack}>
+                  <LLMTextManipulator>{member.function}</LLMTextManipulator>
+                </SectionHeadlineStyle>
               </Grid>
             </Grid>
           ))}

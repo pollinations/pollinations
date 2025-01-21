@@ -34,8 +34,11 @@ export const NEWS_LIST = `
 `
 
 export const IMAGE_FEED_SUBTITLE =
-  "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime." +
-  EMOJI
+REPHRASE +
+TRANSLATE +
+EMOJI +
+"Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
+
 export const IMAGE_FEED_TITLE = TRANSLATE + "Live Feed"
 export const IMAGE_FEED_MODE1 = "DO NOT REPHRASE, Use only the text 'Watch'"
 export const IMAGE_FEED_MODE2 = "DO NOT REPHRASE, write the text 'Try' only"
@@ -77,33 +80,32 @@ export const COMMUNITY_GITHUB_LOGO_PROMPT = "GitHub logo that looks cool"
 export const COMMUNITY_DISCORD_SUBTITLE =
   "Introduce our Discord channel, make it just a few words. Don't cite Discord. In a single very short sentence." +
   EMOJI
-export const COMMUNITY_DISCORD_CTO = "Write only the text 'Join our Discord'"
+export const COMMUNITY_DISCORD_CTO = "Discord"
 export const COMMUNITY_GITHUB_SUBTITLE =
   "Highlight our GitHub repository as a hub for collaboration and contribution. Encourage participation in a single very short sentence. " +
   EMOJI
-export const COMMUNITY_GITHUB_CTO = "Write only the text 'Visit our GitHub'"
+export const COMMUNITY_GITHUB_CTO = "GitHub"
 
 export const ASCII_APP_TOOLTIP = "Try out our ASCII art generator!"
 
-export const TEAM_JOB_TITLE_STYLE = "One short poetic sentence, Format with related emojis."
+export const TEAM_JOB_TITLE_STYLE = "Describe it with one very short poetic sentence, Format with related emojis."
 
 export const TEAM_TITLE = TRANSLATE + "Team"
 export const TEAM_SUBTITLE =
   "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions." +
   EMOJI
-export const TEAM_GITHUB_CTO = "Write only the text 'Visit our GitHub'" + EMOJI
-export const TEAM_1_NAME = "Write only the text 'Thomas Haferlach' in bold and all caps"
-export const TEAM_1_FUNCTION = "Write the text 'CEO'" + TEAM_JOB_TITLE_STYLE
-export const TEAM_2_NAME = "Write only the text 'Elliot Fouchy' in bold and all caps"
-export const TEAM_2_FUNCTION = "Write the text 'CTO'" + TEAM_JOB_TITLE_STYLE
-export const TEAM_3_NAME = "Write only the text 'Laurent Pacoud' in bold and all caps"
-export const TEAM_3_FUNCTION = "Write the text 'COO'Write" + TEAM_JOB_TITLE_STYLE
-export const TEAM_4_NAME = "Write only the text 'Nicolas Pellerin' in bold and all caps"
-export const TEAM_4_FUNCTION = "Write the text 'CMO'Write" + TEAM_JOB_TITLE_STYLE
-export const TEAM_5_NAME = "Write only the text 'Portrait XO' in bold and all caps"
-export const TEAM_5_FUNCTION = "Write the text 'CFO'Write" + TEAM_JOB_TITLE_STYLE
-export const TEAM_6_NAME = "Write only the text 'Kalam Ali' in bold and all caps"
-export const TEAM_6_FUNCTION = "Write the text 'CFO'Write" + TEAM_JOB_TITLE_STYLE
+export const TEAM_1_NAME = REPHRASE + "Write only the text 'Thomas Haferlach' in bold and all caps"
+export const TEAM_1_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CEO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_2_NAME = REPHRASE + "Write only the text 'Elliot Fouchy' in bold and all caps"
+export const TEAM_2_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CTO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_3_NAME = REPHRASE + "Write only the text 'Laurent Pacoud' in bold and all caps"
+export const TEAM_3_FUNCTION = REPHRASE + TRANSLATE + EMOJI + "Write the text 'COO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_4_NAME = REPHRASE + "Write only the text 'Nicolas Pellerin' in bold and all caps"
+export const TEAM_4_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CMO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_5_NAME = REPHRASE + "Write only the text 'Portrait XO' in bold and all caps"
+export const TEAM_5_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CFO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_6_NAME = REPHRASE + "Write only the text 'Kalam Ali' in bold and all caps"
+export const TEAM_6_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CFO'" + TEAM_JOB_TITLE_STYLE
 
 import team1 from "../assets/team/alex_johnson.png"
 import team2 from "../assets/team/samantha_lee.png"
@@ -128,4 +130,4 @@ export const SUPPORTER_DESCRIPTION_STYLE = "Keep it very short, a few words" + E
 export const FOOTER_TERMS_CONDITIONS =
   "Flesh out terms conditions Pollinations.AI in attractive friendly markdown. Terms Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai" +
   EMOJI
-export const FOOTER_INFO = "© 2025 Pollinations.AI All Rights Reserved"
+export const FOOTER_INFO = "© 2025 Pollinations.AI"

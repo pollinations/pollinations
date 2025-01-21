@@ -1,4 +1,4 @@
-import { Colors, Fonts } from "../config/global.js"
+import { Colors } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
 import {
@@ -10,16 +10,16 @@ import {
   COMMUNITY_GITHUB_CTO,
   COMMUNITY_DISCORD_LOGO_PROMPT,
   COMMUNITY_GITHUB_LOGO_PROMPT,
+  ASCII_APP_TOOLTIP,
 } from "../config/copywrite.js"
-import TextEmojiText from "../components/TextEmojiText.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
 import SectionTitle from "../components/SectionTitle.js"
+import { SectionHeadlineStyle } from "../components/SectionContainer.js"
 import { Box } from "@mui/material"
 import { GeneralButton } from "../components/GeneralButton.js"
-import { TextRephraseTranslate } from "../components/TextRephraseTranslate.js"
-import { ImageHeading } from "../components/ImageHeading.js"
-import { CustomTooltip } from "../components/CustomTooltip.js" // Import CustomTooltip
-import { ASCII_APP_TOOLTIP } from "../config/copywrite.js" // Define the tooltip text
+import { CustomTooltip } from "../components/CustomTooltip.js"
+import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
+import { ICONS } from "../assets/icons/icons.js" // Import ICONS
 
 const Community = () => {
   const handleDiscordButtonClick = (e) => {
@@ -35,6 +35,16 @@ const Community = () => {
   const handleAsciiArtClick = (e) => {
     e.preventDefault()
     window.open("https://pollinations.github.io/hive/main/llm-feedback/", "_blank")
+  }
+
+  // Helper function to return the proper icon for each platform
+  const getPlatformIcon = (prompt) => {
+    if (prompt === COMMUNITY_DISCORD_LOGO_PROMPT) {
+      return ICONS.discord
+    } else if (prompt === COMMUNITY_GITHUB_LOGO_PROMPT) {
+      return ICONS.github
+    }
+    return ""
   }
 
   const communityPlatforms = [
@@ -58,7 +68,9 @@ const Community = () => {
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.offblack} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <TextEmojiText color={Colors.offblack} subtitle={COMMUNITY_SUBTITLE} />
+        <SectionHeadlineStyle color={Colors.offblack}>
+          <LLMTextManipulator>{COMMUNITY_SUBTITLE}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <Grid container spacing={4} justifyContent="space-between">
@@ -67,7 +79,7 @@ const Community = () => {
               <Grid
                 container
                 direction="column"
-                gap={"1em"}
+                gap="1em"
                 sx={{
                   borderRadius: "15px",
                   backgroundColor: "transparent",
@@ -79,42 +91,7 @@ const Community = () => {
                     alignItems: "center",
                     justifyContent: "center",
                   }}
-                >
-                  <Box
-                    sx={{
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      width: "200px",
-                      height: "200px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <ImageHeading
-                      customPrompt={platform.imagePrompt}
-                      width={250}
-                      height={250}
-                  >
-                    {platform.imagePrompt}
-                  </ImageHeading>
-                  </Box>
-                </Grid>
-
-                <Grid
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textAlign: "center",
-                  }}
-                >
-                  <TextEmojiText
-                    color={Colors.offblack}
-                    subtitle={platform.subtitle}
-                    fontSize="1.2em"
-                  />
-                </Grid>
+                ></Grid>
                 <Grid
                   sx={{
                     display: "flex",
@@ -127,29 +104,51 @@ const Community = () => {
                     isLoading={false}
                     backgroundColor={Colors.offblack}
                     textColor={Colors.offwhite}
-                    height="60px"
+                    fontSize="1.8em"
+                    borderColor={Colors.offwhite}
                   >
-                    <TextRephraseTranslate>{platform.cto}</TextRephraseTranslate>
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 1024 1024"
+                      fill="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{ marginRight: "8px" }}
+                    >
+                      <path d={getPlatformIcon(platform.imagePrompt)} />
+                    </svg>
+                    <LLMTextManipulator>{platform.cto}</LLMTextManipulator>
                   </GeneralButton>
+                </Grid>
+                <Grid
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                  }}
+                >
+                  <SectionHeadlineStyle color={Colors.offblack} fontSize="1.2em">
+                    <LLMTextManipulator>{platform.subtitle}</LLMTextManipulator>
+                  </SectionHeadlineStyle>
                 </Grid>
               </Grid>
             </Grid>
           ))}
         </Grid>
-
         <CustomTooltip title={ASCII_APP_TOOLTIP} interactive>
           <SectionSubContainer>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              maxWidth: "300px",
-            }}
-            onClick={handleAsciiArtClick}
-          >
-            <AsciiArtGenerator width={"100px"} />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                maxWidth: "300px",
+              }}
+              onClick={handleAsciiArtClick}
+            >
+              <AsciiArtGenerator width="100px" />
             </Box>
           </SectionSubContainer>
         </CustomTooltip>

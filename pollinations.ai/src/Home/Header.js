@@ -12,7 +12,7 @@ const Header = () => {
   const theme = useTheme() // Use the useTheme hook to access the theme
 
   return (
-    <SectionContainer backgroundColor={SectionBG.header}>
+    <SectionContainer backgroundConfig={SectionBG.header}>
       <Box
         sx={{
           display: "flex",

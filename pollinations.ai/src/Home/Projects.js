@@ -43,7 +43,7 @@ const Projects = () => {
   const [selectedCategory, setSelectedCategory] = useState("apps")
 
   return (
-    <SectionContainer backgroundImage={SectionBG.project}>
+    <SectionContainer backgroundConfig={SectionBG.project}>
       <SectionSubContainer>
         <SectionTitle title={PROJECT_TITLE} />
       </SectionSubContainer>

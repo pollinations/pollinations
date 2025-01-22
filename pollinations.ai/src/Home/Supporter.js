@@ -1,6 +1,10 @@
 import React from "react"
 import { Colors, Fonts, SectionBG } from "../config/global"
-import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
+import {
+  SectionContainer,
+  SectionSubContainer,
+  SectionHeadlineStyle,
+} from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import {
@@ -13,7 +17,7 @@ import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
-
+import SvgArtGenerator from "../components/SvgArtGenerator"
 const Supporter = () => {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"))
@@ -27,7 +31,11 @@ const Supporter = () => {
     )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 
   return (
-    <SectionContainer backgroundImage={SectionBG.supporter}>
+    <SectionContainer backgroundConfig={SectionBG.supporter}>
+      <SvgArtGenerator
+        width="1920px"
+        height="600px"
+      />
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
       </SectionSubContainer>
@@ -49,12 +57,17 @@ const Supporter = () => {
               />
               <br />
               <br />
-              <StyledLink href={company.url} style={{ color: Colors.lime, fontFamily: Fonts.parameter }}>
+              <StyledLink
+                href={company.url}
+                style={{ color: Colors.lime, fontFamily: Fonts.parameter }}
+              >
                 <strong>{company.name}</strong>
               </StyledLink>
               <br />
               {isMdUp && (
-                <span style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
+                <span
+                  style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
+                >
                   <LLMTextManipulator>
                     {SUPPORTER_DESCRIPTION_STYLE + company.description}
                   </LLMTextManipulator>

@@ -11,7 +11,7 @@ export const Integration = () => {
   const { image } = useContext(ImageContext)
 
   return (
-    <SectionContainer backgroundImage={SectionBG.integration}>
+    <SectionContainer backgroundConfig={SectionBG.integration}>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATION_TITLE} />
       </SectionSubContainer>

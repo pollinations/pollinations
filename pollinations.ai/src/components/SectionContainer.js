@@ -7,11 +7,24 @@ import useMediaQuery from "@mui/material/useMediaQuery"
 export const SectionContainer = styled.div`
   width: 100%;
   display: flex;
-  background-color: ${(props) => props.backgroundColor || "transparent"};
-  background-image: ${(props) =>
-    props.backgroundImage
-      ? `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${props.backgroundImage})`
-      : "none"};
+  /*
+    We'll handle both color and image. If "gradient" is true, we overlay it only if an image is present.
+    We'll read from props.backgroundConfig — which includes {color, image, gradient}.
+  */
+  background-color: ${(props) =>
+    props.backgroundConfig?.color
+      ? props.backgroundConfig.color
+      : "transparent"};
+
+  background-image: ${(props) => {
+    const { image, gradient } = props.backgroundConfig || {};
+    if (!image) return "none";
+    if (gradient) {
+      return `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${image})`;
+    }
+    return `url(${image})`;
+  }};
+
   background-size: cover;
   background-position: center center;
   background-repeat: repeat;
@@ -71,6 +84,7 @@ export const SectionHeadlineStyle = styled.div`
   color: ${(props) => props.color || Colors.offwhite};
   font-family: ${Fonts.headline};
   text-align: ${(props) => props.textAlign || "center"};
+  justify-content: ${(props) => props.justifyContent || "center"};
   ${({ theme }) => theme.breakpoints.down('md')} {
     font-size: ${(props) => props.fontSize || "1.5em"};
   }

@@ -42,7 +42,7 @@ const teamMembers = [
 
 const Team = () => {
   return (
-    <SectionContainer backgroundImage={SectionBG.team}>
+    <SectionContainer backgroundConfig={SectionBG.team}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.lime} />
       </SectionSubContainer>

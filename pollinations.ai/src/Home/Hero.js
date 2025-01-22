@@ -19,6 +19,8 @@ import { ICONS } from "../assets/icons/icons" // Import the ICONS
 import ContentCopyIcon from "@mui/icons-material/ContentCopy" // Import the Material UI copy icon
 import SvgArtGallery from "../components/SvgArtGallery"
 import SvgArtGenerator from "../components/SvgArtGenerator"
+import { useMediaQuery } from "@mui/material"
+import { useTheme } from "@mui/material/styles"
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -39,27 +41,25 @@ const handleEmailButtonClick = (e) => {
 }
 
 const Hero = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   return (
-    <SectionContainer backgroundColor={SectionBG.hero}>
+    <SectionContainer backgroundConfig={SectionBG.hero}>
       <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator>
       <SectionSubContainer>
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={6}>
-            <SectionHeadlineStyle
-              fontSize="1.5em"
-              color={Colors.offblack}
-              textAlign={{ xs: "center", md: "left" }}
-            >
-              <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
-            </SectionHeadlineStyle>
-          </Grid>
-        </Grid>
+        <SectionHeadlineStyle
+          fontSize="1.5em"
+          color={Colors.offblack}
+          textAlign={{ xs: "center", md: "left" }}
+        >
+          <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
+        </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
       <SectionSubContainer>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"}>
           <Grid size={12}>
-            <SectionHeadlineStyle fontSize="1.5em" color={Colors.offblack}>
+            <SectionHeadlineStyle fontSize="1.5em" color={Colors.offblack} textAlign={isMobile ? "center" : "right"}>
               <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
             </SectionHeadlineStyle>
           </Grid>

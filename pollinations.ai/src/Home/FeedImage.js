@@ -108,7 +108,7 @@ export const FeedImage = memo(() => {
   }
 
   return (
-    <SectionContainer backgroundImage={SectionBG.feedImage}>
+    <SectionContainer backgroundConfig={SectionBG.feedImage}>
       <SectionSubContainer>
         <SectionTitle title={IMAGE_FEED_TITLE} />
       </SectionSubContainer>

@@ -29,14 +29,44 @@ export const Fonts = {
 
 // Step 1: Create a new mapping object for section backgrounds
 export const SectionBG = {
-  header: Colors.offwhite,       
-  hero: Colors.offwhite,
-  news: backgroundImage1,         
-  feedImage: backgroundImage3,   
-  integration: backgroundImage2, 
-  community: backgroundImage5,   
-  project: backgroundImage4,     
-  team: backgroundImage7,
-  supporter: backgroundImage6,        
-  footer: Colors.offwhite       
+  header: {
+    color: Colors.offwhite,
+    gradient: false,
+  },
+  hero: {
+    image: Colors.offwhite, 
+    gradient: false,
+  },
+  news: {
+    color: Colors.offwhite,
+    gradient: false,
+  },
+  feedImage: {
+    image: backgroundImage1,
+    gradient: true,
+  },
+  integration: {
+    color: Colors.offblack,
+    gradient: false,
+  },
+  community: {
+    image: backgroundImage5,
+    gradient: true,
+  },
+  project: {
+    color: Colors.offblack,
+    gradient: false,
+  },
+  team: {
+    image: backgroundImage2,
+    gradient: true,
+  },
+  supporter: {
+    color: Colors.offblack,
+    gradient: false,
+  },
+  footer: {
+    color: Colors.offwhite,
+    gradient: false,
+  }
 }

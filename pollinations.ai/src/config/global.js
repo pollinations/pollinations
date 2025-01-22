@@ -60,7 +60,7 @@ export const SectionBG = {
     gradient: false,
   },
   team: {
-    image: backgroundImage2,
+    image: backgroundImage3,
     gradient: true,
   },
   supporter: {

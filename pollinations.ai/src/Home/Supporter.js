@@ -32,10 +32,10 @@ const Supporter = () => {
 
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
-      <SvgArtGenerator
+      {/* <SvgArtGenerator
         width="1920px"
         height="600px"
-      />
+      /> */}
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
       </SectionSubContainer>

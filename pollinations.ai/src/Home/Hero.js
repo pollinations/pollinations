@@ -45,7 +45,7 @@ const Hero = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   return (
     <SectionContainer backgroundConfig={SectionBG.hero}>
-      <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator>
+      {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}
       <SectionSubContainer>
         <SectionHeadlineStyle
           fontSize="1.5em"

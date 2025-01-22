@@ -1,4 +1,3 @@
-
 import React from "react"
 import { usePollinationsText } from "@pollinations/react"
 import ReactMarkdown from "react-markdown"
@@ -11,72 +10,102 @@ export function LLMTextManipulator({ children }) {
   const userLanguage = navigator.language || navigator.userLanguage
   const isEnglish = userLanguage.startsWith("en")
 
-  // Convert children to a single string
-  let childString = React.Children.toArray(children).join(" ")
+  console.log("User language is English:", isEnglish)
 
-  // Check if any of the instruction strings are present
-  const hasInstructions =
-    childString.includes(REPHRASE) ||
-    childString.includes(EMOJI) ||
-    childString.includes(RESPONSIVE) ||
-    childString.includes(TRANSLATE)
+  // Helper function: finds instructions in the string & returns them in the order found,
+  // plus the text with those instructions removed.
+  function extractInstructionsFromString(originalText) {
+    let text = originalText
+    let instructions = []
 
-  // If none of the 4 strings are found, return the input as is
-  if (!hasInstructions) {
-    console.log("LLMTextManipulator: No instructions found, returning child text without LLM processing.")
-    return (
-      <ReactMarkdown
-        components={{
-          p: ({ children }) => <p style={{ margin: "0px" }}>{children}</p>,
-        }}
-      >
-        {childString}
-      </ReactMarkdown>
-    )
-  }
+    while (true) {
+      const indices = [
+        { name: REPHRASE, idx: text.indexOf(REPHRASE) },
+        { name: EMOJI, idx: text.indexOf(EMOJI) },
+        { name: RESPONSIVE, idx: text.indexOf(RESPONSIVE) },
+        { name: TRANSLATE, idx: text.indexOf(TRANSLATE) },
+      ].filter(item => item.idx !== -1)
 
-  // Build the instruction chain conditionally
-  let instructionChain = []
+      if (indices.length === 0) break
 
-  if (childString.includes(REPHRASE)) {
-    instructionChain.push(REPHRASE)
-    childString = childString.replaceAll(REPHRASE, "")
-  }
+      const earliest = indices.reduce((min, cur) => (cur.idx < min.idx ? cur : min))
+      instructions.push(earliest.name)
 
-  if (!isEnglish && childString.includes(TRANSLATE)) {
-    instructionChain.push(`${TRANSLATE} ${userLanguage}.`)
-    childString = childString.replaceAll(TRANSLATE, "")
-  }
+      text =
+        text.slice(0, earliest.idx) +
+        text.slice(earliest.idx + earliest.name.length)
+    }
 
-  if (childString.includes(RESPONSIVE)) {
-    if (isXs) {
-      instructionChain.push(RESPONSIVE)
-      childString = childString.replaceAll(RESPONSIVE, "")
-    } else {
-      childString = childString.replaceAll(RESPONSIVE, "")
+    return {
+      textWithoutInstructions: text.trim(),
+      instructions,
     }
   }
 
-  if (childString.includes(EMOJI)) {
-    instructionChain.push(EMOJI)
-    childString = childString.replaceAll(EMOJI, "")
-  }
+  // Convert "children" to an array in case multiple items were passed
+  const childArray = React.Children.toArray(children)
 
-  // Combine instructions and original text into a single prompt
-  const promptWithInstructions = instructionChain.join(" ") + " " + childString
-  console.log("Text Prompt", promptWithInstructions)
+  // Process each child individually
+  const processedOutputs = childArray.map((childContent, index) => {
+    const childString = childContent.toString()
 
-  // Process the prompt with usePollinationsText
-  let processedText = usePollinationsText(promptWithInstructions) || promptWithInstructions
+    // Extract the instructions in order & remove them from the text
+    const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
 
-  // Check for error message and replace with "Loading..." if necessary
-  if (processedText.includes("HTTP error! status: 429")) {
-    processedText = "Loading..."
-  }
+    console.group(`Child #${index + 1} - Initial Parsing`)
+    console.log("Initial text:", childString)
+    console.log("Parsed text (without instructions):", textWithoutInstructions)
+    console.log("Instructions order:", instructions)
+    console.groupEnd()
 
-  console.log("Text Output:", processedText)
+    let currentText = textWithoutInstructions
 
-  // Render the processed text in Markdown format
+    instructions.forEach((instruction) => {
+      // Skip TRANSLATE if user is English
+      if (instruction === TRANSLATE && isEnglish) {
+        console.log("Skipping TRANSLATE (user is English).")
+        return
+      }
+
+      // Skip RESPONSIVE if screen is not 'xs'
+      if (instruction === RESPONSIVE && !isXs) {
+        console.log("Skipping RESPONSIVE (not on xs screen).")
+        return
+      }
+
+      // Build the prompt to send to usePollinationsText
+      // If it's TRANSLATE, append the user language.
+      // Otherwise, just prepend the instruction.
+      let combinedPrompt
+      if (instruction === TRANSLATE) {
+        // The user language might be appended in a way that your translation logic expects
+        combinedPrompt = `${instruction} ${userLanguage} ${currentText}`
+      } else {
+        combinedPrompt = `${instruction} ${currentText}`
+      }
+
+      console.group(`Applying instruction: ${instruction}`)
+      console.log("Input to usePollinationsText:", combinedPrompt)
+
+      // Transform with Pollinations
+      const result = usePollinationsText(combinedPrompt) || currentText
+      if (result.includes("HTTP error! status: 429")) {
+        console.log("Rate limit (429) detected. Output replaced with 'Loading...'.")
+        currentText = "Loading..."
+      } else {
+        currentText = result
+      }
+      console.log("Output from usePollinationsText:", currentText)
+      console.groupEnd()
+    })
+
+    return currentText
+  })
+
+  // Combine all processed child outputs
+  const finalOutput = processedOutputs.join("\n\n")
+  console.log("Final Output after all children processed:", finalOutput)
+
   return (
     <ReactMarkdown
       components={{
@@ -88,7 +117,7 @@ export function LLMTextManipulator({ children }) {
         ),
       }}
     >
-      {processedText}
+      {finalOutput}
     </ReactMarkdown>
   )
 }

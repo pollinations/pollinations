@@ -1,12 +1,12 @@
 // Style prompts
 export const REPHRASE =
-  "Start by rewritring the prompt with a direct, professional tone, avoiding excess friendliness or humor. Preserve clarity and conciseness without undue formality."
+  "Reformulate the text with a direct, professional tone, avoiding excess friendliness or humor. Preserve clarity and conciseness without undue formality."
 export const EMOJI =
-  "Enrich with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length."
+  "Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length."
 export const TRANSLATE =
-  "Translate the final text output into the user's language. Only output the translated text, nothing else. User language is:"
+  "Translate the text into the user's language. Only output the translated text, nothing else. User language is:"
 export const RESPONSIVE =
-  "Most important, condense the final text to 5 words maximum. It needs to be super short for mobile friendliness. Don't exceed 5 words!"
+  "Condense the text to 5 words maximum. It needs to be super short for mobile friendliness. Don't exceed 5 words!"
 
 // Copy prompts
 export const HERO_INTRO =
@@ -14,7 +14,7 @@ export const HERO_INTRO =
   REPHRASE +
   TRANSLATE +
   EMOJI +
-  "Text to edit: Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity."
+  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity."
 
 export const HERO_CTO =
   REPHRASE +
@@ -25,7 +25,7 @@ export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "Readme.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
-export const NEWS_TITLE = TRANSLATE + "Goal is to make a short title of the last updates section, In one very short sentence" + EMOJI
+export const NEWS_TITLE = TRANSLATE + "Goal is to make a short title of the last updates section, In one very short sentence." + EMOJI
 export const NEWS_LIST = REPHRASE + TRANSLATE + RESPONSIVE + `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Here is the list to fornat:
 - **2023-10-01 - Feature Request**: Want a new feature? Create a [GitHub issue](https://github.com/pollinations/pollinations/issues/new) and our [AI assistant](https://mentat.ai/) will implement it!
 - **2023-09-15 - New Release**: Check out our latest update with enhanced features and improved performance. [Read more](https://pollinations.ai/releases/2023-09-15)
@@ -38,19 +38,19 @@ TRANSLATE +
 EMOJI +
 "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
 
-export const IMAGE_FEED_TITLE = TRANSLATE + "Just the word 'Live Feed', meaning a stream of images"
-export const IMAGE_FEED_MODE1 = TRANSLATE + "Just the word 'Watch', meaning looking at a live feed"
-export const IMAGE_FEED_MODE2 = TRANSLATE + "Just the word 'Try', meaning trying to generate an image"
-export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Just the word 'Wait', meaning waiting for the image to be generated"
-export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Just the word 'Create' in bold, meaning creating an image"
+export const IMAGE_FEED_TITLE = TRANSLATE + "Live Feed"
+export const IMAGE_FEED_MODE1 = TRANSLATE + "Watch"
+export const IMAGE_FEED_MODE2 = TRANSLATE + "Try"
+export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Wait"
+export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Create"
 
-export const INTEGRATION_TITLE = TRANSLATE + "Just the word: Integrate"
+export const INTEGRATION_TITLE = TRANSLATE + "Integrate"
 export const INTEGRATION_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started."
 export const FEED_ENANCER_TOOLTIP =
   "AI prompt enhancer that helps create better images by improving your text prompt."
 export const FEED_LOGO_WATERMARK = "Enable watermark logo."
 
-export const PROJECT_TITLE = TRANSLATE + "Just the word: User Builds"
+export const PROJECT_TITLE = TRANSLATE + "User Builds"
 export const PROJECT_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Here are some of the various implementations that our API is currently powering."
 export const PROJECT_DESCRIPTION_STYLE =
 REPHRASE +
@@ -78,7 +78,7 @@ export const ASCII_APP_TOOLTIP = REPHRASE + TRANSLATE + EMOJI + "Incite the user
 
 export const TEAM_JOB_TITLE_STYLE = "Describe it with one very short poetic sentence, Format with related emojis."
 
-export const TEAM_TITLE = TRANSLATE + "Just the word: Team"
+export const TEAM_TITLE = TRANSLATE + "Our Team"
 export const TEAM_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions."
 export const TEAM_1_NAME = REPHRASE + "Write only the text 'Thomas Haferlach' in bold and all caps"
 export const TEAM_1_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead visionary" + TEAM_JOB_TITLE_STYLE
@@ -89,7 +89,7 @@ export const TEAM_3_FUNCTION = REPHRASE + TRANSLATE + EMOJI + "Lead Business" + 
 export const TEAM_4_NAME = REPHRASE + "Write only the text 'Nicolas Pellerin' in bold and all caps"
 export const TEAM_4_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead Coder" + TEAM_JOB_TITLE_STYLE
 export const TEAM_5_NAME = REPHRASE + "Write only the text 'Portrait XO' in bold and all caps"
-export const TEAM_5_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Futuristic" + TEAM_JOB_TITLE_STYLE
+export const TEAM_5_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Futurist" + TEAM_JOB_TITLE_STYLE
 export const TEAM_6_NAME = REPHRASE + "Write only the text 'Kalam Ali' in bold and all caps"
 export const TEAM_6_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead strategy" + TEAM_JOB_TITLE_STYLE
 
@@ -107,16 +107,16 @@ export const TEAM_4_IMAGE = team4
 export const TEAM_5_IMAGE = team5
 export const TEAM_6_IMAGE = team6
 
-export const SUPPORTER_TITLE = TRANSLATE + "Just the word: Supporters"
+export const SUPPORTER_TITLE = TRANSLATE + "Supporters"
 export const SUPPORTER_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: We're grateful to our supporters for their contributions to our platform."
 export const SUPPORTER_LOGO_STYLE = "minimalist and modern square logo on white background" + EMOJI
-export const SUPPORTER_DESCRIPTION_STYLE = REPHRASE + TRANSLATE + EMOJI + "Keep it very short, a few words"
+export const SUPPORTER_DESCRIPTION_STYLE = REPHRASE + EMOJI + TRANSLATE + "Formulate this in a very short description, 5 words maximum."
 
 export const FOOTER_TERMS_CONDITIONS =
 TRANSLATE + 
   "Flesh out terms conditions Pollinations.AI in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and different font size (like heading, title, h2...). Here is the text to work with: Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai" +
   EMOJI
-export const FOOTER_CLOSE = TRANSLATE + "Just the word: Close"
+export const FOOTER_CLOSE = TRANSLATE + "Close"
 export const FOOTER_INFO = "© 2025 Pollinations.AI"
 
 export const ASCII_ART_PROMPT = (width,height) => `Unicode/Ascii Art inspired by elegant, minimal Egyptian gods and mystical pyramids. ${width} width x ${height} height characters. Incorporate hieroglyphs and maintain a lot of empty space. Return only the characters, no other text or quotes.`

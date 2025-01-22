@@ -16,14 +16,13 @@ export default function News() {
           expandIcon={<ArrowDownwardIcon />}
           aria-controls="panel1-content"
           id="panel1-header"
-          style={{ fontFamily: Fonts.body, fontSize: "1.5em" }}
         >
-          <SectionHeadlineStyle color={Colors.offblack} fontSize="1.2em">
+          <SectionHeadlineStyle color={Colors.offblack} style={{ fontSize: "2em", fontFamily: Fonts.headline }}>
             <LLMTextManipulator>{NEWS_TITLE}</LLMTextManipulator>
           </SectionHeadlineStyle>
         </AccordionSummary>
         <AccordionDetails>
-          <SectionHeadlineStyle color={Colors.offblack} fontSize="1.2em" textAlign="left">
+          <SectionHeadlineStyle color={Colors.offblack} style={{ fontSize: "1.2em", fontFamily: Fonts.headline }} textAlign="left">
             <LLMTextManipulator>{NEWS_LIST}</LLMTextManipulator>
           </SectionHeadlineStyle>
         </AccordionDetails>

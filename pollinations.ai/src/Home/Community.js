@@ -1,4 +1,4 @@
-import { Colors } from "../config/global.js"
+import { Colors, Fonts } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
 import {
@@ -109,6 +109,7 @@ const Community = () => {
                     textColor={Colors.offwhite}
                     fontSize={isXs ? "1.5em" : "2.5em"}
                     borderColor={Colors.offwhite}
+                    style={{ fontFamily: Fonts.parameter }}
                   >
                     <svg
                       width={isXs ? "40" : "50"}
@@ -131,7 +132,7 @@ const Community = () => {
                     textAlign: "center",
                   }}
                 >
-                  <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em">
+                  <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em" >
                     <LLMTextManipulator>{platform.subtitle}</LLMTextManipulator>
                   </SectionHeadlineStyle>
                 </Grid>

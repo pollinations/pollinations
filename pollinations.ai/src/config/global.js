@@ -10,9 +10,10 @@ export const Colors = {
 };
 
 export const Fonts = {
-  body: 'Monospace, monospace',
+  body: 'Zapfino, fantasy',
   title: 'Monospace, monospace',
   headline: 'Monospace, monospace',
-  parameter: 'Monospace, monospace',
+  parameter: 'Courier New, monospace',
 }
 
+//   headline: 'Monospace, monospace',

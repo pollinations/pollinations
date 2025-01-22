@@ -54,6 +54,7 @@ const ProjectsRender = ({ classes }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                fontFamily: Fonts.parameter,
               }}
             >
               {category.title}
@@ -87,7 +88,7 @@ const ProjectsRender = ({ classes }) => {
                   <Box style={{ maxWidth: "90%" }}>
                     {renderProjectLink(project)}
                     {project.author && (
-                      <div style={{ marginTop: "0.5em", color: Colors.offwhite, fontSize: "1em" }}>
+                      <div style={{ marginTop: "0.5em", color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
                         by{" "}
                         {project.author.startsWith("@") ? (
                           <Link
@@ -107,7 +108,7 @@ const ProjectsRender = ({ classes }) => {
                 </Grid>
 
                 <Grid size={{ xs: 3, md: 6 }} style={{ textAlign: "left" }}>
-                  <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
+                  <span style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
                     <LLMTextManipulator>
                       {PROJECT_DESCRIPTION_STYLE + project.description}
                     </LLMTextManipulator>
@@ -131,7 +132,7 @@ const renderProjectLink = (project) => {
       rel="noopener noreferrer"
       sx={{
         color: Colors.lime,
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.parameter,
         fontStyle: "normal",
         fontWeight: "500",
         fontSize: { xs: "1em", md: "1.2em" },

@@ -12,11 +12,10 @@ export function ServerLoadInfo({ lastImage, imagesGenerated, image }) {
       sx={{
         color: Colors.offwhite,
         fontSize: "1.em",
-        fontFamily: Fonts.body
       }}
     >
       <ServerLoadDisplay concurrentRequests={lastImage?.concurrentRequests || 0} />
-      <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.body }}>
+      <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.headline }}>
         #: <b style={{ color: Colors.lime }}>{formatImagesGenerated(imagesGenerated)}</b>
       </Box>
       {/* <TimingInfo image={lastImage} /> */}
@@ -29,7 +28,7 @@ function ServerLoadDisplay({ concurrentRequests }) {
   const loadDisplay = "▁▃▅▇▉".slice(1, load + 2)
 
   return (
-    <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.body }}>
+    <Box style={{ color: Colors.offwhite, fontSize: "1.8em", fontFamily: Fonts.headline }}>
       Load: <b style={{ color: Colors.lime }}>{loadDisplay}</b> <i>({concurrentRequests})</i>
     </Box>
   )

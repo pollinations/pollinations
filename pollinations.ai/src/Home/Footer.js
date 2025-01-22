@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom"
 import { Box } from "@mui/material"
 import { SocialLinks } from "../components/SocialLinks"
-import { Colors } from "../config/global"
+import { Colors, Fonts } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
@@ -50,6 +50,7 @@ const Footer = () => {
             marginTop: "1em",
             alignItems: { xs: "center", md: "flex-end" },
             height: "100%",
+            fontFamily: Fonts.parameter,
           }}
         >
           <StyledLink to="/terms">

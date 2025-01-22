@@ -5,10 +5,10 @@ import { Link } from "react-router-dom";
 const StyledLink = styled(({ isExternal, ...props }) => 
   isExternal ? <a {...props} /> : <Link {...props} />
 )`
-  font-family: ${Fonts.body};
+  font-family: ${Fonts.parameter};
   font-style: normal;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 1.5em;
   line-height: 22px;
   text-decoration-line: none;
   text-transform: uppercase;

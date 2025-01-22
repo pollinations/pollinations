@@ -1,5 +1,5 @@
 import React from "react"
-import { Colors } from "../config/global"
+import { Colors, Fonts } from "../config/global"
 import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
@@ -49,12 +49,12 @@ const Supporter = () => {
               />
               <br />
               <br />
-              <StyledLink href={company.url} style={{ color: Colors.lime }}>
+              <StyledLink href={company.url} style={{ color: Colors.lime, fontFamily: Fonts.parameter }}>
                 <strong>{company.name}</strong>
               </StyledLink>
               <br />
               {isMdUp && (
-                <span style={{ color: Colors.offwhite, fontSize: "1em" }}>
+                <span style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
                   <LLMTextManipulator>
                     {SUPPORTER_DESCRIPTION_STYLE + company.description}
                   </LLMTextManipulator>

@@ -81,22 +81,22 @@ export const TEAM_JOB_TITLE_STYLE = "Describe it with one very short poetic sent
 export const TEAM_TITLE = TRANSLATE + "Just the word: Team"
 export const TEAM_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions."
 export const TEAM_1_NAME = REPHRASE + "Write only the text 'Thomas Haferlach' in bold and all caps"
-export const TEAM_1_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CEO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_1_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead visionary" + TEAM_JOB_TITLE_STYLE
 export const TEAM_2_NAME = REPHRASE + "Write only the text 'Elliot Fouchy' in bold and all caps"
-export const TEAM_2_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CTO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_2_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead Production" + TEAM_JOB_TITLE_STYLE
 export const TEAM_3_NAME = REPHRASE + "Write only the text 'Laurent Pacoud' in bold and all caps"
-export const TEAM_3_FUNCTION = REPHRASE + TRANSLATE + EMOJI + "Write the text 'COO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_3_FUNCTION = REPHRASE + TRANSLATE + EMOJI + "Lead Business" + TEAM_JOB_TITLE_STYLE
 export const TEAM_4_NAME = REPHRASE + "Write only the text 'Nicolas Pellerin' in bold and all caps"
-export const TEAM_4_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CMO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_4_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead Coder" + TEAM_JOB_TITLE_STYLE
 export const TEAM_5_NAME = REPHRASE + "Write only the text 'Portrait XO' in bold and all caps"
-export const TEAM_5_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CFO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_5_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Futuristic" + TEAM_JOB_TITLE_STYLE
 export const TEAM_6_NAME = REPHRASE + "Write only the text 'Kalam Ali' in bold and all caps"
-export const TEAM_6_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CFO'" + TEAM_JOB_TITLE_STYLE
+export const TEAM_6_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead strategy" + TEAM_JOB_TITLE_STYLE
 
-import team1 from "../assets/team/alex_johnson.png"
-import team2 from "../assets/team/samantha_lee.png"
-import team3 from "../assets/team/michael_chen.png"
-import team4 from "../assets/team/jessica_gomez.png"
+import team1 from "../assets/team/Thomas.webp"
+import team2 from "../assets/team/Elliot.webp"
+import team3 from "../assets/team/Laurent.jpeg"
+import team4 from "../assets/team/Nico.jpeg"
 import team5 from "../assets/team/Portrait_XO.webp"
 import team6 from "../assets/team/Kalam.webp"
 

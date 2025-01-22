@@ -19,7 +19,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           height: "75px",
           width: "100%",
           fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.body,
+          fontFamily: Fonts.parameter,
           fontWeight: 600,
           padding: "0 1em",
         }}
@@ -35,7 +35,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         style={{
           width: "100%",
           fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.body,
+          fontFamily: Fonts.parameter,
           fontWeight: 600,
           padding: "0 1em",
         }}

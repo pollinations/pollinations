@@ -250,6 +250,8 @@ export const ImageEditor = memo(function ImageEditor({
                   ...buttonStyles.responsiveFontSize,
                   borderRadius: "0px",
                   height: "60px",
+                  fontFamily: Fonts.parameter,
+                  fontSize: paramTextSize,
                 }}
               >
                 {model || "flux"}
@@ -264,7 +266,7 @@ export const ImageEditor = memo(function ImageEditor({
                   sx: {
                     textAlign: "left",
                     backgroundColor: Colors.offblack,
-                    color: paramTextColor,
+                    fontFamily: Fonts.parameter,
                   },
                 }}
               >
@@ -297,6 +299,7 @@ export const ImageEditor = memo(function ImageEditor({
                   sx: {
                     color: paramTextColor,
                     fontSize: paramTextSize,
+                    fontFamily: Fonts.parameter,
                     borderRadius: "0px",
                     border: `solid 0.1px ${paramBorderColor}`,
                   },
@@ -318,6 +321,7 @@ export const ImageEditor = memo(function ImageEditor({
                   sx: {
                     color: paramTextColor,
                     fontSize: paramTextSize,
+                    fontFamily: Fonts.parameter,
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
                   },
@@ -340,6 +344,7 @@ export const ImageEditor = memo(function ImageEditor({
                   sx: {
                     color: paramTextColor,
                     fontSize: paramTextSize,
+                    fontFamily: Fonts.parameter,
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
                     height: "60px",
@@ -417,11 +422,12 @@ export const ImageEditor = memo(function ImageEditor({
                 borderColor={Colors.lime}
                 backgroundColor="transparent"
                 textColor={Colors.lime}
-                fontSize="1.5em"
+                fontSize={paramTextSize}
                 style={{
                   width: "100%",
                   animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",
                   height: "60px",
+                  fontFamily: Fonts.parameter,
                 }}
               >
                 <LLMTextManipulator>{IMAGE_EDIT_BUTTON_OFF}</LLMTextManipulator>

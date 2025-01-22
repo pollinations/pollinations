@@ -17,6 +17,7 @@ import {
 import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons" // Import the ICONS
 import ContentCopyIcon from "@mui/icons-material/ContentCopy" // Import the Material UI copy icon
+import SvgArtGallery from "../components/SvgArtGallery"
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -40,14 +41,19 @@ const Hero = () => {
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <SectionSubContainer>
-        <SectionHeadlineStyle
-          fontSize="1.5em"
-          color={Colors.offblack}
-          textAlign={{ xs: "center", md: "left" }}
-        >
-          <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
-        </SectionHeadlineStyle>
+        <Grid container spacing={2} alignItems="center">
+          <Grid xs={12} md={6}>
+            <SectionHeadlineStyle
+              fontSize="1.5em"
+              color={Colors.offblack}
+              textAlign={{ xs: "center", md: "left" }}
+            >
+              <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
+            </SectionHeadlineStyle>
+          </Grid>
+        </Grid>
       </SectionSubContainer>
+      <SvgArtGallery />
       <SectionSubContainer>
         <Grid container spacing={2} >
           <Grid size={12} >

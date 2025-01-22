@@ -14,6 +14,9 @@ import SectionTitle from "../components/SectionTitle"
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite"
 import { getImageURL } from "../utils/getImageURL"
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
+import background from "../assets/background/Fractal_tessellation_network.webp"
+import background2 from "../assets/background/Nanoscale_material_topography_1.webp"
+import background3 from "../assets/background/Nanoscale_material_topography2.webp"
 
 const log = debug("GenerativeImageFeed")
 
@@ -107,7 +110,7 @@ export const FeedImage = memo(() => {
   }
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
+    <SectionContainer backgroundImage={background3}>
       <SectionSubContainer>
         <SectionTitle title={IMAGE_FEED_TITLE} />
       </SectionSubContainer>

@@ -16,7 +16,7 @@ const SvgArtGenerator = ({
   width = "100%",
   height = "100%",
   style,
-  prompt = "Create a minimalist, abstract SVG artwork with simple geometric curved lines and ping pong balls navigating through them with subtle animations. Make sure the background is transparent. Use the colors yellow only.",
+  prompt = "Create a minimalist, abstract SVG artwork with simple geometric curved lines and ping pong balls navigating through them. Make it minmal and mesmerizing, add subtle animations. Make sure the background is transparent. Use the colors yellow only.",
 }) => {
   const [seed, setSeed] = useState(1)
 

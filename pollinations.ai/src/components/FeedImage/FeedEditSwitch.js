@@ -13,7 +13,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         handleClick={() => handleToggleChange(null, "feed")}
         isLoading={isLoading}
         borderColor={Colors.lime}
-        backgroundColor={toggleValue === "feed" ? Colors.lime : "transparent"}
+        backgroundColor={toggleValue === "feed" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
         style={{
           height: "75px",
@@ -30,7 +30,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         handleClick={() => handleToggleChange(null, "edit")}
         isLoading={isLoading}
         borderColor={Colors.lime}
-        backgroundColor={toggleValue === "edit" ? Colors.lime : "transparent"}
+        backgroundColor={toggleValue === "edit" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "edit" ? Colors.offblack : Colors.lime}
         style={{
           width: "100%",

@@ -141,7 +141,7 @@ export const ImageEditor = memo(function ImageEditor({
 
   const sharedTextAreaStyle = {
     width: "100%",
-    backgroundColor: "transparent",
+    backgroundColor: `${Colors.offblack}99`,
     border: `0.1px solid ${paramBorderColor}`,
     fontFamily: Fonts.parameter,
     fontSize: paramTextSize,
@@ -202,14 +202,14 @@ export const ImageEditor = memo(function ImageEditor({
                     scrollbarWidth: "auto",
                     scrollbarColor: `${Colors.gray2}99 transparent`,
                     msOverflowStyle: "auto",
-                    backgroundColor: "transparent",
+                    backgroundColor: `${Colors.offblack}99`,
                     border: `0.1px solid ${paramBorderColor}`,
                     width: "100%",
                   }}
                 />
               ) : (
                 // Read-only mode with Markdown
-                <Box style={sharedTextAreaStyle}>
+                <Box style={sharedTextAreaStyle} >
                   <ReactMarkdown
                     components={{
                       // override <p> styling
@@ -252,6 +252,7 @@ export const ImageEditor = memo(function ImageEditor({
                   height: "60px",
                   fontFamily: Fonts.parameter,
                   fontSize: paramTextSize,
+                  backgroundColor: `${Colors.offblack}99`,
                 }}
               >
                 {model || "flux"}
@@ -302,6 +303,7 @@ export const ImageEditor = memo(function ImageEditor({
                     fontFamily: Fonts.parameter,
                     borderRadius: "0px",
                     border: `solid 0.1px ${paramBorderColor}`,
+                    backgroundColor: `${Colors.offblack}99`,
                   },
                 }}
                 sx={{ width: "100%" }}
@@ -324,6 +326,7 @@ export const ImageEditor = memo(function ImageEditor({
                     fontFamily: Fonts.parameter,
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
+                    backgroundColor: `${Colors.offblack}99`,
                   },
                 }}
                 sx={{ width: "100%" }}
@@ -348,6 +351,7 @@ export const ImageEditor = memo(function ImageEditor({
                     border: `solid 0.1px ${paramBorderColor}`,
                     borderRadius: "0px",
                     height: "60px",
+                    backgroundColor: `${Colors.offblack}99`,
                   },
                 }}
               />
@@ -369,6 +373,7 @@ export const ImageEditor = memo(function ImageEditor({
                   height: "60px",
                   width: "100%",
                   border: `solid 0.1px ${paramBorderColor}`,
+                  backgroundColor: `${Colors.offblack}99`,
                 }}
               >
                 <Checkbox
@@ -422,7 +427,7 @@ export const ImageEditor = memo(function ImageEditor({
                 borderColor={Colors.lime}
                 backgroundColor="transparent"
                 textColor={Colors.lime}
-                fontSize={paramTextSize}
+                fontSize="1.5em"
                 style={{
                   width: "100%",
                   animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",

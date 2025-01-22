@@ -68,7 +68,7 @@ const Community = () => {
   return (
     <SectionContainer backgroundImage={background}>
       <SectionSubContainer>
-        <SectionTitle title={COMMUNITY_TITLE} color={Colors.offwhite} />
+        <SectionTitle title={COMMUNITY_TITLE} color={Colors.lime} />
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>

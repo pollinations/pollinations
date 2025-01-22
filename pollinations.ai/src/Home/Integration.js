@@ -6,12 +6,15 @@ import { INTEGRATION_TITLE, INTEGRATION_SUBTITLE } from "../config/copywrite"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { ImageContext } from "../utils/ImageContext"
+import background from "../assets/background/Fractal_tessellation_network.webp"
+import background2 from "../assets/background/Nanoscale_material_topography_1.webp"
+import background3 from "../assets/background/Nanoscale_material_topography2.webp"
 
 export const Integration = () => {
   const { image } = useContext(ImageContext)
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
+    <SectionContainer backgroundImage={background2}>
       <SectionSubContainer>
         <SectionTitle title={INTEGRATION_TITLE} />
       </SectionSubContainer>

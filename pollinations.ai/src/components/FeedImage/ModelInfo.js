@@ -54,7 +54,7 @@ export function ModelInfo({ model, referrer }) {
       sx={{
         color: Colors.offwhite,
         fontSize: "1em",
-        fontFamily: Fonts.body,
+        fontFamily: Fonts.parameter,
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         flexWrap: "wrap",

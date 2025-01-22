@@ -67,7 +67,13 @@ export function LLMTextManipulator({ children }) {
   console.log("Text Prompt", promptWithInstructions)
 
   // Process the prompt with usePollinationsText
-  const processedText = usePollinationsText(promptWithInstructions) || promptWithInstructions
+  let processedText = usePollinationsText(promptWithInstructions) || promptWithInstructions
+
+  // Check for error message and replace with "Loading..." if necessary
+  if (processedText.includes("HTTP error! status: 429")) {
+    processedText = "Loading..."
+  }
+
   console.log("Text Output:", processedText)
 
   // Render the processed text in Markdown format

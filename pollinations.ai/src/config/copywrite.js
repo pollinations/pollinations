@@ -58,10 +58,8 @@ TRANSLATE +
 EMOJI +
   "Text to edit: Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website." 
   
-export const PROJECT_CTO_1 =
-  "Question if they have created a project that integrates Pollinations.AI? Say that we'd love to feature it!" +
-  EMOJI
-export const PROJECT_CTO_2 = "Express this in one very very short sentence: Talk to us" + EMOJI
+export const PROJECT_CTO_1 = REPHRASE + TRANSLATE + EMOJI + "Question if they have created a project that integrates Pollinations.AI? Say that we'd love to feature it!"
+export const PROJECT_CTO_2 = REPHRASE + TRANSLATE + EMOJI + "Express this in one very very short sentence: Talk to us"
 export const PROJECT_BUTTON = "hello@pollinations.ai"
 export const PROJECT_LOGO_STYLE =
   "minimalist colour logo design focuses on symbols and visuals, no text, solid off white background"
@@ -112,7 +110,7 @@ export const TEAM_6_IMAGE = team6
 export const SUPPORTER_TITLE = TRANSLATE + "Just the word: Supporters"
 export const SUPPORTER_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: We're grateful to our supporters for their contributions to our platform."
 export const SUPPORTER_LOGO_STYLE = "minimalist and modern square logo on white background" + EMOJI
-export const SUPPORTER_DESCRIPTION_STYLE = "Keep it very short, a few words" + EMOJI
+export const SUPPORTER_DESCRIPTION_STYLE = REPHRASE + TRANSLATE + EMOJI + "Keep it very short, a few words"
 
 export const FOOTER_TERMS_CONDITIONS =
 TRANSLATE + 

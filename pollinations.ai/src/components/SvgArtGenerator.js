@@ -15,8 +15,8 @@ const SvgArtGenerator = ({ width = 600, height = 300, style, prompt = "Create a 
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSeed((seed) => (seed + 1) % 30);
-    }, 2500);
+      setSeed((seed) => (seed + 1) % 5);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 

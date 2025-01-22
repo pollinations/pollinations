@@ -18,6 +18,7 @@ import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons" // Import the ICONS
 import ContentCopyIcon from "@mui/icons-material/ContentCopy" // Import the Material UI copy icon
 import SvgArtGallery from "../components/SvgArtGallery"
+import SvgArtGenerator from "../components/SvgArtGenerator"
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -39,7 +40,9 @@ const handleEmailButtonClick = (e) => {
 
 const Hero = () => {
   return (
+    
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+      <SvgArtGenerator width="1500px" height="400px">  </SvgArtGenerator>
       <SectionSubContainer>
         <Grid container spacing={2} alignItems="center">
           <Grid xs={12} md={6}>
@@ -53,7 +56,7 @@ const Hero = () => {
           </Grid>
         </Grid>
       </SectionSubContainer>
-      <SvgArtGallery />
+      {/* <SvgArtGallery /> */}
       <SectionSubContainer>
         <Grid container spacing={2} >
           <Grid size={12} >

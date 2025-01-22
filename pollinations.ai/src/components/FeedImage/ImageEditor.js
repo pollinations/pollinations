@@ -8,8 +8,8 @@ import {
   TextField,
   Checkbox,
   Button,
-  TextareaAutosize,
 } from "@mui/material"
+import TextareaAutosize from 'react-textarea-autosize'
 import { Colors, Fonts } from "../../config/global"
 import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
@@ -147,12 +147,23 @@ export const ImageEditor = memo(function ImageEditor({
     fontSize: paramTextSize,
     color: paramTextColor,
     padding: "15px",
+    height: "120px",
+    minHeight: "30px",
     resize: "vertical",
-    maxHeight: "100px",
     overflowY: "auto",
     scrollbarWidth: "auto",
     scrollbarColor: `${Colors.gray2}99 transparent`,
     msOverflowStyle: "auto",
+    transition: 'all 0.2s ease',
+    '&:focus': {
+      outline: 'none',
+      borderColor: Colors.lime,
+      boxShadow: `0 0 0 2px ${Colors.lime}33`
+    },
+    '&::placeholder': {
+      color: Colors.gray2,
+      opacity: 1
+    }
   }
 
   return (
@@ -174,11 +185,27 @@ export const ImageEditor = memo(function ImageEditor({
               {isStopped ? (
                 // Edit mode: Text area (no Markdown)
                 <TextareaAutosize
-                  style={sharedTextAreaStyle}
                   value={imageParams.prompt}
                   onChange={(e) => handleParamChange("prompt", e.target.value)}
                   onFocus={handleFocus}
-                  
+                  minRows={3}
+                  maxRows={6}
+                  cacheMeasurements
+                  onHeightChange={(height) => console.log('New height:', height)}
+                  style={{
+                    fontFamily: Fonts.parameter,
+                    fontSize: "1.1em",
+                    color: paramTextColor,
+                    padding: "15px",
+                    resize: "vertical",
+                    overflowY: "auto",
+                    scrollbarWidth: "auto",
+                    scrollbarColor: `${Colors.gray2}99 transparent`,
+                    msOverflowStyle: "auto",
+                    backgroundColor: "transparent",
+                    border: `0.1px solid ${paramBorderColor}`,
+                    width: "100%",
+                  }}
                 />
               ) : (
                 // Read-only mode with Markdown

@@ -10,7 +10,7 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 
 export default function News() {
   return (
-    <SectionContainer>
+    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <Accordion style={{ width: "100%", backgroundColor: Colors.lime, margin: 0, padding: 0 }}>
         <AccordionSummary
           expandIcon={<ArrowDownwardIcon />}

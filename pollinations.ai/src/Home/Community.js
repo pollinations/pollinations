@@ -8,8 +8,6 @@ import {
   COMMUNITY_DISCORD_SUBTITLE,
   COMMUNITY_GITHUB_SUBTITLE,
   COMMUNITY_GITHUB_CTO,
-  COMMUNITY_DISCORD_LOGO_PROMPT,
-  COMMUNITY_GITHUB_LOGO_PROMPT,
   ASCII_APP_TOOLTIP,
 } from "../config/copywrite.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
@@ -42,10 +40,10 @@ const Community = () => {
   }
 
   // Helper function to return the proper icon for each platform
-  const getPlatformIcon = (prompt) => {
-    if (prompt === COMMUNITY_DISCORD_LOGO_PROMPT) {
+  const getPlatformIcon = (platform) => {
+    if (platform === "discord") {
       return ICONS.discord
-    } else if (prompt === COMMUNITY_GITHUB_LOGO_PROMPT) {
+    } else if (platform === "github") {
       return ICONS.github
     }
     return ""
@@ -53,13 +51,13 @@ const Community = () => {
 
   const communityPlatforms = [
     {
-      imagePrompt: COMMUNITY_DISCORD_LOGO_PROMPT,
+      platform: "discord",
       buttonClickHandler: handleDiscordButtonClick,
       cto: COMMUNITY_DISCORD_CTO,
       subtitle: COMMUNITY_DISCORD_SUBTITLE,
     },
     {
-      imagePrompt: COMMUNITY_GITHUB_LOGO_PROMPT,
+      platform: "github",
       buttonClickHandler: handleGithubButtonClick,
       cto: COMMUNITY_GITHUB_CTO,
       subtitle: COMMUNITY_GITHUB_SUBTITLE,
@@ -119,7 +117,7 @@ const Community = () => {
                       xmlns="http://www.w3.org/2000/svg"
                       style={{ marginRight: "8px" }}
                     >
-                      <path d={getPlatformIcon(platform.imagePrompt)} />
+                      <path d={getPlatformIcon(platform.platform)} />
                     </svg>
                     <LLMTextManipulator>{platform.cto}</LLMTextManipulator>
                   </GeneralButton>
@@ -140,7 +138,7 @@ const Community = () => {
             </Grid>
           ))}
         </Grid>
-        <CustomTooltip title={ASCII_APP_TOOLTIP} interactive>
+        <CustomTooltip title={<LLMTextManipulator>{ASCII_APP_TOOLTIP}</LLMTextManipulator>} interactive>
           <SectionSubContainer>
             <Box
               sx={{

@@ -8,6 +8,7 @@ function SectionTitle({ title, color }) {
     <SectionTitleStyle color={color}>
       <Typography
         variant="inherit"
+        component="div"
         sx={{
           fontSize: 'inherit',
           fontFamily: 'inherit',

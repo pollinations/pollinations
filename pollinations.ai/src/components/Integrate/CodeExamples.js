@@ -86,7 +86,7 @@ export function CodeExamples({ image = {} }) {
 
           return (
             <Box key={key} position="relative" style={{ width: "100%" }}>
-              <SectionSubContainer style={{ backgroundColor: Colors.offblack2 }}>
+              <SectionSubContainer paddingBottom="0em" style={{ backgroundColor: Colors.offblack2 }}>
                 <CodeBlock
                   text={text}
                   language={language}

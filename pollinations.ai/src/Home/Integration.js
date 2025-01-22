@@ -20,7 +20,9 @@ export const Integration = () => {
           <LLMTextManipulator>{INTEGRATION_SUBTITLE}</LLMTextManipulator>
         </SectionHeadlineStyle>
       </SectionSubContainer>
-      <CodeExamples image={image} />
+      <SectionSubContainer>
+        <CodeExamples image={image} />
+      </SectionSubContainer>
     </SectionContainer>
   )
 }

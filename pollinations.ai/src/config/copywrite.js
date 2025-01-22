@@ -26,7 +26,7 @@ export const HERO_GITHUB_LINK = "Readme.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
 export const NEWS_TITLE = TRANSLATE + "Goal is to make a short title of the last updates section, In one very short sentence" + EMOJI
-export const NEWS_LIST = TRANSLATE + `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, but only small font size. Here is the list to fornat:
+export const NEWS_LIST = REPHRASE + TRANSLATE + RESPONSIVE + `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Here is the list to fornat:
 - **2023-10-01 - Feature Request**: Want a new feature? Create a [GitHub issue](https://github.com/pollinations/pollinations/issues/new) and our [AI assistant](https://mentat.ai/) will implement it!
 - **2023-09-15 - New Release**: Check out our latest update with enhanced features and improved performance. [Read more](https://pollinations.ai/releases/2023-09-15)
 - **2023-08-30 - Community Event**: Join our upcoming community event to connect with fellow developers and enthusiasts. [Register here](https://pollinations.ai/events/community-2023)
@@ -38,26 +38,20 @@ TRANSLATE +
 EMOJI +
 "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
 
-export const IMAGE_FEED_TITLE = TRANSLATE + "Live Feed"
-export const IMAGE_FEED_MODE1 = TRANSLATE + "Translate the word 'Watch, meaning looking at a live feed"
-export const IMAGE_FEED_MODE2 = TRANSLATE + "Translate the word 'Try'"
-export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Translate the word 'Wait'"
-export const IMAGE_EDIT_BUTTON_OFF = 
-TRANSLATE +
-"Translate the word 'Create'"
+export const IMAGE_FEED_TITLE = TRANSLATE + "Just the word 'Live Feed', meaning a stream of images"
+export const IMAGE_FEED_MODE1 = TRANSLATE + "Just the word 'Watch', meaning looking at a live feed"
+export const IMAGE_FEED_MODE2 = TRANSLATE + "Just the word 'Try', meaning trying to generate an image"
+export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Just the word 'Wait', meaning waiting for the image to be generated"
+export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Just the word 'Create', meaning creating an image"
 
 export const INTEGRATION_TITLE = TRANSLATE + "Integrate"
-export const INTEGRATION_SUBTITLE =
-  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started." +
-  EMOJI
+export const INTEGRATION_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started."
 export const FEED_ENANCER_TOOLTIP =
   "AI prompt enhancer that helps create better images by improving your text prompt."
 export const FEED_LOGO_WATERMARK = "Enable watermark logo."
 
-export const PROJECT_TITLE = TRANSLATE + "User Builds"
-export const PROJECT_SUBTITLE =
-  "Express this in one sentence: Here are some of the various implementations that our API is currently powering." +
-  EMOJI
+export const PROJECT_TITLE = TRANSLATE + "Just the word: User Builds"
+export const PROJECT_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Here are some of the various implementations that our API is currently powering."
 export const PROJECT_DESCRIPTION_STYLE =
 REPHRASE +
 TRANSLATE +
@@ -76,25 +70,18 @@ export const COMMUNITY_TITLE = TRANSLATE + "Contribute"
 export const COMMUNITY_SUBTITLE =
   "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate." +
   EMOJI
-export const COMMUNITY_DISCORD_LOGO_PROMPT = "Discord logo that looks cool"
-export const COMMUNITY_GITHUB_LOGO_PROMPT = "GitHub logo that looks cool"
-export const COMMUNITY_DISCORD_SUBTITLE =
-  "Introduce our Discord channel, make it just a few words. Don't cite Discord. In a single very short sentence." +
-  EMOJI
+
+export const COMMUNITY_DISCORD_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Introduce our Discord channel, make it just a few words. In a single very short sentence."
 export const COMMUNITY_DISCORD_CTO = "Discord"
-export const COMMUNITY_GITHUB_SUBTITLE =
-  "Highlight our GitHub repository as a hub for collaboration and contribution. Encourage participation in a single very short sentence. " +
-  EMOJI
+export const COMMUNITY_GITHUB_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Highlight our GitHub repository as a hub for collaboration and contribution. In a single very short sentence."
 export const COMMUNITY_GITHUB_CTO = "GitHub"
 
-export const ASCII_APP_TOOLTIP = "Try out our ASCII art generator!"
+export const ASCII_APP_TOOLTIP = REPHRASE + TRANSLATE + EMOJI + "Incite the users to try out our ASCII art generator!"
 
 export const TEAM_JOB_TITLE_STYLE = "Describe it with one very short poetic sentence, Format with related emojis."
 
-export const TEAM_TITLE = TRANSLATE + "Team"
-export const TEAM_SUBTITLE =
-  "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions." +
-  EMOJI
+export const TEAM_TITLE = TRANSLATE + "Just the word: Team"
+export const TEAM_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions."
 export const TEAM_1_NAME = REPHRASE + "Write only the text 'Thomas Haferlach' in bold and all caps"
 export const TEAM_1_FUNCTION = REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Write the text 'CEO'" + TEAM_JOB_TITLE_STYLE
 export const TEAM_2_NAME = REPHRASE + "Write only the text 'Elliot Fouchy' in bold and all caps"
@@ -122,9 +109,8 @@ export const TEAM_4_IMAGE = team4
 export const TEAM_5_IMAGE = team5
 export const TEAM_6_IMAGE = team6
 
-export const SUPPORTER_TITLE = "Support"
-export const SUPPORTER_SUBTITLE =
-  "We're grateful to our supporters for their contributions to our platform." + EMOJI
+export const SUPPORTER_TITLE = TRANSLATE + "Just the word: Supporters"
+export const SUPPORTER_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: We're grateful to our supporters for their contributions to our platform."
 export const SUPPORTER_LOGO_STYLE = "minimalist and modern square logo on white background" + EMOJI
 export const SUPPORTER_DESCRIPTION_STYLE = "Keep it very short, a few words" + EMOJI
 

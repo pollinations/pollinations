@@ -54,6 +54,7 @@ export const PROJECT_TITLE = TRANSLATE + "User Builds"
 export const PROJECT_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Here are some of the various implementations that our API is currently powering."
 export const PROJECT_DESCRIPTION_STYLE =
 REPHRASE +
+RESPONSIVE +
 TRANSLATE +
 EMOJI +
   "Text to edit: Underline texts that seem to be a link apart from if the text is 'pollinations.ai', because we already are on this website. Two sentnces maximum. Never link the Pollinations.ai website." 

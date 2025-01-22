@@ -10,10 +10,13 @@ export function LLMTextManipulator({ children }) {
   const userLanguage = navigator.language || navigator.userLanguage
   const isEnglish = userLanguage.startsWith("en")
 
-  console.log("User language is English:", isEnglish)
+  console.log(`User language is: ${userLanguage}`)
 
-  // Helper function: finds instructions in the string & returns them in the order found,
-  // plus the text with those instructions removed.
+  /**
+   * Helper function:
+   *   1) Finds instructions in the string & returns them in the order they appear.
+   *   2) Strips those instructions from the text, returning { textWithoutInstructions, instructions }.
+   */
   function extractInstructionsFromString(originalText) {
     let text = originalText
     let instructions = []
@@ -28,9 +31,11 @@ export function LLMTextManipulator({ children }) {
 
       if (indices.length === 0) break
 
+      // Grab the earliest instruction occurrence
       const earliest = indices.reduce((min, cur) => (cur.idx < min.idx ? cur : min))
       instructions.push(earliest.name)
 
+      // Remove that occurrence from the text
       text =
         text.slice(0, earliest.idx) +
         text.slice(earliest.idx + earliest.name.length)
@@ -42,14 +47,38 @@ export function LLMTextManipulator({ children }) {
     }
   }
 
-  // Convert "children" to an array in case multiple items were passed
+  /**
+   * Helper function to build a multi-line markdown prompt that keeps
+   * the "instruction" and the "text" separated to avoid confusion.
+   */
+  function buildInstructionPrompt(instructionText, textToProcess) {
+    // Derive a shorter label from instructionText
+    // (e.g., if "instructionText" starts with "Rephrase...", just call it "Rephrase")
+    let shortLabel = "Generic"
+    if (instructionText.startsWith("Rewrite") || instructionText.startsWith("Rephrase")) {
+      shortLabel = "Rephrase"
+    } else if (instructionText.startsWith("Enrich") || instructionText.startsWith("Add")) {
+      shortLabel = "Emoji"
+    } else if (instructionText.startsWith("Most important,")) {
+      shortLabel = "Responsive"
+    } else if (instructionText.startsWith("Translate")) {
+      shortLabel = "Translate"
+    }
+
+    // Return a structured markdown so the text is clearly separated
+    return `## Function: ${shortLabel}
+**Context**: ${instructionText}
+**Prompt**: ${textToProcess}`
+  }
+
+  // Turn "children" into an array in case multiple items were passed
   const childArray = React.Children.toArray(children)
 
   // Process each child individually
   const processedOutputs = childArray.map((childContent, index) => {
     const childString = childContent.toString()
 
-    // Extract the instructions in order & remove them from the text
+    // 1) Extract instructions & remove them from text
     const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
 
     console.group(`Child #${index + 1} - Initial Parsing`)
@@ -60,41 +89,42 @@ export function LLMTextManipulator({ children }) {
 
     let currentText = textWithoutInstructions
 
+    // 2) Apply each instruction in turn
     instructions.forEach((instruction) => {
-      // Skip TRANSLATE if user is English
+      // Bypass if user is English & instruction is TRANSLATE
       if (instruction === TRANSLATE && isEnglish) {
         console.log("Skipping TRANSLATE (user is English).")
         return
       }
 
-      // Skip RESPONSIVE if screen is not 'xs'
+      // Bypass if not on XS screen & instruction is RESPONSIVE
       if (instruction === RESPONSIVE && !isXs) {
         console.log("Skipping RESPONSIVE (not on xs screen).")
         return
       }
 
-      // Build the prompt to send to usePollinationsText
-      // If it's TRANSLATE, append the user language.
-      // Otherwise, just prepend the instruction.
-      let combinedPrompt
+      // If it's a translate instruction, append the user language
+      let finalInstruction = instruction
       if (instruction === TRANSLATE) {
-        // The user language might be appended in a way that your translation logic expects
-        combinedPrompt = `${instruction} ${userLanguage} ${currentText}`
-      } else {
-        combinedPrompt = `${instruction} ${currentText}`
+        finalInstruction += ` ${userLanguage}`
       }
 
-      console.group(`Applying instruction: ${instruction}`)
-      console.log("Input to usePollinationsText:", combinedPrompt)
+      // Build a dedicated markdown prompt (to keep instruction and text separate)
+      const promptMarkdown = buildInstructionPrompt(finalInstruction, currentText)
 
-      // Transform with Pollinations
-      const result = usePollinationsText(combinedPrompt) || currentText
+      console.group(`Applying instruction: ${instruction}`)
+      console.log("Input to usePollinationsText (markdown prompt):\n", promptMarkdown)
+
+      // Use the pollinations function
+      const result = usePollinationsText(promptMarkdown) || currentText
+
       if (result.includes("HTTP error! status: 429")) {
-        console.log("Rate limit (429) detected. Output replaced with 'Loading...'.")
+        console.log("Rate limit error (429) => output replaced with 'Loading...'.")
         currentText = "Loading..."
       } else {
         currentText = result
       }
+
       console.log("Output from usePollinationsText:", currentText)
       console.groupEnd()
     })
@@ -106,6 +136,7 @@ export function LLMTextManipulator({ children }) {
   const finalOutput = processedOutputs.join("\n\n")
   console.log("Final Output after all children processed:", finalOutput)
 
+  // 3) Render the final result in Markdown
   return (
     <ReactMarkdown
       components={{

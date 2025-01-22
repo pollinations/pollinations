@@ -19,7 +19,7 @@ import { CustomTooltip } from "../components/CustomTooltip.js"
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
 import { ICONS } from "../assets/icons/icons.js" // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material"
-import background from "../assets/background/Deep_sea_bioluminescent_city.webp"
+import { SectionBG } from "../config/global"
 
 const Community = () => {
   const theme = useTheme()
@@ -66,7 +66,7 @@ const Community = () => {
   ]
 
   return (
-    <SectionContainer backgroundImage={background}>
+    <SectionContainer backgroundImage={SectionBG.community}>
       <SectionSubContainer>
         <SectionTitle title={COMMUNITY_TITLE} color={Colors.lime} />
       </SectionSubContainer>

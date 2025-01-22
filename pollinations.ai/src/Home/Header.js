@@ -1,6 +1,6 @@
 import React from "react"
 import { Box, useTheme } from "@mui/material"
-import { Colors } from "../config/global"
+import { Colors, SectionBG } from "../config/global"
 import { SectionContainer } from "../components/SectionContainer"
 import { NavLink } from "react-router-dom"
 import { SocialLinks } from "../components/SocialLinks"
@@ -12,7 +12,7 @@ const Header = () => {
   const theme = useTheme() // Use the useTheme hook to access the theme
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+    <SectionContainer backgroundColor={SectionBG.header}>
       <Box
         sx={{
           display: "flex",

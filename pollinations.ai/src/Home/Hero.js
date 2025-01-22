@@ -1,5 +1,5 @@
 import React from "react"
-import { Colors, Fonts } from "../config/global"
+import { Colors, Fonts, SectionBG } from "../config/global"
 import { GeneralButton } from "../components/GeneralButton"
 import {
   SectionContainer,
@@ -40,7 +40,7 @@ const handleEmailButtonClick = (e) => {
 
 const Hero = () => {
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+    <SectionContainer backgroundColor={SectionBG.hero}>
       <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator>
       <SectionSubContainer>
         <Grid container spacing={2} alignItems="center">

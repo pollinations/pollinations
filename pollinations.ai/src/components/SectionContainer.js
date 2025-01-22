@@ -10,7 +10,7 @@ export const SectionContainer = styled.div`
   background-color: ${(props) => props.backgroundColor || "transparent"};
   background-image: ${(props) =>
     props.backgroundImage
-      ? `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(${props.backgroundImage})`
+      ? `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.9)), url(${props.backgroundImage})`
       : "none"};
   background-size: cover;
   background-position: center center;

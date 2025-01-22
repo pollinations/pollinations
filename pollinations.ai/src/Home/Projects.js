@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { makeStyles } from "@mui/styles"
 
-import { Colors, Fonts } from "../config/global"
+import { Colors, Fonts, SectionBG } from "../config/global"
 import { projects } from "../config/projectList"
 import {
   PROJECT_TITLE,
@@ -43,7 +43,7 @@ const Projects = () => {
   const [selectedCategory, setSelectedCategory] = useState("apps")
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
+    <SectionContainer backgroundImage={SectionBG.project}>
       <SectionSubContainer>
         <SectionTitle title={PROJECT_TITLE} />
       </SectionSubContainer>

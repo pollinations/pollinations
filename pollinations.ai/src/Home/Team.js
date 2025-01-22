@@ -1,4 +1,4 @@
-import { Colors } from "../config/global.js"
+import { Colors, SectionBG } from "../config/global.js"
 import {
   SectionContainer,
   SectionSubContainer,
@@ -29,7 +29,6 @@ import {
 import Grid from "@mui/material/Grid2"
 import SectionTitle from "../components/SectionTitle.js"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
-import background from "../assets/background/City.webp"
 import { Box } from "@mui/material"
 
 const teamMembers = [
@@ -43,7 +42,7 @@ const teamMembers = [
 
 const Team = () => {
   return (
-    <SectionContainer backgroundImage={background}>
+    <SectionContainer backgroundImage={SectionBG.team}>
       <SectionSubContainer>
         <SectionTitle title={TEAM_TITLE} color={Colors.lime} />
       </SectionSubContainer>

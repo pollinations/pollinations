@@ -4,7 +4,7 @@ import { useFeedLoader } from "../utils/useFeedLoader"
 import { useImageEditor, useImageSlideshow } from "../utils/useImageSlideshow"
 import debug from "debug"
 import { ServerLoadInfo } from "../components/FeedImage/ServerLoadInfo"
-import { Colors } from "../config/global"
+import { Colors, SectionBG } from "../config/global"
 import { ModelInfo } from "../components/FeedImage/ModelInfo"
 import { ImageEditor } from "../components/FeedImage/ImageEditor"
 import { FeedEditSwitch } from "../components/FeedImage/FeedEditSwitch"
@@ -14,9 +14,7 @@ import SectionTitle from "../components/SectionTitle"
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite"
 import { getImageURL } from "../utils/getImageURL"
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
-import background from "../assets/background/Fractal_tessellation_network.webp"
-import background2 from "../assets/background/Nanoscale_material_topography_1.webp"
-import background3 from "../assets/background/Nanoscale_material_topography2.webp"
+
 
 const log = debug("GenerativeImageFeed")
 
@@ -110,7 +108,7 @@ export const FeedImage = memo(() => {
   }
 
   return (
-    <SectionContainer backgroundImage={background3}>
+    <SectionContainer backgroundImage={SectionBG.feedImage}>
       <SectionSubContainer>
         <SectionTitle title={IMAGE_FEED_TITLE} />
       </SectionSubContainer>

@@ -1,5 +1,5 @@
 import React from "react"
-import { Colors, Fonts } from "../config/global"
+import { Colors, Fonts, SectionBG } from "../config/global"
 import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
@@ -27,7 +27,7 @@ const Supporter = () => {
     )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offblack }}>
+    <SectionContainer backgroundImage={SectionBG.supporter}>
       <SectionSubContainer>
         <SectionTitle title={SUPPORTER_TITLE} />
       </SectionSubContainer>

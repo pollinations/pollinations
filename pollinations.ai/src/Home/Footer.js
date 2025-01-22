@@ -18,6 +18,7 @@ const Footer = () => {
         justifyContent="space-between"
         padding="1em"
         maxWidth="95%"
+        gap="2em"
       >
         <Grid
           size={{ xs: 12, md: 6 }}
@@ -25,7 +26,7 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: { xs: "center", md: "flex-start" },
-            gap: "1em",
+            gap: "2em",
           }}
         >
           <StyledLink
@@ -50,12 +51,13 @@ const Footer = () => {
             marginTop: "1em",
             alignItems: { xs: "center", md: "flex-end" },
             height: "100%",
-            fontFamily: Fonts.parameter,
+            fontFamily: Fonts.title,
           }}
         >
           <StyledLink to="/terms">
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
+          <br />
           <LLMTextManipulator>{FOOTER_INFO}</LLMTextManipulator>
         </Grid>
       </Box>

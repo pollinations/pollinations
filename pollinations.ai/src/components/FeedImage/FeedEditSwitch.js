@@ -16,10 +16,10 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         backgroundColor={toggleValue === "feed" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
         style={{
-          height: "75px",
+          height: "70px",
           width: "100%",
           fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.parameter,
+          fontFamily: Fonts.title,
           fontWeight: 600,
           padding: "0 1em",
         }}
@@ -35,7 +35,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
         style={{
           width: "100%",
           fontSize: { xs: "1.5em", md: "1.8em" },
-          fontFamily: Fonts.parameter,
+          fontFamily: Fonts.title,
           fontWeight: 600,
           padding: "0 1em",
         }}

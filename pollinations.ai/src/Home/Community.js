@@ -109,7 +109,7 @@ const Community = () => {
                     textColor={Colors.offwhite}
                     fontSize={isXs ? "1.5em" : "2.5em"}
                     borderColor={Colors.offwhite}
-                    style={{ fontFamily: Fonts.parameter }}
+                    style={{ fontFamily: Fonts.title }}
                   >
                     <svg
                       width={isXs ? "40" : "50"}

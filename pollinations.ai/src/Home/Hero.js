@@ -71,7 +71,7 @@ const Hero = () => {
               textColor={Colors.offwhite}
               style={{
                 fontSize: "1.5rem",
-                fontFamily: Fonts.parameter,
+                fontFamily: Fonts.title,
                 fontWeight: 600,
               }}
             >
@@ -87,7 +87,7 @@ const Hero = () => {
               textColor={Colors.offwhite}
               style={{
                 fontSize: "1.5rem",
-                fontFamily: Fonts.parameter,
+                fontFamily: Fonts.title,
                 fontWeight: 600,
               }}
             >
@@ -113,7 +113,7 @@ const Hero = () => {
               style={{
                 width: "100%",
                 fontSize: "1.5rem",
-                fontFamily: Fonts.parameter,
+                fontFamily: Fonts.title,
                 fontWeight: 600,
               }}
             >

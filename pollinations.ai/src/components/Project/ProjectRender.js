@@ -54,7 +54,7 @@ const ProjectsRender = ({ classes }) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: Fonts.parameter,
+                fontFamily: Fonts.title,
               }}
             >
               {category.title}

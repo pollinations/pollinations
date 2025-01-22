@@ -432,7 +432,7 @@ export const ImageEditor = memo(function ImageEditor({
                   width: "100%",
                   animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",
                   height: "60px",
-                  fontFamily: Fonts.parameter,
+                  fontFamily: Fonts.title,
                 }}
               >
                 <LLMTextManipulator>{IMAGE_EDIT_BUTTON_OFF}</LLMTextManipulator>

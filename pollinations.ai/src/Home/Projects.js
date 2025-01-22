@@ -74,7 +74,7 @@ const Projects = () => {
             style={{
               width: "100%",
               fontSize: "1.8rem",
-              fontFamily: Fonts.parameter,
+              fontFamily: Fonts.title,
               fontWeight: 600,
               marginTop: "1em",
             }}

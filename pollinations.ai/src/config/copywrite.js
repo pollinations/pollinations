@@ -42,9 +42,9 @@ export const IMAGE_FEED_TITLE = TRANSLATE + "Just the word 'Live Feed', meaning 
 export const IMAGE_FEED_MODE1 = TRANSLATE + "Just the word 'Watch', meaning looking at a live feed"
 export const IMAGE_FEED_MODE2 = TRANSLATE + "Just the word 'Try', meaning trying to generate an image"
 export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Just the word 'Wait', meaning waiting for the image to be generated"
-export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Just the word 'Create', meaning creating an image"
+export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Just the word 'Create' in bold, meaning creating an image"
 
-export const INTEGRATION_TITLE = TRANSLATE + "Integrate"
+export const INTEGRATION_TITLE = TRANSLATE + "Just the word: Integrate"
 export const INTEGRATION_SUBTITLE = REPHRASE + TRANSLATE + EMOJI + "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started."
 export const FEED_ENANCER_TOOLTIP =
   "AI prompt enhancer that helps create better images by improving your text prompt."

@@ -7,6 +7,8 @@ import backgroundImage6 from "../assets/background/06.webp"
 import backgroundImage7 from "../assets/background/07.webp"
 import backgroundImage8 from "../assets/background/08.webp"
 
+
+
 export const SHOW_PROMPT_TOOLTIP = false; 
 
 export const Colors = {
@@ -19,10 +21,10 @@ export const Colors = {
 };
 
 export const Fonts = {
-  body: 'Zapfino, fantasy',
-  title: 'Monospace, monospace',
+  body: 'Zapfino',
+  title: 'Maven Pro',
   headline: 'Monospace, monospace',
-  parameter: 'Courier New, monospace',
+  parameter: 'Courier New',
 }
 
 //   headline: 'Monospace, monospace',
@@ -34,7 +36,7 @@ export const SectionBG = {
     gradient: false,
   },
   hero: {
-    image: Colors.offwhite, 
+    color: Colors.offwhite, 
     gradient: false,
   },
   news: {

@@ -61,7 +61,7 @@ export function CodeExamples({ image = {} }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily: Fonts.parameter,
+                fontFamily: Fonts.title,
               }}
             >
               {key}

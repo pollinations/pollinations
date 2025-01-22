@@ -63,7 +63,6 @@ const Team = () => {
                 sx={{
                   borderRadius: "15px",
                   backgroundColor: "transparent",
-                  border: `1px solid ${Colors.offwhite}`,
                   padding: "0em",
                   maxWidth: "200px",
                 }}
@@ -78,7 +77,7 @@ const Team = () => {
                     objectFit: "cover",
                   }}
                 />
-                <Box bgcolor={`${Colors.offblack}80`} borderRadius="15px" padding="1em">
+                <Box bgcolor={`${Colors.offblack}99`} borderRadius="0 0 15px 15px" padding="1em">
                   <SectionHeadlineStyle color={Colors.lime} fontSize="1em">
                     <LLMTextManipulator>{member.name}</LLMTextManipulator>
                   </SectionHeadlineStyle>

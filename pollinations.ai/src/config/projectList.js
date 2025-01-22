@@ -44,7 +44,7 @@ export const projects = {
   ],
   webApps: [
     {
-      name: "Image Gen - Uncensored Edition 🆕",
+      name: "Image Gen - Uncensored Edition ",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
       description:
         "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
@@ -58,7 +58,7 @@ export const projects = {
       author: "withthatway",
     },
     {
-      name: "Character RP (Roblox) 🆕",
+      name: "Character RP (Roblox) ",
       url: "https://www.roblox.com/games/108463136689847",
       description:
         "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
@@ -71,7 +71,7 @@ export const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
-      name: "Pollinations.AI Gallery 🆕",
+      name: "Pollinations.AI Gallery ",
       url: "https://deng-xian-sheng.github.io/pollinations-img-page/",
       description:
         "A clean and simple gallery showcasing the community's AI-generated images using Pollinations.AI' image feed interface.",
@@ -159,7 +159,7 @@ export const projects = {
       author: "@rtxpower",
     },
     {
-      name: "AI-Bloom 🆕",
+      name: "AI-Bloom ",
       url: "https://ai-bloom.vercel.app/",
       description:
         "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.AI.",
@@ -215,7 +215,7 @@ export const projects = {
   ],
   sdkLibraries: [
     {
-      name: "@pollinations/react 🆕",
+      name: "@pollinations/react ",
       url: "https://www.npmjs.com/package/@pollinations/react",
       description:
         "React hooks for easy integration of Pollinations.AI' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
@@ -223,7 +223,7 @@ export const projects = {
       repoUrl: "https://react-hooks.pollinations.ai/",
     },
     {
-      name: "pypollinations 🆕",
+      name: "pypollinations ",
       url: "https://pypi.org/project/pypollinations/",
       description:
         "A comprehensive Python wrapper for accessing Pollinations.AI API endpoints. Features async support, image/text generation, and model management.",
@@ -231,12 +231,20 @@ export const projects = {
       repoUrl: "https://pypi.org/project/pypollinations/",
     },
     {
-      name: "Pollinations.AI AI Python SDK 🆕",
+      name: "Pollinations.AI AI Python SDK ",
       url: "https://github.com/pollinations-ai/pollinations.ai",
       description:
         "Official Python SDK for working with Pollinations.AI generative models. Supports both image and text generation with conversation context.",
       author: "@pollinations-ai",
       repoUrl: "https://github.com/pollinations-ai/pollinations.ai",
+    },
+    {
+      name: "Polli API Dashboard ",
+      url: "https://polli-api.vercel.app",
+      description:
+        "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",
+      author: "@sugamdeol",
+      repo: "https://github.com/Sugamdeol/Polli-api",
     },
   ],
   socialBots: [
@@ -276,7 +284,7 @@ export const projects = {
   ],
   tutorials: [
     {
-      name: "Proyecto Descartes 🆕",
+      name: "Proyecto Descartes ",
       url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html?page=102",
       description:
         "An educational initiative integrating Pollinations.AI AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
@@ -294,6 +302,13 @@ export const projects = {
         "A step-by-step video guide on creating AI images using Apple Shortcuts and Pollinations.AI.",
       author: "RoutineHub",
       repo: "https://routinehub.co/shortcut/19953/",
+    },
+    {
+      name: "Artistic Styles Book ",
+      url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
+      description:
+        "An interactive book showcasing over 90 different artistic styles generated using Pollinations.AI. Available in HTML and PDF formats.",
+      repo: "https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf",
     },
   ],
 }

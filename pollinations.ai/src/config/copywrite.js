@@ -97,8 +97,8 @@ import team1 from "../assets/team/alex_johnson.png"
 import team2 from "../assets/team/samantha_lee.png"
 import team3 from "../assets/team/michael_chen.png"
 import team4 from "../assets/team/jessica_gomez.png"
-import team5 from "../assets/team/david_brown.png"
-import team6 from "../assets/team/john_doe.png"
+import team5 from "../assets/team/Portrait_XO.webp"
+import team6 from "../assets/team/Kalam.webp"
 
 export const TEAM_1_IMAGE = team1
 export const TEAM_2_IMAGE = team2

@@ -19,6 +19,7 @@ import { CustomTooltip } from "../components/CustomTooltip.js"
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
 import { ICONS } from "../assets/icons/icons.js" // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material"
+import background from "../assets/background/Deep_sea_bioluminescent_city.webp"
 
 const Community = () => {
   const theme = useTheme()
@@ -65,12 +66,12 @@ const Community = () => {
   ]
 
   return (
-    <SectionContainer style={{ backgroundColor: Colors.lime }}>
+    <SectionContainer backgroundImage={background}>
       <SectionSubContainer>
-        <SectionTitle title={COMMUNITY_TITLE} color={Colors.offblack} />
+        <SectionTitle title={COMMUNITY_TITLE} color={Colors.offwhite} />
       </SectionSubContainer>
       <SectionSubContainer>
-        <SectionHeadlineStyle color={Colors.offblack}>
+        <SectionHeadlineStyle color={Colors.offwhite}>
           <LLMTextManipulator>{COMMUNITY_SUBTITLE}</LLMTextManipulator>
         </SectionHeadlineStyle>
       </SectionSubContainer>
@@ -130,7 +131,7 @@ const Community = () => {
                     textAlign: "center",
                   }}
                 >
-                  <SectionHeadlineStyle color={Colors.offblack} fontSize="1.2em">
+                  <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em">
                     <LLMTextManipulator>{platform.subtitle}</LLMTextManipulator>
                   </SectionHeadlineStyle>
                 </Grid>
@@ -138,7 +139,10 @@ const Community = () => {
             </Grid>
           ))}
         </Grid>
-        <CustomTooltip title={<LLMTextManipulator>{ASCII_APP_TOOLTIP}</LLMTextManipulator>} interactive>
+        <CustomTooltip
+          title={<LLMTextManipulator>{ASCII_APP_TOOLTIP}</LLMTextManipulator>}
+          interactive
+        >
           <SectionSubContainer>
             <Box
               sx={{
@@ -147,11 +151,13 @@ const Community = () => {
                 justifyContent: "center",
                 cursor: "pointer",
                 maxWidth: "400px",
-                
               }}
               onClick={handleAsciiArtClick}
             >
-              <AsciiArtGenerator width="100px" style={{fontWeight: "bold"}} />
+              <AsciiArtGenerator
+                width="100px"
+                style={{ fontWeight: "bold", color: Colors.offwhite }}
+              />
             </Box>
           </SectionSubContainer>
         </CustomTooltip>

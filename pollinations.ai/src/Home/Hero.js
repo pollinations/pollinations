@@ -40,106 +40,104 @@ const handleEmailButtonClick = (e) => {
 
 const Hero = () => {
   return (
-    
-    <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
-      <SvgArtGenerator width="1500px" height="400px">  </SvgArtGenerator>
-      <SectionSubContainer>
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={12} md={6}>
-            <SectionHeadlineStyle
-              fontSize="1.5em"
-              color={Colors.offblack}
-              textAlign={{ xs: "center", md: "left" }}
-            >
-              <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
-            </SectionHeadlineStyle>
-          </Grid>
-        </Grid>
-      </SectionSubContainer>
-      {/* <SvgArtGallery /> */}
-      <SectionSubContainer>
-        <Grid container spacing={2} >
-          <Grid size={12} >
-            <SectionHeadlineStyle
-              fontSize="1.5em"
-              color={Colors.offblack}
-            >
-              <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
-            </SectionHeadlineStyle>
-          </Grid>
-          <Grid >
-            <GeneralButton
-              handleClick={handleEmailButtonClick}
-              isLoading={false}
-              borderColor={Colors.offblack}
-              backgroundColor={Colors.offwhite}
-              textColor={Colors.offblack}
-              style={{
-                fontSize: "1.5rem",
-                fontFamily: Fonts.body,
-                fontWeight: 600,
-              }}
-            >
-              <ContentCopyIcon style={{ marginRight: "8px" }} />
-              <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
-            </GeneralButton>
-          </Grid>
-          <Grid >
-            <GeneralButton
-              handleClick={handleDiscordButtonClick}
-              isLoading={false}
-              borderColor={Colors.offblack}
-              backgroundColor={`${Colors.offblack}100`}
-              textColor={Colors.offblack}
-              style={{
-                fontSize: "1.5rem",
-                fontFamily: Fonts.body,
-                fontWeight: 600,
-              }}
-            >
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 1024 1024"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ marginRight: "8px" }}
+    <>
+      <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
+        <SvgArtGenerator width="1500px" height="440px"></SvgArtGenerator>
+        <SectionSubContainer>
+          <Grid container spacing={2} alignItems="center">
+            <Grid xs={12} md={6}>
+              <SectionHeadlineStyle
+                fontSize="1.5em"
+                color={Colors.offblack}
+                textAlign={{ xs: "center", md: "left" }}
               >
-                <path d={ICONS.discord} />
-              </svg>
-              <LLMTextManipulator>{HERO_DISCORD_LINK}</LLMTextManipulator>
-            </GeneralButton>
+                <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
+              </SectionHeadlineStyle>
+            </Grid>
           </Grid>
-          <Grid>
-            <GeneralButton
-              handleClick={handleGithubButtonClick}
-              isLoading={false}
-              borderColor={Colors.offblack}
-              backgroundColor={`${Colors.offblack}100`}
-              textColor={Colors.offblack}
-              style={{
-                width: "100%",
-                fontSize: "1.5rem",
-                fontFamily: Fonts.body,
-                fontWeight: 600,
-              }}
-            >
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 1024 1024"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ marginRight: "8px" }}
+        </SectionSubContainer>
+        {/* <SvgArtGallery /> */}
+        <SectionSubContainer>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <SectionHeadlineStyle fontSize="1.5em" color={Colors.offblack}>
+                <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
+              </SectionHeadlineStyle>
+            </Grid>
+            <Grid>
+              <GeneralButton
+                handleClick={handleEmailButtonClick}
+                isLoading={false}
+                borderColor={Colors.offblack}
+                backgroundColor={Colors.offwhite}
+                textColor={Colors.offblack}
+                style={{
+                  fontSize: "1.5rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
               >
-                <path d={ICONS.github} />
-              </svg>
-              <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
-            </GeneralButton>
+                <ContentCopyIcon style={{ marginRight: "8px" }} />
+                <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
+              </GeneralButton>
+            </Grid>
+            <Grid>
+              <GeneralButton
+                handleClick={handleDiscordButtonClick}
+                isLoading={false}
+                borderColor={Colors.offblack}
+                backgroundColor={Colors.offwhite}
+                textColor={Colors.offblack}
+                style={{
+                  fontSize: "1.5rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
+              >
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 1024 1024"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{ marginRight: "8px" }}
+                >
+                  <path d={ICONS.discord} />
+                </svg>
+                <LLMTextManipulator>{HERO_DISCORD_LINK}</LLMTextManipulator>
+              </GeneralButton>
+            </Grid>
+            <Grid>
+              <GeneralButton
+                handleClick={handleGithubButtonClick}
+                isLoading={false}
+                borderColor={Colors.offblack}
+                backgroundColor={Colors.offwhite}
+                textColor={Colors.offblack}
+                style={{
+                  width: "100%",
+                  fontSize: "1.5rem",
+                  fontFamily: Fonts.body,
+                  fontWeight: 600,
+                }}
+              >
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 1024 1024"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  style={{ marginRight: "8px" }}
+                >
+                  <path d={ICONS.github} />
+                </svg>
+                <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
+              </GeneralButton>
+            </Grid>
           </Grid>
-        </Grid>
-      </SectionSubContainer>
-    </SectionContainer>
+        </SectionSubContainer>
+      </SectionContainer>
+    </>
   )
 }
 

@@ -172,20 +172,28 @@ export const handleRegisterEndpoint = (req, res) => {
                 const server = JSON.parse(body);
                 if (server.url) {
                     registerServer(server.url, server.type || 'flux');
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(200, { 
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    });
                     res.end(JSON.stringify({ success: true, message: 'Server registered successfully' }));
                 } else {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ success: false, message: 'Invalid request body - url is required' }));
                 }
             } catch (error) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ success: false, message: 'Invalid JSON' }));
             }
         });
     } else if (req.method === 'GET') {
         const availableServers = Object.entries(SERVERS).map(([type, servers]) => servers.map(server => ({ ...server, type }))).flat();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        // res.writeHead(200, { 
+        //     'Content-Type': 'application/json',
+        //     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        //     'Pragma': 'no-cache',
+        //     'Expires': '0'
+        // });
         res.end(JSON.stringify(availableServers.map(server => ({
             url: server.url,
             queueSize: server.queue.size + server.queue.pending,
@@ -196,7 +204,6 @@ export const handleRegisterEndpoint = (req, res) => {
             type: server.type
         }))));
     } else {
-        res.writeHead(405, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: false, message: 'Method not allowed' }));
     }
 };

@@ -1,0 +1,14 @@
+# Binary installers
+Miniconda3-latest-Linux-x86_64.sh
+
+# Test outputs
+image_gen_cloudflare/output.png
+
+# Local development files
+metrics/
+processed.txt
+profiling.js
+steps.txt
+
+# Environment variables
+.env

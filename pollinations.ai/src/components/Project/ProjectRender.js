@@ -5,13 +5,14 @@ import StyledLink from "../StyledLink"
 import { LLMTextManipulator } from "../LLMTextManipulator"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
-import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION_STYLE } from "../../config/copywrite"
+import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION } from "../../config/copywrite"
 import Grid from "@mui/material/Grid2"
 import { projectCategories, projects } from "../../config/projectList"
 import { GeneralButton } from "../GeneralButton"
 import { SectionSubContainer } from "../SectionContainer"
 import { useMediaQuery } from "@mui/material"
 import { useTheme } from "@mui/material/styles"
+import { ICONS } from "../../assets/icons/icons" // Import the ICONS
 
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
@@ -66,7 +67,9 @@ const ProjectsRender = ({ classes }) => {
       <Grid container spacing={0.5} className={classes.gridContainer}>
         {displayProjects.map((project, index) => (
           <React.Fragment key={index}>
-            <SectionSubContainer style={{ backgroundColor: Colors.offblack2, padding: "0em" }}>
+            <SectionSubContainer
+              style={{ backgroundColor: `${Colors.offblack2}90`, padding: "0em" }}
+            >
               <Grid
                 container
                 style={{
@@ -88,7 +91,14 @@ const ProjectsRender = ({ classes }) => {
                   <Box style={{ maxWidth: "90%" }}>
                     {renderProjectLink(project)}
                     {project.author && (
-                      <div style={{ marginTop: "0.5em", color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
+                      <div
+                        style={{
+                          marginTop: "0.5em",
+                          color: Colors.offwhite,
+                          fontSize: "1em",
+                          fontFamily: Fonts.parameter,
+                        }}
+                      >
                         by{" "}
                         {project.author.startsWith("@") ? (
                           <Link
@@ -108,9 +118,15 @@ const ProjectsRender = ({ classes }) => {
                 </Grid>
 
                 <Grid size={{ xs: 3, md: 6 }} style={{ textAlign: "left" }}>
-                  <span style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}>
+                  <span
+                    style={{
+                      color: Colors.offwhite,
+                      fontSize: "1em",
+                      fontFamily: Fonts.parameter,
+                    }}
+                  >
                     <LLMTextManipulator>
-                      {PROJECT_DESCRIPTION_STYLE + project.description}
+                      {PROJECT_DESCRIPTION + project.description}
                     </LLMTextManipulator>
                   </span>
                   {project.repo && renderRepoLink(project.repo)}
@@ -134,7 +150,7 @@ const renderProjectLink = (project) => {
         color: Colors.lime,
         fontFamily: Fonts.parameter,
         fontStyle: "normal",
-        fontWeight: "500",
+        fontWeight: "bold",
         fontSize: { xs: "1em", md: "1.2em" },
         lineHeight: { xs: "20px", md: "28px" },
         textDecoration: "none",
@@ -156,8 +172,22 @@ const renderRepoLink = (repoUrl) => {
       rel="noopener noreferrer"
       style={{
         color: Colors.lime,
+        fontFamily: Fonts.parameter,
+        fontSize: "1em",
+        display: "flex",
+        alignItems: "center",
       }}
     >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 1024 1024"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ marginRight: "8px" }}
+      >
+        <path d={ICONS.github} />
+      </svg>
       GitHub
     </StyledLink>
   )

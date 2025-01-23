@@ -11,9 +11,9 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 export default function News() {
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
-      <Accordion style={{ width: "100%", backgroundColor: Colors.lime, margin: 0, padding: 0 }}>
+      <Accordion style={{ width: "100%", backgroundColor: Colors.lime, margin: 0, padding: 0, borderRadius: "0em", }}>
         <AccordionSummary
-          expandIcon={<ArrowDownwardIcon />}
+          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offblack }} />}
           aria-controls="panel1-content"
           id="panel1-header"
         >

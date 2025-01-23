@@ -23,8 +23,8 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
     const maxPixels = sideLength * sideLength;
 
     // Ensure width and height are integers or default to sideLength
-    width = Number.isInteger(parseInt(width)) ? parseInt(width) : 768;
-    height = Number.isInteger(parseInt(height)) ? parseInt(height) : 768;
+    width = Number.isInteger(parseInt(width)) ? parseInt(width) : Math.min(1024, sideLength);
+    height = Number.isInteger(parseInt(height)) ? parseInt(height) : Math.min(1024, sideLength);
 
     // Ensure seed is a valid integer within the allowed range
     const maxSeedValue = 1844674407370955;

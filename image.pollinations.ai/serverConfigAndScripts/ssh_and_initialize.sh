@@ -10,13 +10,10 @@ HOST=$1
 # Automatically accept adding the key if ssh asks
 ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/thomashkey ubuntu@$HOST << EOF
   sudo rm -r /home/ubuntu/ComfyUI
-  cd /home/ubuntu/pollinations
-  git fetch origin
-  git pull
-  git reset --hard origin/master
-  git pull
-  git clean -fd
-  git checkout master
+  sudo rm -r /home/ubuntu/pollinations
+  cd /home/ubuntu
+  git clone https://github.com/pollinations/pollinations.git
+  cd pollinations
   git pull
   cd /home/ubuntu/pollinations/image.pollinations.ai/serverConfigAndScripts
   bash "install-services.sh"

@@ -74,9 +74,13 @@ for aws_ip in "${aws_ips[@]}"; do
     if [ $found -eq 0 ]; then
         log "  ! Found unregistered instance: $aws_ip"
         log "  → Running initialization script for $aws_ip..."
-        ./ssh_and_initialize.sh "$aws_ip"
-        if [ $? -eq 0 ]; then
-            log "  Successfully initialized $aws_ip"
+        output=$(./ssh_and_initialize.sh "$aws_ip" 2>&1)
+        exit_code=$?
+        echo "$output"
+        
+        # Check if services were successfully installed, even if SSH connection was closed
+        if echo "$output" | grep -q "Services installed successfully"; then
+            log "  Successfully initialized $aws_ip (reboot in progress)"
         else
             log "  Failed to initialize $aws_ip"
         fi

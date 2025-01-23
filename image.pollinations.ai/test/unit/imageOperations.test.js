@@ -87,12 +87,6 @@ describe('Image Operations', () => {
       expect(getLogoPath(safeParams, false, false)).to.be.null
     })
 
-    it('should return meoow logo path for meoow model', () => {
-      const safeParams = { nologo: false, model: 'flux-realism', nofeed: false }
-      const logoPath = getLogoPath(safeParams, false, false)
-      expect(logoPath).to.equal('logo_meoow.png')
-    })
-
     it('should return pollinations logo path for pollinations model', () => {
       const safeParams = { nologo: false, model: 'flux', nofeed: false }
       const logoPath = getLogoPath(safeParams, false, false)

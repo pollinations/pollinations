@@ -66,7 +66,7 @@ export const callComfyUI = async (prompt, safeParams, concurrentRequests) => {
     logOps("concurrent requests", concurrentRequests, "safeParams", safeParams);
 
     // Linear scaling of steps between 6 (at concurrentRequests=2) and 1 (at concurrentRequests=36)
-    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (36 - 2)));
+    const steps = Math.max(1, Math.round(4 - ((concurrentRequests - 2) * (4 - 1)) / (10 - 2)));
     logOps("calculated_steps", steps);
 
     prompt = sanitizeString(prompt);
@@ -263,6 +263,67 @@ export async function callMeoow2(prompt, safeParams) {
 };
 
 /**
+ * Rounds a number to the nearest multiple of 8
+ * @param {number} n - Number to round
+ * @returns {number} - Nearest multiple of 8
+ */
+function roundToMultipleOf8(n) {
+  return Math.round(n / 8) * 8;
+}
+
+/**
+ * Calls the Cloudflare Flux API to generate images
+ * @param {string} prompt - The prompt for image generation
+ * @param {Object} safeParams - The parameters for image generation
+ * @returns {Promise<{buffer: Buffer, isMature: boolean, isChild: boolean}>}
+ */
+async function callCloudflareFlux(prompt, safeParams) {
+  const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_API_TOKEN) {
+    throw new Error('Cloudflare credentials not configured');
+  }
+
+  // Limit prompt to 2048 characters
+  const truncatedPrompt = prompt.slice(0, 2048);
+
+  const url = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-1-schnell`;
+
+  // Round width and height to nearest multiple of 8
+  const width = roundToMultipleOf8(safeParams.width || 1024);
+  const height = roundToMultipleOf8(safeParams.height || 1024);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      prompt: truncatedPrompt,
+      width: width,
+      height: height,
+      seed: safeParams.seed || Math.floor(Math.random() * 1000000),
+      steps: 4
+    })
+  });
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.errors?.[0]?.message || 'Cloudflare API request failed');
+  }
+
+  if (!data.result?.image) {
+    throw new Error('No image in response');
+  }
+
+  const imageBuffer = Buffer.from(data.result.image, 'base64');
+  return { buffer: imageBuffer, isMature: false, isChild: false };
+}
+
+/**
  * Calculates the closest aspect ratio from a list of predefined aspect ratios.
  * @param {number} width - The width of the image.
  * @param {number} height - The height of the image.
@@ -315,47 +376,64 @@ export async function convertToJpeg(buffer) {
  * @returns {Promise<Array<{ buffer: Buffer, isChild: boolean, isMature: boolean }>>}
  */
 export async function createAndReturnImageCached(prompt, safeParams, concurrentRequests, originalPrompt, progress, requestId) {
-  let bufferAndMaturity;
-  const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
-  const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
-  
-  // Update generation progress
-  if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
-  
-  if (meoowModels.includes(safeParams.model)) {
-    bufferAndMaturity = await callMeoow(prompt, safeParams);
-  } else if (meoow2Models.includes(safeParams.model)) {
-    bufferAndMaturity = await callMeoow2(prompt, safeParams);
-  } else {
-    bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
+  try {
+    const meoowModels = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow');
+    const meoow2Models = Object.keys(MODELS).filter(model => MODELS[model].type === 'meoow-2');
+    
+    // Update generation progress
+    if (progress) progress.updateBar(requestId, 60, 'Generation', 'Calling API...');
+    let bufferAndMaturity;
+
+    if (meoowModels.includes(safeParams.model)) {
+      bufferAndMaturity = await callMeoow(prompt, safeParams);
+    } else if (meoow2Models.includes(safeParams.model)) {
+      bufferAndMaturity = await callMeoow2(prompt, safeParams);
+    } else {
+          // Try Cloudflare Flux first if model is 'flux'
+      if (safeParams.model === 'flux') {
+        try {
+          if (progress) progress.updateBar(requestId, 30, 'Processing', 'Trying Cloudflare Flux...');
+          bufferAndMaturity = await callCloudflareFlux(prompt, safeParams);
+        } catch (error) {
+          logError('Cloudflare Flux failed, falling back to ComfyUI:', error.message);
+          // Fall through to ComfyUI
+        }
+      }
+      if (!bufferAndMaturity)
+        bufferAndMaturity = await callComfyUI(prompt, safeParams, concurrentRequests);
+    }
+
+    if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
+    if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
+
+    logError("bufferAndMaturity", bufferAndMaturity);
+
+    let isMature = bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
+    const concept = bufferAndMaturity?.concept;
+    const isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+
+    logError("isMature", isMature, "concepts", isChild);
+
+    // Throw error if NSFW content is detected and safe mode is enabled
+    if (safeParams.safe && isMature) {
+      throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
+    }
+
+    if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
+    const logoPath = getLogoPath(safeParams, isChild, isMature);
+    let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
+
+    if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
+    // Convert the buffer to JPEG if it is not already in JPEG format
+    bufferWithLegend = await convertToJpeg(bufferWithLegend);
+
+    if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
+    const { buffer: _buffer, ...maturity } = bufferAndMaturity;
+    bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
+
+    return { buffer: bufferWithLegend, isChild, isMature };
+  } catch (error) {
+    logError('Error in createAndReturnImageCached:', error);
+    throw error;
   }
-  
-  if (progress) progress.updateBar(requestId, 70, 'Generation', 'API call complete');
-  if (progress) progress.updateBar(requestId, 75, 'Processing', 'Checking safety...');
-
-  logError("bufferAndMaturity", bufferAndMaturity);
-
-  let isMature = bufferAndMaturity?.has_nsfw_concept;
-  const concept = bufferAndMaturity?.concept;
-  const isChild = Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
-  logError("isMature", isMature, "concepts", isChild);
-
-  // Throw error if NSFW content is detected and safe mode is enabled
-  if (safeParams.safe && isMature) {
-    throw new Error("NSFW content detected. This request cannot be fulfilled when safe mode is enabled.");
-  }
-
-  if (progress) progress.updateBar(requestId, 80, 'Processing', 'Adding logo...');
-  const logoPath = getLogoPath(safeParams, isChild, isMature);
-  let bufferWithLegend = !logoPath ? bufferAndMaturity.buffer : await addPollinationsLogoWithImagemagick(bufferAndMaturity.buffer, logoPath, safeParams);
-
-  if (progress) progress.updateBar(requestId, 85, 'Processing', 'Converting format...');
-  // Convert the buffer to JPEG if it is not already in JPEG format
-  bufferWithLegend = await convertToJpeg(bufferWithLegend);
-
-  if (progress) progress.updateBar(requestId, 90, 'Processing', 'Writing metadata...');
-  const { buffer: _buffer, ...maturity } = bufferAndMaturity;
-  bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
-
-  return { buffer: bufferWithLegend, isChild, isMature };
 }

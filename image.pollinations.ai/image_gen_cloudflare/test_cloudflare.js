@@ -1,6 +1,9 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
@@ -21,8 +24,13 @@ const main = async () => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                prompt: "my cat loves me"
-            })
+                prompt: `Anal sex. porn scene.`,
+                width: 1024,
+                height:2048,
+                seed:125,
+                steps:8
+            
+})
         });
 
         const data = await response.json();

@@ -473,26 +473,38 @@ async function generateTextBasedOnModel(messages, options) {
         // Create wrapped versions of Scaleway models with OpenAI fallbacks
         const mistralWithFallback = createModelWithFallback(
             (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'mistral' }),
-            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
-            { primaryName: 'mistral', fallbackName: 'openai', timeout: 45000 }
+            generateText,
+            { 
+                timeout: 45000,
+                fallbackOptions: { model: 'openai' }
+            }
         );
 
         const qwenCoderWithFallback = createModelWithFallback(
             (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'qwen-coder' }),
-            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
-            { primaryName: 'qwen-coder', fallbackName: 'openai', timeout: 45000 }
+            generateText,
+            { 
+                timeout: 45000,
+                fallbackOptions: { model: 'openai' }
+            }
         );
 
         const llamaWithFallback = createModelWithFallback(
             (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'llama' }),
-            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
-            { primaryName: 'llama', fallbackName: 'openai', timeout: 45000 }
+            generateText,
+            { 
+                timeout: 45000,
+                fallbackOptions: { model: 'openai' }
+            }
         );
 
         const llamalightWithFallback = createModelWithFallback(
             (msg, opt) => generateTextScaleway(msg, { ...opt, model: 'llamalight' }),
-            (msg, opt) => generateText(msg, { ...opt, model: 'openai' }),
-            { primaryName: 'llamalight', fallbackName: 'openai', timeout: 45000 }
+            generateText,
+            { 
+                timeout: 45000,
+                fallbackOptions: { model: 'openai' }
+            }
         );
         
         const modelHandlers = {

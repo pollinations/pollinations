@@ -10,10 +10,7 @@ describe('modelWrapper', () => {
         const primaryModel = vi.fn().mockResolvedValue({ result: 'primary' });
         const fallbackModel = vi.fn().mockResolvedValue({ result: 'fallback' });
 
-        const wrappedModel = createModelWithFallback(primaryModel, fallbackModel, {
-            primaryName: 'test-primary',
-            fallbackName: 'test-fallback'
-        });
+        const wrappedModel = createModelWithFallback(primaryModel, fallbackModel);
 
         const result = await wrappedModel(['test message'], { option: 'value' });
 
@@ -22,20 +19,22 @@ describe('modelWrapper', () => {
         expect(fallbackModel).not.toHaveBeenCalled();
     });
 
-    test('should use fallback model when primary fails', async () => {
+    test('should use fallback model with merged options when primary fails', async () => {
         const primaryModel = vi.fn().mockRejectedValue(new Error('Primary failed'));
         const fallbackModel = vi.fn().mockResolvedValue({ result: 'fallback' });
 
         const wrappedModel = createModelWithFallback(primaryModel, fallbackModel, {
-            primaryName: 'test-primary',
-            fallbackName: 'test-fallback'
+            fallbackOptions: { model: 'fallback-model' }
         });
 
         const result = await wrappedModel(['test message'], { option: 'value' });
 
         expect(result).toEqual({ result: 'fallback' });
         expect(primaryModel).toHaveBeenCalledWith(['test message'], { option: 'value' });
-        expect(fallbackModel).toHaveBeenCalledWith(['test message'], { option: 'value' });
+        expect(fallbackModel).toHaveBeenCalledWith(['test message'], {
+            option: 'value',
+            model: 'fallback-model'
+        });
     });
 
     test('should timeout primary model after specified duration', async () => {
@@ -46,8 +45,7 @@ describe('modelWrapper', () => {
 
         const wrappedModel = createModelWithFallback(primaryModel, fallbackModel, {
             timeout: 1000,
-            primaryName: 'test-primary',
-            fallbackName: 'test-fallback'
+            fallbackOptions: { model: 'fallback-model' }
         });
 
         const modelPromise = wrappedModel(['test message'], { option: 'value' });
@@ -59,17 +57,31 @@ describe('modelWrapper', () => {
 
         expect(result).toEqual({ result: 'fallback' });
         expect(primaryModel).toHaveBeenCalledWith(['test message'], { option: 'value' });
-        expect(fallbackModel).toHaveBeenCalledWith(['test message'], { option: 'value' });
+        expect(fallbackModel).toHaveBeenCalledWith(['test message'], {
+            option: 'value',
+            model: 'fallback-model'
+        });
+    });
+
+    test('should preserve original options when no fallback options provided', async () => {
+        const primaryModel = vi.fn().mockRejectedValue(new Error('Primary failed'));
+        const fallbackModel = vi.fn().mockResolvedValue({ result: 'fallback' });
+
+        const wrappedModel = createModelWithFallback(primaryModel, fallbackModel);
+
+        await wrappedModel(['test message'], { option: 'value', model: 'original' });
+
+        expect(fallbackModel).toHaveBeenCalledWith(['test message'], {
+            option: 'value',
+            model: 'original'
+        });
     });
 
     test('should throw error when both models fail', async () => {
         const primaryModel = vi.fn().mockRejectedValue(new Error('Primary failed'));
         const fallbackModel = vi.fn().mockRejectedValue(new Error('Fallback failed'));
 
-        const wrappedModel = createModelWithFallback(primaryModel, fallbackModel, {
-            primaryName: 'test-primary',
-            fallbackName: 'test-fallback'
-        });
+        const wrappedModel = createModelWithFallback(primaryModel, fallbackModel);
 
         await expect(wrappedModel(['test message'], { option: 'value' }))
             .rejects.toThrow('Fallback failed');
@@ -81,9 +93,7 @@ describe('modelWrapper', () => {
     test('should throw original error when no fallback is provided', async () => {
         const primaryModel = vi.fn().mockRejectedValue(new Error('Primary failed'));
 
-        const wrappedModel = createModelWithFallback(primaryModel, null, {
-            primaryName: 'test-primary'
-        });
+        const wrappedModel = createModelWithFallback(primaryModel, null);
 
         await expect(wrappedModel(['test message'], { option: 'value' }))
             .rejects.toThrow('Primary failed');

@@ -68,7 +68,7 @@ test('generateTextOpenai should handle jsonMode', async t => {
 
 test('generateTextOpenai should handle long messages', async t => {
     try {
-        const longContent = 'a'.repeat(60000);
+        const longContent = 'a'.repeat(130000);
         const messages = [{ role: 'user', content: longContent }];
         const error = await t.throwsAsync(async () => {
             await generateTextOpenai(messages, {});

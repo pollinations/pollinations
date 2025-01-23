@@ -41,7 +41,7 @@ function countMessageCharacters(messages) {
 }
 
 export async function generateText(messages, options, performSearch = false) {
-    const MAX_CHARS = 128000;
+    const MAX_CHARS = 256000;
     const totalChars = countMessageCharacters(messages);
     
     if (totalChars > MAX_CHARS) {

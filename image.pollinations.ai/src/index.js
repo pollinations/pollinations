@@ -292,12 +292,23 @@ const server = http.createServer((req, res) => {
   const { pathname } = parse(req.url, true);
 
   if (pathname === '/models') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     res.end(JSON.stringify(Object.keys(MODELS)));
     return;
   }
 
   if (pathname === '/register') {
+    res.writeHead(200, { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     handleRegisterEndpoint(req, res);
     return;
   }

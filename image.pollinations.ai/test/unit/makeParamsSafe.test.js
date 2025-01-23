@@ -38,8 +38,8 @@ describe('makeParamsSafe', () => {
     }
 
     const result = makeParamsSafe(input)
-    expect(result.width).toBe(768)
-    expect(result.height).toBe(768)
+    expect(result.width).toBe(1024)
+    expect(result.height).toBe(1024)
     expect(result.seed).toBe(42)
     expect(result.model).toBe('flux')
   })

@@ -1,8 +1,7 @@
-import React, { useState } from "react"
+import React from "react"
 import { GeneralButton } from "../GeneralButton"
 import { Colors, Fonts } from "../../config/global"
 import { IMAGE_FEED_MODE1, IMAGE_FEED_MODE2 } from "../../config/copywrite"
-import { CustomTooltip } from "../CustomTooltip"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../../components/LLMTextManipulator"
 
@@ -11,7 +10,6 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
     <Box style={{ display: "flex", width: "100%" }}>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "feed")}
-        isLoading={isLoading}
         borderColor={Colors.lime}
         backgroundColor={toggleValue === "feed" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "feed" ? Colors.offblack : Colors.lime}
@@ -28,7 +26,6 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
       </GeneralButton>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "edit")}
-        isLoading={isLoading}
         borderColor={Colors.lime}
         backgroundColor={toggleValue === "edit" ? Colors.lime : `${Colors.offblack}99`}
         textColor={toggleValue === "edit" ? Colors.offblack : Colors.lime}

@@ -7,12 +7,16 @@ import { Colors } from "../config/global"
 import styled from "@emotion/styled"
 
 export function LLMTextManipulator({ children }) {
+  const LOGS_ENABLED = false // Change this flag to enable/disable logs
+
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const userLanguage = navigator.language || navigator.userLanguage
   const isEnglish = userLanguage.startsWith("en")
 
-  console.log(`User language is: ${userLanguage}`)
+  if (LOGS_ENABLED) {
+    console.log(`User language is: ${userLanguage}`)
+  }
 
   /**
    * Helper function:
@@ -83,11 +87,13 @@ export function LLMTextManipulator({ children }) {
     // 1) Extract instructions & remove them from text
     const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
 
-    console.group(`Child #${index + 1} - Initial Parsing`)
-    console.log("Initial text:", childString)
-    console.log("Parsed text (without instructions):", textWithoutInstructions)
-    console.log("Instructions order:", instructions)
-    console.groupEnd()
+    if (LOGS_ENABLED) {
+      console.group(`Child #${index + 1} - Initial Parsing`)
+      console.log("Initial text:", childString)
+      console.log("Parsed text (without instructions):", textWithoutInstructions)
+      console.log("Instructions order:", instructions)
+      console.groupEnd()
+    }
 
     let currentText = textWithoutInstructions
 
@@ -95,13 +101,17 @@ export function LLMTextManipulator({ children }) {
     instructions.forEach((instruction) => {
       // Bypass if user is English & instruction is TRANSLATE
       if (instruction === TRANSLATE && isEnglish) {
-        console.log("Skipping TRANSLATE (user is English).")
+        if (LOGS_ENABLED) {
+          console.log("Skipping TRANSLATE (user is English).")
+        }
         return
       }
 
       // Bypass if not on XS screen & instruction is RESPONSIVE
       if (instruction === RESPONSIVE && !isXs) {
-        console.log("Skipping RESPONSIVE (not on xs screen).")
+        if (LOGS_ENABLED) {
+          console.log("Skipping RESPONSIVE (not on xs screen).")
+        }
         return
       }
 
@@ -114,21 +124,27 @@ export function LLMTextManipulator({ children }) {
       // Build a dedicated markdown prompt (to keep instruction and text separate)
       const promptMarkdown = buildInstructionPrompt(finalInstruction, currentText)
 
-      console.group(`Applying instruction: ${instruction}`)
-      console.log("Input to usePollinationsText (markdown prompt):\n", promptMarkdown)
+      if (LOGS_ENABLED) {
+        console.group(`Applying instruction: ${instruction}`)
+        console.log("Input to usePollinationsText (markdown prompt):\n", promptMarkdown)
+      }
 
       // Use the pollinations function
       const result = usePollinationsText(promptMarkdown) || currentText
 
       if (result.includes("HTTP error! status: 429")) {
-        console.log("Rate limit error (429) => output replaced with 'Loading...'.")
+        if (LOGS_ENABLED) {
+          console.log("Rate limit error (429) => output replaced with 'Loading...'.")
+        }
         currentText = "Loading..."
       } else {
         currentText = result
       }
 
-      console.log("Output from usePollinationsText:", currentText)
-      console.groupEnd()
+      if (LOGS_ENABLED) {
+        console.log("Output from usePollinationsText:", currentText)
+        console.groupEnd()
+      }
     })
 
     return currentText
@@ -136,29 +152,30 @@ export function LLMTextManipulator({ children }) {
 
   // Combine all processed child outputs
   const finalOutput = processedOutputs.join("\n\n")
-  console.log("Final Output after all children processed:", finalOutput)
+  if (LOGS_ENABLED) {
+    console.log("Final Output after all children processed:", finalOutput)
+  }
 
   // 3) Render the final result in Markdown
-  return (          
-  <MarkDownStyle>
-
-    <ReactMarkdown
-      components={{
-        p: ({ children }) => <p style={{ margin: "0px" }}>{children}</p>,
-        a: ({ children, ...props }) => (
-          <a style={{ color: "Colors.lime" }} {...props}>
-            {children}
-          </a>
-        ),
-      }}
-    >
-      {finalOutput}
-    </ReactMarkdown>
-  </MarkDownStyle>
+  return (
+    <MarkDownStyle>
+      <ReactMarkdown
+        components={{
+          p: ({ children }) => <p style={{ margin: "0px" }}>{children}</p>,
+          a: ({ children, ...props }) => (
+            <a style={{ color: "Colors.lime" }} {...props}>
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {finalOutput}
+      </ReactMarkdown>
+    </MarkDownStyle>
   )
 }
-const MarkDownStyle = styled.div`
 
+const MarkDownStyle = styled.div`
   a {
     color: ${Colors.lime};
     text-decoration: none;
@@ -166,5 +183,4 @@ const MarkDownStyle = styled.div`
       color: ${Colors.lime}90;
     }
   }
-
 `

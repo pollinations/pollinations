@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { AppBar, ButtonGroup, Box, IconButton } from "@mui/material"
-import { CodeBlock, atomOneDark } from "react-code-blocks"
+import { CodeBlock, paraisoDark } from "react-code-blocks"
 import { Colors, Fonts } from "../../config/global"
 import React from "react"
 import FileCopyIcon from "@mui/icons-material/FileCopy"
@@ -86,7 +86,7 @@ export function CodeExamples({ image = {} }) {
                   text={text}
                   language={language}
                   showLineNumbers={text.split("\n").length > 1}
-                  theme={atomOneDark}
+                  theme={paraisoDark}
                   customStyle={{
                     backgroundColor: "transparent",
                     color: Colors.offwhite,

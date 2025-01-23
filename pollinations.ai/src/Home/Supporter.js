@@ -59,7 +59,7 @@ const Supporter = () => {
               <br />
               <StyledLink
                 href={company.url}
-                style={{ color: Colors.lime, fontFamily: Fonts.parameter }}
+                style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.3em" }}
               >
                 <strong>{company.name}</strong>
               </StyledLink>

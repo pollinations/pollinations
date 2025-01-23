@@ -63,22 +63,7 @@ const Hero = () => {
               <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
             </SectionHeadlineStyle>
           </Grid>
-          <Grid>
-            <GeneralButton
-              handleClick={handleEmailButtonClick}
-              isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
-              style={{
-                fontSize: "1.5rem",
-                fontFamily: Fonts.title,
-                fontWeight: 600,
-              }}
-            >
-              <ContentCopyIcon style={{ marginRight: "8px" }} />
-              <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
-            </GeneralButton>
-          </Grid>
+
           <Grid>
             <GeneralButton
               handleClick={handleDiscordButtonClick}
@@ -128,6 +113,22 @@ const Hero = () => {
                 <path d={ICONS.github} />
               </svg>
               <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
+            </GeneralButton>
+          </Grid>
+          <Grid>
+            <GeneralButton
+              handleClick={handleEmailButtonClick}
+              isLoading={false}
+              backgroundColor={Colors.offblack}
+              textColor={Colors.offwhite}
+              style={{
+                fontSize: "1.5rem",
+                fontFamily: Fonts.title,
+                fontWeight: 600,
+              }}
+            >
+              <ContentCopyIcon style={{ marginRight: "8px" }} />
+              <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
             </GeneralButton>
           </Grid>
         </Grid>

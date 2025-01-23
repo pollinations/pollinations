@@ -23,16 +23,15 @@ export default function News() {
         <AccordionSummary
           expandIcon={
             <ArrowDownwardIcon
-              style={{ color: Colors.offblack, marginRight: "0.5em", fontSize: "3em" }}
+              style={{ color: Colors.offblack }}
             />
           }
           aria-controls="panel1-content"
           id="panel1-header"
-          style={{ padding: "0em", margin: "0em" }}
         >
           <SectionHeadlineStyle
             color={Colors.offblack}
-            style={{ fontSize: "2em", fontFamily: Fonts.headline, lineHeight: "0em" }}
+            style={{ fontSize: "1.5em", fontFamily: Fonts.headline, lineHeight: "0em" }}
           >
             <LLMTextManipulator>{NEWS_TITLE}</LLMTextManipulator>
           </SectionHeadlineStyle>

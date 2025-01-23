@@ -4,38 +4,45 @@ import { SectionContainer, SectionSubContainer } from "../components/SectionCont
 import { Colors } from "../config/global"
 import { CircularProgress, Box } from "@mui/material"
 import { NavLink } from "react-router-dom"
-import { FOOTER_TERMS_CONDITIONS, FOOTER_CLOSE } from "../config/copywrite"
+import { FOOTER_TERMS_CONDITIONS } from "../config/copywrite"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
+import CancelPresentationOutlinedIcon from '@mui/icons-material/CancelPresentationOutlined';
 
 const Terms = () => {
   return (
-    <SectionContainer style={{ backgroundColor: Colors.offblack, position: "relative" }}>
+    <>
       <NavLink
         to="/"
         style={{
-          position: "absolute",
-          top: "30px",
-          right: "30px",
+          position: "relative",
+          top: "4em",
+          right: "2em",
           color: Colors.lime,
           textDecoration: "none",
           display: "flex",
           alignItems: "center",
+          justifyContent: "right",
+          transition: "color 0.3s ease",
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = `${Colors.lime}90`)}
+        onMouseLeave={(e) => (e.currentTarget.style.color = Colors.lime)}
       >
-        <LLMTextManipulator>{FOOTER_CLOSE}</LLMTextManipulator>
+        <CancelPresentationOutlinedIcon fontSize="large"/>
       </NavLink>
-      <SectionSubContainer style={{ backgroundColor: Colors.offblack }}>
-        {FOOTER_TERMS_CONDITIONS ? (
-          <MarkDownStyle>
-            <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS}</LLMTextManipulator>
-          </MarkDownStyle>
-        ) : (
-          <Box display="flex" justifyContent="center" alignItems="center" height="100%">
-            <CircularProgress sx={{ color: Colors.offwhite }} />
-          </Box>
-        )}
-      </SectionSubContainer>
-    </SectionContainer>
+      <SectionContainer style={{ backgroundColor: Colors.offblack, position: "relative" }}>
+        <SectionSubContainer style={{ backgroundColor: Colors.offblack }}>
+          {FOOTER_TERMS_CONDITIONS ? (
+            <MarkDownStyle>
+              <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS}</LLMTextManipulator>
+            </MarkDownStyle>
+          ) : (
+            <Box display="flex" justifyContent="center" alignItems="center" height="100%">
+              <CircularProgress sx={{ color: Colors.offwhite }} />
+            </Box>
+          )}
+        </SectionSubContainer>
+      </SectionContainer>
+    </>
   )
 }
 

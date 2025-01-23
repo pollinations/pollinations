@@ -249,6 +249,19 @@ const projects = {
   ],
   sdkLibraries: [
     {
+      name: "pollinations NPM Module 🆕",
+      url: "https://www.npmjs.com/package/pollinations",
+      description: "A simple and powerful Node.js package for accessing all Pollinations features, including image generation and LLM capabilities.",
+      author: "@maxencexz",
+    },
+    {
+      name: "Server Status Dashboard 🆕",
+      url: "https://www.ai-ministries.com/serverstatus.html",
+      description: "Real-time status monitoring for Pollinations text server and image server. Created by @intolerant0ne.",
+      author: "@intolerant0ne",
+      repo: "https://github.com/Tolerable",
+    },
+    {
       name: "Polli API Dashboard 🆕",
       url: "https://polli-api.vercel.app",
       description: "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",

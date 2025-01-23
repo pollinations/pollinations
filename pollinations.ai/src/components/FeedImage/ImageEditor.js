@@ -1,20 +1,20 @@
 import React, { useState, useEffect, memo } from "react"
-import {
-  Box,
-  Paper,
-  Typography,
-  Menu,
-  MenuItem,
-  TextField,
-  Checkbox,
-  Button,
-} from "@mui/material"
-import TextareaAutosize from 'react-textarea-autosize'
+import { Box, Paper, Typography, Menu, MenuItem, TextField, Checkbox, Button } from "@mui/material"
+import TextareaAutosize from "react-textarea-autosize"
 import { Colors, Fonts } from "../../config/global"
 import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
 import Grid from "@mui/material/Grid2"
-import { FEED_ENANCER_TOOLTIP, FEED_LOGO_WATERMARK, IMAGE_EDIT_BUTTON_OFF } from "../../config/copywrite"
+import {
+  FEED_ENANCER_TOOLTIP,
+  FEED_LOGO_WATERMARK,
+  IMAGE_EDIT_BUTTON_OFF,
+  IMAGE_FEED_TOOLTIP_PROMPT,
+  IMAGE_FEED_TOOLTIP_MODEL,
+  IMAGE_FEED_TOOLTIP_WIDTH,
+  IMAGE_FEED_TOOLTIP_HEIGHT,
+  IMAGE_FEED_TOOLTIP_SEED,
+} from "../../config/copywrite"
 import ReactMarkdown from "react-markdown"
 import { keyframes } from "@emotion/react"
 import CheckIcon from "@mui/icons-material/Check"
@@ -35,7 +35,7 @@ export const ImageEditor = memo(function ImageEditor({
   toggleValue,
 }) {
   // Styling Constants
-  const labelColor = Colors.gray2
+  const labelColor = `${Colors.offwhite}99`
   const labelFont = Fonts.parameter
   const labelSize = "1em"
   const paramTextColor = Colors.offwhite
@@ -51,14 +51,6 @@ export const ImageEditor = memo(function ImageEditor({
   useEffect(() => {
     setAnchorEl(null)
   }, [image])
-
-  if (!imageParams?.imageURL) {
-    return (
-      <Typography component="div" variant="body" style={{ color: Colors.offwhite }}>
-        Loading...
-      </Typography>
-    )
-  }
 
   const { width, height, seed, enhance = false, nologo = false, model } = imageParams
 
@@ -154,16 +146,16 @@ export const ImageEditor = memo(function ImageEditor({
     scrollbarWidth: "auto",
     scrollbarColor: `${Colors.gray2}99 transparent`,
     msOverflowStyle: "auto",
-    transition: 'all 0.2s ease',
-    '&:focus': {
-      outline: 'none',
+    transition: "all 0.2s ease",
+    "&:focus": {
+      outline: "none",
       borderColor: Colors.lime,
-      boxShadow: `0 0 0 2px ${Colors.lime}33`
+      boxShadow: `0 0 0 2px ${Colors.lime}33`,
     },
-    '&::placeholder': {
+    "&::placeholder": {
       color: Colors.gray2,
-      opacity: 1
-    }
+      opacity: 1,
+    },
   }
 
   return (
@@ -178,9 +170,14 @@ export const ImageEditor = memo(function ImageEditor({
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 12 }}>
           <Box>
-            <Typography component="div" variant="body" sx={typographyStyles.label}>
-              Prompt
-            </Typography>
+            <CustomTooltip
+              title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_PROMPT}</LLMTextManipulator>}
+              interactive
+            >
+              <Typography component="div" variant="body" sx={typographyStyles.label}>
+                Prompt
+              </Typography>
+            </CustomTooltip>
             <Box>
               {isStopped ? (
                 // Edit mode: Text area (no Markdown)
@@ -191,7 +188,7 @@ export const ImageEditor = memo(function ImageEditor({
                   minRows={3}
                   maxRows={6}
                   cacheMeasurements
-                  onHeightChange={(height) => console.log('New height:', height)}
+                  onHeightChange={(height) => console.log("New height:", height)}
                   style={{
                     fontFamily: Fonts.parameter,
                     fontSize: "1.1em",
@@ -205,11 +202,12 @@ export const ImageEditor = memo(function ImageEditor({
                     backgroundColor: `${Colors.offblack}99`,
                     border: `0.1px solid ${paramBorderColor}`,
                     width: "100%",
+                    lineHeight: "1.5em",
                   }}
                 />
               ) : (
                 // Read-only mode with Markdown
-                <Box style={sharedTextAreaStyle} >
+                <Box style={sharedTextAreaStyle}>
                   <ReactMarkdown
                     components={{
                       // override <p> styling
@@ -236,9 +234,14 @@ export const ImageEditor = memo(function ImageEditor({
         {toggleValue === "edit" && (
           <>
             <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-              <Typography component="div" variant="body" sx={typographyStyles.label}>
-                Model
-              </Typography>
+              <CustomTooltip
+                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_MODEL}</LLMTextManipulator>}
+                interactive
+              >
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Model
+                </Typography>
+              </CustomTooltip>
               <Button
                 variant="outlined"
                 aria-controls="model-menu"
@@ -287,9 +290,14 @@ export const ImageEditor = memo(function ImageEditor({
               </Menu>
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <Typography component="div" variant="body" sx={typographyStyles.label}>
-                Width
-              </Typography>
+              <CustomTooltip
+                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_WIDTH}</LLMTextManipulator>}
+                interactive
+              >
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Width
+                </Typography>
+              </CustomTooltip>
               <TextField
                 variant="outlined"
                 value={width}
@@ -310,9 +318,14 @@ export const ImageEditor = memo(function ImageEditor({
               />
             </Grid>
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-              <Typography component="div" variant="body" sx={typographyStyles.label}>
-                Height
-              </Typography>
+              <CustomTooltip
+                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_HEIGHT}</LLMTextManipulator>}
+                interactive
+              >
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Height
+                </Typography>
+              </CustomTooltip>
               <TextField
                 variant="outlined"
                 value={height}
@@ -333,9 +346,14 @@ export const ImageEditor = memo(function ImageEditor({
               />
             </Grid>
             <Grid size={{ xs: 4, sm: 4, md: 2 }}>
-              <Typography component="div" variant="body" sx={typographyStyles.label}>
-                Seed
-              </Typography>
+              <CustomTooltip
+                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_SEED}</LLMTextManipulator>}
+                interactive
+              >
+                <Typography component="div" variant="body" sx={typographyStyles.label}>
+                  Seed
+                </Typography>
+              </CustomTooltip>
               <TextField
                 fullWidth
                 variant="outlined"
@@ -358,8 +376,8 @@ export const ImageEditor = memo(function ImageEditor({
             </Grid>
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
               <CustomTooltip
-                title={FEED_ENANCER_TOOLTIP}
-                sx={typographyStyles.tooltipIcon}
+                title={<LLMTextManipulator>{FEED_ENANCER_TOOLTIP}</LLMTextManipulator>}
+                interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
                   Enhance
@@ -393,8 +411,8 @@ export const ImageEditor = memo(function ImageEditor({
             </Grid>
             <Grid size={{ xs: 4, sm: 2, md: 1 }}>
               <CustomTooltip
-                title={FEED_LOGO_WATERMARK}
-                sx={typographyStyles.tooltipIcon}
+                title={<LLMTextManipulator>{FEED_LOGO_WATERMARK}</LLMTextManipulator>}
+                interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
                   Logo

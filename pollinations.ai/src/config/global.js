@@ -23,8 +23,8 @@ export const Colors = {
 export const Fonts = {
   body: 'Zapfino',
   title: 'Maven Pro',
-  headline: 'Monospace, monospace',
-  parameter: 'Courier New',
+  headline: 'Mako',
+  parameter: 'Duru Sans',
 }
 
 //   headline: 'Monospace, monospace',
@@ -60,7 +60,7 @@ export const SectionBG = {
     gradient: false,
   },
   team: {
-    image: backgroundImage3,
+    image: backgroundImage2,
     gradient: true,
   },
   supporter: {

@@ -80,7 +80,7 @@ export function CodeExamples({ image = {} }) {
             <Box key={key} position="relative" style={{ width: "100%" }}>
               <SectionSubContainer
                 paddingBottom="0em"
-                style={{ backgroundColor: Colors.offblack2 }}
+                style={{ backgroundColor: `${Colors.offblack2}60` }}
               >
                 <CodeBlock
                   text={text}

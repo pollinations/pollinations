@@ -11,18 +11,38 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 export default function News() {
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
-      <Accordion style={{ width: "100%", backgroundColor: Colors.lime, margin: 0, padding: 0, borderRadius: "0em", }}>
+      <Accordion
+        style={{
+          width: "100%",
+          backgroundColor: Colors.lime,
+          margin: 0,
+          padding: 0,
+          borderRadius: "0em",
+        }}
+      >
         <AccordionSummary
-          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offblack }} />}
+          expandIcon={
+            <ArrowDownwardIcon
+              style={{ color: Colors.offblack, marginRight: "0.5em", fontSize: "3em" }}
+            />
+          }
           aria-controls="panel1-content"
           id="panel1-header"
+          style={{ padding: "0em", margin: "0em" }}
         >
-          <SectionHeadlineStyle color={Colors.offblack} style={{ fontSize: "2em", fontFamily: Fonts.headline }}>
+          <SectionHeadlineStyle
+            color={Colors.offblack}
+            style={{ fontSize: "2em", fontFamily: Fonts.headline, lineHeight: "0em" }}
+          >
             <LLMTextManipulator>{NEWS_TITLE}</LLMTextManipulator>
           </SectionHeadlineStyle>
         </AccordionSummary>
         <AccordionDetails>
-          <SectionHeadlineStyle color={Colors.offblack} style={{ fontSize: "1.2em", fontFamily: Fonts.headline }} textAlign="left">
+          <SectionHeadlineStyle
+            color={Colors.offblack}
+            style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
+            textAlign="left"
+          >
             <LLMTextManipulator>{NEWS_LIST}</LLMTextManipulator>
           </SectionHeadlineStyle>
         </AccordionDetails>

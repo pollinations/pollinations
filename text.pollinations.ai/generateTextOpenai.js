@@ -44,10 +44,10 @@ export async function generateText(messages, options, performSearch = false) {
     const MAX_CHARS = 56000;
     const totalChars = countMessageCharacters(messages);
     
-    if (options.model === 'openai' && totalChars > MAX_CHARS) {
-        errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
-        throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
-    }
+    // if (options.model === 'openai' && totalChars > MAX_CHARS) {
+    //     errorLog('Input text exceeds maximum length of %d characters (current: %d)', MAX_CHARS, totalChars);
+    //     throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
+    // }
 
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode

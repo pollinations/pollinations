@@ -10,6 +10,7 @@ import { useMediaQuery } from "@mui/material"
 
 const Header = () => {
   const theme = useTheme() // Use the useTheme hook to access the theme
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
 
   return (
     <SectionContainer backgroundConfig={SectionBG.header}>
@@ -40,16 +41,16 @@ const Header = () => {
           >
             <LogoIconBlack
               style={{
-                width: "100px",
-                height: "100px",
-                marginRight: useMediaQuery(theme.breakpoints.down("md")) ? "0em" : "2em",
+                width: isMobile ? "50px" : "75px",
+                height: isMobile ? "50px" : "75px",
+                marginRight: isMobile ? "0em" : "2em",
               }}
             />
             <PollinationsLogo
               style={{
-                width: useMediaQuery(theme.breakpoints.down("md")) ? "300px" : "500px",
-                height: useMediaQuery(theme.breakpoints.down("md")) ? "80px" : "130px",
-                marginTop: "5px",
+                width: isMobile ? "300px" : "400px",
+                height: isMobile ? "auto" : "auto",
+                marginBottom: isMobile ? "1em" : "0em", 
               }}
             />
           </Box>

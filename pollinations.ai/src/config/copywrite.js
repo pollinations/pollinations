@@ -96,7 +96,7 @@ export const PROJECT_DESCRIPTION =
   RESPONSIVE +
   TRANSLATE +
   EMOJI +
-  "Convey the project description in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website."
+  "Convey the project description in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word"
 
 export const PROJECT_CTO_1 =
   REPHRASE +

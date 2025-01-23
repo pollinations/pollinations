@@ -204,7 +204,7 @@ export const projects = {
     {
       name: "FlowGPT",
       url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-      description: "Generate images on-demand with **ChatGPT**.",
+      description: "Generate images on-demand with **ChatGPT**!",
     },
     {
       name: "Unity AI Lab",

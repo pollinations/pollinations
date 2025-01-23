@@ -25,21 +25,18 @@ const LinkItem = styled(Link, {
   borderRadius: "50%",
   border: `1px solid ${Colors.offblack}`,
   backgroundColor: isHovered ? Colors.offblack : Colors.offwhite,
-  width: "47px",
-  height: "47px",
+  width: "40px",
+  height: "40px",
   transition: "background-color 0.3s, filter 0.3s",
   textDecoration: "none",
-  [theme.breakpoints.down("xs")]: {
-    width: "30px",
-    height: "30px",
-  },
+
 }))
 
 const IconImage = styled("img", {
   // Prevent forwarding isHovered and invert to the DOM
   shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
 })(({ theme, isHovered, invert }) => ({
-  width: "24px",
+  width: "20px",
   height: "auto",
   filter: isHovered ? (invert ? "none" : "invert(100%)") : invert ? "invert(100%)" : "none",
   [theme.breakpoints.down("xs")]: {

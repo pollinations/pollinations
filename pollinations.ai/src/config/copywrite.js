@@ -28,7 +28,7 @@ export const HERO_INTRO =
   REPHRASE +
   TRANSLATE +
   EMOJI +
-  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity."
+  "Shortly introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
 
 export const HERO_CTO =
   REPHRASE +
@@ -126,7 +126,7 @@ export const TEAM_SUBTITLE =
   RESPONSIVE +
   TRANSLATE +
   EMOJI +
-  "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions."
+  "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions. 20 words maximum."
 export const TEAM_1_NAME = REPHRASE + "Write only the text 'Thomas Haferlach' in bold and all caps"
 export const TEAM_1_FUNCTION =
   REPHRASE + TRANSLATE + RESPONSIVE + EMOJI + "Lead visionary" + teamTitleStyle

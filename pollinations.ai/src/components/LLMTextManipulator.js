@@ -3,6 +3,8 @@ import { usePollinationsText } from "@pollinations/react"
 import ReactMarkdown from "react-markdown"
 import { useTheme, useMediaQuery } from "@mui/material"
 import { REPHRASE, EMOJI, RESPONSIVE, TRANSLATE } from "../config/copywrite"
+import { Colors } from "../config/global"
+import styled from "@emotion/styled"
 
 export function LLMTextManipulator({ children }) {
   const theme = useTheme()
@@ -137,7 +139,9 @@ export function LLMTextManipulator({ children }) {
   console.log("Final Output after all children processed:", finalOutput)
 
   // 3) Render the final result in Markdown
-  return (
+  return (          
+  <MarkDownStyle>
+
     <ReactMarkdown
       components={{
         p: ({ children }) => <p style={{ margin: "0px" }}>{children}</p>,
@@ -150,5 +154,17 @@ export function LLMTextManipulator({ children }) {
     >
       {finalOutput}
     </ReactMarkdown>
+  </MarkDownStyle>
   )
 }
+const MarkDownStyle = styled.div`
+
+  a {
+    color: ${Colors.lime};
+    text-decoration: none;
+    &:hover {
+      color: ${Colors.lime}90;
+    }
+  }
+
+`

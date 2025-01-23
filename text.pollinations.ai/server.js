@@ -26,7 +26,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import generateTextClaude from './generateTextClaude.js';
-
+import { generateTextCloudflare } from './generateTextCloudflare.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -112,27 +112,27 @@ app.use((req, res, next) => {
 app.use(bodyParser.json({ limit: '5mb' }));
 app.use(cors());
 
-// Rate limiting setup
-const limiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 200, // 40 requests per windowMs
-    message: {
-        error: {
-            type: 'rate_limit_error',
-            message: 'Rate limit exceeded. Maximum 40 requests per minute.',
-            suggestion: 'Please wait before making more requests.'
-        }
-    },
-    skip: (req) => {
-        const requestData = getRequestData(req);
-        return requestData.isRobloxReferrer;
-    },
-    // Use X-Forwarded-For header but validate it's from our trusted proxy
-    trustProxy: false
-});
+// // Rate limiting setup
+// const limiter = rateLimit({
+//     windowMs: 60 * 1000, // 1 minute
+//     max: 200, // 40 requests per windowMs
+//     message: {
+//         error: {
+//             type: 'rate_limit_error',
+//             message: 'Rate limit exceeded. Maximum 40 requests per minute.',
+//             suggestion: 'Please wait before making more requests.'
+//         }
+//     },
+//     skip: (req) => {
+//         const requestData = getRequestData(req);
+//         return requestData.isRobloxReferrer;
+//     },
+//     // Use X-Forwarded-For header but validate it's from our trusted proxy
+//     trustProxy: false
+// });
 
 // Apply rate limiting to all routes
-app.use(limiter);
+// app.use(limiter);
 
 // New route handler for root path
 app.get('/', (req, res) => {
@@ -483,7 +483,7 @@ async function generateTextBasedOnModel(messages, options) {
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
-            'llama': () => generateTextScaleway(messages, { ...options, model }),
+            'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),
             'sur': () => surOpenai(messages, options),

@@ -7,8 +7,19 @@ import { Colors, Fonts } from "../config/global"
 import { NEWS_TITLE, NEWS_LIST } from "../config/copywrite"
 import { SectionContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
+import { trackEvent } from "../config/analytics"
 
 export default function News() {
+  const handleAccordionChange = (event, isExpanded) => {
+    if (isExpanded) {
+      trackEvent({
+        action: 'Accordion_Open',
+        category: 'User_Interactions',
+        label: 'News_Accordion_Open'
+      })
+    }
+  }
+
   return (
     <SectionContainer style={{ backgroundColor: Colors.offwhite }}>
       <Accordion
@@ -18,6 +29,7 @@ export default function News() {
           padding: 0,
           borderRadius: "0em",
         }}
+        onChange={handleAccordionChange}
       >
         <AccordionSummary
           sx={{

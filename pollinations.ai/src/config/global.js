@@ -21,7 +21,6 @@ export const Colors = {
 };
 
 export const Fonts = {
-  body: 'Zapfino',
   title: 'Maven Pro',
   headline: 'Mako',
   parameter: 'Duru Sans',

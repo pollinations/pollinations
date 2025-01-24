@@ -3,7 +3,6 @@ import styled from "@emotion/styled"
 import { Link } from "@mui/material"
 import { SOCIAL_LINKS } from "../config/socialLinksList"
 import { Colors } from "../config/global"
-import { useTheme } from "@mui/material/styles"
 
 // Container styling
 const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
@@ -29,7 +28,6 @@ const LinkItem = styled(Link, {
   height: "40px",
   transition: "background-color 0.3s, filter 0.3s",
   textDecoration: "none",
-
 }))
 
 const IconImage = styled("img", {
@@ -47,6 +45,14 @@ const IconImage = styled("img", {
 export const SocialLinks = ({ gap, invert }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null)
 
+  const handleLinkClick = (platform) => {
+    trackEvent({
+      action: `${platform}_Link_Click`,
+      category: 'User_Interactions',
+      label: `${platform}_Social_Link`
+    })
+  }
+
   return (
     <SocialLinksContainer gap={gap}>
       {Object.keys(SOCIAL_LINKS).map((platform, index) => {
@@ -60,6 +66,7 @@ export const SocialLinks = ({ gap, invert }) => {
             isHovered={isHovered}
             onMouseEnter={() => setHoveredIndex(index)}
             onMouseLeave={() => setHoveredIndex(null)}
+            onClick={() => handleLinkClick(platform)}
           >
             <IconImage
               src={SOCIAL_LINKS[platform]?.icon_img}

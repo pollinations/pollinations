@@ -17,23 +17,43 @@ import {
 import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons" // Import the ICONS
 import ContentCopyIcon from "@mui/icons-material/ContentCopy" // Import the Material UI copy icon
-import SvgArtGallery from "../components/SvgArtGallery"
-import SvgArtGenerator from "../components/SvgArtGenerator"
 import { useMediaQuery } from "@mui/material"
 import { useTheme } from "@mui/material/styles"
+import { trackEvent } from "../config/analytics"
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
+  // Track the click event
+  trackEvent({
+    action: 'Discord_Click',
+    category: 'User_Interactions',
+    label: 'Hero_Discord_Button',
+    value: 1,
+  })
   window.open("https://discord.gg/k9F7SyTgqn", "_blank")
 }
 
 const handleGithubButtonClick = (e) => {
   e.preventDefault()
+  // Track the click event
+  trackEvent({
+    action: 'Github_Click',
+    category: 'User_Interactions',
+    label: 'Hero_Github_Button',
+    value: 1,
+  })
   window.open("https://github.com/pollinations/pollinations", "_blank")
 }
 
 const handleEmailButtonClick = (e) => {
   e.preventDefault()
+  // Track the click event
+  trackEvent({
+    action: 'Email_Click',
+    category: 'User_Interactions',
+    label: 'Hero_Email_Button',
+    value: 1,
+  })
   const email = "hello@pollinations.ai"
   navigator.clipboard.writeText(email).then(() => {
     console.log(`Copied to clipboard: ${email}`)

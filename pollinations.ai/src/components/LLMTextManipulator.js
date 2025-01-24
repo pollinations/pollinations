@@ -1,3 +1,4 @@
+
 import React from "react"
 import { usePollinationsText } from "@pollinations/react"
 import ReactMarkdown from "react-markdown"
@@ -6,6 +7,14 @@ import { REPHRASE, EMOJI, RESPONSIVE, TRANSLATE } from "../config/copywrite"
 import { Colors } from "../config/global"
 import styled from "@emotion/styled"
 
+/**
+ * For this component, we avoid multiple hook calls in a loop. Instead,
+ * we combine all text/instructions into a single prompt string and make
+ * one call to usePollinationsText, preventing the invalid hook usage.
+ * We only show the final transformed text after the entire process.
+ * Until processing is complete, we show " Generating...".
+ */
+
 export function LLMTextManipulator({ children }) {
   const LOGS_ENABLED = false // Change this flag to enable/disable logs
 
@@ -13,10 +22,6 @@ export function LLMTextManipulator({ children }) {
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const userLanguage = navigator.language || navigator.userLanguage
   const isEnglish = userLanguage.startsWith("en")
-
-  if (LOGS_ENABLED) {
-    console.log(`User language is: ${userLanguage}`)
-  }
 
   /**
    * Helper function:
@@ -54,109 +59,88 @@ export function LLMTextManipulator({ children }) {
   }
 
   /**
-   * Helper function to build a multi-line markdown prompt that keeps
-   * the "instruction" and the "text" separated to avoid confusion.
+   * We build a single prompt that processes each child’s text/instructions
+   * sequentially. We ask pollinations to do all transformations internally
+   * and only return the final output.
    */
-  function buildInstructionPrompt(instructionText, textToProcess) {
-    // Derive a shorter label from instructionText
-    // (e.g., if "instructionText" starts with "Rephrase...", just call it "Rephrase")
-    let shortLabel = "Generic"
-    if (instructionText.startsWith("Rewrite") || instructionText.startsWith("Rephrase")) {
-      shortLabel = "Rephrase"
-    } else if (instructionText.startsWith("Enrich") || instructionText.startsWith("Add")) {
-      shortLabel = "Emoji"
-    } else if (instructionText.startsWith("Most important,")) {
-      shortLabel = "Responsive"
-    } else if (instructionText.startsWith("Translate")) {
-      shortLabel = "Translate"
-    }
+  function buildAggregatedPrompt(childArray) {
+    let promptParts = []
 
-    // Return a structured markdown so the text is clearly separated
-    return `## Function: ${shortLabel}
-**Context**: ${instructionText}
-**Prompt**: ${textToProcess}`
-  }
+    childArray.forEach((childContent, index) => {
+      const childString = childContent.toString()
+      const { textWithoutInstructions, instructions } =
+        extractInstructionsFromString(childString)
 
-  // Turn "children" into an array in case multiple items were passed
-  const childArray = React.Children.toArray(children)
-
-  // Process each child individually
-  const processedOutputs = childArray.map((childContent, index) => {
-    const childString = childContent.toString()
-
-    // 1) Extract instructions & remove them from text
-    const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
-
-    if (LOGS_ENABLED) {
-      console.group(`Child #${index + 1} - Initial Parsing`)
-      console.log("Initial text:", childString)
-      console.log("Parsed text (without instructions):", textWithoutInstructions)
-      console.log("Instructions order:", instructions)
-      console.groupEnd()
-    }
-
-    let currentText = textWithoutInstructions
-
-    // 2) Apply each instruction in turn
-    instructions.forEach((instruction) => {
-      // Bypass if user is English & instruction is TRANSLATE
-      if (instruction === TRANSLATE && isEnglish) {
-        if (LOGS_ENABLED) {
-          console.log("Skipping TRANSLATE (user is English).")
+      // Filter out instructions that we'll skip
+      const relevantInstructions = instructions.filter(instruction => {
+        if (instruction === TRANSLATE && isEnglish) {
+          return false
         }
-        return
-      }
-
-      // Bypass if not on XS screen & instruction is RESPONSIVE
-      if (instruction === RESPONSIVE && !isXs) {
-        if (LOGS_ENABLED) {
-          console.log("Skipping RESPONSIVE (not on xs screen).")
+        if (instruction === RESPONSIVE && !isXs) {
+          return false
         }
-        return
-      }
-
-      // If it's a translate instruction, append the user language
-      let finalInstruction = instruction
-      if (instruction === TRANSLATE) {
-        finalInstruction += ` ${userLanguage}`
-      }
-
-      // Build a dedicated markdown prompt (to keep instruction and text separate)
-      const promptMarkdown = buildInstructionPrompt(finalInstruction, currentText)
+        return true
+      })
 
       if (LOGS_ENABLED) {
-        console.group(`Applying instruction: ${instruction}`)
-        console.log("Input to usePollinationsText (markdown prompt):\n", promptMarkdown)
-      }
-
-      // Use the pollinations function
-      const result = usePollinationsText(promptMarkdown) || currentText
-
-      if (result.includes("HTTP error! status: 429")) {
-        if (LOGS_ENABLED) {
-          console.log("Rate limit error (429) => output replaced with 'Loading...'.")
-        }
-        currentText = "Loading..."
-      } else {
-        currentText = result
-      }
-
-      if (LOGS_ENABLED) {
-        console.log("Output from usePollinationsText:", currentText)
+        console.group(`Child #${index + 1}`)
+        console.log("Original text:", childString)
+        console.log("Parsed text (no instructions):", textWithoutInstructions)
+        console.log("All extracted instructions:", instructions)
+        console.log("Relevant instructions (after skipping):", relevantInstructions)
         console.groupEnd()
       }
+
+      // If there's nothing to transform, just pass the text as-is
+      if (relevantInstructions.length === 0) {
+        promptParts.push(
+          `**Child #${index + 1}**\nNo transformations.\nFinal Text:\n${textWithoutInstructions}`
+        )
+        return
+      }
+
+      // If translation is present, we append user language
+      // (In a single aggregated approach, we just mention it)
+      const instructionDescriptions = relevantInstructions.map(instr => {
+        return instr === TRANSLATE ? `${instr} ${userLanguage}` : instr
+      })
+
+      promptParts.push(
+        `**Child #${index + 1}**\n` +
+          `Original Text:\n${textWithoutInstructions}\n\n` +
+          `Instructions (in order): ${instructionDescriptions.join(", ")}\n` +
+          `Please apply them sequentially and return only the final result.\n`
+      )
     })
 
-    return currentText
-  })
-
-  // Combine all processed child outputs
-  const finalOutput = processedOutputs.join("\n\n")
-  if (LOGS_ENABLED) {
-    console.log("Final Output after all children processed:", finalOutput)
+    return (
+      `You are a text transformer. For each 'Child' section below, apply the listed instructions in sequence.\n` +
+      `After applying all specified transformations for each child, return that child's final text.\n\n` +
+      promptParts.join("\n\n") +
+      `\n\n---\nReturn only the final output for all children in order.\n`
+    )
   }
 
-  // 3) Render the final result in Markdown
+  // 1) Convert children into an array
+  const childArray = React.Children.toArray(children)
+
+  // 2) Build one aggregated prompt for all children
+  const aggregatedPrompt = buildAggregatedPrompt(childArray)
+
+  // 3) Fetch the final output at once
+  const finalOutput = usePollinationsText(aggregatedPrompt)
+
+  if (LOGS_ENABLED) {
+    console.log("Aggregated prompt sent to pollinations:\n", aggregatedPrompt)
+    console.log("Pollinations output:\n", finalOutput)
+  }
+
+  // 4) Render the final result only after pollinations returns a non-empty, non-429 error text
+  const isRateLimited = finalOutput && finalOutput.includes("HTTP error! status: 429")
+  if (!finalOutput || isRateLimited) {
+    return <MarkDownStyle> Generating...</MarkDownStyle>
+  }
+
   return (
     <MarkDownStyle>
       <ReactMarkdown

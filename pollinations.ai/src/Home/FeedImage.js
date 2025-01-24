@@ -58,14 +58,6 @@ export const FeedImage = memo(() => {
     setIsInputChanged(false);
   }, [image?.imageURL]);
 
-  /**
-   * Whenever the slideshow stops or restarts,
-   * update toggleValue to reflect current editing mode.
-   */
-  useEffect(() => {
-    setToggleValue(isStopped ? "edit" : "feed");
-  }, [isStopped]);
-
   // -----------------------------
   // Handlers
   // -----------------------------
@@ -85,9 +77,8 @@ export const FeedImage = memo(() => {
    */
   const handleToggleChange = (event, newValue) => {
     if (newValue !== null) {
-
-      setToggleValue(newValue);
-      stop(newValue === "edit");
+      stop(newValue === "edit");  // First stop/start the slideshow
+      setToggleValue(newValue);   // Then update the toggle value
     }
   };
 

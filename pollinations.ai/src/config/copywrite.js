@@ -43,7 +43,7 @@ export const NEWS_TITLE =
   REPHRASE +
   TRANSLATE +
   EMOJI +
-  "We want a short title for the 'last updates' section, in one very short sentence. Use bold font"
+  "Last Updates! (calendar emoji) 2025-01-24 - Website fully updated, feel free to give your feedback!"
 export const NEWS_LIST =
   REPHRASE +
   RESPONSIVE +

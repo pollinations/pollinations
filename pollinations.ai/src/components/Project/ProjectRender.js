@@ -87,7 +87,6 @@ const ProjectsRender = ({ classes }) => {
                   alignContent: "center",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  border: `0px solid ${Colors.offwhite}`,
                   width: "100%",
                 }}
                 className={classes.gridItem}
@@ -102,7 +101,7 @@ const ProjectsRender = ({ classes }) => {
                   sx={{ backgroundColor: `${Colors.offblack}50`, padding: "1em" }}
                 >
                   <Grid
-                    size={4}
+                    size={{ xs: 7, md: 4 }}
                     style={{
                       textAlign: "left",
                     }}
@@ -136,7 +135,7 @@ const ProjectsRender = ({ classes }) => {
                     </Box>
                   </Grid>
 
-                  <Grid size={8} style={{ textAlign: "left" }}>
+                  <Grid size={{ xs: 5, md: 8 }} style={{ textAlign: "left" }}>
                     <span
                       style={{
                         color: Colors.offwhite,

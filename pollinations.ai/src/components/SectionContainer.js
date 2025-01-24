@@ -58,7 +58,7 @@ export const SectionTitleStyle = styled.div`
   text-align: center;
   margin-top: 0.5em;
   ${({ theme }) => theme.breakpoints.down('md')} {
-    font-size: ${(props) => props.fontSize || "3.5em"};
+    font-size: ${(props) => props.fontSize || "5em"};
   }
 `
 

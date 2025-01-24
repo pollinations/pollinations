@@ -63,8 +63,8 @@ export const SectionBG = {
     gradient: true,
   },
   supporter: {
-    color: Colors.offblack,
-    gradient: false,
+    image: backgroundImage3,
+    gradient: true,
   },
   footer: {
     color: Colors.offwhite,

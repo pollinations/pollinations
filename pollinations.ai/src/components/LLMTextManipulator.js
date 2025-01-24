@@ -1,5 +1,4 @@
-
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { usePollinationsText } from "@pollinations/react"
 import ReactMarkdown from "react-markdown"
 import { useTheme, useMediaQuery } from "@mui/material"
@@ -12,8 +11,21 @@ import styled from "@emotion/styled"
  * we combine all text/instructions into a single prompt string and make
  * one call to usePollinationsText, preventing the invalid hook usage.
  * We only show the final transformed text after the entire process.
- * Until processing is complete, we show " Generating...".
+ * Until processing is complete, we show an animated "Generating..."
  */
+
+function AnimatedDots() {
+  const [dotCount, setDotCount] = useState(1)
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((count) => (count % 3) + 1)
+    }, 500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return <span>{".".repeat(dotCount)}</span>
+}
 
 export function LLMTextManipulator({ children }) {
   const LOGS_ENABLED = false // Change this flag to enable/disable logs
@@ -68,8 +80,7 @@ export function LLMTextManipulator({ children }) {
 
     childArray.forEach((childContent, index) => {
       const childString = childContent.toString()
-      const { textWithoutInstructions, instructions } =
-        extractInstructionsFromString(childString)
+      const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
 
       // Filter out instructions that we'll skip
       const relevantInstructions = instructions.filter(instruction => {
@@ -138,7 +149,11 @@ export function LLMTextManipulator({ children }) {
   // 4) Render the final result only after pollinations returns a non-empty, non-429 error text
   const isRateLimited = finalOutput && finalOutput.includes("HTTP error! status: 429")
   if (!finalOutput || isRateLimited) {
-    return <MarkDownStyle> Generating...</MarkDownStyle>
+    return (
+      <MarkDownStyle>
+        Generating<AnimatedDots />
+      </MarkDownStyle>
+    )
   }
 
   return (
@@ -168,3 +183,4 @@ const MarkDownStyle = styled.div`
     }
   }
 `
+

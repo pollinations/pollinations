@@ -14,13 +14,18 @@ export default function News() {
       <Accordion
         style={{
           width: "100%",
-          backgroundColor: Colors.lime,
           margin: 0,
           padding: 0,
           borderRadius: "0em",
         }}
       >
         <AccordionSummary
+          sx={{
+            backgroundColor: Colors.lime,
+            "&:hover": {
+              backgroundColor: `${Colors.lime}99`
+            }
+          }}
           expandIcon={
             <ArrowDownwardIcon
               style={{ color: Colors.offblack }}
@@ -36,9 +41,9 @@ export default function News() {
             <LLMTextManipulator>{NEWS_TITLE}</LLMTextManipulator>
           </SectionHeadlineStyle>
         </AccordionSummary>
-        <AccordionDetails>
+        <AccordionDetails style={{ backgroundColor: Colors.offblack2 }}>
           <SectionHeadlineStyle
-            color={Colors.offblack}
+            color={Colors.offwhite}
             style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
             textAlign="left"
           >

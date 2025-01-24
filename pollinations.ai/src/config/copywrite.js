@@ -40,13 +40,15 @@ export const HERO_GITHUB_LINK = "Readme.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
 export const NEWS_TITLE =
+  REPHRASE +
   TRANSLATE +
   EMOJI +
-  "Goal is to make a short title of the last updates section, in one very short sentence."
+  "We want a short title for the 'last updates' section, in one very short sentence. Use bold font"
 export const NEWS_LIST =
   REPHRASE +
   RESPONSIVE +
   TRANSLATE +
+  EMOJI +
   `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Do not give a title to it, start with the first bullet point. Here is the list to fornat: ` +
   newsList
 

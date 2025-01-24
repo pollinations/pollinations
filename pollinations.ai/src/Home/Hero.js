@@ -72,7 +72,11 @@ const Hero = () => {
           color={Colors.offblack}
           textAlign={{ xs: "center", md: "left" }}
         >
-          <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
+          <LLMTextManipulator 
+          transformations={"header_transformation"}>
+            {HERO_INTRO}
+          </LLMTextManipulator>
+          
         </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}

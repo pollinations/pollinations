@@ -110,7 +110,7 @@ export const PROJECT_CTO_2 =
   REPHRASE + TRANSLATE + EMOJI + "Express this in one very very short sentence: Talk to us"
 export const PROJECT_BUTTON = "hello@pollinations.ai"
 export const PROJECT_LOGO_STYLE =
-  "minimalist colour logo design focuses on symbols and visuals, no text, solid off white background"
+  "square logo based on the info of the company. Only colored backgrounds. Be creative!"
 
 export const COMMUNITY_TITLE = TRANSLATE + "Contribute"
 export const COMMUNITY_SUBTITLE =

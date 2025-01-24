@@ -71,14 +71,14 @@ const Header = () => {
           >
             <LogoIconBlack
               style={{
-                width: isMobile ? "50px" : "75px",
-                height: isMobile ? "50px" : "75px",
-                marginRight: isMobile ? "0em" : "2em",
+                width: isMobile ? "50px" : "60px",
+                height: isMobile ? "50px" : "60px",
+                marginRight: isMobile ? "0em" : "1em",
               }}
             />
             <PollinationsLogo
               style={{
-                width: isMobile ? "300px" : "400px",
+                width: isMobile ? "300px" : "350px",
                 height: isMobile ? "auto" : "auto",
                 marginBottom: isMobile ? "1em" : "0em",
               }}

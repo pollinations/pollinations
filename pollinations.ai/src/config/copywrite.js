@@ -112,8 +112,10 @@ export const PROJECT_LOGO_STYLE =
 
 export const COMMUNITY_TITLE = TRANSLATE + "Contribute"
 export const COMMUNITY_SUBTITLE =
-  "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate." +
-  EMOJI
+  REPHRASE +
+  TRANSLATE +
+  EMOJI +
+  "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate."
 
 export const COMMUNITY_DISCORD_SUBTITLE =
   REPHRASE +

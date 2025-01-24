@@ -1,11 +1,7 @@
 export const projectCategories = [
   {
-    title: "Mobile Apps",
-    key: "mobileApps",
-  },
-  {
-    title: "Web Apps",
-    key: "webApps",
+    title: "Applications",
+    key: "apps",
   },
   {
     title: "AI Chat / LLMs",
@@ -26,7 +22,7 @@ export const projectCategories = [
 ]
 
 export const projects = {
-  mobileApps: [
+  apps: [
     {
       name: "Free AI Chatbot & Image Generator",
       url: "https://freeaichat.app",
@@ -41,8 +37,6 @@ export const projects = {
         "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
       author: "@gaurav_87680",
     },
-  ],
-  webApps: [
     {
       name: "Image Gen - Uncensored Edition ",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",

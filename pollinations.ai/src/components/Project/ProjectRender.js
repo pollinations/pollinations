@@ -23,8 +23,8 @@ const ProjectsRender = ({ classes }) => {
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
     trackEvent({
-      action: 'Category_Select',
-      category: 'User_Interactions',
+      action: "Category_Select",
+      category: "User_Interactions",
       label: `Category_${categoryKey}`,
       value: 1,
     })
@@ -78,9 +78,7 @@ const ProjectsRender = ({ classes }) => {
       <Grid container spacing={0.5} className={classes.gridContainer}>
         {displayProjects.map((project, index) => (
           <React.Fragment key={index}>
-            <SectionSubContainer
-              style={{ backgroundColor: `${Colors.offblack}50`, padding: "0em" }}
-            >
+            <SectionSubContainer style={{ padding: "0em" }}>
               <Grid
                 container
                 style={{
@@ -97,50 +95,61 @@ const ProjectsRender = ({ classes }) => {
                 <Grid size={{ xs: 4, md: 2 }} style={{ textAlign: "center" }}>
                   <ProjectImage name={project.name} PROJECT_LOGO_SIZE={PROJECT_LOGO_SIZE} />
                 </Grid>
-
-                <Grid size={4} style={{ textAlign: "left" }}>
-                  <Box style={{ maxWidth: "90%" }}>
-                    {renderProjectLink(project)}
-                    {project.author && (
-                      <div
-                        style={{
-                          marginTop: "0.5em",
-                          color: Colors.offwhite,
-                          fontSize: "1em",
-                          fontFamily: Fonts.parameter,
-                        }}
-                      >
-                        by{" "}
-                        {project.author.startsWith("@") ? (
-                          <Link
-                            href={`https://discord.com/users/${project.author.substring(1)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: Colors.lime }}
-                          >
-                            {project.author}
-                          </Link>
-                        ) : (
-                          project.author
-                        )}
-                      </div>
-                    )}
-                  </Box>
-                </Grid>
-
-                <Grid size={{ xs: 3, md: 6 }} style={{ textAlign: "left" }}>
-                  <span
+                <Grid
+                  container
+                  size={12}
+                  direction="row"
+                  sx={{ backgroundColor: `${Colors.offblack}50`, padding: "1em" }}
+                >
+                  <Grid
+                    size={4}
                     style={{
-                      color: Colors.offwhite,
-                      fontSize: "1em",
-                      fontFamily: Fonts.parameter,
+                      textAlign: "left",
                     }}
                   >
-                    <LLMTextManipulator>
-                      {PROJECT_DESCRIPTION + project.description}
-                    </LLMTextManipulator>
-                  </span>
-                  {project.repo && renderRepoLink(project.repo)}
+                    <Box style={{ maxWidth: "90%" }}>
+                      {renderProjectLink(project)}
+                      {project.author && (
+                        <div
+                          style={{
+                            marginTop: "0.5em",
+                            color: Colors.offwhite,
+                            fontSize: "1em",
+                            fontFamily: Fonts.parameter,
+                          }}
+                        >
+                          by{" "}
+                          {project.author.startsWith("@") ? (
+                            <Link
+                              href={`https://discord.com/users/${project.author.substring(1)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: Colors.lime }}
+                            >
+                              {project.author}
+                            </Link>
+                          ) : (
+                            project.author
+                          )}
+                        </div>
+                      )}
+                    </Box>
+                  </Grid>
+
+                  <Grid size={8} style={{ textAlign: "left" }}>
+                    <span
+                      style={{
+                        color: Colors.offwhite,
+                        fontSize: "1em",
+                        fontFamily: Fonts.parameter,
+                      }}
+                    >
+                      <LLMTextManipulator>
+                        {PROJECT_DESCRIPTION + project.description}
+                      </LLMTextManipulator>
+                    </span>
+                    {project.repo && renderRepoLink(project.repo)}
+                  </Grid>
                 </Grid>
               </Grid>
             </SectionSubContainer>
@@ -154,8 +163,8 @@ const ProjectsRender = ({ classes }) => {
 const renderProjectLink = (project) => {
   const handleProjectLinkClick = () => {
     trackEvent({
-      action: 'Project_Link_Click',
-      category: 'User_Interactions',
+      action: "Project_Link_Click",
+      category: "User_Interactions",
       label: `Project_${project.name}_Link`,
       value: 1,
     })
@@ -188,9 +197,9 @@ const renderProjectLink = (project) => {
 const renderRepoLink = (repoUrl) => {
   const handleRepoLinkClick = () => {
     trackEvent({
-      action: 'Repo_Link_Click',
-      category: 'User_Interactions',
-      label: 'Repo_Link',
+      action: "Repo_Link_Click",
+      category: "User_Interactions",
+      label: "Repo_Link",
       value: 1,
     })
   }

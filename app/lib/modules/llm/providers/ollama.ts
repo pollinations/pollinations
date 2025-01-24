@@ -63,7 +63,7 @@ export default class OllamaProvider extends BaseProvider {
        * Running in Server
        * Backend: Check if we're running in Docker
        */
-      const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+      const isDocker = process?.env?.RUNNING_IN_DOCKER === 'true' || serverEnv?.RUNNING_IN_DOCKER === 'true';
 
       baseUrl = isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
       baseUrl = isDocker ? baseUrl.replace('127.0.0.1', 'host.docker.internal') : baseUrl;
@@ -83,7 +83,7 @@ export default class OllamaProvider extends BaseProvider {
   }
   getModelInstance: (options: {
     model: string;
-    serverEnv: Env;
+    serverEnv?: Env;
     apiKeys?: Record<string, string>;
     providerSettings?: Record<string, IProviderSetting>;
   }) => LanguageModelV1 = (options) => {
@@ -101,7 +101,7 @@ export default class OllamaProvider extends BaseProvider {
       throw new Error('No baseUrl found for OLLAMA provider');
     }
 
-    const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+    const isDocker = process?.env?.RUNNING_IN_DOCKER === 'true' || serverEnv?.RUNNING_IN_DOCKER === 'true';
     baseUrl = isDocker ? baseUrl.replace('localhost', 'host.docker.internal') : baseUrl;
     baseUrl = isDocker ? baseUrl.replace('127.0.0.1', 'host.docker.internal') : baseUrl;
 

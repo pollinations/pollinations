@@ -175,7 +175,7 @@ export const SUPPORTER_SUBTITLE =
   TRANSLATE +
   EMOJI +
   "Express this in one sentence: We're grateful to our supporters for their contributions to our platform."
-export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative"
+export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!"
 export const SUPPORTER_DESCRIPTION_STYLE =
   REPHRASE +
   EMOJI +

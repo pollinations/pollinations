@@ -69,7 +69,7 @@ export const INTEGRATION_SUBTITLE =
   REPHRASE +
   TRANSLATE +
   EMOJI +
-  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started."
+  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started. Check our Github for detailed documentation."
 
 export const IMAGE_FEED_TOOLTIP_PROMPT = REPHRASE + TRANSLATE + EMOJI + "This text box is for the text prompt describing the image you want to generate."
 export const IMAGE_FEED_TOOLTIP_MODEL = REPHRASE + TRANSLATE + EMOJI + "Select the text-to-image model you would like to use."
@@ -87,7 +87,7 @@ export const FEED_LOGO_WATERMARK =
   EMOJI +
   "Explain that this check box is to enable/disable the Pollinations watermark logo."
 
-export const PROJECT_TITLE = TRANSLATE + "User Builds"
+export const PROJECT_TITLE = TRANSLATE + "Use Cases"
 export const PROJECT_SUBTITLE =
   REPHRASE +
   TRANSLATE +

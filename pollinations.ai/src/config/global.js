@@ -7,12 +7,12 @@ import backgroundImage6 from "../assets/background/06.webp"
 import backgroundImage7 from "../assets/background/07.webp"
 import backgroundImage8 from "../assets/background/08.webp"
 
-
+// lime: '#FFE801',
 
 export const SHOW_PROMPT_TOOLTIP = false; 
 
 export const Colors = {
-  lime: '#FFE801',
+  lime: '#00afbf', //#37b9b0 #00afbf
   offwhite: '#FAFAFA',
   offblack: '#1a1a1a', 
   offblack2: '#3b3b3b',

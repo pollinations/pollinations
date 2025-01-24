@@ -24,38 +24,33 @@ export const projectCategories = [
 export const projects = {
   apps: [
     {
-      name: "Free AI Chatbot & Image Generator",
-      url: "https://freeaichat.app",
-      description:
-        "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
-      author: "@andreas_11",
-    },
-    {
-      name: "Pollinator Android App",
-      url: "https://github.com/g-aggarwal/Pollinator",
-      description:
-        "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
-      author: "@gaurav_87680",
-    },
-    {
       name: "Image Gen - Uncensored Edition ",
       url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-      description:
-        "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
+      description: "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
       author: "@DeFactOfficial",
     },
     {
       name: "UR Imagine & Chat AI ",
       url: "https://perchance.org/ur-imagine-ai",
-      description:
-        "A free and limitless image generator with companion AI chat/roleplay system. Features enhanced prompting and privacy options.",
+      description: "A free and limitless image generator with companion AI chat/roleplay system. Features enhanced prompting and privacy options.",
       author: "withthatway",
     },
     {
       name: "Character RP (Roblox) ",
       url: "https://www.roblox.com/games/108463136689847",
-      description:
-        "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
+      description: "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
+    },
+    {
+      name: "Free AI Chatbot & Image Generator",
+      url: "https://freeaichat.app",
+      description: "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
+      author: "@andreas_11",
+    },
+    {
+      name: "Pollinator Android App",
+      url: "https://github.com/g-aggarwal/Pollinator",
+      description: "An open-source **Android app** for text-to-image generation using Pollinations.ai's endpoint.",
+      author: "@gaurav_87680",
     },
     {
       name: "MIDIjourney",
@@ -65,98 +60,86 @@ export const projects = {
       repo: "https://github.com/korus-labs/MIDIjourney",
     },
     {
-      name: "Pollinations.AI Gallery ",
+      name: "Pollinations Gallery ",
       url: "https://deng-xian-sheng.github.io/pollinations-img-page/",
-      description:
-        "A clean and simple gallery showcasing the community's AI-generated images using Pollinations.AI' image feed interface.",
+      description: "A clean and simple gallery showcasing the community's AI-generated images using Pollinations' image feed interface.",
       author: "@deng-xian-sheng",
     },
     {
       name: "TurboReel",
       url: "https://turboreelgpt.tech/",
-      description:
-        "An open-source video generation system using AI to create engaging content from scripts.",
+      description: "An open-source video generation system using AI to create engaging content from scripts.",
       author: "@pedroriosa",
       repo: "https://github.com/TurboReel/TurboReel_studio",
     },
     {
       name: "Rangrez AI",
       url: "https://rangrezai.com",
-      description:
-        "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations.AI and GroqCloud.",
+      description: "A web platform focused on inspiring, creating, and customizing designs with AI-powered tools, powered by Pollinations and GroqCloud.",
       author: "@saadaryf",
     },
     {
       name: "JustBuildThings",
       url: "https://justbuildthings.com",
-      description:
-        "A collection of AI tools for image generation, character chat, and writing powered by Pollinations.AI.",
+      description: "A collection of AI tools for image generation, character chat, and writing powered by Pollinations.",
       author: "rasit",
     },
     {
       name: "Elixpo",
       url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
-      description:
-        "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.AI.",
+      description: "A web interface for easy image generation with theme selection, aspect ratio options, and an internal server gallery. Powered by Pollinations.ai.",
       author: "Ayushman Bhattacharya",
       repo: "https://github.com/Circuit-Overtime/elixpo_ai_chapter",
     },
     {
       name: "Own-AI",
       url: "https://own-ai.pages.dev/",
-      description:
-        "An AI text-to-image generator powered by Pollinations.AI. Users can describe the images they want, generate them, and share them.",
+      description: "An AI text-to-image generator powered by Pollinations.ai. Users can describe the images they want, generate them, and share them.",
       author: "Sujal Goswami",
       repo: "https://github.com/sujal-goswami/Own-AI",
     },
     {
       name: "Infinite Tales",
       url: "https://infinite-tales-rpg.vercel.app/",
-      description:
-        "A Choose Your Own Adventure RPG, dynamically narrated by AI. Customize your adventure, build your hero, and explore vast lands. Each journey is uniquely generated by AI.",
+      description: "A Choose Your Own Adventure RPG, dynamically narrated by AI. Customize your adventure, build your hero, and explore vast lands. Each journey is uniquely generated by AI.",
       author: "JayJayBinks",
       repo: "https://github.com/JayJayBinks/infinite-tales-rpg",
     },
     {
       name: "POLLIPAPER",
       url: "https://github.com/Tolerable/POLLIPAPER",
-      description:
-        "A dynamic wallpaper app that uses Pollinations.AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
+      description: "A dynamic wallpaper app that uses Pollinations AI to create unique desktop backgrounds. It offers weather-based prompts and customizable settings.",
       author: "@intolerant0ne",
       repo: "https://github.com/Tolerable/",
     },
     {
       name: "StorySight",
       url: "https://github.com/abiral-manandhar/storySight",
-      description:
-        "An app to help children with learning disabilities by visualizing abstract concepts. Made using **Django** and **Pollinations.AI**. Submitted to: [Devpost](https://devpost.com/software/storysight)",
+      description: "An app to help children with learning disabilities by visualizing abstract concepts. Made using **Django** and **Pollinations.ai**. Submitted to: [Devpost](https://devpost.com/software/storysight)",
     },
     {
       name: "StoryWeaver",
       url: "https://devpost.com/software/storyweaver-013xdw",
-      description:
-        "StoryWeaver crafts personalized picture books for children based on themes and prompts you choose, bringing your unique story ideas to life with AI!",
+      description: "StoryWeaver crafts personalized picture books for children based on themes and prompts you choose, bringing your unique story ideas to life with AI!",
       author: "Advaith Narayanan, Omeed Sabouri, Yufan Wang",
       repo: "https://github.com/AdvaithN1/StoryWeaver",
     },
     {
       name: "Websim",
       url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-      description:
-        "A web simulation tool that integrates **Pollinations.AI** for generating AI-driven content. *Remix* the app with your own promots.",
+      description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
       author: "@thomash",
     },
     {
       name: "JCode Website Builder",
       url: "https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories",
-      description: "A website generator using Pollinations.AI text API.",
+      description: "A website generator using Pollinations text API.",
       author: "@rtxpower",
     },
     {
       name: "AI-Bloom ",
       url: "https://ai-bloom.vercel.app/",
-      description:
-        "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.AI.",
+      description: "A minimal yet creative showcase of AI-powered visual and interactive content generation using Pollinations.ai.",
       author: "@diepdo1810",
       repoUrl: "https://github.com/diepdo1810/AI-Bloom",
     },

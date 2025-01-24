@@ -117,7 +117,7 @@ export function LLMTextManipulator({ children }) {
       })
 
       promptParts.push(
-        `**Child #${index + 1}**\n` +
+        // `**Child #${index + 1}**\n` +
           `Original Text:\n${textWithoutInstructions}\n\n` +
           `Instructions (in order): ${instructionDescriptions.join(", ")}\n` +
           `Please apply them sequentially and return only the final result.\n`

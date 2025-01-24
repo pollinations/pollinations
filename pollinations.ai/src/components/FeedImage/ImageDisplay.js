@@ -4,6 +4,7 @@ import { ImageContainer } from "../ImageHeading"
 import PromptTooltip from "../PromptTooltip"
 import styled from "@emotion/styled"
 import { Colors } from "../../config/global"
+import { trackEvent } from "../../config/analytics"
 
 /**
  * ImageDisplay
@@ -13,7 +14,6 @@ import { Colors } from "../../config/global"
 export const ImageDisplay = memo(function ImageDisplay({ image }) {
   const theme = useTheme()
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"))
-
   const handleImageClick = (e) => {
     e.preventDefault()
     trackEvent({

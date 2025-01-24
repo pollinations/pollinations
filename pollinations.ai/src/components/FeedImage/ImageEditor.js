@@ -531,7 +531,6 @@ export const ImageEditor = memo(function ImageEditor({
               />
             </Grid>
 
-                // Start of Selection
                 {/* Enhance Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
@@ -578,7 +577,6 @@ export const ImageEditor = memo(function ImageEditor({
                   </Box>
                 </Grid>
 
-                // Start of Selection
                 {/* Logo Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip

@@ -87,7 +87,7 @@ export const FEED_LOGO_WATERMARK =
   EMOJI +
   "Explain that this check box is to enable/disable the Pollinations watermark logo."
 
-export const PROJECT_TITLE = TRANSLATE + "Use Cases"
+export const PROJECT_TITLE = TRANSLATE + "Projects"
 export const PROJECT_SUBTITLE =
   REPHRASE +
   TRANSLATE +
@@ -105,7 +105,7 @@ export const PROJECT_CTO_1 =
   RESPONSIVE +
   TRANSLATE +
   EMOJI +
-  "Question if they have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic."
+  "Express this in one sentence: Do you have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic."
 export const PROJECT_CTO_2 =
   REPHRASE + TRANSLATE + EMOJI + "Express this in one very very short sentence: Talk to us"
 export const PROJECT_BUTTON = "hello@pollinations.ai"

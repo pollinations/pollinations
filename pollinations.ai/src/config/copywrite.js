@@ -12,19 +12,25 @@ import team6 from "../assets/team/Kalam.webp"
 const userLanguage = navigator.language || navigator.userLanguage
 const isEnglish = userLanguage.startsWith("en")
 
-const responsive = (text) =>
+
+// const isXs = useMediaQuery(theme.breakpoints.only("xs"))
+
+// useMediaQuery but without the hook. just using vanilla js
+
+
+const responsive = (text, { isXs }) => isXs ?
 `Condense the text to 5 words maximum. It needs to be super short for mobile friendliness. Don't exceed 5 words! Return only the condensed text.
 
 # Text
-\`${text}\``
+\`${text}\`` : null;
 
 
-const translate = (text) => 
+const translate = (text) =>  isEnglish ? null :
 `Translate the text into the user's language. Only output the translated text, nothing else. User 
   language is: ${userLanguage}. 
 
 # Context:
-${text}
+The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.
 
 Text to translate: \`${text}\`.`
 

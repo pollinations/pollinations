@@ -49,7 +49,7 @@ const Supporter = () => {
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img
-                src={generateImageUrl(company.name, company.description)}
+                src={generateImageUrl(company.name, company.description, SUPPORTER_LOGO_STYLE)}
                 alt={company.name}
                 width={imageDimension}
                 height={imageDimension}

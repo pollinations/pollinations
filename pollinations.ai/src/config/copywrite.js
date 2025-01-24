@@ -9,8 +9,6 @@ import team4 from "../assets/team/Nico.jpeg"
 import team5 from "../assets/team/Portrait_XO.webp"
 import team6 from "../assets/team/Kalam.webp"
 
-// Styling constants
-const teamTitleStyle = ". Write this in a professional, concise style.";
 
 const context = () => `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`;
 
@@ -26,6 +24,9 @@ const rephrase = () => `Formulate the idea with a direct, friendly but professio
 
 const emojify = () =>
 `Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length.`;
+
+const teamStyle = () =>
+`Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
 
 const combine = (text, ...transformations) => props => `
 # Context
@@ -47,7 +48,7 @@ const translateOnly = text => props => combine(text, translate)(props);
 const translateAndEmojify = text => props => combine(text, translate, emojify)(props);
 const basicTransform = text => props => combine(text, translate, rephrase, emojify)(props);
 const responsiveTransform = text => props => combine(text, translate, rephrase, responsive, emojify)(props);
-
+const teamTitleTransform = text => props => combine(text, teamStyle, translate)(props);
 
 export const HERO_INTRO = basicTransform("Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum.");
 
@@ -104,17 +105,17 @@ export const TEAM_SUBTITLE = responsiveTransform("Introducing our team, explain 
 const formatTeamName = name => combine(rephrase)(`Write only the text '${name}' in bold and all caps`);
 
 export const TEAM_1_NAME = formatTeamName("Thomas Haferlach");
-export const TEAM_1_FUNCTION = responsiveTransform("Lead visionary" + teamTitleStyle);
+export const TEAM_1_FUNCTION = teamTitleTransform("Lead visionary");
 export const TEAM_2_NAME = formatTeamName("Elliot Fouchy");
-export const TEAM_2_FUNCTION = responsiveTransform("Lead Production" + teamTitleStyle);
+export const TEAM_2_FUNCTION = teamTitleTransform("Lead Production");
 export const TEAM_3_NAME = formatTeamName("Laurent Pacoud");
-export const TEAM_3_FUNCTION = basicTransform("Lead Business" + teamTitleStyle);
+export const TEAM_3_FUNCTION = teamTitleTransform("Lead Business");
 export const TEAM_4_NAME = formatTeamName("Nicolas Pellerin");
-export const TEAM_4_FUNCTION = responsiveTransform("Lead Coder" + teamTitleStyle);
+export const TEAM_4_FUNCTION = teamTitleTransform("Lead Developer");
 export const TEAM_5_NAME = formatTeamName("Portrait XO");
-export const TEAM_5_FUNCTION = responsiveTransform("Futurist" + teamTitleStyle);
+export const TEAM_5_FUNCTION = teamTitleTransform("Lead Artist");
 export const TEAM_6_NAME = formatTeamName("Kalam Ali");
-export const TEAM_6_FUNCTION = responsiveTransform("Lead strategy" + teamTitleStyle);
+export const TEAM_6_FUNCTION = teamTitleTransform("Lead Researcher");
 
 export const TEAM_1_IMAGE = team1
 export const TEAM_2_IMAGE = team2

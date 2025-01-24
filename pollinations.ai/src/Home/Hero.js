@@ -25,9 +25,9 @@ const handleDiscordButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'Discord_Click',
-    category: 'User_Interactions',
-    label: 'Hero_Discord_Button',
+    action: "Discord_Click",
+    category: "User_Interactions",
+    label: "Hero_Discord_Button",
     value: 1,
   })
   window.open("https://discord.gg/k9F7SyTgqn", "_blank")
@@ -37,9 +37,9 @@ const handleGithubButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'Github_Click',
-    category: 'User_Interactions',
-    label: 'Hero_Github_Button',
+    action: "Github_Click",
+    category: "User_Interactions",
+    label: "Hero_Github_Button",
     value: 1,
   })
   window.open("https://github.com/pollinations/pollinations", "_blank")
@@ -49,9 +49,9 @@ const handleEmailButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: 'Email_Click',
-    category: 'User_Interactions',
-    label: 'Hero_Email_Button',
+    action: "Email_Click",
+    category: "User_Interactions",
+    label: "Hero_Email_Button",
     value: 1,
   })
   const email = "hello@pollinations.ai"
@@ -68,6 +68,7 @@ const Hero = () => {
       {/* <SvgArtGenerator width="1920px" height="100px"></SvgArtGenerator> */}
       <SectionSubContainer>
         <SectionHeadlineStyle
+          maxWidth="1000px"
           fontSize="1.5em"
           color={Colors.offblack}
           textAlign={{ xs: "center", md: "left" }}
@@ -79,7 +80,12 @@ const Hero = () => {
       <SectionSubContainer>
         <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"}>
           <Grid size={12}>
-            <SectionHeadlineStyle fontSize="1.5em" color={Colors.offblack} textAlign={isMobile ? "center" : "right"}>
+            <SectionHeadlineStyle
+              maxWidth="1000px"
+              fontSize="1.5em"
+              color={Colors.offblack}
+              textAlign={isMobile ? "center" : "right"}
+            >
               <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
             </SectionHeadlineStyle>
           </Grid>

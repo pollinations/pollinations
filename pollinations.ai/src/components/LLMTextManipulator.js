@@ -32,8 +32,7 @@ export function LLMTextManipulator({ children }) {
 
   const theme = useTheme()
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
-  const userLanguage = navigator.language || navigator.userLanguage
-  const isEnglish = userLanguage.startsWith("en")
+
 
   /**
    * Helper function:
@@ -83,15 +82,7 @@ export function LLMTextManipulator({ children }) {
       const { textWithoutInstructions, instructions } = extractInstructionsFromString(childString)
 
       // Filter out instructions that we'll skip
-      const relevantInstructions = instructions.filter(instruction => {
-        if (instruction === TRANSLATE && isEnglish) {
-          return false
-        }
-        if (instruction === RESPONSIVE && !isXs) {
-          return false
-        }
-        return true
-      })
+      const relevantInstructions = instructions.filter(instruction => instruction !== null);
 
       if (LOGS_ENABLED) {
         console.group(`Child #${index + 1}`)

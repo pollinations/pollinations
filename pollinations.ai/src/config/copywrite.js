@@ -9,13 +9,19 @@ import team4 from "../assets/team/Nico.jpeg"
 import team5 from "../assets/team/Portrait_XO.webp"
 import team6 from "../assets/team/Kalam.webp"
 
+const userLanguage = navigator.language || navigator.userLanguage
+const isEnglish = userLanguage.startsWith("en")
+
 // Style Action prompts
 export const REPHRASE =
-  "Formulate the idea with a direct, professional tone, avoiding excess friendliness or humor. Preserve clarity and conciseness without undue formality."
+  "Formulate the idea with a direct, friendly butprofessional tone. Preserve clarity and conciseness without undue formality."
 export const EMOJI =
   "Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length."
-export const TRANSLATE =
-  "Translate the text into the user's language. Only output the translated text, nothing else. User language is:"
+
+
+export const TRANSLATE = () =>
+  isEnglish ? `Translate the text into the user's language. Only output the translated text, nothing else. User language is: ${userLanguage}.` : null;
+
 export const RESPONSIVE =
   "Condense the text to 5 words maximum. It needs to be super short for mobile friendliness. Don't exceed 5 words!"
 

@@ -5,7 +5,7 @@ import { Colors, Fonts, SectionBG } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
-import { FOOTER_INFO } from "../config/copywrite"
+import { FOOTER_INFO, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics" // Import trackEvent
 
@@ -66,14 +66,14 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
-            marginTop: "1em",
+            marginTop: { xs: "1em", md: "0em" },
             alignItems: { xs: "center", md: "flex-end" },
             height: "100%",
             fontFamily: Fonts.title,
           }}
         >
           <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-            <b>TERMS & CONDITIONS </b>
+            <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS_LINK}</LLMTextManipulator>
           </StyledLink>
           <br />
           <LLMTextManipulator>{FOOTER_INFO}</LLMTextManipulator>

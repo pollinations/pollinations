@@ -61,8 +61,8 @@ export const IMAGE_FEED_SUBTITLE =
 export const IMAGE_FEED_TITLE = TRANSLATE + "Live Feed"
 export const IMAGE_FEED_MODE1 = TRANSLATE + "Watch"
 export const IMAGE_FEED_MODE2 = TRANSLATE + "Try"
-export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Wait"
-export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Create"
+export const IMAGE_EDIT_BUTTON_ON = TRANSLATE + "Imagine"
+export const IMAGE_EDIT_BUTTON_OFF = TRANSLATE + "Imagine"
 
 export const INTEGRATION_TITLE = TRANSLATE + "Integrate"
 export const INTEGRATION_SUBTITLE =
@@ -182,6 +182,7 @@ export const SUPPORTER_DESCRIPTION_STYLE =
   TRANSLATE +
   "Convey the description of the supporter buisness very very briefly, 5 words maximum."
 
+export const FOOTER_TERMS_CONDITIONS_LINK = TRANSLATE + "Terms & Conditions"
 export const FOOTER_TERMS_CONDITIONS =
   TRANSLATE +
   EMOJI +

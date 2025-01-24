@@ -68,7 +68,7 @@ const ProjectsRender = ({ classes }) => {
         {displayProjects.map((project, index) => (
           <React.Fragment key={index}>
             <SectionSubContainer
-              style={{ backgroundColor: `${Colors.offblack2}90`, padding: "0em" }}
+              style={{ backgroundColor: `${Colors.offblack}50`, padding: "0em" }}
             >
               <Grid
                 container

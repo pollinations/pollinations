@@ -22,7 +22,7 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
                 alignItems: "center",
                 position: "relative",
                 boxShadow: "none",
-                backgroundColor: `${Colors.offblack}99`
+                backgroundColor: `${Colors.offblack2}99`
             }}
         >
             {image ? (

@@ -23,7 +23,7 @@ export default function Home() {
         <Integration />
         <Discord />
         <Projects />
-        <Team />
+        {/* <Team /> */}
         <Supporter />
       </Style>
     </ImageContext.Provider>

@@ -44,11 +44,11 @@ export const SectionBG = {
     gradient: false,
   },
   feedImage: {
-    image: backgroundImage1,
+    color: Colors.offblack,
     gradient: true,
   },
   integration: {
-    color: Colors.offblack,
+    color: Colors.offblack2,
     gradient: false,
   },
   community: {
@@ -56,7 +56,7 @@ export const SectionBG = {
     gradient: true,
   },
   project: {
-    color: Colors.offblack,
+    color: Colors.offblack2,
     gradient: false,
   },
   team: {

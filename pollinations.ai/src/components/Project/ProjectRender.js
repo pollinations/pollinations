@@ -13,11 +13,22 @@ import { SectionSubContainer } from "../SectionContainer"
 import { useMediaQuery } from "@mui/material"
 import { useTheme } from "@mui/material/styles"
 import { ICONS } from "../../assets/icons/icons" // Import the ICONS
+import { trackEvent } from "../../config/analytics" // Import trackEvent
 
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
   const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key) // Default to index 1
+
+  const handleCategoryClick = (categoryKey) => {
+    setSelectedCategory(categoryKey)
+    trackEvent({
+      action: 'Category_Select',
+      category: 'User_Interactions',
+      label: `Category_${categoryKey}`,
+      value: 1,
+    })
+  }
 
   const displayProjects = selectedCategory
     ? projects[selectedCategory] || []
@@ -44,7 +55,7 @@ const ProjectsRender = ({ classes }) => {
           {projectCategories.map((category, index) => (
             <GeneralButton
               key={category.key}
-              handleClick={() => setSelectedCategory(category.key)}
+              handleClick={() => handleCategoryClick(category.key)}
               backgroundColor={selectedCategory === category.key ? Colors.lime : "transparent"}
               textColor={selectedCategory === category.key ? Colors.offblack : Colors.lime}
               fontSize="1.3rem"
@@ -141,11 +152,21 @@ const ProjectsRender = ({ classes }) => {
 }
 
 const renderProjectLink = (project) => {
+  const handleProjectLinkClick = () => {
+    trackEvent({
+      action: 'Project_Link_Click',
+      category: 'User_Interactions',
+      label: `Project_${project.name}_Link`,
+      value: 1,
+    })
+  }
+
   return (
     <Link
       href={project.url}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleProjectLinkClick}
       sx={{
         color: Colors.lime,
         fontFamily: Fonts.parameter,
@@ -165,11 +186,21 @@ const renderProjectLink = (project) => {
 }
 
 const renderRepoLink = (repoUrl) => {
+  const handleRepoLinkClick = () => {
+    trackEvent({
+      action: 'Repo_Link_Click',
+      category: 'User_Interactions',
+      label: 'Repo_Link',
+      value: 1,
+    })
+  }
+
   return (
     <StyledLink
       href={repoUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleRepoLinkClick}
       style={{
         color: Colors.lime,
         fontFamily: Fonts.parameter,

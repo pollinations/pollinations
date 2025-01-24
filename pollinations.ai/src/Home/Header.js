@@ -17,7 +17,8 @@ const Header = () => {
     trackEvent({
       action: 'Header_Logo_Click',
       category: 'User_Interactions',
-      label: 'Header_Logo_NavLink'
+      label: 'Header_Logo_NavLink',
+      value: 1,
     })
   }
 

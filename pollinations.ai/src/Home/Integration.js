@@ -12,12 +12,19 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { ImageContext } from "../utils/ImageContext"
 import { GeneralButton } from "../components/GeneralButton"
 import { ICONS } from "../assets/icons/icons"
+import { trackEvent } from "../config/analytics"
 
 export const Integration = () => {
   const { image } = useContext(ImageContext)
 
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
+    trackEvent({
+      action: "Github_Button_Click",
+      category: "User_Interactions",
+      label: "Integration_Page",
+      value: 1,
+    })
     window.open("https://github.com/pollinations/pollinations", "_blank")
   }
 

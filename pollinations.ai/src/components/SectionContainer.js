@@ -49,22 +49,6 @@ export const SectionSubContainer = styled.div`
   z-index: ${(props) => props.zIndex || "1"};
 `
 
-export const SectionBgBox = styled.div`
-  background-color: ${(props) => props.backgroundColor || `${Colors.offblack2}70`};
-  border-radius: 0px;
-  max-width: 1000px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1em;
-
-  /* Use Material-UI's theme breakpoints for responsive design */
-  ${({ theme }) => theme.breakpoints.down('md')} {
-    background-color: transparent;
-  }
-`
-
 export const SectionTitleStyle = styled.div`
   font-size: ${(props) => props.fontSize || "8em"};
   color: ${(props) => props.color || Colors.lime};

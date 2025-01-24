@@ -3,7 +3,7 @@ import styled from "@emotion/styled"
 import { Link } from "@mui/material"
 import { SOCIAL_LINKS } from "../config/socialLinksList"
 import { Colors } from "../config/global"
-
+import { trackEvent } from "../config/analytics"
 // Container styling
 const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
   gridArea: "social",
@@ -49,7 +49,8 @@ export const SocialLinks = ({ gap, invert }) => {
     trackEvent({
       action: `${platform}_Link_Click`,
       category: 'User_Interactions',
-      label: `${platform}_Social_Link`
+      label: `${platform}_Social_Link`,
+      value: 1,
     })
   }
 

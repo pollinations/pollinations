@@ -20,6 +20,7 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator.js"
 import { ICONS } from "../assets/icons/icons.js" // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material"
 import { SectionBG } from "../config/global"
+import { trackEvent } from "../config/analytics.js" // Import trackEvent
 
 const Community = () => {
   const theme = useTheme()
@@ -27,16 +28,34 @@ const Community = () => {
 
   const handleDiscordButtonClick = (e) => {
     e.preventDefault()
+    trackEvent({
+      action: 'Discord_Click',
+      category: 'User_Interactions',
+      label: 'Community_Discord_Button',
+      value: 1,
+    })
     window.open("https://discord.gg/k9F7SyTgqn", "_blank")
   }
 
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
+    trackEvent({
+      action: 'Github_Click',
+      category: 'User_Interactions',
+      label: 'Community_Github_Button',
+      value: 1,
+    })
     window.open("https://github.com/pollinations/pollinations", "_blank")
   }
 
   const handleAsciiArtClick = (e) => {
     e.preventDefault()
+    trackEvent({
+      action: 'AsciiArt_Click',
+      category: 'User_Interactions',
+      label: 'Community_AsciiArt_Button',
+      value: 1,
+    })
     window.open("https://pollinations.github.io/hive/main/llm-feedback/", "_blank")
   }
 

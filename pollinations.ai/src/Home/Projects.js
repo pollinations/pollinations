@@ -17,6 +17,7 @@ import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
+import { trackEvent } from "../config/analytics"
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -35,6 +36,12 @@ const handleEmailButtonClick = (e) => {
   const email = "hello@pollinations.ai"
   navigator.clipboard.writeText(email).then(() => {
     console.log(`Copied to clipboard: ${email}`)
+  })
+  trackEvent({
+    action: 'Email_Button_Click',
+    category: 'User_Interactions',
+    label: 'Projects_Email_Button',
+    value: 1,
   })
 }
 

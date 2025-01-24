@@ -7,12 +7,19 @@ import FileCopyIcon from "@mui/icons-material/FileCopy"
 import CODE_EXAMPLES from "../../config/codeExamplesText"
 import { SectionSubContainer } from "../SectionContainer"
 import { GeneralButton } from "../GeneralButton"
+import { trackEvent } from "../../config/analytics"
 
 export function CodeExamples({ image = {} }) {
   const [tabValue, setTabValue] = useState(0)
 
   const handleChange = (event, newValue) => {
     setTabValue(newValue)
+    trackEvent({
+      action: 'CodeExample_Tab_Click',
+      category: 'User_Interactions',
+      label: `CodeExample_Tab_${newValue}`,
+      value: newValue,
+    })
   }
 
   const codeExampleTabs = Object.keys(CODE_EXAMPLES)

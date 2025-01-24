@@ -7,8 +7,29 @@ import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
 import { FOOTER_INFO } from "../config/copywrite"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
+import { trackEvent } from "../config/analytics" // Import trackEvent
 
 const Footer = () => {
+  const handleEmailLinkClick = (e) => {
+    e.preventDefault()
+    navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
+    trackEvent({
+      action: 'Email_Link_Click',
+      category: 'User_Interactions',
+      label: 'Footer_Email_Link',
+      value: 1,
+    })
+  }
+
+  const handleTermsLinkClick = () => {
+    trackEvent({
+      action: 'Terms_Link_Click',
+      category: 'User_Interactions',
+      label: 'Footer_Terms_Link',
+      value: 1,
+    })
+  }
+
   return (
     <SectionContainer backgroundColor={SectionBG.footer}>
       <Box
@@ -31,10 +52,7 @@ const Footer = () => {
         >
           <StyledLink
             isExternal
-            onClick={(e) => {
-              e.preventDefault()
-              navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
-            }}
+            onClick={handleEmailLinkClick}
             href="mailto:hello@pollinations.ai"
             sx={{ userSelect: "text" }}
           >
@@ -54,7 +72,7 @@ const Footer = () => {
             fontFamily: Fonts.title,
           }}
         >
-          <StyledLink to="/terms">
+          <StyledLink to="/terms" onClick={handleTermsLinkClick}>
             <b>TERMS & CONDITIONS </b>
           </StyledLink>
           <br />

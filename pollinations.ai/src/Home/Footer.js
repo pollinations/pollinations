@@ -73,10 +73,10 @@ const Footer = () => {
           }}
         >
           <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-            <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS_LINK}</LLMTextManipulator>
+            <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} />
           </StyledLink>
           <br />
-          <LLMTextManipulator>{FOOTER_INFO}</LLMTextManipulator>
+          <LLMTextManipulator text={FOOTER_INFO} />
         </Grid>
       </Box>
     </SectionContainer>

@@ -49,7 +49,7 @@ const Team = () => {
       <SectionSubContainer>
         <SectionSubContainer>
           <SectionHeadlineStyle color={Colors.offwhite}>
-            <LLMTextManipulator>{TEAM_SUBTITLE}</LLMTextManipulator>
+            <LLMTextManipulator text={TEAM_SUBTITLE} />
           </SectionHeadlineStyle>
         </SectionSubContainer>
         <Grid container spacing={1} justifyContent="center">
@@ -78,11 +78,11 @@ const Team = () => {
                 />
                 <Box bgcolor={`${Colors.offblack}99`} borderRadius="0 0 15px 15px" padding="1em">
                   <SectionHeadlineStyle color={Colors.lime} fontSize="1em">
-                    <LLMTextManipulator>{member.name}</LLMTextManipulator>
+                    <LLMTextManipulator text={member.name} />
                   </SectionHeadlineStyle>
                   <br />
                   <SectionHeadlineStyle color={Colors.offwhite} fontSize="1em">
-                    <LLMTextManipulator>{member.function}</LLMTextManipulator>
+                    <LLMTextManipulator text={member.function} />
                   </SectionHeadlineStyle>
                 </Box>
               </Grid>

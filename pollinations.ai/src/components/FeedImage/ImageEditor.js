@@ -314,7 +314,7 @@ export const ImageEditor = memo(function ImageEditor({
         <Grid size={{ xs: 12, md: 12 }}>
           <Box>
             <CustomTooltip
-              title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_PROMPT}</LLMTextManipulator>}
+              title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_PROMPT} />}
               interactive
             >
               <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -385,7 +385,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Model Selector */}
             <Grid size={{ xs: 12, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_MODEL}</LLMTextManipulator>}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_MODEL} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -443,7 +443,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Width Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_WIDTH}</LLMTextManipulator>}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_WIDTH} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -473,7 +473,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Height Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_HEIGHT}</LLMTextManipulator>}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_HEIGHT} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -503,7 +503,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Seed Input */}
             <Grid size={{ xs: 4, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator>{IMAGE_FEED_TOOLTIP_SEED}</LLMTextManipulator>}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_SEED} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -534,7 +534,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Enhance Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator>{FEED_ENANCER_TOOLTIP}</LLMTextManipulator>}
+                    title={<LLMTextManipulator text={FEED_ENANCER_TOOLTIP} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -580,7 +580,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Logo Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator>{FEED_LOGO_WATERMARK}</LLMTextManipulator>}
+                    title={<LLMTextManipulator text={FEED_LOGO_WATERMARK} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -633,7 +633,7 @@ export const ImageEditor = memo(function ImageEditor({
                   fontFamily: Fonts.title,
                 }}
               >
-                <LLMTextManipulator>{IMAGE_EDIT_BUTTON_OFF}</LLMTextManipulator>
+                <LLMTextManipulator text={IMAGE_EDIT_BUTTON_OFF} />
               </GeneralButton>
             </Grid>
           </>

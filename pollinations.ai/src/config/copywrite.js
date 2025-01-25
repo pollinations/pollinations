@@ -7,8 +7,8 @@ import team4 from "../assets/team/Nico.jpeg"
 import team5 from "../assets/team/Portrait_XO.webp"
 import team6 from "../assets/team/Kalam.webp"
 
-const context = () =>
-  `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`
+// 1) Base building blocks
+const context = () => `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`
 
 const responsive = ({ isXs }) =>
   isXs ?? false
@@ -18,8 +18,7 @@ const responsive = ({ isXs }) =>
 const translate = ({ userLanguage }) =>
   userLanguage?.startsWith("en")
     ? null
-    : `Translate to: ${userLanguage}. 
-`
+    : `Translate to: ${userLanguage}. `
 
 const rephrase = () =>
   `Formulate with a direct, friendly but professional tone. Preserve clarity and conciseness without undue formality.`
@@ -28,12 +27,18 @@ const emojify = () =>
   `Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length.`
 
 const teamStyle = () =>
-`Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
+  `Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
 
 const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
 
 const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
 
+const projectDescription = () =>
+  `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`
+
+const oneSentence = () => `Express this in one sentence.`
+
+// 2) combine helper
 const combine = (text, ...transformations) => props => `
 # Context
 ${context()}
@@ -52,13 +57,7 @@ Only output the final text, nothing else. Links should be in markdown format.
 ${text}
 `
 
-const projectDescription = () =>
-  `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`
-
-
-const oneSentence = () => `Express this in one sentence.`
-
-// Helper functions for common transformation combinations
+// 3) Specialized combos
 const translateOnly = (text) => (props) => combine(text, translate)(props)
 const translateAndEmojify = (text) => (props) => combine(text, translate, emojify)(props)
 const basicTransform = (text) => (props) => combine(text, translate, rephrase, emojify)(props)
@@ -66,11 +65,10 @@ const responsiveTransform = (text) => (props) =>
   combine(text, translate, rephrase, responsive, emojify)(props)
 const teamTitleTransform = (text) => (props) => combine(text, teamStyle, translate)(props)
 const projectTransform = (text) => (props) => combine(text, projectDescription)(props)
-
 const friendlyMarkdownTransform = (text) => (props) => combine(text, friendlyMarkdownStyle, responsive)(props)
-
 const oneSentenceTransform = (text) => (props) => combine(text, translate, oneSentence, emojify)(props);
 
+// 4) Use combos throughout
 export const HERO_INTRO = basicTransform(
   "Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
 )
@@ -192,7 +190,6 @@ export const SUPPORTER_SUBTITLE = oneSentenceTransform(`We're grateful to our su
 
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
 export const SUPPORTER_DESCRIPTION_STYLE = translateOnly;
-
 
 export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");
 export const FOOTER_TERMS_CONDITIONS = friendlyMarkdownTransform("Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai");

@@ -1,39 +1,22 @@
-import { createMuiTheme, ThemeProvider } from '@material-ui/core'
-import CssBaseline from '@material-ui/core/CssBaseline'
-import React from 'react'
-import ReactDOM from 'react-dom'
-import App from './App'
+import { createTheme, ThemeProvider } from "@mui/material"
+import CssBaseline from "@mui/material/CssBaseline"
+import React from "react"
+import { createRoot } from "react-dom/client" // Import createRoot
+import App from "./App"
 import { BrowserRouter } from "react-router-dom"
+import ScrollToTop from "./utils/ScrollToTop"
 
-import './index.css'
-import ScrollToTop from './utils/ScrollToTop'
+const theme = createTheme()
+const container = document.getElementById("root")
+const root = createRoot(container) // Create a root
 
-const darkTheme = createMuiTheme({
-  typography: {
-    fontFamily: 'Uncut-Sans-Variable'
-  },
-  palette: {
-    type: 'dark',
-    primary: {
-      main: 'rgb(255, 255, 255)',
-      },
-    secondary: {
-      main: 'rgb(166, 213, 250)'
-    }
-  },
-})
-
-ReactDOM.render(
-    <ThemeProvider theme={darkTheme}>
-        <CssBaseline />
-        <BrowserRouter>
-        <ScrollToTop>
-
-            <App />
-            </ScrollToTop>
-
-        </BrowserRouter>
-    </ThemeProvider>,
-  document.getElementById('root')
-);
-
+root.render(
+  <ThemeProvider theme={theme}>
+    <CssBaseline />
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ScrollToTop>
+        <App />
+      </ScrollToTop>
+    </BrowserRouter>
+  </ThemeProvider>
+)

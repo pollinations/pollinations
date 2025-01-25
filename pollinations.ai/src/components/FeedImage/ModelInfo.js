@@ -76,5 +76,5 @@ export function ModelInfo({ model, referrer }) {
     </Box>
   )
 
-  return renderModelInfo(modelName, modelLink, loraLink)
+  return renderModelInfo(modelName, modelLink)
 }

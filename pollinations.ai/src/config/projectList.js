@@ -189,6 +189,12 @@ export const projects = {
       description:
         "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
     },
+    {
+      name: "gpt4free",
+      url: "https://github.com/xtekky/gpt4free",
+      description: "The official gpt4free repository | various collection of powerful language models.",
+      author: "@xtekky"
+    }
   ],
   sdkLibraries: [
     {

@@ -35,7 +35,7 @@ export const Integration = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator>{INTEGRATION_SUBTITLE}</LLMTextManipulator>
+          <LLMTextManipulator text={INTEGRATION_SUBTITLE} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -60,7 +60,7 @@ export const Integration = () => {
           >
             <path d={ICONS.github} />
           </svg>
-          <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
+          <LLMTextManipulator text={HERO_GITHUB_LINK} />
         </GeneralButton>
       </SectionSubContainer>
       <SectionSubContainer>

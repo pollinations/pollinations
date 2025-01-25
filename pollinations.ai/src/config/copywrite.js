@@ -27,7 +27,7 @@ const emojify = () =>
 
 const teamStyle = () =>
 `Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
-
+ 
 const combine = (text, ...transformations) => props => `
 # Context
 ${context()}
@@ -35,13 +35,18 @@ ${context()}
 # Instructions:
 Apply the following transformations to the text in order:
 
-${transformations.map((t) => `- ${t(props)}`).filter(Boolean).join("\n")}
+${transformations.filter(Boolean).map((t) => `- ${t(props)}`).join("\n")}
 
-Only output the final text, nothing else.
+Only output the final text in markdown format, nothing else.
 
 # Text:
 ${text}
 ` 
+
+
+
+const projectDescription = () => `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`;
+
 
 // Helper functions for common transformation combinations
 const translateOnly = text => props => combine(text, translate)(props);
@@ -49,6 +54,7 @@ const translateAndEmojify = text => props => combine(text, translate, emojify)(p
 const basicTransform = text => props => combine(text, translate, rephrase, emojify)(props);
 const responsiveTransform = text => props => combine(text, translate, rephrase, responsive, emojify)(props);
 const teamTitleTransform = text => props => combine(text, teamStyle, translate)(props);
+const projectTransform = text => props => combine(text, projectDescription)(props);
 
 export const HERO_INTRO = basicTransform("Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum.");
 
@@ -81,7 +87,8 @@ export const FEED_LOGO_WATERMARK = basicTransform("Explain that this check box i
 
 export const PROJECT_TITLE = translateOnly("Projects");
 export const PROJECT_SUBTITLE = basicTransform("Express this in one sentence: Here are some of the various implementations that our API is currently powering.");
-export const PROJECT_DESCRIPTION = responsiveTransform("Convey the project description in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word");
+
+export const PROJECT_DESCRIPTION = projectDescription => combine(projectDescription, projectTransform);
 
 export const PROJECT_CTO_1 = responsiveTransform("Express this in one sentence: Do you have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic.");
 export const PROJECT_CTO_2 = basicTransform("Express this in one very very short sentence: Talk to us");

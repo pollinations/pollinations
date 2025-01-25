@@ -23,13 +23,13 @@ export function LLMTextManipulator({ text }) {
   const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const userLanguage = navigator.language || navigator.userLanguage
 
-  const prompt = typeof text === "function" ? text({ isXs, userLanguage }) : text
-  const transformedText = usePollinationsText(prompt)
+  const prompt = typeof text === "function" ? text({ isXs, userLanguage }) : null;
+  const transformedText = usePollinationsText(prompt) || text;
 
   if (!transformedText) {
     return (
       <span>
-        Generating<AnimatedDots />
+        Generating... {text} {JSON.stringify(transformedText)}
       </span>
     )
   }

@@ -100,7 +100,7 @@ export const FeedImage = memo(() => {
       {/* Subheading / LLM Banner */}
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator>{IMAGE_FEED_SUBTITLE}</LLMTextManipulator>
+          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
 

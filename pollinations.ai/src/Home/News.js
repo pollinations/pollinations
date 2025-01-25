@@ -50,7 +50,7 @@ export default function News() {
             color={Colors.offblack}
             style={{ fontSize: "1.5em", fontFamily: Fonts.headline, lineHeight: "0em" }}
           >
-            <LLMTextManipulator>{NEWS_TITLE}</LLMTextManipulator>
+            <LLMTextManipulator text={NEWS_TITLE} />
           </SectionHeadlineStyle>
         </AccordionSummary>
         <AccordionDetails style={{ backgroundColor: Colors.offblack2 }}>
@@ -59,7 +59,7 @@ export default function News() {
             style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
             textAlign="left"
           >
-            <LLMTextManipulator>{NEWS_LIST}</LLMTextManipulator>
+            <LLMTextManipulator text={NEWS_LIST} />
           </SectionHeadlineStyle>
         </AccordionDetails>
       </Accordion>

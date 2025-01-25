@@ -32,7 +32,7 @@ const teamStyle = () =>
 
 const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
 
-const newsListStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
+const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
 
 const combine = (text, ...transformations) => props => `
 # Context
@@ -67,7 +67,7 @@ const responsiveTransform = (text) => (props) =>
 const teamTitleTransform = (text) => (props) => combine(text, teamStyle, translate)(props)
 const projectTransform = (text) => (props) => combine(text, projectDescription)(props)
 
-const newsListTransform = (text) => (props) => combine(text, newsListStyle, responsive)(props)
+const friendlyMarkdownTransform = (text) => (props) => combine(text, friendlyMarkdownStyle, responsive)(props)
 
 const oneSentenceTransform = (text) => (props) => combine(text, translate, oneSentence, emojify)(props);
 
@@ -86,7 +86,7 @@ export const HERO_DISCORD_LINK = "Join our Discord"
 export const NEWS_TITLE = basicTransform(
   "Last updates! '- 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
 )
-export const NEWS_LIST = newsListTransform(newsList)
+export const NEWS_LIST = friendlyMarkdownTransform(newsList)
 
 export const IMAGE_FEED_SUBTITLE = basicTransform(
   "This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
@@ -195,7 +195,7 @@ export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, t
 
 
 export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");
-export const FOOTER_TERMS_CONDITIONS = translateAndEmojify("Flesh out terms conditions Pollinations.AI in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and different font size (like heading, title, h2...). Here is the text to work with: Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai");
+export const FOOTER_TERMS_CONDITIONS = friendlyMarkdownTransform("Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai");
 
 export const FOOTER_CLOSE = translateOnly("Close");
 export const FOOTER_INFO = " 2025 Pollinations.AI"

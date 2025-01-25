@@ -20,7 +20,6 @@ import {
 import {
   emojify,
   rephrase,
-  translate,
   responsive,
   noLink
 } from "../config/llmTransforms.js"
@@ -110,7 +109,7 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, translate, responsive, emojify, noLink]} />
+          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, responsive, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -170,7 +169,7 @@ const Community = () => {
                   }}
                 >
                   <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em" >
-                    <LLMTextManipulator text={platform.subtitle} transforms={[rephrase, translate, emojify, responsive, noLink]} />
+                    <LLMTextManipulator text={platform.subtitle} transforms={[rephrase, emojify, responsive, noLink]} />
                   </SectionHeadlineStyle>
                 </Grid>
               </Grid>
@@ -178,7 +177,7 @@ const Community = () => {
           ))}
         </Grid>
         <CustomTooltip
-          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, translate, emojify, noLink]} />}
+          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify, noLink]} />}
           interactive
         >
           <SectionSubContainer>

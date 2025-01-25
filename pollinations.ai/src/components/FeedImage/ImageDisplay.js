@@ -1,6 +1,5 @@
 import React, { memo } from "react"
-import { Typography, Link, Box, useMediaQuery, useTheme } from "@mui/material"
-import { ImageContainer } from "../ImageHeading"
+import { Typography, Link, Paper, useMediaQuery, useTheme } from "@mui/material"
 import PromptTooltip from "../PromptTooltip"
 import styled from "@emotion/styled"
 import { Colors } from "../../config/global"
@@ -63,4 +62,10 @@ const ImageStyle = styled.img`
   height: 600px;
   max-width: 100%;
   object-fit: contain;
+`
+const ImageContainer = styled(Paper)`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 `

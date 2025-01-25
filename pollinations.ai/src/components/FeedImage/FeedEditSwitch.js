@@ -2,7 +2,7 @@ import React from "react"
 import { GeneralButton } from "../GeneralButton"
 import { Colors, Fonts } from "../../config/global"
 import { IMAGE_FEED_MODE1, IMAGE_FEED_MODE2 } from "../../config/copywrite"
-import { translate, noLink } from "../../config/llmTransforms"
+import { noLink } from "../../config/llmTransforms"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../../components/LLMTextManipulator"
 
@@ -23,7 +23,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator text={IMAGE_FEED_MODE1} transforms={[translate, noLink]} />
+        <LLMTextManipulator text={IMAGE_FEED_MODE1} transforms={[noLink]} />
       </GeneralButton>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "edit")}
@@ -38,7 +38,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator text={IMAGE_FEED_MODE2} transforms={[translate, noLink]} />
+        <LLMTextManipulator text={IMAGE_FEED_MODE2} transforms={[noLink]} />
       </GeneralButton>
     </Box>
   )

@@ -13,7 +13,6 @@ import {
   SUPPORTER_LOGO_STYLE
 } from "../config/copywrite"
 import {
-  translate,
   rephrase,
   emojify,
   noLink
@@ -50,7 +49,7 @@ const Supporter = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, translate, emojify, noLink]} />
+          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -77,7 +76,7 @@ const Supporter = () => {
                 <span
                   style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
                 >
-                  <LLMTextManipulator text={company.description} transforms={[rephrase, translate, emojify, noLink]} />
+                  <LLMTextManipulator text={company.description} transforms={[rephrase, emojify, noLink]} />
                 </span>
               )}
             </Grid>

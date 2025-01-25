@@ -134,6 +134,7 @@ export const FeedImage = memo(() => {
                 switchToEditMode={switchToEditMode}
                 edit={isStopped}
                 toggleValue={toggleValue}
+                handleToggleChange={handleToggleChange}
                 stop={stop}
                 cancelLoading={cancelLoading}
                 updateImage={updateImage}

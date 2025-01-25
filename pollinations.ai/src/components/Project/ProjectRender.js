@@ -107,7 +107,8 @@ const ProjectsRender = ({ classes }) => {
                   sx={{ backgroundColor: `${Colors.offblack}50`, padding: "1em" }}
                 >
                   <Grid
-                    size={{ xs: 7, md: 4 }}
+                    size={{ xs: 12, md: 4 }}
+                    marginBottom= {{xs: "0.5em", md: "0em"}}
                     style={{
                       textAlign: "left",
                     }}
@@ -141,7 +142,7 @@ const ProjectsRender = ({ classes }) => {
                     </Box>
                   </Grid>
 
-                  <Grid size={{ xs: 5, md: 8 }} style={{ textAlign: "left" }}>
+                  <Grid size={{ xs: 12, md: 8 }} style={{ textAlign: "left" }}>
                     <span
                       style={{
                         color: Colors.offwhite,

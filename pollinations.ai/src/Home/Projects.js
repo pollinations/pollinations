@@ -91,8 +91,7 @@ const Projects = () => {
             fontSize="2em"
             backgroundColor={Colors.offblack}
             style={{
-              width: "100%",
-              fontSize: "1.8rem",
+              fontSize: "1.5rem",
               fontFamily: Fonts.title,
               fontWeight: 600,
               marginTop: "1em",

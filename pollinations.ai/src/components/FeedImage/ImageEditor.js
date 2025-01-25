@@ -39,6 +39,7 @@ export const ImageEditor = memo(function ImageEditor({
   stop,
   cancelLoading,
   updateImage,
+  handleToggleChange,
 }) {
   // ─── STYLING CONSTANTS ────────────────────────────────────────────────────────
   const labelColor = `${Colors.offwhite}99`
@@ -246,17 +247,22 @@ export const ImageEditor = memo(function ImageEditor({
     },
   }
 
-  // Blink animation for loading state
   const blinkAnimation = keyframes`
-    0%, 100% { 
-      background-color: ${Colors.offblack}; 
-      color: ${Colors.lime}; 
+    0% {
+      background-color: ${Colors.offblack};
+      color: ${Colors.lime};
     }
-    50% { 
-      background-color: ${Colors.lime}; 
-      color: ${Colors.offblack}; 
+    50% {
+      background-color: ${Colors.lime}B3;
+      color: ${Colors.offblack}B3;
     }
-  `
+    100% {
+      background-color: ${Colors.offblack}B3;
+      color: ${Colors.lime}B3;
+    }
+  `;
+  
+
 
   // All available model options
   const models = [
@@ -354,7 +360,9 @@ export const ImageEditor = memo(function ImageEditor({
                 /* Feed mode: Render Markdown */
                 <Box
                   style={sharedTextAreaStyle}
-                  onClick={() => stop(true)}
+                  onClick={() => {
+                      handleToggleChange(null, "edit")
+                    }}
                 >
                   <ReactMarkdown
                     components={{
@@ -628,7 +636,7 @@ export const ImageEditor = memo(function ImageEditor({
                 fontSize="1.5em"
                 style={{
                   width: "100%",
-                  animation: isLoading ? `${blinkAnimation} 2s infinite` : "none",
+                  animation: isLoading ? `${blinkAnimation} 2s ease-in-out infinite` : "none",
                   height: "60px",
                   fontFamily: Fonts.title,
                 }}

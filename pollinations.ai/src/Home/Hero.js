@@ -81,7 +81,7 @@ const Hero = () => {
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
       <SectionSubContainer>
-        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"}>
+        <Grid container spacing={2} justifyContent={isMobile ? "center" : "flex-end"} width="100%">
           <Grid size={12}>
             <SectionHeadlineStyle
               maxWidth="1000px"
@@ -127,7 +127,6 @@ const Hero = () => {
               backgroundColor={Colors.offblack}
               textColor={Colors.offwhite}
               style={{
-                width: "100%",
                 fontSize: "1.5rem",
                 fontFamily: Fonts.title,
                 fontWeight: 600,

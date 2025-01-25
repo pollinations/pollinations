@@ -64,9 +64,9 @@ export const PROJECT_TITLE = "Projects"
 export const PROJECT_SUBTITLE = " Here are some of the various implementations that our API is currently powering."
 
 export const PROJECT_CTO_1 = 
-  "Have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic."
+  "Ask if the user has created a project that integrates Pollinations.AI. Explain that would we be happy to feature it."
 
-export const PROJECT_CTO_2 = "Talk to us"
+export const PROJECT_CTO_2 = "Reach out to us"
 
 export const PROJECT_BUTTON = "hello@pollinations.ai"
 export const PROJECT_LOGO_STYLE =
@@ -108,7 +108,7 @@ export const TEAM_MEMBERS = [
 export const SUPPORTER_TITLE = "Supporters";
 export const SUPPORTER_SUBTITLE = `We're grateful to our supporters for their contributions to our platform.`;
 
-export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
+export const SUPPORTER_LOGO_STYLE = "Company logo based on its description. The logo contrasts very much with the background. Colors and style of the company are used. The background is white but the logos are colorful and large. Be imaginative!";
 
 export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
 export const FOOTER_TERMS_CONDITIONS = "Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai";

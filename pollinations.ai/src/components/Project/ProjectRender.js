@@ -1,24 +1,26 @@
+
 import React, { useState } from "react"
-import { Link, AppBar, ButtonGroup, Box } from "@mui/material"
+import { Link, AppBar, ButtonGroup, Box, useMediaQuery } from "@mui/material"
+import Grid from "@mui/material/Grid2"
+import { useTheme } from "@mui/material/styles"
+import { ReactSVG } from "react-svg"
+
 import { Colors, Fonts } from "../../config/global"
 import StyledLink from "../StyledLink"
 import { LLMTextManipulator } from "../LLMTextManipulator"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION } from "../../config/copywrite"
-import Grid from "@mui/material/Grid2"
 import { projectCategories, projects } from "../../config/projectList"
 import { GeneralButton } from "../GeneralButton"
 import { SectionSubContainer } from "../SectionContainer"
-import { useMediaQuery } from "@mui/material"
-import { useTheme } from "@mui/material/styles"
-import { ICONS } from "../../assets/icons/icons" // Import the ICONS
-import { trackEvent } from "../../config/analytics" // Import trackEvent
+import { ICONS } from "../../assets/icons/icons"
+import { trackEvent } from "../../config/analytics"
 
 const ProjectsRender = ({ classes }) => {
   const theme = useTheme()
   const PROJECT_LOGO_SIZE = useMediaQuery(theme.breakpoints.down("md")) ? 80 : 96
-  const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key) // Default to index 1
+  const [selectedCategory, setSelectedCategory] = useState(projectCategories[0].key)
 
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
@@ -52,7 +54,7 @@ const ProjectsRender = ({ classes }) => {
             boxShadow: "none",
           }}
         >
-          {projectCategories.map((category, index) => (
+          {projectCategories.map((category) => (
             <GeneralButton
               key={category.key}
               handleClick={() => handleCategoryClick(category.key)}
@@ -221,16 +223,15 @@ const renderRepoLink = (repoUrl) => {
         alignItems: "center",
       }}
     >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 1024 1024"
-        fill="currentColor"
-        xmlns="http://www.w3.org/2000/svg"
-        style={{ marginRight: "8px" }}
-      >
-        <path d={ICONS.github} />
-      </svg>
+      <ReactSVG
+        src={ICONS.github}
+        beforeInjection={(svg) => {
+          svg.setAttribute("fill", Colors.lime)
+          svg.setAttribute("style", "margin-right: 8px; background: transparent;")
+          svg.setAttribute("width", "15")
+          svg.setAttribute("height", "15")
+        }}
+      />
       GitHub
     </StyledLink>
   )

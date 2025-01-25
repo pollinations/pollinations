@@ -12,7 +12,7 @@ import backgroundImage8 from "../assets/background/08.webp"
 export const SHOW_PROMPT_TOOLTIP = false; 
 
 export const Colors = {
-  lime: '#ecf874', //#37b9b0 #00afbf
+  lime: '#ecf874', //#37b9b0 #00afbf #ecf874 #226062 #54f0f4 #8fd4c3 rgb(13,242,201)
   offwhite: '#c7d4d6',
   offblack: '#110518', 
   offblack2: '#181a2c',

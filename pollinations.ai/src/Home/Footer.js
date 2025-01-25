@@ -50,7 +50,7 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: isXs ? "center" : "flex-start",
-            gap: "2em",
+            gap: "1em",
             fontSize: "1.5em",
             fontFamily: Fonts.title,
           }}
@@ -63,7 +63,7 @@ const Footer = () => {
           >
             <b>hello@pollinations.ai</b>
           </StyledLink>
-          <SocialLinks gap="1em" invert />
+          <SocialLinks gap="1em" />
         </Grid>
         <Grid
           size={{ xs: 12, md: 6 }}
@@ -76,7 +76,7 @@ const Footer = () => {
             fontFamily: Fonts.title,
           }}
         >
-          <Box sx={{ fontSize: "0.8em" }} >
+          <Box height="100%" sx={{ fontSize: "1.5em" }} >
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
               <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} />
             </StyledLink>

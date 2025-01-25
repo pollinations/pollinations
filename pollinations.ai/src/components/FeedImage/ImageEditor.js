@@ -6,8 +6,8 @@ import { CustomTooltip } from "../CustomTooltip"
 import { GeneralButton } from "../GeneralButton"
 import Grid from "@mui/material/Grid2"
 import {
-  FEED_ENANCER_TOOLTIP,
-  FEED_LOGO_WATERMARK,
+  IMAGE_FEED_ENANCER_TOOLTIP,
+  IMAGE_FEED_LOGO_WATERMARK,
   IMAGE_EDIT_BUTTON_OFF,
   IMAGE_FEED_TOOLTIP_PROMPT,
   IMAGE_FEED_TOOLTIP_MODEL,
@@ -534,7 +534,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Enhance Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator text={FEED_ENANCER_TOOLTIP} />}
+                    title={<LLMTextManipulator text={IMAGE_FEED_ENANCER_TOOLTIP} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -580,7 +580,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Logo Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator text={FEED_LOGO_WATERMARK} />}
+                    title={<LLMTextManipulator text={IMAGE_FEED_LOGO_WATERMARK} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>

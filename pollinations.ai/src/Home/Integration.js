@@ -7,7 +7,7 @@ import {
   SectionSubContainer,
   SectionHeadlineStyle,
 } from "../components/SectionContainer.js"
-import { INTEGRATION_TITLE, INTEGRATION_SUBTITLE, HERO_GITHUB_LINK } from "../config/copywrite"
+import { INTEGRATE_TITLE, INTEGRATE_SUBTITLE, INTEGRATE_GITHUB_LINK } from "../config/copywrite"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { ImageContext } from "../utils/ImageContext"
@@ -33,11 +33,11 @@ export const Integration = () => {
   return (
     <SectionContainer backgroundConfig={SectionBG.integration}>
       <SectionSubContainer>
-        <SectionTitle title={INTEGRATION_TITLE} />
+        <SectionTitle title={INTEGRATE_TITLE} />
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={INTEGRATION_SUBTITLE} />
+          <LLMTextManipulator text={INTEGRATE_SUBTITLE} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -64,7 +64,7 @@ export const Integration = () => {
               background: "transparent",
             }}
           />
-          <LLMTextManipulator text={HERO_GITHUB_LINK} />
+          <LLMTextManipulator text={INTEGRATE_GITHUB_LINK} />
         </GeneralButton>
       </SectionSubContainer>
       <SectionSubContainer>

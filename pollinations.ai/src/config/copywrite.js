@@ -79,11 +79,16 @@ export const HERO_CTO = basicTransform(
 )
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
-export const HERO_GITHUB_LINK = "APIDOCS.md"
+export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
-export const NEWS_TITLE = basicTransform("News");
-export const NEWS_LIST = newsListTransform(newsList);
+export const NEWS_TITLE = basicTransform(
+  "Last updates! '- 2025-01-25 - New GPU thanks to Cloudfare https://developers.cloudflare.com/workers-ai/. In one very short sentence."
+)
+export const NEWS_LIST = responsiveTransform(
+  `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Do not give a title to it, start with the first bullet point. Here is the list to fornat: ` +
+    newsList
+)
 
 export const IMAGE_FEED_SUBTITLE = basicTransform(
   "This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
@@ -94,12 +99,6 @@ export const IMAGE_FEED_MODE1 = translateOnly("Watch")
 export const IMAGE_FEED_MODE2 = translateOnly("Try")
 export const IMAGE_EDIT_BUTTON_ON = translateOnly("Imagine")
 export const IMAGE_EDIT_BUTTON_OFF = translateOnly("Imagine")
-
-export const INTEGRATION_TITLE = translateOnly("Integrate");
-export const INTEGRATION_SUBTITLE = basicTransform(
-  "Discover how to seamlessly integrate our free image and text generation API into your projects."
-);
-
 export const IMAGE_FEED_TOOLTIP_PROMPT = basicTransform(
   "This text box is for the text prompt describing the image you want to generate."
 )
@@ -115,13 +114,18 @@ export const IMAGE_FEED_TOOLTIP_HEIGHT = basicTransform(
 export const IMAGE_FEED_TOOLTIP_SEED = basicTransform(
   "Explain that the seed is the starting value for randomness. Use the same seed to reproduce identical results. Keep it informative but short"
 )
-export const FEED_ENANCER_TOOLTIP = basicTransform(
+export const IMAGE_FEED_ENANCER_TOOLTIP = basicTransform(
   "Explain that this check box is to enable/disable the Pollinations AI prompt enhancer that can help creating better images by improving your text prompt."
 )
-export const FEED_LOGO_WATERMARK = basicTransform(
+export const IMAGE_FEED_LOGO_WATERMARK = basicTransform(
   "Explain that this check box is to enable/disable the Pollinations watermark logo."
 )
 
+export const INTEGRATE_TITLE = translateOnly("Integrate")
+export const INTEGRATE_SUBTITLE = basicTransform(
+  "Discover how to seamlessly integrate our free image and text generation API into your projects."
+)
+export const INTEGRATE_GITHUB_LINK = "APIDOCS.md"
 export const PROJECT_TITLE = translateOnly("Projects")
 export const PROJECT_SUBTITLE = basicTransform(
   "Express this in one sentence: Here are some of the various implementations that our API is currently powering."

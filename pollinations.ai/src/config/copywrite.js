@@ -27,6 +27,8 @@ const emojify = () =>
 
 const teamStyle = () =>
 `Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
+
+const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
  
 const combine = (text, ...transformations) => props => `
 # Context
@@ -37,7 +39,7 @@ Apply the following transformations to the text in order:
 
 ${transformations.filter(Boolean).map((t) => `- ${t(props)}`).join("\n")}
 
-Only output the final text in markdown format, nothing else.
+Only output the final text, nothing else.
 
 # Text:
 ${text}
@@ -135,7 +137,7 @@ export const TEAM_6_IMAGE = team6
 export const SUPPORTER_TITLE = translateOnly("Supporters");
 export const SUPPORTER_SUBTITLE = basicTransform("Express this in one sentence: We're grateful to our supporters for their contributions to our platform.");
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
-export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, teamStyle);
+export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, translateOnly);
 
 
 export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");

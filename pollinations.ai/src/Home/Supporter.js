@@ -11,8 +11,11 @@ import {
   SUPPORTER_TITLE,
   SUPPORTER_SUBTITLE,
   SUPPORTER_LOGO_STYLE,
-  SUPPORTER_DESCRIPTION_STYLE,
 } from "../config/copywrite"
+import {
+  translate,
+  oneSentence
+} from "../config/llmTransforms"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
@@ -41,7 +44,7 @@ const Supporter = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={SUPPORTER_SUBTITLE} />
+          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[translate, oneSentence]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -68,7 +71,7 @@ const Supporter = () => {
                 <span
                   style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
                 >
-                  <LLMTextManipulator text={SUPPORTER_DESCRIPTION_STYLE(company.description)} />
+                  <LLMTextManipulator text={company.description} transforms={[translate]} />
                 </span>
               )}
             </Grid>

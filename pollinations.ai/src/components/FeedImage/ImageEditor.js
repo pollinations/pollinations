@@ -13,8 +13,8 @@ import {
   IMAGE_FEED_TOOLTIP_MODEL,
   IMAGE_FEED_TOOLTIP_WIDTH,
   IMAGE_FEED_TOOLTIP_HEIGHT,
-  IMAGE_FEED_TOOLTIP_SEED,
-} from "../../config/copywrite"
+  IMAGE_FEED_TOOLTIP_SEED} from "../../config/copywrite"
+import { emojify, translate, rephrase } from "../../config/llmTransforms"
 import ReactMarkdown from "react-markdown"
 import { keyframes } from "@emotion/react"
 import CheckIcon from "@mui/icons-material/Check"
@@ -314,7 +314,7 @@ export const ImageEditor = memo(function ImageEditor({
         <Grid size={{ xs: 12, md: 12 }}>
           <Box>
             <CustomTooltip
-              title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_PROMPT} />}
+              title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_PROMPT} transforms={[translate, rephrase, emojify]} />}
               interactive
             >
               <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -385,7 +385,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Model Selector */}
             <Grid size={{ xs: 12, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_MODEL} />}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_MODEL} transforms={[translate, rephrase, emojify]} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -443,7 +443,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Width Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_WIDTH} />}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_WIDTH} transforms={[translate, rephrase, emojify]} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -473,7 +473,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Height Input */}
             <Grid size={{ xs: 6, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_HEIGHT} />}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_HEIGHT} transforms={[translate, rephrase, emojify]} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -503,7 +503,7 @@ export const ImageEditor = memo(function ImageEditor({
             {/* Seed Input */}
             <Grid size={{ xs: 4, sm: 4, md: 2 }}>
               <CustomTooltip
-                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_SEED} />}
+                title={<LLMTextManipulator text={IMAGE_FEED_TOOLTIP_SEED} transforms={[translate, rephrase, emojify]} />}
                 interactive
               >
                 <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -534,7 +534,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Enhance Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator text={IMAGE_FEED_ENANCER_TOOLTIP} />}
+                    title={<LLMTextManipulator text={IMAGE_FEED_ENANCER_TOOLTIP} transforms={[translate, rephrase, emojify]} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -580,7 +580,7 @@ export const ImageEditor = memo(function ImageEditor({
                 {/* Logo Checkbox */}
                 <Grid size={{ xs: 4, sm: 2, md: 1 }}>
                   <CustomTooltip
-                    title={<LLMTextManipulator text={IMAGE_FEED_LOGO_WATERMARK} />}
+                    title={<LLMTextManipulator text={IMAGE_FEED_LOGO_WATERMARK} transforms={[translate, rephrase, emojify]} />}
                     interactive
                   >
                     <Typography component="div" variant="body" sx={typographyStyles.label}>
@@ -633,7 +633,7 @@ export const ImageEditor = memo(function ImageEditor({
                   fontFamily: Fonts.title,
                 }}
               >
-                <LLMTextManipulator text={IMAGE_EDIT_BUTTON_OFF} />
+                <LLMTextManipulator text={IMAGE_EDIT_BUTTON_OFF} transforms={[translate, rephrase, emojify]} />
               </GeneralButton>
             </Grid>
           </>

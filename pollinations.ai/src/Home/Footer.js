@@ -5,6 +5,7 @@ import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
 import { FOOTER_INFO, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
+import { translate } from "../config/llmTransforms"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
 import { useTheme } from "@mui/material/styles"
@@ -78,11 +79,11 @@ const Footer = () => {
         >
           <Box height="100%" sx={{ fontSize: "1.5em" }} >
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} />
+              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[translate]} />
             </StyledLink>
           </Box>
           <Box sx={{ fontSize: "1.2em" }}>
-            <LLMTextManipulator text={FOOTER_INFO} />
+            <LLMTextManipulator text={FOOTER_INFO} transforms={[translate]} />
           </Box>
         </Grid>
       </Box>

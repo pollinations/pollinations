@@ -17,6 +17,12 @@ import {
   COMMUNITY_GITHUB_CTO,
   ASCII_APP_TOOLTIP,
 } from "../config/copywrite.js"
+import {
+  emojify,
+  rephrase,
+  translate,
+  responsive
+} from "../config/llmTransforms.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
 import SectionTitle from "../components/SectionTitle.js"
 import { SectionHeadlineStyle } from "../components/SectionContainer.js"
@@ -103,7 +109,7 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} />
+          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[translate, rephrase, emojify]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -151,7 +157,7 @@ const Community = () => {
                         lineHeight: "0em",
                       }}
                     />
-                    <LLMTextManipulator text={platform.cto} />
+                    {platform.cto}
                   </GeneralButton>
                 </Grid>
                 <Grid
@@ -163,7 +169,7 @@ const Community = () => {
                   }}
                 >
                   <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em" >
-                    <LLMTextManipulator text={platform.subtitle} />
+                    <LLMTextManipulator text={platform.subtitle} transforms={[responsive]} />
                   </SectionHeadlineStyle>
                 </Grid>
               </Grid>
@@ -171,7 +177,7 @@ const Community = () => {
           ))}
         </Grid>
         <CustomTooltip
-          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} />}
+          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[translate, rephrase, emojify]} />}
           interactive
         >
           <SectionSubContainer>

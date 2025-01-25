@@ -3,6 +3,7 @@ import { SectionContainer, SectionSubContainer } from "../components/SectionCont
 import { Colors, Fonts } from "../config/global"
 import { NavLink } from "react-router-dom"
 import { FOOTER_TERMS_CONDITIONS } from "../config/copywrite"
+import { emojify, friendlyMarkdownStyle, translate } from "../config/llmTransforms"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import CancelPresentationOutlinedIcon from "@mui/icons-material/CancelPresentationOutlined"
 import { Box } from "@mui/material"
@@ -25,7 +26,7 @@ const Terms = () => {
       </Box>
       <SectionSubContainer style={{ backgroundColor: Colors.offblack, fontFamily: Fonts.headline }}>
         <Box style={{ color: Colors.offwhite }}>
-          <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS} />
+          <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS} transforms={[translate, friendlyMarkdownStyle, emojify]} />
         </Box>
       </SectionSubContainer>
     </SectionContainer>

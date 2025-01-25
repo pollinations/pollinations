@@ -11,6 +11,7 @@ import { ImageDisplay } from "../components/FeedImage/ImageDisplay";
 import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer";
 import SectionTitle from "../components/SectionTitle";
 import { IMAGE_FEED_SUBTITLE, IMAGE_FEED_TITLE } from "../config/copywrite";
+import { emojify, rephrase, translate } from "../config/llmTransforms.js";
 import { LLMTextManipulator } from "../components/LLMTextManipulator.js";
 import { trackEvent } from "../config/analytics"
 
@@ -100,7 +101,7 @@ export const FeedImage = memo(() => {
       {/* Subheading / LLM Banner */}
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} />
+          <LLMTextManipulator text={IMAGE_FEED_SUBTITLE} transforms={[translate,rephrase, emojify]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
 

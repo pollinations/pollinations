@@ -7,7 +7,6 @@ import {
 import { TEAM_MEMBERS, TEAM_TITLE } from "../config/copywrite.js"
 import Grid from "@mui/material/Grid2"
 import SectionTitle from "../components/SectionTitle.js"
-import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { Box } from "@mui/material"
 
 const Team = () => {

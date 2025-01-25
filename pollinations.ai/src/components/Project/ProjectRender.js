@@ -1,4 +1,3 @@
-
 import React, { useState } from "react"
 import { Link, AppBar, ButtonGroup, Box, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
@@ -11,6 +10,7 @@ import { LLMTextManipulator } from "../LLMTextManipulator"
 import useRandomSeed from "../../hooks/useRandomSeed"
 import { usePollinationsImage } from "@pollinations/react"
 import { PROJECT_LOGO_STYLE, PROJECT_DESCRIPTION } from "../../config/copywrite"
+import { translate, rephrase, emojify, shortTechnical } from "../../config/llmTransforms"
 import { projectCategories, projects } from "../../config/projectList"
 import { GeneralButton } from "../GeneralButton"
 import { SectionSubContainer } from "../SectionContainer"
@@ -149,7 +149,7 @@ const ProjectsRender = ({ classes }) => {
                         fontFamily: Fonts.parameter,
                       }}
                     >
-                      <LLMTextManipulator text={PROJECT_DESCRIPTION(project.description)} />
+                      <LLMTextManipulator text={project.description} transforms={[shortTechnical]} />
                     </span>
                     {project.repo && renderRepoLink(project.repo)}
                   </Grid>

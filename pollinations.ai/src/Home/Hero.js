@@ -14,6 +14,11 @@ import {
   HERO_GITHUB_LINK,
   HERO_DISCORD_LINK,
 } from "../config/copywrite"
+import {
+  translate,
+  emojify,
+  rephrase
+} from "../config/llmTransforms"
 import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons"
 import ContentCopyIcon from "@mui/icons-material/ContentCopy"
@@ -74,7 +79,7 @@ const Hero = () => {
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >
-          <LLMTextManipulator text={HERO_INTRO} transformations={"header_transformation"} />
+          <LLMTextManipulator text={HERO_INTRO} transformations={[translate, emojify, rephrase]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
@@ -87,7 +92,7 @@ const Hero = () => {
               color={Colors.offblack}
               textAlign={isMobile ? "center" : "right"}
             >
-              <LLMTextManipulator text={HERO_CTO} />
+              <LLMTextManipulator text={HERO_CTO} transforms={[translate, emojify]} />
             </SectionHeadlineStyle>
           </Grid>
 
@@ -115,7 +120,7 @@ const Hero = () => {
                   background: "transparent",
                 }}
               />
-              <LLMTextManipulator text={HERO_DISCORD_LINK} />
+              <LLMTextManipulator text={HERO_DISCORD_LINK} transforms={[translate]} />
             </GeneralButton>
           </Grid>
           <Grid>
@@ -143,7 +148,7 @@ const Hero = () => {
                   background: "transparent",
                 }}
               />
-              <LLMTextManipulator text={HERO_GITHUB_LINK} />
+              {HERO_GITHUB_LINK}
             </GeneralButton>
           </Grid>
           <Grid>
@@ -159,7 +164,7 @@ const Hero = () => {
               }}
             >
               <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
-              <LLMTextManipulator text={HERO_EMAIL_BUTTON} />
+              {HERO_EMAIL_BUTTON}
             </GeneralButton>
           </Grid>
         </Grid>

@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown"
 import styled from "@emotion/styled"
 import { useTheme, useMediaQuery } from "@mui/material"
 import { Colors } from "../config/global"
+import { context } from "../config/copywrite"
 
 
 // function AnimatedDots() {
@@ -19,13 +20,34 @@ import { Colors } from "../config/global"
 //   return <span>{".".repeat(dotCount)}</span>
 // }
 
-export function LLMTextManipulator({ text }) {
-  const theme = useTheme()
-  const isXs = useMediaQuery(theme.breakpoints.only("xs"))
-  const userLanguage = navigator.language || navigator.userLanguage
 
-  const prompt = typeof text === "function" ? text({ isXs, userLanguage }) : null;
-  const transformedText = usePollinationsText(prompt) || text;
+// 2) combine helper
+const combine = (text, transformations, props) => `
+# Context
+${context}
+
+# Instructions:
+Apply the following transformations to the text in order:
+
+${transformations
+  .filter(Boolean)
+  .map((t) => `- ${t(props)}`)
+  .join("\n")}
+
+Only output the final text, nothing else. Links should be in markdown format.
+
+# Prompt:
+${text}
+`
+
+
+export function LLMTextManipulator({ text, transforms = [] }) {
+  const theme = useTheme();
+  const isXs = useMediaQuery(theme.breakpoints.only("xs"));
+  const userLanguage = navigator.language || navigator.userLanguage;
+
+  const prompt = combine(text, transforms, { isXs, userLanguage })
+  const transformedText = usePollinationsText(prompt);
 
   if (!transformedText) {
     return (

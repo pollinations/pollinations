@@ -6,184 +6,114 @@ import team3 from "../assets/team/Laurent.jpeg"
 import team4 from "../assets/team/Nico.jpeg"
 import team5 from "../assets/team/Portrait_XO.webp"
 import team6 from "../assets/team/Kalam.webp"
+import { rephrase } from "./llmTransforms"
 
 // 1) Base building blocks
-const context = () => `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`
-
-const responsive = ({ isXs }) =>
-  isXs ?? false
-    ? `Condense the text to 5 words maximum. It needs to be super short for mobile friendliness. Don't exceed 5 words!`
-    : null
-
-const translate = ({ userLanguage }) =>
-  userLanguage?.startsWith("en")
-    ? null
-    : `Translate to: ${userLanguage}. `
-
-const rephrase = () =>
-  `Formulate with a direct, friendly but professional tone. Preserve clarity and conciseness without undue formality.`
-
-const emojify = () =>
-  `Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length.`
-
-const teamStyle = () =>
-  `Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
-
-const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
-
-const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
-
-const projectDescription = () =>
-  `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`
-
-const oneSentence = () => `Express this in one sentence.`
-
-// 2) combine helper
-const combine = (text, ...transformations) => props => `
-# Context
-${context()}
-
-# Instructions:
-Apply the following transformations to the text in order:
-
-${transformations
-  .filter(Boolean)
-  .map((t) => `- ${t(props)}`)
-  .join("\n")}
-
-Only output the final text, nothing else. Links should be in markdown format.
-
-# Prompt:
-${text}
-`
-
-// 3) Specialized combos
-const translateOnly = (text) => (props) => combine(text, translate)(props)
-const translateAndEmojify = (text) => (props) => combine(text, translate, emojify)(props)
-const basicTransform = (text) => (props) => combine(text, translate, rephrase, emojify)(props)
-const responsiveTransform = (text) => (props) =>
-  combine(text, translate, rephrase, responsive, emojify)(props)
-const teamTitleTransform = (text) => (props) => combine(text, teamStyle, translate)(props)
-const projectTransform = (text) => (props) => combine(text, projectDescription)(props)
-const friendlyMarkdownTransform = (text) => (props) => combine(text, friendlyMarkdownStyle, responsive)(props)
-const oneSentenceTransform = (text) => (props) => combine(text, translate, oneSentence, emojify)(props);
+export const context = `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`
 
 // 4) Use combos throughout
-export const HERO_INTRO = basicTransform(
+export const HERO_INTRO = 
   "Introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
-)
 
-export const HERO_CTO = translateAndEmojify(
+
+export const HERO_CTO = 
   "Talk to us, reach out. "
-)
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
-export const NEWS_TITLE = basicTransform(
+export const NEWS_TITLE = 
   "Last update! - 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
-)
-export const NEWS_LIST = friendlyMarkdownTransform(newsList)
 
-export const IMAGE_FEED_SUBTITLE = basicTransform(
+export const NEWS_LIST =newsList
+
+export const IMAGE_FEED_SUBTITLE =
   "Real-time feed of our image API endpoint"
-)
 
-export const IMAGE_FEED_TITLE = translateOnly("Live Feed")
-export const IMAGE_FEED_MODE1 = translateOnly("Watch")
-export const IMAGE_FEED_MODE2 = translateOnly("Try")
-export const IMAGE_EDIT_BUTTON_ON = translateOnly("Imagine")
-export const IMAGE_EDIT_BUTTON_OFF = translateOnly("Imagine")
-export const IMAGE_FEED_TOOLTIP_PROMPT = basicTransform(
-  "the text prompt describes the image to generate."
-)
-export const IMAGE_FEED_TOOLTIP_MODEL = basicTransform(
-  "Select the text-to-image model."
-)
-export const IMAGE_FEED_TOOLTIP_WIDTH = basicTransform(
+
+export const IMAGE_FEED_TITLE = "Live Feed"
+export const IMAGE_FEED_MODE1 = "Watch";
+export const IMAGE_FEED_MODE2 = "Try"
+export const IMAGE_EDIT_BUTTON_ON = "Imagine"
+export const IMAGE_EDIT_BUTTON_OFF = "Imagine"
+export const IMAGE_FEED_TOOLTIP_PROMPT = "the text prompt describes the image to generate."
+
+export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."
+export const IMAGE_FEED_TOOLTIP_WIDTH = 
   "sets the number of pixels in the horizontal direction."
-)
-export const IMAGE_FEED_TOOLTIP_HEIGHT = basicTransform(
+
+export const IMAGE_FEED_TOOLTIP_HEIGHT = 
   "sets the number of pixels in the vertical direction."
-)
-export const IMAGE_FEED_TOOLTIP_SEED = basicTransform(
+
+export const IMAGE_FEED_TOOLTIP_SEED =  
   "Explain that the seed is the starting value for randomness. Use the same seed to reproduce identical results."
-)
-export const IMAGE_FEED_ENANCER_TOOLTIP = basicTransform(
+
+export const IMAGE_FEED_ENANCER_TOOLTIP = 
   "Explain that this check box is to enable/disable the Pollinations AI prompt enhancer that can help creating better images by improving your text prompt."
-)
-export const IMAGE_FEED_LOGO_WATERMARK = basicTransform(
+
+export const IMAGE_FEED_LOGO_WATERMARK = 
   "Explain that this check box is to enable/disable the Pollinations watermark logo."
-)
 
-export const INTEGRATE_TITLE = translateOnly("Integrate")
-export const INTEGRATE_SUBTITLE = basicTransform(
+export const INTEGRATE_TITLE = "Integrate"
+export const INTEGRATE_SUBTITLE =
   "Discover how to seamlessly integrate our free image and text generation API into your projects."
-)
+
 export const INTEGRATE_GITHUB_LINK = "APIDOCS.md"
-export const PROJECT_TITLE = translateOnly("Projects")
-export const PROJECT_SUBTITLE = oneSentenceTransform(" Here are some of the various implementations that our API is currently powering.")
+export const PROJECT_TITLE = "Projects"
+export const PROJECT_SUBTITLE = " Here are some of the various implementations that our API is currently powering."
 
-export const PROJECT_DESCRIPTION = (projectDescription) =>
-  combine(projectDescription, projectTransform)
+export const PROJECT_CTO_1 = 
+  "Have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic."
 
-export const PROJECT_CTO_1 = responsiveTransform(
-  "Express this in one sentence: Do you have created a project that integrates Pollinations.AI? Say that we'd love to feature it! Be very synthetic."
-)
-export const PROJECT_CTO_2 = basicTransform(
-  "Express this in one very very short sentence: Talk to us"
-)
+export const PROJECT_CTO_2 = "Talk to us"
+
 export const PROJECT_BUTTON = "hello@pollinations.ai"
 export const PROJECT_LOGO_STYLE =
   "square logo based on the info of the company. Only colored backgrounds. Be creative!"
 
-export const COMMUNITY_TITLE = translateOnly("Contribute")
-export const COMMUNITY_SUBTITLE = basicTransform(
+export const COMMUNITY_TITLE = "Contribute";
+export const COMMUNITY_SUBTITLE =
   "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate."
-)
 
-export const COMMUNITY_DISCORD_SUBTITLE = responsiveTransform(
+
+export const COMMUNITY_DISCORD_SUBTITLE = 
   "Introduce our Discord channel, make it just a few words. In a single very short sentence."
-)
+
 export const COMMUNITY_DISCORD_CTO = "Discord"
-export const COMMUNITY_GITHUB_SUBTITLE = responsiveTransform(
+export const COMMUNITY_GITHUB_SUBTITLE = 
   "Highlight our GitHub repository as a hub for collaboration and contribution. In a single very short sentence."
-)
+
 export const COMMUNITY_GITHUB_CTO = "GitHub"
 
-export const ASCII_APP_TOOLTIP = basicTransform(
+export const ASCII_APP_TOOLTIP =
   "Incite the users to try out our ASCII art generator!"
-)
 
-export const TEAM_TITLE = translateOnly("Our Team")
-export const TEAM_SUBTITLE = responsiveTransform(
-  "Introducing our team, explain that we are a collective of dedicated developers, creators, and AI enthusiasts collaborating to innovate and build exceptional solutions. 20 words maximum."
-)
+
+export const TEAM_TITLE = "Our Team"
 
 // Helper for team name formatting
 const formatTeamName = (name) =>
   combine(rephrase)(`Write only the text '${name}' in bold and all caps`)
 
 export const TEAM_MEMBERS = [
-  { name: formatTeamName("Thomas Haferlach"), function: teamTitleTransform("Lead visionary"), image: team1 },
-  { name: formatTeamName("Elliot Fouchy"), function: teamTitleTransform("Lead Production"), image: team2 },
-  { name: formatTeamName("Laurent"), function: teamTitleTransform("Developer"), image: team3 },
-  { name: formatTeamName("Nico"), function: teamTitleTransform("Designer"), image: team4 },
-  { name: formatTeamName("Portrait XO"), function: teamTitleTransform("Artist"), image: team5 },
-  { name: formatTeamName("Kalam"), function: teamTitleTransform("Researcher"), image: team6 },
+  { name: "Thomas Haferlach", function: "Lead visionary", image: team1 },
+  { name: "Elliot Fouchy", function: "Lead Production", image: team2 },
+  { name: "Laurent", function: "Developer", image: team3 },
+  { name: "Nico", function: "Designer", image: team4 },
+  { name: "Portrait XO", function: "Artist", image: team5 },
+  { name: "Kalam", function: "Researcher", image: team6 },
 ];
 
-export const SUPPORTER_TITLE = translateOnly("Supporters");
-export const SUPPORTER_SUBTITLE = oneSentenceTransform(`We're grateful to our supporters for their contributions to our platform.`);
+export const SUPPORTER_TITLE = "Supporters";
+export const SUPPORTER_SUBTITLE = `We're grateful to our supporters for their contributions to our platform.`;
 
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
-export const SUPPORTER_DESCRIPTION_STYLE = translateOnly;
 
-export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");
-export const FOOTER_TERMS_CONDITIONS = friendlyMarkdownTransform("Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai");
+export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
+export const FOOTER_TERMS_CONDITIONS = "Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai";
 
-export const FOOTER_CLOSE = translateOnly("Close");
+export const FOOTER_CLOSE = "Close";
 export const FOOTER_INFO = " 2025 Pollinations.AI"
 
 export const ASCII_ART_PROMPT = (width, height) =>

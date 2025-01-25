@@ -70,10 +70,10 @@ const oneSentenceTransform = (text) => (props) => combine(text, translate, oneSe
 
 // 4) Use combos throughout
 export const HERO_INTRO = basicTransform(
-  "Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
+  "Introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
 )
 
-export const HERO_CTO = basicTransform(
+export const HERO_CTO = translateAndEmojify(
   "Talk to us, reach out. "
 )
 
@@ -87,7 +87,7 @@ export const NEWS_TITLE = basicTransform(
 export const NEWS_LIST = friendlyMarkdownTransform(newsList)
 
 export const IMAGE_FEED_SUBTITLE = basicTransform(
-  "This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
+  "Real-time feed of our image API endpoint"
 )
 
 export const IMAGE_FEED_TITLE = translateOnly("Live Feed")
@@ -96,19 +96,19 @@ export const IMAGE_FEED_MODE2 = translateOnly("Try")
 export const IMAGE_EDIT_BUTTON_ON = translateOnly("Imagine")
 export const IMAGE_EDIT_BUTTON_OFF = translateOnly("Imagine")
 export const IMAGE_FEED_TOOLTIP_PROMPT = basicTransform(
-  "This text box is for the text prompt describing the image you want to generate."
+  "the text prompt describes the image to generate."
 )
 export const IMAGE_FEED_TOOLTIP_MODEL = basicTransform(
-  "Select the text-to-image model you would like to use."
+  "Select the text-to-image model."
 )
 export const IMAGE_FEED_TOOLTIP_WIDTH = basicTransform(
-  "This number sets the number of pixels in the horizontal direction."
+  "sets the number of pixels in the horizontal direction."
 )
 export const IMAGE_FEED_TOOLTIP_HEIGHT = basicTransform(
-  "This number sets the number of pixels in the vertical direction."
+  "sets the number of pixels in the vertical direction."
 )
 export const IMAGE_FEED_TOOLTIP_SEED = basicTransform(
-  "Explain that the seed is the starting value for randomness. Use the same seed to reproduce identical results. Keep it informative but short"
+  "Explain that the seed is the starting value for randomness. Use the same seed to reproduce identical results."
 )
 export const IMAGE_FEED_ENANCER_TOOLTIP = basicTransform(
   "Explain that this check box is to enable/disable the Pollinations AI prompt enhancer that can help creating better images by improving your text prompt."

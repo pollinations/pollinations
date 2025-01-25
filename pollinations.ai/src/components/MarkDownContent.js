@@ -1,16 +1,14 @@
-import Typography from "@material-ui/core/Typography"
+import Typography from "@mui/material/Typography"
 import Markdown from "markdown-to-jsx"
 import { range, zipObj } from "ramda"
 import useFetchText from "../hooks/useFetchText"
 import useMarkdown from "../hooks/useMarkdown"
-import { useTheme } from "@material-ui/core/styles"
-import useMediaQuery from "@material-ui/core/useMediaQuery"
+import { useTheme } from "@mui/material/styles"
+import useMediaQuery from "@mui/material/useMediaQuery"
 import styled from "@emotion/styled"
 
 // replacements allow replacing dynamic content in the markdown
 // the syntax is {[key]} which will be matched with the props passed to this object
-
-const MOBILE_BREAKPOINT = "768px"
 
 const MarkDownContent = ({ url, ...replacements }) => {
   const raw = useFetchText(url)
@@ -24,7 +22,7 @@ const MarkDownContent = ({ url, ...replacements }) => {
 
   // elements to override the header tags with
   const overrideElements = tags.map((tag) => ({ children }) => (
-    <Typography variant={tag} children={children} style={{ fontSize: '2em', marginTop: '2em' }} />
+    <Typography component="div" variant={tag} children={children} style={{ fontSize: '2em', marginTop: '2em' }} />
   ))
 
   let overrides = zipObj(tags, overrideElements)
@@ -64,7 +62,7 @@ const applyReplacements = (replacements, content) =>
 const replaceOne = (content, [key, replacement]) => content.replaceAll(`{${key}}`, replacement)
 
 const StyledMarkdownContent = styled.div`
-  @media (max-width: ${MOBILE_BREAKPOINT}) {
+  ${({ theme }) => theme.breakpoints.down('md')} {
     h1,
     h2,
     h3,

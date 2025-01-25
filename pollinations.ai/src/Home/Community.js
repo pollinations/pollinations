@@ -21,7 +21,8 @@ import {
   emojify,
   rephrase,
   translate,
-  responsive
+  responsive,
+  noLink
 } from "../config/llmTransforms.js"
 import Grid from "@mui/material/Grid2" // v5 Grid2
 import SectionTitle from "../components/SectionTitle.js"
@@ -109,7 +110,7 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[translate, rephrase, emojify]} />
+          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, translate, responsive, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -169,7 +170,7 @@ const Community = () => {
                   }}
                 >
                   <SectionHeadlineStyle color={Colors.offwhite} fontSize="1.2em" >
-                    <LLMTextManipulator text={platform.subtitle} transforms={[responsive]} />
+                    <LLMTextManipulator text={platform.subtitle} transforms={[rephrase, translate, emojify, responsive, noLink]} />
                   </SectionHeadlineStyle>
                 </Grid>
               </Grid>
@@ -177,7 +178,7 @@ const Community = () => {
           ))}
         </Grid>
         <CustomTooltip
-          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify]} />}
+          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, translate, emojify, noLink]} />}
           interactive
         >
           <SectionSubContainer>
@@ -193,7 +194,7 @@ const Community = () => {
             >
               <AsciiArtGenerator
                 width="100px"
-                style={{ fontWeight: "bold", color: Colors.offwhite }}
+                style={{ fontWeight: "bold", color: Colors.lime }}
               />
             </Box>
           </SectionSubContainer>

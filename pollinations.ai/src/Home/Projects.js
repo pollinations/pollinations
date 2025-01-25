@@ -13,7 +13,9 @@ import {
 import {
   translate,
   oneSentence,
-  emojify
+  emojify,
+  rephrase,
+  noLink
 } from "../config/llmTransforms"
 
 import SectionTitle from "../components/SectionTitle"
@@ -66,7 +68,7 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[oneSentence]} />
+          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, translate, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -74,12 +76,12 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[oneSentence]} />
+          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, translate, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[emojify]} />
+          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[rephrase, translate, emojify, noLink]} />
         </SectionHeadlineStyle>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton

@@ -17,8 +17,8 @@ export const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
 
 export const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
 
-export const shortTechnical = () => `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`;
+export const shortTechnical = () => `Convey in one very short sentence. Technical language is fine. Be very synthetic. Do not link the Pollinations.ai website. Any other link in the description should be displayed as a clickable word`;
 
 export const oneSentence = () => `Express this in one sentence.`;
 
-export const noLink = () => `Do not use any link url`;
+export const noLink = () => `Do not use any link URL`;

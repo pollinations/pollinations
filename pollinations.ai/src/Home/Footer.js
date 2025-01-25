@@ -5,7 +5,7 @@ import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
 import { FOOTER_INFO, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
-import { translate } from "../config/llmTransforms"
+import { translate, noLink } from "../config/llmTransforms"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
 import { useTheme } from "@mui/material/styles"
@@ -18,18 +18,18 @@ const Footer = () => {
     e.preventDefault()
     navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
     trackEvent({
-      action: 'Email_Link_Click',
-      category: 'User_Interactions',
-      label: 'Footer_Email_Link',
+      action: "Email_Link_Click",
+      category: "User_Interactions",
+      label: "Footer_Email_Link",
       value: 1,
     })
   }
 
   const handleTermsLinkClick = () => {
     trackEvent({
-      action: 'Terms_Link_Click',
-      category: 'User_Interactions',
-      label: 'Footer_Terms_Link',
+      action: "Terms_Link_Click",
+      category: "User_Interactions",
+      label: "Footer_Terms_Link",
       value: 1,
     })
   }
@@ -77,13 +77,13 @@ const Footer = () => {
             fontFamily: Fonts.title,
           }}
         >
-          <Box height="100%" sx={{ fontSize: "1.5em" }} >
+          <Box height="100%" sx={{ fontSize: "1.5em" }}>
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[translate]} />
+              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[translate, noLink]} />
             </StyledLink>
           </Box>
           <Box sx={{ fontSize: "1.2em" }}>
-            <LLMTextManipulator text={FOOTER_INFO} transforms={[translate]} />
+            <LLMTextManipulator text={FOOTER_INFO} transforms={[noLink]} />
           </Box>
         </Grid>
       </Box>

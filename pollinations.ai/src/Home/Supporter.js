@@ -3,24 +3,30 @@ import { Colors, Fonts, SectionBG } from "../config/global"
 import {
   SectionContainer,
   SectionSubContainer,
-  SectionHeadlineStyle,
+  SectionHeadlineStyle
 } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import {
   SUPPORTER_TITLE,
   SUPPORTER_SUBTITLE,
-  SUPPORTER_LOGO_STYLE,
+  SUPPORTER_LOGO_STYLE
 } from "../config/copywrite"
 import {
   translate,
-  oneSentence
+  rephrase,
+  emojify,
+  noLink
 } from "../config/llmTransforms"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import SvgArtGenerator from "../components/SvgArtGenerator"
+
+
+
+
 const Supporter = () => {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"))
@@ -44,7 +50,7 @@ const Supporter = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[oneSentence]} />
+          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[rephrase, translate, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -71,7 +77,7 @@ const Supporter = () => {
                 <span
                   style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
                 >
-                  <LLMTextManipulator text={company.description} transforms={[translate]} />
+                  <LLMTextManipulator text={company.description} transforms={[rephrase, translate, emojify, noLink]} />
                 </span>
               )}
             </Grid>

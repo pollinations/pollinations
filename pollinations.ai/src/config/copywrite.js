@@ -47,7 +47,7 @@ ${transformations
   .map((t) => `- ${t(props)}`)
   .join("\n")}
 
-Only output the final text, nothing else.
+Only output the final text, nothing else. Links should be in markdown format.
 
 # Prompt:
 ${text}

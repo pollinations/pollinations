@@ -66,8 +66,8 @@ export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "APIDOCS.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
-export const NEWS_TITLE = basicTransform("We want a short title for the 'last updates' section, in one very short sentence. Use bold font");
-export const NEWS_LIST = responsiveTransform(`Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Do not give a title to it, start with the first bullet point. Here is the list to fornat: ` + newsList);
+export const NEWS_TITLE = basicTransform("We want a short title in one very short sentence. Use bold font");
+export const NEWS_LIST = responsiveTransform(`Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. Do not give a title to it, start with the first bullet point. Here is the list to format: ` + newsList);
 
 export const IMAGE_FEED_SUBTITLE = basicTransform("Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime.");
 export const IMAGE_FEED_TITLE = translateOnly("Live Feed");

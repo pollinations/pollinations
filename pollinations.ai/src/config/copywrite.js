@@ -22,7 +22,7 @@ const translate = ({ userLanguage }) =>
 `
 
 const rephrase = () =>
-  `Formulate the idea with a direct, friendly but professional tone. Preserve clarity and conciseness without undue formality.`
+  `Formulate with a direct, friendly but professional tone. Preserve clarity and conciseness without undue formality.`
 
 const emojify = () =>
   `Enrich the text with suitable emojis and varied text styles (use bold and italics). Do not rephrase or change the text length.`

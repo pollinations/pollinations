@@ -135,7 +135,7 @@ export const TEAM_6_IMAGE = team6
 export const SUPPORTER_TITLE = translateOnly("Supporters");
 export const SUPPORTER_SUBTITLE = basicTransform("Express this in one sentence: We're grateful to our supporters for their contributions to our platform.");
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
-export const SUPPORTER_DESCRIPTION_STYLE = basicTransform("Convey the description of the supporter busuness very very briefly, 5 words maximum.");
+export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, teamStyle);
 
 
 export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");

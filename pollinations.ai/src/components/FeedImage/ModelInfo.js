@@ -13,43 +13,20 @@ export function ModelInfo({ model, referrer }) {
     turbo: {
       modelName: "Boltning",
       modelLink: "https://civitai.com/models/413466/boltning-realistic-lightning-hyper",
-      loraLink: "https://huggingface.co/tianweiy/DMD2",
     },
     flux: {
       modelName: "Flux.Schnell",
       modelLink: "https://blackforestlabs.ai/",
-      loraLink: null,
-    },
-    "flux-anime": {
-      modelName: "Flux.Anime",
-      modelLink: "https://llmplayground.net/",
-      loraLink: null,
-    },
-    "flux-3d": {
-      modelName: "Flux.3D",
-      modelLink: "https://llmplayground.net/",
-      loraLink: null,
-    },
-    "flux-realism": {
-      modelName: "Flux.Realism",
-      modelLink: "https://llmplayground.net/",
-      loraLink: null,
-    },
-    "flux-cablyai": {
-      modelName: "CablyAI Pro",
-      modelLink: "https://cablyai.com/",
-      loraLink: null,
     },
     default: {
       modelName: "Unknown Model",
       modelLink: "#",
-      loraLink: null,
     },
   }
 
-  const { modelName, modelLink, loraLink } = MODEL_INFO[model] || MODEL_INFO.default
+  const { modelName, modelLink } = MODEL_INFO[model] || MODEL_INFO.default
 
-  const renderModelInfo = (name, link, lora) => (
+  const renderModelInfo = (name, link) => (
     <Box
       sx={{
         color: Colors.offwhite,
@@ -62,7 +39,7 @@ export function ModelInfo({ model, referrer }) {
       }}
     >
       <Box>
-        Model:{" "}
+        {"Model: "}
         <Link
           href={link}
           target="_blank"
@@ -74,19 +51,7 @@ export function ModelInfo({ model, referrer }) {
       </Box>
 
       <Box>
-        LoRA:{" "}
-        <Link
-          href={lora}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ color: Colors.lime, fontSize: "1em" }}
-        >
-          DMD2
-        </Link>
-      </Box>
-
-      <Box>
-        Prompt Enhancer:{" "}
+        {"Prompt Enhancer: "}
         <Link
           href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js"
           target="_blank"
@@ -98,7 +63,7 @@ export function ModelInfo({ model, referrer }) {
       </Box>
 
       <Box>
-        Referrer:{" "}
+      {"Referrer: "}
         <Link
           href={referrer}
           target="_blank"

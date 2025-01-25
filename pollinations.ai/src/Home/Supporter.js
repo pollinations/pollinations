@@ -68,7 +68,7 @@ const Supporter = () => {
                 <span
                   style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
                 >
-                  <LLMTextManipulator text={SUPPORTER_DESCRIPTION_STYLE + company.description} />
+                  <LLMTextManipulator text={SUPPORTER_DESCRIPTION_STYLE(company.description)} />
                 </span>
               )}
             </Grid>

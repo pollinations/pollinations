@@ -1,17 +1,19 @@
 import styled from "@emotion/styled";
-import { Colors } from "../styles/global";
+import { Colors, Fonts } from "../config/global";
+import { Link } from "react-router-dom";
 
-// Define LinkStyle if not available in global styles
-const LinkStyle = styled.a`
+const StyledLink = styled(({ isExternal, ...props }) => 
+  isExternal ? <a {...props} /> : <Link {...props} />
+)`
+  font-family: ${Fonts.title};
+  font-style: normal;
+  font-weight: 600;
+  text-decoration-line: none;
+  text-transform: uppercase;
   color: inherit;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const StyledLink = styled(LinkStyle)`
   transition: color 0.3s ease;
   &:hover {
+    text-decoration: underline;
     color: ${(props) => (props.dark ? Colors.accent : Colors.primary)};
   }
 `;

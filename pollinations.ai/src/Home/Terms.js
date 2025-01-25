@@ -25,7 +25,7 @@ const Terms = () => {
       </Box>
       <SectionSubContainer style={{ backgroundColor: Colors.offblack, fontFamily: Fonts.headline }}>
         <Box style={{ color: Colors.offwhite }}>
-          <LLMTextManipulator>{FOOTER_TERMS_CONDITIONS}</LLMTextManipulator>
+          <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS} />
         </Box>
       </SectionSubContainer>
     </SectionContainer>

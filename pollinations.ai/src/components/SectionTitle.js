@@ -15,7 +15,7 @@ function SectionTitle({ title, color }) {
           color: 'inherit',
         }}
       >
-        <LLMTextManipulator>{title}</LLMTextManipulator>
+        <LLMTextManipulator text={title} />
       </Typography>
     </SectionTitleStyle>
   )

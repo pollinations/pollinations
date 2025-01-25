@@ -22,7 +22,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator>{IMAGE_FEED_MODE1}</LLMTextManipulator>
+        <LLMTextManipulator text={IMAGE_FEED_MODE1} />
       </GeneralButton>
       <GeneralButton
         handleClick={() => handleToggleChange(null, "edit")}
@@ -37,7 +37,7 @@ export function FeedEditSwitch({ toggleValue, handleToggleChange, isLoading }) {
           padding: "0 1em",
         }}
       >
-        <LLMTextManipulator>{IMAGE_FEED_MODE2}</LLMTextManipulator>
+        <LLMTextManipulator text={IMAGE_FEED_MODE2} />
       </GeneralButton>
     </Box>
   )

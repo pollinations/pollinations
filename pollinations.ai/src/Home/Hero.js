@@ -74,7 +74,7 @@ const Hero = () => {
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >
-          <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
+          <LLMTextManipulator text={HERO_INTRO} transformations={"header_transformation"} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
@@ -87,7 +87,7 @@ const Hero = () => {
               color={Colors.offblack}
               textAlign={isMobile ? "center" : "right"}
             >
-              <LLMTextManipulator>{HERO_CTO}</LLMTextManipulator>
+              <LLMTextManipulator text={HERO_CTO} />
             </SectionHeadlineStyle>
           </Grid>
 
@@ -115,7 +115,7 @@ const Hero = () => {
                   background: "transparent",
                 }}
               />
-              <LLMTextManipulator>{HERO_DISCORD_LINK}</LLMTextManipulator>
+              <LLMTextManipulator text={HERO_DISCORD_LINK} />
             </GeneralButton>
           </Grid>
           <Grid>
@@ -143,7 +143,7 @@ const Hero = () => {
                   background: "transparent",
                 }}
               />
-              <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
+              <LLMTextManipulator text={HERO_GITHUB_LINK} />
             </GeneralButton>
           </Grid>
           <Grid>
@@ -159,7 +159,7 @@ const Hero = () => {
               }}
             >
               <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
-              <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
+              <LLMTextManipulator text={HERO_EMAIL_BUTTON} />
             </GeneralButton>
           </Grid>
         </Grid>

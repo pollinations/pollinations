@@ -149,9 +149,7 @@ const ProjectsRender = ({ classes }) => {
                         fontFamily: Fonts.parameter,
                       }}
                     >
-                      <LLMTextManipulator>
-                        {PROJECT_DESCRIPTION + project.description}
-                      </LLMTextManipulator>
+                      <LLMTextManipulator text={PROJECT_DESCRIPTION(project.description)} />
                     </span>
                     {project.repo && renderRepoLink(project.repo)}
                   </Grid>

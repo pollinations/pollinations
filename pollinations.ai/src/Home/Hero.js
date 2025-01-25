@@ -15,11 +15,12 @@ import {
   HERO_DISCORD_LINK,
 } from "../config/copywrite"
 import Grid from "@mui/material/Grid2"
-import { ICONS } from "../assets/icons/icons" // Import the ICONS
-import ContentCopyIcon from "@mui/icons-material/ContentCopy" // Import the Material UI copy icon
+import { ICONS } from "../assets/icons/icons"
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 import { useMediaQuery } from "@mui/material"
 import { useTheme } from "@mui/material/styles"
 import { trackEvent } from "../config/analytics"
+import { ReactSVG } from "react-svg"
 
 const handleDiscordButtonClick = (e) => {
   e.preventDefault()
@@ -71,7 +72,7 @@ const Hero = () => {
           maxWidth="1000px"
           fontSize="1.5em"
           color={Colors.offblack}
-          textAlign={{ xs: "center", md: "left" }}
+          textAlign={isMobile ? "center" : "left"}
         >
           <LLMTextManipulator>{HERO_INTRO}</LLMTextManipulator>
         </SectionHeadlineStyle>
@@ -102,16 +103,18 @@ const Hero = () => {
                 fontWeight: 600,
               }}
             >
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 1024 1024"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ marginRight: "8px" }}
-              >
-                <path d={ICONS.discord} />
-              </svg>
+              <ReactSVG
+                src={ICONS.discord}
+                beforeInjection={(svg) => {
+                  svg.setAttribute("fill", Colors.offwhite)
+                }}
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  marginRight: "8px",
+                  background: "transparent",
+                }}
+              />
               <LLMTextManipulator>{HERO_DISCORD_LINK}</LLMTextManipulator>
             </GeneralButton>
           </Grid>
@@ -128,16 +131,18 @@ const Hero = () => {
                 fontWeight: 600,
               }}
             >
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 1024 1024"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ marginRight: "8px" }}
-              >
-                <path d={ICONS.github} />
-              </svg>
+              <ReactSVG
+                src={ICONS.github}
+                beforeInjection={(svg) => {
+                  svg.setAttribute("fill", Colors.offwhite)
+                }}
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  marginRight: "8px",
+                  background: "transparent",
+                }}
+              />
               <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
             </GeneralButton>
           </Grid>
@@ -153,7 +158,7 @@ const Hero = () => {
                 fontWeight: 600,
               }}
             >
-              <ContentCopyIcon style={{ marginRight: "8px" }} />
+              <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
               <LLMTextManipulator>{HERO_EMAIL_BUTTON}</LLMTextManipulator>
             </GeneralButton>
           </Grid>

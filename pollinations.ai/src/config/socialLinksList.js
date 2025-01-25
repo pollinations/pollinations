@@ -1,46 +1,46 @@
 import { ICONS } from '../assets/icons/icons.js'
-import DiscordLogo from '../assets/icons/discord.png'
-import YoutubeLogo from '../assets/icons/youtube.png'
-import InstagramLogo from '../assets/icons/instagram.png'
-import TwitterLogo from '../assets/icons/twitter.png'
-import GithubLogo from '../assets/icons/github.png'
-import TikTokLogo from '../assets/icons/tiktok.png'
 
 export const SOCIAL_LINKS = {
   discord: {
     label: 'Discord',
     icon: ICONS.discord,
-    icon_img: DiscordLogo,
     url: 'https://discord.gg/k9F7SyTgqn',
+    width: "32px",
+    height: "32px",
   },
   github: {
     label: 'GitHub',
     icon: ICONS.github,
-    icon_img: GithubLogo,
-    url: 'https://www.github.com/pollinations/pollinations'
+    url: 'https://www.github.com/pollinations/pollinations',
+    width: "25px",
+    height: "25px",
   },
   youtube: {
     label: 'YouTube',
     icon: ICONS.youtube,
-    icon_img: YoutubeLogo,
-    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug'
+    url: 'https://www.youtube.com/channel/UCk4yKnLnYfyUmCCbDzOZOug',
+    width: "25px",
+    height: "25px",
   },
   instagram: {
     label: 'Instagram',
     icon: ICONS.instagram,
-    icon_img: InstagramLogo,
-    url: 'https://instagram.com/pollinations_ai'
+    url: 'https://instagram.com/pollinations_ai',
+    width: "22px",
+    height: "22px",
   },
-  twitter: {
-    label: 'Twitter',
-    icon: ICONS.twitter,
-    icon_img: TwitterLogo,
-    url: 'https://twitter.com/pollinations_ai'
-  },
+  // x: {
+  //   label: 'X',
+  //   icon: ICONS.x,
+  //   url: 'https://twitter.com/pollinations_ai',
+  //   width: "20px",
+  //   height: "20px",
+  // },
   tiktok: {
     label: 'Tiktok',
     icon: ICONS.tiktok,
-    icon_img: TikTokLogo,
-    url: 'https://tiktok.com/@pollinations.ai'
+    url: 'https://tiktok.com/@pollinations.ai',
+    width: "27px",
+    height: "27px",
   },
 }

@@ -57,7 +57,7 @@ const Footer = () => {
           >
             <b>hello@pollinations.ai</b>
           </StyledLink>
-          <SocialLinks medium gap="1em" invert />
+          <SocialLinks gap="1em" invert />
         </Grid>
         <Grid
           size={{ xs: 12, md: 6 }}

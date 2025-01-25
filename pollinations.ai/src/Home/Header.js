@@ -1,4 +1,6 @@
+/// Start of Selection
 import React, { useState } from "react"
+import styled from "@emotion/styled" // Added to style our ReactSVG icon
 import { Box, useTheme, Popover, IconButton } from "@mui/material"
 import { SectionBG, Colors, Fonts } from "../config/global"
 import { SectionContainer } from "../components/SectionContainer"
@@ -11,6 +13,17 @@ import { trackEvent } from "../config/analytics"
 import { GeneralButton } from "../components/GeneralButton"
 import { ICONS } from "../assets/icons/icons" // Import the ICONS map
 import InfoIcon from "@mui/icons-material/Info"
+import { ReactSVG } from "react-svg"
+
+// Styled icon component to control fill color
+const AboutUsIcon = styled(ReactSVG)(() => ({
+  width: "20px",
+  height: "20px",
+  marginRight: "0.5em",
+  "& svg": {
+    fill: Colors.offwhite,
+  },
+}))
 
 const Header = () => {
   const theme = useTheme() // Use the useTheme hook to access the theme
@@ -135,19 +148,10 @@ const Header = () => {
               minHeight: "40px",
               display: "flex",
               alignItems: "center",
-              minWidth: "140px",
+              minWidth: "150px",
             }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ marginRight: "0.5em" }}
-            >
-              <path d={ICONS.linkedin} />
-            </svg>
+            <AboutUsIcon src={ICONS.linkedin} wrapper="span" aria-label="linkedin-icon" />
             About Us
           </GeneralButton>
           <SocialLinks medium gap="1em" invert />

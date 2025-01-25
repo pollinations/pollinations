@@ -1,3 +1,10 @@
+ // Start of Selection
+/* 
+  Below is the requested code rewrite of the selection. 
+  The height and width were not being applied because they were incorrectly captured 
+  in the .map callback's parameter list rather than accessed from the platform object.
+*/
+
 import { Colors, Fonts } from "../config/global.js"
 import AsciiArtGenerator from "../components/AsciiArtGenerator.js"
 import { SectionContainer, SectionSubContainer } from "../components/SectionContainer.js"
@@ -21,6 +28,7 @@ import { ICONS } from "../assets/icons/icons.js" // Import ICONS
 import { useTheme, useMediaQuery } from "@mui/material"
 import { SectionBG } from "../config/global"
 import { trackEvent } from "../config/analytics.js" // Import trackEvent
+import { ReactSVG } from "react-svg"
 
 const Community = () => {
   const theme = useTheme()
@@ -75,12 +83,16 @@ const Community = () => {
       buttonClickHandler: handleDiscordButtonClick,
       cto: COMMUNITY_DISCORD_CTO,
       subtitle: COMMUNITY_DISCORD_SUBTITLE,
+      height: "50px",
+      width: "50px",
     },
     {
       platform: "github",
       buttonClickHandler: handleGithubButtonClick,
       cto: COMMUNITY_GITHUB_CTO,
       subtitle: COMMUNITY_GITHUB_SUBTITLE,
+      height: "40px",
+      width: "40px",
     },
   ]
 
@@ -102,10 +114,6 @@ const Community = () => {
                 container
                 direction="column"
                 gap="1em"
-                sx={{
-                  borderRadius: "15px",
-                  backgroundColor: "transparent",
-                }}
               >
                 <Grid
                   sx={{
@@ -130,16 +138,19 @@ const Community = () => {
                     borderColor={Colors.offwhite}
                     style={{ fontFamily: Fonts.title }}
                   >
-                    <svg
-                      width={isXs ? "40" : "50"}
-                      height={isXs ? "40" : "50"}
-                      viewBox="0 0 1024 1024"
-                      fill="currentColor"
-                      xmlns="http://www.w3.org/2000/svg"
-                      style={{ marginRight: "8px" }}
-                    >
-                      <path d={getPlatformIcon(platform.platform)} />
-                    </svg>
+                    <ReactSVG
+                      src={getPlatformIcon(platform.platform)}
+                      beforeInjection={(svg) => {
+                        svg.setAttribute("fill", Colors.offwhite)
+                      }}
+                      style={{
+                        width: platform.width,
+                        height: platform.height,
+                        marginRight: "0.5em",
+                        background: "transparent",
+                        lineHeight: "0em",
+                      }}
+                    />
                     <LLMTextManipulator>{platform.cto}</LLMTextManipulator>
                   </GeneralButton>
                 </Grid>

@@ -1,3 +1,4 @@
+ // Start of Selection
 import React, { useContext } from "react"
 import { Colors, SectionBG, Fonts } from "../config/global"
 import { CodeExamples } from "../components/Integrate/CodeExamples"
@@ -12,6 +13,7 @@ import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { ImageContext } from "../utils/ImageContext"
 import { GeneralButton } from "../components/GeneralButton"
 import { ICONS } from "../assets/icons/icons"
+import { ReactSVG } from "react-svg"
 import { trackEvent } from "../config/analytics"
 
 export const Integration = () => {
@@ -25,7 +27,7 @@ export const Integration = () => {
       label: "Integration_Page",
       value: 1,
     })
-    window.open("https://github.com/pollinations/pollinations", "_blank")
+    window.open("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md", "_blank")
   }
 
   return (
@@ -50,16 +52,18 @@ export const Integration = () => {
             fontWeight: 600,
           }}
         >
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 1024 1024"
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ marginRight: "8px" }}
-          >
-            <path d={ICONS.github} />
-          </svg>
+          <ReactSVG
+            src={ICONS.github}
+            beforeInjection={(svg) => {
+              svg.setAttribute("fill", Colors.offwhite)
+            }}
+            style={{
+              width: "32px",
+              height: "32px",
+              marginRight: "1em",
+              background: "transparent",
+            }}
+          />
           <LLMTextManipulator>{HERO_GITHUB_LINK}</LLMTextManipulator>
         </GeneralButton>
       </SectionSubContainer>

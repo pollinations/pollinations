@@ -47,6 +47,7 @@
     "react-iframe": "^1.8.5",
     "react-router-dom": "^6.0.1",
     "react-scripts": "^5.0.1",
+    "react-svg": "^16.2.0",
     "react-textarea-autosize": "^8.5.7",
     "react-use": "^17.3.2",
     "slick-carousel": "^1.8.1",

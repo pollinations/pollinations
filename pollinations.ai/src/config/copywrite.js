@@ -36,7 +36,7 @@ export const HERO_CTO =
   EMOJI +
   "Express this in one very very short sentence: Talk to us, reach out. "
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
-export const HERO_GITHUB_LINK = "Readme.md"
+export const HERO_GITHUB_LINK = "APIDOCS.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
 export const NEWS_TITLE =

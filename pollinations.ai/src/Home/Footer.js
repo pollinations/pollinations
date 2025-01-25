@@ -6,9 +6,13 @@ import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
 import { FOOTER_INFO, FOOTER_TERMS_CONDITIONS_LINK } from "../config/copywrite"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
-import { trackEvent } from "../config/analytics" // Import trackEvent
+import { trackEvent } from "../config/analytics"
+import { useTheme } from "@mui/material/styles"
+import { useMediaQuery } from "@mui/material"
 
 const Footer = () => {
+  const theme = useTheme()
+  const isXs = useMediaQuery(theme.breakpoints.only("xs"))
   const handleEmailLinkClick = (e) => {
     e.preventDefault()
     navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
@@ -34,7 +38,7 @@ const Footer = () => {
       <Box
         width="100%"
         display="flex"
-        flexDirection={{ xs: "column", md: "row" }}
+        flexDirection={isXs ? "column" : "row"}
         justifyContent="space-between"
         padding="1em"
         maxWidth="95%"
@@ -45,8 +49,10 @@ const Footer = () => {
           sx={{
             display: "flex",
             flexDirection: "column",
-            alignItems: { xs: "center", md: "flex-start" },
+            alignItems: isXs ? "center" : "flex-start",
             gap: "2em",
+            fontSize: "1.5em",
+            fontFamily: Fonts.title,
           }}
         >
           <StyledLink
@@ -65,17 +71,19 @@ const Footer = () => {
             display: "flex",
             flexDirection: "column",
             justifyContent: "flex-end",
-            marginTop: { xs: "1em", md: "0em" },
-            alignItems: { xs: "center", md: "flex-end" },
-            height: "100%",
+            marginTop: isXs ? "1em" : "0em",
+            alignItems: isXs ? "center" : "flex-end",
             fontFamily: Fonts.title,
           }}
         >
-          <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-            <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} />
-          </StyledLink>
-          <br />
-          <LLMTextManipulator text={FOOTER_INFO} />
+          <Box sx={{ fontSize: "0.8em" }} >
+            <StyledLink to="/terms" onClick={handleTermsLinkClick}>
+              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} />
+            </StyledLink>
+          </Box>
+          <Box sx={{ fontSize: "1.2em" }}>
+            <LLMTextManipulator text={FOOTER_INFO} />
+          </Box>
         </Grid>
       </Box>
     </SectionContainer>

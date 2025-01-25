@@ -11,8 +11,6 @@ import {
   PROJECT_BUTTON,
 } from "../config/copywrite"
 import {
-  translate,
-  oneSentence,
   emojify,
   rephrase,
   noLink
@@ -68,7 +66,7 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, translate, emojify, noLink]} />
+          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -76,12 +74,12 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, translate, emojify, noLink]} />
+          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[rephrase, translate, emojify, noLink]} />
+          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[rephrase, emojify, noLink]} />
         </SectionHeadlineStyle>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton

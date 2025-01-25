@@ -2,7 +2,7 @@ import React from "react"
 import { SectionTitleStyle } from "./SectionContainer"
 import Typography from '@mui/material/Typography';
 import { LLMTextManipulator } from "./LLMTextManipulator";
-import { translate, noLink } from "../config/llmTransforms";
+import { noLink } from "../config/llmTransforms";
 
 function SectionTitle({ title, color }) {  
 ;
@@ -18,7 +18,7 @@ function SectionTitle({ title, color }) {
           color: 'inherit',
         }}
       >
-        <LLMTextManipulator text={title} transforms={[translate, noLink]}/>
+        <LLMTextManipulator text={title} transforms={[noLink]}/>
       </Typography>
     </SectionTitleStyle>
   )

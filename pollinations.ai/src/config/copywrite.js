@@ -123,7 +123,7 @@ export const IMAGE_FEED_LOGO_WATERMARK = basicTransform(
 
 export const INTEGRATE_TITLE = translateOnly("Integrate")
 export const INTEGRATE_SUBTITLE = basicTransform(
-  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started. Check our Github for detailed documentation."
+  "Discover how to seamlessly integrate our free image and text generation API into your projects."
 )
 export const INTEGRATE_GITHUB_LINK = "APIDOCS.md"
 export const PROJECT_TITLE = translateOnly("Projects")

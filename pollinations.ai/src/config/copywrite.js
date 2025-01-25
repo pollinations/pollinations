@@ -18,8 +18,7 @@ const responsive = ({ isXs }) =>
 const translate = ({ userLanguage }) =>
   userLanguage?.startsWith("en")
     ? null
-    : `Translate the text into the user's language. Only output the translated text, nothing else. User 
-  language is: ${userLanguage}. 
+    : `Translate to: ${userLanguage}. 
 `
 
 const rephrase = () =>
@@ -33,7 +32,7 @@ const teamStyle = () =>
 
 const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
 
-const newsListStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. Do not give a title to it, start with the first bullet point.`;
+const newsListStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
 
 const combine = (text, ...transformations) => props => `
 # Context
@@ -68,7 +67,9 @@ const responsiveTransform = (text) => (props) =>
 const teamTitleTransform = (text) => (props) => combine(text, teamStyle, translate)(props)
 const projectTransform = (text) => (props) => combine(text, projectDescription)(props)
 
-const newsListTransform = (text) => (props) => combine(text, newsListStyle)(props)
+const newsListTransform = (text) => (props) => combine(text, newsListStyle, responsive)(props)
+
+const oneSentenceTransform = (text) => (props) => combine(text, translate, oneSentence, emojify)(props);
 
 export const HERO_INTRO = basicTransform(
   "Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
@@ -83,12 +84,9 @@ export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
 export const NEWS_TITLE = basicTransform(
-  "Last updates! '- 2025-01-25 - New GPU thanks to Cloudfare https://developers.cloudflare.com/workers-ai/. In one very short sentence."
+  "Last updates! '- 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
 )
-export const NEWS_LIST = responsiveTransform(
-  `Flesh out news list in attractive friendly markdown. Make sure that this has a nice markdown format, using bold, italic, and many related emojis, but only small font size. Do not give a title to it, start with the first bullet point. Here is the list to fornat: ` +
-    newsList
-)
+export const NEWS_LIST = newsListTransform(newsList)
 
 export const IMAGE_FEED_SUBTITLE = basicTransform(
   "This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
@@ -127,9 +125,7 @@ export const INTEGRATE_SUBTITLE = basicTransform(
 )
 export const INTEGRATE_GITHUB_LINK = "APIDOCS.md"
 export const PROJECT_TITLE = translateOnly("Projects")
-export const PROJECT_SUBTITLE = basicTransform(
-  "Express this in one sentence: Here are some of the various implementations that our API is currently powering."
-)
+export const PROJECT_SUBTITLE = oneSentenceTransform(" Here are some of the various implementations that our API is currently powering.")
 
 export const PROJECT_DESCRIPTION = (projectDescription) =>
   combine(projectDescription, projectTransform)
@@ -192,7 +188,8 @@ export const TEAM_5_IMAGE = team5
 export const TEAM_6_IMAGE = team6
 
 export const SUPPORTER_TITLE = translateOnly("Supporters");
-export const SUPPORTER_SUBTITLE = basicTransform("Express this in one sentence: We're grateful to our supporters for their contributions to our platform.");
+export const SUPPORTER_SUBTITLE = oneSentenceTransform(`We're grateful to our supporters for their contributions to our platform.`);
+
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
 export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, translateOnly);
 

@@ -50,6 +50,7 @@ export default function News() {
             color={Colors.offwhite}
             maxWidth="90%"
             style={{ fontSize: "1.8em", fontFamily: Fonts.headline}}
+            textAlign="left"
           >
             <LLMTextManipulator text={NEWS_TITLE} />
           </SectionHeadlineStyle>

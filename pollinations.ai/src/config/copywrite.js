@@ -165,25 +165,14 @@ export const TEAM_SUBTITLE = responsiveTransform(
 const formatTeamName = (name) =>
   combine(rephrase)(`Write only the text '${name}' in bold and all caps`)
 
-export const TEAM_1_NAME = formatTeamName("Thomas Haferlach")
-export const TEAM_1_FUNCTION = teamTitleTransform("Lead visionary")
-export const TEAM_2_NAME = formatTeamName("Elliot Fouchy")
-export const TEAM_2_FUNCTION = teamTitleTransform("Lead Production")
-export const TEAM_3_NAME = formatTeamName("Laurent Pacoud")
-export const TEAM_3_FUNCTION = teamTitleTransform("Lead Business")
-export const TEAM_4_NAME = formatTeamName("Nicolas Pellerin")
-export const TEAM_4_FUNCTION = teamTitleTransform("Lead Developer")
-export const TEAM_5_NAME = formatTeamName("Portrait XO")
-export const TEAM_5_FUNCTION = teamTitleTransform("Lead Artist")
-export const TEAM_6_NAME = formatTeamName("Kalam Ali")
-export const TEAM_6_FUNCTION = teamTitleTransform("Lead Researcher")
-
-export const TEAM_1_IMAGE = team1
-export const TEAM_2_IMAGE = team2
-export const TEAM_3_IMAGE = team3
-export const TEAM_4_IMAGE = team4
-export const TEAM_5_IMAGE = team5
-export const TEAM_6_IMAGE = team6
+export const TEAM_MEMBERS = [
+  { name: formatTeamName("Thomas Haferlach"), function: teamTitleTransform("Lead visionary"), image: team1 },
+  { name: formatTeamName("Elliot Fouchy"), function: teamTitleTransform("Lead Production"), image: team2 },
+  { name: formatTeamName("Laurent"), function: teamTitleTransform("Developer"), image: team3 },
+  { name: formatTeamName("Nico"), function: teamTitleTransform("Designer"), image: team4 },
+  { name: formatTeamName("Portrait XO"), function: teamTitleTransform("Artist"), image: team5 },
+  { name: formatTeamName("Kalam"), function: teamTitleTransform("Researcher"), image: team6 },
+];
 
 export const SUPPORTER_TITLE = translateOnly("Supporters");
 export const SUPPORTER_SUBTITLE = oneSentenceTransform(`We're grateful to our supporters for their contributions to our platform.`);

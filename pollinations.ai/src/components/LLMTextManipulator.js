@@ -5,18 +5,19 @@ import styled from "@emotion/styled"
 import { useTheme, useMediaQuery } from "@mui/material"
 import { Colors } from "../config/global"
 
-function AnimatedDots() {
-  const [dotCount, setDotCount] = useState(1)
-  
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDotCount((count) => (count % 3) + 1)
-    }, 500)
-    return () => clearInterval(interval)
-  }, [])
 
-  return <span>{".".repeat(dotCount)}</span>
-}
+// function AnimatedDots() {
+//   const [dotCount, setDotCount] = useState(1)
+  
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       setDotCount((count) => (count % 3) + 1)
+//     }, 500)
+//     return () => clearInterval(interval)
+//   }, [])
+
+//   return <span>{".".repeat(dotCount)}</span>
+// }
 
 export function LLMTextManipulator({ text }) {
   const theme = useTheme()
@@ -29,7 +30,7 @@ export function LLMTextManipulator({ text }) {
   if (!transformedText) {
     return (
       <span>
-        Generating... {text} {JSON.stringify(transformedText)}
+        Generating...
       </span>
     )
   }

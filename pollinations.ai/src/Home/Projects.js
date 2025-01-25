@@ -12,12 +12,17 @@ import {
 } from "../config/copywrite"
 
 import SectionTitle from "../components/SectionTitle"
-import { SectionContainer, SectionSubContainer, SectionHeadlineStyle } from "../components/SectionContainer"
+import {
+  SectionContainer,
+  SectionSubContainer,
+  SectionHeadlineStyle,
+} from "../components/SectionContainer"
 import ProjectsRender from "../components/Project/ProjectRender"
 import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
+import ContentCopyIcon from "@mui/icons-material/ContentCopy"
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -38,9 +43,9 @@ const handleEmailButtonClick = (e) => {
     console.log(`Copied to clipboard: ${email}`)
   })
   trackEvent({
-    action: 'Email_Button_Click',
-    category: 'User_Interactions',
-    label: 'Projects_Email_Button',
+    action: "Email_Button_Click",
+    category: "User_Interactions",
+    label: "Projects_Email_Button",
     value: 1,
   })
 }
@@ -86,6 +91,7 @@ const Projects = () => {
               marginTop: "1em",
             }}
           >
+            <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
             <LLMTextManipulator text={PROJECT_BUTTON} />
           </GeneralButton>
         </Box>

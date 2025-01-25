@@ -1,7 +1,6 @@
-import { NavLink } from "react-router-dom"
 import { Box } from "@mui/material"
 import { SocialLinks } from "../components/SocialLinks"
-import { Colors, Fonts, SectionBG } from "../config/global"
+import { Fonts, SectionBG } from "../config/global"
 import StyledLink from "../components/StyledLink"
 import { SectionContainer } from "../components/SectionContainer"
 import Grid from "@mui/material/Grid2"
@@ -31,7 +30,7 @@ const Footer = () => {
   }
 
   return (
-    <SectionContainer backgroundColor={SectionBG.footer}>
+    <SectionContainer backgroundConfig={SectionBG.footer}>
       <Box
         width="100%"
         display="flex"
@@ -58,7 +57,7 @@ const Footer = () => {
           >
             <b>hello@pollinations.ai</b>
           </StyledLink>
-          <SocialLinks medium gap="1em" invert />
+          <SocialLinks gap="1em" invert />
         </Grid>
         <Grid
           size={{ xs: 12, md: 6 }}

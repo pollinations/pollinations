@@ -4,12 +4,12 @@ import { Link } from "@mui/material"
 import { SOCIAL_LINKS } from "../config/socialLinksList"
 import { Colors } from "../config/global"
 import { trackEvent } from "../config/analytics"
+import { ReactSVG } from "react-svg"
+
 // Container styling
-const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
+const SocialLinksContainer = styled("div")(({ gap }) => ({
   gridArea: "social",
-  alignSelf: "center",
   display: "flex",
-  justifyContent: "flex-end",
   alignItems: "center",
   gap: gap || "0em",
 }))
@@ -17,7 +17,7 @@ const SocialLinksContainer = styled("div")(({ gap, theme }) => ({
 const LinkItem = styled(Link, {
   // Prevent forwarding isHovered to the DOM
   shouldForwardProp: (prop) => prop !== "isHovered",
-})(({ theme, isHovered }) => ({
+})(({ isHovered }) => ({
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -26,23 +26,23 @@ const LinkItem = styled(Link, {
   backgroundColor: isHovered ? Colors.offblack : Colors.offwhite,
   width: "40px",
   height: "40px",
-  transition: "background-color 0.3s, filter 0.3s",
+  transition: "background-color 0.3s",
   textDecoration: "none",
 }))
 
-const IconImage = styled("img", {
-  // Prevent forwarding isHovered and invert to the DOM
-  shouldForwardProp: (prop) => !["isHovered", "invert"].includes(prop),
-})(({ theme, isHovered, invert }) => ({
-  width: "20px",
-  height: "auto",
-  filter: isHovered ? (invert ? "none" : "invert(100%)") : invert ? "invert(100%)" : "none",
-  [theme.breakpoints.down("xs")]: {
-    width: "16px",
+// Replacing the <img> with a Styled ReactSVG to control the svg fill dynamically
+const StyledReactSVG = styled(ReactSVG, {
+  shouldForwardProp: (prop) => prop !== "isHovered",
+})(({ isHovered }) => ({
+  "& svg": {
+    fill: isHovered ? Colors.offwhite : Colors.offblack,
+    transition: "fill 0.3s",
+    width: "100%",
+    height: "100%",
   },
 }))
 
-export const SocialLinks = ({ gap, invert }) => {
+export const SocialLinks = ({ gap }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null)
 
   const handleLinkClick = (platform) => {
@@ -58,10 +58,11 @@ export const SocialLinks = ({ gap, invert }) => {
     <SocialLinksContainer gap={gap}>
       {Object.keys(SOCIAL_LINKS).map((platform, index) => {
         const isHovered = hoveredIndex === index
+        const { url, icon, width, height } = SOCIAL_LINKS[platform]
         return (
           <LinkItem
-            key={`plt_link_${SOCIAL_LINKS[platform]?.url}`}
-            href={SOCIAL_LINKS[platform]?.url}
+            key={`plt_link_${url}`}
+            href={url}
             target="_blank"
             title={platform}
             isHovered={isHovered}
@@ -69,11 +70,12 @@ export const SocialLinks = ({ gap, invert }) => {
             onMouseLeave={() => setHoveredIndex(null)}
             onClick={() => handleLinkClick(platform)}
           >
-            <IconImage
-              src={SOCIAL_LINKS[platform]?.icon_img}
-              alt={platform}
+            <StyledReactSVG
+              src={icon}
               isHovered={isHovered}
-              invert={invert}
+              wrapper="span"
+              aria-label={`${platform}-icon`}
+              style={{ width, height }}
             />
           </LinkItem>
         )

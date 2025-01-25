@@ -87,13 +87,16 @@ const ProjectsRender = ({ classes }) => {
                   alignContent: "center",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  border: `0px solid ${Colors.offwhite}`,
                   width: "100%",
                 }}
                 className={classes.gridItem}
               >
                 <Grid size={{ xs: 4, md: 2 }} style={{ textAlign: "center" }}>
-                  <ProjectImage name={project.name} PROJECT_LOGO_SIZE={PROJECT_LOGO_SIZE} />
+                  <ProjectImage
+                    name={project.name}
+                    description={project.description}
+                    PROJECT_LOGO_SIZE={PROJECT_LOGO_SIZE}
+                  />
                 </Grid>
                 <Grid
                   container
@@ -102,7 +105,7 @@ const ProjectsRender = ({ classes }) => {
                   sx={{ backgroundColor: `${Colors.offblack}50`, padding: "1em" }}
                 >
                   <Grid
-                    size={4}
+                    size={{ xs: 7, md: 4 }}
                     style={{
                       textAlign: "left",
                     }}
@@ -136,7 +139,7 @@ const ProjectsRender = ({ classes }) => {
                     </Box>
                   </Grid>
 
-                  <Grid size={8} style={{ textAlign: "left" }}>
+                  <Grid size={{ xs: 5, md: 8 }} style={{ textAlign: "left" }}>
                     <span
                       style={{
                         color: Colors.offwhite,
@@ -231,9 +234,9 @@ const renderRepoLink = (repoUrl) => {
   )
 }
 
-const ProjectImage = ({ name, PROJECT_LOGO_SIZE }) => {
+const ProjectImage = ({ name, PROJECT_LOGO_SIZE, description }) => {
   const seed = useRandomSeed()
-  const prompt = `${PROJECT_LOGO_STYLE} ${name}`
+  const prompt = `${PROJECT_LOGO_STYLE} ${name} ${description}`
   const imageUrl = usePollinationsImage(prompt, {
     width: PROJECT_LOGO_SIZE * 4,
     height: PROJECT_LOGO_SIZE * 4,

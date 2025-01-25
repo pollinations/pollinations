@@ -39,4 +39,19 @@ export const SUPPORTER_LIST = [
     url: "https://outlierventures.io/",
     description: "Startup Accelerator",
   },
-] 
+  {
+    name: "Cloudflare",
+    url: "https://developers.cloudflare.com/workers-ai/",
+    description: "Put the connectivity cloud to work for you.",
+  },
+  {
+    name: "Scaleway",
+    url: "https://www.scaleway.com/",
+    description: "Europe's empowering cloud provider",
+  },
+  {
+    name: "Modal",
+    url: "https://modal.com/",
+    description: "High-performance AI infrastructure",
+  },
+]

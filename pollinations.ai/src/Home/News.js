@@ -40,14 +40,14 @@ export default function News() {
           }}
           expandIcon={
             <ArrowDownwardIcon
-              style={{ color: Colors.offblack}}
+              style={{ color: Colors.offwhite}}
             />
           }
           aria-controls="panel1-content"
           id="panel1-header"
         >
           <SectionHeadlineStyle
-            color={Colors.offblack}
+            color={Colors.offwhite}
             maxWidth="90%"
             style={{ fontSize: "1.8em", fontFamily: Fonts.headline}}
           >

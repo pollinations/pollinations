@@ -42,7 +42,6 @@ const Footer = () => {
         flexDirection={isXs ? "column" : "row"}
         justifyContent="space-between"
         padding="1em"
-        maxWidth="95%"
         gap="2em"
       >
         <Grid
@@ -52,19 +51,21 @@ const Footer = () => {
             flexDirection: "column",
             alignItems: isXs ? "center" : "flex-start",
             gap: "1em",
-            fontSize: "1.5em",
-            fontFamily: Fonts.title,
           }}
         >
-          <StyledLink
-            isExternal
-            onClick={handleEmailLinkClick}
-            href="mailto:hello@pollinations.ai"
-            sx={{ userSelect: "text" }}
-          >
-            <b>hello@pollinations.ai</b>
-          </StyledLink>
-          <SocialLinks gap="1em" />
+          <Box sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}>
+            <StyledLink
+              isExternal
+              onClick={handleEmailLinkClick}
+              href="mailto:hello@pollinations.ai"
+              sx={{ userSelect: "text" }}
+            >
+              <b>hello@pollinations.ai</b>
+            </StyledLink>
+          </Box>
+          <Box>
+            <SocialLinks gap="1em" />
+          </Box>
         </Grid>
         <Grid
           size={{ xs: 12, md: 6 }}
@@ -74,15 +75,17 @@ const Footer = () => {
             justifyContent: "flex-end",
             marginTop: isXs ? "1em" : "0em",
             alignItems: isXs ? "center" : "flex-end",
-            fontFamily: Fonts.title,
           }}
         >
-          <Box height="100%" sx={{ fontSize: "1.5em" }}>
+          <Box height="100%" sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}>
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[translate, noLink]} />
+              <LLMTextManipulator
+                text={FOOTER_TERMS_CONDITIONS_LINK}
+                transforms={[translate, noLink]}
+              />
             </StyledLink>
           </Box>
-          <Box sx={{ fontSize: "1.2em" }}>
+          <Box sx={{ fontSize: "1.2em", fontFamily: Fonts.title }}>
             <LLMTextManipulator text={FOOTER_INFO} transforms={[noLink]} />
           </Box>
         </Grid>

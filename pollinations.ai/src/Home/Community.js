@@ -109,7 +109,7 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, emojify]} />
+          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[translate, rephrase, emojify]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>

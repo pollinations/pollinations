@@ -31,13 +31,14 @@ ${context}
 Apply the following transformations to the text in order:
 
 ${transformations
+  .map((t) => t(props))
   .filter(Boolean)
-  .map((t) => `- ${t(props)}`)
+  .map(s => `- ${s}`)
   .join("\n")}
 
 Only output the final text, nothing else. Links should be in markdown format.
 
-# Prompt:
+# Input Text:
 ${text}
 `
 

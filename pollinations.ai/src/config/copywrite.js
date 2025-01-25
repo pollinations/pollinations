@@ -34,10 +34,10 @@ export const IMAGE_FEED_SUBTITLE =
 
 export const IMAGE_FEED_TITLE = "Live Feed"
 export const IMAGE_FEED_MODE1 = "Watch";
-export const IMAGE_FEED_MODE2 = "Try"
-export const IMAGE_EDIT_BUTTON_ON = "Imagine"
-export const IMAGE_EDIT_BUTTON_OFF = "Imagine"
-export const IMAGE_FEED_TOOLTIP_PROMPT = "the text prompt describes the image to generate."
+export const IMAGE_FEED_MODE2 = "Try";
+export const IMAGE_EDIT_BUTTON_ON = "Imagine";
+export const IMAGE_EDIT_BUTTON_OFF = "Imagine";
+export const IMAGE_FEED_TOOLTIP_PROMPT = "describe the image to generate.";
 
 export const IMAGE_FEED_TOOLTIP_MODEL = "Select the text-to-image model."
 export const IMAGE_FEED_TOOLTIP_WIDTH = 
@@ -74,7 +74,7 @@ export const PROJECT_LOGO_STYLE =
 
 export const COMMUNITY_TITLE = "Contribute";
 export const COMMUNITY_SUBTITLE =
-  "Introduce our community-driven approach: Warning! We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate."
+  "Introduce our community-driven approach. We're building a platform where developers, creators, and AI enthusiasts can collaborate and innovate."
 
 
 export const COMMUNITY_DISCORD_SUBTITLE = 

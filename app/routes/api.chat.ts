@@ -63,6 +63,8 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
     const totalMessageContent = messages.reduce((acc, message) => acc + message.content, '');
     logger.debug(`Total message length: ${totalMessageContent.split(' ').length}, words`);
 
+    let lastChunk: string | undefined = undefined;
+
     const dataStream = createDataStream({
       async execute(dataStream) {
         const filePaths = getFilePaths(files || {});
@@ -247,15 +249,42 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             }
           }
         })();
-
         result.mergeIntoDataStream(dataStream);
       },
       onError: (error: any) => `Custom error: ${error.message}`,
     }).pipeThrough(
       new TransformStream({
         transform: (chunk, controller) => {
+          if (!lastChunk) {
+            lastChunk = ' ';
+          }
+
+          if (typeof chunk === 'string') {
+            if (chunk.startsWith('g') && !lastChunk.startsWith('g')) {
+              controller.enqueue(encoder.encode(`0: "<div class=\\"__boltThought__\\">"\n`));
+            }
+
+            if (lastChunk.startsWith('g') && !chunk.startsWith('g')) {
+              controller.enqueue(encoder.encode(`0: "</div>\\n"\n`));
+            }
+          }
+
+          lastChunk = chunk;
+
+          let transformedChunk = chunk;
+
+          if (typeof chunk === 'string' && chunk.startsWith('g')) {
+            let content = chunk.split(':').slice(1).join(':');
+
+            if (content.endsWith('\n')) {
+              content = content.slice(0, content.length - 1);
+            }
+
+            transformedChunk = `0:${content}\n`;
+          }
+
           // Convert the string stream to a byte stream
-          const str = typeof chunk === 'string' ? chunk : JSON.stringify(chunk);
+          const str = typeof transformedChunk === 'string' ? transformedChunk : JSON.stringify(transformedChunk);
           controller.enqueue(encoder.encode(str));
         },
       }),

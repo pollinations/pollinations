@@ -7,6 +7,7 @@ import { Artifact } from './Artifact';
 import { CodeBlock } from './CodeBlock';
 
 import styles from './Markdown.module.scss';
+import ThoughtBox from './ThoughtBox';
 
 const logger = createScopedLogger('MarkdownComponent');
 
@@ -22,6 +23,8 @@ export const Markdown = memo(({ children, html = false, limitedMarkdown = false 
   const components = useMemo(() => {
     return {
       div: ({ className, children, node, ...props }) => {
+        console.log(className, node);
+
         if (className?.includes('__boltArtifact__')) {
           const messageId = node?.properties.dataMessageId as string;
 
@@ -30,6 +33,10 @@ export const Markdown = memo(({ children, html = false, limitedMarkdown = false 
           }
 
           return <Artifact messageId={messageId} />;
+        }
+
+        if (className?.includes('__boltThought__')) {
+          return <ThoughtBox title="Thought process">{children}</ThoughtBox>;
         }
 
         return (

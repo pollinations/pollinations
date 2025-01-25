@@ -2,7 +2,7 @@ import { BaseProvider } from '~/lib/modules/llm/base-provider';
 import type { ModelInfo } from '~/lib/modules/llm/types';
 import type { IProviderSetting } from '~/types/model';
 import type { LanguageModelV1 } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
+import { createDeepSeek } from '@ai-sdk/deepseek';
 
 export default class DeepseekProvider extends BaseProvider {
   name = 'Deepseek';
@@ -38,11 +38,12 @@ export default class DeepseekProvider extends BaseProvider {
       throw new Error(`Missing API key for ${this.name} provider`);
     }
 
-    const openai = createOpenAI({
-      baseURL: 'https://api.deepseek.com/beta',
+    const deepseek = createDeepSeek({
       apiKey,
     });
 
-    return openai(model);
+    return deepseek(model, {
+      // simulateStreaming: true,
+    });
   }
 }

@@ -33,9 +33,10 @@
     "@ai-sdk/amazon-bedrock": "1.0.6",
     "@ai-sdk/anthropic": "^0.0.39",
     "@ai-sdk/cohere": "^1.0.3",
+    "@ai-sdk/deepseek": "^0.1.3",
     "@ai-sdk/google": "^0.0.52",
     "@ai-sdk/mistral": "^0.0.43",
-    "@ai-sdk/openai": "^0.0.66",
+    "@ai-sdk/openai": "^1.1.2",
     "@codemirror/autocomplete": "^6.18.3",
     "@codemirror/commands": "^6.7.1",
     "@codemirror/lang-cpp": "^6.0.2",
@@ -75,7 +76,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-web-links": "^0.11.0",
     "@xterm/xterm": "^5.5.0",
-    "ai": "^4.0.13",
+    "ai": "^4.1.2",
     "chalk": "^5.4.1",
     "date-fns": "^3.6.0",
     "diff": "^5.2.0",
@@ -131,7 +132,7 @@
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^2.1.7",
     "wrangler": "^3.91.0",
-    "zod": "^3.23.8"
+    "zod": "^3.24.1"
   },
   "resolutions": {
     "@typescript-eslint/utils": "^8.0.0-alpha.30"

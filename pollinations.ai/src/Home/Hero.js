@@ -17,7 +17,8 @@ import {
 import {
   translate,
   emojify,
-  rephrase
+  rephrase,
+  noLink
 } from "../config/llmTransforms"
 import Grid from "@mui/material/Grid2"
 import { ICONS } from "../assets/icons/icons"
@@ -79,7 +80,7 @@ const Hero = () => {
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >
-          <LLMTextManipulator text={HERO_INTRO} transforms={[rephrase, emojify]} />
+          <LLMTextManipulator text={HERO_INTRO} transforms={[rephrase, translate, emojify, noLink]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
@@ -92,7 +93,7 @@ const Hero = () => {
               color={Colors.offblack}
               textAlign={isMobile ? "center" : "right"}
             >
-              <LLMTextManipulator text={HERO_CTO} transforms={[emojify]} />
+              <LLMTextManipulator text={HERO_CTO} transforms={[rephrase, translate, emojify, noLink]} />
             </SectionHeadlineStyle>
           </Grid>
 
@@ -120,7 +121,7 @@ const Hero = () => {
                   background: "transparent",
                 }}
               />
-              <LLMTextManipulator text={HERO_DISCORD_LINK} transforms={[translate]} />
+              <LLMTextManipulator text={HERO_DISCORD_LINK} transforms={[translate, noLink]} />
             </GeneralButton>
           </Grid>
           <Grid>

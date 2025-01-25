@@ -1,5 +1,3 @@
-import { Colors } from "../config/global"
-
 import { newsList } from "../config/newsList"
 
 import team1 from "../assets/team/Thomas.webp"
@@ -97,10 +95,10 @@ export const IMAGE_FEED_MODE2 = translateOnly("Try")
 export const IMAGE_EDIT_BUTTON_ON = translateOnly("Imagine")
 export const IMAGE_EDIT_BUTTON_OFF = translateOnly("Imagine")
 
-export const INTEGRATION_TITLE = translateOnly("Integrate")
+export const INTEGRATION_TITLE = translateOnly("Integrate");
 export const INTEGRATION_SUBTITLE = basicTransform(
-  "Express this in one sentence: "
-)
+  "Discover how to seamlessly integrate our free image and text generation API into your projects."
+);
 
 export const IMAGE_FEED_TOOLTIP_PROMPT = basicTransform(
   "This text box is for the text prompt describing the image you want to generate."

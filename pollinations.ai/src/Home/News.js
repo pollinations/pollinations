@@ -33,14 +33,14 @@ export default function News() {
       >
         <AccordionSummary
           sx={{
-            backgroundColor: Colors.lime,
+            backgroundColor: Colors.special,
             "&:hover": {
-              backgroundColor: `${Colors.lime}99`
+              backgroundColor: `${Colors.special}99`
             }
           }}
           expandIcon={
             <ArrowDownwardIcon
-              style={{ color: Colors.offblack }}
+              style={{ color: Colors.offblack}}
             />
           }
           aria-controls="panel1-content"
@@ -48,16 +48,18 @@ export default function News() {
         >
           <SectionHeadlineStyle
             color={Colors.offblack}
-            style={{ fontSize: "1.5em", fontFamily: Fonts.headline, lineHeight: "0em" }}
+            maxWidth="90%"
+            style={{ fontSize: "1.8em", fontFamily: Fonts.headline}}
           >
             <LLMTextManipulator text={NEWS_TITLE} />
           </SectionHeadlineStyle>
         </AccordionSummary>
-        <AccordionDetails style={{ backgroundColor: Colors.offblack2 }}>
+        <AccordionDetails style={{ backgroundColor: Colors.offblack }}>
           <SectionHeadlineStyle
             color={Colors.offwhite}
             style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
             textAlign="left"
+            maxWidth="1000px"
           >
             <LLMTextManipulator text={NEWS_LIST} />
           </SectionHeadlineStyle>

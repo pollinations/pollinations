@@ -18,6 +18,7 @@ export const Colors = {
   offblack2: '#181a2c',
   gray1: '#B3B3B3',
   gray2: '#8A8A8A',
+  special: 'rgb(191,64,64)',
 };
 
 export const Fonts = {

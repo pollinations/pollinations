@@ -49,7 +49,7 @@ ${transformations
 
 Only output the final text, nothing else.
 
-# Text:
+# Prompt:
 ${text}
 `
 

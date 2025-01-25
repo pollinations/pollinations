@@ -8,8 +8,6 @@ const StyledLink = styled(({ isExternal, ...props }) =>
   font-family: ${Fonts.title};
   font-style: normal;
   font-weight: 600;
-  font-size: 1.5em;
-  line-height: 22px;
   text-decoration-line: none;
   text-transform: uppercase;
   color: inherit;

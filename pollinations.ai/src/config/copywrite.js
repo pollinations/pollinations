@@ -191,7 +191,7 @@ export const SUPPORTER_TITLE = translateOnly("Supporters");
 export const SUPPORTER_SUBTITLE = oneSentenceTransform(`We're grateful to our supporters for their contributions to our platform.`);
 
 export const SUPPORTER_LOGO_STYLE = "square logo based on the info of the company. Be creative!";
-export const SUPPORTER_DESCRIPTION_STYLE = description => combine(description, translateOnly);
+export const SUPPORTER_DESCRIPTION_STYLE = translateOnly;
 
 
 export const FOOTER_TERMS_CONDITIONS_LINK = translateOnly("Terms & Conditions");

@@ -5,7 +5,13 @@ import AccordionDetails from "@mui/material/AccordionDetails"
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward"
 import { Colors, Fonts } from "../config/global"
 import { NEWS_TITLE, NEWS_LIST } from "../config/copywrite"
-import { rephrase, emojify, friendlyMarkdownStyle, translate, noLink } from "../config/llmTransforms"
+import {
+  rephrase,
+  emojify,
+  friendlyMarkdownStyle,
+  translate,
+  noLink,
+} from "../config/llmTransforms"
 import { SectionContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
@@ -14,10 +20,16 @@ export default function News() {
   const handleAccordionChange = (event, isExpanded) => {
     if (isExpanded) {
       trackEvent({
-        action: 'Accordion_Open',
-        category: 'User_Interactions',
-        label: 'News_Accordion_Open'
+        action: "Accordion_Open",
+        category: "User_Interactions",
+        label: "News_Accordion_Open",
       })
+    }
+  }
+
+  const handleClickAccordionSummary = (event) => {
+    if (event.target.tagName.toLowerCase() === "a") {
+      event.stopPropagation()
     }
   }
 
@@ -36,22 +48,20 @@ export default function News() {
           sx={{
             backgroundColor: Colors.special,
             "&:hover": {
-              backgroundColor: `${Colors.special}99`
-            }
+              backgroundColor: `${Colors.special}99`,
+            },
           }}
-          expandIcon={
-            <ArrowDownwardIcon
-              style={{ color: Colors.offwhite}}
-            />
-          }
+          expandIcon={<ArrowDownwardIcon style={{ color: Colors.offwhite }} />}
           aria-controls="panel1-content"
           id="panel1-header"
         >
           <SectionHeadlineStyle
             color={Colors.offwhite}
             maxWidth="90%"
-            style={{ fontSize: "1.6em", fontFamily: Fonts.headline}}
+            style={{ fontSize: "1.6em", fontFamily: Fonts.headline }}
             textAlign="left"
+            onClick={handleClickAccordionSummary}
+
           >
             <LLMTextManipulator text={NEWS_TITLE} transforms={[rephrase, translate, emojify]} />
           </SectionHeadlineStyle>
@@ -63,7 +73,10 @@ export default function News() {
             textAlign="left"
             maxWidth="1000px"
           >
-            <LLMTextManipulator text={NEWS_LIST} transforms={[friendlyMarkdownStyle, rephrase, translate, emojify]} />
+            <LLMTextManipulator
+              text={NEWS_LIST}
+              transforms={[friendlyMarkdownStyle, rephrase, translate, emojify]}
+            />
           </SectionHeadlineStyle>
         </AccordionDetails>
       </Accordion>

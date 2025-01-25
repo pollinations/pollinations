@@ -75,7 +75,7 @@ export default function News() {
           >
             <LLMTextManipulator
               text={NEWS_LIST}
-              transforms={[friendlyMarkdownStyle, rephrase, translate, emojify]}
+              transforms={[rephrase, translate, emojify]}
             />
           </SectionHeadlineStyle>
         </AccordionDetails>

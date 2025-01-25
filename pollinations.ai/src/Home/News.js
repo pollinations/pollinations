@@ -5,7 +5,7 @@ import AccordionDetails from "@mui/material/AccordionDetails"
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward"
 import { Colors, Fonts } from "../config/global"
 import { NEWS_TITLE, NEWS_LIST } from "../config/copywrite"
-import { translate, rephrase, emojify, friendlyMarkdownStyle } from "../config/llmTransforms"
+import { rephrase, emojify, friendlyMarkdownStyle } from "../config/llmTransforms"
 import { SectionContainer, SectionHeadlineStyle } from "../components/SectionContainer"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
@@ -53,7 +53,7 @@ export default function News() {
             style={{ fontSize: "1.8em", fontFamily: Fonts.headline}}
             textAlign="left"
           >
-            <LLMTextManipulator text={NEWS_TITLE} transforms={[translate, rephrase, emojify]} />
+            <LLMTextManipulator text={NEWS_TITLE} transforms={[rephrase, emojify]} />
           </SectionHeadlineStyle>
         </AccordionSummary>
         <AccordionDetails style={{ backgroundColor: Colors.offblack }}>
@@ -63,7 +63,7 @@ export default function News() {
             textAlign="left"
             maxWidth="1000px"
           >
-            <LLMTextManipulator text={NEWS_LIST} transforms={[translate, friendlyMarkdownStyle, emojify]} />
+            <LLMTextManipulator text={NEWS_LIST} transforms={[friendlyMarkdownStyle, emojify]} />
           </SectionHeadlineStyle>
         </AccordionDetails>
       </Accordion>

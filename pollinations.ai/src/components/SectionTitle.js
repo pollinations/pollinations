@@ -18,7 +18,7 @@ function SectionTitle({ title, color }) {
           color: 'inherit',
         }}
       >
-        <LLMTextManipulator text={title} transforms={[translate]} />
+        <LLMTextManipulator text={title} />
       </Typography>
     </SectionTitleStyle>
   )

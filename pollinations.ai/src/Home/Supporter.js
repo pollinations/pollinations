@@ -44,7 +44,7 @@ const Supporter = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[translate, oneSentence]} />
+          <LLMTextManipulator text={SUPPORTER_SUBTITLE} transforms={[oneSentence]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>

@@ -109,7 +109,7 @@ const Community = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle color={Colors.offwhite}>
-          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[translate, rephrase, emojify]} />
+          <LLMTextManipulator text={COMMUNITY_SUBTITLE} transforms={[rephrase, emojify]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -177,7 +177,7 @@ const Community = () => {
           ))}
         </Grid>
         <CustomTooltip
-          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[translate, rephrase, emojify]} />}
+          title={<LLMTextManipulator text={ASCII_APP_TOOLTIP} transforms={[rephrase, emojify]} />}
           interactive
         >
           <SectionSubContainer>

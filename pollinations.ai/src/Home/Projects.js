@@ -66,7 +66,7 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[translate, oneSentence]} />
+          <LLMTextManipulator text={PROJECT_SUBTITLE} transforms={[oneSentence]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
@@ -74,12 +74,12 @@ const Projects = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[translate, oneSentence]} />
+          <LLMTextManipulator text={PROJECT_CTO_1} transforms={[oneSentence]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[translate, emojify]} />
+          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[emojify]} />
         </SectionHeadlineStyle>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton

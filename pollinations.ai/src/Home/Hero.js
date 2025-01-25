@@ -79,7 +79,7 @@ const Hero = () => {
           color={Colors.offblack}
           textAlign={isMobile ? "center" : "left"}
         >
-          <LLMTextManipulator text={HERO_INTRO} transformations={[translate, emojify, rephrase]} />
+          <LLMTextManipulator text={HERO_INTRO} transformations={[emojify, rephrase]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       {/* <SvgArtGallery /> */}
@@ -92,7 +92,7 @@ const Hero = () => {
               color={Colors.offblack}
               textAlign={isMobile ? "center" : "right"}
             >
-              <LLMTextManipulator text={HERO_CTO} transforms={[translate, emojify]} />
+              <LLMTextManipulator text={HERO_CTO} transforms={[emojify]} />
             </SectionHeadlineStyle>
           </Grid>
 

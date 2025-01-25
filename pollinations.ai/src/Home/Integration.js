@@ -8,7 +8,7 @@ import {
   SectionHeadlineStyle,
 } from "../components/SectionContainer.js"
 import { INTEGRATE_TITLE, INTEGRATE_SUBTITLE, INTEGRATE_GITHUB_LINK } from "../config/copywrite"
-import { translate, rephrase, emojify } from "../config/llmTransforms.js"
+import { rephrase, emojify } from "../config/llmTransforms.js"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { ImageContext } from "../utils/ImageContext"
@@ -38,7 +38,7 @@ export const Integration = () => {
       </SectionSubContainer>
       <SectionSubContainer>
         <SectionHeadlineStyle>
-          <LLMTextManipulator text={INTEGRATE_SUBTITLE} transforms={[translate, rephrase, emojify]} />
+          <LLMTextManipulator text={INTEGRATE_SUBTITLE} transforms={[rephrase, emojify]} />
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>

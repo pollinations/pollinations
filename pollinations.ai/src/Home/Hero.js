@@ -61,10 +61,6 @@ const handleEmailButtonClick = (e) => {
     label: "Hero_Email_Button",
     value: 1,
   })
-  const email = "hello@pollinations.ai"
-  navigator.clipboard.writeText(email).then(() => {
-    console.log(`Copied to clipboard: ${email}`)
-  })
 }
 
 const Hero = () => {
@@ -150,22 +146,6 @@ const Hero = () => {
                 }}
               />
               {HERO_GITHUB_LINK}
-            </GeneralButton>
-          </Grid>
-          <Grid>
-            <GeneralButton
-              handleClick={handleEmailButtonClick}
-              isLoading={false}
-              backgroundColor={Colors.offblack}
-              textColor={Colors.offwhite}
-              style={{
-                fontSize: "1.5rem",
-                fontFamily: Fonts.title,
-                fontWeight: 600,
-              }}
-            >
-              <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
-              {HERO_EMAIL_BUTTON}
             </GeneralButton>
           </Grid>
         </Grid>

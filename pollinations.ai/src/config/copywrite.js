@@ -84,7 +84,7 @@ export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
 export const NEWS_TITLE = basicTransform(
-  "Last updates! '- 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
+  "Last update! - 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
 )
 export const NEWS_LIST = friendlyMarkdownTransform(newsList)
 

@@ -34,7 +34,9 @@ const teamStyle = () =>
 `Describe it with one very very short poetic sentence, 6 words maximum. Make it professional and impactful.`;
 
 const supporterStyle = () => `Convey very very briefly, 5 words maximum.`
- 
+
+const newsListStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. Do not give a title to it, start with the first bullet point.`;
+
 const combine = (text, ...transformations) => props => `
 # Context
 ${context()}
@@ -56,6 +58,9 @@ ${text}
 const projectDescription = () =>
   `Convey in one very short sentence. Technical language is fine. Be very synthetic. Never link the Pollinations.ai website, any other link in the description should be displayed as a clickable word`
 
+
+const oneSentence = () => `Express this in one sentence.`
+
 // Helper functions for common transformation combinations
 const translateOnly = (text) => (props) => combine(text, translate)(props)
 const translateAndEmojify = (text) => (props) => combine(text, translate, emojify)(props)
@@ -65,24 +70,27 @@ const responsiveTransform = (text) => (props) =>
 const teamTitleTransform = (text) => (props) => combine(text, teamStyle, translate)(props)
 const projectTransform = (text) => (props) => combine(text, projectDescription)(props)
 
+const newsListTransform = (text) => (props) => combine(text, newsListStyle)(props)
+
 export const HERO_INTRO = basicTransform(
   "Concisely introduce our open-source platform that provides easy-to-use text and image generation APIs. It requires no sign-ups or API keys, prioritizing user privacy and anonymity. 20 words maximum."
 )
 
 export const HERO_CTO = basicTransform(
-  "Express this in one very very short sentence: Talk to us, reach out. "
+  "Talk to us, reach out. "
 )
 
 export const HERO_EMAIL_BUTTON = "hello@pollinations.ai"
 export const HERO_GITHUB_LINK = "APIDOCS.md"
 export const HERO_DISCORD_LINK = "Join our Discord"
 
-export const NEWS_TITLE = basicTransform("We want a short title in one very short sentence. Use bold font");
-export const NEWS_LIST = responsiveTransform(`Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. Do not give a title to it, start with the first bullet point. Here is the list to format: ` + newsList);
+export const NEWS_TITLE = basicTransform("News");
+export const NEWS_LIST = newsListTransform(newsList);
 
 export const IMAGE_FEED_SUBTITLE = basicTransform(
-  "Express this in one sentence: This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
+  "This shows the real-time feed of our image API endpoint (minus the private ones). Try it now pausing the feed anytime."
 )
+
 export const IMAGE_FEED_TITLE = translateOnly("Live Feed")
 export const IMAGE_FEED_MODE1 = translateOnly("Watch")
 export const IMAGE_FEED_MODE2 = translateOnly("Try")
@@ -91,7 +99,7 @@ export const IMAGE_EDIT_BUTTON_OFF = translateOnly("Imagine")
 
 export const INTEGRATION_TITLE = translateOnly("Integrate")
 export const INTEGRATION_SUBTITLE = basicTransform(
-  "Express this in one sentence: Discover how to seamlessly integrate our free image and text generation API into your projects. Below are code examples to help you get started. Check our Github for detailed documentation."
+  "Express this in one sentence: "
 )
 
 export const IMAGE_FEED_TOOLTIP_PROMPT = basicTransform(

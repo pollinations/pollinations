@@ -47,6 +47,7 @@ export const Integration = () => {
           isLoading={false}
           backgroundColor={Colors.offblack}
           textColor={Colors.offwhite}
+          borderColor={Colors.offwhite}
           style={{
             fontSize: "1.5rem",
             fontFamily: Fonts.title,

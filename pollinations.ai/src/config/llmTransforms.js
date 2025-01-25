@@ -15,7 +15,7 @@ export const teamStyle = () => `Describe it with one very very short poetic sent
 
 export const supporterStyle = () => `Convey very very briefly, 5 words maximum.`;
 
-export const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, and many related emojis, Only regular font size. No title. Start with the first bullet point.`;
+export const friendlyMarkdownStyle = () => `Flesh out in attractive friendly markdown using bold, italic, font sizes and colors, and many related emojis.`;
 
 export const shortTechnical = () => `Convey in one very short sentence. Technical language is fine. Be very synthetic. Do not link the Pollinations.ai website. Any other link in the description should be displayed as a clickable word`;
 

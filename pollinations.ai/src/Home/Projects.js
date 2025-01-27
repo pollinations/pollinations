@@ -1,6 +1,5 @@
 import React, { useState } from "react"
 import { makeStyles } from "@mui/styles"
-
 import { Colors, Fonts, SectionBG } from "../config/global"
 import { projects } from "../config/projectList"
 import {
@@ -10,12 +9,7 @@ import {
   PROJECT_CTO_2,
   PROJECT_BUTTON,
 } from "../config/copywrite"
-import {
-  emojify,
-  rephrase,
-  noLink
-} from "../config/llmTransforms"
-
+import { emojify, rephrase, noLink } from "../config/llmTransforms"
 import SectionTitle from "../components/SectionTitle"
 import {
   SectionContainer,
@@ -27,7 +21,7 @@ import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
-import ContentCopyIcon from "@mui/icons-material/ContentCopy"
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -43,10 +37,7 @@ const useStyles = makeStyles(() => ({
 
 const handleEmailButtonClick = (e) => {
   e.preventDefault()
-  const email = "hello@pollinations.ai"
-  navigator.clipboard.writeText(email).then(() => {
-    console.log(`Copied to clipboard: ${email}`)
-  })
+  window.open("https://forms.gle/GxWFWHfCJajipZvM7", "_blank")
   trackEvent({
     action: "Email_Button_Click",
     category: "User_Interactions",
@@ -95,7 +86,7 @@ const Projects = () => {
               marginTop: "1em",
             }}
           >
-            <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
+            <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
             {PROJECT_BUTTON}
           </GeneralButton>
         </Box>

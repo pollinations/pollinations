@@ -23,9 +23,6 @@ import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import SvgArtGenerator from "../components/SvgArtGenerator"
 
-
-
-
 const Supporter = () => {
   const theme = useTheme()
   const isMdUp = useMediaQuery(theme.breakpoints.up("md"))
@@ -37,6 +34,23 @@ const Supporter = () => {
     `https://pollinations.ai/p/${encodeURIComponent(
       `${SUPPORTER_LOGO_STYLE} ${name} ${description}`
     )}?width=${imageDimension * 3}&height=${imageDimension * 3}&nologo=true&seed=${seedValue}`
+
+  // Helper to ensure proper protocol for external links
+  const getCompanyLink = (url) => {
+    console.log("[getCompanyLink] Raw URL:", url)
+    if (!url) {
+      console.warn("[getCompanyLink] No URL provided, returning '#'")
+      return "#"
+    }
+    if (url.startsWith("http")) {
+      console.log("[getCompanyLink] Protocol included, returning URL as is:", url)
+      return url
+    } else {
+      const correctedUrl = `https://${url}`
+      console.warn("[getCompanyLink] Protocol missing, corrected URL:", correctedUrl)
+      return correctedUrl
+    }
+  }
 
   return (
     <SectionContainer backgroundConfig={SectionBG.supporter}>
@@ -66,7 +80,10 @@ const Supporter = () => {
               <br />
               <br />
               <StyledLink
-                href={company.url}
+                isExternal
+                href={getCompanyLink(company.url)}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.3em" }}
               >
                 <strong>{company.name}</strong>
@@ -88,3 +105,4 @@ const Supporter = () => {
 }
 
 export default Supporter
+

@@ -198,36 +198,40 @@ export const projects = {
   ],
   sdkLibraries: [
     {
+      name: "pollinations ",
+      url: "https://www.npmjs.com/package/pollinations",
+      description: "A powerful Node.js package for accessing all Pollinations features including image and text generation. Features TypeScript support, model selection, and extensive configuration options.",
+      author: "@maxencexz",
+      version: "2.0.1",
+      downloads: "128 weekly"
+    },
+    {
+      name: "Polli API Dashboard ",
+      url: "https://polli-api.vercel.app",
+      description: "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",
+      author: "@Sugamdeol",
+      repo: "https://github.com/Sugamdeol/Polli-api",
+    },
+    {
       name: "@pollinations/react ",
       url: "https://www.npmjs.com/package/@pollinations/react",
-      description:
-        "React hooks for easy integration of Pollinations.AI' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
+      description: "React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks.",
       author: "@pollinations",
       repoUrl: "https://react-hooks.pollinations.ai/",
     },
     {
       name: "pypollinations ",
       url: "https://pypi.org/project/pypollinations/",
-      description:
-        "A comprehensive Python wrapper for accessing Pollinations.AI API endpoints. Features async support, image/text generation, and model management.",
+      description: "A comprehensive Python wrapper for accessing Pollinations AI API endpoints. Features async support, image/text generation, and model management.",
       author: "@KTS-o7",
       repoUrl: "https://pypi.org/project/pypollinations/",
     },
     {
-      name: "Pollinations.AI AI Python SDK ",
+      name: "pollinations.ai Python SDK ",
       url: "https://github.com/pollinations-ai/pollinations.ai",
-      description:
-        "Official Python SDK for working with Pollinations.AI generative models. Supports both image and text generation with conversation context.",
+      description: "Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context.",
       author: "@pollinations-ai",
       repoUrl: "https://github.com/pollinations-ai/pollinations.ai",
-    },
-    {
-      name: "Polli API Dashboard ",
-      url: "https://polli-api.vercel.app",
-      description:
-        "A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics.",
-      author: "@sugamdeol",
-      repo: "https://github.com/Sugamdeol/Polli-api",
     },
   ],
   socialBots: [
@@ -270,7 +274,7 @@ export const projects = {
       name: "Proyecto Descartes ",
       url: "https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html?page=102",
       description:
-        "An educational initiative integrating Pollinations.AI AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
+        "An educational initiative integrating Pollinations AI into interactive STEM learning resources. Created by Juan Gmo. Rivera.",
     },
     {
       name: "Tutorial",
@@ -290,7 +294,7 @@ export const projects = {
       name: "Artistic Styles Book ",
       url: "https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html",
       description:
-        "An interactive book showcasing over 90 different artistic styles generated using Pollinations.AI. Available in HTML and PDF formats.",
+        "An interactive book showcasing over 90 different artistic styles generated using Pollinations.ai. Available in HTML and PDF formats.",
       repo: "https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf",
     },
   ],

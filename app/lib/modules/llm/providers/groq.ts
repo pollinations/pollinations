@@ -19,6 +19,7 @@ export default class GroqProvider extends BaseProvider {
     { name: 'llama-3.2-3b-preview', label: 'Llama 3.2 3b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     { name: 'llama-3.2-1b-preview', label: 'Llama 3.2 1b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     { name: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
+    { name: 'deepseek-r1-distill-llama-70b', label: 'Deepseek R1 Distill Llama 70b (Groq)', provider: 'Groq', maxTokenAllowed: 131072 },
   ];
 
   getModelInstance(options: {

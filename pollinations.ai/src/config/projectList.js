@@ -36,9 +36,10 @@ export const projects = {
       author: "withthatway",
     },
     {
-      name: "Character RP (Roblox) ",
-      url: "https://www.roblox.com/games/108463136689847",
-      description: "A Roblox game where players can create and roleplay with AI characters. Created by @user113.",
+      name: "[AI] Character RP (Roblox) ",
+      url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
+      description: "A popular Roblox game where players can create and roleplay with AI characters. Features custom character creation and AI-powered chat interactions using Pollinations API.",
+      author: "@renewed",
     },
     {
       name: "Free AI Chatbot & Image Generator",
@@ -232,6 +233,12 @@ export const projects = {
       description: "Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context.",
       author: "@pollinations-ai",
       repoUrl: "https://github.com/pollinations-ai/pollinations.ai",
+    },
+    {
+      name: "Server Status Dashboard ",
+      url: "https://serverstatus.pollinations.ai/",
+      description: "Real-time dashboard showing the status of Pollinations image and text generation APIs, including available models and server health.",
+      author: "@intolerant0ne",
     },
   ],
   socialBots: [

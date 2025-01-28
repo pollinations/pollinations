@@ -215,7 +215,12 @@ export const projects = {
       url: "https://github.com/xtekky/gpt4free",
       description: "The official gpt4free repository | various collection of powerful language models.",
       author: "@xtekky"
-    }
+    },
+  {
+    name: "AI PowerPoint Generator",
+    url: "https://sites.google.com/view/kushai",
+    description: "A tool to automatically create PowerPoint slides from your text input, harnessing AI capabilities.",
+  }
   ],
   sdkLibraries: [
     {

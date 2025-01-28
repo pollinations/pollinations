@@ -174,7 +174,7 @@ const checkCacheAndGenerate = async (req, res) => {
   if (!needsProcessing) return;
 
   const originalPrompt = urldecode(pathname.split("/prompt/")[1] || "random_prompt");
-  const { ...safeParams } = makeParamsSafe(query);
+  const { ...safeParams } = await makeParamsSafe(originalPrompt, query);
   const referrer = query.headers?.referer || 
                   query.headers?.referrer || 
                   query.headers?.Referer || 

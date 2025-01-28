@@ -1,11 +1,13 @@
 import { MODELS } from './models.js';
+import { checkPromptSafety } from './llamaguardChecker.js';
 
 /**
  * Sanitizes and adjusts parameters for image generation.
+ * @param {string} prompt - The prompt to check for safety
  * @param {{ width: number|null, height: number|null, seed: number|string, model: string, enhance: boolean|string, nologo: boolean|string, negative_prompt: string, nofeed: boolean|string, safe: boolean|string }} params
- * @returns {Object} - The sanitized parameters.
+ * @returns {Promise<Object>} - The sanitized parameters.
  */
-export const makeParamsSafe = ({ width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false }) => {
+export const makeParamsSafe = async (prompt, { width = null, height = null, seed, model = "flux", enhance, nologo = false, negative_prompt = "worst quality, blurry", nofeed = false, safe = false }) => {
     // Sanitize boolean parameters
     const sanitizeBoolean = (value) => value?.toLowerCase?.() === "true" ? true : value?.toLowerCase?.() === "false" ? false : value;
     enhance = sanitizeBoolean(enhance);
@@ -39,6 +41,15 @@ export const makeParamsSafe = ({ width = null, height = null, seed, model = "flu
         const ratio = Math.sqrt(maxPixels / (width * height));
         width = Math.floor(width * ratio);
         height = Math.floor(height * ratio);
+    }
+
+    // Check prompt safety with LlamaGuard if safe mode is enabled
+    if (safe) {
+        const safetyCheck = await checkPromptSafety(prompt);
+        if (!safetyCheck.safe) {
+            console.log(`Unsafe content detected in prompt. Categories: ${safetyCheck.categories.join(', ')}`);
+            safe = false; // Force safe mode off if unsafe content detected
+        }
     }
 
     return { width, height, seed, model, enhance, nologo, negative_prompt, nofeed, safe };

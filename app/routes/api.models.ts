@@ -67,11 +67,11 @@ export async function loader({
     const provider = llmManager.getProvider(params.provider);
 
     if (provider) {
-      const staticModels = provider.staticModels;
-      const dynamicModels = provider.getDynamicModels
-        ? await provider.getDynamicModels(apiKeys, providerSettings, context.cloudflare?.env)
-        : [];
-      modelList = [...staticModels, ...dynamicModels];
+      modelList = await llmManager.getModelListFromProvider(provider, {
+        apiKeys,
+        providerSettings,
+        serverEnv: context.cloudflare?.env,
+      });
     }
   } else {
     // Update all models

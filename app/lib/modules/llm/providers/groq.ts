@@ -19,8 +19,50 @@ export default class GroqProvider extends BaseProvider {
     { name: 'llama-3.2-3b-preview', label: 'Llama 3.2 3b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     { name: 'llama-3.2-1b-preview', label: 'Llama 3.2 1b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
     { name: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70b (Groq)', provider: 'Groq', maxTokenAllowed: 8000 },
-    { name: 'deepseek-r1-distill-llama-70b', label: 'Deepseek R1 Distill Llama 70b (Groq)', provider: 'Groq', maxTokenAllowed: 131072 },
+    {
+      name: 'deepseek-r1-distill-llama-70b',
+      label: 'Deepseek R1 Distill Llama 70b (Groq)',
+      provider: 'Groq',
+      maxTokenAllowed: 131072,
+    },
   ];
+
+  async getDynamicModels(
+    apiKeys?: Record<string, string>,
+    settings?: IProviderSetting,
+    serverEnv?: Record<string, string>,
+  ): Promise<ModelInfo[]> {
+    const { apiKey } = this.getProviderBaseUrlAndKey({
+      apiKeys,
+      providerSettings: settings,
+      serverEnv: serverEnv as any,
+      defaultBaseUrlKey: '',
+      defaultApiTokenKey: 'GROQ_API_KEY',
+    });
+
+    if (!apiKey) {
+      throw `Missing Api Key configuration for ${this.name} provider`;
+    }
+
+    const response = await fetch(`https://api.groq.com/openai/v1/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+
+    const res = (await response.json()) as any;
+
+    const data = res.data.filter(
+      (model: any) => model.object === 'model' && model.active && model.context_window > 8000,
+    );
+
+    return data.map((m: any) => ({
+      name: m.id,
+      label: `${m.id} - context ${m.context_window ? Math.floor(m.context_window / 1000) + 'k' : 'N/A'} [ by ${m.owned_by}]`,
+      provider: this.name,
+      maxTokenAllowed: m.context_window || 8000,
+    }));
+  }
 
   getModelInstance(options: {
     model: string;

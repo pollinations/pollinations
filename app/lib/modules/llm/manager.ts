@@ -118,12 +118,14 @@ export class LLMManager {
           return dynamicModels;
         }),
     );
+    const staticModels = Array.from(this._providers.values()).flatMap((p) => p.staticModels || []);
+    const dynamicModelsFlat = dynamicModels.flat();
+    const dynamicModelKeys = dynamicModelsFlat.map((d) => `${d.name}-${d.provider}`);
+    const filteredStaticModesl = staticModels.filter((m) => !dynamicModelKeys.includes(`${m.name}-${m.provider}`));
 
     // Combine static and dynamic models
-    const modelList = [
-      ...dynamicModels.flat(),
-      ...Array.from(this._providers.values()).flatMap((p) => p.staticModels || []),
-    ];
+    const modelList = [...dynamicModelsFlat, ...filteredStaticModesl];
+    modelList.sort((a, b) => a.name.localeCompare(b.name));
     this._modelList = modelList;
 
     return modelList;
@@ -178,8 +180,12 @@ export class LLMManager {
         logger.error(`Error getting dynamic models ${provider.name} :`, err);
         return [];
       });
+    const dynamicModelsName = dynamicModels.map((d) => d.name);
+    const filteredStaticList = staticModels.filter((m) => !dynamicModelsName.includes(m.name));
+    const modelList = [...dynamicModels, ...filteredStaticList];
+    modelList.sort((a, b) => a.name.localeCompare(b.name));
 
-    return [...dynamicModels, ...staticModels];
+    return modelList;
   }
   getStaticModelListFromProvider(providerArg: BaseProvider) {
     const provider = this._providers.get(providerArg.name);

@@ -24,28 +24,10 @@ export const projectCategories = [
 export const projects = {
   apps: [
     {
-      name: "Image Gen - Uncensored Edition ",
-      url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
-      description: "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
-      author: "@DeFactOfficial",
-    },
-    {
-      name: "UR Imagine & Chat AI ",
-      url: "https://perchance.org/ur-imagine-ai",
-      description: "A free and limitless image generator with companion AI chat/roleplay system. Features enhanced prompting and privacy options.",
-      author: "withthatway",
-    },
-    {
-      name: "[AI] Character RP (Roblox) ",
-      url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
-      description: "A popular Roblox game where players can create and roleplay with AI characters. Features custom character creation and AI-powered chat interactions using Pollinations API.",
-      author: "@renewed",
-    },
-    {
-      name: "Free AI Chatbot & Image Generator",
-      url: "https://freeaichat.app",
-      description: "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
-      author: "@andreas_11",
+      name: "AI PPT Maker",
+      url: "https://sites.google.com/view/kushai",
+      description: "Create AI-powered presentations using Pollinations' API. Automates slide generation and content creation.",
+      author: "@k_ush",
     },
     {
       name: "Pollinator Android App",
@@ -126,10 +108,28 @@ export const projects = {
       repo: "https://github.com/AdvaithN1/StoryWeaver",
     },
     {
-      name: "Websim",
-      url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
-      description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
-      author: "@thomash",
+      name: "UR Imagine & Chat AI ",
+      url: "https://perchance.org/ur-imagine-ai",
+      description: "A free and limitless image generator with companion AI chat/roleplay system. Features enhanced prompting and privacy options.",
+      author: "withthatway",
+    },
+    {
+      name: "Image Gen - Uncensored Edition ",
+      url: "https://huggingface.co/chat/assistant/66fccce0c0fafc94ab557ef2",
+      description: "A powerful image generation assistant on HuggingChat using Qwen 2.5 (72B) with intelligent model selection and uncensored capabilities.",
+      author: "@DeFactOfficial",
+    },
+    {
+      name: "[AI] Character RP (Roblox) ",
+      url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
+      description: "A popular Roblox game where players can create and roleplay with AI characters. Features custom character creation and AI-powered chat interactions using Pollinations API.",
+      author: "@renewed",
+    },
+    {
+      name: "Free AI Chatbot & Image Generator",
+      url: "https://freeaichat.app",
+      description: "A mobile app for unlimited AI chat and image generation powered by state-of-the-art AI, featuring GPT-4 and Flux.",
+      author: "@andreas_11",
     },
     {
       name: "JCode Website Builder",
@@ -159,23 +159,29 @@ export const projects = {
       repo: "https://github.com/Tolerable",
     },
     {
-      name: "AI PPT Maker",
-      url: "https://sites.google.com/view/kushai",
-      description: "Create AI-powered presentations using Pollinations' API. Automates slide generation and content creation.",
-      author: "@k_ush",
+      name: "Websim",
+      url: "https://websim.ai/c/bXsmNE96e3op5rtUS",
+      description: "A web simulation tool that integrates **Pollinations.ai** for generating AI-driven content. *Remix* the app with your own promots.",
+      author: "@thomash",
     },
   ],
   llmIntegration: [
     {
-      name: "SillyTavern",
-      url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
-      description: "An **LLM frontend** for power users. Pollinations.AI permits it to generate images.",
-      repo: "https://github.com/SillyTavern/SillyTavern",
+      name: "LobeChat",
+      url: "https://lobehub.com/plugins/pollinations-drawing",
+      description:
+        "An open-source, modern-design ChatGPT/LLMs UI/Framework. Supports speech-synthesis, multi-modal, and extensible (function call) plugin system.",
+      repo: "https://github.com/lobehub/lobe-chat",
     },
     {
       name: "Qwen-Agent",
       url: "https://github.com/QwenLM/Qwen-Agent",
       description: "A framework for developing agentic LLM applications.",
+    },
+    {
+      name: "FlowGPT",
+      url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
+      description: "Generate images on-demand with **ChatGPT**!",
     },
     {
       name: "Sirius Cybernetics Elevator Challenge",
@@ -185,11 +191,16 @@ export const projects = {
       repo: "https://github.com/voodoohop/sirius-cybernetics-elevator-challenge",
     },
     {
-      name: "LobeChat",
-      url: "https://lobehub.com/plugins/pollinations-drawing",
-      description:
-        "An open-source, modern-design ChatGPT/LLMs UI/Framework. Supports speech-synthesis, multi-modal, and extensible (function call) plugin system.",
-      repo: "https://github.com/lobehub/lobe-chat",
+      name: "gpt4free",
+      url: "https://github.com/xtekky/gpt4free",
+      description: "The official gpt4free repository | various collection of powerful language models.",
+      author: "@xtekky"
+    },
+    {
+      name: "SillyTavern",
+      url: "https://docs.sillytavern.app/extensions/stable-diffusion/",
+      description: "An **LLM frontend** for power users. Pollinations.AI permits it to generate images.",
+      repo: "https://github.com/SillyTavern/SillyTavern",
     },
     {
       name: "DynaSpark AI",
@@ -200,27 +211,16 @@ export const projects = {
       repo: "https://github.com/Th3-C0der",
     },
     {
-      name: "FlowGPT",
-      url: "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",
-      description: "Generate images on-demand with **ChatGPT**!",
-    },
-    {
       name: "Unity AI Lab",
       url: "https://blog.unityailab.com/unity.html",
       description:
         "A specialized uncensored LLM model built on Mistral Large, focused on unrestricted conversations.",
     },
     {
-      name: "gpt4free",
-      url: "https://github.com/xtekky/gpt4free",
-      description: "The official gpt4free repository | various collection of powerful language models.",
-      author: "@xtekky"
+      name: "AI PowerPoint Generator",
+      url: "https://sites.google.com/view/kushai",
+      description: "A tool to automatically create PowerPoint slides from your text input, harnessing AI capabilities.",
     },
-  {
-    name: "AI PowerPoint Generator",
-    url: "https://sites.google.com/view/kushai",
-    description: "A tool to automatically create PowerPoint slides from your text input, harnessing AI capabilities.",
-  }
   ],
   sdkLibraries: [
     {

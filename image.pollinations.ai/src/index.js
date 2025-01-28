@@ -203,7 +203,7 @@ const checkCacheAndGenerate = async (req, res) => {
 
       let queueExisted = false;
       if (!ipQueue[ip]) {
-        ipQueue[ip] = new PQueue({ concurrency: 1 });
+        ipQueue[ip] = new PQueue({ concurrency: 1, interval: 5000 });
       } else {
         queueExisted = true;
       }

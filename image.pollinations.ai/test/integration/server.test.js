@@ -37,7 +37,7 @@ describe('Server Integration', () => {
       }
       
       else if (pathname === '/image') {
-        const params = await makeParamsSafe(query.prompt || '', query)
+        const params = makeParamsSafe(query)
         if (!query.prompt) {
           res.writeHead(400, { 'Content-Type': 'application/json' })
           res.end(JSON.stringify({ error: 'Missing prompt' }))

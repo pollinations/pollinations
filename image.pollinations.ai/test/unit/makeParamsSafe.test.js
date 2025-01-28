@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { makeParamsSafe } from '../../src/makeParamsSafe.js'
 
 describe('makeParamsSafe', () => {
-  it('should sanitize input parameters and check safety asynchronously', async () => {
+  it('should sanitize input parameters', async () => {
     const input = {
       prompt: 'test prompt',
       width: 512,
@@ -16,7 +16,7 @@ describe('makeParamsSafe', () => {
       safe: true
     }
     
-    const result = await makeParamsSafe('test prompt', input)
+    const result = makeParamsSafe(input)
     expect(result).toBeDefined()
     expect(result.width).toBe(512)
     expect(result.height).toBe(512)
@@ -29,7 +29,7 @@ describe('makeParamsSafe', () => {
     expect(result.safe).toBe(true)
   })
 
-  it('should handle invalid inputs with defaults asynchronously', async () => {
+  it('should handle invalid inputs with defaults', () => {
     const input = {
       width: 'invalid',
       height: 'invalid',
@@ -37,7 +37,7 @@ describe('makeParamsSafe', () => {
       model: 'invalid_model'
     }
 
-    const result = await makeParamsSafe('test prompt', input)
+    const result = makeParamsSafe(input)
     expect(result.width).toBe(1024)
     expect(result.height).toBe(1024)
     expect(result.seed).toBe(42)

@@ -10,7 +10,7 @@ We're excited to announce MentatBot, our autonomous AI coding assistant that imp
 
 ## 🌟 Introduction
 
-[Pollinations.AI](https://pollinations.ai) is the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
+[Pollinations.AI](https://pollinations.ai) is an open-source gen AI startup based in Berlin, providing the most easy-to-use, free text and image generation API available. No signups or API keys required. We prioritize your privacy with zero data storage and completely anonymous usage.
 
 ## 🚀 Key Features
 

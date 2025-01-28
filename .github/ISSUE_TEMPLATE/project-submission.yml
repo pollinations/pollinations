@@ -1,0 +1,84 @@
+name: Project Submission
+description: Submit your project to be featured on Pollinations
+title: "[Project Submission]: "
+labels: ["project-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to submit your project! Please fill out the information below to help us understand and showcase your project.
+        
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What is the name of your project?
+      placeholder: "e.g., AI Art Gallery"
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-description
+    attributes:
+      label: Project Description
+      description: Please provide a brief description of your project and how it uses Pollinations
+      placeholder: "Describe what your project does and how it integrates with Pollinations..."
+    validations:
+      required: true
+
+  - type: input
+    id: project-url
+    attributes:
+      label: Project URL
+      description: Link to your project (if public)
+      placeholder: "https://example.com"
+
+  - type: dropdown
+    id: integration-type
+    attributes:
+      label: Integration Type
+      description: How does your project integrate with Pollinations?
+      options:
+        - API Integration
+        - Frontend Component
+        - Backend Service
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: technologies
+    attributes:
+      label: Technologies Used
+      description: What technologies and frameworks does your project use?
+      placeholder: |
+        - Frontend: React, Vue.js, etc.
+        - Backend: Node.js, Python, etc.
+        - Other relevant technologies
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional Information
+      description: Any other details you'd like to share about your project?
+      placeholder: "Screenshots, features, future plans..."
+
+  - type: input
+    id: contact
+    attributes:
+      label: Contact Information
+      description: How can we reach you if we have questions? (GitHub username, email, or Discord handle)
+      placeholder: "@username or email"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this project, you agree to follow our project submission guidelines
+      options:
+        - label: I agree to follow Pollinations' project submission guidelines and code of conduct
+          required: true

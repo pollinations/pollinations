@@ -68,7 +68,7 @@ export const PROJECT_CTO_1 =
 
 export const PROJECT_CTO_2 = "Reach out to us"
 
-export const PROJECT_BUTTON = "hello@pollinations.ai"
+export const PROJECT_BUTTON = "Submit Your Project"
 export const PROJECT_LOGO_STYLE =
   "square logo based on the info of the company. Only colored backgrounds. Be creative!"
 

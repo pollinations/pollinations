@@ -8,7 +8,9 @@ const log = debug('pollinations:cloudflare');
 
 // Model mapping for Cloudflare
 const MODEL_MAPPING = {
-    'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+    'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    'llamalight': '@cf/meta/llama-3.1-8b-instruct',
+    'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
 };
 
 export async function generateTextCloudflare(messages, options) {

@@ -108,13 +108,13 @@ export const availableModels = [
         description: 'Evil Mode - Experimental',
         baseModel: false,
     },
-    {
-        name: 'p1',
-        type: 'chat',
-        censored: false,
-        description: 'Pollinations 1 (OptiLLM)',
-        baseModel: false,
-    },
+    // {
+    //     name: 'p1',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Pollinations 1 (OptiLLM)',
+    //     baseModel: false,
+    // },
     {
         name: 'deepseek',
         type: 'chat',
@@ -128,6 +128,15 @@ export const availableModels = [
         censored: true,
         description: 'Claude Hybridspace',
         baseModel: true,
+    },
+    {
+        name: 'deepseek-r1',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek-R1 Distill Qwen 32B',
+        baseModel: true,
+        reasoning: true,
+        provider: 'cloudflare'
     },
     // {
     //     name: 'llamalight',

@@ -395,19 +395,19 @@ export async function processRequest(req, res, requestData) {
 
     const queue = getQueue(ip);
 
-    if (queue.size >= 60) {
-        errorLog('Queue size limit exceeded for IP: %s', ip);
-        const errorResponse = {
-            error: 'Too Many Requests',
-            status: 429,
-            details: {
-                queueSize: queue.size,
-                maxQueueSize: 60,
-                timestamp: new Date().toISOString()
-            }
-        };
-        return res.status(429).json(errorResponse);
-    }
+    // if (queue.size >= 60) {
+    //     errorLog('Queue size limit exceeded for IP: %s', ip);
+    //     const errorResponse = {
+    //         error: 'Too Many Requests',
+    //         status: 429,
+    //         details: {
+    //             queueSize: queue.size,
+    //             maxQueueSize: 60,
+    //             timestamp: new Date().toISOString()
+    //         }
+    //     };
+    //     return res.status(429).json(errorResponse);
+    // }
     
     const bypassQueue = requestData.isImagePollinationsReferrer || requestData.isRobloxReferrer || shouldBypassDelay(req);
 
@@ -484,7 +484,9 @@ async function generateTextBasedOnModel(messages, options) {
             'qwen-coder': () => generateTextScaleway(messages, options),
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
-            'llamalight': () => generateTextScaleway(messages, options),
+            'llamalight': () => generateTextCloudflare(messages, options),
+            'deepseek-r1': () => generateTextCloudflare(messages, options),
+            // 'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),
             'sur': () => surOpenai(messages, options),
             'sur-mistral': () => surMistral(messages, options),

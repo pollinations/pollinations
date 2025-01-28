@@ -9,7 +9,7 @@ import team6 from "../assets/team/Kalam.webp"
 import { rephrase } from "./llmTransforms"
 
 // 1) Base building blocks
-export const context = `The text appears on the website Pollinations.AI. Pollinations.AI is a generative AI service that allows creating different types of media using AI models.`
+export const context = `The text appears on the website Pollinations.AI. Pollinations.AI is an open-source generative AI startup based in Berlin that allows creating different types of media using AI models.`
 
 // 4) Use combos throughout
 export const HERO_INTRO = 
@@ -114,7 +114,7 @@ export const FOOTER_TERMS_CONDITIONS_LINK = "Terms & Conditions";
 export const FOOTER_TERMS_CONDITIONS = "Welcome to Pollinations.AI services empower harness AI technology creation interaction digital media. consent terms review attentively Acceptance Terms accessing Pollinations.AI confirm understanding agreement Terms Privacy Policy disagree advised not to use services offers AI - powered tools digital media retain ownership responsibility content encourage review licenses open - source models Content utilized commercial purposes legality ethical standards Pollinations.AI store user - content personal data stored user privacy information User Conduct Pollinations.AI ethically legally agree not Engage illegal activities violate local laws Infringe third - party rights intellectual property Disseminate malicious software data access probe services Prohibition of Unauthorized Materials services generate Celebrity Deepfakes Creating materials celebrities politicians public figures prohibited Child Sexual Abuse Material CSAM forbidden produce CSAM content under 18 years applies to fictional real - life subjects Intellectual Property content using Pollinations.AI crucial respect licenses open - source models content used for commercial purposes advise checking licenses for restrictions Pollinations.AI GmbH claims no intellectual property rights content Modification amend terms services after accept revised terms Governing Law subject to laws Germany conflict of laws principles Privacy Policy paramount outlines practices collection use protection sharing information Information collect details collect Discord IDs Usage Information anonymously track services experience without Cookies Tracking Technologies collect information deliver maintain refine services communication notices safeguard security integrity legal requirements. Sharing not for sale. share data with third parties service providers defend rights safety. safeguards protect against unauthorized access changes destruction Changes Privacy Policy update policy occasionally. changes communicated updating Privacy Policy Contact questions Privacy Policy hello@pollinations.ai";
 
 export const FOOTER_CLOSE = "Close";
-export const FOOTER_INFO = " 2025 Pollinations.AI"
+export const FOOTER_INFO = " 2025 Pollinations.AI - An open source AI startup based in Berlin"
 
 export const ASCII_ART_PROMPT = (width, height) =>
   `Unicode/Ascii Art inspired by elegant, minimal Egyptian gods and mystical pyramids. ${width} width x ${height} height characters. Incorporate hieroglyphs and maintain a lot of empty space. Return only the characters, no other text or quotes.`

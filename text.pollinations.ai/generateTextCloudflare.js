@@ -11,6 +11,7 @@ const MODEL_MAPPING = {
     'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
     'llamalight': '@cf/meta/llama-3.1-8b-instruct',
     'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+    'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
 };
 
 export async function generateTextCloudflare(messages, options) {

@@ -27,7 +27,7 @@ import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
-import ContentCopyIcon from "@mui/icons-material/ContentCopy"
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -41,16 +41,13 @@ const useStyles = makeStyles(() => ({
   },
 }))
 
-const handleEmailButtonClick = (e) => {
+const handleSubmitButtonClick = (e) => {
   e.preventDefault()
-  const email = "hello@pollinations.ai"
-  navigator.clipboard.writeText(email).then(() => {
-    console.log(`Copied to clipboard: ${email}`)
-  })
+  window.open("https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml", "_blank")
   trackEvent({
-    action: "Email_Button_Click",
+    action: "Project_Submit_Click",
     category: "User_Interactions",
-    label: "Projects_Email_Button",
+    label: "Projects_Submit_Button",
     value: 1,
   })
 }
@@ -83,7 +80,7 @@ const Projects = () => {
         </SectionHeadlineStyle>
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton
-            onClick={handleEmailButtonClick}
+            onClick={handleSubmitButtonClick}
             textColor={Colors.lime}
             borderColor={Colors.offwhite}
             fontSize="2em"
@@ -95,7 +92,7 @@ const Projects = () => {
               marginTop: "1em",
             }}
           >
-            <ContentCopyIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
+            <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />
             {PROJECT_BUTTON}
           </GeneralButton>
         </Box>

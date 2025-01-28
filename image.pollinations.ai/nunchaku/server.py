@@ -45,17 +45,12 @@ def get_public_ip():
 
 # Heartbeat function
 async def send_heartbeat():
-    # Use Modal URL if available, otherwise fallback to IP-based URL
-    url = os.getenv("MODAL_URL")
-    if not url:
-        public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
-        if public_ip:
+    public_ip = await asyncio.get_event_loop().run_in_executor(None, get_public_ip)
+    if public_ip:
+        try:
             port = int(os.getenv("PORT", "8765"))
             url = f"http://{public_ip}:{port}"
-    
-    if url:
-        try:
-            service_type = os.getenv("SERVICE_TYPE", "flux")
+            service_type = os.getenv("SERVICE_TYPE", "flux")  # Get service type from environment variable
             async with aiohttp.ClientSession() as session:
                 async with session.post('https://image.pollinations.ai/register', json={'url': url, 'type': service_type}) as response:
                     if response.status == 200:

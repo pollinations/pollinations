@@ -283,3 +283,4 @@ dist
 venv/
 cursor-party/
 .aider*
+data/

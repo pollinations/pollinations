@@ -63,16 +63,11 @@ export function useFeedLoader(onNewImage, setLastImage) {
 }
 
 function estimateGeneratedImages() {
-  const launchDate = 1701718083442;
+  const launchDate = 1737974161902;
   const now = Date.now();
   const differenceInSeconds = (now - launchDate) / 1000;
-  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 3);
+  const imagesGeneratedSinceLaunch = Math.round(differenceInSeconds * 12);
 
-  const imagesGeneratedCalculated = 9000000 + imagesGeneratedSinceLaunch;
+  const imagesGeneratedCalculated = 117772000 + imagesGeneratedSinceLaunch;
   return imagesGeneratedCalculated;
 }
-
-
-let lastServerLoad = 0;
-
-export const getLastServerLoad = () => lastServerLoad;

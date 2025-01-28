@@ -157,10 +157,6 @@ graph LR
 
 Pollinations.AI is used in various projects, including:
 
-## Projects Using Pollinations.AI
-
-Pollinations.AI is used in various projects, including:
-
 ### LLM Integrations
 
 | Project | Description | Creator | Links |

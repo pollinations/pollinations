@@ -18,7 +18,7 @@ We're excited to announce MentatBot, our autonomous AI coding assistant that imp
 - 🆓 **_Free to use_**
 - 🔒 **Simplicity and privacy:** No logins, no keys, no data stored
 - 🖼️ **Embed like any normal image or text**
-- 🌍 Over **50,000 active users** and > **_8 million images generated per month_**
+- 🌍 Over **50,000 active users** and > **_20 million images generated per month_**
 - 🤝 Used by various **open-source LLMs**, **bots**, and **communities**
 - 🎣 **_Easy-to-use React hooks_** ([React Hooks Examples](https://react-hooks.pollinations.ai/))
 - 🤖 **Autonomous Development:** Features implemented by our MentatBot coding assistant through GitHub issues
@@ -185,7 +185,8 @@ Pollinations.AI is used in various projects, including:
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
 | pollinations NPM Module 🆕 | A simple and powerful Node.js package for accessing all Pollinations features, including image generation and LLM capabilities. | @maxencexz | [NPM](https://www.npmjs.com/package/pollinations) |
-| Server Status Dashboard 🆕 | Real-time status monitoring for Pollinations text server and image server. | @intolerant0ne | [Text Status](https://www.ai-ministries.com/serverstatus.html) • [Image Status](https://www.ai-ministries.com/imagestatus.html) • [GitHub](https://github.com/Tolerable) |
+| Server Status Dashboard 🆕 | Real-time status monitoring for Pollinations text and image servers. Features uptime tracking, response times, and service health indicators. | @intolerant0ne | [Text Status](https://www.ai-ministries.com/serverstatus.html) • [Image Status](https://www.ai-ministries.com/imagestatus.html) • [GitHub](https://github.com/Tolerable) |
+| AI PPT Maker 🆕 | Create AI-powered presentations automatically using Pollinations' API. Generate professional slides with AI-generated content and visuals. | @k_ush | [Website](https://sites.google.com/view/kushai) |
 | Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
 | @pollinations/react 🆕 | React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks. | @pollinations | [NPM](https://www.npmjs.com/package/@pollinations/react) • [Docs](https://react-hooks.pollinations.ai/) |
 | pypollinations 🆕 | Comprehensive Python wrapper for Pollinations AI API with async support, image/text generation, and model management. | @KTS-o7 | [PyPI](https://pypi.org/project/pypollinations/) |

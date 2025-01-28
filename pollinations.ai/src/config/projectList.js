@@ -144,6 +144,26 @@ export const projects = {
       author: "@diepdo1810",
       repoUrl: "https://github.com/diepdo1810/AI-Bloom",
     },
+    {
+      name: "Text Server Status",
+      url: "https://www.ai-ministries.com/serverstatus.html",
+      description: "Real-time monitoring dashboard for Pollinations text server. Features uptime tracking, response times, and service health indicators.",
+      author: "@tolerantone",
+      repo: "https://github.com/Tolerable",
+    },
+    {
+      name: "Image Server Status",
+      url: "https://www.ai-ministries.com/imagestatus.html",
+      description: "Real-time monitoring dashboard for Pollinations image server. Features uptime tracking, response times, and service health indicators.",
+      author: "@tolerantone",
+      repo: "https://github.com/Tolerable",
+    },
+    {
+      name: "AI PPT Maker",
+      url: "https://sites.google.com/view/kushai",
+      description: "Create AI-powered presentations using Pollinations' API. Automates slide generation and content creation.",
+      author: "@k_ush",
+    },
   ],
   llmIntegration: [
     {

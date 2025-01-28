@@ -21,7 +21,7 @@ export async function generateTextCloudflare(messages, options) {
     log(`[${requestId}] Starting text generation request`, {
         timestamp: new Date().toISOString(),
         messageCount: messages.length,
-        options
+        options: JSON.stringify(options, null, 2)
     });
 
     try {
@@ -35,10 +35,8 @@ export async function generateTextCloudflare(messages, options) {
 
         const requestBody = {
             messages: validatedMessages,
-            max_tokens: 4096,
+            // max_tokens: 4096,
             temperature: options.temperature,
-            // top_p: options.top_p,
-            // stream: options.stream,
         };
 
         if (typeof options.seed === 'number') {
@@ -49,14 +47,6 @@ export async function generateTextCloudflare(messages, options) {
             requestBody.response_format = { type: 'json_object' };
         }
 
-        if (options.tools) {
-            requestBody.tools = options.tools;
-        }
-
-        if (options.tool_choice) {
-            requestBody.tool_choice = options.tool_choice;
-        }
-
         // Remove undefined values
         Object.keys(requestBody).forEach(key => 
             requestBody[key] === undefined && delete requestBody[key]
@@ -65,8 +55,13 @@ export async function generateTextCloudflare(messages, options) {
         log(`[${requestId}] Sending request to Cloudflare API`, {
             timestamp: new Date().toISOString(),
             model: modelName,
-            maxTokens: requestBody.max_tokens,
-            temperature: requestBody.temperature
+            request: JSON.stringify({
+                temperature: requestBody.temperature,
+                messages: requestBody.messages.map(m => ({
+                    role: m.role,
+                    content: m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '') // Truncate long messages
+                }))
+            }, null, 2)
         });
 
         const response = await fetch(
@@ -85,7 +80,7 @@ export async function generateTextCloudflare(messages, options) {
             timestamp: new Date().toISOString(),
             status: response.status,
             statusText: response.statusText,
-            headers: Object.fromEntries(response.headers)
+            headers: JSON.stringify(Object.fromEntries(response.headers), null, 2)
         });
 
         if (!response.ok) {
@@ -94,7 +89,7 @@ export async function generateTextCloudflare(messages, options) {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
-                error: errorData || 'Failed to parse error response'
+                error: JSON.stringify(errorData || 'Failed to parse error response', null, 2)
             });
             
             return {

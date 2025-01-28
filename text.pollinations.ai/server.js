@@ -186,15 +186,16 @@ setupFeedEndpoint(app);
 async function handleRequest(req, res, requestData) {
 
     log('Request: model=%s referrer=%s', requestData.model, requestData.referrer);
-    log('Request data: %o', requestData);
+    log('Request data: %s', JSON.stringify(requestData, null, 2));
 
     try {
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
-        log("completion: %o", completion);
+        log("completion: %s", JSON.stringify(completion, null, 2));
         
         // Check if completion contains an error
         if (completion.error) {
-            throw new Error(completion.error.message || 'Unknown error from provider');
+            errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
+            throw new Error(JSON.stringify(completion.error));
         }
         
         const responseText = completion.choices[0].message.content;

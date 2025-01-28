@@ -185,12 +185,17 @@ Pollinations.AI is used in various projects, including:
 | Library | Description | Creator | Links |
 |---------|-------------|---------|-------|
 | pollinations NPM Module 🆕 | A simple and powerful Node.js package for accessing all Pollinations features, including image generation and LLM capabilities. | @maxencexz | [NPM](https://www.npmjs.com/package/pollinations) |
-| Server Status Dashboard 🆕 | Real-time status monitoring for Pollinations text and image servers. Features uptime tracking, response times, and service health indicators. | @intolerant0ne | [Text Status](https://www.ai-ministries.com/serverstatus.html) • [Image Status](https://www.ai-ministries.com/imagestatus.html) • [GitHub](https://github.com/Tolerable) |
-| AI PPT Maker 🆕 | Create AI-powered presentations automatically using Pollinations' API. Generate professional slides with AI-generated content and visuals. | @k_ush | [Website](https://sites.google.com/view/kushai) |
-| Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
-| @pollinations/react 🆕 | React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks. | @pollinations | [NPM](https://www.npmjs.com/package/@pollinations/react) • [Docs](https://react-hooks.pollinations.ai/) |
 | pypollinations 🆕 | Comprehensive Python wrapper for Pollinations AI API with async support, image/text generation, and model management. | @KTS-o7 | [PyPI](https://pypi.org/project/pypollinations/) |
-| pollinations.ai Python SDK 🆕 | Official Python SDK for working with Pollinations' generative models. Supports both image and text generation with conversation context. | @pollinations-ai | [GitHub](https://github.com/pollinations-ai/pollinations.ai) |
+| @pollinations/react 🆕 | React hooks for easy integration of Pollinations' image and text generation. Features usePollinationsImage, usePollinationsText, and usePollinationsChat hooks. | @pollinations | [NPM](https://www.npmjs.com/package/@pollinations/react) • [Docs](https://react-hooks.pollinations.ai/) |
+
+### Applications
+
+| App | Description | Creator | Links |
+|-----|-------------|---------|-------|
+| AI PPT Maker 🆕 | Create AI-powered presentations automatically using Pollinations' API. Generate professional slides with AI-generated content and visuals. | @k_ush | [Website](https://sites.google.com/view/kushai) |
+| Server Status Dashboard 🆕 | Real-time status monitoring for Pollinations text and image servers. Features uptime tracking, response times, and service health indicators. | @intolerant0ne | [Text Status](https://www.ai-ministries.com/serverstatus.html) • [Image Status](https://www.ai-ministries.com/imagestatus.html) • [GitHub](https://github.com/Tolerable) |
+| Polli API Dashboard 🆕 | A beautiful realtime dashboard monitoring text.pollinations.ai/feed with detailed statistics and analytics. | @sugamdeol | [Website](https://polli-api.vercel.app) • [GitHub](https://github.com/Sugamdeol/Polli-api) |
+| Websim | A web simulation tool that integrates Pollinations.ai for generating AI-driven content. | @thomash_pollinations | [Website](https://websim.ai/c/bXsmNE96e3op5rtUS) |
 
 ### Mobile & Web Applications
 
@@ -211,9 +216,7 @@ Pollinations.AI is used in various projects, including:
 | StorySight | An app to help children with learning disabilities by visualizing abstract concepts. | @abiral-manandhar | [GitHub](https://github.com/abiral-manandhar/storySight), [Devpost](https://devpost.com/software/storysight-013xdw) |
 | StoryWeaver | A tool that crafts personalized picture books for children based on themes and prompts. | Advaith Narayanan, Omeed Sabouri, Yufan Wang | [GitHub](https://github.com/AdvaithN1/StoryWeaver), [Devpost](https://devpost.com/software/storyweaver-013xdw) |
 | UR Imagine & Chat AI 🎨💬 | Free and limitless AI image generator with companion chat/roleplay system. | withthatway | [Image Gen](https://perchance.org/ur-imagine-ai/), [Chat](https://perchance.org/urchat-ai/) |
-| Websim | A web simulation tool that integrates Pollinations.ai for generating AI-driven content. | @thomash_pollinations | [Website](https://websim.ai/c/bXsmNE96e3op5rtUS) |
 | JCode Website Builder | A website generator using Pollinations text API. | @rtxpower | [Website](https://jcode-ai-website-bulder.netlify.app/ai-website-builder/generated-projects/categories) |
-| JustBuildThings | A collection of AI tools for image generation, character chat, and writing. | rasit | [Website](https://justbuildthings.com) |
 
 ### Tutorials
 1. [Artistic Styles Book](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html): 🆕 An interactive book showcasing over 90 different artistic styles generated using Pollinations.ai. Available in [HTML](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html) and [PDF](https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf) formats.

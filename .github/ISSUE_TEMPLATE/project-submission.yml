@@ -33,28 +33,34 @@ body:
       description: Link to your project (if public)
       placeholder: "https://example.com"
 
-  - type: dropdown
-    id: integration-type
+  - type: input
+    id: discord-username
     attributes:
-      label: Integration Type
-      description: How does your project integrate with Pollinations?
-      options:
-        - API Integration
-        - Frontend Component
-        - Backend Service
-        - Other
+      label: Discord Username or Social Profile Link
+      description: Provide your Discord username or a link to another social profile online
+      placeholder: "e.g., @username or https://profile.example.com"
     validations:
       required: true
 
-  - type: textarea
-    id: technologies
+  - type: input
+    id: github-repo
     attributes:
-      label: Technologies Used
-      description: What technologies and frameworks does your project use?
-      placeholder: |
-        - Frontend: React, Vue.js, etc.
-        - Backend: Node.js, Python, etc.
-        - Other relevant technologies
+      label: GitHub Repository URL
+      description: (Optional) Provide a link to your project's GitHub repository
+      placeholder: "https://github.com/your-repo"
+
+  - type: dropdown
+    id: project-category
+    attributes:
+      label: Project Category
+      description: Select the category under which your project should be posted
+      options:
+        - LLM Integrations
+        - Creative & Interactive Applications
+        - Tools & Interfaces
+        - Social Bots
+        - SDK & Libraries
+        - Tutorials
     validations:
       required: true
 
@@ -73,12 +79,3 @@ body:
       placeholder: "@username or email"
     validations:
       required: true
-
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: By submitting this project, you agree to follow our project submission guidelines
-      options:
-        - label: I agree to follow Pollinations' project submission guidelines and code of conduct
-          required: true

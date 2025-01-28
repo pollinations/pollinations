@@ -1,0 +1,14 @@
+name = "pollinations-image-worker"
+main = "src/image-worker.ts"
+compatibility_date = "2024-01-28"
+
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "pollinations-cache"
+
+[vars]
+ORIGIN_SERVER = "http://origin.pollinations.ai"
+
+[env.production]
+workers_dev = false
+route = "image.pollinations.ai/*"

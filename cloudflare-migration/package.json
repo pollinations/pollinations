@@ -1,0 +1,22 @@
+{
+  "name": "cloudflare-migration",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers implementation for Pollinations",
+  "main": "dist/worker.js",
+  "scripts": {
+    "build": "wrangler build",
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "wrangler": "^3.0.0"
+  }
+}

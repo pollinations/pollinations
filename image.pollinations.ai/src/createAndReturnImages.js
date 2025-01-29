@@ -417,16 +417,14 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     // Check with LlamaGuard and override if necessary
     try {
         const llamaguardResult = await checkContent(prompt);
-        log('LlamaGuard check completed in', llamaguardResult.executionTimeMs, 'ms');
         
-        // Override isMature if S12 (Sexual Content) is detected
-        if (llamaguardResult.categories.includes('S12')) {
+        // Override safety flags if LlamaGuard detects issues
+        if (llamaguardResult.isMature) {
             isMature = true;
-            log('LlamaGuard detected sexual content, overriding isMature to true');
+            log('LlamaGuard detected mature content, overriding isMature to true');
         }
         
-        // Override isChild if S4 (Child Exploitation) is detected
-        if (llamaguardResult.categories.includes('S4')) {
+        if (llamaguardResult.isChild) {
             isChild = true;
             log('LlamaGuard detected child exploitation content, overriding isChild to true');
         }

@@ -28,6 +28,12 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "Pollinations Chat",
+      url: "https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4",
+      description: "Pollinations' integrated AI for text and images, totally free and unlimited.",
+      author: "@adrianoprogramer",
+    },
+    {
       name: "LobeChat",
       url: "https://lobehub.com/plugins/pollinations-drawing",
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",

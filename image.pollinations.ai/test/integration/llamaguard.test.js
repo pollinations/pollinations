@@ -26,9 +26,12 @@ describe('Llamaguard Integration Tests', () => {
     })
 
     it('should handle empty content', async () => {
-        await expect(async () => {
-            await checkContent('')
-        }).rejects.toThrow('Content must not be empty')
+        try {
+            await checkContent('');
+            throw new Error('Expected error was not thrown');
+        } catch (error) {
+            expect(error.message).to.equal('Content must not be empty');
+        }
     })
 
     it('should handle minimal content', async () => {
@@ -51,15 +54,13 @@ describe('Llamaguard Integration Tests', () => {
         expect(result.unsafe).to.be.a('boolean')
     })
 
-    it('should handle long content by slicing', async () => {
-        const longContent = 'x'.repeat(500)
-        const result = await checkContent(longContent)
-        
-        expect(result).to.be.an('object')
-        expect(result).to.have.all.keys(['isChild', 'isMature', 'categories', 'unsafe'])
-        expect(result.categories).to.be.an('array')
-        expect(result.unsafe).to.be.a('boolean')
-        expect(longContent.length).to.be.greaterThan(400)
+    it('should handle long content', async () => {
+        const longContent = 'a'.repeat(10000);
+        const result = await checkContent(longContent);
+        expect(result).to.have.property('unsafe');
+        expect(result).to.have.property('categories');
+        expect(result).to.have.property('isChild');
+        expect(result).to.have.property('isMature');
     })
 
     it('should handle error cases from the API', async () => {

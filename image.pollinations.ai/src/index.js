@@ -167,7 +167,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     if (error.message === "Content is prohibited") {
       const violations = incrementIpViolations(ip);
       if (violations >= MAX_VIOLATIONS) {
-        throw new Error("Your IP has been temporarily blocked due to multiple content violations");
+        await sleep(10000);
+        throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
       }
     }
     // Handle errors gracefully in progress bars

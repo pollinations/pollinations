@@ -82,10 +82,10 @@ export function createFilesContext(files: FileMap, useRelativePath?: boolean) {
         filePath = path.replace('/home/project/', '');
       }
 
-      return `<file path="${filePath}">\n${codeWithLinesNumbers}\n</file>`;
+      return `<boltAction type="file" filePath="${filePath}">${codeWithLinesNumbers}</boltAction>`;
     });
 
-  return `<codebase>${fileContexts.join('\n\n')}\n\n</codebase>`;
+  return `<boltArtifact id="code-content" title="Code Content" >\n${fileContexts.join('\n')}\n</boltArtifact>`;
 }
 
 export function extractCurrentContext(messages: Message[]) {

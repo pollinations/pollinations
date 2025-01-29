@@ -23,8 +23,6 @@ export const Markdown = memo(({ children, html = false, limitedMarkdown = false 
   const components = useMemo(() => {
     return {
       div: ({ className, children, node, ...props }) => {
-        console.log(className, node);
-
         if (className?.includes('__boltArtifact__')) {
           const messageId = node?.properties.dataMessageId as string;
 

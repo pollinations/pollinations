@@ -16,7 +16,7 @@ export async function createSummary(props: {
   contextOptimization?: boolean;
   onFinish?: (resp: GenerateTextResult<Record<string, CoreTool<any, any>>, never>) => void;
 }) {
-  const { messages, env: serverEnv, apiKeys, providerSettings, contextOptimization, onFinish } = props;
+  const { messages, env: serverEnv, apiKeys, providerSettings, onFinish } = props;
   let currentModel = DEFAULT_MODEL;
   let currentProvider = DEFAULT_PROVIDER.name;
   const processedMessages = messages.map((message) => {
@@ -29,9 +29,9 @@ export async function createSummary(props: {
     } else if (message.role == 'assistant') {
       let content = message.content;
 
-      if (contextOptimization) {
-        content = simplifyBoltActions(content);
-      }
+      content = simplifyBoltActions(content);
+      content = content.replace(/<div class=\\"__boltThought__\\">.*?<\/div>/s, '');
+      content = content.replace(/<think>.*?<\/think>/s, '');
 
       return { ...message, content };
     }
@@ -92,6 +92,8 @@ ${summary.summary}`;
     }
   }
 
+  logger.debug('Sliced Messages:', slicedMessages.length);
+
   const extractTextContent = (message: Message) =>
     Array.isArray(message.content)
       ? (message.content.find((item) => item.type === 'text')?.text as string) || ''
@@ -100,25 +102,82 @@ ${summary.summary}`;
   // select files from the list of code file from the project that might be useful for the current request from the user
   const resp = await generateText({
     system: `
-        You are a software engineer. You are working on a project. tou need to summarize the work till now and provide a summary of the chat till now.
+        You are a software engineer. You are working on a project. you need to summarize the work till now and provide a summary of the chat till now.
 
-        ${summaryText} 
-        
-        RULES:
-        * Only provide the summary of the chat till now.
-        * Do not provide any new information.
-        `,
-    prompt: `
-please provide a summary of the chat till now.
-below is the latest chat:
+        Please only use the following format to generate the summary:
+---
+# Project Overview
+- **Project**: {project_name} - {brief_description}
+- **Current Phase**: {phase}
+- **Tech Stack**: {languages}, {frameworks}, {key_dependencies}
+- **Environment**: {critical_env_details}
+
+# Conversation Context
+- **Last Topic**: {main_discussion_point}
+- **Key Decisions**: {important_decisions_made}
+- **User Context**:
+  - Technical Level: {expertise_level}
+  - Preferences: {coding_style_preferences}
+  - Communication: {preferred_explanation_style}
+
+# Implementation Status
+## Current State
+- **Active Feature**: {feature_in_development}
+- **Progress**: {what_works_and_what_doesn't}
+- **Blockers**: {current_challenges}
+
+## Code Evolution
+- **Recent Changes**: {latest_modifications}
+- **Working Patterns**: {successful_approaches}
+- **Failed Approaches**: {attempted_solutions_that_failed}
+
+# Requirements
+- **Implemented**: {completed_features}
+- **In Progress**: {current_focus}
+- **Pending**: {upcoming_features}
+- **Technical Constraints**: {critical_constraints}
+
+# Critical Memory
+- **Must Preserve**: {crucial_technical_context}
+- **User Requirements**: {specific_user_needs}
+- **Known Issues**: {documented_problems}
+
+# Next Actions
+- **Immediate**: {next_steps}
+- **Open Questions**: {unresolved_issues}
 
 ---
+Note:
+4. Keep entries concise and focused on information needed for continuity
+
+
+---
+        
+        RULES:
+        * Only provide the whole summary of the chat till now.
+        * Do not provide any new information.
+        * DO not need to think too much just start writing imidiately
+        * do not write any thing other that the summary with with the provided structure
+        `,
+    prompt: `
+
+Here is the previous summary of the chat:
+<old_summary>
+${summaryText} 
+</old_summary>
+
+Below is the chat after that:
+---
+<new_chats>
 ${slicedMessages
   .map((x) => {
     return `---\n[${x.role}] ${extractTextContent(x)}\n---`;
   })
   .join('\n')}
+</new_chats>
 ---
+
+Please provide a summary of the chat till now including the hitorical summary of the chat.
 `,
     model: provider.getModelInstance({
       model: currentModel,

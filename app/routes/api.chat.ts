@@ -10,6 +10,7 @@ import { getFilePaths, selectContext } from '~/lib/.server/llm/select-context';
 import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
 import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
+import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -70,15 +71,21 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         const filePaths = getFilePaths(files || {});
         let filteredFiles: FileMap | undefined = undefined;
         let summary: string | undefined = undefined;
+        let messageSliceId = 0;
+
+        if (messages.length > 3) {
+          messageSliceId = messages.length - 3;
+        }
 
         if (filePaths.length > 0 && contextOptimization) {
-          dataStream.writeData('HI ');
           logger.debug('Generating Chat Summary');
-          dataStream.writeMessageAnnotation({
+          dataStream.writeData({
             type: 'progress',
-            value: progressCounter++,
-            message: 'Generating Chat Summary',
-          } as ProgressAnnotation);
+            label: 'summary',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Analysing Request',
+          } satisfies ProgressAnnotation);
 
           // Create a summary of the chat
           console.log(`Messages count: ${messages.length}`);
@@ -99,6 +106,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               }
             },
           });
+          dataStream.writeData({
+            type: 'progress',
+            label: 'summary',
+            status: 'complete',
+            order: progressCounter++,
+            message: 'Analysis Complete',
+          } satisfies ProgressAnnotation);
 
           dataStream.writeMessageAnnotation({
             type: 'chatSummary',
@@ -108,11 +122,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
           // Update context buffer
           logger.debug('Updating Context Buffer');
-          dataStream.writeMessageAnnotation({
+          dataStream.writeData({
             type: 'progress',
-            value: progressCounter++,
-            message: 'Updating Context Buffer',
-          } as ProgressAnnotation);
+            label: 'context',
+            status: 'in-progress',
+            order: progressCounter++,
+            message: 'Determining Files to Read',
+          } satisfies ProgressAnnotation);
 
           // Select context files
           console.log(`Messages count: ${messages.length}`);
@@ -152,12 +168,15 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
             }),
           } as ContextAnnotation);
 
-          dataStream.writeMessageAnnotation({
+          dataStream.writeData({
             type: 'progress',
-            value: progressCounter++,
-            message: 'Context Buffer Updated',
-          } as ProgressAnnotation);
-          logger.debug('Context Buffer Updated');
+            label: 'context',
+            status: 'complete',
+            order: progressCounter++,
+            message: 'Code Files Selected',
+          } satisfies ProgressAnnotation);
+
+          // logger.debug('Code Files Selected');
         }
 
         // Stream the text
@@ -181,6 +200,13 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
                   totalTokens: cumulativeUsage.totalTokens,
                 },
               });
+              dataStream.writeData({
+                type: 'progress',
+                label: 'response',
+                status: 'complete',
+                order: progressCounter++,
+                message: 'Response Generated',
+              } satisfies ProgressAnnotation);
               await new Promise((resolve) => setTimeout(resolve, 0));
 
               // stream.close();
@@ -195,8 +221,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
             logger.info(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
+            const lastUserMessage = messages.filter((x) => x.role == 'user').slice(-1)[0];
+            const { model, provider } = extractPropertiesFromMessage(lastUserMessage);
             messages.push({ id: generateId(), role: 'assistant', content });
-            messages.push({ id: generateId(), role: 'user', content: CONTINUE_PROMPT });
+            messages.push({
+              id: generateId(),
+              role: 'user',
+              content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${CONTINUE_PROMPT}`,
+            });
 
             const result = await streamText({
               messages,
@@ -207,6 +239,9 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               providerSettings,
               promptId,
               contextOptimization,
+              contextFiles: filteredFiles,
+              summary,
+              messageSliceId,
             });
 
             result.mergeIntoDataStream(dataStream);
@@ -226,6 +261,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           },
         };
 
+        dataStream.writeData({
+          type: 'progress',
+          label: 'response',
+          status: 'in-progress',
+          order: progressCounter++,
+          message: 'Generating Response',
+        } satisfies ProgressAnnotation);
+
         const result = await streamText({
           messages,
           env: context.cloudflare?.env,
@@ -237,6 +280,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           contextOptimization,
           contextFiles: filteredFiles,
           summary,
+          messageSliceId,
         });
 
         (async () => {

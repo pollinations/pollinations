@@ -137,36 +137,49 @@ export const ChatImpl = memo(
 
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
-    const { messages, isLoading, input, handleInputChange, setInput, stop, append, setMessages, reload, error } =
-      useChat({
-        api: '/api/chat',
-        body: {
-          apiKeys,
-          files,
-          promptId,
-          contextOptimization: contextOptimizationEnabled,
-        },
-        sendExtraMessageFields: true,
-        onError: (e) => {
-          logger.error('Request failed\n\n', e, error);
-          toast.error(
-            'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
-          );
-        },
-        onFinish: (message, response) => {
-          const usage = response.usage;
+    const {
+      messages,
+      isLoading,
+      input,
+      handleInputChange,
+      setInput,
+      stop,
+      append,
+      setMessages,
+      reload,
+      error,
+      data: chatData,
+      setData,
+    } = useChat({
+      api: '/api/chat',
+      body: {
+        apiKeys,
+        files,
+        promptId,
+        contextOptimization: contextOptimizationEnabled,
+      },
+      sendExtraMessageFields: true,
+      onError: (e) => {
+        logger.error('Request failed\n\n', e, error);
+        toast.error(
+          'There was an error processing your request: ' + (e.message ? e.message : 'No details were returned'),
+        );
+      },
+      onFinish: (message, response) => {
+        const usage = response.usage;
+        setData(undefined);
 
-          if (usage) {
-            console.log('Token usage:', usage);
+        if (usage) {
+          console.log('Token usage:', usage);
 
-            // You can now use the usage data as needed
-          }
+          // You can now use the usage data as needed
+        }
 
-          logger.debug('Finished streaming');
-        },
-        initialMessages,
-        initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
-      });
+        logger.debug('Finished streaming');
+      },
+      initialMessages,
+      initialInput: Cookies.get(PROMPT_COOKIE_KEY) || '',
+    });
     useEffect(() => {
       const prompt = searchParams.get('prompt');
 
@@ -535,6 +548,7 @@ export const ChatImpl = memo(
         setImageDataList={setImageDataList}
         actionAlert={actionAlert}
         clearAlert={() => workbenchStore.clearAlert()}
+        data={chatData}
       />
     );
   },

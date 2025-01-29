@@ -83,11 +83,13 @@ User: ${content}
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Referer': 'https://image.pollinations.ai/',
       },
       body: JSON.stringify({
         messages,
         model: 'llamaguard',
         temperature: 0,
+        referrer: 'https://image.pollinations.ai/',
       })
     });
 

@@ -108,7 +108,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { buffer, ...maturity} = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
     
@@ -145,8 +145,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           concurrentRequests: countFluxJobs(),
           imageURL,
           prompt,
-          originalPrompt,
           ...maturity,
+          maturity,
           timingInfo: relativeTiming(timingInfo),
           ip: getIp(req),
           status: "end_generating",

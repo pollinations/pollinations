@@ -135,7 +135,7 @@ graph LR
     L2[Text CDN] --> C
     
     B[image.pollinations.ai - AWS EC2 CPU] --> F[groqCloud - Prompt Enhancing]
-    B --> S[Safety Checker]
+    B --> S[LlamaGuard - Safety Checker]
     B --> M[llmplayground.net - Custom FLUX models]
     F --> E[Translation Service - 1 GPU VM]
     E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
@@ -144,13 +144,14 @@ graph LR
     C --> SC[Scaleway API]
     C --> DS[Deepseek API]
     C --> G[Azure-hosted Serverless LLMs]
+    C --> CF[Cloudflare AI]
     SC --> MI[Mistral Models]
     SC --> QW[Qwen Models]
     SC --> LL[Llama Models]
     DS --> DM[Deepseek Models]
     G --> H[OpenAI]
     G --> K[Claude]
-
+    CF --> CFM[Llama & Deepseek Models]
 ```
 
 ## Projects Using Pollinations.AI

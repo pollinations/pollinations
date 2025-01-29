@@ -7,6 +7,7 @@ When handling project submission issues:
 1. Add new projects to the top of the appropriate section in:
    - README.md under the "Projects Using Pollinations.AI" section
    - pollinations.ai/src/config/projectList.js in the corresponding category array
+   - add a UTF8 icon higlighting them as new additions
 
 2. Project Entry Format:
    ```javascript
@@ -14,7 +15,7 @@ When handling project submission issues:
      name: "Project Name",
      url: "https://project-url.com",
      description: "Brief description of the project.",
-     author: "@github_username", // if available
+     author: "@discord_username", // if available or alternatively a URL to a social media profile
      repo: "https://github.com/repo-url" // if available
    }
    ```

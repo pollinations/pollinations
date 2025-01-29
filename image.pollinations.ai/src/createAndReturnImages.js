@@ -4,6 +4,7 @@ import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperatio
 import { MODELS } from './models.js';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
+import { checkContent } from './llamaguard.js';
 
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
@@ -408,9 +409,31 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
     logError("bufferAndMaturity", bufferAndMaturity);
 
+    // Get initial values from model
     let isMature = bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
     const concept = bufferAndMaturity?.concept;
-    const isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+    let isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+
+    // Check with LlamaGuard and override if necessary
+    try {
+        const llamaguardResult = await checkContent(prompt);
+        log('LlamaGuard check completed in', llamaguardResult.executionTimeMs, 'ms');
+        
+        // Override isMature if S12 (Sexual Content) is detected
+        if (llamaguardResult.categories.includes('S12')) {
+            isMature = true;
+            log('LlamaGuard detected sexual content, overriding isMature to true');
+        }
+        
+        // Override isChild if S4 (Child Exploitation) is detected
+        if (llamaguardResult.categories.includes('S4')) {
+            isChild = true;
+            log('LlamaGuard detected child exploitation content, overriding isChild to true');
+        }
+    } catch (error) {
+        logError('LlamaGuard check failed:', error);
+        // Continue with original model classifications if LlamaGuard fails
+    }
 
     logError("isMature", isMature, "concepts", isChild);
 

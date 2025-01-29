@@ -9,9 +9,10 @@ const MAX_CONTENT_LENGTH = 400;
 /**
  * Check content for unsafe categories using Llamaguard
  * @param {string} content - The content to check (will be truncated to ${MAX_CONTENT_LENGTH} characters if longer)
- * @returns {Promise<{safe: boolean, categories?: string[]}>} Result object with safety assessment
+ * @returns {Promise<{isChild: boolean, isMature: boolean}>} Result object with safety assessment
  */
 export async function checkContent(content) {
+    const startTime = performance.now();
     try {
         if (!content) {
             throw new Error('Content must not be empty');
@@ -63,19 +64,28 @@ Provide your safety assessment for ONLY THE LAST User message in the above conve
         }
 
         const result = await response.text();
+        log('LlamaGuard raw response:', result);
         
         // Parse the Llamaguard response
         const lines = result.trim().split('\n');
-        const isSafe = lines[0].toLowerCase() === 'safe';
-        const categories = !isSafe && lines[1] ? 
+        log('LlamaGuard lines:', lines);
+        const categories = lines[0].toLowerCase() !== 'safe' && lines[1] ? 
             lines[1].split(',')
                 .map(c => c.trim())
-                .filter(c => c.startsWith('S'))
                 .map(c => c.replace(/[^A-Z0-9]/g, '')) : [];
+        
+        log('LlamaGuard categories:', categories);
+
+        const executionTimeMs = performance.now() - startTime;
+        log('LlamaGuard check completed in', executionTimeMs, 'ms');
+
+        // Map O12 to S12 for consistency
+        const normalizedCategories = categories.map(c => c === 'O12' ? 'S12' : c);
+        log('LlamaGuard normalized categories:', normalizedCategories);
 
         return {
-            safe: isSafe,
-            categories: categories
+            isChild: normalizedCategories.includes('S4'),
+            isMature: normalizedCategories.includes('S12')
         };
     } catch (error) {
         logError('Error checking content with Llamaguard:', error);

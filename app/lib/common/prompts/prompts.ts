@@ -1,4 +1,4 @@
-import { MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
+import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 
@@ -24,6 +24,8 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
   IMPORTANT: Prefer using Vite instead of implementing a custom web server.
 
   IMPORTANT: Git is NOT available.
+
+  IMPORTANT: WebContainer CANNOT execute diff or patch editing so always write your code in full no partial/diff update
 
   IMPORTANT: Prefer writing Node.js scripts instead of shell scripts. The environment doesn't fully support shell scripts, so use Node.js for scripting tasks whenever possible!
 
@@ -64,50 +66,6 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
 <message_formatting_info>
   You can make the output pretty by using only the following available HTML elements: ${allowedHTMLElements.map((tagName) => `<${tagName}>`).join(', ')}
 </message_formatting_info>
-
-<diff_spec>
-  For user-made file modifications, a \`<${MODIFICATIONS_TAG_NAME}>\` section will appear at the start of the user message. It will contain either \`<diff>\` or \`<file>\` elements for each modified file:
-
-    - \`<diff path="/some/file/path.ext">\`: Contains GNU unified diff format changes
-    - \`<file path="/some/file/path.ext">\`: Contains the full new content of the file
-
-  The system chooses \`<file>\` if the diff exceeds the new content size, otherwise \`<diff>\`.
-
-  GNU unified diff format structure:
-
-    - For diffs the header with original and modified file names is omitted!
-    - Changed sections start with @@ -X,Y +A,B @@ where:
-      - X: Original file starting line
-      - Y: Original file line count
-      - A: Modified file starting line
-      - B: Modified file line count
-    - (-) lines: Removed from original
-    - (+) lines: Added in modified version
-    - Unmarked lines: Unchanged context
-
-  Example:
-
-  <${MODIFICATIONS_TAG_NAME}>
-    <diff path="${WORK_DIR}/src/main.js">
-      @@ -2,7 +2,10 @@
-        return a + b;
-      }
-
-      -console.log('Hello, World!');
-      +console.log('Hello, Bolt!');
-      +
-      function greet() {
-      -  return 'Greetings!';
-      +  return 'Greetings!!';
-      }
-      +
-      +console.log('The End');
-    </diff>
-    <file path="${WORK_DIR}/package.json">
-      // full file content here
-    </file>
-  </${MODIFICATIONS_TAG_NAME}>
-</diff_spec>
 
 <chain_of_thought_instructions>
   Before providing a solution, BRIEFLY outline your implementation steps. This helps ensure systematic thinking and clear communication. Your planning should:

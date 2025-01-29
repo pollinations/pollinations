@@ -1,0 +1,21 @@
+{
+  "name": "discord.pollinations.ai",
+  "version": "1.0.0",
+  "description": "Discord bot for Pollinations AI image and text generation",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
+  }
+}

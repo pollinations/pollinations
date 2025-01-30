@@ -1,23 +1,14 @@
 import 'dotenv/config';
+import { parse } from 'url';
 
 /**
  * Gets the valid tokens from environment variables
- * Format in .env: VALID_TOKENS=token1:name1:desc1,token2:name2:desc2
- * @returns {Object} Map of valid tokens to their metadata
+ * Format in .env: VALID_TOKENS=token1,token2,token3
+ * @returns {Set} Set of valid tokens
  */
 function getValidTokens() {
-  const tokens = {};
-  
-  if (process.env.VALID_TOKENS) {
-    process.env.VALID_TOKENS.split(',').forEach(tokenEntry => {
-      const [token, name, description] = tokenEntry.split(':');
-      if (token) {
-        tokens[token] = { name, description };
-      }
-    });
-  }
-  
-  return tokens;
+  if (!process.env.VALID_TOKENS) return new Set();
+  return new Set(process.env.VALID_TOKENS.split(',').map(token => token.trim()).filter(Boolean));
 }
 
 /**
@@ -28,7 +19,7 @@ function getValidTokens() {
 export function isValidToken(token) {
   if (!token) return false;
   const validTokens = getValidTokens();
-  return validTokens.hasOwnProperty(token);
+  return validTokens.has(token);
 }
 
 /**
@@ -38,7 +29,7 @@ export function isValidToken(token) {
  */
 export function extractToken(req) {
   // Check query parameters
-  const { query } = require('url').parse(req.url, true);
+  const { query } = parse(req.url, true);
   if (query.token) {
     return query.token;
   }

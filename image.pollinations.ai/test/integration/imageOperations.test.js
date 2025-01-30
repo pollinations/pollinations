@@ -23,7 +23,7 @@ describe('Image Generation Integration Tests', () => {
       seed: 12345,
       width: 512,
       height: 512,
-      model: 'flux'  // Using flux model which is available
+      model: 'flux',
     }
 
     const result = await createAndReturnImageCached(

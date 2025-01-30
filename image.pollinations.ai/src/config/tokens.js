@@ -26,8 +26,9 @@ function getValidTokens() {
  * @returns {boolean} - Whether the token is valid
  */
 export function isValidToken(token) {
+  if (!token) return false;
   const validTokens = getValidTokens();
-  return token && validTokens.hasOwnProperty(token);
+  return validTokens.hasOwnProperty(token);
 }
 
 /**

@@ -66,6 +66,28 @@ Docs: https://pollinations.ai/react-hooks
 - private: Set to 'true' to prevent the image from appearing in the public feed. Default: false
 - enhance: Set to 'true' to turn on prompt enhancing (passes prompts through an LLM to add detail). Default: false
 - safe: Set to 'true' to enable strict NSFW content filtering, throwing an error if NSFW content is detected. Default: false
+- token: API token for priority access (optional)
+
+**Authentication:**
+
+For priority access bypassing the queue system, you can provide an API token in one of three ways:
+
+1. Query Parameter:
+```
+GET /prompt/your-prompt?token=your-token
+```
+
+2. Authorization Header:
+```
+Authorization: Bearer your-token
+```
+
+3. Custom Header:
+```
+X-Pollinations-Token: your-token
+```
+
+Authenticated requests will bypass the standard queue and rate limiting system. Contact team@pollinations.ai for token access.
 
 **Return:** Image file (typically JPEG or PNG)
 

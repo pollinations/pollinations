@@ -16,9 +16,11 @@ import { countFluxJobs } from './availableServers.js';
 import { handleRegisterEndpoint } from './availableServers.js';
 import debug from 'debug';
 import { createProgressTracker } from './progressBar.js';
+import { extractToken, isValidToken } from './config/tokens.js';
 
 const logError = debug('pollinations:error');
 const logApi = debug('pollinations:api');
+const logAuth = debug('pollinations:auth');
 
 export let currentJobs = [];
 
@@ -200,6 +202,27 @@ const checkCacheAndGenerate = async (req, res) => {
       progress.updateBar(requestId, 10, 'Queueing', 'Request queued');
       timingInfo = [{ step: 'Request received and queued.', timestamp: Date.now() }];
       sendToFeedListeners({ ...safeParams, prompt: originalPrompt, ip: getIp(req), status: "queueing", concurrentRequests: countJobs(true), timingInfo: relativeTiming(timingInfo), referrer });
+
+      // Check for valid token to bypass queue
+      const token = extractToken(req);
+      const hasValidToken = isValidToken(token);
+      if (hasValidToken) {
+        logAuth('Queue bypass granted for token:', token);
+        progress.updateBar(requestId, 20, 'Priority', 'Token authenticated');
+        
+        // Skip queue for valid tokens
+        timingInfo.push({ step: 'Token authenticated - bypassing queue', timestamp: Date.now() });
+        const result = await imageGen({ 
+          req, 
+          timingInfo, 
+          originalPrompt, 
+          safeParams, 
+          referrer,
+          progress,
+          requestId 
+        });
+        return result;
+      }
 
       let queueExisted = false;
       if (!ipQueue[ip]) {

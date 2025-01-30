@@ -1,13 +1,24 @@
-// Configuration for API tokens that can bypass the queue
-// Format: { token: { name: string, description: string } }
+import 'dotenv/config';
 
-export const VALID_TOKENS = {
-  // Token for @metimol's startup
-  'metimol-startup-token': {
-    name: '@metimol startup',
-    description: 'Queue bypass token for startup integration'
+/**
+ * Gets the valid tokens from environment variables
+ * Format in .env: VALID_TOKENS=token1:name1:desc1,token2:name2:desc2
+ * @returns {Object} Map of valid tokens to their metadata
+ */
+function getValidTokens() {
+  const tokens = {};
+  
+  if (process.env.VALID_TOKENS) {
+    process.env.VALID_TOKENS.split(',').forEach(tokenEntry => {
+      const [token, name, description] = tokenEntry.split(':');
+      if (token) {
+        tokens[token] = { name, description };
+      }
+    });
   }
-};
+  
+  return tokens;
+}
 
 /**
  * Validates if a given token is authorized for queue bypass
@@ -15,7 +26,8 @@ export const VALID_TOKENS = {
  * @returns {boolean} - Whether the token is valid
  */
 export function isValidToken(token) {
-  return token && VALID_TOKENS.hasOwnProperty(token);
+  const validTokens = getValidTokens();
+  return token && validTokens.hasOwnProperty(token);
 }
 
 /**

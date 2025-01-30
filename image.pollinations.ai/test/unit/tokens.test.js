@@ -1,10 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { extractToken, isValidToken } from '../../src/config/tokens.js';
 
 describe('Token Authentication', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    process.env = {
+      ...originalEnv,
+      VALID_TOKENS: 'test-token:Test Customer:Test description,another-token:Another:Another desc'
+    };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
   describe('isValidToken', () => {
     it('should validate known tokens', () => {
-      expect(isValidToken('metimol-startup-token')).toBe(true);
+      expect(isValidToken('test-token')).toBe(true);
+      expect(isValidToken('another-token')).toBe(true);
     });
 
     it('should reject invalid tokens', () => {

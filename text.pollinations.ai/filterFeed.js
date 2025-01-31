@@ -6,7 +6,7 @@ const log = debug('pollinations:filter');
 class FeedFilter {
     constructor(options = {}) {
         this.options = {
-            referrer: null,      // String or RegExp to match referrer
+            referrer: null,      // String or RegExp to match referrer, or false to match no referrer
             hasMarkdown: null,   // Boolean to filter markdown content
             hasHtml: null,       // Boolean to filter HTML content
             ...options
@@ -40,12 +40,16 @@ class FeedFilter {
         const referrer = parameters?.referrer;
 
         // Referrer filter
-        if (this.options.referrer) {
-            if (!referrer) return false;
-            if (this.options.referrer instanceof RegExp) {
-                if (!this.options.referrer.test(referrer)) return false;
-            } else if (referrer !== this.options.referrer) {
-                return false;
+        if (this.options.referrer !== null) {
+            if (this.options.referrer === false) {
+                // Match messages with no referrer
+                if (referrer) return false;
+            } else if (this.options.referrer instanceof RegExp) {
+                // Match referrer against regex pattern
+                if (!referrer || !this.options.referrer.test(referrer)) return false;
+            } else {
+                // Match exact referrer string
+                if (referrer !== this.options.referrer) return false;
             }
         }
 
@@ -106,18 +110,18 @@ if (require.main === module) {
     // Enable debug logging
     debug.enable('pollinations:filter');
 
-    // Create a filter instance
+    // Create a filter instance to match messages with no referrer
     const filter = new FeedFilter({
-        referrer: /pollinations\.ai$/,  // Only show requests from pollinations.ai domains
-        hasMarkdown: true               // Only show responses containing markdown
+        referrer: false  // Only show requests without a referrer
     });
 
-    // Add a handler for matching messages
+    // Log matched messages
     filter.onMessage(data => {
         log('Matched message:');
-        log('Referrer: %s', data.parameters?.referrer);
-        log('Response: %s', data.response.slice(0, 200) + '...');
-        log('---');
+        log('%O', {
+            response: data.response.slice(0, 200) + '...',
+            parameters: data.parameters
+        });
     });
 
     // Start listening

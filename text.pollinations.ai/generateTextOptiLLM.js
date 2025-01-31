@@ -1,39 +1,47 @@
+import { createTextGenerator, ensureSystemMessage } from './generateTextBase.js';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { imageGenerationPrompt } from './pollinationsPrompt.js';
 import debug from 'debug';
 
 dotenv.config();
+const log = debug('pollinations:optillm');
 
 const openai = new OpenAI({
     baseURL: 'http://localhost:8000/v1',
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const log = debug('pollinations:optillm');
+const preprocessMessages = (messages, { jsonMode = false } = {}) => {
+    const prompt = `You are a helpful assistant. If you are asked to run code, just generate it in python and return the code. It will be run for you.\n\n`;
+    const defaultSystemMessage = jsonMode
+        ? prompt + 'Respond in simple json format'
+        : prompt + imageGenerationPrompt();
+    return ensureSystemMessage(messages, defaultSystemMessage);
+};
 
-export default async function generateTextOptiLLM(messages, { jsonMode = false, seed = null, temperature = null } = {}) {
-    if (!hasSystemMessage(messages)) {
-        const prompt = `You are a helpful assistant. If you are asked to run code, just generate it in python and return the code. It will be run for you.\n\n`;
-        const systemContent = jsonMode
-            ? prompt + 'Respond in simple json format'
-            : prompt + imageGenerationPrompt();
-        messages = [{ role: 'system', content: systemContent }, ...messages];
-    }
-
-    log('calling openai with messages %O', messages);
-
-    const completion = await openai.chat.completions.create({
+// Custom API call handler since we're using OpenAI's client
+const customApiCall = async (endpoint, { body }) => {
+    const response = await openai.chat.completions.create({
         model: 'cot_reflection-readurls&memory&executecode-gpt-4o-mini',
-        messages,
-        seed,
-        response_format: jsonMode ? { type: 'json_object' } : undefined,
-        max_tokens: 1024,
+        messages: body.messages,
+        seed: body.seed,
+        response_format: body.response_format,
+        max_tokens: body.max_tokens || 1024,
     });
+    
+    return {
+        ok: true,
+        json: () => response
+    };
+};
 
-    return completion;
-}
+const generateTextOptiLLM = createTextGenerator({
+    endpoint: 'http://localhost:8000/v1/chat/completions', // Not used due to custom API call
+    apiKey: process.env.OPENAI_API_KEY,
+    defaultModel: 'cot_reflection-readurls&memory&executecode-gpt-4o-mini',
+    preprocessor: preprocessMessages,
+    customApiCall
+});
 
-function hasSystemMessage(messages) {
-    return messages.some(message => message.role === 'system');
-}
+export default generateTextOptiLLM;

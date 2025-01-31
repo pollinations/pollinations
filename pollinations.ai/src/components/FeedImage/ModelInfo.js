@@ -53,12 +53,12 @@ export function ModelInfo({ model, referrer }) {
       <Box>
         {"Prompt Enhancer: "}
         <Link
-          href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/groqPimp.js"
+          href="https://github.com/pollinations/pollinations/blob/master/image.pollinations.ai/promptEnhancer.js"
           target="_blank"
           rel="noopener noreferrer"
           sx={{ color: Colors.lime, fontSize: "1em" }}
         >
-          Groq
+          Azure OpenAI
         </Link>
       </Box>
 

@@ -62,6 +62,7 @@ Parameters: model, seed, json, system
 
 1. Code Style:
    - Use modern JavaScript/TypeScript features
+   - Use ES modules (import/export) - all .js files are treated as ES modules
    - Follow existing code formatting patterns
    - Add descriptive comments for complex logic
 

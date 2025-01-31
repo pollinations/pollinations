@@ -9,30 +9,94 @@ const refererStats = new Map();
 const ipStats = new Map();
 let totalEntries = 0;
 
-function updateStats(data) {
-        const { parameters, ip } = JSON.parse(data);
+// Parse command line arguments
+const args = process.argv.slice(2);
+const filters = {
+    noReferrer: args.includes('--no-referrer'),
+    referrer: args.find(arg => arg.startsWith('--referrer='))?.split('=')[1],
+    hasMarkdown: args.includes('--markdown'),
+    hasHtml: args.includes('--html'),
+    model: args.find(arg => arg.startsWith('--model='))?.split('=')[1],
+    showRaw: args.includes('--raw')
+};
+
+// Helper functions for content detection
+function hasMarkdown(text) {
+    const patterns = [
+        /#{1,6}\s+.+/,      // Headers
+        /\[.+\]\(.+\)/,     // Links
+        /\*\*.+\*\*/,       // Bold
+        /`.+`/,             // Code
+        /^\s*[-*+]\s+/m,    // Lists
+        /^\s*\d+\.\s+/m     // Numbered lists
+    ];
+    return patterns.some(pattern => pattern.test(text));
+}
+
+function hasHtml(text) {
+    return /<[^>]+>/i.test(text);
+}
+
+function matchesFilters(data) {
+    const { parameters, response } = data;
+    if (!parameters) return false;
+
+    const referer = parameters.referrer || 'undefined';
+    const model = parameters.model || 'undefined';
+
+    // Filter by referrer
+    if (filters.noReferrer && referer !== 'undefined') return false;
+    if (filters.referrer) {
+        if (filters.referrer.startsWith('/') && filters.referrer.endsWith('/')) {
+            // Regex pattern
+            const pattern = new RegExp(filters.referrer.slice(1, -1));
+            if (!pattern.test(referer)) return false;
+        } else if (referer !== filters.referrer) {
+            return false;
+        }
+    }
+
+    // Filter by model
+    if (filters.model && model !== filters.model) return false;
+
+    // Filter by content type
+    if (filters.hasMarkdown && !hasMarkdown(response)) return false;
+    if (filters.hasHtml && !hasHtml(response)) return false;
+
+    return true;
+}
+
+function updateStats(eventData) {
+    try {
+        const data = JSON.parse(eventData);
+        if (!matchesFilters(data)) return;
+
+        const { parameters, response, ip } = data;
         if (!parameters) return;
         
         const model = parameters.model || 'undefined';
         const referer = parameters.referrer || 'undefined';
 
-        log('referer: %s', referer);
-        
-        log('Model: %s, Referer: %s, IP: %s', model, referer, ip);
+        // Show raw message if requested
+        if (filters.showRaw) {
+            log('\nMatched message:');
+            log('Model: %s', model);
+            log('Referer: %s', referer);
+            log('Response: %s', response);
+            log('---');
+            return;
+        }
         
         modelStats.set(model, (modelStats.get(model) || 0) + 1);
         refererStats.set(referer, (refererStats.get(referer) || 0) + 1);
         
-        // Add first 3 letters of referrer to IP if not undefined
         const ipKey = referer !== 'undefined' ? `${ip} (${referer.slice(0, 30)})` : ip;
         ipStats.set(ipKey, (ipStats.get(ipKey) || 0) + 1);
         
         totalEntries++;
         
-        // Clear screen and show updated stats
-        // console.clear();
         log('Last updated: %s', new Date().toLocaleTimeString());
-        log('Total entries: %d\n', totalEntries);
+        log('Total filtered entries: %d\n', totalEntries);
         
         // Models table
         log('Models:');
@@ -63,7 +127,16 @@ function updateStats(data) {
                 percentage: ((count / totalEntries) * 100).toFixed(1) + '%'
             }));
         log('%O', ipTable);
+    } catch (error) {
+        log('Error processing message: %O', error);
+    }
 }
+
+// Show startup message with active filters
+log('Starting monitor with filters:');
+Object.entries(filters).forEach(([key, value]) => {
+    if (value) log('- %s: %s', key, value);
+});
 
 // Connect to SSE feed
 const eventSource = new EventSource.EventSource(FEED_URL);
@@ -76,4 +149,4 @@ eventSource.onerror = (error) => {
     log('EventSource failed: %O', error);
 };
 
-log('Connecting to feed...');
+log('\nConnecting to feed...');

@@ -1,84 +1,72 @@
 import { HfInference } from "@huggingface/inference";
 import dotenv from 'dotenv';
-import { setupLogging, handleSystemMessage, createRequestBody, standardizeResponse, createModelMapping } from './src/utils.js';
+import debug from 'debug';
+
+const log = debug('pollinations:huggingface');
 
 dotenv.config();
 
-const { log, errorLog } = setupLogging('huggingface');
-
-const MODEL_MAPPING = {
+const MODEL_MAP = {
     'qwen-coder': 'Qwen/Qwen2.5-Coder-32B-Instruct',
     'qwen': 'Qwen/Qwen2.5-72B-Instruct',
     'llama': 'meta-llama/Llama-3.3-70B-Instruct'
 };
 
-const getModel = createModelMapping(MODEL_MAPPING, 'qwen-coder');
+const DEFAULT_MODEL = MODEL_MAP['qwen-coder'];
 const inference = new HfInference(process.env.HUGGINGFACE_TOKEN);
 
-async function generateTextHuggingface(messages, options) {
-    const requestId = Math.random().toString(36).substring(7);
-    const startTime = Date.now();
+async function generateTextHuggingface(messages, { temperature, jsonMode = false, seed=null, model='qwen-coder' }) {
+    log('=== Starting Text Generation ===');
+    const selectedModel = MODEL_MAP[model] || DEFAULT_MODEL;
+    log('Parameters received:\n    - Model: %s\n    - Temperature: %s\n    - JSON Mode: %s\n    - Seed: %s\n    - Number of messages: %s',
+        model, temperature || 0.7, jsonMode, seed, messages.length);
+    
+    log('Input Messages: %O', messages);
 
-    log(`[${requestId}] Starting text generation request`, {
-        messageCount: messages.length,
-        options
-    });
+    // If jsonMode and no system message, add one
+    if (jsonMode && !messages.some(m => m.role === 'system')) {
+        log('Adding JSON system message');
+        messages = [{ role: 'system', content: 'Respond in simple JSON format' }, ...messages];
+    }
 
     try {
-        const modelName = getModel(options.model);
-
-        // Handle system messages
-        messages = handleSystemMessage(messages, options, 'You are a helpful AI assistant.');
-
-        // Create standardized request body with HuggingFace-specific adjustments
-        const baseRequestBody = createRequestBody(messages, options, {
-            max_tokens: 16384,
-            temperature: 0.7
-        });
-
-        // Adjust for HuggingFace-specific parameters
+        log('Making API call to model: %s', selectedModel);
+        log('API Call Duration');
+        
         const requestParams = {
-            model: modelName,
-            ...baseRequestBody,
+            model: selectedModel,
+            messages,
+            temperature: temperature || 0.7,
+            seed,
             stream: false,
-            max_length: baseRequestBody.max_tokens, // HuggingFace uses max_length instead of max_tokens
+            max_tokens: 16384,
+            max_length: 16384,
         };
+        log('Request Parameters: %O', requestParams);
 
-        log(`[${requestId}] Sending request to HuggingFace API`, {
-            model: modelName,
-            maxLength: requestParams.max_length,
-            temperature: requestParams.temperature
-        });
-
+        // For non-streaming response
         const response = await inference.chatCompletion(requestParams);
+        log('API Call Duration');
 
-        const completionTime = Date.now() - startTime;
-        log(`[${requestId}] Successfully generated text`, {
-            completionTimeMs: completionTime,
-            modelUsed: modelName,
-            responseLength: response.choices?.[0]?.message?.content?.length
+        log('Response received: %O', {
+            choices_length: response.choices?.length,
+            first_choice_length: response.choices[0]?.message?.content?.length,
+            usage: response.usage
         });
 
-        return standardizeResponse({
-            choices: response.choices,
-            model: modelName,
-            created: Math.floor(startTime / 1000),
-            usage: response.usage || {}
-        }, 'HuggingFace');
+        const result = response;
+        log(result)
+        log('Generated text length: %s characters', result.length);
+        log('=== Text Generation Complete ===');
+
+        return result;
     } catch (error) {
-        errorLog(`[${requestId}] Error in text generation`, {
-            error: error.message,
-            stack: error.stack,
-            completionTimeMs: Date.now() - startTime
-        });
-
-        return standardizeResponse({
-            error: {
-                message: error.message,
-                code: error.status || 500
-            }
-        }, 'HuggingFace');
+        log('=== Error in Text Generation ===');
+        log('Error Type: %s', error.constructor.name);
+        log('Error Message: %s', error.message);
+        log('Error Stack: %s', error.stack);
+        throw error;
     }
 }
 
-export default generateTextHuggingface;
+export default generateTextHuggingface; 

@@ -134,7 +134,7 @@ graph LR
     L1[Image CDN] --> B
     L2[Text CDN] --> C
     
-    B[image.pollinations.ai - AWS EC2 CPU] --> F[groqCloud - Prompt Enhancing]
+    B[image.pollinations.ai - AWS EC2 CPU] --> F[Azure OpenAI - Prompt Enhancing]
     B --> S[Safety Checker]
     B --> M[llmplayground.net - Custom FLUX models]
     F --> E[Translation Service - 1 GPU VM]

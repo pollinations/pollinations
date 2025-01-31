@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { normalizeAndTranslatePrompt } from '../../src/normalizeAndTranslatePrompt.js'
-import { pimpPrompt } from '../../src/groqPimp.js'
+import { pimpPrompt } from '../../src/promptEnhancer.js'
 import { detectLanguage, translateIfNecessary } from '../../src/translateIfNecessary.js'
 
 describe('Prompt Integration Tests', () => {

@@ -1,5 +1,5 @@
 import { detectLanguage, sanitizeString, translateIfNecessary } from './translateIfNecessary.js';
-import { pimpPrompt } from './groqPimp.js';
+import { pimpPrompt } from './promptEnhancer.js';
 import debug from 'debug';
 
 const logPrompt = debug('pollinations:prompt');

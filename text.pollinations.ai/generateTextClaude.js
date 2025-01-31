@@ -1,162 +1,131 @@
 import axios from 'axios';
+import { createTextGenerator, ensureSystemMessage } from './generateTextBase.js';
 import dotenv from 'dotenv';
-import debug from 'debug';
-
-const log = debug('pollinations:claude');
 
 dotenv.config();
 
-const claudeEndpoint = 'https://api.anthropic.com/v1/messages';
+const CLAUDE_MODEL = 'claude-3-5-haiku-20241022';
 
-async function generateTextClaude(messages, { jsonMode = false, seed = null, temperature } = {}) {
-    log('generateTextClaude called with messages: %O', messages);
-    log('Options: %O', { jsonMode, seed, temperature });
-
-    const { messages: processedMessages, systemMessage } = extractSystemMessage(messages, jsonMode, seed);
-    log('extracted system message: %s', systemMessage);
-    log('processed messages: %O', processedMessages);
-
-    const alternatingMessages = ensureAlternatingRoles(processedMessages);
-    log('alternating messages: %O', alternatingMessages);
-
-    // Ensure the first message is a user message
-    if (alternatingMessages.length === 0 || alternatingMessages[0].role !== 'user') {
-        alternatingMessages.unshift({ role: 'user', content: '-' });
-    }
-
-    try {
-        const convertedMessages = await convertToClaudeFormat(alternatingMessages);
-        log('converted messages: %O', convertedMessages);
-
-        // Ensure temperature is a valid number between 0 and 1
-        if (typeof temperature !== 'number' || temperature < 0 || temperature > 1) {
-            temperature = 0.5;
-        }
-
-        const response = await axios.post(claudeEndpoint, {
-            // model: "claude-3-5-sonnet-20241022",
-            model: "claude-3-5-haiku-20241022",
-            max_tokens: 8190,
-            messages: convertedMessages,
-            system: systemMessage,
-            temperature: temperature,
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': process.env.ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01'
+/**
+ * Converts an image to Claude's format
+ */
+async function convertImage(imageUrl) {
+    if (imageUrl.startsWith('data:image/')) {
+        const [mediaType, base64Data] = imageUrl.split(',');
+        return {
+            type: 'image',
+            source: {
+                type: 'base64',
+                media_type: mediaType.split(':')[1].split(';')[0],
+                data: base64Data,
             }
-        });
-
-        log('Claude API response: %O', response.data);
-        return response.data.content[0]?.text;
-    } catch (error) {
-        log('Error calling Claude API: %s', error.message);
-        if (error.response && error.response.data && error.response.data.error) {
-            log('Error details: %s', error.response.data.error);
-        }
-        throw error;
-    }
-}
-
-function extractSystemMessage(messages, jsonMode, seed) {
-    log('extractSystemMessage called with messages: %O', messages);
-    let systemMessage = undefined;
-    messages = messages.map(message => {
-        if (message.role === 'system') {
-            systemMessage = message.content;
-            return null;
-        }
-        return message;
-    }).filter(message => message !== null);
-
-    if (jsonMode && !systemMessage) {
-        systemMessage = 'Respond in simple JSON format';
+        };
     }
 
-    log('extracted system message: %s', systemMessage);
-    log('filtered messages: %O', messages);
-
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const base64Data = Buffer.from(response.data, 'binary').toString('base64');
     return {
-        messages,
-        systemMessage: systemMessage
+        type: 'image',
+        source: {
+            type: 'base64',
+            media_type: response.headers['content-type'],
+            data: base64Data,
+        }
     };
 }
 
-function ensureAlternatingRoles(messages) {
-    log('ensureAlternatingRoles called with messages: %O', messages);
+/**
+ * Preprocesses messages for Claude format
+ */
+async function preprocessMessages(messages, options) {
+    // Handle system message
+    messages = ensureSystemMessage(messages, 'You are Claude, a helpful AI assistant.');
+    const systemMessage = messages.find(m => m.role === 'system')?.content;
+    messages = messages.filter(m => m.role !== 'system');
+
+    // Ensure alternating roles
     const alternatingMessages = [];
     let lastRole = null;
 
     messages.forEach(message => {
         if (lastRole === message.role) {
-            const alternateRole = lastRole === 'user' ? 'assistant' : 'user';
-            alternatingMessages.push({ role: alternateRole, content: '-' });
+            alternatingMessages.push({ 
+                role: lastRole === 'user' ? 'assistant' : 'user',
+                content: '-' 
+            });
         }
         alternatingMessages.push(message);
         lastRole = message.role;
     });
 
-    log('ensured alternating messages: %O', alternatingMessages);
-    return alternatingMessages;
-}
+    // Ensure first message is from user
+    if (alternatingMessages.length === 0 || alternatingMessages[0].role !== 'user') {
+        alternatingMessages.unshift({ role: 'user', content: '-' });
+    }
 
-async function convertToClaudeFormat(messages) {
-    log('convertToClaudeFormat called with messages: %O', messages);
-    return Promise.all(messages.map(async message => {
+    // Convert messages to Claude format
+    const convertedMessages = await Promise.all(alternatingMessages.map(async message => {
         if (Array.isArray(message.content)) {
             const convertedContent = await Promise.all(message.content.map(async item => {
                 if (item.type === 'text') {
-                    return {
-                        type: 'text',
-                        text: item?.text || '-'
-                    };
-                } else if (item.type === 'image_url') {
-                    const imageUrl = item.image_url.url;
-                    if (imageUrl.startsWith('data:image/')) {
-                        // Handle base64 image
-                        const [mediaType, base64Data] = imageUrl.split(',');
-                        return {
-                            type: 'image',
-                            source: {
-                                type: 'base64',
-                                media_type: mediaType.split(':')[1].split(';')[0],
-                                data: base64Data,
-                            }
-                        };
-                    } else {
-                        // Handle URL image
-                        try {
-                            const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-                            const base64Data = Buffer.from(response.data, 'binary').toString('base64');
-                            const mediaType = response.headers['content-type'];
-                            return {
-                                type: 'image',
-                                source: {
-                                    type: 'base64',
-                                    media_type: mediaType,
-                                    data: base64Data,
-                                }
-                            };
-                        } catch (error) {
-                            log('Error fetching image: %s', error);
-                            throw new Error('Failed to fetch and convert image to base64');
-                        }
-                    }
+                    return { type: 'text', text: item?.text || '-' };
                 }
+                if (item.type === 'image_url') {
+                    return await convertImage(item.image_url.url);
+                }
+                return null;
             }));
-            log('converted content: %O', convertedContent);
             return {
                 role: message.role,
-                content: convertedContent
-            };
-        } else {
-            return {
-                ...message,
-                content: message.content || '-'
+                content: convertedContent.filter(Boolean)
             };
         }
+        return {
+            ...message,
+            content: message.content || '-'
+        };
     }));
+
+    return { messages: convertedMessages, systemMessage };
 }
+
+// Create Claude text generator instance
+const generateTextClaude = createTextGenerator({
+    endpoint: 'https://api.anthropic.com/v1/messages',
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    defaultModel: CLAUDE_MODEL,
+    customHeaders: {
+        'anthropic-version': '2023-06-01'
+    },
+    preprocessor: preprocessMessages,
+    customApiCall: async (endpoint, config) => {
+        const { body } = config;
+        const requestBody = JSON.parse(body);
+        const { messages, systemMessage } = await preprocessMessages(requestBody.messages, requestBody);
+
+        const response = await axios.post(endpoint, {
+            model: CLAUDE_MODEL,
+            messages,
+            system: systemMessage,
+            max_tokens: requestBody.max_tokens || 8190,
+            temperature: requestBody.temperature || 0.7
+        }, {
+            headers: config.headers
+        });
+
+        return {
+            choices: [{
+                message: {
+                    role: 'assistant',
+                    content: response.data.content[0]?.text
+                },
+                finish_reason: 'stop'
+            }],
+            model: CLAUDE_MODEL,
+            created: Date.now(),
+            usage: response.data.usage || {}
+        };
+    }
+});
 
 export default generateTextClaude;

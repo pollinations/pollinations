@@ -206,10 +206,13 @@ async function handleRequest(req, res, requestData) {
         // Extract token usage data
         const tokenUsage = completion.usage || {};
         
-        sendToFeedListeners(responseText, {
-            ...requestData,
-            ...tokenUsage
-        }, getIp(req));
+        // only send if not roblox
+        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer) {
+            sendToFeedListeners(responseText, {
+                ...requestData,
+                ...tokenUsage
+            }, getIp(req));
+        }
         
         // Track successful completion with token usage
         await sendToAnalytics(req, 'textGenerated', {

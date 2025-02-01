@@ -61,7 +61,7 @@ export const createTextGenerator = ({
 
         try {
             // Use custom API call if provided, otherwise use default fetch
-            const response = customApiCall ? 
+            const result = customApiCall ? 
                 await customApiCall(endpoint, {
                     body: JSON.stringify(requestBody),
                     headers: {
@@ -78,14 +78,20 @@ export const createTextGenerator = ({
                         ...customHeaders
                     },
                     body: JSON.stringify(requestBody)
+                })
+                // errors
+                .catch(error => {
+                    log(`[${requestId}] Error during text generation:`, error);
+                    throw error;
+                })
+                // response
+                .then(response => response.json())
+                // errors
+                .catch(error => {
+                    log(`[${requestId}] Error during text generation:`, error);
+                    throw error;
                 });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(`API request failed: ${error.message || response.statusText}`);
-            }
-
-            const result = await response.json();
             return result;
 
         } catch (error) {

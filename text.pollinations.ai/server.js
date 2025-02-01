@@ -26,7 +26,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import generateTextClaude from './generateTextClaude.js';
-import { generateTextCloudflare } from './generateTextCloudflare.js';
+import generateTextCloudflare from './generateTextCloudflare.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -485,6 +485,7 @@ async function generateTextBasedOnModel(messages, options) {
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
+            'llama-scaleway': () => generateTextScaleway(messages, {...options, model: 'llama'}),
             'deepseek-r1': () => generateTextCloudflare(messages, options),
             // 'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),

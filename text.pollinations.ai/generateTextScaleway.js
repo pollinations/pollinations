@@ -27,7 +27,13 @@ const SYSTEM_PROMPTS = {
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`
 };
 
-export async function generateTextScaleway(messages, options) {
+export async function 
+
+
+
+
+
+generateTextScaleway(messages, options) {
     const { jsonMode = false, seed = null, temperature } = options;
     const modelName = MODEL_MAP[options.model] || MODEL_MAP.mistral;
     

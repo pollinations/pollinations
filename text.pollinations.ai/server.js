@@ -485,6 +485,7 @@ async function generateTextBasedOnModel(messages, options) {
             'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
+            'llama-scaleway': () => generateTextScaleway(messages, {...options, model: 'llama'}),
             'deepseek-r1': () => generateTextCloudflare(messages, options),
             // 'llamalight': () => generateTextScaleway(messages, options),
             // 'karma': () => generateTextKarma(messages, options),

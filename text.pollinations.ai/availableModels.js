@@ -152,11 +152,12 @@ export const availableModels = [
         description: 'Llama 3.1 8B Instruct',
         baseModel: true,
     },
-    // {
-    //     name: 'mistral-large',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Mistral Large (v2)',
-    //     baseModel: true,
-    // },
+    { 
+        name: 'hormoz',
+        type: 'chat',
+        censored: true,
+        description: 'Hormoz 8B by @muhammadrezahaghiri',
+        baseModel: true,
+        provider: 'modal'
+    }
 ];

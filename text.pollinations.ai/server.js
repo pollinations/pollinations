@@ -27,6 +27,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import generateTextClaude from './generateTextClaude.js';
 import generateTextCloudflare from './generateTextCloudflare.js';
+import { generateTextModal } from './generateTextModal.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -192,12 +193,28 @@ async function handleRequest(req, res, requestData) {
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
         log("completion: %o", completion);
         
+        // Check if completion is null or undefined
+        if (!completion) {
+            throw new Error('No response received from the model');
+        }
+
         // Check if completion contains an error
-        if (completion.error) {
-            throw new Error(completion.error.message || 'Unknown error from provider');
+        if (completion.error || completion.detail) {
+            const errorMessage = completion.error?.message || completion.detail || 'Unknown error from provider';
+            throw new Error(errorMessage);
         }
         
-        const responseText = completion.choices[0].message.content;
+        // Validate completion structure
+        if (!completion.choices || !Array.isArray(completion.choices) || completion.choices.length === 0) {
+            throw new Error('Invalid response structure: missing choices array');
+        }
+
+        const choice = completion.choices[0];
+        if (!choice || !choice.message || typeof choice.message.content !== 'string') {
+            throw new Error('Invalid response structure: missing or invalid message content');
+        }
+
+        const responseText = choice.message.content;
 
         const cacheKey = createHashKey(requestData);
         setInCache(cacheKey, completion);
@@ -473,10 +490,7 @@ function sendAsOpenAIStream(res, completion) {
 
 async function generateTextBasedOnModel(messages, options) {
     const model = options.model || 'openai';
-    log('Using model:', model);
-
-    try {
-        
+    log('Using model:', model)
         const modelHandlers = {
             'deepseek': () => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
@@ -501,16 +515,13 @@ async function generateTextBasedOnModel(messages, options) {
             'openai-large': () => generateText(messages, options),
             'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
             'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
+            'hormoz': () => generateTextModal(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));
         const response = await handler();
         
         return response;
-    } catch (error) {
-        errorLog('Error in generateTextBasedOnModel:', error);
-        throw error;
-    }
 }
 
 

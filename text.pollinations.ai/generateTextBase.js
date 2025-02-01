@@ -59,45 +59,40 @@ export const createTextGenerator = ({
             ...(toolChoice && { tool_choice: toolChoice })
         };
 
-        try {
-            // Use custom API call if provided, otherwise use default fetch
-            const result = customApiCall ? 
-                await customApiCall(endpoint, {
-                    body: JSON.stringify(requestBody),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
-                        ...customHeaders
-                    }
-                }) :
-                await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`,
-                        ...customHeaders
-                    },
-                    body: JSON.stringify(requestBody)
-                })
-                // errors
-                .catch(error => {
-                    log(`[${requestId}] Error during text generation:`, error);
-                    throw error;
-                })
-                // response
-                .then(response => response.json())
-                // errors
-                .catch(error => {
-                    log(`[${requestId}] Error during text generation:`, error);
-                    throw error;
-                });
+        log(`[${requestId}] Request body:`, JSON.stringify(requestBody, null, 2));
 
-            return result;
+        const response = customApiCall ? 
+            await customApiCall(endpoint, {
+                body: JSON.stringify(requestBody),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    ...customHeaders
+                }
+            }) :
+            await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`,
+                    ...customHeaders
+                },
+                body: JSON.stringify(requestBody)
+            });
 
-        } catch (error) {
-            log(`[${requestId}] Error during text generation:`, error);
-            throw error;
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API request failed (${response.status}): ${errorText}`);
         }
+
+        const result = await response.json();
+        log(`[${requestId}] Text generation successful:`, {
+            model: modelName,
+            messageCount: processedMessages.length,
+            responseTokens: result.usage?.completion_tokens
+        });
+
+        return result;
     };
 
     return generateText;

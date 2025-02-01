@@ -76,6 +76,12 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "Deep Saga",
+      url: "https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations",
+      description: "A text based RPG available on Android with AI-generated scene images.",
+      author: "@jr_7_77",
+    },
+    {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",

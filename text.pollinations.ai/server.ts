@@ -195,7 +195,7 @@ async function handleRequest(req: Request, res: Response, requestData: TextReque
 
         // Check if completion contains an error
         if (completion.error) {
-            throw new Error(completion.error.message ?? 'Unknown error from provider')
+            throw new Error(completion.error?.message ?? 'Unknown error from provider')
         }
 
         const responseText = completion.choices[0].message.content
@@ -470,7 +470,6 @@ async function generateTextBasedOnModel(messages: Conversation, options: TextReq
     log('Using model:', model)
 
     try {
-
         const modelHandlers: Record<string, () => any> = {
             'deepseek': () => generateDeepseek(messages, { ...options, model: 'deepseek-chat' }),
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),

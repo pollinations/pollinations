@@ -1,12 +1,3 @@
-import backgroundImage1 from "../assets/background/01.webp"
-import backgroundImage2 from "../assets/background/02.webp"
-import backgroundImage3 from "../assets/background/03.webp"
-import backgroundImage4 from "../assets/background/04.webp"
-import backgroundImage5 from "../assets/background/05.webp"
-import backgroundImage6 from "../assets/background/06.webp"
-import backgroundImage7 from "../assets/background/07.webp"
-import backgroundImage8 from "../assets/background/08.webp"
-
 // lime: '#FFE801',
 
 export const SHOW_PROMPT_TOOLTIP = false; 
@@ -52,7 +43,7 @@ export const SectionBG = {
     gradient: false,
   },
   community: {
-    image: backgroundImage5,
+    color: Colors.offwhite,
     gradient: true,
   },
   project: {
@@ -60,11 +51,11 @@ export const SectionBG = {
     gradient: false,
   },
   team: {
-    image: backgroundImage2,
+    color: Colors.offwhite,
     gradient: true,
   },
   supporter: {
-    image: backgroundImage3,
+    color: Colors.offwhite,
     gradient: true,
   },
   footer: {

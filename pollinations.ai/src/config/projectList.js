@@ -76,6 +76,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "Abyss Ascending",
+      url: "https://interzone.art.br/abyss_ascending/",
+      description: "A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world.",
+      author: "@brain.diver",
+      repo: "https://github.com/rafabez/abyss_ascending",
+    },
+    {
       name: "Deep Saga",
       url: "https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations",
       description: "A text based RPG available on Android with AI-generated scene images.",

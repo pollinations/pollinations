@@ -16,7 +16,7 @@ interface TextRequestData {
     referrer?: string
     stream?: boolean
     plainTextResponse?: boolean
-
+    persona?: string
     private?: boolean
 
     // TODO: Figure out the types of tools

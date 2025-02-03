@@ -234,7 +234,7 @@ export function getRequestData(req: Request): TextRequestData {
         data.response_format?.type === 'json_object'
 
     const seed = data.seed ? parseInt(data.seed, 10) : undefined
-    const model = data.model ?? 'openai'
+    let model = data.model ?? 'openai'
     const systemPrompt = data.system ? data.system : undefined
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined
 
@@ -243,8 +243,19 @@ export function getRequestData(req: Request): TextRequestData {
     const isRobloxReferrer = referrer.toLowerCase().includes('roblox')
     const stream = data.stream || false
 
-    const messages: Conversation = data.messages || [{ role: 'user', content: req.params[0] }]
-    if (systemPrompt) {
+    let messages: Conversation = data.messages || [{ role: 'user', content: req.params[0] }]
+    
+    // Apply persona template if specified
+    if (data.persona) {
+        const { getPersonaTemplate, applyPersonaToMessages } = await import('./personas/index')
+        const persona = getPersonaTemplate(data.persona)
+        if (persona) {
+            messages = applyPersonaToMessages(persona, messages)
+            if (persona.defaultModel && !data.model) {
+                model = persona.defaultModel
+            }
+        }
+    } else if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt })
     }
 

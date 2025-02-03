@@ -81,7 +81,16 @@ export const createTextGenerator = ({
             });
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText;
+            try {
+                errorText = await response.text();
+            } catch (e) {
+                // If text() is not available, try to get error details from the response directly
+                errorText = response.statusText || 'Unknown error';
+                if (response.error) {
+                    errorText = typeof response.error === 'string' ? response.error : JSON.stringify(response.error);
+                }
+            }
             throw new Error(`API request failed (${response.status}): ${errorText}`);
         }
 

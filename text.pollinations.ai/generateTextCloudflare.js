@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { createTextGenerator, ensureSystemMessage } from './generateTextBase.js';
+import debug from 'debug';
 
 dotenv.config();
 
@@ -35,32 +36,46 @@ const generateTextCloudflare = createTextGenerator({
         const requestBody = JSON.parse(body);
         const modelName = requestBody.model;
         
-        const response = await fetch(`${baseEndpoint}/${modelName}`, {
-            method: 'POST',
-            headers: config.headers,
-            body
+        // Add debug logging
+        const log = debug('pollinations:cloudflare');
+        log(`Making request to Cloudflare AI API:`, {
+            endpoint: `${baseEndpoint}/${modelName}`,
+            model: modelName,
+            headers: config.headers
         });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.errors?.[0]?.message || `Cloudflare API error: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        
-        // Transform Cloudflare's response format to match the standard format
-        return {
-            choices: [{
-                message: {
-                    role: 'assistant',
-                    content: data.result.response
+        try {
+            const response = await fetch(`${baseEndpoint}/${modelName}`, {
+                method: 'POST',
+                headers: {
+                    ...config.headers,
+                    'Content-Type': 'application/json'
                 },
-                finish_reason: 'stop'
-            }],
-            model: modelName,
-            created: Date.now(),
-            usage: data.result.usage || {}
-        };
+                body
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                log('Cloudflare API error:', errorData);
+                throw new Error(errorData.errors?.[0]?.message || `Cloudflare API error (${response.status}): ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            return {
+                choices: [{
+                    message: {
+                        role: 'assistant',
+                        content: data.result?.response || ''
+                    },
+                    finish_reason: 'stop'
+                }],
+                model: modelName,
+                created: Date.now()
+            };
+        } catch (error) {
+            log('Error in Cloudflare API call:', error);
+            throw error;
+        }
     }
 });
 

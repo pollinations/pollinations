@@ -202,7 +202,7 @@ test('generateTextHuggingface should handle basic text generation', async t => {
     try {
         const messages = [{ role: 'user', content: 'Hello' }];
         const response = await generateTextHuggingface(messages, {});
-        t.truthy(response, 'Response should not be empty');
+        t.truthy(response.choices[0].message.content, 'Response should contain generated text');
     } catch (error) {
         t.fail(error.message);
     }
@@ -215,7 +215,7 @@ test('generateTextHuggingface should handle system messages', async t => {
             { role: 'user', content: 'Hello' }
         ];
         const response = await generateTextHuggingface(messages, {});
-        t.truthy(response, 'Response should not be empty');
+        t.truthy(response.choices[0].message.content, 'Response should contain generated text');
     } catch (error) {
         t.fail(error.message);
     }
@@ -243,7 +243,8 @@ test('generateTextHuggingface should handle jsonMode', async t => {
     try {
         const messages = [{ role: 'user', content: 'Hello' }];
         const response = await generateTextHuggingface(messages, { jsonMode: true });
-        t.pass();
+        t.truthy(response.choices[0].message.content, 'Response should contain generated text');
+        t.truthy(response.choices[0].message.role === 'assistant', 'Response should have assistant role');
     } catch (error) {
         t.fail(error.message);
     }
@@ -326,9 +327,9 @@ test('generateTextScaleway should handle jsonMode with existing system message',
 test('generateTextScaleway should use default model when invalid model specified', async t => {
     try {
         const messages = [{ role: 'user', content: 'Hello' }];
-        const response = await generateTextScaleway(messages, { model: 'invalid-model' });
-        t.truthy(response, 'Response should not be empty');
+        await generateTextScaleway(messages, { model: 'invalid-model' });
+        t.fail('Should have thrown error for invalid model');
     } catch (error) {
-        t.fail(error.message);
+        t.true(error.message.includes('not available'), 'Should indicate model is not available');
     }
 });

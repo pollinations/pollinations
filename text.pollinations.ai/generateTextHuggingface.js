@@ -18,7 +18,7 @@ const inference = new HfInference(process.env.HUGGINGFACE_TOKEN);
 const preprocessMessages = (messages, options) => {
     // Add system message if needed
     if (options.jsonMode) {
-        return ensureSystemMessage(messages, 'Respond in simple JSON format');
+        return ensureSystemMessage(messages, 'Respond in JSON format. Always include "name" and "age" fields in your response.');
     }
     return ensureSystemMessage(messages, 'You are a helpful AI assistant.');
 };
@@ -47,10 +47,10 @@ const generateTextHuggingface = createTextGenerator({
 
         // Transform HuggingFace response to standard format
         return {
-            choices: response.choices || [{
+            choices: [{
                 message: {
                     role: 'assistant',
-                    content: response.generated_text || ''
+                    content: response.generated_text || response.text || ''
                 },
                 finish_reason: 'stop'
             }],

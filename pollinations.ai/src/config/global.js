@@ -43,7 +43,7 @@ export const SectionBG = {
     gradient: false,
   },
   community: {
-    color: Colors.offwhite,
+    color: Colors.offblack2,
     gradient: true,
   },
   project: {
@@ -55,7 +55,7 @@ export const SectionBG = {
     gradient: true,
   },
   supporter: {
-    color: Colors.offwhite,
+    color: Colors.offblack,
     gradient: true,
   },
   footer: {

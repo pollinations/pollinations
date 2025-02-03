@@ -1,5 +1,6 @@
 import debug from 'debug'
-import app from './server'
+// import app from './server'
+import app from './server_litellm'
 
 const log = debug('pollinations:startup')
 

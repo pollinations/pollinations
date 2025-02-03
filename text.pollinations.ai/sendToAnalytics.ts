@@ -23,7 +23,7 @@ function filterSimpleValues(obj: any) {
     )
 }
 
-export async function sendToAnalytics(request: Request, name: string, metadata: { error?: any, errorType?: any, errorCode?: any, statusCode?: number, model?: string, referrer?: any }) {
+export async function sendToAnalytics(request: Request, name: string, metadata: { error?: any, errorType?: any, errorCode?: any, statusCode?: number, model?: string, referrer?: any } & Record<string, any>) {
     try {
         if (!request || !name) {
             logAnalytics('Analytics skipped: Missing required parameters', { request: !!request, name })

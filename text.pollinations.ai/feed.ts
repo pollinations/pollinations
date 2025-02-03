@@ -6,7 +6,7 @@ const log = debug('pollinations:feed')
 // Map to store connected clients
 const connectedClients = new Map()
 
-function sendToFeedListeners(response: Response, requestParams: TextRequestData, ip: string) {
+function sendToFeedListeners(response: string, requestParams: TextRequestData, ip: string) {
     // SUGGESTION: Make certain requests private, if suggested by the user
     if(requestParams.private) return
 
@@ -26,7 +26,7 @@ function setupFeedEndpoint(app: Express) {
 
         // Add the client to a list of connected clients
         const clientId = Date.now()
-        connectedClients.set(clientId, (response: Response, parameters: any) => {
+        connectedClients.set(clientId, (response: string, parameters: any) => {
             const eventData = {
                 response,
                 parameters,

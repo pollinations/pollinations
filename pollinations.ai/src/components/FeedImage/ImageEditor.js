@@ -330,32 +330,48 @@ export const ImageEditor = memo(function ImageEditor({
             <Box>
               {isStopped ? (
                 /* Edit mode: Text area (plaintext) */
-                <TextareaAutosize
-                  value={imageParams.prompt}
-                  onChange={(e) => handleParamChange("prompt", e.target.value)}
-                  onFocus={handleFocus}
-                  minRows={3}
-                  maxRows={6}
-                  cacheMeasurements
-                  onHeightChange={(height) => {
-                    // Optionally track height changes
-                  }}
-                  style={{
-                    fontFamily: Fonts.parameter,
-                    fontSize: "1.1em",
-                    color: paramTextColor,
-                    padding: "15px",
-                    resize: "vertical",
-                    overflowY: "auto",
-                    scrollbarWidth: "auto",
-                    scrollbarColor: `${Colors.gray2}99 transparent`,
-                    msOverflowStyle: "auto",
-                    backgroundColor: `${Colors.offblack}99`,
-                    border: `0.1px solid ${paramBorderColor}`,
-                    width: "100%",
-                    lineHeight: "1.5em",
-                  }}
-                />
+                <Box>
+                  <TextareaAutosize
+                    value={imageParams.prompt}
+                    onChange={(e) => handleParamChange("prompt", e.target.value)}
+                    onFocus={handleFocus}
+                    minRows={3}
+                    maxRows={6}
+                    cacheMeasurements
+                    onHeightChange={(height) => {
+                      // Optionally track height changes
+                    }}
+                    style={{
+                      fontFamily: Fonts.parameter,
+                      fontSize: "1.1em",
+                      color: paramTextColor,
+                      padding: "15px",
+                      resize: "vertical",
+                      overflowY: "auto",
+                      scrollbarWidth: "auto",
+                      scrollbarColor: `${Colors.gray2}99 transparent`,
+                      msOverflowStyle: "auto",
+                      backgroundColor: `${Colors.offblack}99`,
+                      border: `0.1px solid ${imageParams.prompt?.length > 200 ? Colors.special : paramBorderColor}`,
+                      width: "100%",
+                      lineHeight: "1.5em",
+                    }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: imageParams.prompt?.length > 200 ? Colors.special : Colors.gray2,
+                      mt: 1,
+                      display: 'block',
+                      textAlign: 'right',
+                      fontFamily: Fonts.parameter,
+                      fontSize: '0.8em',
+                    }}
+                  >
+                    {imageParams.prompt?.length || 0}/200 characters
+                    {imageParams.prompt?.length > 200 && " (Text too long - may be rejected)"}
+                  </Typography>
+                </Box>
               ) : (
                 /* Feed mode: Render Markdown */
                 <Box

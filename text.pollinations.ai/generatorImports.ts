@@ -1,0 +1,1 @@
+export const hasSystemMessage = (messages: Conversation) => messages.some(message => message.role === 'system')

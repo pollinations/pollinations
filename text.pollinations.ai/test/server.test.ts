@@ -1,22 +1,18 @@
-import test from 'ava';
-import request from 'supertest';
+import test from 'ava'
+import request from 'supertest'
 import app, {
     getIp,
-    getReferrer,
     getRequestData,
     shouldBypassDelay,
     sendErrorResponse,
     sendOpenAIResponse,
     sendContentResponse,
-    processRequest,
-    getQueue
-} from '../server.js';
-import { setInCache, createHashKey } from '../cache.js';
+} from '../server.js'
 
 // Increase timeout for all tests
 test.beforeEach(t => {
-    t.timeout(30000); // 30 seconds
-});
+    t.timeout(30000) // 30 seconds
+})
 
 /**
  * Test suite for the server API endpoints
@@ -33,11 +29,11 @@ test.beforeEach(t => {
  * 3. The array should contain at least one model
  */
 test('GET /models should return available models', async t => {
-    const response = await request(app).get('/models?code=BeesKnees');
-    t.is(response.status, 200, 'Response status should be 200');
-    t.true(Array.isArray(response.body), 'Response body should be an array');
-    t.true(response.body.length > 0, 'Array should contain at least one model');
-});
+    const response = await request(app).get('/models?code=BeesKnees')
+    t.is(response.status, 200, 'Response status should be 200')
+    t.true(Array.isArray(response.body), 'Response body should be an array')
+    t.true(response.body.length > 0, 'Array should contain at least one model')
+})
 
 /**
  * Test: GET /:prompt
@@ -49,10 +45,10 @@ test('GET /models should return available models', async t => {
  * 2. The response should contain text
  */
 test('GET /:prompt should handle a valid prompt', async t => {
-    const response = await request(app).get('/hello?code=BeesKnees');
-    t.is(response.status, 200, 'Response status should be 200');
-    t.truthy(response.text, 'Response should contain text');
-});
+    const response = await request(app).get('/hello?code=BeesKnees')
+    t.is(response.status, 200, 'Response status should be 200')
+    t.truthy(response.text, 'Response should contain text')
+})
 
 /**
  * Test: POST /
@@ -70,10 +66,10 @@ test('POST / should handle a valid request', async t => {
         .send({ 
             messages: [{ role: 'user', content: 'Hello' }],
             code: 'BeesKnees'
-        });
-    t.is(response.status, 200, 'Response status should be 200');
-    t.truthy(response.text, 'Response should contain text');
-});
+        })
+    t.is(response.status, 200, 'Response status should be 200')
+    t.truthy(response.text, 'Response should contain text')
+})
 
 /**
  * Test: POST /openai
@@ -89,13 +85,13 @@ test('POST /openai should handle a valid request', async t => {
         const response = await request(app)
             .post('/openai')
             .query({ code: 'BeesKnees' })  // Add code parameter
-            .send({ messages: [{ role: 'user', content: 'Hello' }] });
-        t.is(response.status, 200, 'Response status should be 200');
-        t.truthy(response.body, 'Response body should contain data');
-    } catch (error) {
-        t.fail(error.message);
+            .send({ messages: [{ role: 'user', content: 'Hello' }] })
+        t.is(response.status, 200, 'Response status should be 200')
+        t.truthy(response.body, 'Response body should contain data')
+    } catch (error: any) {
+        t.fail(error.message)
     }
-});
+})
 
 /**
  * Test: POST / with invalid messages
@@ -109,11 +105,11 @@ test('POST /openai should handle a valid request', async t => {
 test('POST / should return 400 for invalid messages array', async t => {
     const response = await request(app)
         .post('/')
-        .send({ messages: 'invalid' });
+        .send({ messages: 'invalid' })
     
-    t.is(response.status, 400, 'Response status should be 400');
-    t.true(response.text.includes('Invalid messages'), 'Response should indicate invalid messages');
-});
+    t.is(response.status, 400, 'Response status should be 400')
+    t.true(response.text.includes('Invalid messages'), 'Response should indicate invalid messages')
+})
 
 /**
  * Test: POST / caching behavior
@@ -129,22 +125,22 @@ test('POST / should cache responses', async t => {
         messages: [{ role: 'user', content: 'Cache test' }],
         cache: true,
         code: 'BeesKnees'
-    };
+    }
 
     const response1 = await request(app)
         .post('/')
         .set('Content-Type', 'application/json')
-        .send(requestBody);
-    t.is(response1.status, 200, 'First response status should be 200');
+        .send(requestBody)
+    t.is(response1.status, 200, 'First response status should be 200')
 
     const response2 = await request(app)
         .post('/')
         .set('Content-Type', 'application/json')
-        .send(requestBody);
-    t.is(response2.status, 200, 'Second response status should be 200');
+        .send(requestBody)
+    t.is(response2.status, 200, 'Second response status should be 200')
 
-    t.is(response1.text, response2.text, 'Cached responses should be identical');
-});
+    t.is(response1.text, response2.text, 'Cached responses should be identical')
+})
 
 /**
  * Test: POST /openai with streaming
@@ -162,13 +158,13 @@ test('POST /openai should handle streaming requests', async t => {
         .send({ 
             messages: [{ role: 'user', content: 'Hello' }],
             stream: true 
-        });
+        })
     
-    t.is(response.status, 200, 'Response status should be 200');
-    t.is(response.headers['content-type'], 'text/event-stream; charset=utf-8', 'Content-Type should be text/event-stream');
-    t.is(response.headers['cache-control'], 'no-cache', 'Cache-Control should be no-cache');
-    t.is(response.headers['connection'], 'keep-alive', 'Connection should be keep-alive');
-});
+    t.is(response.status, 200, 'Response status should be 200')
+    t.is(response.headers['content-type'], 'text/event-stream charset=utf-8', 'Content-Type should be text/event-stream')
+    t.is(response.headers['cache-control'], 'no-cache', 'Cache-Control should be no-cache')
+    t.is(response.headers['connection'], 'keep-alive', 'Connection should be keep-alive')
+})
 
 /**
  * Test: POST /openai response format
@@ -182,13 +178,13 @@ test('POST /openai should handle streaming requests', async t => {
 test('POST /openai should return OpenAI formatted responses', async t => {
     const response = await request(app)
         .post('/openai?code=BeesKnees')
-        .send({ messages: [{ role: 'user', content: 'Hello' }] });
+        .send({ messages: [{ role: 'user', content: 'Hello' }] })
     
-    t.is(response.status, 200, 'Response status should be 200');
-    t.truthy(response.body.choices, 'Response should have choices array');
-    t.truthy(response.body.choices[0].message, 'Response should have message in first choice');
-    t.truthy(response.body.choices[0].message.content, 'Response should have content in message');
-});
+    t.is(response.status, 200, 'Response status should be 200')
+    t.truthy(response.body.choices, 'Response should have choices array')
+    t.truthy(response.body.choices[0].message, 'Response should have message in first choice')
+    t.truthy(response.body.choices[0].message.content, 'Response should have content in message')
+})
 
 /**
  * Test: POST /openai caching
@@ -204,21 +200,21 @@ test('POST /openai should cache responses', async t => {
     const requestBody = {
         messages: [{ role: 'user', content: 'Cache test openai' }],
         code: 'BeesKnees'
-    };
+    }
 
     const response1 = await request(app)
         .post('/openai?code=BeesKnees')
-        .send(requestBody);
-    t.is(response1.status, 200, 'First response status should be 200');
+        .send(requestBody)
+    t.is(response1.status, 200, 'First response status should be 200')
 
     const response2 = await request(app)
         .post('/openai?code=BeesKnees')
-        .send(requestBody);
-    t.is(response2.status, 200, 'Second response status should be 200');
+        .send(requestBody)
+    t.is(response2.status, 200, 'Second response status should be 200')
 
-    t.deepEqual(response1.body, response2.body, 'Cached responses should be identical');
-    t.truthy(response1.body.choices, 'Cached response should maintain OpenAI format');
-});
+    t.deepEqual(response1.body, response2.body, 'Cached responses should be identical')
+    t.truthy(response1.body.choices, 'Cached response should maintain OpenAI format')
+})
 
 /**
  * Test: POST /openai with invalid model
@@ -234,10 +230,10 @@ test('POST /openai should handle invalid model', async t => {
         .send({ 
             messages: [{ role: 'user', content: 'Hello' }],
             model: 'invalid-model'
-        });
+        })
     
-    t.is(response.status, 200, 'Response status should be 200');
-});
+    t.is(response.status, 200, 'Response status should be 200')
+})
 
 /**
  * Test: POST /openai with rate limiting
@@ -265,11 +261,11 @@ test('POST /openai should handle system messages', async t => {
                 { role: 'system', content: 'You are a helpful assistant' },
                 { role: 'user', content: 'Hello' }
             ]
-        });
+        })
     
-    t.is(response.status, 200, 'Response status should be 200');
-    t.truthy(response.body.choices[0].message, 'Response should contain message');
-});
+    t.is(response.status, 200, 'Response status should be 200')
+    t.truthy(response.body.choices[0].message, 'Response should contain message')
+})
 
 /**
  * Test: POST /openai with different temperature
@@ -285,10 +281,10 @@ test('POST /openai should handle temperature parameter', async t => {
         .send({ 
             messages: [{ role: 'user', content: 'Hello' }],
             temperature: 0.7
-        });
+        })
     
-    t.is(response.status, 200, 'Response status should be 200');
-});
+    t.is(response.status, 200, 'Response status should be 200')
+})
 
 /**
  * Test: GET / without code
@@ -299,9 +295,9 @@ test('POST /openai should handle temperature parameter', async t => {
  * 1. Request without code should be handled
  */
 test('GET / should handle missing authentication code', async t => {
-    const response = await request(app).get('/hello');
-    t.is(response.status, 200, 'Response status should be 200');
-});
+    const response = await request(app).get('/hello')
+    t.is(response.status, 200, 'Response status should be 200')
+})
 
 /**
  * Test: POST /openai with empty messages
@@ -314,10 +310,10 @@ test('GET / should handle missing authentication code', async t => {
 test('POST /openai should handle empty messages', async t => {
     const response = await request(app)
         .post('/openai?code=BeesKnees')
-        .send({ messages: [] });
+        .send({ messages: [] })
     
-    t.is(response.status, 400, 'Response status should be 400');
-});
+    t.is(response.status, 400, 'Response status should be 400')
+})
 
 /**
  * Test: server should format responses as OpenAI format
@@ -329,19 +325,20 @@ test('POST /openai should handle empty messages', async t => {
  */
 test('server should format responses as OpenAI format', async t => {
     try {
-        const response = await request(app)
+        // const response = 
+        await request(app)
             .post('/openai')
             .send({
                 messages: [{ role: 'user', content: 'Hello' }],
                 model: 'qwen',
                 stream: true
             })
-            .expect(200);
-        t.pass();
-    } catch (error) {
-        t.fail(error.message);
+            .expect(200)
+        t.pass()
+    } catch (error: any) {
+        t.fail(error.message)
     }
-});
+})
 
 /**
  * Test: server should handle streaming responses with error
@@ -359,12 +356,12 @@ test('server should handle streaming responses with error', async t => {
                 messages: [{ role: 'user', content: 'Hello' }],
                 model: 'qwen',
                 stream: true
-            });
-        t.pass();
-    } catch (error) {
-        t.fail(error.message);
+            })
+        t.pass()
+    } catch (error: any) {
+        t.fail(error.message)
     }
-});
+})
 
 /**
  * Test: should handle malformed request body
@@ -379,10 +376,10 @@ test('should handle malformed request body', async t => {
     const response = await request(app)
         .post('/')
         .send({ messages: 'not an array' })  // Malformed messages
-        .query({ code: 'BeesKnees' });
-    t.is(response.status, 400);
-    t.truthy(response.body.error);
-});
+        .query({ code: 'BeesKnees' })
+    t.is(response.status, 400)
+    t.truthy(response.body.error)
+})
 
 /**
  * Test: should handle missing messages
@@ -397,10 +394,10 @@ test('should handle missing messages', async t => {
     const response = await request(app)
         .post('/')
         .send({})  // Missing messages field
-        .query({ code: 'BeesKnees' });
-    t.is(response.status, 400);
-    t.truthy(response.body.error);
-});
+        .query({ code: 'BeesKnees' })
+    t.is(response.status, 400)
+    t.truthy(response.body.error)
+})
 
 /**
  * Test: should handle roblox referrer
@@ -415,9 +412,9 @@ test('should handle roblox referrer', async t => {
         .post('/')
         .set('Referer', 'https://www.roblox.com')
         .send({ messages: [{ role: 'user', content: 'test' }] })
-        .query({ code: 'BeesKnees' });
-    t.is(response.status, 200);
-});
+        .query({ code: 'BeesKnees' })
+    t.is(response.status, 200)
+})
 
 /**
  * Test: should handle pollinations referrer
@@ -432,9 +429,9 @@ test('should handle pollinations referrer', async t => {
         .post('/')
         .set('Referer', 'https://image.pollinations.ai')
         .send({ messages: [{ role: 'user', content: 'test' }] })
-        .query({ code: 'BeesKnees' });
-    t.is(response.status, 200);
-});
+        .query({ code: 'BeesKnees' })
+    t.is(response.status, 200)
+})
 
 /**
  * Test: GET /openai/models
@@ -447,15 +444,15 @@ test('should handle pollinations referrer', async t => {
  */
 test('GET /openai/models should return available models in OpenAI format', async t => {
     try {
-        const response = await request(app).get('/openai/models?code=BeesKnees');
-        t.is(response.status, 200);
-        t.true(Array.isArray(response.body.data));
-        t.true(response.body.data.length > 0);
-        t.true(response.body.data.every(model => model.id && model.owned_by));
-    } catch (error) {
-        t.fail(error.message);
+        const response = await request(app).get('/openai/models?code=BeesKnees')
+        t.is(response.status, 200)
+        t.true(Array.isArray(response.body.data))
+        t.true(response.body.data.length > 0)
+        t.true(response.body.data.every((model: any) => model.id && model.owned_by))
+    } catch (error: any) {
+        t.fail(error.message)
     }
-});
+})
 
 /**
  * Unit Tests for Helper Functions
@@ -487,13 +484,13 @@ test('getIp should handle various header combinations', t => {
             req: { headers: {}, socket: { remoteAddress: '21.22.23.24' } },
             expected: '21.22.23'
         }
-    ];
+    ]
 
     testCases.forEach(({ req, expected }) => {
-        const result = getIp(req);
-        t.is(result, expected);
-    });
-});
+        const result = getIp(req as any)
+        t.is(result, expected)
+    })
+})
 
 test('getRequestData should parse request data correctly', t => {
     const testCases = [
@@ -535,13 +532,13 @@ test('getRequestData should parse request data correctly', t => {
                 stream: false
             }
         }
-    ];
+    ]
 
     testCases.forEach(({ req, expected }) => {
-        const result = getRequestData(req);
-        t.deepEqual(result, expected);
-    });
-});
+        const result = getRequestData(req as any)
+        t.deepEqual(result, expected)
+    })
+})
 
 test('shouldBypassDelay should handle Roblox referrer', t => {
     const testCases = [
@@ -572,134 +569,134 @@ test('shouldBypassDelay should handle Roblox referrer', t => {
             },
             expected: false
         }
-    ];
+    ]
 
     testCases.forEach(({ req, expected }) => {
-        const result = shouldBypassDelay(req);
-        t.is(result, expected);
-    });
-});
+        const result = shouldBypassDelay(req as any)
+        t.is(result, expected)
+    })
+})
 
 test('sendErrorResponse should format error responses correctly', async t => {
     const res = {
-        status: function(code) {
-            t.is(code, 500);
-            return this;
+        status: function(code: number) {
+            t.is(code, 500)
+            return this
         },
-        json: function(data) {
+        json: function(data: object) {
             t.deepEqual(data, {
                 error: 'Test error',
                 status: 500,
                 details: { foo: 'bar' }
-            });
+            })
         }
-    };
-    const error = new Error('Test error');
-    error.response = { data: { foo: 'bar' } };
+    }
+    const error: any  = new Error('Test error')
+    error.response = { data: { foo: 'bar' } }
     
-    await sendErrorResponse(res, {}, error, { model: 'test' });
-});
+    await sendErrorResponse(res as any, {} as any, error, { model: 'test' })
+})
 
 test('sendOpenAIResponse should set headers and send JSON response', t => {
-    const res = {
-        setHeader: function(name, value) {
-            t.pass();
+    const res: any = {
+        setHeader: function() {
+            t.pass()
         },
-        json: function(data) {
-            t.deepEqual(data, { foo: 'bar' });
+        json: function(data: object) {
+            t.deepEqual(data, { foo: 'bar' })
         }
-    };
+    }
     
-    sendOpenAIResponse(res, { foo: 'bar' });
-});
+    sendOpenAIResponse(res, { foo: 'bar' })
+})
 
 test('sendContentResponse should set headers and send text response', t => {
-    const res = {
-        setHeader: function(name, value) {
-            t.pass();
+    const res: any = {
+        setHeader: function() {
+            t.pass()
         },
-        send: function(data) {
-            t.is(data, 'test content');
+        send: function(data: any) {
+            t.is(data, 'test content')
         }
-    };
+    }
     
     sendContentResponse(res, {
         choices: [{ message: { content: 'test content' } }]
-    });
-});
+    })
+})
 
 // test('processRequest should handle cached responses', async t => {
 //     const res = {
 //         status: function(code) {
-//             return this;
+//             return this
 //         },
 //         json: function(data) {
-//             t.deepEqual(data.choices[0].message.content, 'cached response');
+//             t.deepEqual(data.choices[0].message.content, 'cached response')
 //         },
 //         setHeader: function(name, value) {
-//             return this;
+//             return this
 //         },
 //         send: function(data) {
-//             return this;
+//             return this
 //         }
-//     };
+//     }
 //     const req = {
 //         headers: {},
 //         query: {},
 //         body: { messages: [{ role: 'user', content: 'test' }] },
 //         socket: { remoteAddress: '127.0.0.1' }
-//     };
+//     }
 //     const requestData = {
 //         messages: [{ role: 'user', content: 'test' }],
 //         model: 'test'
-//     };
+//     }
     
 //     // Mock cache hit
 //     const cachedResponse = {
 //         choices: [{ message: { content: 'cached response' } }],
 //         usage: { total_tokens: 10 }
-//     };
-//     setInCache(createHashKey(requestData), cachedResponse);
+//     }
+//     setInCache(createHashKey(requestData), cachedResponse)
     
-//     await processRequest(req, res, requestData);
-// });
+//     await processRequest(req, res, requestData)
+// })
 
 // test('processRequest should handle queue size limit', async t => {
 //     const res = {
 //         status: function(code) {
-//             t.is(code, 429);
-//             return this;
+//             t.is(code, 429)
+//             return this
 //         },
 //         json: function(data) {
-//             t.is(data.status, 429);
-//             t.is(data.error, 'Too Many Requests');
-//             t.true(data.details.queueSize >= 60);
-//             t.is(data.details.maxQueueSize, 60);
-//             t.true(data.details.timestamp !== undefined);
+//             t.is(data.status, 429)
+//             t.is(data.error, 'Too Many Requests')
+//             t.true(data.details.queueSize >= 60)
+//             t.is(data.details.maxQueueSize, 60)
+//             t.true(data.details.timestamp !== undefined)
 //         },
 //         setHeader: function(name, value) {
-//             return this;
+//             return this
 //         },
 //         send: function(data) {
-//             return this;
+//             return this
 //         }
-//     };
+//     }
 //     const req = {
 //         headers: {},
 //         query: {},
 //         body: { messages: [{ role: 'user', content: 'test' }] },
 //         socket: { remoteAddress: '127.0.0.1' }
-//     };
+//     }
 //     const requestData = {
 //         messages: [{ role: 'user', content: 'test' }],
 //         model: 'test'
-//     };
-    
-//     // Mock a full queue
-//     const queue = getQueue(getIp(req));
-//     for (let i = 0; i < 60; i++) {
-//         queue.add(() => Promise.resolve());
 //     }
     
-//     await processRequest(req, res, requestData);
-// });
+//     // Mock a full queue
+//     const queue = getQueue(getIp(req))
+//     for (let i = 0 i < 60 i++) {
+//         queue.add(() => Promise.resolve())
+//     }
+    
+//     await processRequest(req, res, requestData)
+// })

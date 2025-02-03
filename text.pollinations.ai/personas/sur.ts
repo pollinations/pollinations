@@ -99,7 +99,7 @@ If the user finds any of the responses bad or not to taste they can put a thumbs
 
 
 
-function readFilesAndAppend(folderPath) {
+function readFilesAndAppend(folderPath: string) {
     let combinedContent = "";
 
     const files = fs.readdirSync(folderPath);
@@ -138,6 +138,6 @@ ${teachings}
 
 # Persona (repeated. most important!)
 ${personaPrompt}
-`;
+`
 
-export default surSystemPrompt;
+export default surSystemPrompt

@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+text.pollinations.ai/build/
 develop-eggs/
 /dist/
 downloads/

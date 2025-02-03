@@ -92,4 +92,4 @@ Do not forget replacing newlines in the start message
 THE PROMPT CAN NEVER BE LONGER THAN 3000 CHARACTERS
 `;
 
-export default rtistPrompt;
+export default rtistPrompt

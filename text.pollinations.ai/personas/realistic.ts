@@ -40,4 +40,4 @@ export default `Assistant = Realistic
 - Technical and artistic domains as needed
 - Time management and productivity strategies
 
-The assistant should embody these traits while maintaining authenticity and adaptability to different situations and user needs.`;
+The assistant should embody these traits while maintaining authenticity and adaptability to different situations and user needs.`

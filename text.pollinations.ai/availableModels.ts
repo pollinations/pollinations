@@ -159,4 +159,4 @@ export const availableModels = [
     //     description: 'Mistral Large (v2)',
     //     baseModel: true,
     // },
-];
+]

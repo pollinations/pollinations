@@ -4,6 +4,7 @@ import { addPollinationsLogoWithImagemagick, getLogoPath } from './imageOperatio
 import { MODELS } from './models.js';
 import { fetchFromLeastBusyFluxServer, getNextTurboServerUrl } from './availableServers.js';
 import debug from 'debug';
+import { checkContent } from './llamaguard.js';
 
 const logError = debug('pollinations:error');
 const logPerf = debug('pollinations:perf');
@@ -408,9 +409,30 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
 
     logError("bufferAndMaturity", bufferAndMaturity);
 
+    // Get initial values from model
     let isMature = bufferAndMaturity?.isMature || bufferAndMaturity?.has_nsfw_concept;
     const concept = bufferAndMaturity?.concept;
-    const isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+    let isChild = bufferAndMaturity?.isChild || Object.values(concept?.special_scores || {})?.slice(1).some(score => score > -0.05);
+
+    // Check with LlamaGuard and override if necessary
+    try {
+
+        const llamaguardResult = await checkContent(prompt);
+        
+        // Override safety flags if LlamaGuard detects issues
+        if (llamaguardResult.isMature) {
+            isMature = true;
+            log('LlamaGuard detected mature content, overriding isMature to true');
+        }
+        
+        if (llamaguardResult.isChild) {
+            isChild = true;
+            log('LlamaGuard detected child exploitation content, overriding isChild to true');
+        }
+    } catch (error) {
+        logError('LlamaGuard check failed:', error);
+        // Continue with original model classifications if LlamaGuard fails
+    }
 
     logError("isMature", isMature, "concepts", isChild);
 
@@ -431,6 +453,10 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     const { buffer: _buffer, ...maturity } = bufferAndMaturity;
     bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
 
+    // if isChild is true and isMature is true throw a content is prohibited error
+    if (isChild && isMature) {
+      throw new Error("Content is prohibited");
+    }
     return { buffer: bufferWithLegend, isChild, isMature };
   } catch (error) {
     logError('Error in createAndReturnImageCached:', error);

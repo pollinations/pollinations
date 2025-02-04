@@ -8,10 +8,24 @@ import debug from 'debug';
 const logError = debug('pollinations:mcp:error');
 const logApi = debug('pollinations:api');
 
-// Create MCP server instance
+// Create MCP server instance with detailed metadata
 const mcpServer = new McpServer({
   name: "Pollinations Image Generator",
-  version: "1.0.0"
+  version: "1.0.0",
+  description: "Generate AI images using various models through the Model Context Protocol",
+  provider: {
+    name: "Pollinations.AI",
+    url: "https://pollinations.ai",
+    contact: "https://github.com/pollinations/pollinations/issues"
+  },
+  documentation: {
+    url: "https://github.com/pollinations/pollinations/blob/main/APIDOCS.md#mcp-interface"
+  },
+  capabilities: {
+    resources: ["models", "capabilities"],
+    tools: ["generate-image"],
+    prompts: ["create-image"]
+  }
 });
 
 // Expose available models as a resource
@@ -155,10 +169,22 @@ mcpServer.prompt(
   }
 );
 
+/**
+ * Handle Server-Sent Events (SSE) connection for MCP
+ * @param {import('http').IncomingMessage} req - The request object
+ * @param {import('http').ServerResponse} res - The response object
+ */
 export const handleMcpSSE = (req, res) => {
+  logApi('MCP SSE connection established');
   mcpServer.handleSSE(req, res);
 };
 
+/**
+ * Handle MCP message
+ * @param {Object} message - The MCP message object
+ * @param {import('http').ServerResponse} res - The response object
+ */
 export const handleMcpMessage = (message, res) => {
+  logApi('MCP message received:', message.type);
   mcpServer.handleMessage(message, res);
 };

@@ -189,8 +189,8 @@ export const projects = {
       author: "rasit",
     },
     {
-      name: "Elixpo",
-      url: "https://circuit-overtime.github.io/Elixpo_ai_pollinations",
+      name: "Elixpo-Art",
+      url: "https://elixpoart.vercel.app",
       description: "A web interface for easy image generation with theme selection.",
       author: "Ayushman Bhattacharya",
     },

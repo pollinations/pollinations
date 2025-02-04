@@ -8,12 +8,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "start:mcp": "node mcp/index.js",
+    "start:all": "node src/index.js & node mcp/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.4.1",
     "@google-cloud/translate": "^7.2.1",
     "@gradio/client": "^0.19.4",
     "@vitalets/google-translate-api": "^9.2.0",

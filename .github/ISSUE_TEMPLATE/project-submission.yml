@@ -79,3 +79,12 @@ body:
       placeholder: "@username or email"
     validations:
       required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Implementation Instructions
+
+        For the being implementing this issue:
+        - Add the new project to the top of the appropriate section in README.md and pollinations.ai/src/config/projectList.js
+        - Add a new UTF-8 icon to the title or where appropriate

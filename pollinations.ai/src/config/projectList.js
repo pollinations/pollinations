@@ -28,6 +28,12 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "Pollinations Chat",
+      url: "https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4",
+      description: "Pollinations' integrated AI for text and images, totally free and unlimited.",
+      author: "@adrianoprogramer",
+    },
+    {
       name: "LobeChat",
       url: "https://lobehub.com/plugins/pollinations-drawing",
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
@@ -69,6 +75,19 @@ export const projects = {
     },
   ],
   creativeApps: [
+    {
+      name: "Abyss Ascending",
+      url: "https://interzone.art.br/abyss_ascending/",
+      description: "A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world.",
+      author: "@brain.diver",
+      repo: "https://github.com/rafabez/abyss_ascending",
+    },
+    {
+      name: "Deep Saga",
+      url: "https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations",
+      description: "A text based RPG available on Android with AI-generated scene images.",
+      author: "@jr_7_77",
+    },
     {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",

@@ -3,6 +3,7 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
+import { handleMcpSSE, handleMcpMessage } from './mcpServer.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
@@ -337,6 +338,30 @@ const server = http.createServer((req, res) => {
   setCORSHeaders(res);
 
   const { pathname } = parse(req.url, true);
+
+  // Handle MCP endpoints
+  if (pathname === '/mcp/sse') {
+    handleMcpSSE(req, res);
+    return;
+  }
+
+  if (pathname === '/mcp/messages') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const message = JSON.parse(body);
+        handleMcpMessage(message, res);
+      } catch (error) {
+        logError('Failed to parse MCP message:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON message' }));
+      }
+    });
+    return;
+  }
 
   if (pathname === '/models') {
     res.writeHead(200, { 

@@ -6,6 +6,14 @@ import PQueue, { QueueAddOptions } from 'p-queue'
 import { availableModels } from './availableModels'
 
 import litellm from 'litellm'
+import wrapModelWithContext from './wrapModelWithContext'
+
+// Import persona prompts
+import surSystemPrompt from './personas/sur'
+import unityPrompt from './personas/unity'
+import midijourneyPrompt from './personas/midijourney'
+import rtistPrompt from './personas/rtist'
+import evilPrompt from './personas/evil'
 
 // Models
 import { sendToAnalytics } from './sendToAnalytics'
@@ -32,8 +40,19 @@ const WHITELISTED_DOMAINS = [
 
 const app = express()
 
+// Create custom instances of Sur backed by Claude, Mistral, and Command-R
+const surOpenai = wrapModelWithContext(surSystemPrompt, litellm.completion)
+const surMistral = wrapModelWithContext(surSystemPrompt, litellm.completion, 'mistral')
+// Create custom instance of Unity backed by Mistral Large
+const unityMistralLarge = wrapModelWithContext(unityPrompt, litellm.completion, 'mistral')
+// Create custom instance of Midijourney
+const midijourney = wrapModelWithContext(midijourneyPrompt, litellm.completion)
+// Create custom instance of Rtist
+const rtist = wrapModelWithContext(rtistPrompt, litellm.completion)
+// Create custom instance of Evil backed by Command-R
+const evilCommandR = wrapModelWithContext(evilPrompt, litellm.completion, 'mistral')
+
 // Load blocked IPs from file on startup
-// Load blocked IPs before starting server
 loadBlockedIPs().catch(error => {
     errorLog('Failed to load blocked IPs:', error)
 })
@@ -152,22 +171,50 @@ async function handleRequest(req: Request, res: Response, requestData: TextReque
         }
 
         if (requestData.stream) {
-            const response = await litellm.completion({
-                ...requestData,
-                model: requestData.model ?? 'gpt-3.5-turbo',
-                messages: requestData.messages ?? [],
-                stream: true
-            })
+            let response;
+            const modelHandlers = {
+                'sur': () => surOpenai(requestData.messages ?? [], requestData),
+                'sur-mistral': () => surMistral(requestData.messages ?? [], requestData),
+                'unity': () => unityMistralLarge(requestData.messages ?? [], requestData),
+                'midijourney': () => midijourney(requestData.messages ?? [], requestData),
+                'rtist': () => rtist(requestData.messages ?? [], requestData),
+                'evil': () => evilCommandR(requestData.messages ?? [], requestData),
+            };
+
+            if (modelHandlers[requestData.model ?? '']) {
+                response = await modelHandlers[requestData.model ?? '']();
+            } else {
+                response = await litellm.completion({
+                    ...requestData,
+                    model: requestData.model ?? 'gpt-3.5-turbo',
+                    messages: requestData.messages ?? [],
+                    stream: true
+                });
+            }
             log('completion: %o', response)
 
             sendAsOpenAIStream(res, response, onStreamFinish)
         } else {
-            const response = await litellm.completion({
-                ...requestData,
-                model: requestData.model ?? 'gpt-3.5-turbo',
-                messages: requestData.messages ?? [],
-                stream: false
-            })
+            let response;
+            const modelHandlers = {
+                'sur': () => surOpenai(requestData.messages ?? [], requestData),
+                'sur-mistral': () => surMistral(requestData.messages ?? [], requestData),
+                'unity': () => unityMistralLarge(requestData.messages ?? [], requestData),
+                'midijourney': () => midijourney(requestData.messages ?? [], requestData),
+                'rtist': () => rtist(requestData.messages ?? [], requestData),
+                'evil': () => evilCommandR(requestData.messages ?? [], requestData),
+            };
+
+            if (modelHandlers[requestData.model ?? '']) {
+                response = await modelHandlers[requestData.model ?? '']();
+            } else {
+                response = await litellm.completion({
+                    ...requestData,
+                    model: requestData.model ?? 'gpt-3.5-turbo',
+                    messages: requestData.messages ?? [],
+                    stream: false
+                });
+            }
 
             const text = await onStreamFinish(response)
 

@@ -159,4 +159,12 @@ export const availableModels = [
     //     description: 'Mistral Large (v2)',
     //     baseModel: true,
     // },
+    {
+        name: 'llamaguard',
+        type: 'safety',
+        censored: false,
+        description: 'Llamaguard 7B AWQ',
+        baseModel: false,
+        provider: 'cloudflare'
+    },
 ];

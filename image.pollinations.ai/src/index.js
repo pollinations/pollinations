@@ -26,6 +26,22 @@ export let currentJobs = [];
 
 const ipQueue = {};
 
+// In-memory store for tracking IP violations
+const ipViolations = new Map();
+const MAX_VIOLATIONS = 5;
+
+// Check if an IP is blocked
+const isIpBlocked = (ip) => {
+  return (ipViolations.get(ip) || 0) >= MAX_VIOLATIONS;
+};
+
+// Increment violations for an IP
+const incrementIpViolations = (ip) => {
+  const currentViolations = ipViolations.get(ip) || 0;
+  ipViolations.set(ip, currentViolations + 1);
+  return currentViolations + 1;
+};
+
 /**
  * @function
  * @param {Object} res - The response object.
@@ -72,6 +88,13 @@ const preMiddleware = async function (pathname, req, res) {
  * @returns {Promise<void>}
  */
 const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer, progress, requestId }) => {
+  const ip = getIp(req);
+  
+  // Check if IP is blocked
+  if (isIpBlocked(ip)) {
+    throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+  }
+
   try {
     timingInfo.push({ step: 'Start processing', timestamp: Date.now() });
     
@@ -87,11 +110,10 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     progress.updateBar(requestId, 40, 'Server', 'Selecting optimal server...');
     progress.updateBar(requestId, 50, 'Generation', 'Preparing...');
     
-    const { buffer, ...maturity} = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
+    const { buffer, ...maturity } = await createAndReturnImageCached(prompt, safeParams, countFluxJobs(), originalPrompt, progress, requestId);
 
     progress.updateBar(requestId, 50, 'Generation', 'Starting generation');
     
-    const ip = getIp(req);
     const concurrentRequests = countJobs(true);
 
     timingInfo.push({ step: 'Generation started.', timestamp: Date.now() });
@@ -125,8 +147,8 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
           concurrentRequests: countFluxJobs(),
           imageURL,
           prompt,
-          originalPrompt,
           ...maturity,
+          maturity,
           timingInfo: relativeTiming(timingInfo),
           ip: getIp(req),
           status: "end_generating",
@@ -143,6 +165,14 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     
     return { buffer, ...maturity };
   } catch (error) {
+    // Check if this was a prohibited content error
+    if (error.message === "Content is prohibited") {
+      const violations = incrementIpViolations(ip);
+      if (violations >= MAX_VIOLATIONS) {
+        await sleep(10000);
+        throw new Error(`Your IP ${ip} has been temporarily blocked due to multiple content violations`);
+      }
+    }
     // Handle errors gracefully in progress bars
     progress.errorBar(requestId, 'Generation failed');
     progress.stop();

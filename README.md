@@ -2,9 +2,9 @@
 
 *Your Engine for Personalized Synthetic Media*
 
-## 🆕 NEWS: MentatBot AI Assistant
+## 🆕 NEWS: AI Code Assistant
 
-We're excited to announce MentatBot, our autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. Learn more about [MentatBot](https://mentat.ai/).
+We're excited to announce MentatBot, the autonomous AI coding assistant that implements new features directly from GitHub issues! Simply [create an issue](https://github.com/pollinations/pollinations/issues/new) describing what you'd like to see, and MentatBot will analyze and implement it. Learn more about [MentatBot](https://mentat.ai/).
 
 [![Pollinations.AI Logo](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)](https://pollinations.ai/p/Pollinations.AI_logo_that_looks_cool_on_black_background?width=3000&height=1000&nologo=true&seed=-1)
 
@@ -135,7 +135,7 @@ graph LR
     L2[Text CDN] --> C
     
     B[image.pollinations.ai - AWS EC2 CPU] --> F[Azure OpenAI - Prompt Enhancing]
-    B --> S[Safety Checker]
+    B --> S[LlamaGuard - Safety Checker]
     B --> M[llmplayground.net - Custom FLUX models]
     F --> E[Translation Service - 1 GPU VM]
     E --> D[FLUX image generation model - 2-6 GPU VMs on AWS]
@@ -144,13 +144,14 @@ graph LR
     C --> SC[Scaleway API]
     C --> DS[Deepseek API]
     C --> G[Azure-hosted Serverless LLMs]
+    C --> CF[Cloudflare AI]
     SC --> MI[Mistral Models]
     SC --> QW[Qwen Models]
     SC --> LL[Llama Models]
     DS --> DM[Deepseek Models]
     G --> H[OpenAI]
     G --> K[Claude]
-
+    CF --> CFM[Llama & Deepseek Models]
 ```
 
 ## Projects Using Pollinations.AI

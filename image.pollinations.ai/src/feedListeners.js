@@ -47,7 +47,7 @@ export const sendToFeedListeners = (data, options = {}) => {
 };
 
 function sendToListener(listener, data, nsfw) {
-  if (!nsfw && (data?.nsfw || data?.isChild)) return;
+  if (!nsfw && (data?.nsfw || data?.isChild || data?.isMature || data?.maturity?.nsfw || data?.maturity?.isChild || data?.maturity?.isMature)) return;
   logFeed("data", data);
   return listener.write(`data: ${JSON.stringify(data)}\n\n`);
 }

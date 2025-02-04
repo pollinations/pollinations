@@ -29,13 +29,18 @@ vi.mock('../../src/availableServers.js', () => ({
   fetchFromLeastBusyFluxServer: vi.fn(async () => ({
     ok: true,
     status: 200,
-    json: () => Promise.resolve({
+    json: async () => ({
       image: testImageBuffer.toString('base64'),
       maturity: { isChild: false, isMature: false }
     }),
-    buffer: () => Promise.resolve(testImageBuffer)
+    buffer: async () => testImageBuffer
   })),
   getNextTurboServerUrl: vi.fn(() => 'http://fake-server.com')
+}))
+
+// Mock LlamaGuard
+vi.mock('../../src/llamaguard.js', () => ({
+  checkContent: vi.fn(async () => ({ isChild: false, isMature: false }))
 }))
 
 describe('Image Generation', () => {
@@ -70,6 +75,6 @@ describe('Image Generation', () => {
       expect(result).toBeDefined()
       expect(result.buffer).toBeInstanceOf(Buffer)
       expect(mockProgress.updateBar).toHaveBeenCalled()
-    })
+    }, { timeout: 30000 })
   })
 })

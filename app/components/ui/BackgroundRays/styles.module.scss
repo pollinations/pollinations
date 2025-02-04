@@ -1,13 +1,13 @@
 .rayContainer {
   // Theme-specific colors
-  --ray-color-primary: color-mix(in srgb, var(--primary-color), transparent 30%);
-  --ray-color-secondary: color-mix(in srgb, var(--secondary-color), transparent 30%);
-  --ray-color-accent: color-mix(in srgb, var(--accent-color), transparent 30%);
+  --ray-color-primary: color-mix(in srgb, var(--primary-color), transparent 50%);
+  --ray-color-secondary: color-mix(in srgb, var(--secondary-color), transparent 50%);
+  --ray-color-accent: color-mix(in srgb, var(--accent-color), transparent 50%);
 
   // Theme-specific gradients
-  --ray-gradient-primary: radial-gradient(var(--ray-color-primary) 0%, transparent 70%);
-  --ray-gradient-secondary: radial-gradient(var(--ray-color-secondary) 0%, transparent 70%);
-  --ray-gradient-accent: radial-gradient(var(--ray-color-accent) 0%, transparent 70%);
+  --ray-gradient-primary: radial-gradient(var(--ray-color-primary) 0%, transparent 80%);
+  --ray-gradient-secondary: radial-gradient(var(--ray-color-secondary) 0%, transparent 80%);
+  --ray-gradient-accent: radial-gradient(var(--ray-color-accent) 0%, transparent 80%);
 
   position: fixed;
   inset: 0;

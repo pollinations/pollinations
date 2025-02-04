@@ -1,39 +1,25 @@
-import AnthropicProvider from './providers/anthropic';
-import CohereProvider from './providers/cohere';
-import DeepseekProvider from './providers/deepseek';
-import GoogleProvider from './providers/google';
-import GroqProvider from './providers/groq';
-import HuggingFaceProvider from './providers/huggingface';
-import LMStudioProvider from './providers/lmstudio';
-import MistralProvider from './providers/mistral';
-import OllamaProvider from './providers/ollama';
-import OpenRouterProvider from './providers/open-router';
-import OpenAILikeProvider from './providers/openai-like';
-import OpenAIProvider from './providers/openai';
-import PerplexityProvider from './providers/perplexity';
-import TogetherProvider from './providers/together';
-import XAIProvider from './providers/xai';
-import HyperbolicProvider from './providers/hyperbolic';
-import AmazonBedrockProvider from './providers/amazon-bedrock';
-import GithubProvider from './providers/github';
+import OpenAIProvider from './providers/openai-like';
+import { BaseProvider } from './base-provider';
 
-export {
-  AnthropicProvider,
-  CohereProvider,
-  DeepseekProvider,
-  GoogleProvider,
-  GroqProvider,
-  HuggingFaceProvider,
-  HyperbolicProvider,
-  MistralProvider,
-  OllamaProvider,
-  OpenAIProvider,
-  OpenRouterProvider,
-  OpenAILikeProvider,
-  PerplexityProvider,
-  XAIProvider,
-  TogetherProvider,
-  LMStudioProvider,
-  AmazonBedrockProvider,
-  GithubProvider,
-};
+export type LLMProviderName = 'openai';
+
+export const llmProviders = new Map<LLMProviderName, BaseProvider>();
+
+/**
+ * Register all available LLM providers.
+ * Each provider must implement the BaseProvider interface.
+ */
+export function registerProviders() {
+  llmProviders.set('openai', new OpenAIProvider());
+}
+
+/**
+ * Get a provider by name.
+ * Returns undefined if the provider is not found.
+ */
+export function getProvider(name: LLMProviderName) {
+  return llmProviders.get(name);
+}
+
+// Export the provider class for dynamic loading
+export { OpenAIProvider };

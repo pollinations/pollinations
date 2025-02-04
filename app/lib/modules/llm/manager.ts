@@ -35,14 +35,13 @@ export class LLMManager {
        */
 
       // Look for exported classes that extend BaseProvider
-      for (const exportedItem of Object.values(providers)) {
+      for (const [name, exportedItem] of Object.entries(providers)) {
         if (typeof exportedItem === 'function' && exportedItem.prototype instanceof BaseProvider) {
-          const provider = new exportedItem();
-
           try {
+            const provider = new exportedItem();
             this.registerProvider(provider);
           } catch (error: any) {
-            logger.warn('Failed To Register Provider: ', provider.name, 'error:', error.message);
+            logger.warn('Failed To Register Provider:', name, 'error:', error.message);
           }
         }
       }

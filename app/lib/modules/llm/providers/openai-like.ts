@@ -4,7 +4,7 @@ import type { IProviderSetting } from '~/types/model';
 import type { LanguageModelV1 } from 'ai';
 
 export default class OpenAILikeProvider extends BaseProvider {
-  name = 'OpenAILike';
+  name = 'Pollinations.AI';
   getApiKeyLink = undefined;
 
   config = {

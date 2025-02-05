@@ -190,8 +190,13 @@ async function handleRequest(req, res, requestData) {
     log('Request data: %s', JSON.stringify(requestData, null, 2));
 
     try {
+        // Generate a unique ID for this request
+        const requestId = generatePollinationsId();
         const completion = await generateTextBasedOnModel(requestData.messages, requestData);
         log("completion: %s", JSON.stringify(completion, null, 2));
+        
+        // Ensure completion has the request ID
+        completion.id = requestId;
         
         // Check if completion contains an error
         if (completion.error) {
@@ -280,8 +285,19 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
     res.status(statusCode).json(errorResponse);
 }
 
+// Generate a unique ID with pllns_ prefix
+function generatePollinationsId() {
+    const hash = crypto.randomBytes(16).toString('hex');
+    return `pllns_${hash}`;
+}
+
 // Helper function for consistent success responses
 export function sendOpenAIResponse(res, completion) {
+    // Ensure completion has an id field with pllns_ prefix
+    if (!completion.id || !completion.id.startsWith('pllns_')) {
+        completion.id = generatePollinationsId();
+    }
+    
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.json(completion);

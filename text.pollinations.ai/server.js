@@ -308,7 +308,8 @@ export function getRequestData(req) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const isPrivate = data.private === 'true' || data.private === true;
+    const isPrivate = data.private === true || 
+                     (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
 
     const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));

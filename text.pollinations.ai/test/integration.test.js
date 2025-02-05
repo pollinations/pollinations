@@ -245,6 +245,25 @@ test('should respect temperature parameter', async t => {
  * 2. Feed broadcasting should be skipped for private=true
  * 3. Feed broadcasting should occur for private=false
  */
+test('should handle different true/false formats for private parameter', async t => {
+    // Test different variations of "true"
+    const variations = [
+        { value: true, desc: 'boolean true' },
+        { value: 'true', desc: 'string true' },
+        { value: 'True', desc: 'Python-style True' },
+        { value: 'TRUE', desc: 'uppercase TRUE' }
+    ];
+
+    for (const { value, desc } of variations) {
+        const response = await axiosInstance.post('/', {
+            messages: [{ role: 'user', content: `Test ${desc}` }],
+            private: value,
+            cache: false
+        });
+        t.is(response.status, 200, `Response status should be 200 for ${desc}`);
+    }
+});
+
 test('should respect private parameter and control feed broadcasting', async t => {
     // Create a promise that will resolve with received feed messages
     const receivedMessages = [];

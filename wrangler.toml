@@ -1,6 +1,6 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "bolt"
+name = "pollinations-diy"
 compatibility_flags = ["nodejs_compat"]
-compatibility_date = "2024-07-01"
+compatibility_date = "2025-02-05"
 pages_build_output_dir = "./build/client"
 send_metrics = false

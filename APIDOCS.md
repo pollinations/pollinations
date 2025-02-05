@@ -13,7 +13,7 @@ List Models: `GET https://image.pollinations.ai/models`
 ### Text Generation API (Default model: 'openai')
 
 Generate (GET): `GET https://text.pollinations.ai/{prompt}`
-- Params: prompt*, model, seed, json, system
+- Params: prompt*, model, seed, json, system, private
 - Return: Generated text
 
 Generate (POST): `POST https://text.pollinations.ai/`
@@ -103,6 +103,7 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 - seed: Seed for reproducible results.
 - json: Set to 'true' to receive response in JSON format.
 - system: System prompt to set the behavior of the AI. Should be URL-encoded.
+- private: Set to 'true' to prevent the response from appearing in the public feed. Default: false
 
 **Return:** Generated text
 
@@ -118,7 +119,8 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
   ],
   "model": "openai",
   "seed": 42,
-  "jsonMode": true  // Optional: Forces the response to be valid JSON
+  "jsonMode": true,  // Optional: Forces the response to be valid JSON
+  "private": true    // Optional: Prevents response from appearing in public feed
 }
 ```
 

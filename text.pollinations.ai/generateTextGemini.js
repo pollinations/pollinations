@@ -84,23 +84,15 @@ export async function generateTextGemini(messages, options) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => null);
-            log(`[${requestId}] Gemini API error`, {
+            const errorObject = {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
                 error: JSON.stringify(errorData || 'Failed to parse error response', null, 2)
-            });
-            
-            return {
-                error: {
-                    message: errorData?.error?.message || `Gemini API error: ${response.status} ${response.statusText}`,
-                    code: response.status,
-                    metadata: {
-                        raw: errorData,
-                        provider_name: 'Gemini'
-                    }
-                }
             };
+            log(`[${requestId}] Gemini API error`, errorObject);
+            
+            throw new Error('Failed to generate text with Gemini API. \n\n' + JSON.stringify(errorObject, null, 2));
         }
 
         const data = await response.json();
@@ -114,15 +106,7 @@ export async function generateTextGemini(messages, options) {
             }, null, 2)
         });
 
-        return {
-            text: data.choices[0]?.message?.content || '',
-            raw: data,
-            metadata: {
-                provider_name: 'Gemini',
-                duration_ms: endTime - startTime,
-                request_id: requestId
-            }
-        };
+        return data;
     } catch (error) {
         log(`[${requestId}] Unexpected error`, {
             timestamp: new Date().toISOString(),

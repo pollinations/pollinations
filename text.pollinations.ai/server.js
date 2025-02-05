@@ -293,9 +293,20 @@ function generatePollinationsId() {
 
 // Helper function for consistent success responses
 export function sendOpenAIResponse(res, completion) {
-    // Ensure completion has an id field with pllns_ prefix
+    // Ensure completion has required OpenAI API fields
     if (!completion.id || !completion.id.startsWith('pllns_')) {
         completion.id = generatePollinationsId();
+    }
+    if (!completion.object) {
+        completion.object = "chat.completion";
+    }
+    
+    // Ensure choices array has index field
+    if (completion.choices && Array.isArray(completion.choices)) {
+        completion.choices = completion.choices.map((choice, idx) => ({
+            index: idx,
+            ...choice
+        }));
     }
     
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

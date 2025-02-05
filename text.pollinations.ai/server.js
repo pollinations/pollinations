@@ -18,6 +18,7 @@ import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
 import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
+import { generateTextGemini } from './generateTextGemini.js';
 
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
@@ -492,8 +493,8 @@ async function generateTextBasedOnModel(messages, options) {
             'llamaguard': () => generateTextCloudflare(messages, options),
             'llama-scaleway': () => generateTextScaleway(messages, {...options, model: 'llama'}),
             'deepseek-r1': () => generateTextCloudflare(messages, options),
-            // 'llamalight': () => generateTextScaleway(messages, options),
-            // 'karma': () => generateTextKarma(messages, options),
+            'gemini': () => generateTextGemini(messages, options),
+            'gemini-thinking': () => generateTextGemini(messages, options),
             'sur': () => surOpenai(messages, options),
             'sur-mistral': () => surMistral(messages, options),
             'unity': () => unityMistralLarge(messages, options),
@@ -505,7 +506,7 @@ async function generateTextBasedOnModel(messages, options) {
             'openai': () => generateText(messages, options),
             'openai-large': () => generateText(messages, options),
             'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
-            'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
+            // 'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

@@ -454,9 +454,9 @@ export async function createAndReturnImageCached(prompt, safeParams, concurrentR
     bufferWithLegend = await writeExifMetadata(bufferWithLegend, { prompt, originalPrompt, ...safeParams }, maturity);
 
     // if isChild is true and isMature is true throw a content is prohibited error
-    if (isChild && isMature) {
-      throw new Error("Content is prohibited");
-    }
+    // if (isChild && isMature) {
+    //   throw new Error("Content is prohibited");
+    // }
     return { buffer: bufferWithLegend, isChild, isMature };
   } catch (error) {
     logError('Error in createAndReturnImageCached:', error);

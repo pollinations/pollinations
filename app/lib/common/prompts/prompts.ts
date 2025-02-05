@@ -28,17 +28,6 @@ const apiDocs = `
 - Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images)
 - Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
 
-## React Hooks (npm install @pollinations/react)
-- usePollinationsText(prompt, options)
-  Options: seed, model, systemPrompt
-  Return: string | null
-- usePollinationsImage(prompt, options)
-  Options: width, height, model, seed, nologo, enhance
-  Return: string | null
-- usePollinationsChat(initialMessages, options)
-  Options: seed, jsonMode, model
-  Return: { sendUserMessage: (message) => void, messages: Array<{role, content}> }
-
 ## Vision Capabilities
 OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API.
 Images can be passed as URLs or base64-encoded data in the messages.
@@ -55,7 +44,79 @@ e.g.
                 },
             ],
         }
-  `;
+`;
+
+const codeExamples = `
+## Code Examples for AI Assistants
+
+### API Endpoints Quick Reference
+
+- Image Generation: GET https://image.pollinations.ai/prompt/{prompt}
+- Image Models: GET https://image.pollinations.ai/models
+- Text Generation: GET https://text.pollinations.ai/{prompt}
+- Text Generation (Advanced): POST https://text.pollinations.ai/
+- OpenAI Compatible: POST https://text.pollinations.ai/openai
+- Text Models: GET https://text.pollinations.ai/models
+- Image Feed: GET https://image.pollinations.ai/feed
+- Text Feed: GET https://text.pollinations.ai/feed
+
+### Image Generation Examples
+
+1. Basic Image Generation:
+  // Simple image URL construction
+  const imageUrl = "https://image.pollinations.ai/prompt/a%20serene%20mountain%20landscape%20at%20sunset?width=1024&height=1024&seed=123&model=flux"
+
+2. Advanced Image Parameters:
+  // Example with all available parameters
+  const imageUrl = "https://image.pollinations.ai/prompt/hyperrealistic%20portrait%20of%20an%20astronaut?width=1024&height=1024&seed=456&model=flux-realism&nologo=true&enhance=true&safe=true"
+
+### Text Generation Examples
+
+1. Simple Text Generation:
+  // GET request
+  const textUrl = "https://text.pollinations.ai/write%20a%20short%20story%20about%20space%20exploration"
+
+2. OpenAI Compatible Request:
+    // POST request body following OpenAI format
+    {
+      "model": "gpt-4o",
+      "messages": [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is artificial intelligence?"}
+      ],
+      "temperature": 0.7
+    }
+
+### React Integration Example
+    import { usePollinationsImage } from '@pollinations/react';
+
+    const ImageComponent = () => {
+      const imageUrl = usePollinationsImage('Bauhaus, Mondrian, Space Exploration, Arrival, Hyperrealism, UFOs', {
+        width: 1600,
+        height: 800,
+        seed: 43,
+        model: 'flux'
+      });
+
+      return <img src={imageUrl} alt="Generated landscape" />;
+    };
+
+### Real-time Feed Integration
+
+    // SSE client for image feed
+    const imageStream = new EventSource('https://image.pollinations.ai/feed');
+    imageStream.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('New image:', data.url);
+    };
+
+    // SSE client for text feed
+    const textStream = new EventSource('https://text.pollinations.ai/feed');
+    textStream.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('New text:', data.content);
+    };
+`;
 
 export const getSystemPrompt = (cwd: string = WORK_DIR) => `
 You are Polli, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
@@ -155,6 +216,10 @@ You are Polli, an expert AI assistant and exceptional senior software developer 
 <api_documentation>
 ${apiDocs}
 </api_documentation>
+
+<code_examples>
+${codeExamples}
+</code_examples>
 
 <artifact_info>
   Polli creates a SINGLE, comprehensive artifact for each project. The artifact contains all necessary steps and components, including:

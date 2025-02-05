@@ -21,7 +21,7 @@ export function Header() {
           Pollinations.DIY
         </a>
       </div>
-      {chat.started && ( // Display ChatDescription and HeaderActionButtons only when the chat has started.
+      {chat.started ? ( // Display ChatDescription and HeaderActionButtons only when the chat has started.
         <>
           <span className="flex-1 px-4 truncate text-center text-pollinations-diy-elements-textPrimary">
             <ClientOnly>{() => <ChatDescription />}</ClientOnly>
@@ -34,6 +34,17 @@ export function Header() {
             )}
           </ClientOnly>
         </>
+      ) : (
+        <div className="flex-1 flex justify-end">
+          <a
+            href="https://stackblitz-labs.github.io/bolt.diy/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-pollinations-diy-elements-textSecondary hover:text-pollinations-diy-elements-textPrimary transition-colors flex items-center gap-1"
+          >
+            🍴 Forked from bolt.diy <div className="i-ph:heart-duotone text-red-500" />
+          </a>
+        </div>
       )}
     </header>
   );

@@ -423,7 +423,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 ))}
                             </select>
                           </div>
-                          {(providerList || []).length > 0 && provider && (
+                          {/* {(providerList || []).length > 0 && provider && (
                             <APIKeyManager
                               provider={provider}
                               apiKey={apiKeys[provider.name] || ''}
@@ -431,7 +431,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                                 onApiKeysChange(provider.name, key);
                               }}
                             />
-                          )}
+                          )} */}
                         </div>
                       )}
                     </ClientOnly>

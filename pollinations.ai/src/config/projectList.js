@@ -173,7 +173,7 @@ export const projects = {
     {
       name: "🆕 Pollinations.DIY",
       url: "https://pollinations.diy",
-      description: "An AI-powered creative coding assistant with multi-modal AI integration, real-time streaming, and developer-friendly features.",
+      description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
       author: "@thomash_pollinations",
       repo: "https://github.com/pollinations/pollinations.diy",
     },

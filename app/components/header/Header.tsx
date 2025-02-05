@@ -34,18 +34,7 @@ export function Header() {
             )}
           </ClientOnly>
         </>
-      ) : (
-        <div className="flex-1 flex justify-end">
-          <a
-            href="https://stackblitz-labs.github.io/bolt.diy/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-pollinations-diy-elements-textSecondary hover:text-pollinations-diy-elements-textPrimary transition-colors flex items-center gap-1"
-          >
-            🍴 Forked from bolt.diy <div className="i-ph:heart-duotone text-red-500" />
-          </a>
-        </div>
-      )}
+      ) : null}
     </header>
   );
 }

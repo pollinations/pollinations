@@ -167,4 +167,27 @@ export const availableModels = [
         baseModel: false,
         provider: 'cloudflare'
     },
+    {
+        name: 'gemini',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash',
+        baseModel: true,
+        provider: 'google'
+    },
+    {
+        name: 'gemini-thinking',
+        type: 'chat',
+        censored: true,
+        description: 'Gemini 2.0 Flash Thinking',
+        baseModel: true,
+        provider: 'google'
+    },
+    // {
+    //     name: 'llama',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Llama 3.3 70B',
+    //     baseModel: true,
+    // },
 ];

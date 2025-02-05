@@ -26,10 +26,27 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 List Models: `GET https://text.pollinations.ai/models`
 
-### Feed Endpoints
+## Feed Endpoints
+- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
+- Example:
+    data: {
+    "width":1024,
+    "height":1024,
+    "seed":42,
+    "model":"flux",
+    "imageURL":"https://image.pollinations.ai/prompt/gleaming%20face%20n2xuqsan%2020250205141310",
+    "prompt":"A radiant visage illuminated by soft, ethereal light",
+    ...
+    }
 
-- Image Feed: `GET https://image.pollinations.ai/feed` - SSE stream of user-generated images.
-- Text Feed: `GET https://text.pollinations.ai/feed` - SSE stream of user-generated text.
+- Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
+- Example:
+    data: {
+    "response": "Cherry Blossom Pink represents the beautiful spring in Tachikawa",
+    "model": "openai",
+    "messages": [openai messages array],
+    ...
+    }
 
 *\* required parameter*
 

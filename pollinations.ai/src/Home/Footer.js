@@ -79,13 +79,17 @@ const Footer = () => {
         >
           <Box height="100%" sx={{ fontSize: "1.5em", fontFamily: Fonts.title }}>
             <StyledLink to="/terms" onClick={handleTermsLinkClick}>
-              <LLMTextManipulator
-                text={FOOTER_TERMS_CONDITIONS_LINK}
-                transforms={[noLink]}
-              />
+              <LLMTextManipulator text={FOOTER_TERMS_CONDITIONS_LINK} transforms={[noLink]} />
             </StyledLink>
           </Box>
-          <Box sx={{ fontSize: "1.2em", fontFamily: Fonts.title }}>
+          <Box
+            sx={{
+              fontSize: "1.2em",
+              fontFamily: Fonts.title,
+              width: "100%",
+              textAlign: isXs ? "center" : "right",
+            }}
+          >
             <LLMTextManipulator text={FOOTER_INFO} transforms={[noLink]} />
           </Box>
         </Grid>

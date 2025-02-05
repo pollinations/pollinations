@@ -24,7 +24,7 @@ export const HERO_GITHUB_LINK = "README.md"
 export const HERO_DISCORD_LINK = "Join on Discord"
 
 export const NEWS_TITLE = 
-  "Last update! - 2025-01-25 - New lightning fast Flux.Schnell backend thanks to Cloudfare (for details on cloudflare check https://developers.cloudflare.com/workers-ai/). "
+  "Last update! " + newsList.split("\n")[0];
 
 export const NEWS_LIST =newsList
 

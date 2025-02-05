@@ -28,6 +28,7 @@ import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import generateTextClaude from './generateTextClaude.js';
 import { generateTextCloudflare } from './generateTextCloudflare.js';
+import { generateTextModal } from './generateTextModal.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -507,6 +508,7 @@ async function generateTextBasedOnModel(messages, options) {
             'openai-large': () => generateText(messages, options),
             'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
             // 'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
+            'hormoz': () => generateTextModal(messages, options),
         };
 
         const handler = modelHandlers[model] || (() => generateText(messages, options));

@@ -208,8 +208,8 @@ async function handleRequest(req, res, requestData) {
         // Extract token usage data
         const tokenUsage = completion.usage || {};
         
-        // only send if not roblox
-        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer) {
+        // only send if not roblox, not private, and not from image pollinations
+        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer && !requestData.isPrivate) {
             sendToFeedListeners(responseText, {
                 ...requestData,
                 ...tokenUsage
@@ -308,6 +308,7 @@ export function getRequestData(req) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
+    const isPrivate = data.private === 'true' || data.private === true;
 
     const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
@@ -328,7 +329,8 @@ export function getRequestData(req) {
         isImagePollinationsReferrer,
         isRobloxReferrer,
         referrer,
-        stream
+        stream,
+        isPrivate
     };
 }
 

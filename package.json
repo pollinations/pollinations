@@ -7,8 +7,9 @@
   "type": "module",
   "version": "0.0.6",
   "scripts": {
-    "deploy": "npm run build && wrangler pages deploy",
+    "deploy": "netlify deploy --prod",
     "build": "remix vite:build",
+    "netlify:dev": "netlify dev",
     "dev": "node pre-start.cjs  && remix vite:dev",
     "test": "vitest --run",
     "test:watch": "vitest",

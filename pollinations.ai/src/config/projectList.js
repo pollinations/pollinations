@@ -240,6 +240,12 @@ export const projects = {
   ],
   socialBots: [
     {
+      name: "Titan-GPT",
+      url: "https://t.me/titangpt_channel",
+      description: "Free Telegram bot providing access to neural networks including image and text generation powered by Pollinations.AI",
+      author: "t.me/titangpt_support",
+    },
+    {
       name: "Discord Bot",
       url: "https://discord.gg/D9xGg8mq3D",
       description: "A Discord bot for generating images based on user prompts.",

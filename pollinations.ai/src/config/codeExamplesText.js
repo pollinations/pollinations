@@ -280,7 +280,7 @@ const eventSource = new EventSource('https://image.pollinations.ai/feed');
 
 eventSource.onmessage = function(event) {
   const imageData = JSON.parse(event.data);
-  console.log('New image generated:', imageData);
+  console.log('New image generated:', imageData.imageURL);
 };
 \`\`\`
 

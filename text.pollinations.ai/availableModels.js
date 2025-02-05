@@ -181,11 +181,11 @@ export const availableModels = [
         description: 'Gemini 2.0 Flash Thinking',
         baseModel: true,
     },
-    {
-        name: 'llama',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3.3 70B',
-        baseModel: true,
-    },
+    // {
+    //     name: 'llama',
+    //     type: 'chat',
+    //     censored: false,
+    //     description: 'Llama 3.3 70B',
+    //     baseModel: true,
+    // },
 ];

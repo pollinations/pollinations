@@ -173,6 +173,7 @@ export const availableModels = [
         censored: true,
         description: 'Gemini 2.0 Flash',
         baseModel: true,
+        provider: 'google'
     },
     {
         name: 'gemini-thinking',
@@ -180,6 +181,7 @@ export const availableModels = [
         censored: true,
         description: 'Gemini 2.0 Flash Thinking',
         baseModel: true,
+        provider: 'google'
     },
     // {
     //     name: 'llama',

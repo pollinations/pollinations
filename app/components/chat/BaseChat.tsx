@@ -306,13 +306,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
-              <div id="intro" className="mt-[16vh] max-w-chat mx-auto text-center px-4 lg:px-0">
-                <h1 className="text-3xl lg:text-6xl font-bold text-[#ecf874] mb-4 animate-fade-in">
-                  🌺 Cross-Pollinate Ideas
-                </h1>
-                <p className="text-md lg:text-xl mb-8 text-[#ffffff] animate-fade-in animation-delay-200">
-                  Where code and creativity cross-pollinate to grow something amazing. 🐝
-                </p>
+              <div className="max-w-2xl mx-auto text-left">
+                <blockquote className="text-sm lg:text-base italic text-gray-300 border-l-4 border-gray-500 pl-4 py-2 mb-2">
+                  A computational process is indeed much like a sorcerer's idea of a spirit. It cannot be seen or touched. It is not composed of matter at all. However, it is very real. It can perform intellectual work. It can answer questions. It can aﬀect the world by disbursing money at a bank or by controlling a robot arm in a factory. The programs we use to conjure processes are like a sorcerer's spells. They are carefully composed from symbolic expressions in arcane and esoteric programming languages that prescribe the tasks we want our processes to perform.
+                </blockquote>
+                <div className="text-xs lg:text-sm text-gray-400 text-right">
+                  ~H. Abelson, G. Sussman - Structure and Interpretation of Computer Programs
+                </div>
               </div>
             )}
             <div

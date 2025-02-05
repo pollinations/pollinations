@@ -78,6 +78,7 @@ export default function App() {
   const theme = useStore(themeStore);
 
   useEffect(() => {
+    logStore.showLogs.set(true);  // Enable logs by default
     logStore.logSystem('Application initialized', {
       theme,
       platform: navigator.platform,

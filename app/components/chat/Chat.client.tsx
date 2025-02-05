@@ -91,10 +91,20 @@ const processSampledMessages = createSampler(
     storeMessageHistory: (messages: Message[]) => Promise<void>;
   }) => {
     const { messages, initialMessages, isLoading, parseMessages, storeMessageHistory } = options;
+    logger.debug('Processing messages:', { 
+      messagesLength: messages.length, 
+      initialMessagesLength: initialMessages.length,
+      isLoading 
+    });
+    
     parseMessages(messages, isLoading);
 
     if (messages.length > initialMessages.length) {
-      storeMessageHistory(messages).catch((error) => toast.error(error.message));
+      logger.debug('Storing new messages');
+      storeMessageHistory(messages).catch((error) => {
+        logger.error('Failed to store messages:', error);
+        toast.error(error.message);
+      });
     }
   },
   50,
@@ -247,24 +257,48 @@ export const ChatImpl = memo(
     }, [input, textareaRef]);
 
     const runAnimation = async () => {
+      logger.debug('Running animation:', { chatStarted });
       if (chatStarted) {
+        logger.debug('Animation skipped - chat already started');
         return;
       }
 
-      await Promise.all([
-        animate('#examples', { opacity: 0, display: 'none' }, { duration: 0.1 }),
-        animate('#intro', { opacity: 0, flex: 1 }, { duration: 0.2, ease: cubicEasingFn }),
-      ]);
+      try {
+        const examples = document.querySelector('#examples');
+        const intro = document.querySelector('#intro');
+        
+        const animations = [];
+        if (examples) {
+          animations.push(animate('#examples', { opacity: 0, display: 'none' }, { duration: 0.1 }));
+        }
+        if (intro) {
+          animations.push(animate('#intro', { opacity: 0, flex: 1 }, { duration: 0.2, ease: cubicEasingFn }));
+        }
+        
+        if (animations.length > 0) {
+          await Promise.all(animations);
+        }
+      } catch (error) {
+        logger.error('Animation failed:', error);
+        // Continue even if animation fails
+      }
 
+      logger.debug('Setting chat started');
       chatStore.setKey('started', true);
-
       setChatStarted(true);
     };
 
     const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
       const _input = messageInput || input;
+      logger.debug('Sending message:', { 
+        inputLength: _input.length,
+        isLoading,
+        chatStarted,
+        messagesLength: messages.length
+      });
 
       if (_input.length === 0 || isLoading) {
+        logger.debug('Skipping empty or loading message');
         return;
       }
 
@@ -278,6 +312,7 @@ export const ChatImpl = memo(
       await workbenchStore.saveAllFiles();
 
       if (error != null) {
+        logger.debug('Removing last message due to error');
         setMessages(messages.slice(0, -1));
       }
 
@@ -285,9 +320,11 @@ export const ChatImpl = memo(
 
       chatStore.setKey('aborted', false);
 
+      logger.debug('Running animation, chat state:', { chatStarted, autoSelectTemplate });
       runAnimation();
 
       if (!chatStarted && _input && autoSelectTemplate) {
+        logger.debug('Setting fake loading for first message');
         setFakeLoading(true);
         setMessages([
           {

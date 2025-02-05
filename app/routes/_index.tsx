@@ -15,6 +15,14 @@ export default function Index() {
     <div className="flex flex-col h-full w-full bg-[#110518]">
       <Header />
       <ClientOnly fallback={<BaseChat />}>{() => <Chat />}</ClientOnly>
+      <a
+        href="https://stackblitz-labs.github.io/bolt.diy/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-4 right-4 text-sm text-pollinations-diy-elements-textSecondary hover:text-pollinations-diy-elements-textPrimary transition-colors flex items-center gap-1"
+      >
+        <span className="text-xl">🍴</span> bolt.diy
+      </a>
     </div>
   );
 }

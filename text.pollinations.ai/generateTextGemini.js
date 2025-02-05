@@ -38,10 +38,6 @@ export async function generateTextGemini(messages, options) {
             n: 1
         };
 
-        if (typeof options.seed === 'number') {
-            requestBody.seed = Math.floor(options.seed);
-        }
-
         if (options.jsonMode) {
             requestBody.response_format = { type: 'json_object' };
         }

@@ -2,8 +2,63 @@ import { WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
 
+const apiDocs = `
+# Pollinations.AI API Documentation
+- You have access to the Pollinations API which allows you to generate text and images through a variety of models. Vision as in image recognition is also possible.
+
+## Image Generation API (Default model: 'flux')
+- Generate Image: GET https://image.pollinations.ai/prompt/{prompt}
+  Parameters: prompt*, model, seed, width, height, nologo, private, enhance, safe
+  Return: Image file
+- List Models: GET https://image.pollinations.ai/models
+
+## Text Generation API (Default model: 'openai')
+- Generate (GET): GET https://text.pollinations.ai/{prompt}
+  Parameters: prompt*, model, seed, json, system
+  Return: Generated text
+- Generate (POST): POST https://text.pollinations.ai/
+  Body: messages*, model, seed, jsonMode
+  Return: Generated text
+- OpenAI Compatible: POST https://text.pollinations.ai/openai
+  Body: Follows OpenAI ChatGPT API format
+  Return: OpenAI-style response
+- List Models: GET https://text.pollinations.ai/models
+
+## Feed Endpoints
+- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images)
+- Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
+
+## React Hooks (npm install @pollinations/react)
+- usePollinationsText(prompt, options)
+  Options: seed, model, systemPrompt
+  Return: string | null
+- usePollinationsImage(prompt, options)
+  Options: width, height, model, seed, nologo, enhance
+  Return: string | null
+- usePollinationsChat(initialMessages, options)
+  Options: seed, jsonMode, model
+  Return: { sendUserMessage: (message) => void, messages: Array<{role, content}> }
+
+## Vision Capabilities
+OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API.
+Images can be passed as URLs or base64-encoded data in the messages.
+e.g. 
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+                    },
+                },
+            ],
+        }
+  `;
+
 export const getSystemPrompt = (cwd: string = WORK_DIR) => `
-You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
+You are Polli, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
 
 <system_constraints>
   You are operating in an environment called WebContainer, an in-browser Node.js runtime that emulates a Linux system to some degree. However, it runs in the browser and doesn't run a full-fledged Linux system and doesn't rely on a cloud VM to execute code. All code is executed in the browser. It does come with a shell that emulates zsh. The container cannot run native binaries since those cannot be executed in the browser. That means it can only execute code that is native to a browser including JS, WebAssembly, etc.
@@ -97,8 +152,12 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
 
 </chain_of_thought_instructions>
 
+<api_documentation>
+${apiDocs}
+</api_documentation>
+
 <artifact_info>
-  Bolt creates a SINGLE, comprehensive artifact for each project. The artifact contains all necessary steps and components, including:
+  Polli creates a SINGLE, comprehensive artifact for each project. The artifact contains all necessary steps and components, including:
 
   - Shell commands to run including dependencies to install using a package manager (NPM)
   - Files to create and their contents

@@ -171,6 +171,13 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Pollinations.DIY",
+      url: "https://pollinations.diy",
+      description: "An AI-powered creative coding assistant with multi-modal AI integration, real-time streaming, and developer-friendly features.",
+      author: "@thomash_pollinations",
+      repo: "https://github.com/pollinations/pollinations.diy",
+    },
+    {
       name: "Pal Chat",
       url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
       description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",

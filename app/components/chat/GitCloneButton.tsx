@@ -114,10 +114,10 @@ ${escapeBoltTags(file.content)}
     <>
       <button
         onClick={onClick}
-        title="Clone a Git Repo"
-        className="px-4 py-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-3 transition-all flex items-center gap-2"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#332d39] hover:bg-[#433d49] border border-[#4a4a4a] text-[#f874ec] hover:border-[#f874ec] transition-all"
+        disabled={!ready || loading}
       >
-        <span className="i-ph:git-branch" />
+        <div className="i-ph:git-branch text-xl" />
         Clone a Git Repo
       </button>
       {loading && <LoadingOverlay message="Please wait while we clone the repository..." />}

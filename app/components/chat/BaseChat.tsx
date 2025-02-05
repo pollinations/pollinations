@@ -310,7 +310,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 <h1 className="text-3xl lg:text-6xl font-bold text-[#ecf874] mb-4 animate-fade-in">
                   🌺 Cross-Pollinate Ideas
                 </h1>
-                <p className="text-md lg:text-xl mb-8 text-white animate-fade-in animation-delay-200">
+                <p className="text-md lg:text-xl mb-8 text-[#ffffff] animate-fade-in animation-delay-200">
                   Where code and creativity cross-pollinate to grow something amazing. 🐝
                 </p>
               </div>
@@ -392,17 +392,37 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     <ClientOnly>
                       {() => (
                         <div className={isModelSettingsCollapsed ? 'hidden' : ''}>
-                          <ModelSelector
-                            key={provider?.name + ':' + modelList.length}
-                            model={model}
-                            setModel={setModel}
-                            modelList={modelList}
-                            provider={provider}
-                            setProvider={setProvider}
-                            providerList={providerList || (PROVIDER_LIST as ProviderInfo[])}
-                            apiKeys={apiKeys}
-                            modelLoading={isModelLoading}
-                          />
+                          <div className="mb-2 flex gap-2 flex-col sm:flex-row">
+                            <select
+                              value={provider?.name}
+                              onChange={(e) => {
+                                const selectedProvider = providerList?.find((p) => p.name === e.target.value);
+                                if (selectedProvider) {
+                                  setProvider?.(selectedProvider);
+                                }
+                              }}
+                              className="flex-1 p-2 rounded-lg border border-[#4a4a4a] bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#74ecf8] focus:border-[#74ecf8] transition-all text-sm min-w-[100px] outline-none"
+                            >
+                              {providerList?.map((p) => (
+                                <option key={p.name} value={p.name} className="bg-[#2a2a2a]">
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              value={model}
+                              onChange={(e) => setModel?.(e.target.value)}
+                              className="flex-1 p-2 rounded-lg border border-[#4a4a4a] bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#f874ec] focus:border-[#f874ec] transition-all text-sm min-w-[100px] outline-none"
+                            >
+                              {modelList
+                                .filter((m) => m.provider === provider?.name)
+                                .map((m) => (
+                                  <option key={m.name} value={m.name} className="bg-[#2a2a2a]">
+                                    {m.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
                           {(providerList || []).length > 0 && provider && (
                             <APIKeyManager
                               provider={provider}
@@ -441,11 +461,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   >
                     <textarea
                       ref={textareaRef}
-                      className={classNames(
-                        'w-full pl-4 pt-4 pr-16 outline-none resize-none text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent text-sm',
-                        'transition-all duration-200',
-                        'hover:border-bolt-elements-focus',
-                      )}
+                      className="w-full resize-none bg-transparent outline-none text-white placeholder:text-gray-400 p-4"
+                      rows={1}
                       onDragEnter={(e) => {
                         e.preventDefault();
                         e.currentTarget.style.border = '2px solid #1488fc';

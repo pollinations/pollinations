@@ -62,7 +62,7 @@ export default function ProvidersTab() {
               alt={`${provider.name} icon`}
               className="w-6 h-6 dark:invert"
             />
-            <span className="text-bolt-elements-textPrimary">{provider.name}</span>
+            <span className="text-[rgb(236,248,116)]">{provider.name}</span>
           </div>
           <Switch
             className="ml-auto"
@@ -134,7 +134,7 @@ export default function ProvidersTab() {
       {/* URL Configurable Providers Section */}
       {urlConfigurableProviders.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-2 text-bolt-elements-textPrimary">Experimental Providers</h3>
+          <h3 className="text-lg font-semibold mb-2 text-[rgb(236,248,116)]">Experimental Providers</h3>
           <p className="text-sm text-bolt-elements-textSecondary mb-4">
             These providers are experimental and allow you to run AI models locally or connect to your own
             infrastructure. They require additional setup but offer more flexibility.

@@ -78,7 +78,7 @@ export const SettingsWindow = ({ open, onClose }: SettingsProps) => {
                   styles['settings-tabs'],
                 )}
               >
-                <DialogTitle className="flex-shrink-0 text-lg font-semibold text-bolt-elements-textPrimary mb-2">
+                <DialogTitle className="flex-shrink-0 text-lg font-semibold text-[rgb(236,248,116)] mb-2">
                   Settings
                 </DialogTitle>
                 {tabs.map((tab) => (

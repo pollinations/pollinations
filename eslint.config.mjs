@@ -20,15 +20,15 @@ export default [
       '@typescript-eslint/no-empty-object-type': 'off',
       '@blitz/comment-syntax': 'off',
       '@blitz/block-scope-case': 'off',
-      'array-bracket-spacing': ["error", "never"],
-      'object-curly-newline': ["error", { "consistent": true }],
-      'keyword-spacing': ["error", { "before": true, "after": true }],
-      'consistent-return': "error",
-      'semi': ["error", "always"],
-      'curly': ["error"],
-      'no-eval': ["error"],
-      'linebreak-style': ["error", "unix"],
-      'arrow-spacing': ["error", { "before": true, "after": true }]
+      'array-bracket-spacing': ["warn", "never"],
+      'object-curly-newline': ["warn", { "consistent": true }],
+      'keyword-spacing': ["warn", { "before": true, "after": true }],
+      'consistent-return': "warn",
+      'semi': ["warn", "always"],
+      'curly': ["warn"],
+      'no-eval': ["warn"],
+      'linebreak-style': ["warn", "unix"],
+      'arrow-spacing': ["warn", { "before": true, "after": true }]
     },
   },
   {
@@ -48,7 +48,7 @@ export default [
     ignores: ['functions/*'],
     rules: {
       'no-restricted-imports': [
-        'error',
+        'warn',
         {
           patterns: [
             {

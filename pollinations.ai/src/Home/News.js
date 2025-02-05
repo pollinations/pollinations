@@ -64,7 +64,7 @@ export default function News() {
             color={Colors.offwhite}
             style={{ fontSize: "1.2em", fontFamily: Fonts.title }}
             textAlign="left"
-            maxWidth="1000px"
+            maxWidth="90%"
           >
             <LLMTextManipulator text={NEWS_LIST} transforms={[rephrase, emojify]} />
           </SectionHeadlineStyle>

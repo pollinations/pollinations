@@ -25,8 +25,26 @@ const apiDocs = `
 - List Models: GET https://text.pollinations.ai/models
 
 ## Feed Endpoints
-- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images)
+- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
+- Example:
+    data: {
+    "width":1024,
+    "height":1024,
+    "seed":42,
+    "model":"flux",
+    "imageURL":"https://image.pollinations.ai/prompt/gleaming%20face%20n2xuqsan%2020250205141310",
+    "prompt":"A radiant visage illuminated by soft, ethereal light",
+    ...
+    }
+
 - Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
+- Example:
+    data: {
+    "response": "Cherry Blossom Pink represents the beautiful spring in Tachikawa",
+    "model": "openai",
+    "messages": [openai messages array],
+    ...
+    }
 
 ## Vision Capabilities
 OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API.
@@ -107,14 +125,14 @@ const codeExamples = `
     const imageStream = new EventSource('https://image.pollinations.ai/feed');
     imageStream.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('New image:', data.url);
+      console.log('New image:', data.imageURL);
     };
 
     // SSE client for text feed
     const textStream = new EventSource('https://text.pollinations.ai/feed');
     textStream.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('New text:', data.content);
+      console.log('New text:', data);
     };
 `;
 
@@ -138,6 +156,8 @@ You are Polli, an expert AI assistant and exceptional senior software developer 
   WebContainer has the ability to run a web server but requires to use an npm package (e.g., Vite, servor, serve, http-server) or use the Node.js APIs to implement a web server.
 
   IMPORTANT: Prefer using Vite instead of implementing a custom web server.
+
+  IMPORTANT: Vanilla HTML (and JS) projects should run \`npx serve --single\` automatically after the files have been created. If thats not possible inform the user.
 
   IMPORTANT: Git is NOT available.
 

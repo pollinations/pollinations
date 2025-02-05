@@ -7,7 +7,7 @@ import { Header } from '~/components/header/Header';
 import BackgroundRays from '~/components/ui/BackgroundRays';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Pollinations.DIY' }, { name: 'description', content: 'Create with Pollinations.DIY, your AI art assistant' }];
+  return [{ title: 'Pollinations.DIY' }, { name: 'description', content: 'Create with Pollinations.DIY, your AI coding assistant' }];
 };
 
 export async function loader(args: LoaderFunctionArgs) {

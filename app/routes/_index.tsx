@@ -5,7 +5,7 @@ import { Chat } from '~/components/chat/Chat.client';
 import { Header } from '~/components/header/Header';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Pollinations.DIY' }, { name: 'description', content: 'Create with Pollinations.DIY, your AI art assistant' }];
+  return [{ title: 'Pollinations.DIY' }, { name: 'description', content: 'Create with Pollinations.DIY, your AI coding assistant' }];
 };
 
 export const loader = () => json({});

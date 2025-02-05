@@ -1,3 +1,7 @@
+// Project entries support an optional submissionDate field (format: "YYYY-MM-DD")
+// This field is automatically added for new submissions but may not be present in older entries
+// The date is not currently displayed in the UI but is recorded for future use
+
 export const projectCategories = [
   {
     title: "LLM Integrations",

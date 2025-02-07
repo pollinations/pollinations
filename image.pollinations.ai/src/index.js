@@ -130,7 +130,7 @@ const imageGen = async ({ req, timingInfo, originalPrompt, safeParams, referrer,
     if (maturity.isChild && maturity.isMature) {
       logApi("isChild and isMature, delaying response by 15 seconds");
       progress.updateBar(requestId, 85, 'Safety', 'Additional review...');
-      await sleep(8000);
+      await sleep(3000);
     }
     progress.updateBar(requestId, 90, 'Safety', 'Check complete');
 

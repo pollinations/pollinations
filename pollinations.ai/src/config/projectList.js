@@ -76,6 +76,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🎵 PolliSonic Generator",
+      url: "https://interzone.art.br/pollisonic_generator/",
+      description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",
+      author: "@brain.diver",
+      repo: "https://github.com/rafabez/pollisonic_generator",
+    },
+    {
       name: "Abyss Ascending",
       url: "https://interzone.art.br/abyss_ascending/",
       description: "A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world.",

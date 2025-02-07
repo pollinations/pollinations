@@ -15,13 +15,13 @@ export const availableModels = [
         baseModel: true,
         vision: true
     },
-    {
-        name: 'qwen',
-        type: 'chat',
-        censored: true,
-        description: 'Qwen 2.5 72B',
-        baseModel: true,
-    },
+    // {
+    //     name: 'qwen',
+    //     type: 'chat',
+    //     censored: true,
+    //     description: 'Qwen 2.5 72B',
+    //     baseModel: true,
+    // },
     {
         name: 'qwen-coder',
         type: 'chat',
@@ -137,6 +137,15 @@ export const availableModels = [
         baseModel: true,
         reasoning: true,
         provider: 'cloudflare'
+    },
+    {
+        name: 'deepseek-reasoner',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek R1 - Full',
+        baseModel: true,
+        reasoning: true,
+        provider: 'deepseek'
     },
     // {
     //     name: 'llamalight',

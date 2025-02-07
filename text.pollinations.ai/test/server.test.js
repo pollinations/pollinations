@@ -513,7 +513,8 @@ test('getRequestData should parse request data correctly', t => {
                 isImagePollinationsReferrer: false,
                 isRobloxReferrer: false,
                 referrer: 'unknown',
-                stream: false
+                stream: false,
+                isPrivate: false
             }
         },
         {
@@ -532,7 +533,8 @@ test('getRequestData should parse request data correctly', t => {
                 isImagePollinationsReferrer: false,
                 isRobloxReferrer: false,
                 referrer: 'unknown',
-                stream: false
+                stream: false,
+                isPrivate: false
             }
         }
     ];

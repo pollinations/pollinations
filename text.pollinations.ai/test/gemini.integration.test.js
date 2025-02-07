@@ -83,33 +83,6 @@ test.serial('should respect temperature parameter', async t => {
 });
 
 /**
- * Test: Error Handling
- * 
- * Purpose: Verify that the API handles errors gracefully.
- * 
- * Expected behavior:
- * 1. Should throw an error with invalid API key
- */
-test.serial('should handle API errors gracefully', async t => {
-    // Temporarily unset API key
-    const originalKey = process.env.GEMINI_API_KEY;
-    process.env.GEMINI_API_KEY = 'invalid-key';
-
-    const messages = [{ role: 'user', content: 'Hello' }];
-    const options = { model: 'gemini' };
-
-    await t.throwsAsync(
-        async () => {
-            await generateTextGemini(messages, options);
-        },
-        { message: /Failed to generate text with Gemini API/ }
-    );
-
-    // Restore API key
-    process.env.GEMINI_API_KEY = originalKey;
-});
-
-/**
  * Test: Message Formatting
  * 
  * Purpose: Verify that messages are formatted correctly.

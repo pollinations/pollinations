@@ -1,5 +1,6 @@
 import test from 'ava';
 import axios from 'axios';
+import { Readable } from 'stream';
 import { availableModels } from '../availableModels.js';
 import app from '../server.js';
 import http from 'http';
@@ -191,7 +192,7 @@ test('should return different responses for different seeds', async t => {
  */
 test('should return JSON response when jsonMode is true', async t => {
     const response = await axiosInstance.post('/', {
-        messages: [{ role: 'user', content: 'Return a JSON object with keys "name" and "age"' }],
+        messages: [{ role: 'user', content: 'Generate a JSON object with exactly two top-level keys: "name" (a real name string) and "age" (a number between 1 and 100). Do not nest these under any other object.' }],
         jsonMode: true,
         cache: false
     });
@@ -199,6 +200,9 @@ test('should return JSON response when jsonMode is true', async t => {
     t.truthy(response.data, 'Response should contain data');
     t.truthy(response.data.name, 'Response should contain a "name" key');
     t.truthy(response.data.age, 'Response should contain an "age" key');
+    t.true(typeof response.data.age === 'number', 'Age should be a number');
+    t.true(response.data.age > 0 && response.data.age <= 100, 'Age should be between 1 and 100');
+    t.true(response.data.name.length > 0, 'Name should not be empty');
 });
 
 /**
@@ -228,6 +232,153 @@ test('should respect temperature parameter', async t => {
     t.is(lowTempResponse.status, 200, 'Low temperature response status should be 200');
     t.is(highTempResponse.status, 200, 'High temperature response status should be 200');
     t.notDeepEqual(lowTempResponse.data, highTempResponse.data, 'Responses should differ based on temperature');
+});
+
+/**
+ * Test: Private Parameter Handling
+ * 
+ * Purpose: Verify that the private parameter correctly controls feed broadcasting
+ * 
+ * Steps:
+ * 1. Send requests with private=true and private=false
+ * 2. Monitor feed broadcasting behavior
+ * 
+ * Expected behavior:
+ * 1. Responses should be successful (200 OK)
+ * 2. Feed broadcasting should be skipped for private=true
+ * 3. Feed broadcasting should occur for private=false
+ */
+test('should handle different true/false formats for private parameter', async t => {
+    // Test different variations of "true"
+    const variations = [
+        { value: true, desc: 'boolean true' },
+        { value: 'true', desc: 'string true' },
+        { value: 'True', desc: 'Python-style True' },
+        { value: 'TRUE', desc: 'uppercase TRUE' }
+    ];
+
+    for (const { value, desc } of variations) {
+        const response = await axiosInstance.post('/', {
+            messages: [{ role: 'user', content: `Test ${desc}` }],
+            private: value,
+            cache: false
+        });
+        t.is(response.status, 200, `Response status should be 200 for ${desc}`);
+    }
+});
+
+test('should respect private parameter and control feed broadcasting', async t => {
+    // Create a promise that will resolve with received feed messages
+    const receivedMessages = [];
+    const feedPromise = new Promise((resolve, reject) => {
+        const feedResponse = axios.get(`${baseUrl}/feed`, {
+            responseType: 'stream'
+        });
+
+        feedResponse.then(response => {
+            response.data.on('data', chunk => {
+                const lines = chunk.toString().split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        receivedMessages.push(data);
+                    }
+                }
+            });
+
+            // Resolve after a delay to allow messages to be received
+            setTimeout(() => resolve(receivedMessages), 2000);
+        }).catch(reject);
+    });
+
+    // Send a private message
+    const privateMessage = 'Test private message ' + Date.now();
+    const privateResponse = await axiosInstance.post('/', {
+        messages: [{ role: 'user', content: privateMessage }],
+        private: true,
+        cache: false
+    });
+    t.is(privateResponse.status, 200, 'Private response status should be 200');
+
+    // Wait a bit to ensure message processing
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Send a public message
+    const publicMessage = 'Test public message ' + Date.now();
+    const publicResponse = await axiosInstance.post('/', {
+        messages: [{ role: 'user', content: publicMessage }],
+        private: false,
+        cache: false
+    });
+    t.is(publicResponse.status, 200, 'Public response status should be 200');
+
+    // Wait for feed messages to be collected
+    const messages = await feedPromise;
+
+    // Verify that private message is not in feed
+    const privateMessageInFeed = messages.some(msg => 
+        msg.parameters.messages[0].content === privateMessage
+    );
+    t.false(privateMessageInFeed, 'Private message should not appear in feed');
+
+    // Verify that public message is in feed
+    const publicMessageInFeed = messages.some(msg => 
+        msg.parameters.messages[0].content === publicMessage
+    );
+    t.true(publicMessageInFeed, 'Public message should appear in feed');
+});
+
+test('should respect private parameter in GET requests', async t => {
+    // Create a promise that will resolve with received feed messages
+    const receivedMessages = [];
+    const feedPromise = new Promise((resolve, reject) => {
+        const feedResponse = axios.get(`${baseUrl}/feed`, {
+            responseType: 'stream'
+        });
+
+        feedResponse.then(response => {
+            response.data.on('data', chunk => {
+                const lines = chunk.toString().split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        receivedMessages.push(data);
+                    }
+                }
+            });
+
+            // Resolve after a delay to allow messages to be received
+            setTimeout(() => resolve(receivedMessages), 2000);
+        }).catch(reject);
+    });
+
+    // Send a private message
+    const privateMessage = 'Test private GET message ' + Date.now();
+    const privateResponse = await axiosInstance.get(`/${privateMessage}?private=true`);
+    t.is(privateResponse.status, 200, 'Private response status should be 200');
+
+    // Wait a bit to ensure message processing
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Send a public message
+    const publicMessage = 'Test public GET message ' + Date.now();
+    const publicResponse = await axiosInstance.get(`/${publicMessage}?private=false`);
+    t.is(publicResponse.status, 200, 'Public response status should be 200');
+
+    // Wait for feed messages to be collected
+    const messages = await feedPromise;
+
+    // Verify that private message is not in feed
+    const privateMessageInFeed = messages.some(msg => 
+        msg.parameters.messages[0].content === privateMessage
+    );
+    t.false(privateMessageInFeed, 'Private message should not appear in feed');
+
+    // Verify that public message is in feed
+    const publicMessageInFeed = messages.some(msg => 
+        msg.parameters.messages[0].content === publicMessage
+    );
+    t.true(publicMessageInFeed, 'Public message should appear in feed');
 });
 
 /**
@@ -305,7 +456,6 @@ test('OpenAI API should handle invalid model gracefully', async t => {
     t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');
 });
 
-
 /**
  * Test Suite: Special Character Handling
  * 
@@ -344,7 +494,6 @@ test('POST /openai should handle special characters', async t => {
             `${testCase.description} should return a response`);
     }
 });
-
 
 /**
  * Test Suite: Seed Behavior Across Models
@@ -401,6 +550,88 @@ for (const modelConfig of chatModels) {
         }
     });
 }
+
+/**
+ * Test: Private Parameter with SSE Feed
+ * 
+ * Purpose: Verify that private images do not appear in the public feed
+ * while public images do.
+ * 
+ * Expected behavior:
+ * 1. Private image should not appear in the feed
+ * 2. Public image should appear in the feed
+ */
+test('should respect private parameter in image feed', async t => {
+    // Create arrays to store feed events
+    const receivedEvents = [];
+    
+    // Subscribe to the feed
+    const feedPromise = new Promise((resolve, reject) => {
+        const feedResponse = axios.get(`${baseUrl}/feed`, {
+            responseType: 'stream'
+        });
+
+        feedResponse.then(response => {
+            const stream = response.data;
+            stream.on('data', chunk => {
+                const lines = chunk.toString().split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const eventData = JSON.parse(line.slice(6));
+                            receivedEvents.push(eventData);
+                        } catch (error) {
+                            log('Error parsing SSE data:', error);
+                        }
+                    }
+                }
+            });
+
+            // Resolve after collecting events for a while
+            setTimeout(() => {
+                stream.destroy();
+                resolve();
+            }, 5000); // Wait 5 seconds for events
+        }).catch(reject);
+    });
+
+    // Generate two images with different prompts
+    const privatePrompt = 'A peaceful garden with butterflies';
+    const publicPrompt = 'A serene mountain landscape';
+
+    // Make the requests
+    const privateResponse = await axiosInstance.get(`/prompt/${encodeURIComponent(privatePrompt)}`, {
+        params: {
+            private: true,
+            enhance: false
+        }
+    });
+
+    const publicResponse = await axiosInstance.get(`/prompt/${encodeURIComponent(publicPrompt)}`, {
+        params: {
+            private: false,
+            enhance: false
+        }
+    });
+
+    // Wait for feed events to be collected
+    await feedPromise;
+
+    // Check that responses were successful
+    t.is(privateResponse.status, 200, 'Private image generation should succeed');
+    t.is(publicResponse.status, 200, 'Public image generation should succeed');
+
+    // Verify feed contents
+    const privateImageInFeed = receivedEvents.some(event => 
+        event.prompt && event.prompt.includes(privatePrompt)
+    );
+    const publicImageInFeed = receivedEvents.some(event => 
+        event.prompt && event.prompt.includes(publicPrompt)
+    );
+
+    t.false(privateImageInFeed, 'Private image should not appear in feed');
+    t.true(publicImageInFeed, 'Public image should appear in feed');
+});
 
 /**
  * Test: Streaming Responses (Commented Out)

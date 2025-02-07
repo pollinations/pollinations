@@ -32,6 +32,13 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "🆕 urSapere AI",
+      url: "https://perchance.org/chat-ursapere-ai",
+      description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
+      author: "https://perchance.org/withthatway",
+      submissionDate: "2025-02-07",
+    },
+    {
       name: "Pollinations Chat",
       url: "https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4",
       description: "Pollinations' integrated AI for text and images, totally free and unlimited.",

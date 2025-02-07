@@ -16,7 +16,8 @@ When handling project submission issues:
      url: "https://project-url.com",
      description: "Brief description of the project.",
      author: "@discord_username", // if available or alternatively a URL to a social media profile
-     repo: "https://github.com/repo-url" // if available
+     repo: "https://github.com/repo-url", // if available
+     submissionDate: "YYYY-MM-DD" // automatically added for new submissions
    }
    ```
 

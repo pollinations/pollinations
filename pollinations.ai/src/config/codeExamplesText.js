@@ -186,7 +186,9 @@ reqwest = { version = "0.11", features =["blocking", "json"] }
   },
   nodejs: {
     code: ({ prompt, width, height, seed, model }) => `
-// Node.js code example for downloading an image
+// Node.js code examples for Pollinations.AI
+
+// Example 1: Image Generation
 
 import fs from 'fs';
 import fetch from 'node-fetch';
@@ -212,6 +214,28 @@ const model = '${model || "flux"}'; // Using 'flux' as default if model is not p
 const imageUrl = \`https://pollinations.ai/p/\${encodeURIComponent(prompt)}?width=\${width}&height=\${height}&seed=\${seed}&model=\${model}\`;
 
 downloadImage(imageUrl);
+
+// Example 2: Text Generation with Private Response
+async function generatePrivateText() {
+  const response = await fetch('https://text.pollinations.ai/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: 'user', content: 'Generate a creative story' }
+      ],
+      model: 'openai',
+      private: true  // Response won't appear in public feed
+    })
+  });
+  
+  const data = await response.text();
+  console.log('Generated Text:', data);
+}
+
+generatePrivateText();
 `,
     language: "javascript"
   },

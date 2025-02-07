@@ -208,8 +208,8 @@ async function handleRequest(req, res, requestData) {
         // Extract token usage data
         const tokenUsage = completion.usage || {};
         
-        // only send if not roblox
-        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer) {
+        // only send if not roblox, not private, and not from image pollinations
+        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer && !requestData.isPrivate) {
             sendToFeedListeners(responseText, {
                 ...requestData,
                 ...tokenUsage
@@ -308,6 +308,8 @@ export function getRequestData(req) {
     const model = data.model || 'openai';
     const systemPrompt = data.system ? data.system : null;
     const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
+    const isPrivate = data.private === true || 
+                     (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
 
     const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
@@ -328,7 +330,8 @@ export function getRequestData(req) {
         isImagePollinationsReferrer,
         isRobloxReferrer,
         referrer,
-        stream
+        stream,
+        isPrivate
     };
 }
 
@@ -487,7 +490,7 @@ async function generateTextBasedOnModel(messages, options) {
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
-            'qwen': () => generateTextHuggingface(messages, { ...options, model }),
+            // 'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
             'llamaguard': () => generateTextCloudflare(messages, options),

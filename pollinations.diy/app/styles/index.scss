@@ -1,0 +1,39 @@
+@use 'variables.scss';
+@use 'z-index.scss';
+@use 'animations.scss';
+@use 'components/terminal.scss';
+@use 'components/resize-handle.scss';
+@use 'components/code.scss';
+@use 'components/editor.scss';
+@use 'components/toast.scss';
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  color: #e5e5e5; /* Light gray color for better visibility */
+}
+
+.font-title {
+  font-family: 'Maven Pro', sans-serif;
+}
+
+.font-headline {
+  font-family: 'Mako', sans-serif;
+}
+
+.font-parameter {
+  font-family: 'Duru Sans', sans-serif;
+}
+
+button {
+  background-color: var(--bolt-elements-button-primary-background);
+}
+
+div.flex {
+  background-color: rgb(17, 5, 24);
+}
+
+iframe {
+  background-color: white;
+}

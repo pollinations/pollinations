@@ -490,7 +490,7 @@ async function generateTextBasedOnModel(messages, options) {
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
-            'qwen': () => generateTextHuggingface(messages, { ...options, model }),
+            // 'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
             'llamaguard': () => generateTextCloudflare(messages, options),

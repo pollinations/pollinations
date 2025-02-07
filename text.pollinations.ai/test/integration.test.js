@@ -192,7 +192,7 @@ test('should return different responses for different seeds', async t => {
  */
 test('should return JSON response when jsonMode is true', async t => {
     const response = await axiosInstance.post('/', {
-        messages: [{ role: 'user', content: 'Return a JSON object with keys "name" and "age"' }],
+        messages: [{ role: 'user', content: 'Generate a JSON object with exactly two top-level keys: "name" (a real name string) and "age" (a number between 1 and 100). Do not nest these under any other object.' }],
         jsonMode: true,
         cache: false
     });
@@ -200,6 +200,9 @@ test('should return JSON response when jsonMode is true', async t => {
     t.truthy(response.data, 'Response should contain data');
     t.truthy(response.data.name, 'Response should contain a "name" key');
     t.truthy(response.data.age, 'Response should contain an "age" key');
+    t.true(typeof response.data.age === 'number', 'Age should be a number');
+    t.true(response.data.age > 0 && response.data.age <= 100, 'Age should be between 1 and 100');
+    t.true(response.data.name.length > 0, 'Name should not be empty');
 });
 
 /**

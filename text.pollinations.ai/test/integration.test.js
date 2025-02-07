@@ -453,7 +453,6 @@ test('OpenAI API should handle invalid model gracefully', async t => {
     t.truthy(response.data.choices[0].message, 'First choice should have a "message" object');
 });
 
-
 /**
  * Test Suite: Special Character Handling
  * 
@@ -492,7 +491,6 @@ test('POST /openai should handle special characters', async t => {
             `${testCase.description} should return a response`);
     }
 });
-
 
 /**
  * Test Suite: Seed Behavior Across Models
@@ -549,6 +547,88 @@ for (const modelConfig of chatModels) {
         }
     });
 }
+
+/**
+ * Test: Private Parameter with SSE Feed
+ * 
+ * Purpose: Verify that private images do not appear in the public feed
+ * while public images do.
+ * 
+ * Expected behavior:
+ * 1. Private image should not appear in the feed
+ * 2. Public image should appear in the feed
+ */
+test('should respect private parameter in image feed', async t => {
+    // Create arrays to store feed events
+    const receivedEvents = [];
+    
+    // Subscribe to the feed
+    const feedPromise = new Promise((resolve, reject) => {
+        const feedResponse = axios.get(`${baseUrl}/feed`, {
+            responseType: 'stream'
+        });
+
+        feedResponse.then(response => {
+            const stream = response.data;
+            stream.on('data', chunk => {
+                const lines = chunk.toString().split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const eventData = JSON.parse(line.slice(6));
+                            receivedEvents.push(eventData);
+                        } catch (error) {
+                            log('Error parsing SSE data:', error);
+                        }
+                    }
+                }
+            });
+
+            // Resolve after collecting events for a while
+            setTimeout(() => {
+                stream.destroy();
+                resolve();
+            }, 5000); // Wait 5 seconds for events
+        }).catch(reject);
+    });
+
+    // Generate two images with different prompts
+    const privatePrompt = 'A peaceful garden with butterflies';
+    const publicPrompt = 'A serene mountain landscape';
+
+    // Make the requests
+    const privateResponse = await axiosInstance.get(`/prompt/${encodeURIComponent(privatePrompt)}`, {
+        params: {
+            private: true,
+            enhance: false
+        }
+    });
+
+    const publicResponse = await axiosInstance.get(`/prompt/${encodeURIComponent(publicPrompt)}`, {
+        params: {
+            private: false,
+            enhance: false
+        }
+    });
+
+    // Wait for feed events to be collected
+    await feedPromise;
+
+    // Check that responses were successful
+    t.is(privateResponse.status, 200, 'Private image generation should succeed');
+    t.is(publicResponse.status, 200, 'Public image generation should succeed');
+
+    // Verify feed contents
+    const privateImageInFeed = receivedEvents.some(event => 
+        event.prompt && event.prompt.includes(privatePrompt)
+    );
+    const publicImageInFeed = receivedEvents.some(event => 
+        event.prompt && event.prompt.includes(publicPrompt)
+    );
+
+    t.false(privateImageInFeed, 'Private image should not appear in feed');
+    t.true(publicImageInFeed, 'Public image should appear in feed');
+});
 
 /**
  * Test: Streaming Responses (Commented Out)

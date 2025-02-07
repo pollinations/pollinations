@@ -199,4 +199,12 @@ export const availableModels = [
     //     description: 'Llama 3.3 70B',
     //     baseModel: true,
     // },
+    {
+        name: 'hormoz',
+        type: 'chat',
+        description: 'Hormoz 8b by Muhammadreza Haghiri',
+        baseModel: false,
+        provider: 'modal.com',
+        censored: false
+    },
 ];

@@ -195,6 +195,7 @@ export const availableModels = [
         type: 'chat',
         description: 'Hormoz 8b by Muhammadreza Haghiri',
         baseModel: false,
-        provider: 'modal.com'
+        provider: 'modal.com',
+        censored: false
     },
 ];

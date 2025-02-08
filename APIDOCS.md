@@ -127,7 +127,14 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 **Return:** Generated text
 
 #### Vision Capabilities
-Our OpenAI-compatible models (gpt-4o-mini, gpt-4o) support analyzing images through the same API. You can pass images either as URLs or base64-encoded data in the messages. See the [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision) for detailed documentation.
+The following models support analyzing images through our API:
+- `openai`
+- `openai-large`
+- `claude-hybridspace`
+
+You can pass images either as URLs or base64-encoded data in the messages. See the [OpenAI Vision Guide](https://platform.openai.com/docs/guides/vision) for detailed documentation on the message format.
+
+Note: While we offer other models like Gemini, they currently do not support multimodal (image) inputs.
 
 Example message format with image:
 ```json
@@ -146,7 +153,7 @@ Example message format with image:
       ]
     }
   ],
-  "model": "gpt-4o-mini"
+  "model": "openai"
 }
 ```
 
@@ -193,7 +200,7 @@ def analyze_image(image_url):
                 ]
             }
         ],
-        "model": "gpt-4o-mini"
+        "model": "openai"
     })
     return response.json()
 

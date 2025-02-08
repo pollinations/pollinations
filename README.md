@@ -325,7 +325,7 @@ Pollinations.AI is open-source software licensed under the [MIT license](LICENSE
 
 ---
 
-[![Stargazers repo roster for @pollinations/pollinations](https://reporoster.com/stars/dark/pollinations/pollinations)](https://github.com/pollinations/pollinations/stargazers)
+![Alt](https://repobeats.axiom.co/api/embed/ee9f2146eb98410170a104dda91de48712a14072.svg "Repobeats analytics image")
 
 ---
 

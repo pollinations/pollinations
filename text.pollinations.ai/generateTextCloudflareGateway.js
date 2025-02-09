@@ -10,6 +10,20 @@ const CLOUDFLARE_AUTH_TOKEN = process.env.CLOUDFLARE_AUTH_TOKEN;
 
 const BASE_URL = `https://gateway.ai.cloudflare.com/v1/${CLOUDFLARE_ACCOUNT_ID}/${CLOUDFLARE_GATEWAY_ID}`;
 
+// Note on streaming:
+// When options.stream is true, the response will be in Server-Sent Events (SSE) format.
+// The client should handle the stream by:
+// 1. Reading each event (data: {...})
+// 2. Parsing the JSON content
+// 3. Concatenating the text chunks
+// 4. Handling the final [DONE] event
+//
+// Example stream response format:
+// data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null,"index":0}]}
+// data: {"choices":[{"delta":{"content":" world"},"finish_reason":null,"index":0}]}
+// data: {"choices":[{"delta":{"content":"!"},"finish_reason":"stop","index":0}]}
+// data: [DONE]
+
 // Map of model names to their provider endpoints
 const MODEL_PROVIDERS = {
     'openai': 'openai',
@@ -40,6 +54,31 @@ const MODEL_IDS = {
     'gemini-thinking': 'gemini-pro'
 };
 
+/**
+ * Generates text using various AI models through Cloudflare's AI Gateway
+ * 
+ * @param {Array<Object>} messages - Array of message objects with role and content
+ * @param {Object} options - Configuration options
+ * @param {string} [options.model='openai'] - Model identifier (e.g., 'openai', 'mistral', 'llama')
+ * @param {number} [options.temperature=0.7] - Temperature for response generation
+ * @param {boolean} [options.stream=false] - Whether to stream the response
+ * @param {number} [options.cacheTtl=3600] - Cache TTL in seconds (ignored if streaming)
+ * @param {boolean} [options.skipCache=false] - Whether to skip cache for this request
+ * 
+ * @returns {Promise<Object>} Response object with:
+ *   - Standard OpenAI-compatible response fields
+ *   - _metadata object containing:
+ *     - provider: The AI provider used
+ *     - cacheStatus: Cache hit/miss status
+ *     - gateway: 'cloudflare'
+ *     - modelId: Specific model identifier
+ * 
+ * @throws {Error} With enhanced error information including:
+ *   - Specific error messages for common Cloudflare AI Gateway errors
+ *   - provider: The provider that failed
+ *   - model: The model that was requested
+ *   - gateway: 'cloudflare'
+ */
 async function generateText(messages, options = {}) {
     const model = options.model || 'openai';
     const provider = MODEL_PROVIDERS[model];
@@ -109,32 +148,97 @@ async function generateText(messages, options = {}) {
     }
 
     try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${CLOUDFLARE_AUTH_TOKEN}`
+        };
+
+        // Add caching headers if not streaming
+        if (!options.stream) {
+            headers['cf-aig-cache-ttl'] = options.cacheTtl || '3600';  // Default 1 hour cache
+            if (options.skipCache) {
+                headers['cf-aig-skip-cache'] = 'true';
+            }
+        }
+
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CLOUDFLARE_AUTH_TOKEN}`
-            },
+            headers,
             body: JSON.stringify(body)
         });
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(`API request failed: ${JSON.stringify(error)}`);
+            
+            // Handle specific Cloudflare AI Gateway errors
+            switch (response.status) {
+                case 401:
+                    throw new Error('Unauthorized: Invalid Cloudflare AI Gateway token');
+                case 403:
+                    throw new Error('Forbidden: Access denied to the requested provider');
+                case 429:
+                    throw new Error('Rate limit exceeded. Please try again later');
+                case 502:
+                    throw new Error('Provider service is currently unavailable');
+                case 504:
+                    throw new Error('Request timeout. The provider took too long to respond');
+                default:
+                    throw new Error(`API request failed: ${JSON.stringify(error)}`);
+            }
+        }
+
+        // Log cache status
+        const cacheStatus = response.headers.get('cf-aig-cache-status');
+        if (cacheStatus) {
+            log(`Cache status for request: ${cacheStatus}`);
         }
 
         const data = await response.json();
 
-        // Normalize response to OpenAI format
-        return normalizeResponse(data, provider, model);
+        // Add cache and provider information to response metadata
+        const responseWithMetadata = {
+            ...normalizeResponse(data, provider, model),
+            _metadata: {
+                provider,
+                cacheStatus,
+                gateway: 'cloudflare',
+                modelId: modelId
+            }
+        };
+
+        return responseWithMetadata;
     } catch (error) {
         errorLog('Error in generateText:', error);
+        
+        // Enhance error with provider information
+        error.provider = provider;
+        error.model = model;
+        error.gateway = 'cloudflare';
+        
         throw error;
     }
 }
 
+/**
+ * Normalizes responses from different providers into a consistent OpenAI-compatible format
+ * 
+ * @param {Object} data - Raw response data from the provider
+ * @param {string} provider - Provider identifier (e.g., 'openai', 'anthropic', 'workers-ai')
+ * @param {string} model - Model name used for the request
+ * 
+ * @returns {Object} Normalized response with OpenAI-compatible structure:
+ *   - id: Unique identifier with pllns_ prefix
+ *   - object: Always 'chat.completion'
+ *   - created: Timestamp
+ *   - model: Original model name
+ *   - choices: Array of message choices with:
+ *     - index: Choice index
+ *     - message: { role: 'assistant', content: string }
+ *     - finish_reason: Reason for completion
+ *   - usage: Token usage statistics when available
+ */
 function normalizeResponse(data, provider, model) {
-    // Default OpenAI-like response structure
+    // Initialize with OpenAI-compatible structure
     const normalized = {
         id: `pllns_${Date.now()}`,
         object: 'chat.completion',
@@ -152,10 +256,16 @@ function normalizeResponse(data, provider, model) {
         case 'openai':
         case 'mistral':
         case 'deepseek':
-            // Already in OpenAI format
+            // These providers already return OpenAI-compatible format:
+            // {
+            //   choices: [{ message: { role: 'assistant', content: string } }],
+            //   usage: { prompt_tokens, completion_tokens, total_tokens }
+            // }
             return data;
 
         case 'workers-ai':
+            // Workers AI returns simpler format:
+            // { response: string }
             normalized.choices = [{
                 index: 0,
                 message: {
@@ -167,6 +277,12 @@ function normalizeResponse(data, provider, model) {
             break;
 
         case 'anthropic':
+            // Anthropic Claude returns:
+            // {
+            //   content: [{ text: string }],
+            //   stop_reason: string,
+            //   usage: { input_tokens, output_tokens }
+            // }
             normalized.choices = [{
                 index: 0,
                 message: {
@@ -181,6 +297,12 @@ function normalizeResponse(data, provider, model) {
             break;
 
         case 'google-ai-studio':
+            // Google AI returns:
+            // {
+            //   candidates: [{
+            //     content: { parts: [{ text: string }] }
+            //   }]
+            // }
             normalized.choices = [{
                 index: 0,
                 message: {

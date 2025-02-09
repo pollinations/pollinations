@@ -8,7 +8,7 @@ const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
 const CLOUDFLARE_GATEWAY_ID = process.env.CLOUDFLARE_GATEWAY_ID;
 const CLOUDFLARE_AUTH_TOKEN = process.env.CLOUDFLARE_AUTH_TOKEN;
 
-const BASE_URL = `https://gateway.ai.cloudflare.com/v1/${CLOUDFLARE_ACCOUNT_ID}/${CLOUDFLARE_GATEWAY_ID}`;
+const BASE_URL = 'https://gateway.ai.cloudflare.com/v1/efdcb0933eaac64f27c0b295039b28f2/pollinations-text';
 
 // Note on streaming:
 // When options.stream is true, the response will be in Server-Sent Events (SSE) format.
@@ -24,34 +24,63 @@ const BASE_URL = `https://gateway.ai.cloudflare.com/v1/${CLOUDFLARE_ACCOUNT_ID}/
 // data: {"choices":[{"delta":{"content":"!"},"finish_reason":"stop","index":0}]}
 // data: [DONE]
 
-// Map of model names to their provider endpoints
-const MODEL_PROVIDERS = {
-    'openai': 'openai',
-    'openai-large': 'openai',
-    'deepseek': 'deepseek',
-    'deepseek-reasoner': 'deepseek',
-    'mistral': 'mistral',
-    'llama': 'workers-ai',
-    'llamalight': 'workers-ai',
-    'llamaguard': 'workers-ai',
-    'claude-hybridspace': 'anthropic',
-    'gemini': 'google-ai-studio',
-    'gemini-thinking': 'google-ai-studio'
-};
-
-// Map of model names to their actual model IDs on respective providers
-const MODEL_IDS = {
-    'openai': 'gpt-4',
-    'openai-large': 'gpt-4',
-    'deepseek': 'deepseek-chat',
-    'deepseek-reasoner': 'deepseek-reasoner',
-    'mistral': 'mistral-large-latest',
-    'llama': '@cf/meta/llama-3.1-70b-chat',
-    'llamalight': '@cf/meta/llama-3.1-8b-instruct',
-    'llamaguard': '@cf/meta/llamaguard-7b',
-    'claude-hybridspace': 'claude-3-haiku-20240307',
-    'gemini': 'gemini-pro',
-    'gemini-thinking': 'gemini-pro'
+// Provider configurations
+const PROVIDER_CONFIGS = {
+    'openai': {
+        provider: 'openai',
+        endpoint: 'chat/completions',
+        modelParam: 'model'
+    },
+    'openai-large': {
+        provider: 'openai',
+        endpoint: 'chat/completions',
+        modelParam: 'model'
+    },
+    'deepseek': {
+        provider: 'deepseek',
+        endpoint: 'chat/completions',
+        modelParam: 'model'
+    },
+    'deepseek-reasoner': {
+        provider: 'deepseek',
+        endpoint: 'chat/completions',
+        modelParam: 'model'
+    },
+    'mistral': {
+        provider: 'mistral',
+        endpoint: 'chat/completions',
+        modelParam: 'model'
+    },
+    'llama': {
+        provider: 'workers-ai',
+        endpoint: '@cf/meta/llama-3.1-70b-chat',
+        modelParam: null
+    },
+    'llamalight': {
+        provider: 'workers-ai',
+        endpoint: '@cf/meta/llama-3.1-8b-instruct',
+        modelParam: null
+    },
+    'llamaguard': {
+        provider: 'workers-ai',
+        endpoint: '@cf/meta/llamaguard-7b',
+        modelParam: null
+    },
+    'claude-hybridspace': {
+        provider: 'anthropic',
+        endpoint: 'messages',
+        modelParam: 'model'
+    },
+    'gemini': {
+        provider: 'google-ai-studio',
+        endpoint: 'models/gemini-pro:generateContent',
+        modelParam: null
+    },
+    'gemini-thinking': {
+        provider: 'google-ai-studio',
+        endpoint: 'models/gemini-pro:generateContent',
+        modelParam: null
+    }
 };
 
 /**
@@ -62,7 +91,7 @@ const MODEL_IDS = {
  * @param {string} [options.model='openai'] - Model identifier (e.g., 'openai', 'mistral', 'llama')
  * @param {number} [options.temperature=0.7] - Temperature for response generation
  * @param {boolean} [options.stream=false] - Whether to stream the response
- * @param {number} [options.cacheTtl=3600] - Cache TTL in seconds (ignored if streaming)
+ * @param {number} [options.cacheTtl=86400] - Cache TTL in seconds (max 86400 = 24h, ignored if streaming)
  * @param {boolean} [options.skipCache=false] - Whether to skip cache for this request
  * 
  * @returns {Promise<Object>} Response object with:
@@ -81,58 +110,52 @@ const MODEL_IDS = {
  */
 async function generateText(messages, options = {}) {
     const model = options.model || 'openai';
-    const provider = MODEL_PROVIDERS[model];
-    const modelId = MODEL_IDS[model];
+    const config = PROVIDER_CONFIGS[model];
 
-    if (!provider || !modelId) {
+    if (!config) {
         throw new Error(`Unsupported model: ${model}`);
     }
 
-    if (!CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_GATEWAY_ID || !CLOUDFLARE_AUTH_TOKEN) {
+    if (!CLOUDFLARE_AUTH_TOKEN) {
         throw new Error('Missing required Cloudflare configuration');
     }
 
-    const endpoint = `${BASE_URL}/${provider}`;
-    let url;
-    let body;
+    // Build request for the universal endpoint
+    const request = {
+        provider: config.provider,
+        endpoint: config.endpoint,
+        headers: {
+            'Authorization': `Bearer ${CLOUDFLARE_AUTH_TOKEN}`,
+            'Content-Type': 'application/json'
+        }
+    };
 
-    // Configure request based on provider
-    switch (provider) {
+    // Configure query based on provider
+    switch (config.provider) {
         case 'openai':
         case 'mistral':
         case 'deepseek':
-            url = `${endpoint}/v1/chat/completions`;
-            body = {
-                model: modelId,
+        case 'anthropic':
+            request.query = {
                 messages,
                 temperature: options.temperature || 0.7,
                 stream: options.stream || false
             };
+            if (config.modelParam) {
+                request.query[config.modelParam] = model;
+            }
             break;
 
         case 'workers-ai':
-            url = `${endpoint}/${modelId}`;
-            body = {
+            request.query = {
                 messages,
-                temperature: options.temperature || 0.7,
-                stream: options.stream || false
-            };
-            break;
-
-        case 'anthropic':
-            url = `${endpoint}/v1/messages`;
-            body = {
-                model: modelId,
-                messages,
-                max_tokens: 1024,
                 temperature: options.temperature || 0.7,
                 stream: options.stream || false
             };
             break;
 
         case 'google-ai-studio':
-            url = `${endpoint}/v1/models/${modelId}:generateContent`;
-            body = {
+            request.query = {
                 contents: messages.map(msg => ({
                     role: msg.role,
                     parts: [{ text: msg.content }]
@@ -144,27 +167,25 @@ async function generateText(messages, options = {}) {
             break;
 
         default:
-            throw new Error(`Unsupported provider: ${provider}`);
+            throw new Error(`Unsupported provider: ${config.provider}`);
     }
 
     try {
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CLOUDFLARE_AUTH_TOKEN}`
-        };
-
         // Add caching headers if not streaming
         if (!options.stream) {
-            headers['cf-aig-cache-ttl'] = options.cacheTtl || '3600';  // Default 1 hour cache
+            request.headers['cf-aig-cache-ttl'] = options.cacheTtl || '86400';  // Default 24 hour cache (maximum allowed)
             if (options.skipCache) {
-                headers['cf-aig-skip-cache'] = 'true';
+                request.headers['cf-aig-skip-cache'] = 'true';
             }
         }
 
-        const response = await fetch(url, {
+        const response = await fetch(BASE_URL, {
             method: 'POST',
-            headers,
-            body: JSON.stringify(body)
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CLOUDFLARE_AUTH_TOKEN}`
+            },
+            body: JSON.stringify([request]) // Wrap in array for batch format
         });
 
         if (!response.ok) {
@@ -194,15 +215,22 @@ async function generateText(messages, options = {}) {
         }
 
         const data = await response.json();
+        
+        // The response is an array with one item since we sent one request
+        const result = data[0];
+
+        if (!result.success) {
+            throw new Error(`Provider request failed: ${JSON.stringify(result.errors)}`);
+        }
 
         // Add cache and provider information to response metadata
         const responseWithMetadata = {
-            ...normalizeResponse(data, provider, model),
+            ...normalizeResponse(result.response, config.provider, model),
             _metadata: {
-                provider,
+                provider: config.provider,
                 cacheStatus,
                 gateway: 'cloudflare',
-                modelId: modelId
+                endpoint: config.endpoint
             }
         };
 
@@ -211,7 +239,7 @@ async function generateText(messages, options = {}) {
         errorLog('Error in generateText:', error);
         
         // Enhance error with provider information
-        error.provider = provider;
+        error.provider = config.provider;
         error.model = model;
         error.gateway = 'cloudflare';
         
@@ -252,42 +280,47 @@ function normalizeResponse(data, provider, model) {
         }
     };
 
+    // Handle different response formats from the universal endpoint
     switch (provider) {
         case 'openai':
         case 'mistral':
         case 'deepseek':
-            // These providers already return OpenAI-compatible format:
-            // {
-            //   choices: [{ message: { role: 'assistant', content: string } }],
-            //   usage: { prompt_tokens, completion_tokens, total_tokens }
-            // }
-            return data;
-
-        case 'workers-ai':
-            // Workers AI returns simpler format:
-            // { response: string }
+            // These providers return OpenAI format through the gateway
+            if (data.choices && Array.isArray(data.choices)) {
+                return data;
+            }
+            // Fallback if response is not in expected format
             normalized.choices = [{
                 index: 0,
                 message: {
                     role: 'assistant',
-                    content: data.response
+                    content: typeof data === 'string' ? data : JSON.stringify(data)
+                },
+                finish_reason: 'stop'
+            }];
+            break;
+
+        case 'workers-ai':
+            // Workers AI might return string or object with response field
+            const content = typeof data === 'string' ? data : data.response;
+            normalized.choices = [{
+                index: 0,
+                message: {
+                    role: 'assistant',
+                    content: content
                 },
                 finish_reason: 'stop'
             }];
             break;
 
         case 'anthropic':
-            // Anthropic Claude returns:
-            // {
-            //   content: [{ text: string }],
-            //   stop_reason: string,
-            //   usage: { input_tokens, output_tokens }
-            // }
+            // Anthropic response through gateway
+            const text = data.content?.[0]?.text || data.text || data;
             normalized.choices = [{
                 index: 0,
                 message: {
                     role: 'assistant',
-                    content: data.content[0].text
+                    content: typeof text === 'string' ? text : JSON.stringify(text)
                 },
                 finish_reason: data.stop_reason || 'stop'
             }];
@@ -297,21 +330,30 @@ function normalizeResponse(data, provider, model) {
             break;
 
         case 'google-ai-studio':
-            // Google AI returns:
-            // {
-            //   candidates: [{
-            //     content: { parts: [{ text: string }] }
-            //   }]
-            // }
+            // Google AI response through gateway
+            const geminiContent = data.candidates?.[0]?.content?.parts?.[0]?.text 
+                || data.text 
+                || (typeof data === 'string' ? data : JSON.stringify(data));
             normalized.choices = [{
                 index: 0,
                 message: {
                     role: 'assistant',
-                    content: data.candidates[0].content.parts[0].text
+                    content: geminiContent
                 },
                 finish_reason: 'stop'
             }];
             break;
+
+        default:
+            // Generic handler for unknown providers
+            normalized.choices = [{
+                index: 0,
+                message: {
+                    role: 'assistant',
+                    content: typeof data === 'string' ? data : JSON.stringify(data)
+                },
+                finish_reason: 'stop'
+            }];
     }
 
     return normalized;

@@ -5,7 +5,8 @@ export const availableModels = [
         censored: true,
         description: 'OpenAI GPT-4o-mini',
         baseModel: true,
-        vision: true
+        vision: true,
+        provider: 'openai'
     },
     {
         name: 'openai-large',
@@ -13,21 +14,8 @@ export const availableModels = [
         censored: true,
         description: 'OpenAI GPT-4o',
         baseModel: true,
-        vision: true
-    },
-    // {
-    //     name: 'qwen',
-    //     type: 'chat',
-    //     censored: true,
-    //     description: 'Qwen 2.5 72B',
-    //     baseModel: true,
-    // },
-    {
-        name: 'qwen-coder',
-        type: 'chat',
-        censored: true,
-        description: 'Qwen 2.5 Coder 32B',
-        baseModel: true,
+        vision: true,
+        provider: 'openai'
     },
     {
         name: 'llama',
@@ -35,6 +23,7 @@ export const availableModels = [
         censored: false,
         description: 'Llama 3.3 70B',
         baseModel: true,
+        provider: 'workers-ai'
     },
     {
         name: 'mistral',
@@ -42,41 +31,15 @@ export const availableModels = [
         censored: false,
         description: 'Mistral Nemo',
         baseModel: true,
+        provider: 'mistral'
     },
-    // {
-    //     name: 'mistral-large',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Mistral Large (v2)',
-    //     baseModel: true,
-    // },
-    // {
-    //     name: 'llama',
-    //     type: 'completion',
-    //     censored: true,
-    //     description: 'Llama 3.1',
-    //     baseModel: true,
-    // },
-    // {
-    //     name: 'karma',
-    //     type: 'completion',
-    //     censored: true,
-    //     description: 'Karma.yt Zeitgeist. Connected to realtime news and the web. (beta)',
-    //     baseModel: false,
-    // },
-    // {
-    //     name: 'command-r',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Command-R',
-    //     baseModel: false,
-    // },
     {
         name: 'unity',
         type: 'chat',
         censored: false,
         description: 'Unity with Mistral Large by Unity AI Lab',
         baseModel: false,
+        provider: 'mistral'
     },
     {
         name: 'midijourney',
@@ -84,6 +47,7 @@ export const availableModels = [
         censored: true,
         description: 'Midijourney musical transformer',
         baseModel: false,
+        provider: 'openai'
     },
     {
         name: 'rtist',
@@ -91,6 +55,7 @@ export const availableModels = [
         censored: true,
         description: 'Rtist image generator by @bqrio',
         baseModel: false,
+        provider: 'openai'
     },
     {
         name: 'searchgpt',
@@ -98,29 +63,23 @@ export const availableModels = [
         censored: true,
         description: 'SearchGPT with realtime news and web search',
         baseModel: false,
+        provider: 'openai'
     },
-    // { name: 'claude', type: 'chat', censored: true }
-    // { name: 'sur', type: 'chat', censored: true }
     {
         name: 'evil',
         type: 'chat',
         censored: false,
         description: 'Evil Mode - Experimental',
         baseModel: false,
+        provider: 'mistral'
     },
-    // {
-    //     name: 'p1',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Pollinations 1 (OptiLLM)',
-    //     baseModel: false,
-    // },
     {
         name: 'deepseek',
         type: 'chat',
         censored: true,
         description: 'DeepSeek-V3',
         baseModel: true,
+        provider: 'deepseek'
     },
     {
         name: 'claude-hybridspace',
@@ -128,6 +87,7 @@ export const availableModels = [
         censored: true,
         description: 'Claude Hybridspace',
         baseModel: true,
+        provider: 'anthropic'
     },
     {
         name: 'deepseek-r1',
@@ -136,7 +96,7 @@ export const availableModels = [
         description: 'DeepSeek-R1 Distill Qwen 32B',
         baseModel: true,
         reasoning: true,
-        provider: 'cloudflare'
+        provider: 'deepseek'
     },
     {
         name: 'deepseek-reasoner',
@@ -147,34 +107,21 @@ export const availableModels = [
         reasoning: true,
         provider: 'deepseek'
     },
-    // {
-    //     name: 'llamalight',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Llama 3.2 3B Instruct',
-    //     baseModel: true,
-    // },
     {
         name: 'llamalight',
         type: 'chat',
         censored: false,
         description: 'Llama 3.1 8B Instruct',
         baseModel: true,
+        provider: 'workers-ai'
     },
-    // {
-    //     name: 'mistral-large',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Mistral Large (v2)',
-    //     baseModel: true,
-    // },
     {
         name: 'llamaguard',
         type: 'safety',
         censored: false,
         description: 'Llamaguard 7B AWQ',
         baseModel: false,
-        provider: 'cloudflare'
+        provider: 'workers-ai'
     },
     {
         name: 'gemini',
@@ -182,7 +129,7 @@ export const availableModels = [
         censored: true,
         description: 'Gemini 2.0 Flash',
         baseModel: true,
-        provider: 'google'
+        provider: 'google-ai-studio'
     },
     {
         name: 'gemini-thinking',
@@ -190,21 +137,6 @@ export const availableModels = [
         censored: true,
         description: 'Gemini 2.0 Flash Thinking',
         baseModel: true,
-        provider: 'google'
-    },
-    // {
-    //     name: 'llama',
-    //     type: 'chat',
-    //     censored: false,
-    //     description: 'Llama 3.3 70B',
-    //     baseModel: true,
-    // },
-    {
-        name: 'hormoz',
-        type: 'chat',
-        description: 'Hormoz 8b by Muhammadreza Haghiri',
-        baseModel: false,
-        provider: 'modal.com',
-        censored: false
-    },
+        provider: 'google-ai-studio'
+    }
 ];

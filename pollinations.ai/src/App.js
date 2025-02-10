@@ -1,5 +1,4 @@
-import { Navigate, Route, Routes } from "react-router"
-import { useSearchParams } from "react-router-dom"
+import { Navigate, Route, Routes, useSearchParams } from "react-router-dom"
 import { useEffect } from "react"
 import { SEOMetadata } from "./components/Helmet"
 import Header from "./Home/Header"

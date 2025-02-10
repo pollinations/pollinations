@@ -29,6 +29,7 @@ import { getFromCache, setInCache, createHashKey } from './cache.js';
 import generateTextClaude from './generateTextClaude.js';
 import { generateTextCloudflare } from './generateTextCloudflare.js';
 import { generateTextModal } from './generateTextModal.js';
+import { processReferralLinks } from './referralLinks.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -205,6 +206,17 @@ async function handleRequest(req, res, requestData) {
             throw new Error(JSON.stringify(completion.error));
         }
         
+        // Process referral links if there's content in the response
+        if (completion.choices?.[0]?.message?.content) {
+            try {
+                const processedContent = await processReferralLinks(completion.choices[0].message.content, req);
+                completion.choices[0].message.content = processedContent;
+            } catch (error) {
+                errorLog('Error processing referral links:', error);
+                // Continue with original content if referral processing fails
+            }
+        }
+
         const responseText = completion.choices[0].message.content;
 
         const cacheKey = createHashKey(requestData);
@@ -294,25 +306,16 @@ function generatePollinationsId() {
 
 // Helper function for consistent success responses
 export function sendOpenAIResponse(res, completion) {
-    // Ensure completion has required OpenAI API fields
-    if (!completion.id || !completion.id.startsWith('pllns_')) {
-        completion.id = generatePollinationsId();
-    }
-    if (!completion.object) {
-        completion.object = "chat.completion";
-    }
-    
-    // Ensure choices array has index field
-    if (completion.choices && Array.isArray(completion.choices)) {
-        completion.choices = completion.choices.map((choice, idx) => ({
-            index: idx,
-            ...choice
-        }));
-    }
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.json(completion);
+    const response = {
+        id: generatePollinationsId(),
+        object: 'chat.completion',
+        created: Date.now(),
+        model: completion.model,
+        choices: completion.choices,
+        usage: completion.usage,
+    };
+
+    res.json(response);
 }
 
 export function sendContentResponse(res, completion) {

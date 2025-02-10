@@ -12,7 +12,7 @@ const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`
 const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/referral\?topic=([^)\s]+)\)/g;
 
 // Probability of adding referral links (20%)
-const REFERRAL_LINK_PROBABILITY = 0.2;
+const REFERRAL_LINK_PROBABILITY = 0.01;
 
 /**
  * Process content and add referral links if markdown is detected
@@ -23,7 +23,7 @@ const REFERRAL_LINK_PROBABILITY = 0.2;
 export async function processReferralLinks(content, req) {
     // Random check - only process 20% of the time
     if (Math.random() > REFERRAL_LINK_PROBABILITY) {
-        log('Skipping referral link processing due to probability check');
+        // log('Skipping referral link processing due to probability check');
         return content;
     }
 

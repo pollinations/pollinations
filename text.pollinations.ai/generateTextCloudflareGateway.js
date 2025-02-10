@@ -225,21 +225,67 @@ async function generateText(messages, options = {}) {
                 body: responseBody,
             });
 
-            // Directly return the error response from the provider
-            throw responseBody;
+            // Handle specific error cases
+            switch (response.status) {
+                case 401:
+                    throw new Error(`Authentication failed for provider ${config.provider}. Check ${config.environmentKey}`);
+                case 403:
+                    throw new Error(`Access denied for provider ${config.provider}. Verify API key permissions`);
+                case 429:
+                    throw new Error('Rate limit exceeded. Please try again later');
+                case 502:
+                    throw new Error(`${config.provider} service is currently unavailable`);
+                case 504:
+                    throw new Error('Request timeout. The provider took too long to respond');
+                default:
+                    throw new Error(`API request failed: ${JSON.stringify(responseBody)}`);
+            }
         }
 
         log('Successful response body:', responseBody);
 
-        // Return the raw API response
-        return responseBody;
+        // The response is an array with one item since we sent one request
+        const result = responseBody[0];
+
+        if (!result.success) {
+            throw new Error(`Provider request failed: ${JSON.stringify(result.errors)}`);
+        }
+
+        // Add cache and provider information to response metadata
+        const responseWithMetadata = {
+            ...normalizeResponse(result.response, config.provider, model),
+            _metadata: {
+                provider: config.provider,
+                cacheStatus: response.headers.get('cf-aig-cache-status'),
+                gateway: 'cloudflare',
+                endpoint: config.endpoint,
+                environmentKey: config.environmentKey
+            }
+        };
+
+        return responseWithMetadata;
 
     } catch (error) {
-        // Log unexpected errors
-        errorLog('Unexpected error in generateText:', error);
-        throw error;
+        // Log unexpected errors with provider context
+        errorLog('Error in generateText:', {
+            error: error.message,
+            provider: config.provider,
+            model,
+            environmentKey: config.environmentKey,
+            endpoint: config.endpoint
+        });
+
+        // Enhance error with provider context
+        const enhancedError = new Error(error.message);
+        enhancedError.provider = config.provider;
+        enhancedError.model = model;
+        enhancedError.environmentKey = config.environmentKey;
+        enhancedError.gateway = 'cloudflare';
+        enhancedError.originalError = error;
+
+        throw enhancedError;
     }
-    }
+}
 
 
 export { generateText };

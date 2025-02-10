@@ -20,8 +20,13 @@ const ReferralRedirect = () => {
       label: topic || 'unknown',
     });
 
-    // Redirect to home page after tracking
-    window.location.href = 'https://pollinations.ai';
+    // Redirect to home page after 3 seconds to ensure tracking is registered
+    const redirectTimeout = setTimeout(() => {
+      window.location.href = 'https://pollinations.ai';
+    }, 3000);
+
+    // Cleanup timeout if component unmounts
+    return () => clearTimeout(redirectTimeout);
   }, [topic]);
 
   return null; // Component doesn't render anything

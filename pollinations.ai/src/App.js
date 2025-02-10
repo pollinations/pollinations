@@ -15,8 +15,9 @@ const ReferralRedirect = () => {
     // Track the referral event
     trackEvent({
       action: 'referral_visit',
-      category: 'referral',
+      category: topic,
       label: topic || 'unknown',
+      value: topic,
     });
 
     // Redirect to home page after 3 seconds to ensure tracking is registered

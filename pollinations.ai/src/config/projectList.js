@@ -189,6 +189,13 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Anime AI Generation",
+      url: "https://www.animeaigeneration.com/",
+      description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
+      author: "@shreyas281898",
+      submissionDate: "2025-02-11",
+    },
+    {
       name: "🆕 Pollinations.DIY",
       url: "https://pollinations.diy",
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",

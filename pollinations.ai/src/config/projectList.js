@@ -87,6 +87,14 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 AI Image Generator",
+      url: "https://fvai.infinityfreeapp.com/my-apps/pollicb09.html",
+      description: "A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview.",
+      author: "@hrisjeui",
+      repo: "https://github.com/hrisjeui/Multi-text-image-model-pollinations",
+      submissionDate: "2025-02-15",
+    },
+    {
       name: "🎵 PolliSonic Generator",
       url: "https://interzone.art.br/pollisonic_generator/",
       description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",

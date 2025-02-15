@@ -183,6 +183,7 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 AI Image Generator | A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview | @hrisjeui | [Website](https://fvai.infinityfreeapp.com/my-apps/pollicb09.html), [GitHub](https://github.com/hrisjeui/Multi-text-image-model-pollinations) |
 | 🆕 🎵 PolliSonic Generator | An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators | @brain.diver | [Website](https://interzone.art.br/pollisonic_generator/), [GitHub](https://github.com/rafabez/pollisonic_generator) |
 | 🆕 Abyss Ascending | A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world | @brain.diver | [Website](https://interzone.art.br/abyss_ascending/), [GitHub](https://github.com/rafabez/abyss_ascending) |
 | 🆕 🎮 Deep Saga | A text based RPG with AI-generated scene images | @jr_7_77 | [Play Store](https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations) |

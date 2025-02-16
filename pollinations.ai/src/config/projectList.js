@@ -197,6 +197,14 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Pollinations.ai Model Comparison",
+      url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
+      description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
+      author: "https://github.com/dseeker",
+      repo: "https://github.com/EndemicMedia",
+      submissionDate: "2025-02-16",
+    },
+    {
       name: "🆕 Anime AI Generation",
       url: "https://www.animeaigeneration.com/",
       description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",

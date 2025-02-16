@@ -1,0 +1,71 @@
+---
+pcx_content_type: configuration
+title: Authentication
+sidebar:
+  order: 7
+head: []
+description: Add security by requiring a valid authorization token for each request.
+---
+
+Using an Authenticated Gateway in AI Gateway adds security by requiring a valid authorization token for each request. This feature is especially useful when storing logs, as it prevents unauthorized access and protects against invalid requests that can inflate log storage usage and make it harder to find the data you need. With Authenticated Gateway enabled, only requests with the correct token are processed.
+
+:::note
+We recommend enabling Authenticated Gateway when opting to store logs with AI Gateway.
+
+If Authenticated Gateway is enabled but a request does not include the required `cf-aig-authorization` header, the request will fail. This setting ensures that only verified requests pass through the gateway. To bypass the need for the `cf-aig-authorization` header, make sure to disable Authenticated Gateway.
+:::
+
+## Setting up Authenticated Gateway using the Dashboard
+
+1. Go to the Settings for the specific gateway you want to enable authentication for.
+2. Select **Create authentication token** to generate a custom token with the required `Run` permissions. Be sure to securely save this token, as it will not be displayed again.
+3. Include the `cf-aig-authorization` header with your API token in each request for this gateway.
+4. Return to the settings page and toggle on Authenticated Gateway.
+
+## Example requests with OpenAI
+
+```bash
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai/chat/completions \
+  --header 'cf-aig-authorization: Bearer {CF_AIG_TOKEN}' \
+  --header 'Authorization: Bearer OPENAI_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "What is Cloudflare?"}]}'
+```
+
+Using the OpenAI SDK:
+
+```javascript
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+	apiKey: process.env.OPENAI_API_KEY,
+	baseURL: "https://gateway.ai.cloudflare.com/v1/account-id/gateway/openai",
+	defaultHeaders: {
+		"cf-aig-authorization": `Bearer {token}`,
+	},
+});
+```
+
+## Example requests with the Vercel AI SDK
+
+```javascript
+import { createOpenAI } from "@ai-sdk/openai";
+
+const openai = createOpenAI({
+	baseURL: "https://gateway.ai.cloudflare.com/v1/account-id/gateway/openai",
+	headers: {
+		"cf-aig-authorization": `Bearer {token}`,
+	},
+});
+```
+
+## Expected behavior
+
+The following table outlines gateway behavior based on the authentication settings and header status:
+
+| Authentication Setting | Header Info    | Gateway State           | Response                                   |
+| ---------------------- | -------------- | ----------------------- | ------------------------------------------ |
+| On                     | Header present | Authenticated gateway   | Request succeeds                           |
+| On                     | No header      | Error                   | Request fails due to missing authorization |
+| Off                    | Header present | Unauthenticated gateway | Request succeeds                           |
+| Off                    | No header      | Unauthenticated gateway | Request succeeds                           |

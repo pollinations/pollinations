@@ -1,0 +1,60 @@
+---
+pcx_content_type: tutorial
+content_type: 📝 Tutorial
+difficulty: Beginner
+updated: 2024-08-01
+title: Create your first AI Gateway using Workers AI
+---
+
+import { Render } from "~/components";
+
+This tutorial guides you through creating your first AI Gateway using Workers AI on the Cloudflare dashboard. The intended audience is beginners who are new to AI Gateway and Workers AI. Creating an AI Gateway enables the user to efficiently manage and secure AI requests, allowing them to utilize AI models for tasks such as content generation, data processing, or predictive analysis with enhanced control and performance.
+
+## Sign up and log in
+
+1. **Sign up**: If you do not have a Cloudflare account, [sign up](https://cloudflare.com/sign-up).
+2. **Log in**: Access the Cloudflare dashboard by logging in to the [Cloudflare dashboard](https://dash.cloudflare.com/login).
+
+## Create gateway
+
+Then, create a new AI Gateway.
+
+<Render file="create-gateway" />
+
+## Connect Your AI Provider
+
+1. In the AI Gateway section, select the gateway you created.
+2. Select **Workers AI** as your provider to set up an endpoint specific to Workers AI.
+   You will receive an endpoint URL for sending requests.
+
+## Configure Your Workers AI
+
+1. Go to **AI** > **Workers AI** in the Cloudflare dashboard.
+2. Select **Use REST API** and follow the steps to create and copy the API token and Account ID.
+3. **Send Requests to Workers AI**: Use the provided API endpoint. For example, you can run a model via the API using a curl command. Replace `{account_id}`, `{gateway_id}` and `{cf_api_token}` with your actual account ID and API token:
+
+   ```bash
+   curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai/@cf/meta/llama-3.1-8b-instruct \
+   --header 'Authorization: Bearer {cf_api_token}' \
+   --header 'Content-Type: application/json' \
+   --data '{"prompt": "What is Cloudflare?"}'
+   ```
+
+The expected output would be similar to :
+
+```bash
+{"result":{"response":"I'd be happy to explain what Cloudflare is.\n\nCloudflare is a cloud-based service that provides a range of features to help protect and improve the performance, security, and reliability of websites, applications, and other online services. Think of it as a shield for your online presence!\n\nHere are some of the key things Cloudflare does:\n\n1. **Content Delivery Network (CDN)**: Cloudflare has a network of servers all over the world. When you visit a website that uses Cloudflare, your request is sent to the nearest server, which caches a copy of the website's content. This reduces the time it takes for the content to load, making your browsing experience faster.\n2. **DDoS Protection**: Cloudflare protects against Distributed Denial-of-Service (DDoS) attacks. This happens when a website is overwhelmed with traffic from multiple sources to make it unavailable. Cloudflare filters out this traffic, ensuring your site remains accessible.\n3. **Firewall**: Cloudflare acts as an additional layer of security, filtering out malicious traffic and hacking attempts, such as SQL injection or cross-site scripting (XSS) attacks.\n4. **SSL Encryption**: Cloudflare offers free SSL encryption, which secure sensitive information (like passwords, credit card numbers, and browsing data) with an HTTPS connection (the \"S\" stands for Secure).\n5. **Bot Protection**: Cloudflare has an AI-driven system that identifies and blocks bots trying to exploit vulnerabilities or scrape your content.\n6. **Analytics**: Cloudflare provides insights into website traffic, helping you understand your audience and make informed decisions.\n7. **Cybersecurity**: Cloudflare offers advanced security features, such as intrusion protection, DNS filtering, and Web Application Firewall (WAF) protection.\n\nOverall, Cloudflare helps protect against cyber threats, improves website performance, and enhances security for online businesses, bloggers, and individuals who need to establish a strong online presence.\n\nWould you like to know more about a specific aspect of Cloudflare?"},"success":true,"errors":[],"messages":[]}%
+```
+
+## View Analytics
+
+Monitor your AI Gateway to view usage metrics.
+
+1. Go to **AI** > **AI Gateway** in the dashboard.
+2. Select your gateway to view metrics such as request counts, token usage, caching efficiency, errors, and estimated costs. You can also turn on additional configurations like logging and rate limiting.
+
+## Optional - Next steps
+
+To build more with Workers, refer to [Tutorials](/workers/tutorials/).
+
+If you have any questions, need assistance, or would like to share your project, join the Cloudflare Developer community on [Discord](https://discord.cloudflare.com) to connect with other developers and the Cloudflare team.

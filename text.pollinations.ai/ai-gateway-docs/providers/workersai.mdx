@@ -1,0 +1,119 @@
+---
+title: Workers AI
+pcx_content_type: configuration
+sidebar:
+  order: 2
+---
+
+import { Render } from "~/components";
+
+Use AI Gateway for analytics, caching, and security on requests to [Workers AI](/workers-ai/). Workers AI integrates seamlessly with AI Gateway, allowing you to execute AI inference via API requests or through an environment binding for Workers scripts. The binding simplifies the process by routing requests through your AI Gateway with minimal setup.
+
+## Prerequisites
+
+When making requests to Workers AI, ensure you have the following:
+
+- Your AI Gateway Account ID.
+- Your AI Gateway gateway name.
+- An active Workers AI API token.
+- The name of the Workers AI model you want to use.
+
+## REST API
+
+To interact with a REST API, update the URL used for your request:
+
+- **Previous**:
+
+```txt
+https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run/{model_id}
+```
+
+- **New**:
+
+```txt
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai/{model_id}
+```
+
+For these parameters:
+
+- `{account_id}` is your Cloudflare [account ID](/workers-ai/get-started/rest-api/#1-get-api-token-and-account-id).
+- `{gateway_id}` refers to the name of your existing [AI Gateway](/ai-gateway/get-started/#create-gateway).
+- `{model_id}` refers to the model ID of the [Workers AI model](/workers-ai/models/).
+
+## Examples
+
+First, generate an [API token](/fundamentals/api/get-started/create-token/) with `Workers AI Read` access and use it in your request.
+
+```bash title="Request to Workers AI llama model"
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai/@cf/meta/llama-3.1-8b-instruct \
+ --header 'Authorization: Bearer {cf_api_token}' \
+ --header 'Content-Type: application/json' \
+ --data '{"prompt": "What is Cloudflare?"}'
+```
+
+```bash title="Request to Workers AI text classification model"
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai/@cf/huggingface/distilbert-sst-2-int8 \
+  --header 'Authorization: Bearer {cf_api_token}' \
+  --header 'Content-Type: application/json' \
+  --data '{ "text": "Cloudflare docs are amazing!" }'
+```
+
+### OpenAI compatible endpoints
+
+<Render file="openai-compatibility" product="workers-ai" /> <br />
+
+```bash title="Request to OpenAI compatible endpoint"
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai/v1/chat/completions \
+ --header 'Authorization: Bearer {cf_api_token}' \
+ --header 'Content-Type: application/json' \
+ --data '{
+      "model": "@cf/meta/llama-3.1-8b-instruct",
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is Cloudflare?"
+        }
+      ]
+    }
+'
+```
+
+## Workers Binding
+
+You can integrate Workers AI with AI Gateway using an environment binding. To include an AI Gateway within your Worker, add the gateway as an object in your Workers AI request.
+
+```ts
+export interface Env {
+	AI: Ai;
+}
+
+export default {
+	async fetch(request: Request, env: Env): Promise<Response> {
+		const response = await env.AI.run(
+			"@cf/meta/llama-3.1-8b-instruct",
+			{
+				prompt: "Why should you use Cloudflare for your AI inference?",
+			},
+			{
+				gateway: {
+					id: "{gateway_id}",
+					skipCache: false,
+					cacheTtl: 3360,
+				},
+			},
+		);
+		return new Response(JSON.stringify(response));
+	},
+} satisfies ExportedHandler<Env>;
+```
+
+For a detailed step-by-step guide on integrating Workers AI with AI Gateway using a binding, see [Integrations in AI Gateway](/ai-gateway/integrations/aig-workers-ai-binding/).
+
+Workers AI supports the following parameters for AI gateways:
+
+- `id` string
+  - Name of your existing [AI Gateway](/ai-gateway/get-started/#create-gateway). Must be in the same account as your Worker.
+- `skipCache` boolean(default: false)
+  - Controls whether the request should [skip the cache](/ai-gateway/configuration/caching/#skip-cache-cf-aig-skip-cache).
+- `cacheTtl` number
+  - Controls the [Cache TTL](/ai-gateway/configuration/caching/#cache-ttl-cf-aig-cache-ttl).

@@ -1,0 +1,43 @@
+---
+title: Cerebras
+pcx_content_type: get-started
+sidebar:
+  badge:
+    text: Beta
+---
+
+[Cerebras](https://inference-docs.cerebras.ai/) offers developers a low-latency solution for AI model inference.
+
+## Endpoint
+
+```txt
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/cerebras-ai
+```
+
+## Prerequisites
+
+When making requests to Cerebras, ensure you have the following:
+
+- Your AI Gateway Account ID.
+- Your AI Gateway gateway name.
+- An active Cerebras API token.
+- The name of the Cerebras model you want to use.
+
+## Examples
+
+### cURL
+
+```bash title="Example fetch request"
+curl https://gateway.ai.cloudflare.com/v1/ACCOUNT_TAG/GATEWAY/cerebras/chat/completions \
+ --header 'content-type: application/json' \
+ --header 'Authorization: Bearer CEREBRAS_TOKEN' \
+ --data '{
+    "model": "llama3.1-8b",
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Cloudflare?"
+        }
+    ]
+}'
+```

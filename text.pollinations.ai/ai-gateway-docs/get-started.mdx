@@ -1,0 +1,66 @@
+---
+pcx_content_type: get-started
+title: Get started
+updated: 2024-06-19
+sidebar:
+  order: 2
+---
+
+import { Details, DirectoryListing, LinkButton, Render } from "~/components";
+
+In this guide, you will learn how to create your first AI Gateway. You can create multiple gateways to control different applications.
+
+## Prerequisites
+
+Before you get started, you need a Cloudflare account.
+
+<LinkButton variant="primary" href="https://dash.cloudflare.com/sign-up">
+	Sign up
+</LinkButton>
+
+## Create gateway
+
+Then, create a new AI Gateway.
+
+<Render file="create-gateway" />
+
+## Choosing gateway authentication
+
+When setting up a new gateway, you can choose between an authenticated and unauthenticated gateway. Enabling an authenticated gateway requires each request to include a valid authorization token, adding an extra layer of security. We recommend using an authenticated gateway when storing logs to prevent unauthorized access and protect against invalid requests that can inflate log storage usage and make it harder to find the data you need. Learn more about setting up an [Authenticated Gateway](/ai-gateway/configuration/authentication/).
+
+## Connect application
+
+Next, connect your AI provider to your gateway.
+
+AI Gateway offers multiple endpoints for each Gateway you create - one endpoint per provider, and one Universal Endpoint. To use AI Gateway, you will need to create your own account with each  provider and provide your API key. AI Gateway acts as a proxy for these requests, enabling observability, caching, and more.
+
+Additionally, AI Gateway has a [WebSockets API](/ai-gateway/configuration/websockets-api/) which provides a single persistent connection, enabling continuous communication. This API supports all AI providers connected to AI Gateway, including those that do not natively support WebSockets.
+
+Below is a list of our supported model providers:
+
+<DirectoryListing folder="ai-gateway/providers" />
+
+If you do not have a provider preference, start with one of our dedicated tutorials:
+
+- [OpenAI](/ai-gateway/integrations/aig-workers-ai-binding/)
+- [Workers AI](/ai-gateway/tutorials/create-first-aig-workers/)
+
+## View analytics
+
+Now that your provider is connected to the AI Gateway, you can view analytics for requests going through your gateway.
+
+<Render file="analytics-overview" /> <br />
+
+<Render file="analytics-dashboard" />
+
+:::note[Note]
+
+The cost metric is an estimation based on the number of tokens sent and received in requests. While this metric can help you monitor and predict cost trends, refer to your provider’s dashboard for the most accurate cost details.
+
+:::
+
+## Next steps
+
+- Learn more about [caching](/ai-gateway/configuration/caching/) for faster requests and cost savings and [rate limiting](/ai-gateway/configuration/rate-limiting/) to control how your application scales.
+- Explore how to specify model or provider [fallbacks](/ai-gateway/configuration/fallbacks/) for resiliency.
+- Learn how to use low-cost, open source models on [Workers AI](/ai-gateway/providers/workersai/) - our AI inference service.

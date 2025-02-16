@@ -1,0 +1,82 @@
+---
+title: DeepSeek
+pcx_content_type: get-started
+sidebar:
+  badge:
+    text: Beta
+---
+
+[DeepSeek](https://www.deepseek.com/) helps you build quickly with DeepSeek's advanced AI models.
+
+## Endpoint
+
+```txt
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/deepseek
+```
+
+## Prerequisites
+
+When making requests to DeepSeek, ensure you have the following:
+
+- Your AI Gateway Account ID.
+- Your AI Gateway gateway name.
+- An active DeepSeek AI API token.
+- The name of the DeepSeek AI model you want to use.
+
+## URL structure
+
+Your new base URL will use the data above in this structure:
+
+`https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/deepseek/`.
+
+You can then append the endpoint you want to hit, for example: `chat/completions`.
+
+So your final URL will come together as:
+
+`https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/deepseek/chat/completions`.
+
+## Examples
+
+### cURL
+
+```bash title="Example fetch request"
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/deepseek/chat/completions \
+ --header 'content-type: application/json' \
+ --header 'Authorization: Bearer DEEPSEEK_TOKEN' \
+ --data '{
+    "model": "deepseek-chat",
+    "messages": [
+        {
+            "role": "user",
+            "content": "What is Cloudflare?"
+        }
+    ]
+}'
+```
+
+### Use DeepSeek with JavaScript
+
+If you are using the OpenAI SDK, you can set your endpoint like this:
+
+```js title="JavaScript"
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+	apiKey: env.DEEPSEEK_TOKEN,
+	baseURL:
+		"https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/deepseek",
+});
+
+try {
+	const chatCompletion = await openai.chat.completions.create({
+		model: "deepseek-chat",
+		messages: [{ role: "user", content: "What is Cloudflare?" }],
+	});
+
+	const response = chatCompletion.choices[0].message;
+
+	return new Response(JSON.stringify(response));
+} catch (e) {
+	return new Response(e);
+}
+```

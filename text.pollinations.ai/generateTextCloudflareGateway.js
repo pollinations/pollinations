@@ -134,7 +134,10 @@ async function generateText(messages, options = {}) {
 
     const requestBody = {
         messages,
-        // ...options
+        temperature: options.temperature,
+        stream: options.stream,
+        max_tokens: options.max_tokens,
+        response_format: options.jsonMode ? { type: 'json_object' } : undefined
     };
 
     const url = config.provider === 'azure-openai' 
@@ -156,7 +159,22 @@ async function generateText(messages, options = {}) {
     if (!response.ok) {
         const error = await response.json();
         errorLog('Error from AI Gateway:', error);
-        throw new Error(`AI Gateway error: ${error.error?.message || JSON.stringify(error.error) || 'Unknown error'}`);
+        
+        // Extract error details
+        const errorMessage = error.error?.message || JSON.stringify(error.error) || 'Unknown error';
+        const errorCode = error.error?.code || response.status;
+        const errorType = error.error?.type || 'gateway_error';
+        
+        // Construct detailed error object
+        const enhancedError = new Error(`AI Gateway error: ${errorMessage}`);
+        enhancedError.code = errorCode;
+        enhancedError.type = errorType;
+        enhancedError.provider = config.provider;
+        enhancedError.model = model;
+        enhancedError.gateway = 'cloudflare';
+        enhancedError.raw = error;
+        
+        throw enhancedError;
     }
 
     if (options.stream) {

@@ -1,0 +1,66 @@
+---
+pcx_content_type: how-to
+title: Add human feedback using Worker Bindings
+sidebar:
+  order: 4
+---
+
+This guide explains how to provide human feedback for AI Gateway evaluations using Worker bindings.
+
+## 1. Run an AI Evaluation
+
+Start by sending a prompt to the AI model through your AI Gateway.
+
+```javascript
+const resp = await env.AI.run(
+	"@cf/meta/llama-3.1-8b-instruct",
+	{
+		prompt: "tell me a joke",
+	},
+	{
+		gateway: {
+			id: "my-gateway",
+		},
+	},
+);
+
+const myLogId = env.AI.aiGatewayLogId;
+```
+
+Let the user interact with or evaluate the AI response. This interaction will inform the feedback you send back to the AI Gateway.
+
+## 2. Send Human Feedback
+
+Use the [`patchLog()`](/ai-gateway/integrations/worker-binding-methods/#31-patchlog-send-feedback) method to provide feedback for the AI evaluation.
+
+```javascript
+await env.AI.gateway("my-gateway").patchLog(myLogId, {
+	feedback: 1, // all fields are optional; set values that fit your use case
+	score: 100,
+	metadata: {
+		user: "123", // Optional metadata to provide additional context
+	},
+});
+```
+
+## Feedback parameters explanation
+
+- `feedback`: is either `-1` for negative or `1` to positive, `0` is considered not evaluated.
+- `score`: A number between 0 and 100.
+- `metadata`: An object containing additional contextual information.
+
+### patchLog: Send Feedback
+
+The `patchLog` method allows you to send feedback, score, and metadata for a specific log ID. All object properties are optional, so you can include any combination of the parameters:
+
+```javascript
+gateway.patchLog("my-log-id", {
+	feedback: 1,
+	score: 100,
+	metadata: {
+		user: "123",
+	},
+});
+```
+
+Returns: `Promise<void>` (Make sure to `await` the request.)

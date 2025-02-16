@@ -1,0 +1,41 @@
+---
+pcx_content_type: concept
+title: Limits
+sidebar:
+  order: 3
+---
+
+import { Render } from "~/components";
+
+The following limits apply to gateway configurations, logs, and related features in Cloudflare's platform.
+
+| Feature                                                          | Limit                               |
+| ---------------------------------------------------------------- | ----------------------------------- |
+| [Cacheable request size](/ai-gateway/configuration/caching/)     | 25 MB per request                   |
+| [Cache TTL](/ai-gateway/configuration/caching/#cache-ttl-cf-aig-cache-ttl)     | 1 month               |
+| [Custom metadata](/ai-gateway/configuration/custom-metadata/)    | 5 entries per request               |
+| [Datasets](/ai-gateway/evaluations/set-up-evaluations/)          | 10 per gateway                      |
+| Gateways                                                         | 10 per account                      |
+| Gateway name length                                              | 64 characters                       |
+| Log storage rate limit                                           | 500 logs per second per gateway     |
+| Logs stored [paid plan](/ai-gateway/reference/pricing/)          | 10 million per gateway <sup>1</sup> |
+| Logs stored [free plan](/ai-gateway/reference/pricing/)          | 100,000 per account <sup>2</sup>    |
+| [Log size stored](/ai-gateway/observability/logging/)            | 10 MB per log <sup>3</sup>          |
+| [Logpush jobs](/ai-gateway/observability/logging/logpush/)       | 4 per account                       |
+| [Logpush size limit](/ai-gateway/observability/logging/logpush/) | 1MB per log                         |
+
+<sup>1</sup> If you have reached 10 million logs stored per gateway, new logs
+will stop being saved. To continue saving logs, you must delete older logs in
+that gateway to free up space or create a new gateway. Refer to [Auto Log
+Cleanup](/ai-gateway/observability/logging/#auto-log-cleanup) for more details
+on how to automatically delete logs.
+
+<sup>2</sup> If you have reached 100,000 logs stored per account, across all
+gateways, new logs will stop being saved. To continue saving logs, you must
+delete older logs. Refer to [Auto Log
+Cleanup](/ai-gateway/observability/logging/#auto-log-cleanup) for more details
+on how to automatically delete logs.
+
+<sup>3</sup> Logs larger than 10 MB will not be stored.
+
+<Render file="limits-increase" product="ai-gateway" />

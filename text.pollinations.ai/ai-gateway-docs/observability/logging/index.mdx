@@ -1,0 +1,82 @@
+---
+pcx_content_type: reference
+title: Logging
+sidebar:
+  badge:
+    text: Beta
+---
+
+import { Render } from "~/components";
+
+Logging is a fundamental building block for application development. Logs provide insights during the early stages of development and are often critical to understanding issues occurring in production.
+
+Your AI Gateway dashboard shows logs of individual requests, including the user prompt, model response, provider, timestamp, request status, token usage, cost, and duration. These logs persist, giving you the flexibility to store them for your preferred duration and do more with valuable request data.
+
+You can store up to 10 million logs per gateway. If your limit is reached, new logs will stop being saved. To continue saving logs, you must delete older logs to free up space for new logs.
+
+To learn more about your plan limits, refer to [Limits](/ai-gateway/reference/limits/).
+
+We recommend using an authenticated gateway when storing logs to prevent unauthorized access and protects against invalid requests that can inflate log storage usage and make it harder to find the data you need. Learn more about setting up an [authenticated gateway](/ai-gateway/configuration/authentication/).
+
+## Default configuration
+
+Logs, which include metrics as well as request and response data, are enabled by default for each gateway. This logging behavior will be uniformly applied to all requests in the gateway. If you are concerned about privacy or compliance and want to turn log collection off, you can go to settings and opt out of logs. If you need to modify the log settings for specific requests, you can override this setting on a per-request basis.
+
+<Render file="logging" />
+
+## Per-request logging
+
+To override the default logging behavior set in the settings tab, you can define headers on a per-request basis.
+
+### Collect logs (`cf-aig-collect-log`)
+
+The `cf-aig-collect-log` header allows you to bypass the default log setting for the gateway. If the gateway is configured to save logs, the header will exclude the log for that specific request. Conversely, if logging is disabled at the gateway level, this header will save the log for that request.
+
+In the example below, we use `cf-aig-collect-log` to bypass the default setting to avoid saving the log.
+
+```bash
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai/chat/completions \
+  --header "Authorization: Bearer $TOKEN" \
+  --header 'Content-Type: application/json' \
+  --header 'cf-aig-collect-log: false \
+  --data ' {
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is the email address and phone number of user123?"
+          }
+        ]
+      }
+'
+```
+
+## How to delete logs
+
+### Auto Log Cleanup
+
+Enable Auto Log Cleanup to automatically delete the oldest logs once the default storage limit of 10 million logs is reached, ensuring that new logs are always saved without needing manual deletion. Logs are deleted in chunks of 0.1% of the storage limit, which equates to 10,000 logs at a time.
+
+This setting is useful for maintaining continuous logging while staying within the default storage constraints.
+
+### Manual deletion
+
+To manually delete logs, navigate to the Logs tab in the dashboard. Use the available filters such as status, cache, provider, cost, or any other options in the dropdown to refine the logs you wish to delete. Once filtered, select Delete logs to complete the action.
+
+See full list of available filters and their descriptions below:
+
+| Filter category | Filter options                                               | Filter by description                     |
+| --------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| Status          | error, status                                                | error type or status.                     |
+| Cache           | cached, not cached                                           | based on whether they were cached or not. |
+| Provider        | specific providers                                           | the selected AI provider.                 |
+| AI Models       | specific models                                              | the selected AI model.                    |
+| Cost            | less than, greater than                                      | cost, specifying a threshold.             |
+| Request type    | Universal, Workers AI Binding, WebSockets                    | the type of request.                      |
+| Tokens          | Total tokens, Tokens In, Tokens Out                          | token count (less than or greater than).  |
+| Duration        | less than, greater than                                      | request duration.                         |
+| Feedback        | equals, does not equal (thumbs up, thumbs down, no feedback) | feedback type.                            |
+| Metadata Key    | equals, does not equal                                       | specific metadata keys.                   |
+| Metadata Value  | equals, does not equal                                       | specific metadata values.                 |
+| Log ID          | equals, does not equal                                       | a specific Log ID.                        |
+| Event ID        | equals, does not equal                                       | a specific Event ID.                      |

@@ -1,0 +1,46 @@
+---
+pcx_content_type: configuration
+title: Fallbacks
+sidebar:
+  order: 2
+---
+
+import { Render } from "~/components";
+
+Specify model or provider fallbacks with your [Universal endpoint](/ai-gateway/providers/universal/) to handle request failures and ensure reliability.
+
+Cloudflare can trigger your fallback provider in response to [request errors](#request-failures) or [predetermined request timeouts](#request-timeouts). The [response header `cf-aig-step`](#response-headercf-aig-step) indicates which step successfully processed the request.
+
+## Request failures
+
+By default, Cloudflare triggers your fallback if a model request returns an error.
+
+### Example
+
+In the following example, a request first goes to the [Workers AI](/workers-ai/) Inference API. If the request fails, it falls back to OpenAI. The response header `cf-aig-step` indicates which provider successfully processed the request.
+
+1. Sends a request to Workers AI Inference API.
+2. If that request fails, proceeds to OpenAI.
+
+```mermaid
+graph TD
+    A[AI Gateway] --> B[Request to Workers AI Inference API]
+    B -->|Success| C[Return Response]
+    B -->|Failure| D[Request to OpenAI API]
+    D --> E[Return Response]
+```
+
+<br />
+
+You can add as many fallbacks as you need, just by adding another object in the array.
+
+<Render file="universal-gateway-example" />
+
+## Response header(cf-aig-step)
+
+When using the [Universal endpoint](/ai-gateway/providers/universal/) with fallbacks, the response header `cf-aig-step` indicates which model successfully processed the request by returning the step number. This header provides visibility into whether a fallback was triggered and which model ultimately processed the response.
+
+- `cf-aig-step:0` – The first (primary) model was used successfully.
+- `cf-aig-step:1` – The request fell back to the second model.
+- `cf-aig-step:2` – The request fell back to the third model.
+- Subsequent steps – Each fallback increments the step number by 1.

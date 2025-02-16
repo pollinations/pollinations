@@ -1,0 +1,66 @@
+---
+title: Google Vertex AI
+pcx_content_type: get-started
+sidebar:
+  badge:
+    text: Beta
+---
+
+[Google Vertex AI](https://cloud.google.com/vertex-ai) enables developers to easily build and deploy enterprise ready generative AI experiences.
+
+Below is a quick guide on how to set your Google Cloud Account:
+
+1. Google Cloud Platform (GCP) Account
+
+   - Sign up for a [GCP account](https://cloud.google.com/vertex-ai). New users may be eligible for credits (valid for 90 days).
+
+2. Enable the Vertex AI API
+
+   - Navigate to [Enable Vertex AI API](https://console.cloud.google.com/marketplace/product/google/aiplatform.googleapis.com) and activate the API for your project.
+
+3. Apply for access to desired models.
+
+## Endpoint
+
+```txt
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/google-vertex-ai
+```
+
+## Prerequisites
+
+When making requests to Google Vertex, you will need:
+
+- AI Gateway account tag
+- AI Gateway gateway name
+- Google Vertex API key
+- Google Vertex Project Name
+- Google Vertex Region (for example, us-east4)
+- Google Vertex model
+
+## URL structure
+
+Your new base URL will use the data above in this structure: `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/google-vertex-ai/v1/projects/{project_name}/locations/{region}`.
+
+Then you can append the endpoint you want to hit, for example: `/publishers/google/models/{model}:{generative_ai_rest_resource}`
+
+So your final URL will come together as: `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/google-vertex-ai/v1/projects/{project_name}/locations/{region}/publishers/google/models/gemini-1.0-pro-001:generateContent`
+
+## Example
+
+### cURL
+
+```bash title="Example fetch request"
+curl "https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/google-vertex-ai/v1/projects/{project_name}/locations/{region}/publishers/google/models/gemini-1.0-pro-001:generateContent" \
+    -H "Authorization: Bearer {vertex_api_key}" \
+    -H 'Content-Type: application/json' \
+    -d '{
+        "contents": {
+          "role": "user",
+          "parts": [
+            {
+              "text": "Tell me more about Cloudflare"
+            }
+          ]
+        }'
+
+```

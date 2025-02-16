@@ -1,0 +1,81 @@
+---
+title: OpenAI
+pcx_content_type: get-started
+---
+
+[OpenAI](https://openai.com/about/) helps you build with ChatGPT.
+
+## Endpoint
+
+```txt
+https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai
+```
+
+## URL structure
+
+When making requests to OpenAI, replace `https://api.openai.com/v1` in the URL you’re currently using with `https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai`.
+
+## Prerequisites
+
+When making requests to OpenAI, ensure you have the following:
+
+- Your AI Gateway Account ID.
+- Your AI Gateway gateway name.
+- An active OpenAI API token.
+- The name of the OpenAI model you want to use.
+
+## Examples
+
+### cURL
+
+```bash title="Request"
+curl https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/openai/chat/completions \
+  --header 'Authorization: Bearer {openai_token}' \
+  --header 'Content-Type: application/json' \
+  --data ' {
+   		 "model": "gpt-4o-mini",
+   		 "messages": [
+        {
+          "role": "user",
+          "content": "What is Cloudflare"
+        }
+   		 ]
+   	 }
+'
+```
+
+### Use OpenAI SDK with JavaScript
+
+If you are using a library like openai-node, set the `baseURL` to your OpenAI endpoint like this:
+
+```js title="JavaScript"
+import OpenAI from "openai";
+
+const apiKey = "my api key"; // defaults to process.env["OPENAI_API_KEY"]
+const accountId = "{account_id}";
+const gatewayId = "{gateway_id}";
+const baseURL = `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayId}/openai`;
+
+const openai = new OpenAI({
+	apiKey,
+	baseURL,
+});
+
+try {
+	const model = "gpt-3.5-turbo-0613";
+	const messages = [{ role: "user", content: "What is a neuron?" }];
+	const maxTokens = 100;
+
+	const chatCompletion = await openai.chat.completions.create({
+		model,
+		messages,
+		max_tokens: maxTokens,
+	});
+
+	const response = chatCompletion.choices[0].message;
+
+	return new Response(JSON.stringify(response));
+} catch (e) {
+	return new Response(e);
+}
+```

@@ -1,0 +1,25 @@
+---
+title: Header Glossary
+pcx_content_type: glossary
+sidebar:
+  order: 15
+---
+
+import { Glossary } from "~/components";
+
+AI Gateway supports a variety of headers to help you configure, customize, and manage your API requests. This page provides a complete list of all supported headers, along with a short description
+
+<Glossary product="ai-gateway" />
+
+## Configuration hierarchy
+
+Settings in AI Gateway can be configured at three levels: **Provider**, **Request**, and **Gateway**. Since the same settings can be configured in multiple locations, the following hierarchy determines which value is applied:
+
+1. **Provider-level headers**:
+   Relevant only when using the [Universal Endpoint](/ai-gateway/providers/universal/), these headers take precedence over all other configurations.
+2. **Request-level headers**:
+   Apply if no provider-level headers are set.
+3. **Gateway-level settings**:
+   Act as the default if no headers are set at the provider or request levels.
+
+This hierarchy ensures consistent behavior, prioritizing the most specific configurations. Use provider-level and request-level headers for more fine-tuned control, and gateway settings for general defaults.

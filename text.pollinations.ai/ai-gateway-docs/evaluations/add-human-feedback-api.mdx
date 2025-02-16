@@ -1,0 +1,180 @@
+---
+pcx_content_type: how-to
+title: Add Human Feedback using API
+sidebar:
+  order: 4
+---
+
+This guide will walk you through the steps of adding human feedback to an AI Gateway request using the Cloudflare API. You will learn how to retrieve the relevant request logs, and submit feedback using the API.
+
+If you prefer to add human feedback via the dashboard, refer to [Add Human Feedback](/ai-gateway/evaluations/add-human-feedback/).
+
+## 1. Create an API Token
+
+1. [Create an API token](/fundamentals/api/get-started/create-token/) with the following permissions:
+
+- `AI Gateway - Read`
+- `AI Gateway - Edit`
+
+2. Get your [Account ID](/fundamentals/setup/find-account-and-zone-ids/).
+3. Using that API token and Account ID, send a [`POST` request](/api/resources/ai_gateway/methods/create/) to the Cloudflare API.
+
+## 2. Using the API Token
+
+Once you have the token, you can use it in API requests by adding it to the authorization header as a bearer token. Here is an example of how to use it in a request:
+
+```bash
+curl "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs" \
+--header "Authorization: Bearer {your_api_token}"
+```
+
+In the request above:
+
+- Replace `{account_id}` and `{gateway_id}` with your specific Cloudflare account and gateway details.
+- Replace `{your_api_token}` with the API token you just created.
+
+## 3. Retrieve the `cf-aig-log-id`
+
+The `cf-aig-log-id` is a unique identifier for the specific log entry to which you want to add feedback. Below are two methods to obtain this identifier.
+
+### Method 1: Locate the `cf-aig-log-id` in the request response
+
+This method allows you to directly find the `cf-aig-log-id` within the header of the response returned by the AI Gateway. This is the most straightforward approach if you have access to the original API response.
+
+The steps below outline how to do this.
+
+1. **Make a Request to the AI Gateway**: This could be a request your application sends to the AI Gateway. Once the request is made, the response will contain various pieces of metadata.
+2. **Check the Response Headers**: The response will include a header named `cf-aig-log-id`. This is the identifier you will need to submit feedback.
+
+In the example below, the `cf-aig-log-id` is `01JADMCQQQBWH3NXZ5GCRN98DP`.
+
+```json
+{
+	"status": "success",
+	"headers": {
+		"cf-aig-log-id": "01JADMCQQQBWH3NXZ5GCRN98DP"
+	},
+	"data": {
+		"response": "Sample response data"
+	}
+}
+```
+
+### Method 2: Retrieve the `cf-aig-log-id` via API (GET request)
+
+If you don't have the `cf-aig-log-id` in the response body or you need to access it after the fact, you can retrieve it by querying the logs using the [Cloudflare API](/api/resources/ai_gateway/subresources/logs/methods/list/).
+
+The steps below outline how to do this.
+
+1. **Send a GET Request to Retrieve Logs**: You can query the AI Gateway logs for a specific time frame or for a specific request. The request will return a list of logs, each containing its own `id`.
+   Here is an example request:
+
+```bash
+GET https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs
+```
+
+Replace `{account_id}` and `{gateway_id}` with your specific account and gateway details.
+
+2. **Search for the Relevant Log**: In the response from the GET request, locate the specific log entry for which you would like to submit feedback. Each log entry will include the `id`.
+
+In the example below, the `id` is `01JADMCQQQBWH3NXZ5GCRN98DP`.
+
+```json
+{
+	"result": [
+		{
+			"id": "01JADMCQQQBWH3NXZ5GCRN98DP",
+			"cached": true,
+			"created_at": "2019-08-24T14:15:22Z",
+			"custom_cost": true,
+			"duration": 0,
+			"id": "string",
+			"metadata": "string",
+			"model": "string",
+			"model_type": "string",
+			"path": "string",
+			"provider": "string",
+			"request_content_type": "string",
+			"request_type": "string",
+			"response_content_type": "string",
+			"status_code": 0,
+			"step": 0,
+			"success": true,
+			"tokens_in": 0,
+			"tokens_out": 0
+		}
+	],
+	"result_info": {
+		"count": 0,
+		"max_cost": 0,
+		"max_duration": 0,
+		"max_tokens_in": 0,
+		"max_tokens_out": 0,
+		"max_total_tokens": 0,
+		"min_cost": 0,
+		"min_duration": 0,
+		"min_tokens_in": 0,
+		"min_tokens_out": 0,
+		"min_total_tokens": 0,
+		"page": 0,
+		"per_page": 0,
+		"total_count": 0
+	},
+	"success": true
+}
+```
+
+### Method 3: Retrieve the `cf-aig-log-id` via a binding
+
+You can also retrieve the `cf-aig-log-id` using a binding, which streamlines the process. Here's how to retrieve the log ID directly:
+
+```js
+const resp = await env.AI.run('@cf/meta/llama-3-8b-instruct', {
+		prompt: 'tell me a joke'
+}, {
+		gateway: {
+				id: 'my_gateway_id'
+		}
+})
+
+const myLogId = env.AI.aiGatewayLogId
+```
+
+:::note[Note:]
+
+
+The `aiGatewayLogId` property, will only hold the last inference call log id.
+
+
+:::
+
+## 4. Submit feedback via PATCH request
+
+Once you have both the API token and the `cf-aig-log-id`, you can send a PATCH request to submit feedback. Use the following URL format, replacing the `{account_id}`, `{gateway_id}`, and `{log_id}` with your specific details:
+
+```bash
+PATCH https://api.cloudflare.com/client/v4/accounts/{account_id}/ai-gateway/gateways/{gateway_id}/logs/{log_id}
+```
+
+Add the following in the request body to submit positive feedback:
+
+```json
+{
+	"feedback": 1
+}
+```
+
+Add the following in the request body to submit negative feedback:
+
+```json
+{
+	"feedback": -1
+}
+```
+
+## 5. Verify the feedback submission
+
+You can verify the feedback submission in two ways:
+
+- **Through the [Cloudflare dashboard ](https://dash.cloudflare.com)**: check the updated feedback on the AI Gateway interface.
+- **Through the API**: Send another GET request to retrieve the updated log entry and confirm the feedback has been recorded.

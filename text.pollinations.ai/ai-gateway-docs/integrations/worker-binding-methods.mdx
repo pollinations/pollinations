@@ -1,0 +1,121 @@
+---
+title: AI Gateway Binding Methods
+pcx_content_type: tutorial
+updated: 2025-01-28
+---
+
+import { Render, PackageManagers } from "~/components";
+
+This guide provides an overview of how to use the latest Cloudflare Workers AI Gateway binding methods. You will learn how to set up an AI Gateway binding, access new methods, and integrate them into your Workers.
+
+## Prerequisites
+
+- Install and use the `@cloudflare/workers-types` library, version `4.20250124.3` or above.
+
+## 1. Add an AI Binding to your Worker
+
+To connect your Worker to Workers AI, add the following to your [Wrangler configuration file](/workers/wrangler/configuration/):
+
+import { WranglerConfig } from "~/components";
+
+<WranglerConfig>
+
+```toml title="wrangler.toml"
+[ai]
+binding = "AI"
+```
+
+</WranglerConfig>
+
+This configuration sets up the AI binding accessible in your Worker code as `env.AI`.
+
+## 2. Basic Usage with Workers AI + Gateway
+
+To perform an inference task using Workers AI and an AI Gateway, you can use the following code:
+
+```typescript title="src/index.ts"
+const resp = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+  prompt: "tell me a joke"
+}, {
+  gateway: {
+    id: "my-gateway"
+  }
+});
+```
+
+Additionally, you can access the latest request log ID with:
+
+```typescript
+const myLogId = env.AI.aiGatewayLogId;
+```
+
+## 3. Access the Gateway Binding
+
+You can access your AI Gateway binding using the following code:
+
+```typescript
+const gateway = env.AI.gateway("my-gateway");
+```
+
+Once you have the gateway instance, you can use the following methods:
+
+### 3.1. `patchLog`: Send Feedback
+
+The `patchLog` method allows you to send feedback, score, and metadata for a specific log ID. All object properties are optional, so you can include any combination of the parameters:
+
+```typescript
+gateway.patchLog('my-log-id', {
+  feedback: 1,
+  score: 100,
+  metadata: {
+    user: "123"
+  }
+});
+```
+
+- **Returns**: `Promise<void>` (Make sure to `await` the request.)
+- **Example Use Case**: Update a log entry with user feedback or additional metadata.
+
+### 3.2. `getLog`: Read Log Details
+
+The `getLog` method retrieves details of a specific log ID. It returns an object of type `Promise<AiGatewayLog>`. You can import the `AiGatewayLog` type from the `@cloudflare/workers-types` library.
+
+```typescript
+const log = await gateway.getLog("my-log-id");
+```
+
+- **Returns**: `Promise<AiGatewayLog>`
+- **Example Use Case**: Retrieve log information for debugging or analytics.
+
+### 3.3. `run`: Universal Requests
+
+The `run` method allows you to execute universal requests. Users can pass either a single universal request object or an array of them. This method supports all AI Gateway providers.
+
+Refer to the [Universal endpoint documentation](/ai-gateway/providers/universal/) for details about the available inputs.
+
+```typescript
+const resp = await gateway.run({
+  provider: "workers-ai",
+  endpoint: "@cf/meta/llama-3.1-8b-instruct",
+  headers: {
+    authorization: "Bearer my-api-token"
+  },
+  query: {
+    prompt: "tell me a joke"
+  }
+});
+```
+
+- **Returns**: `Promise<Response>`
+- **Example Use Case**: Perform a [universal request](/ai-gateway/providers/universal/) to any supported provider.
+
+## Conclusion
+
+With the new AI Gateway binding methods, you can now:
+
+- Send feedback and update metadata with `patchLog`.
+- Retrieve detailed log information using `getLog`.
+- Execute universal requests to any AI Gateway provider with `run`.
+
+These methods offer greater flexibility and control over your AI integrations, empowering you to build more sophisticated applications on the Cloudflare Workers platform.
+

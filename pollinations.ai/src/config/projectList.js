@@ -281,6 +281,13 @@ export const projects = {
   ],
   socialBots: [
     {
+      name: "🆕 One Word",
+      url: "https://t.me/OdnoSlovoBot",
+      description: "A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI.",
+      author: "@Dimaq21",
+      submissionDate: "2025-02-17",
+    },
+    {
       name: "Titan-GPT",
       url: "https://t.me/titangpt_channel",
       description: "Free Telegram bot providing access to neural networks including image and text generation powered by Pollinations.AI",

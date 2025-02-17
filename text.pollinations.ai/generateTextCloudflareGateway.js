@@ -3,95 +3,80 @@ import debug from 'debug';
 
 const log = debug('pollinations:cloudflare-gateway');
 const errorLog = debug('pollinations:error');
-const CLOUDFLARE_AUTH_TOKEN = process.env.CLOUDFLARE_AUTH_TOKEN;
 
 const BASE_URL = 'https://gateway.ai.cloudflare.com/v1/efdcb0933eaac64f27c0b295039b28f2/pollinations-text';
-
-// Note on streaming:
-// When options.stream is true, the response will be in Server-Sent Events (SSE) format.
-// The client should handle the stream by:
-// 1. Reading each event (data: {...})
-// 2. Parsing the JSON content
-// 3. Concatenating the text chunks
-// 4. Handling the final [DONE] event
-//
-// Example stream response format:
-// data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null,"index":0}]}
-// data: {"choices":[{"delta":{"content":" world"},"finish_reason":null,"index":0}]}
-// data: {"choices":[{"delta":{"content":"!"},"finish_reason":"stop","index":0}]}
-// data: [DONE]
 
 // Provider configurations
 const PROVIDER_CONFIGS = {
     'openai': {
         provider: 'azure-openai',
         endpoint: 'chat/completions?api-version=2025-01-01-preview',
-        environmentKey: 'AZURE_OPENAI_API_KEY',
+        authToken: process.env.AZURE_OPENAI_API_KEY,
         resourceName: 'pollinations',
         deploymentName: 'gpt-4o-mini',
-        // apiVersion: '2024-08-01-preview'
     },
     'openai-large': {
         provider: 'azure-openai',
         endpoint: 'chat/completions?api-version=2025-01-01-preview',
         modelParam: 'model',
-        environmentKey: 'AZURE_OPENAI_LARGE_API_KEY',
+        authToken: process.env.AZURE_OPENAI_LARGE_API_KEY,
         resourceName: 'pollinations',
         deploymentName: 'gpt-4o'
     },
     'deepseek': {
-        provider: 'deepseek',
+        provider: 'openai',
         endpoint: 'chat/completions',
         modelParam: 'model',
-        environmentKey: 'AZURE_DEEPSEEK_API_KEY',
+        authToken: process.env.DEEPSEEK_API_KEY,
     },
     'deepseek-reasoner': {
-        provider: 'deepseek',
+        provider: 'openai',
         endpoint: 'chat/completions',
         modelParam: 'model',
-        environmentKey: 'AZURE_DEEPSEEK_API_KEY',   
+        authToken: process.env.DEEPSEEK_API_KEY,   
     },
     'mistral': {
-        provider: 'mistral',
+        provider: 'openai',
         endpoint: 'chat/completions',
         modelParam: 'model',
-        environmentKey: 'AZURE_MISTRAL_API_KEY',
+        authToken: process.env.SCALEWAY_API_KEY,
+        baseUrl: process.env.SCALEWAY_BASE_URL
     },
     'llama': {
         provider: 'workers-ai',
         endpoint: '@cf/meta/llama-3.1-70b-chat',
-        modelParam: null,
-        environmentKey: 'AZURE_LLAMA_API_KEY',
+        modelParam: 'model',
+        authToken: process.env.CLOUDFLARE_AUTH_TOKEN,
     },
     'llamalight': {
         provider: 'workers-ai',
         endpoint: '@cf/meta/llama-3.1-8b-instruct',
-        modelParam: null,
-        environmentKey: 'AZURE_LLAMA_API_KEY',
+        modelParam: 'model',
+        authToken: process.env.CLOUDFLARE_AUTH_TOKEN,
     },
     'llamaguard': {
         provider: 'workers-ai',
         endpoint: '@cf/meta/llamaguard-7b',
-        modelParam: null,
-        environmentKey: 'AZURE_LLAMA_API_KEY',
+        modelParam: 'model',
+        authToken: process.env.CLOUDFLARE_AUTH_TOKEN,
     },
     'claude-hybridspace': {
         provider: 'anthropic',
         endpoint: 'messages',
         modelParam: 'model',
-        environmentKey: 'ANTHROPIC_API_KEY',
+        authToken: process.env.ANTHROPIC_API_KEY,
     },
     'gemini': {
-        provider: 'google-ai-studio',
-        endpoint: 'models/gemini-pro:generateContent',
-        modelParam: null,
-        environmentKey: 'GEMINI_API_KEY',
+        provider: 'openai',
+        endpoint: 'chat/completions',
+        modelParam: 'model',
+        authToken: process.env.GEMINI_API_KEY,
     },
     'gemini-thinking': {
-        provider: 'google-ai-studio',
-        endpoint: 'models/gemini-pro:generateContent',
-        modelParam: null,
-        environmentKey: 'GEMINI_API_KEY',
+        provider: 'openai',
+        endpoint: 'chat/completions',
+        modelParam: 'model',
+        authToken: process.env.GEMINI_API_KEY,
     }
 };
 
@@ -127,9 +112,8 @@ async function generateText(messages, options = {}) {
         throw new Error(`Unknown model: ${model}`);
     }
 
-    const apiKey = process.env[config.environmentKey];
-    if (!apiKey) {
-        throw new Error(`Missing API key for ${model} (${config.environmentKey})`);
+    if (!config.authToken) {
+        throw new Error(`Missing auth token for ${model}`);
     }
 
     const requestBody = {
@@ -147,12 +131,14 @@ async function generateText(messages, options = {}) {
     log('Request URL:', url);
     log('Request body:', requestBody);
 
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.authToken}`
+    };
+
     const response = await fetch(url, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'api-key': apiKey
-        },
+        headers,
         body: JSON.stringify(requestBody)
     });
 

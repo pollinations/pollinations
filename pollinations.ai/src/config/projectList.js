@@ -32,6 +32,13 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "🆕 Zelos AI image generator",
+      url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
+      description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
+      author: "https://www.roblox.com/users/4361935306/profile",
+      submissionDate: "2025-02-17",
+    },
+    {
       name: "🆕 urSapere AI",
       url: "https://perchance.org/chat-ursapere-ai",
       description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",

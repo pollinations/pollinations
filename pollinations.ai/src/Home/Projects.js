@@ -75,9 +75,9 @@ const Projects = () => {
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
-        <SectionHeadlineStyle>
+        {/* <SectionHeadlineStyle>
           <LLMTextManipulator text={PROJECT_CTO_2} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle>
+        </SectionHeadlineStyle> */}
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton
             onClick={handleSubmitButtonClick}
@@ -89,7 +89,6 @@ const Projects = () => {
               fontSize: "1.5rem",
               fontFamily: Fonts.title,
               fontWeight: 600,
-              marginTop: "1em",
             }}
           >
             <OpenInNewIcon style={{ marginRight: "8px", width: "32px", height: "32px" }} />

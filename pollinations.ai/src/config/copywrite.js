@@ -64,9 +64,9 @@ export const PROJECT_TITLE = "Projects"
 export const PROJECT_SUBTITLE = " Here are some of the various implementations that our API is currently powering."
 
 export const PROJECT_CTO_1 = 
-  "Ask if the user has created a project that integrates Pollinations.AI. Explain that would we be happy to feature it."
+  "Ask if the user has created a project that integrates Pollinations.AI and would like it to be featured in this section. Keep in short, one sentence"
 
-export const PROJECT_CTO_2 = "Reach out to us"
+// export const PROJECT_CTO_2 = "Reach out to us"
 
 export const PROJECT_BUTTON = "Submit Your Project"
 export const PROJECT_LOGO_STYLE =

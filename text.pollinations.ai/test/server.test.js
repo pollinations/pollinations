@@ -500,6 +500,28 @@ test('getRequestData should parse request data correctly', t => {
         {
             req: {
                 method: 'POST',
+                path: '/openai',
+                body: { messages: [{ role: 'user', content: 'test' }], model: 'openai' },
+                query: { code: 'test' },
+                headers: {}
+            },
+            expected: {
+                messages: [{ role: 'user', content: 'test' }],
+                model: 'openai',
+                jsonMode: false,
+                seed: null,
+                temperature: undefined,
+                isImagePollinationsReferrer: false,
+                isRobloxReferrer: false,
+                referrer: 'unknown',
+                stream: false,
+                isPrivate: true
+            }
+        },
+        {
+            req: {
+                method: 'POST',
+                path: '/',
                 body: { messages: [{ role: 'user', content: 'test' }], model: 'openai' },
                 query: { code: 'test' },
                 headers: {}

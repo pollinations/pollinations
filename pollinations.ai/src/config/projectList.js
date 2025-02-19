@@ -4,6 +4,10 @@
 
 export const projectCategories = [
   {
+    title: "New / Featured",
+    key: "featured",
+  },
+  {
     title: "LLM Integrations",
     key: "llmIntegrations",
   },
@@ -29,7 +33,7 @@ export const projectCategories = [
   },
 ];
 
-export const projects = {
+const allProjects = {
   llmIntegrations: [
     {
       name: "🆕 Zelos AI image generator",
@@ -56,11 +60,13 @@ export const projects = {
       url: "https://lobehub.com/plugins/pollinations-drawing",
       description: "An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system.",
       repo: "https://github.com/lobehub/lobe-chat",
+      featured: true,
     },
     {
       name: "Qwen-Agent",
       url: "https://github.com/QwenLM/Qwen-Agent",
       description: "A framework for developing agentic LLM applications.",
+      repo: "https://github.com/QwenLM/Qwen-Agent",
     },
     {
       name: "SillyTavern",
@@ -107,6 +113,7 @@ export const projects = {
       description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",
       author: "@brain.diver",
       repo: "https://github.com/rafabez/pollisonic_generator",
+      featured: true,
     },
     {
       name: "Abyss Ascending",
@@ -125,7 +132,8 @@ export const projects = {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
-      author: "@user113 (Roblox: [Profile](https://www.roblox.com/users/5810708209))",
+      author: "[@user113](https://www.roblox.com/users/5810708209))",
+      featured: true,
     },
     {
       name: "MIDIjourney",
@@ -224,12 +232,14 @@ export const projects = {
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
       author: "@thomash_pollinations",
       repo: "https://github.com/pollinations/pollinations.diy",
+      featured: true,
     },
     {
       name: "Pal Chat",
       url: "https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone",
       description: "An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface.",
       author: "https://x.com/pallavmac",
+      featured: true,
     },
     {
       name: "Pollinator Android App",
@@ -390,3 +400,23 @@ export const projects = {
     },
   ],
 };
+
+export const projects = {
+  featured: [],
+  llmIntegrations: [],
+  creativeApps: [],
+  toolsInterfaces: [],
+  socialBots: [],
+  sdkLibraries: [],
+  tutorials: [],
+};
+
+Object.keys(allProjects).forEach(category => {
+  allProjects[category].forEach(project => {
+    if (project.featured) {
+      projects.featured.push(project);
+    } else {
+      projects[category].push(project);
+    }
+  });
+});

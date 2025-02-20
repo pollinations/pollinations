@@ -1,3 +1,4 @@
+// Start of Selection
 import React, { useState, useEffect, memo, useRef, useCallback } from "react"
 import { Box, Paper, Typography, Menu, MenuItem, TextField, Checkbox, Button } from "@mui/material"
 import TextareaAutosize from "react-textarea-autosize"
@@ -81,13 +82,6 @@ export const ImageEditor = memo(function ImageEditor({
    * Opens the model selection menu when triggered by a Button event.
    */
   const handleMenuOpen = (event) => {
-    // Track event for opening the model menu
-    if (typeof trackEvent === "function") {
-      trackEvent({
-        action: 'click_model_select',
-        category: 'feed',
-      })
-    }
     setAnchorEl(event.currentTarget)
   }
 
@@ -101,8 +95,9 @@ export const ImageEditor = memo(function ImageEditor({
       // Track event for selecting a model
       if (typeof trackEvent === "function") {
         trackEvent({
-          action: 'click_model_selected',
+          action: 'change_model',
           category: 'feed',
+          value: value,
         })
       }
     }
@@ -132,6 +127,15 @@ export const ImageEditor = memo(function ImageEditor({
       setIsInputChanged(true)
     }
     handleParamChange(param, newValue)
+
+    // Track event for input changes (excluding width and height, which are tracked onBlur)
+    if (typeof trackEvent === "function" && param !== "width" && param !== "height") {
+      trackEvent({
+        action: `change_${param}`,
+        category: 'feed',
+        value: param === "prompt" ? undefined : newValue,
+      })
+    }
   }
 
   // Flags for checkboxes
@@ -163,9 +167,8 @@ export const ImageEditor = memo(function ImageEditor({
       // Track event for generating with bumped seed
       if (typeof trackEvent === "function") {
         trackEvent({
-          category: "ImageEditor",
-          action: "Generate with Bumped Seed",
-          label: "Submit/Generate Button",
+          category: "feed",
+          action: "click_create_bump_seed",
         })
       }
       // If no changes, bump seed for a new random value
@@ -177,9 +180,8 @@ export const ImageEditor = memo(function ImageEditor({
       // Track event for submitting generate
       if (typeof trackEvent === "function") {
         trackEvent({
-          category: "ImageEditor",
-          action: "Submit Generate",
-          label: "Submit/Generate Button",
+          category: "feed",
+          action: "click_create",
         })
       }
     }
@@ -330,7 +332,17 @@ export const ImageEditor = memo(function ImageEditor({
                 /* Edit mode: Text area (plaintext) */
                 <TextareaAutosize
                   value={imageParams.prompt}
-                  onChange={(e) => handleParamChange("prompt", e.target.value)}
+                  onChange={(e) => {
+                    handleParamChange("prompt", e.target.value)
+                  }}
+                  onBlur={() => {
+                    if (typeof trackEvent === "function") {
+                      trackEvent({
+                        action: 'change_prompt',
+                        category: 'feed',
+                      })
+                    }
+                  }}
                   onFocus={handleFocus}
                   minRows={3}
                   maxRows={6}
@@ -461,6 +473,16 @@ export const ImageEditor = memo(function ImageEditor({
                 value={width}
                 onChange={(e) => handleInputChange("width", e.target.value)}
                 onFocus={handleFocus}
+                onBlur={(e) => {
+                  const parsed = parseInt(e.target.value, 10);
+                  if (typeof trackEvent === "function") {
+                    trackEvent({
+                      action: 'change_width',
+                      category: 'feed',
+                      value: isNaN(parsed) ? undefined : parsed,
+                    });
+                  }
+                }}
                 type="number"
                 InputProps={{
                   sx: {
@@ -491,6 +513,16 @@ export const ImageEditor = memo(function ImageEditor({
                 value={height}
                 onChange={(e) => handleInputChange("height", e.target.value)}
                 onFocus={handleFocus}
+                onBlur={(e) => {
+                  const parsed = parseInt(e.target.value, 10);
+                  if (typeof trackEvent === "function") {
+                    trackEvent({
+                      action: 'change_height',
+                      category: 'feed',
+                      value: isNaN(parsed) ? undefined : parsed,
+                    });
+                  }
+                }}
                 type="number"
                 InputProps={{
                   sx: {
@@ -564,8 +596,9 @@ export const ImageEditor = memo(function ImageEditor({
                         handleInputChange("enhance", e.target.checked);
                         if (typeof trackEvent === "function") {
                           trackEvent({
-                            action: 'click_enhance',
+                            action: 'change_enhance',
                             category: 'feed',
+                            value: isEnhanceChecked,
                           });
                         }
                       }}
@@ -608,8 +641,9 @@ export const ImageEditor = memo(function ImageEditor({
                         handleInputChange("nologo", !e.target.checked);
                         if (typeof trackEvent === "function") {
                           trackEvent({
-                            action: 'click_logo',
+                            action: 'change_logo',
                             category: 'feed',
+                            value: isLogoChecked,
                           });
                         }
                       }}
@@ -646,3 +680,4 @@ export const ImageEditor = memo(function ImageEditor({
     </Box>
   )
 })
+// End of Selectio

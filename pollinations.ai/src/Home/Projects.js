@@ -10,11 +10,7 @@ import {
   PROJECT_CTO_2,
   PROJECT_BUTTON,
 } from "../config/copywrite"
-import {
-  emojify,
-  rephrase,
-  noLink
-} from "../config/llmTransforms"
+import { emojify, rephrase, noLink } from "../config/llmTransforms"
 
 import SectionTitle from "../components/SectionTitle"
 import {
@@ -27,7 +23,7 @@ import { GeneralButton } from "../components/GeneralButton"
 import { Box } from "@mui/material"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
 import { trackEvent } from "../config/analytics"
-import OpenInNewIcon from '@mui/icons-material/OpenInNew'
+import OpenInNewIcon from "@mui/icons-material/OpenInNew"
 
 const useStyles = makeStyles(() => ({
   gridContainer: {
@@ -43,12 +39,13 @@ const useStyles = makeStyles(() => ({
 
 const handleSubmitButtonClick = (e) => {
   e.preventDefault()
-  window.open("https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml", "_blank")
+  window.open(
+    "https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml",
+    "_blank"
+  )
   trackEvent({
-    action: "Project_Submit_Click",
-    category: "User_Interactions",
-    label: "Projects_Submit_Button",
-    value: 1,
+    action: "click_submit_project",
+    category: "project",
   })
 }
 
@@ -75,9 +72,6 @@ const Projects = () => {
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
-        {/* <SectionHeadlineStyle>
-          <LLMTextManipulator text={PROJECT_CTO_2} transforms={[rephrase, emojify, noLink]} />
-        </SectionHeadlineStyle> */}
         <Box sx={{ width: "auto", height: "100px" }}>
           <GeneralButton
             onClick={handleSubmitButtonClick}

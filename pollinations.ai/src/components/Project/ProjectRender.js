@@ -25,10 +25,9 @@ const ProjectsRender = ({ classes }) => {
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
     trackEvent({
-      action: "Category_Select",
-      category: "User_Interactions",
-      label: `Category_${categoryKey}`,
-      value: 1,
+      action: "select_category",
+      category: "project",
+      value: categoryKey,
     })
   }
 
@@ -131,6 +130,11 @@ const ProjectsRender = ({ classes }) => {
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: Colors.lime }}
+                              onClick={() => trackEvent({
+                                action: "click_project_author",
+                                category: "project",
+                                value: project.author,
+                              })}
                             >
                               {project.author}
                             </Link>
@@ -167,10 +171,9 @@ const ProjectsRender = ({ classes }) => {
 const renderProjectLink = (project) => {
   const handleProjectLinkClick = () => {
     trackEvent({
-      action: "Project_Link_Click",
-      category: "User_Interactions",
-      label: `Project_${project.name}_Link`,
-      value: 1,
+      action: "click_project_title",
+      category: "project",
+      value: project.name,
     })
   }
 
@@ -201,10 +204,9 @@ const renderProjectLink = (project) => {
 const renderRepoLink = (repoUrl) => {
   const handleRepoLinkClick = () => {
     trackEvent({
-      action: "Repo_Link_Click",
-      category: "User_Interactions",
-      label: "Repo_Link",
-      value: 1,
+      action: 'click_project_repo',
+      category: 'project',
+      value: repoUrl,
     })
   }
 

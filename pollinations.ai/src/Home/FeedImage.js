@@ -65,9 +65,8 @@ export const FeedImage = memo(() => {
   /** Forcefully switch the toggleValue to "edit". */
   const switchToEditMode = useCallback(() => {
     trackEvent({
-      action: "Switch_To_Edit_Mode",
-      category: "User_Interactions",
-      label: "Manual_Switch",
+      action: 'click_switch_mode',
+      category: 'feed',
     });
     setToggleValue("edit");
   }, []);

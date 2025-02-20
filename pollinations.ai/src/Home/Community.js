@@ -1,4 +1,4 @@
- // Start of Selection
+// Start of Selection
 /* 
   Below is the requested code rewrite of the selection. 
   The height and width were not being applied because they were incorrectly captured 
@@ -43,10 +43,8 @@ const Community = () => {
   const handleDiscordButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'Discord_Click',
-      category: 'User_Interactions',
-      label: 'Community_Discord_Button',
-      value: 1,
+      action: 'click_discord',
+      category: 'community',
     })
     window.open("https://discord.gg/k9F7SyTgqn", "_blank")
   }
@@ -54,10 +52,8 @@ const Community = () => {
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'Github_Click',
-      category: 'User_Interactions',
-      label: 'Community_Github_Button',
-      value: 1,
+      action: 'click_github',
+      category: 'community',
     })
     window.open("https://github.com/pollinations/pollinations", "_blank")
   }
@@ -65,10 +61,8 @@ const Community = () => {
   const handleAsciiArtClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: 'AsciiArt_Click',
-      category: 'User_Interactions',
-      label: 'Community_AsciiArt_Button',
-      value: 1,
+      action: 'click_ascii', 
+      category: 'community',
     })
     window.open("https://pollinations.github.io/hive/main/llm-feedback/", "_blank")
   }

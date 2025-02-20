@@ -14,9 +14,8 @@ export default function News() {
   const handleAccordionChange = (event, isExpanded) => {
     if (isExpanded) {
       trackEvent({
-        action: "Accordion_Open",
-        category: "User_Interactions",
-        label: "News_Accordion_Open",
+        action: 'click_accordion',
+        category: 'news',
       })
     }
   }

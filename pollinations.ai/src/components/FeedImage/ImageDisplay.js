@@ -16,10 +16,8 @@ export const ImageDisplay = memo(function ImageDisplay({ image }) {
   const handleImageClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: "Image_Click",
-      category: "User_Interactions",
-      label: "Image_Display",
-      value: 1,
+      action: 'click_image',
+      category: 'feed',
     })
     window.open(image["imageURL"], "_blank")
   }

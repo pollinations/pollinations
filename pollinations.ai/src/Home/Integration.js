@@ -1,4 +1,3 @@
- // Start of Selection
 import React, { useContext } from "react"
 import { Colors, SectionBG, Fonts } from "../config/global"
 import { CodeExamples } from "../components/Integrate/CodeExamples"
@@ -23,10 +22,8 @@ export const Integration = () => {
   const handleGithubButtonClick = (e) => {
     e.preventDefault()
     trackEvent({
-      action: "Github_Button_Click",
-      category: "User_Interactions",
-      label: "Integration_Page",
-      value: 1,
+      action: 'click_apidocs',
+      category: 'integrate',
     })
     window.open("https://github.com/pollinations/pollinations/blob/master/APIDOCS.md", "_blank")
   }

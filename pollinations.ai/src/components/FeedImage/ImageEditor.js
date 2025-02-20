@@ -84,9 +84,8 @@ export const ImageEditor = memo(function ImageEditor({
     // Track event for opening the model menu
     if (typeof trackEvent === "function") {
       trackEvent({
-        category: "ImageEditor",
-        action: "Open Model Menu",
-        label: "Open Model Selector",
+        action: 'click_model_select',
+        category: 'feed',
       })
     }
     setAnchorEl(event.currentTarget)
@@ -102,13 +101,12 @@ export const ImageEditor = memo(function ImageEditor({
       // Track event for selecting a model
       if (typeof trackEvent === "function") {
         trackEvent({
-          category: "ImageEditor",
-          action: "Select Model",
-          label: value,
+          action: 'click_model_selected',
+          category: 'feed',
         })
       }
-      handleInputChange("model", value)
     }
+    handleInputChange("model", value)
   }
 
   // ─── HANDLERS: INPUT ────────────────────────────────────────────────────────
@@ -566,9 +564,8 @@ export const ImageEditor = memo(function ImageEditor({
                         handleInputChange("enhance", e.target.checked);
                         if (typeof trackEvent === "function") {
                           trackEvent({
-                            category: "ImageEditor",
-                            action: "Toggle Enhance",
-                            label: e.target.checked ? "Enable Enhance" : "Disable Enhance",
+                            action: 'click_enhance',
+                            category: 'feed',
                           });
                         }
                       }}
@@ -611,9 +608,8 @@ export const ImageEditor = memo(function ImageEditor({
                         handleInputChange("nologo", !e.target.checked);
                         if (typeof trackEvent === "function") {
                           trackEvent({
-                            category: "ImageEditor",
-                            action: "Toggle Logo",
-                            label: e.target.checked ? "Disable Logo" : "Enable Logo",
+                            action: 'click_logo',
+                            category: 'feed',
                           });
                         }
                       }}

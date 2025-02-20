@@ -18,19 +18,15 @@ const Footer = () => {
     e.preventDefault()
     navigator.clipboard.writeText("hello@pollinations.ai").then(() => {})
     trackEvent({
-      action: "Email_Link_Click",
-      category: "User_Interactions",
-      label: "Footer_Email_Link",
-      value: 1,
+      action: 'click_email',
+      category: 'footer',
     })
   }
 
   const handleTermsLinkClick = () => {
     trackEvent({
-      action: "Terms_Link_Click",
-      category: "User_Interactions",
-      label: "Footer_Terms_Link",
-      value: 1,
+      action: 'click_terms',
+      category: 'footer',
     })
   }
 
@@ -64,7 +60,7 @@ const Footer = () => {
             </StyledLink>
           </Box>
           <Box>
-            <SocialLinks gap="1em" />
+            <SocialLinks gap="1em" location="footer" />
           </Box>
         </Grid>
         <Grid

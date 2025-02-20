@@ -47,8 +47,9 @@ export const SocialLinks = ({ gap, location }) => {
 
   const handleLinkClick = (platform) => {
     trackEvent({
-      action: `click_${platform}`,
+      action: `click_social_link`,
       category: location,
+      value: platform,
     })
   }
 

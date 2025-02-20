@@ -22,6 +22,7 @@ import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
 import Grid from "@mui/material/Grid2"
 import SvgArtGenerator from "../components/SvgArtGenerator"
+import { trackEvent } from "../config/analytics"
 
 const Supporter = () => {
   const theme = useTheme()
@@ -50,6 +51,14 @@ const Supporter = () => {
       console.warn("[getCompanyLink] Protocol missing, corrected URL:", correctedUrl)
       return correctedUrl
     }
+  }
+
+  const handleSupporterClick = (companyName) => {
+    trackEvent({
+      action: 'click_supporter',
+      category: 'supporter',
+      value: companyName,
+    })
   }
 
   return (
@@ -85,6 +94,7 @@ const Supporter = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: Colors.lime, fontFamily: Fonts.parameter, fontSize: "1.3em" }}
+                onClick={() => handleSupporterClick(company.name)}
               >
                 <strong>{company.name}</strong>
               </StyledLink>
@@ -105,4 +115,3 @@ const Supporter = () => {
 }
 
 export default Supporter
-

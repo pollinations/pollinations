@@ -1,4 +1,3 @@
-/// Start of Selection
 import React, { useState } from "react"
 import styled from "@emotion/styled" // Added to style our ReactSVG icon
 import { Box, useTheme, Popover, IconButton } from "@mui/material"
@@ -32,24 +31,18 @@ const Header = () => {
 
   const handleNavLinkClick = () => {
     trackEvent({
-      action: "Header_Logo_Click",
-      category: "User_Interactions",
-      label: "Header_Logo_NavLink",
-      value: 1,
+      action: "click_home_logo",
+      category: "header",
     })
   }
 
   const handleAboutUsClick = (e) => {
     e.preventDefault()
+    trackEvent({
+      action: "click_linkedin",
+      category: "header",
+    })
     window.open("https://www.linkedin.com/company/pollinations-ai", "_blank")
-  }
-
-  const handlePopoverOpen = (event) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handlePopoverClose = () => {
-    setAnchorEl(null)
   }
 
   const open = Boolean(anchorEl)
@@ -104,35 +97,6 @@ const Header = () => {
             alignItems: "center",
           }}
         >
-          {/* <IconButton 
-            onClick={handlePopoverOpen} 
-            sx={{ 
-              color: Colors.offblack, 
-              padding: "0em",
-              marginRight: "0.5em",
-              transition: "color 0.3s ease",
-              '&:hover': {
-                color: 'rgba(0, 0, 0, 0.7)', // Slightly transparent color on hover
-              }
-            }}
-          >
-            <InfoIcon sx={{ fontSize: "47px" }} />
-          </IconButton>
-          <Popover
-            open={open}
-            anchorEl={anchorEl}
-            onClose={handlePopoverClose}
-            anchorOrigin={{
-              vertical: "bottom",
-              horizontal: "left",
-            }}
-            transformOrigin={{
-              vertical: "top",
-              horizontal: "left",
-            }}
-          >
-            <Box sx={{ p: 2 }}>Cool</Box>
-          </Popover> */}
           <GeneralButton
             handleClick={handleAboutUsClick}
             isLoading={false}
@@ -154,7 +118,7 @@ const Header = () => {
             <AboutUsIcon src={ICONS.linkedin} wrapper="span" aria-label="linkedin-icon" />
             About Us
           </GeneralButton>
-          <SocialLinks medium gap="1em" invert />
+          <SocialLinks medium gap="1em" invert location="header" />
         </Box>
       </Box>
     </SectionContainer>

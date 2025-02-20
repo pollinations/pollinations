@@ -20,10 +20,8 @@ const handleDiscordButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Discord_Click",
-    category: "User_Interactions",
-    label: "Hero_Discord_Button",
-    value: 1,
+    action: 'click_discord',
+    category: 'hero',
   })
   window.open("https://discord.gg/k9F7SyTgqn", "_blank")
 }
@@ -32,10 +30,8 @@ const handleGithubButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Github_Click",
-    category: "User_Interactions",
-    label: "Hero_Github_Button",
-    value: 1,
+    action: 'click_github',
+    category: 'hero',
   })
   window.open("https://github.com/pollinations/pollinations", "_blank")
 }
@@ -44,10 +40,8 @@ const handleEmailButtonClick = (e) => {
   e.preventDefault()
   // Track the click event
   trackEvent({
-    action: "Email_Click",
-    category: "User_Interactions",
-    label: "Hero_Email_Button",
-    value: 1,
+    action: 'click_email',
+    category: 'hero',
   })
 }
 

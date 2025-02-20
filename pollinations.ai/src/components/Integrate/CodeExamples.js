@@ -15,7 +15,7 @@ export function CodeExamples({ image = {} }) {
   const handleChange = (event, newValue) => {
     setTabValue(newValue)
     trackEvent({
-      action: 'select_category',
+      action: 'select_code_category',
       category: 'integrate',
       value: `${codeExampleTabs[newValue]}`,
     })

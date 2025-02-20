@@ -62,23 +62,21 @@ export const FeedImage = memo(() => {
   // -----------------------------
   // Handlers
   // -----------------------------
-  /** Forcefully switch the toggleValue to "edit". */
-  const switchToEditMode = useCallback(() => {
-    trackEvent({
-      action: 'click_switch_mode',
-      category: 'feed',
-    });
-    setToggleValue("edit");
-  }, []);
-
   /**
    * Handler for switching between "feed" and "edit" modes.
    * Calls 'stop' with a boolean to indicate if we should pause slideshow.
+   * Tracks the event with a boolean value indicating the mode.
    */
   const handleToggleChange = (event, newValue) => {
     if (newValue !== null) {
-      stop(newValue === "edit");  // First stop/start the slideshow
+      const isEditMode = newValue === "edit";
+      stop(isEditMode);  // First stop/start the slideshow
       setToggleValue(newValue);   // Then update the toggle value
+      trackEvent({
+        action: 'click_feed_edit_switch',
+        category: 'feed',
+        value: isEditMode ? "edit" : "feed",
+      });
     }
   };
 
@@ -130,7 +128,7 @@ export const FeedImage = memo(() => {
                 setIsInputChanged={setIsInputChanged}
                 isInputChanged={isInputChanged}
                 isStopped={isStopped}
-                switchToEditMode={switchToEditMode}
+                switchToEditMode={() => handleToggleChange(null, "edit")}
                 edit={isStopped}
                 toggleValue={toggleValue}
                 handleToggleChange={handleToggleChange}

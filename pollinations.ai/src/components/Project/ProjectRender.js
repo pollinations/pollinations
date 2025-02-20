@@ -25,7 +25,7 @@ const ProjectsRender = ({ classes }) => {
   const handleCategoryClick = (categoryKey) => {
     setSelectedCategory(categoryKey)
     trackEvent({
-      action: "select_category",
+      action: "select_project_category",
       category: "project",
       value: categoryKey,
     })

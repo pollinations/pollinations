@@ -31,7 +31,7 @@ const Header = () => {
 
   const handleNavLinkClick = () => {
     trackEvent({
-      action: "click_logo",
+      action: "click_home_logo",
       category: "header",
     })
   }

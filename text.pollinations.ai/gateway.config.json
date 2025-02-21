@@ -1,0 +1,15 @@
+{
+  "port": 8788,
+  "providers": {
+    "openai": {
+      "api_key": "${AZURE_OPENAI_API_KEY}"
+    },
+    "mistral": {
+      "api_key": "${SCALEWAY_API_KEY}"
+    },
+    "deepseek": {
+      "api_key": "${DEEPSEEK_API_KEY}",
+      "base_url": "${DEEPSEEK_API_BASE}"
+    }
+  }
+}

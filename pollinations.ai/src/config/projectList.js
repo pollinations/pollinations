@@ -223,7 +223,7 @@ export const projects = {
       url: "https://pollinations.diy",
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
       author: "@thomash_pollinations",
-      repo: "https://github.com/pollinations/pollinations/tree/main/pollinations.diy",
+      repo: "https://github.com/pollinations/pollinations.diy",
     },
     {
       name: "Pal Chat",
@@ -358,9 +358,9 @@ export const projects = {
     },
     {
       name: "pollinations.ai Python SDK",
-      url: "https://github.com/pollinations/pollinations",
+      url: "https://github.com/pollinations-ai/pollinations.ai",
       description: "Official Python SDK for working with Pollinations' models.",
-      author: "@pollinations",
+      author: "@pollinations-ai",
     },
   ],
   tutorials: [

@@ -40,9 +40,9 @@ export const projects = {
     },
     {
       name: "🆕 urSapere AI",
-      url: "https://perchance.org/chat-ursapere-ai",
+      url: "https://ursapere.vercel.app",
       description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
-      author: "https://perchance.org/withthatway",
+      author: "@withthatway",
       submissionDate: "2025-02-07",
     },
     {

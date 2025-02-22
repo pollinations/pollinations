@@ -94,6 +94,14 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 image1gen",
+      url: "https://image1gen.streamlit.app/",
+      description: "Website to easily create images via pollinations.ai API.",
+      author: "@oopshnik",
+      repo: "https://github.com/oopshnik/image1gen",
+      submissionDate: "2025-02-22",
+    },
+    {
       name: "🆕 AI Image Generator",
       url: "https://fvai.infinityfreeapp.com/my-apps/pollicb09.html",
       description: "A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview.",

@@ -1,0 +1,7 @@
+tunnel: 0c0d5f66-3ead-47ff-ac86-fa9ce673fcea
+credentials-file: /home/ubuntu/.cloudflared/0c0d5f66-3ead-47ff-ac86-fa9ce673fcea.json
+
+ingress:
+  - hostname: image2.pollinations.ai
+    service: http://localhost:16384
+  - service: http_status:404

@@ -32,6 +32,14 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "🆕 PrivatePollenAI",
+      url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
+      description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
+      author: "https://discordapp.com/users/tenacious_humming_bird",
+      repo: "https://github.com/MMojoCoder/PrivatePollenAI",
+      submissionDate: "2025-02-23",
+    },
+    {
       name: "🆕 Zelos AI image generator",
       url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
       description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
@@ -40,9 +48,9 @@ export const projects = {
     },
     {
       name: "🆕 urSapere AI",
-      url: "https://perchance.org/chat-ursapere-ai",
+      url: "https://ursapere.vercel.app",
       description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
-      author: "https://perchance.org/withthatway",
+      author: "@withthatway",
       submissionDate: "2025-02-07",
     },
     {
@@ -93,6 +101,14 @@ export const projects = {
     },
   ],
   creativeApps: [
+    {
+      name: "🆕 image1gen",
+      url: "https://image1gen.streamlit.app/",
+      description: "Website to easily create images via pollinations.ai API.",
+      author: "@oopshnik",
+      repo: "https://github.com/oopshnik/image1gen",
+      submissionDate: "2025-02-22",
+    },
     {
       name: "🆕 AI Image Generator",
       url: "https://fvai.infinityfreeapp.com/my-apps/pollicb09.html",

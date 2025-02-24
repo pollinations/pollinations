@@ -39,8 +39,8 @@ async function generateTextHuggingface(messages, { temperature, jsonMode = false
             temperature: temperature || 0.7,
             seed,
             stream: false,
-            max_tokens: 16384,
-            max_length: 16384,
+            max_tokens: 8000, // Reduced to stay within the 16000 token limit
+            max_length: 8000, // Reduced to stay within the 16000 token limit
         };
         log('Request Parameters: %O', requestParams);
 

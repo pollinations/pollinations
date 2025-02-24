@@ -210,8 +210,7 @@ const renderRepoLink = (repoUrl) => {
     })
   }
 
-  const isInternalRepo = repoUrl.includes("/pollinations/pollinations/tree/main/")
-  const linkText = isInternalRepo ? "View Code" : "GitHub"
+  const linkText ="GitHub"
 
   return (
     <StyledLink

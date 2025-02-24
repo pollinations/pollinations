@@ -16,7 +16,6 @@ import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
-import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextGemini } from './generateTextGemini.js';
 
@@ -544,7 +543,6 @@ async function generateTextBasedOnModel(messages, options) {
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
-            // 'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
             'llamaguard': () => generateTextCloudflare(messages, options),

@@ -54,11 +54,12 @@ export async function generateTextGemini(messages, options) {
                 temperature: requestBody.temperature,
                 messages: requestBody.messages.map(m => ({
                     role: m.role,
-                    content: m.content.substring(0, 100) + (m.content.length > 100 ? '...' : '')
+                    content: m.content?.substring?.(0, 100) + (m.content?.length > 100 ? '...' : '')
                 }))
             }, null, 2)
         });
 
+        console.log("messages",requestBody.messages)
         const response = await fetch(
             'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
             {

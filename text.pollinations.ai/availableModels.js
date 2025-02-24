@@ -15,6 +15,14 @@ export const availableModels = [
         baseModel: true,
         vision: true
     },
+    {
+        name: 'openai-reasoning',
+        type: 'chat',
+        censored: true,
+        description: 'OpenAI o1-mini',
+        baseModel: true,
+        reasoning: true
+    },
     // {
     //     name: 'qwen',
     //     type: 'chat',
@@ -207,4 +215,12 @@ export const availableModels = [
         provider: 'modal.com',
         censored: false
     },
+    {
+        name: 'hypnosis-tracy',
+        type: 'chat',
+        description: 'Hypnosis Tracy - Your Self-Help AI',
+        baseModel: false,
+        provider: 'modal.com',
+        censored: false
+    }
 ];

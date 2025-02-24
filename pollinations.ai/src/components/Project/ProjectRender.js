@@ -210,6 +210,9 @@ const renderRepoLink = (repoUrl) => {
     })
   }
 
+  const isInternalRepo = repoUrl.includes("/pollinations/pollinations/tree/main/")
+  const linkText = isInternalRepo ? "View Code" : "GitHub"
+
   return (
     <StyledLink
       href={repoUrl}
@@ -222,6 +225,7 @@ const renderRepoLink = (repoUrl) => {
         fontSize: "1em",
         display: "flex",
         alignItems: "center",
+        marginTop: "0.5em",
       }}
     >
       <ReactSVG
@@ -233,7 +237,7 @@ const renderRepoLink = (repoUrl) => {
           svg.setAttribute("height", "15")
         }}
       />
-      GitHub
+      {linkText}
     </StyledLink>
   )
 }

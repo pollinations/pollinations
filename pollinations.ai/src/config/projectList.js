@@ -141,9 +141,10 @@ export const projects = {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
-      author: "@user113 (Roblox: [Profile](https://www.roblox.com/users/5810708209))",
+      author: "[user113](https://www.roblox.com/users/5810708209)",
     },
     {
+      
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",

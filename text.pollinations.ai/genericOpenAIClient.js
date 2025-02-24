@@ -20,6 +20,7 @@ import {
  * @param {Object} config.defaultOptions - Default options for the client
  * @param {string} config.providerName - Name of the provider (for logging and errors)
  * @param {Function} config.formatResponse - Optional function to format the response
+ * @param {Object} config.additionalHeaders - Optional additional headers to include in requests
  * @returns {Function} - Client function that handles API requests
  */
 export function createOpenAICompatibleClient(config) {
@@ -31,7 +32,8 @@ export function createOpenAICompatibleClient(config) {
         systemPrompts = {},
         defaultOptions = {},
         providerName = 'unknown',
-        formatResponse = null
+        formatResponse = null,
+        additionalHeaders = {}
     } = config;
 
     const log = debug(`pollinations:${providerName.toLowerCase()}`);
@@ -95,13 +97,17 @@ export function createOpenAICompatibleClient(config) {
                 ? endpoint(modelName) 
                 : endpoint;
 
+            // Prepare headers
+            const headers = {
+                [authHeaderName]: authHeaderValue(),
+                "Content-Type": "application/json",
+                ...additionalHeaders
+            };
+
             // Make API request
             const response = await fetch(endpointUrl, {
                 method: "POST",
-                headers: {
-                    [authHeaderName]: authHeaderValue(),
-                    "Content-Type": "application/json"
-                },
+                headers,
                 body: JSON.stringify(cleanedRequestBody)
             });
 

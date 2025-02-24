@@ -140,6 +140,32 @@ const ProjectsRender = ({ classes }) => {
                             >
                               {project.author}
                             </Link>
+                          ) : project.author.startsWith("[") && project.author.includes("](") ? (
+                            (() => {
+                              const match = project.author.match(/^\[(.*?)\]\((.*?)\)$/);
+                              if (match) {
+                                const displayName = match[1];
+                                const userUrl = match[2];
+                                return (
+                                  <Link
+                                    href={userUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: Colors.lime }}
+                                    onClick={() =>
+                                      trackEvent({
+                                        action: "click_project_author",
+                                        category: "project",
+                                        value: displayName,
+                                      })
+                                    }
+                                  >
+                                    {displayName}
+                                  </Link>
+                                );
+                              }
+                              return project.author;
+                            })()
                           ) : project.author.includes("http") ? (
                             <Link
                               href={project.author}

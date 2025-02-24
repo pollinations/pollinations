@@ -30,6 +30,8 @@ import generateTextClaude from './generateTextClaude.js';
 import { generateTextCloudflare } from './generateTextCloudflare.js';
 import { generateTextModal } from './generateTextModal.js';
 import { processReferralLinks } from './referralLinks.js';
+import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
+import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -42,6 +44,7 @@ const WHITELISTED_DOMAINS = [
     'localhost',
     'pollinations.github.io',
     '127.0.0.1',
+    'nima'
 ];
 
 const blockedIPs = new Set();
@@ -146,6 +149,7 @@ app.get('/', (req, res) => {
 // Create custom instances of Sur backed by Claude, Mistral, and Command-R
 const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway,"mistral");
+const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateText,"openai-large");
 // const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
 // Create custom instance of Unity backed by Mistral Large
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
@@ -209,7 +213,17 @@ async function handleRequest(req, res, requestData) {
         // Process referral links if there's content in the response
         if (completion.choices?.[0]?.message?.content) {
             try {
-                const processedContent = await processReferralLinks(completion.choices[0].message.content, req);
+                let processedContent = completion.choices[0].message.content;
+                
+                // First check for NSFW content in entire conversation
+                processedContent = await processNSFWReferralLinks({
+                    messages: requestData.messages,
+                    responseContent: processedContent
+                }, req);
+                
+                // Then process regular referral links
+                // processedContent = await processReferralLinks(processedContent, req);
+                
                 completion.choices[0].message.content = processedContent;
             } catch (error) {
                 errorLog('Error processing referral links:', error);
@@ -227,7 +241,8 @@ async function handleRequest(req, res, requestData) {
         const tokenUsage = completion.usage || {};
         
         // only send if not roblox, not private, and not from image pollinations
-        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer && !requestData.isPrivate) {
+        if (!shouldBypassDelay(req) && !requestData.isImagePollinationsReferrer &&  !requestData.isPrivate) {
+        // if (!requestData.isPrivate) {
             sendToFeedListeners(responseText, {
                 ...requestData,
                 ...tokenUsage
@@ -345,7 +360,7 @@ export function getRequestData(req) {
 
     const referrer = getReferrer(req, data);
     const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-    const isRobloxReferrer = referrer.toLowerCase().includes('roblox');
+    const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
     const stream = data.stream || false; 
 
     const messages = data.messages || [{ role: 'user', content: req.params[0] }];
@@ -369,7 +384,7 @@ export function getRequestData(req) {
 
 // Helper function to get referrer from request
 export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || data.referrer || 'unknown';
+    const referer = req.headers.referer || req.headers.referrer || data.referrer || req.headers['http-referer'] || 'unknown';
     return referer;
 }
 
@@ -540,7 +555,9 @@ async function generateTextBasedOnModel(messages, options) {
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),
             'openai-large': () => generateText(messages, options),
+            'openai-reasoning': () => generateText(messages, options),
             'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
+            'hypnosis-tracy': () => hypnosisTracy(messages, options),
             // 'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
             'hormoz': () => generateTextModal(messages, options),
         };

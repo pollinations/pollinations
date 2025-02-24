@@ -336,7 +336,14 @@ const checkCacheAndGenerate = async (req, res) => {
 const server = http.createServer((req, res) => {
   setCORSHeaders(res);
 
-  const { pathname } = parse(req.url, true);
+  const parsedUrl = parse(req.url, true);
+  const pathname = parsedUrl.pathname;
+
+  if (pathname === '/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI');
+    return;
+  }
 
   if (pathname === '/models') {
     res.writeHead(200, { 

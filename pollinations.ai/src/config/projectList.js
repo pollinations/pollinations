@@ -304,6 +304,13 @@ export const projects = {
   ],
   socialBots: [
     {
+      name: "🆕 Gacha",
+      url: "https://shapes.inc/gacha-gachu/public",
+      description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-02-24",
+    },
+    {
       name: "🆕 One Word",
       url: "https://t.me/OdnoSlovoBot",
       description: "A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI.",

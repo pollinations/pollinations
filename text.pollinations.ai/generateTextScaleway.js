@@ -1,6 +1,12 @@
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import debug from 'debug';
+import {
+    validateAndNormalizeMessages,
+    ensureSystemMessage,
+    cleanUndefined,
+    createErrorResponse
+} from './textGenerationUtils.js';
 
 dotenv.config();
 
@@ -27,41 +33,41 @@ const SYSTEM_PROMPTS = {
     'qwen-coder': `You are an expert coding assistant with deep knowledge of programming languages, software architecture, and best practices. Your purpose is to help users write high-quality, efficient, and maintainable code. You provide clear explanations, suggest improvements, and help debug issues while following industry best practices.`
 };
 
-export async function 
-
-
-
-
-
-generateTextScaleway(messages, options) {
+/**
+ * Generates text using Scaleway's API (OpenAI-compatible)
+ * @param {Array} messages - Array of message objects
+ * @param {Object} options - Options for text generation
+ * @returns {Object} - OpenAI-compatible response
+ */
+export async function generateTextScaleway(messages, options) {
     const { jsonMode = false, seed = null, temperature } = options;
     const modelName = MODEL_MAP[options.model] || MODEL_MAP.mistral;
     
     log('Generating text with Scaleway model: %s', modelName);
     log('Options: %o', { jsonMode, seed, temperature });
 
-    // Only add a system message if none exists
-    if (!messages.some(message => message.role === 'system')) {
-        const systemMessage = jsonMode
-            ? { role: 'system', content: 'Respond in simple JSON format' }
-            : { role: 'system', content: SYSTEM_PROMPTS[options.model] || SYSTEM_PROMPTS.mistral };
-        messages = [systemMessage, ...messages];
-        log('Added system message: %o', systemMessage);
-    }
-
     try {
+        // Validate and normalize messages
+        const validatedMessages = validateAndNormalizeMessages(messages);
+        
+        // Ensure system message is present
+        const defaultSystemPrompt = SYSTEM_PROMPTS[options.model] || SYSTEM_PROMPTS.mistral;
+        const messagesWithSystem = ensureSystemMessage(validatedMessages, options, defaultSystemPrompt);
+        
         log('Sending request to Scaleway API');
-        const completion = await openai.chat.completions.create({
+        const requestParams = cleanUndefined({
             model: modelName,
-            messages,
-            seed: seed || undefined,
+            messages: messagesWithSystem,
+            seed: seed,
             temperature: temperature,
             response_format: jsonMode ? { type: 'json_object' } : undefined,
         });
+        
+        const completion = await openai.chat.completions.create(requestParams);
         log('Received response from Scaleway API');
         return completion;
     } catch (error) {
         errorLog('Error generating text with Scaleway: %o', error);
-        throw error;
+        return createErrorResponse(error, 'Scaleway');
     }
 }

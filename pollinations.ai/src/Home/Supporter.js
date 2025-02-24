@@ -3,20 +3,12 @@ import { Colors, Fonts, SectionBG } from "../config/global"
 import {
   SectionContainer,
   SectionSubContainer,
-  SectionHeadlineStyle
+  SectionHeadlineStyle,
 } from "../components/SectionContainer"
 import SectionTitle from "../components/SectionTitle"
 import { LLMTextManipulator } from "../components/LLMTextManipulator"
-import {
-  SUPPORTER_TITLE,
-  SUPPORTER_SUBTITLE,
-  SUPPORTER_LOGO_STYLE
-} from "../config/copywrite"
-import {
-  rephrase,
-  emojify,
-  noLink
-} from "../config/llmTransforms"
+import { SUPPORTER_TITLE, SUPPORTER_SUBTITLE, SUPPORTER_LOGO_STYLE } from "../config/copywrite"
+import { rephrase, emojify, noLink } from "../config/llmTransforms"
 import { SUPPORTER_LIST } from "../config/supporterList"
 import StyledLink from "../components/StyledLink"
 import { useTheme, useMediaQuery } from "@mui/material"
@@ -55,8 +47,8 @@ const Supporter = () => {
 
   const handleSupporterClick = (companyName) => {
     trackEvent({
-      action: 'click_supporter',
-      category: 'supporter',
+      action: "click_supporter",
+      category: "supporter",
       value: companyName,
     })
   }
@@ -76,7 +68,7 @@ const Supporter = () => {
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
-        <Grid container spacing={4}>
+        <Grid container spacing={4} mb={8}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img
@@ -103,7 +95,10 @@ const Supporter = () => {
                 <span
                   style={{ color: Colors.offwhite, fontSize: "1em", fontFamily: Fonts.parameter }}
                 >
-                  <LLMTextManipulator text={company.description} transforms={[rephrase, emojify, noLink]} />
+                  <LLMTextManipulator
+                    text={company.description}
+                    transforms={[rephrase, emojify, noLink]}
+                  />
                 </span>
               )}
             </Grid>

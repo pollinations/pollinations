@@ -57,8 +57,22 @@ const ProjectsRender = ({ classes }) => {
             <GeneralButton
               key={category.key}
               handleClick={() => handleCategoryClick(category.key)}
-              backgroundColor={selectedCategory === category.key ? Colors.lime : "transparent"}
-              textColor={selectedCategory === category.key ? Colors.offblack : Colors.lime}
+              backgroundColor={
+                selectedCategory === category.key
+                  ? category.key === "featured"
+                    ? Colors.special
+                    : Colors.lime
+                  : "transparent"
+              }
+              textColor={
+                selectedCategory === category.key
+                  ? category.key === "featured"
+                    ? Colors.offwhite
+                    : Colors.offblack
+                  : category.key === "featured"
+                    ? Colors.special
+                    : Colors.lime
+              }
               fontSize="1.3rem"
               style={{
                 fontStyle: "normal",
@@ -107,7 +121,7 @@ const ProjectsRender = ({ classes }) => {
                 >
                   <Grid
                     size={{ xs: 12, md: 4 }}
-                    marginBottom= {{xs: "0.5em", md: "0em"}}
+                    marginBottom={{ xs: "0.5em", md: "0em" }}
                     style={{
                       textAlign: "left",
                     }}
@@ -138,6 +152,15 @@ const ProjectsRender = ({ classes }) => {
                             >
                               {project.author}
                             </Link>
+                          ) : project.author.includes("http") ? (
+                            <Link
+                              href={project.author}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: Colors.lime }}
+                            >
+                              {project.author.split("/").pop()}
+                            </Link>
                           ) : (
                             project.author
                           )}
@@ -154,7 +177,10 @@ const ProjectsRender = ({ classes }) => {
                         fontFamily: Fonts.parameter,
                       }}
                     >
-                      <LLMTextManipulator text={project.description} transforms={[shortTechnical]} />
+                      <LLMTextManipulator
+                        text={project.description}
+                        transforms={[shortTechnical]}
+                      />
                     </span>
                     {project.repo && renderRepoLink(project.repo)}
                   </Grid>

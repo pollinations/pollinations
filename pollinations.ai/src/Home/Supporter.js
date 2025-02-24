@@ -76,7 +76,7 @@ const Supporter = () => {
         </SectionHeadlineStyle>
       </SectionSubContainer>
       <SectionSubContainer>
-        <Grid container spacing={4}>
+        <Grid container spacing={4} mb={8}>
           {SUPPORTER_LIST.map((company) => (
             <Grid key={company.name} size={{ xs: 6, sm: 3 }} style={{ textAlign: "center" }}>
               <img

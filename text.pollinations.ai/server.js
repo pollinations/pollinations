@@ -16,9 +16,9 @@ import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
 import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
-import generateTextHuggingface from './generateTextHuggingface.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextGemini } from './generateTextGemini.js';
+import generateTextSearch from './generateTextSearch.js';
 
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
@@ -544,7 +544,6 @@ async function generateTextBasedOnModel(messages, options) {
             'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
             'mistral': () => generateTextScaleway(messages, options),
             'qwen-coder': () => generateTextScaleway(messages, options),
-            // 'qwen': () => generateTextHuggingface(messages, { ...options, model }),
             'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
             'llamalight': () => generateTextCloudflare(messages, options),
             'llamaguard': () => generateTextCloudflare(messages, options),
@@ -557,7 +556,7 @@ async function generateTextBasedOnModel(messages, options) {
             'unity': () => unityMistralLarge(messages, options),
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateText(messages, {...options, model: 'openai-large' } , true),
+            'searchgpt': () => generateTextSearch(messages, options),
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),

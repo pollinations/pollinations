@@ -1,86 +1,55 @@
 import dotenv from 'dotenv';
-import fetch from 'node-fetch';
-import debug from 'debug';
+import { createOpenAICompatibleClient } from './genericOpenAIClient.js';
 
 dotenv.config();
 
-const log = debug('pollinations:deepseek');
-const errorLog = debug('pollinations:deepseek:error');
+// Default system prompts for DeepSeek models
+const SYSTEM_PROMPTS = {
+    'deepseek-coder': 'You are DeepSeek Coder, an AI programming assistant developed by DeepSeek. You are designed to help with coding tasks, debugging, and providing explanations about code. You excel at understanding and generating code in various programming languages.',
+    'deepseek-chat': 'You are DeepSeek, a helpful AI assistant. You provide accurate, balanced information and can assist with a wide range of tasks while maintaining a respectful and supportive tone.'
+};
 
-export async function generateDeepseek(messages, options) {
-    const startTime = Date.now();
-    const requestId = Math.random().toString(36).substring(7);
-    
-    log(`[${requestId}] Starting DeepSeek generation request`, {
-        timestamp: new Date().toISOString(),
-        messageCount: messages.length,
-        options
-    });
+// Default model to use if none specified
+const DEFAULT_MODEL = 'deepseek-chat';
 
-    try {
-        const requestBody = {
-            model: options.model,
-            messages,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-            max_tokens: 4096,
-            stream: false,
-            tools: options.tools,
-            tool_choice: options.tool_choice
-        };
+// Maximum token length for responses
+const MAX_TOKENS = 4096;
 
-        log(`[${requestId}] Sending request to DeepSeek API`, {
-            timestamp: new Date().toISOString(),
-            model: requestBody.model,
-            maxTokens: requestBody.max_tokens
-        });
+// API endpoint
+const API_ENDPOINT = 'https://api.deepseek.com/v1/chat/completions';
 
-        const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBody)
-        });
+// Default options
+const DEFAULT_OPTIONS = {
+    model: DEFAULT_MODEL,
+    maxTokens: MAX_TOKENS,
+    temperature: 0.7,
+    jsonMode: false,
+    stream: false
+};
 
-        log(`[${requestId}] Received response from DeepSeek API`, {
-            timestamp: new Date().toISOString(),
-            status: response.status,
-            statusText: response.statusText,
-        });
+// Model mapping (in this case, the model names are the same)
+const MODEL_MAPPING = {
+    'deepseek-chat': 'deepseek-chat',
+    'deepseek-coder': 'deepseek-coder'
+};
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            errorLog(`[${requestId}] DeepSeek API error`, {
-                timestamp: new Date().toISOString(),
-                status: response.status,
-                statusText: response.statusText,
-                error: errorText
-            });
-            throw new Error(`DeepSeek API error: ${response.status} ${response.statusText} - ${errorText}`);
+/**
+ * Generates text using DeepSeek's API
+ * @param {Array} messages - Array of message objects
+ * @param {Object} options - Options for text generation
+ * @returns {Object} - OpenAI-compatible response
+ */
+export const generateDeepseek = createOpenAICompatibleClient({
+    endpoint: API_ENDPOINT,
+    authHeaderName: 'Authorization',
+    authHeaderValue: () => {
+        if (!process.env.DEEPSEEK_API_KEY) {
+            return null;
         }
-
-        const data = await response.json();
-        const completionTime = Date.now() - startTime;
-
-        log(`[${requestId}] Successfully generated text`, {
-            timestamp: new Date().toISOString(),
-            completionTimeMs: completionTime,
-            modelUsed: data.model,
-            promptTokens: data.usage?.prompt_tokens,
-            completionTokens: data.usage?.completion_tokens,
-            totalTokens: data.usage?.total_tokens,
-            reasoningContent: data.choices[0]?.message?.reasoning_content
-        });
-
-        return data;
-    } catch (error) {
-        errorLog(`[${requestId}] Error in text generation`, {
-            timestamp: new Date().toISOString(),
-            error: error.message,
-            stack: error.stack,
-            completionTimeMs: Date.now() - startTime
-        });
-        throw error;
-    }
-}
+        return `Bearer ${process.env.DEEPSEEK_API_KEY}`;
+    },
+    modelMapping: MODEL_MAPPING,
+    systemPrompts: SYSTEM_PROMPTS,
+    defaultOptions: DEFAULT_OPTIONS,
+    providerName: 'DeepSeek'
+});

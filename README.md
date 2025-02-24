@@ -168,7 +168,9 @@ Pollinations.AI is used in various projects, including:
 
 | Project | Description | Creator | Links |
 |---------|-------------|---------|-------|
-| 🆕 urSapere AI | A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search | withthatway | [Website](https://perchance.org/chat-ursapere-ai), [Profile](https://perchance.org/withthatway) |
+| 🆕 PrivatePollenAI | A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions | [tenacious_humming_bird](https://discordapp.com/users/tenacious_humming_bird) | [Website](https://mmojocoder.github.io/PrivatePollenAI/chat.html), [GitHub](https://github.com/MMojoCoder/PrivatePollenAI) |
+| 🆕 Zelos AI image generator | It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use | [Roblox Profile](https://www.roblox.com/users/4361935306/profile) | [Website](https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator) |
+| 🆕 urSapere AI | A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search | withthatway | [Website](https://ursapere.vercel.app) |
 | Pollinations Chat | Pollinations' integrated AI for text and images, totally free and unlimited | @adrianoprogramer | [Website](https://websim.ai/@AdrianoDev1/pollinations-ai-assistant/4), [Instagram](https://www.instagram.com/adrianop_761?igsh=MmxwNnRsajVnZmMy) |
 | LobeChat | An open-source, modern-design ChatGPT/LLMs UI/Framework with speech-synthesis, multi-modal, and extensible plugin system | - | [Website](https://lobehub.com/plugins/pollinations-drawing), [GitHub](https://github.com/lobehub/lobe-chat) |
 | Qwen-Agent | A framework for developing agentic LLM applications | - | [GitHub](https://github.com/QwenLM/Qwen-Agent) |
@@ -183,6 +185,8 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 image1gen | Website to easily create images via pollinations.ai API | @oopshnik | [Website](https://image1gen.streamlit.app/), [GitHub](https://github.com/oopshnik/image1gen), [HuggingFace](https://huggingface.co/spaces/oopshnik/image_gen) |
+| 🆕 AI Image Generator | A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview | @hrisjeui | [Website](https://fvai.infinityfreeapp.com/my-apps/pollicb09.html), [GitHub](https://github.com/hrisjeui/Multi-text-image-model-pollinations) |
 | 🆕 🎵 PolliSonic Generator | An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators | @brain.diver | [Website](https://interzone.art.br/pollisonic_generator/), [GitHub](https://github.com/rafabez/pollisonic_generator) |
 | 🆕 Abyss Ascending | A web-based generative interactive fiction (text adventure) set in a sci-fi underwater world | @brain.diver | [Website](https://interzone.art.br/abyss_ascending/), [GitHub](https://github.com/rafabez/abyss_ascending) |
 | 🆕 🎮 Deep Saga | A text based RPG with AI-generated scene images | @jr_7_77 | [Play Store](https://play.google.com/store/apps/details?id=com.cestrian.deepsaga.android&pcampaignid=pollinations) |
@@ -204,6 +208,8 @@ Pollinations.AI is used in various projects, including:
 
 | App | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Pollinations.ai Model Comparison | An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities. | @dseeker | [Website](https://endemicmedia.github.io/FLARE/llm-comparison-tool/), [GitHub](https://github.com/EndemicMedia) |
+| 🆕 Anime AI Generation | Create professional-quality anime characters with powerful AI technology. No artistic skills required. | @shreyas281898 | [Website](https://www.animeaigeneration.com/) |
 | 🆕 Pollinations.DIY | A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools | @thomash_pollinations | [Website](https://pollinations.diy), [GitHub](https://github.com/pollinations/pollinations.diy) |
 | 🆕 Pal Chat | An iOS app that integrates with all LLMs including Pollinations AI models in one unified simple interface | @pallavmac | [App Store](https://apps.apple.com/us/app/pal-chat-ai-chat-client/id6447545085?platform=iphone) |
 | Pollinator Android App | An open-source Android app for text-to-image generation | @gaurav_87680 | [GitHub](https://github.com/g-aggarwal/Pollinator) |
@@ -220,6 +226,8 @@ Pollinations.AI is used in various projects, including:
 
 | Bot | Description | Creator | Links |
 |-----|-------------|---------|-------|
+| 🆕 Gacha | A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command | @_dr_misterio_ | [Website](https://shapes.inc/gacha-gachu/public), [Install](https://shapes.inc/gacha-gachu/install) |
+| 🆕 One Word | A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI | @Dimaq21 | [Telegram](https://t.me/OdnoSlovoBot) |
 | 🆕 Titan-GPT | Free Telegram bot providing access to neural networks including image and text generation powered by Pollinations.AI | @titangpt_support | [Telegram](https://t.me/titangpt_channel) |
 | Discord Bot | A Discord bot for generating images based on user prompts | @Zngzy | [Discord](https://discord.gg/D9xGg8mq3D), [GitHub](https://github.com/Zingzy/pollinations.ai-bot) |
 | Telegram Bot | A Telegram bot for generating images based on user prompts | Wong Wei Hao | [Telegram](http://t.me/pollinationsbot) |

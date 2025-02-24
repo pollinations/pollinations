@@ -32,10 +32,25 @@ export const projectCategories = [
 export const projects = {
   llmIntegrations: [
     {
+      name: "🆕 PrivatePollenAI",
+      url: "https://mmojocoder.github.io/PrivatePollenAI/chat.html",
+      description: "A privacy-focused chat assistant app that securely stores data locally, integrates with PollinationAI for text and image generation, features a minimalistic UI, and allows users to choose models and write their own system instructions.",
+      author: "https://discordapp.com/users/tenacious_humming_bird",
+      repo: "https://github.com/MMojoCoder/PrivatePollenAI",
+      submissionDate: "2025-02-23",
+    },
+    {
+      name: "🆕 Zelos AI image generator",
+      url: "https://websim.ai/@ISWEARIAMNOTADDICTEDTOPILLOW/ai-image-prompt-generator",
+      description: "It uses Pollinations for both prompt enhancing and image generation, it was a easy to make project due to pollinations services being easy to use.",
+      author: "https://www.roblox.com/users/4361935306/profile",
+      submissionDate: "2025-02-17",
+    },
+    {
       name: "🆕 urSapere AI",
-      url: "https://perchance.org/chat-ursapere-ai",
+      url: "https://ursapere.vercel.app",
       description: "A state-of-the-art chatbot integrating multiple LLMs with advanced features including image generation, mathematical proficiency, and real-time web search.",
-      author: "https://perchance.org/withthatway",
+      author: "@withthatway",
       submissionDate: "2025-02-07",
     },
     {
@@ -87,6 +102,22 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 image1gen",
+      url: "https://image1gen.streamlit.app/",
+      description: "Website to easily create images via pollinations.ai API.",
+      author: "@oopshnik",
+      repo: "https://github.com/oopshnik/image1gen",
+      submissionDate: "2025-02-22",
+    },
+    {
+      name: "🆕 AI Image Generator",
+      url: "https://fvai.infinityfreeapp.com/my-apps/pollicb09.html",
+      description: "A web-based AI image generator powered by Pollinations.ai, featuring multi-model support, customizable parameters, and real-time preview.",
+      author: "@hrisjeui",
+      repo: "https://github.com/hrisjeui/Multi-text-image-model-pollinations",
+      submissionDate: "2025-02-15",
+    },
+    {
       name: "🎵 PolliSonic Generator",
       url: "https://interzone.art.br/pollisonic_generator/",
       description: "An AI-driven tool that transforms text prompts using MidiJourney into MIDI-based melodies through browser oscillators.",
@@ -110,9 +141,10 @@ export const projects = {
       name: "[AI] Character RP (Roblox)",
       url: "https://www.roblox.com/games/108463136689847/AI-Character-RP",
       description: "A popular Roblox game for AI character roleplay.",
-      author: "@user113 (Roblox: [Profile](https://www.roblox.com/users/5810708209))",
+      author: "[user113](https://www.roblox.com/users/5810708209)",
     },
     {
+      
       name: "MIDIjourney",
       url: "https://github.com/korus-labs/MIDIjourney",
       description: "An AI-powered plugin for Ableton Live that turns text descriptions into music.",
@@ -189,6 +221,21 @@ export const projects = {
   ],
   toolsInterfaces: [
     {
+      name: "🆕 Pollinations.ai Model Comparison",
+      url: "https://endemicmedia.github.io/FLARE/llm-comparison-tool/",
+      description: "An interactive tool designed to compare outputs from various large language models with customizable timeout settings and real-time testing capabilities.",
+      author: "https://github.com/dseeker",
+      repo: "https://github.com/EndemicMedia",
+      submissionDate: "2025-02-16",
+    },
+    {
+      name: "🆕 Anime AI Generation",
+      url: "https://www.animeaigeneration.com/",
+      description: "Create professional-quality anime characters with powerful AI technology. No artistic skills required.",
+      author: "@shreyas281898",
+      submissionDate: "2025-02-11",
+    },
+    {
       name: "🆕 Pollinations.DIY",
       url: "https://pollinations.diy",
       description: "A browser-based coding environment based on bolt.diy, featuring integrated Pollinations AI services, visual code editing, and project management tools.",
@@ -257,6 +304,20 @@ export const projects = {
     },
   ],
   socialBots: [
+    {
+      name: "🆕 Gacha",
+      url: "https://shapes.inc/gacha-gachu/public",
+      description: "A versatile AI chat-bot and image generator powered by Pollinations.AI, featuring web search, image generation with model selection, and character-aware image generation through !webgen command.",
+      author: "@_dr_misterio_",
+      submissionDate: "2025-02-24",
+    },
+    {
+      name: "🆕 One Word",
+      url: "https://t.me/OdnoSlovoBot",
+      description: "A Telegram bot for a word-matching game where players try to write the same word simultaneously, featuring image generation from game words using Pollinations.AI.",
+      author: "@Dimaq21",
+      submissionDate: "2025-02-17",
+    },
     {
       name: "Titan-GPT",
       url: "https://t.me/titangpt_channel",

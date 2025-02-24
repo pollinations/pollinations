@@ -39,11 +39,9 @@ export async function processReferralLinks(content, req) {
         return content;
     }
 
-
-
     log('Processing markdown content for referral links');
 
-    // Prepare the prompt for OpenAI   
+    // Prepare the prompt for OpenAI
     const messages = [
         {
             role: "system",

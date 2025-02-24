@@ -13,7 +13,7 @@ const markdownRegex = /(?:\*\*.*\*\*)|(?:\[.*\]\(.*\))|(?:\#.*)|(?:\*.*\*)|(?:\`
 const referralLinkRegex = /\[([^\]]+)\]\(https:\/\/pollinations\.ai\/referral\?topic=([^)\s]+)\)/g;
 
 // Probability of adding referral links (20%)
-const REFERRAL_LINK_PROBABILITY = 0.2;
+const REFERRAL_LINK_PROBABILITY = 0.01;
 
 /**
  * Process content and add referral links if markdown is detected
@@ -26,16 +26,12 @@ export async function processReferralLinks(content, req) {
     const requestData = getRequestData(req);
 
     // Skip referral processing if referrer is roblox or from image pollinations
-    if (requestData.isRobloxReferrer || requestData.isImagePollinationsReferrer) {
-        // log('Skipping referral link processing due to referrer type');
+    if (requestData.isRobloxReferrer || requestData.isImagePollinationsReferrer) 
         return content;
-    }
 
     // Check if content contains markdown
-    if (!markdownRegex.test(content)) {
-        // log('No markdown detected in content, skipping referral processing');
+    if (!markdownRegex.test(content)) 
         return content;
-    }
     
     // Random check - only process 20% of the time
     if (Math.random() > REFERRAL_LINK_PROBABILITY) {
@@ -47,7 +43,7 @@ export async function processReferralLinks(content, req) {
 
     log('Processing markdown content for referral links');
 
-    // Prepare the prompt for OpenAI
+    // Prepare the prompt for OpenAI   
     const messages = [
         {
             role: "system",

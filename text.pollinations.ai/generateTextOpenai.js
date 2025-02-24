@@ -12,16 +12,28 @@ dotenv.config();
 
 const azureInstances = {
     'gpt-4o-mini': new AzureOpenAI({
-        apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+        // apiVersion: process.env.AZURE_OPENAI_API_VERSION,
         endpoint: process.env.AZURE_OPENAI_ENDPOINT,
         apiKey: process.env.AZURE_OPENAI_API_KEY,
     }),
     'gpt-4o': new AzureOpenAI({
-        apiVersion: process.env.AZURE_OPENAI_LARGE_API_VERSION,
+        // apiVersion: process.env.AZURE_OPENAI_LARGE_API_VERSION,
         endpoint: process.env.AZURE_OPENAI_LARGE_ENDPOINT,
         apiKey: process.env.AZURE_OPENAI_LARGE_API_KEY,
-    })
+    }),
+    'o1-mini': new AzureOpenAI({
+        // apiVersion: process.env.AZURE_OPENAI_LARGE_API_VERSION,
+        endpoint: process.env.AZURE_O1MINI_ENDPOINT,
+        apiKey: process.env.AZURE_O1MINI_API_KEY,
+    }),
 };
+
+
+const modelMap = {
+    "openai": "gpt-4o-mini",
+    "openai-reasoning": "o1-mini",
+    "openai-large": "gpt-4o",
+}
 
 function countMessageCharacters(messages) {
     return messages.reduce((total, message) => {
@@ -41,7 +53,7 @@ function countMessageCharacters(messages) {
 }
 
 export async function generateText(messages, options, performSearch = false) {
-    const MAX_CHARS = 256000;
+    const MAX_CHARS = 512000;
     const totalChars = countMessageCharacters(messages);
     
     if (totalChars > MAX_CHARS) {
@@ -62,7 +74,18 @@ export async function generateText(messages, options, performSearch = false) {
         }
     }
 
-    const modelName = options.model === 'openai-large' ? 'gpt-4o' : 'gpt-4o-mini';
+    const modelName = modelMap[options.model] || 'gpt-4o-mini';
+    if (modelName === 'o1-mini')  
+        console.log("modelName", modelName);
+    if (modelName === 'o1-mini') {
+        messages = messages.map(message => {
+            if (message.role === 'system') {
+                return { ...message, role: 'user' };
+            }
+            return message;
+        });
+    }
+    
     const azureInstance = azureInstances[modelName];
     
     let completion = await azureInstance.chat.completions.create({

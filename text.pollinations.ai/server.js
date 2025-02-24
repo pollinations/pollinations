@@ -18,6 +18,7 @@ import { generateText } from './generateTextOpenai.js';
 import evilPrompt from './personas/evil.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextGemini } from './generateTextGemini.js';
+import generateTextSearch from './generateTextSearch.js';
 
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
@@ -555,7 +556,7 @@ async function generateTextBasedOnModel(messages, options) {
             'unity': () => unityMistralLarge(messages, options),
             'midijourney': () => midijourney(messages, options),
             'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateText(messages, {...options, model: 'openai-large' } , true),
+            'searchgpt': () => generateTextSearch(messages, options),
             'evil': () => evilCommandR(messages, options),
             // 'roblox': () => generateTextRoblox(messages, options),
             'openai': () => generateText(messages, options),

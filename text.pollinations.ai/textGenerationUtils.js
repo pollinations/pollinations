@@ -13,10 +13,20 @@ export function validateAndNormalizeMessages(messages) {
     throw new Error('Messages must be a non-empty array');
   }
   
-  return messages.map(msg => ({
-    role: msg.role || 'user',
-    content: msg.content || ''
-  }));
+  return messages.map(msg => {
+    // Create a base message with required properties
+    const normalizedMsg = {
+      role: msg.role || 'user',
+      content: msg.content || ''
+    };
+    
+    // Preserve properties needed for function calling
+    if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
+    if (msg.name) normalizedMsg.name = msg.name;
+    if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
+    
+    return normalizedMsg;
+  });
 }
 
 /**
@@ -94,6 +104,23 @@ export function formatToOpenAIResponse(response, modelName) {
     return response;
   }
   
+  // Create a message object based on the response
+  let message = {
+    role: 'assistant'
+  };
+  
+  // Handle different response formats
+  if (typeof response === 'string') {
+    message.content = response;
+  } else if (response.tool_calls) {
+    // If the response has tool_calls, include them in the message
+    message.tool_calls = response.tool_calls;
+    message.content = response.content || '';
+  } else {
+    // For other object responses, stringify them
+    message.content = JSON.stringify(response);
+  }
+  
   // Create a basic OpenAI-compatible response structure
   return {
     id: `pllns_${Date.now().toString(36)}`,
@@ -102,10 +129,7 @@ export function formatToOpenAIResponse(response, modelName) {
     model: modelName,
     choices: [
       {
-        message: {
-          role: 'assistant',
-          content: typeof response === 'string' ? response : JSON.stringify(response)
-        },
+        message,
         finish_reason: 'stop',
         index: 0
       }

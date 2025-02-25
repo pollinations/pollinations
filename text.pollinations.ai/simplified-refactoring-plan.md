@@ -1,132 +1,107 @@
-# Simplified Text Generation Refactoring Plan
+# Simplified Refactoring Plan: Model Handler Integration
 
-## Core Principles
-- Focus on simplicity and minimalism
-- Make incremental improvements
-- Prioritize testing
-- Address the most critical DRY issues first
+This document outlines a minimal approach to refactoring the model handling logic with the lowest possible risk.
 
-## Key DRY Issues to Address
+## Core Problem
 
-1. **Error Handling**: Similar error handling code is repeated across modules
-2. **Option Normalization**: Default values and option validation are duplicated
-3. **Message Validation**: Basic message validation logic is repeated
+The current implementation has model definitions in `availableModels.js` but the handler mapping in `server.js`, creating a maintenance burden when adding or modifying models.
 
-## Minimal Utility Functions
+## Minimal Solution
 
-Add just two key utility functions to `textGenerationUtils.js`:
+Enhance the `availableModels.js` file to include handler functions for each model, while making minimal changes to `server.js`.
+
+## Implementation Steps
+
+### Step 1: Enhance `availableModels.js`
+
+Add a `getHandler` function to each model object that returns the appropriate handler function:
 
 ```javascript
-/**
- * Creates a standard error response object
- * @param {Error|Object} error - The error that occurred
- * @param {string} provider - The provider name
- * @returns {Object} - Standardized error response
- */
-function createErrorResponse(error, provider) {
-  return {
-    error: {
-      message: error.message || 'Unknown error',
-      type: error.type || 'api_error',
-      param: error.param,
-      code: error.code,
-      status: error.status || 500,
-      provider
+// Import all necessary handler functions
+import { generateText } from './generateTextOpenai.js';
+import { generateTextScaleway } from './generateTextScaleway.js';
+import { generateDeepseek } from './generateDeepseek.js';
+// ... other imports
+
+// Import persona prompts
+import surSystemPrompt from './personas/sur.js';
+// ... other prompts
+
+// Create wrapped models (same as current implementation)
+const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
+// ... other wrapped models
+
+export const availableModels = [
+    {
+        name: 'openai',
+        type: 'chat',
+        censored: true,
+        description: 'OpenAI GPT-4o-mini',
+        baseModel: true,
+        vision: true,
+        getHandler: () => (messages, options) => generateText(messages, options)
+    },
+    {
+        name: 'deepseek',
+        type: 'chat',
+        censored: true,
+        description: 'DeepSeek-V3',
+        baseModel: true,
+        getHandler: () => (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'})
+    },
+    // ... other models
+];
+
+// Helper function to get a model handler by name
+export function getModelHandler(modelName) {
+    const model = availableModels.find(m => m.name === modelName);
+    if (model && model.getHandler) {
+        return model.getHandler();
     }
-  };
-}
-
-/**
- * Normalizes options with defaults
- * @param {Object} options - User options
- * @param {Object} defaults - Default options
- * @returns {Object} - Normalized options
- */
-function normalizeOptions(options = {}, defaults = {}) {
-  return { ...defaults, ...options };
+    // Default to openai if model not found
+    const defaultModel = availableModels.find(m => m.name === 'openai');
+    return defaultModel.getHandler();
 }
 ```
 
-## Incremental Implementation Approach
+### Step 2: Modify `server.js`
 
-1. **Phase 1**: Update `textGenerationUtils.js` with minimal new functions
-   - Add `createErrorResponse` and `normalizeOptions`
-   - Run tests to ensure existing functions still work
+Replace the `modelHandlers` object with a call to the new `getModelHandler` function:
 
-2. **Phase 2**: Refactor one module as a proof of concept
-   - Start with `generateDeepseek.js` as it's already being worked on
-   - Use the new utility functions
-   - Run tests to verify functionality
-
-3. **Phase 3**: Apply the pattern to one more module
-   - Choose `generateTextOpenai.js` as it's a core module
-   - Apply the same pattern
-   - Run tests to verify functionality
-
-4. **Phase 4**: Evaluate results and decide on next steps
-   - Review code improvements
-   - Assess test results
-   - Decide whether to continue with other modules
-
-## Testing Focus
-
-For each phase:
-
-1. **Unit Tests**: Run specific tests for the modified module
-   ```bash
-   npx ava test/deepseek.integration.test.js
-   ```
-
-2. **Integration Tests**: Run integration tests to ensure end-to-end functionality
-   ```bash
-   npx ava test/integration.test.js
-   ```
-
-3. **Full Test Suite**: Run all tests to catch any regressions
-   ```bash
-   npm test
-   ```
-
-## Example Refactoring (DeepSeek)
-
-### Before/After Comparison
-
-**Before:**
 ```javascript
-// Error handling
-if (!apiKey) {
-  return {
-    error: {
-      message: "DeepSeek API key not found. Please set DEEPSEEK_API_KEY environment variable.",
-      type: "api_key_error",
-      provider: "deepseek"
+import { getModelHandler } from './availableModels.js';
+
+async function generateTextBasedOnModel(messages, options) {
+    const modelName = options.model || 'openai';
+    log('Using model:', modelName);
+
+    try {
+        const handler = getModelHandler(modelName);
+        const response = await handler(messages, options);
+        return response;
+    } catch (error) {
+        errorLog('Error in generateTextBasedOnModel:', error);
+        throw error;
     }
-  };
 }
 ```
 
-**After:**
-```javascript
-// Error handling
-if (!apiKey) {
-  return createErrorResponse(
-    { message: "DeepSeek API key not found. Please set DEEPSEEK_API_KEY environment variable." },
-    "deepseek"
-  );
-}
-```
+### Step 3: Testing
+
+1. Run existing tests to ensure they still pass
+2. Manually test a few representative models to verify correct behavior
 
 ## Benefits of This Approach
 
-1. **Minimal Changes**: Reduces risk of introducing bugs
-2. **Incremental Improvement**: See benefits without a complete overhaul
-3. **Focused Testing**: Ensures each change maintains functionality
-4. **Clear Pattern**: Establishes a pattern that can be applied to other modules later
+1. **Minimal Changes**: Only two files need to be modified
+2. **Low Risk**: The core logic remains largely unchanged
+3. **Single Source of Truth**: Model definitions and handlers are in one place
+4. **Easier Maintenance**: Adding a new model only requires updating `availableModels.js`
 
-## Next Steps After Initial Refactoring
+## Implementation Timeline
 
-If the initial refactoring proves successful:
+1. Enhance `availableModels.js` - 1 hour
+2. Modify `server.js` - 30 minutes
+3. Testing - 1 hour
 
-1. Apply the same pattern to other modules one at a time
-2. Consider adding more utility functions if clear patterns emerge
-3. Continue to prioritize testing with each change
+Total estimated time: 2.5 hours

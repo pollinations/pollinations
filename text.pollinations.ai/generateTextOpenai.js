@@ -1,9 +1,7 @@
 import { AzureOpenAI } from 'openai';
 import dotenv from 'dotenv';
 import debug from 'debug';
-import { imageGenerationPrompt, spamTheSpammersPrompt } from './pollinationsPrompt.js';
-import { searchToolDefinition, performWebSearch } from './tools/searchTool.js';
-import { performWebScrape, scrapeToolDefinition } from './tools/scrapeTool.js';
+import { spamTheSpammersPrompt } from './pollinationsPrompt.js';
 
 const log = debug('pollinations:openai');
 const errorLog = debug('pollinations:openai:error');
@@ -52,7 +50,7 @@ function countMessageCharacters(messages) {
     }, 0);
 }
 
-export async function generateText(messages, options, performSearch = false) {
+export async function generateText(messages, options) {
     const MAX_CHARS = 512000;
     const totalChars = countMessageCharacters(messages);
     
@@ -64,7 +62,7 @@ export async function generateText(messages, options, performSearch = false) {
     if (!hasSystemMessage(messages)) {
         const systemContent = options.jsonMode
             ? 'Respond in simple json format'
-            : performSearch ? 'You are Polly, Pollinations.AI helpful search assistant. You can search the web for old and current information.' : spamTheSpammersPrompt();
+            : spamTheSpammersPrompt();
             
         messages = [{ role: 'system', content: systemContent }, ...messages];
     } else if (options.jsonMode) {
@@ -88,81 +86,65 @@ export async function generateText(messages, options, performSearch = false) {
     
     const azureInstance = azureInstances[modelName];
     
-    // Simplified tools and tool_choice handling
-    const defaultSearchTools = [searchToolDefinition, scrapeToolDefinition];
-    const tools = options.tools || (performSearch ? defaultSearchTools : undefined);
-    const toolChoice = options.tool_choice || (performSearch ? "auto" : undefined);
+
+    // Handle streaming mode
+    if (options.stream) {
+        log('Streaming mode enabled in generateTextOpenai for model:', modelName, 'with options:', JSON.stringify(options));
+        
+        try {
+            const stream = await azureInstance.chat.completions.create({
+                model: modelName,
+                messages,
+                seed: options.seed,
+                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+                tools: options.tools,
+                tool_choice: options.tool_choice,
+                temperature: options.temperature,
+                stream: true
+            });
+            log('Stream created successfully from Azure OpenAI');
+            
+            // The OpenAI SDK returns an AsyncIterable, not a standard Node.js stream
+            // We need to convert it to a format that can be properly proxied
+            log('Creating streaming response object from OpenAI SDK AsyncIterable');
+            
+            // Convert the AsyncIterable to a ReadableStream that can be properly proxied
+            const readableStream = stream.toReadableStream();
+            
+            // Return a streaming response object
+            return {
+                id: `openai-${Date.now()}`,
+                object: 'chat.completion.chunk',
+                created: Math.floor(Date.now() / 1000),
+                model: modelName,
+                stream: true,
+                responseStream: readableStream,
+                isSSE: true, // Mark as SSE stream for proper handling
+                providerName: 'OpenAI',
+                choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }]
+            };
+        } catch (error) {
+            errorLog('Error in streaming mode in generateTextOpenai:', error.message, error.stack);
+            throw error;
+        }
+    }
     
     let completion = await azureInstance.chat.completions.create({
         model: modelName,
         messages,
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        tools,
-        tool_choice: toolChoice,
+        tools: options.tools,
+        tool_choice: options.tool_choice,
         temperature: options.temperature,
     });
 
-    let responseMessage = completion.choices[0].message;
-
-    // Only process tool_calls for search and scrape if performSearch is true
-    // Otherwise, just return the response as is (proxy mode)
-    if (performSearch && responseMessage.tool_calls) {
-        const toolCalls = responseMessage.tool_calls;
-        
-        // Check if any of the tool calls are for search or scrape
-        const hasSearchOrScrapeCalls = toolCalls.some(
-            toolCall => toolCall.function.name === 'web_search' || toolCall.function.name === 'web_scrape'
-        );
-        
-        // Only process if there are search or scrape calls
-        if (hasSearchOrScrapeCalls) {
-            messages.push(responseMessage);
-
-            for (const toolCall of toolCalls) {
-                if (toolCall.function.name === 'web_search') {
-                    const args = JSON.parse(toolCall.function.arguments);
-                    const searchResponse = await performWebSearch(args);
-                    
-                    messages.push({
-                        tool_call_id: toolCall.id,
-                        role: "tool",
-                        name: toolCall.function.name,
-                        content: searchResponse
-                    });
-                } else if (toolCall.function.name === 'web_scrape') {
-                    const args = JSON.parse(toolCall.function.arguments);
-                    const scrapeResponse = await performWebScrape(args);
-                    
-                    messages.push({
-                        tool_call_id: toolCall.id,
-                        role: "tool",
-                        name: toolCall.function.name,
-                        content: scrapeResponse
-                    });
-                }
-                // Ignore other function calls
-            }
-
-            completion = await azureInstance.chat.completions.create({
-                model: modelName,
-                messages,
-                seed: options.seed,
-                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-                tools,
-                tool_choice: toolChoice,
-                max_tokens: 4096,
-            });
-        }
-    }
-    
     return completion;
 }
 
 function hasSystemMessage(messages) {
     return messages.some(message => message.role === 'system');
 }
-
 function containsJSON(text) {
     return text.toLowerCase().includes('json');
 }

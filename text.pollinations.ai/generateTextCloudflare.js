@@ -46,13 +46,37 @@ export const generateTextCloudflare = createOpenAICompatibleClient({
     defaultOptions: DEFAULT_OPTIONS,
     providerName: 'Cloudflare',
     
-    // Custom response formatter for Cloudflare's unique response format
-    formatResponse: (data, requestId, startTime, modelName) => {
+    // Custom response formatter for Cloudflare's unique response format (for non-streaming responses)
+    formatResponse: (data, requestId, startTime, modelName, options) => {
+        // If this is a streaming response with responseStream, return it as-is
+        if (data && data.stream === true && data.responseStream) {
+            // Add additional metadata to the streaming response
+            return {
+                ...data,
+                id: `cloudflare-${requestId}`,
+                created: Math.floor(startTime / 1000),
+                model: modelName,
+                isSSE: data.isSSE || false,
+                // Keep the existing responseStream and other properties
+            };
+        }
+        
+        // Handle error responses
+        if (data && data.error) {
+            return {
+                ...data,
+                id: `cloudflare-${requestId}`,
+                created: Math.floor(startTime / 1000),
+                model: modelName
+            };
+        }
+        
+        // Handle normal responses
         return {
             choices: [{
                 message: {
                     role: 'assistant',
-                    content: data.result.response
+                    content: data?.result?.response || 'No response from Cloudflare'
                 },
                 finish_reason: 'stop',
                 index: 0
@@ -61,7 +85,7 @@ export const generateTextCloudflare = createOpenAICompatibleClient({
             object: 'chat.completion',
             model: modelName,
             created: Math.floor(startTime / 1000),
-            usage: data.result.usage || {
+            usage: data?.result?.usage || {
                 prompt_tokens: 0,
                 completion_tokens: 0,
                 total_tokens: 0

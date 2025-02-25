@@ -75,6 +75,7 @@ export function createOpenAICompatibleClient(config) {
                 model: modelName,
                 messages: messagesWithSystem,
                 temperature: normalizedOptions.temperature,
+                stream: normalizedOptions.stream,
                 seed: normalizedOptions.seed,
                 max_tokens: normalizedOptions.maxTokens,
                 response_format: normalizedOptions.jsonMode ? { type: 'json_object' } : undefined,
@@ -111,10 +112,66 @@ export function createOpenAICompatibleClient(config) {
                 body: JSON.stringify(cleanedRequestBody)
             });
 
+            // Handle streaming response
+            if (normalizedOptions.stream) {
+                log(`[${requestId}] Streaming response from ${providerName} API, status: ${response.status}, statusText: ${response.statusText}`);
+                const responseHeaders = Object.fromEntries([...response.headers.entries()]);
+                log(`[${requestId}] Streaming response headers:`, responseHeaders);
+                
+                // Check if the response is successful for streaming
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    errorLog(`[${requestId}] ${providerName} API error in streaming mode`, {
+                        timestamp: new Date().toISOString(),
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorText
+                    });
+                    log(`[${requestId}] Error response in streaming mode: ${errorText}`);
+                    
+                    // Return an error response that can be streamed
+                    return {
+                        id: `${providerName.toLowerCase()}-${requestId}`,
+                        object: 'chat.completion.chunk',
+                        created: Math.floor(startTime / 1000),
+                        model: modelName,
+                        stream: true,
+                        responseStream: null, // No stream for error
+                        providerName,
+                        choices: [{ delta: { content: `${providerName} API error: ${response.status} ${response.statusText}` }, finish_reason: "stop", index: 0 }],
+                        error: { 
+                            message: `${providerName} API error: ${response.status} ${response.statusText}`,
+                            status: response.status,
+                            details: errorText
+                        }
+                    };
+                }
+                
+                log(`[${requestId}] Creating streaming response object for ${providerName}`);
+                
+                // Check if the response is SSE (text/event-stream)
+                const isSSE = responseHeaders['content-type']?.includes('text/event-stream');
+                log(`[${requestId}] Response is SSE: ${isSSE}`);
+                
+                return {
+                    id: `${providerName.toLowerCase()}-${requestId}`,
+                    object: 'chat.completion.chunk',
+                    created: Math.floor(startTime / 1000),
+                    model: modelName,
+                    stream: true,
+                    responseStream: response.body, // This is the raw stream that will be proxied
+                    providerName,
+                    isSSE,
+                    choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
+                    error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
+                };
+            }
+
             log(`[${requestId}] Received response from ${providerName} API`, {
                 timestamp: new Date().toISOString(),
                 status: response.status,
                 statusText: response.statusText,
+                headers: Object.fromEntries([...response.headers.entries()])
             });
 
             // Handle error responses
@@ -125,6 +182,7 @@ export function createOpenAICompatibleClient(config) {
                     status: response.status,
                     statusText: response.statusText,
                     error: errorText
+                    
                 });
                 
                 return createErrorResponse(
@@ -135,6 +193,7 @@ export function createOpenAICompatibleClient(config) {
 
             // Parse response
             const data = await response.json();
+            log(`[${requestId}] Parsed JSON response:`, JSON.stringify(data).substring(0, 500) + '...');
             const completionTime = Date.now() - startTime;
 
             log(`[${requestId}] Successfully generated text`, {
@@ -174,6 +233,7 @@ export function createOpenAICompatibleClient(config) {
             errorLog(`[${requestId}] Error in text generation`, {
                 timestamp: new Date().toISOString(),
                 error: error.message,
+                name: error.name,
                 stack: error.stack,
                 completionTimeMs: Date.now() - startTime
             });

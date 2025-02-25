@@ -186,7 +186,8 @@ download_image("A beautiful sunset over the ocean", width=1280, height=720, mode
 import base64
 import requests
 
-def analyze_image(image_url):
+def analyze_image_url(image_url):
+    """Analyze an image using its URL"""
     response = requests.post('https://text.pollinations.ai/openai', json={
         "messages": [
             {
@@ -204,9 +205,86 @@ def analyze_image(image_url):
     })
     return response.json()
 
-# Example usage
-result = analyze_image("https://example.com/image.jpg")
+def analyze_local_image(image_path):
+    """Analyze a local image using base64 encoding"""
+    # Read and encode the image
+    with open(image_path, "rb") as image_file:
+        base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+    
+    response = requests.post('https://text.pollinations.ai/openai', json={
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "model": "openai"
+    })
+    return response.json()
+
+# Example usage with URL
+result = analyze_image_url("https://example.com/image.jpg")
 print(result['choices'][0]['message']['content'])
+
+# Example usage with local file
+result = analyze_local_image("local_image.jpg")
+print(result['choices'][0]['message']['content'])
+```
+
+### JavaScript (Vision)
+
+```javascript
+async function analyzeLocalImage(imageFile) {
+    // Convert file to base64
+    const base64Image = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+    });
+
+    const response = await fetch('https://text.pollinations.ai/openai', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: "What's in this image?" },
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: `data:image/jpeg;base64,${base64Image}`
+                            }
+                        }
+                    ]
+                }
+            ],
+            model: 'openai'
+        }),
+    });
+
+    const data = await response.json();
+    return data;
+}
+
+// Example usage with file input
+document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    const result = await analyzeLocalImage(file);
+    console.log(result.choices[0].message.content);
+});
 ```
 
 ### JavaScript (Text Generation)

@@ -88,57 +88,74 @@ export async function generateText(messages, options, performSearch = false) {
     
     const azureInstance = azureInstances[modelName];
     
+    // Simplified tools and tool_choice handling
+    const defaultSearchTools = [searchToolDefinition, scrapeToolDefinition];
+    const tools = options.tools || (performSearch ? defaultSearchTools : undefined);
+    const toolChoice = options.tool_choice || (performSearch ? "auto" : undefined);
+    
     let completion = await azureInstance.chat.completions.create({
         model: modelName,
         messages,
         seed: options.seed,
         response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-        tools: performSearch ? [searchToolDefinition, scrapeToolDefinition] : undefined,
-        tool_choice: performSearch ? "auto" : undefined,
+        tools,
+        tool_choice: toolChoice,
         temperature: options.temperature,
     });
 
     let responseMessage = completion.choices[0].message;
 
-    while (responseMessage.tool_calls) {
+    // Only process tool_calls for search and scrape if performSearch is true
+    // Otherwise, just return the response as is (proxy mode)
+    if (performSearch && responseMessage.tool_calls) {
         const toolCalls = responseMessage.tool_calls;
-        messages.push(responseMessage);
+        
+        // Check if any of the tool calls are for search or scrape
+        const hasSearchOrScrapeCalls = toolCalls.some(
+            toolCall => toolCall.function.name === 'web_search' || toolCall.function.name === 'web_scrape'
+        );
+        
+        // Only process if there are search or scrape calls
+        if (hasSearchOrScrapeCalls) {
+            messages.push(responseMessage);
 
-        for (const toolCall of toolCalls) {
-            if (toolCall.function.name === 'web_search') {
-                const args = JSON.parse(toolCall.function.arguments);
-                const searchResponse = await performWebSearch(args);
-                
-                messages.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: searchResponse
-                });
-            } else if (toolCall.function.name === 'web_scrape') {
-                const args = JSON.parse(toolCall.function.arguments);
-                const scrapeResponse = await performWebScrape(args);
-                
-                messages.push({
-                    tool_call_id: toolCall.id,
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: scrapeResponse
-                });
+            for (const toolCall of toolCalls) {
+                if (toolCall.function.name === 'web_search') {
+                    const args = JSON.parse(toolCall.function.arguments);
+                    const searchResponse = await performWebSearch(args);
+                    
+                    messages.push({
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: toolCall.function.name,
+                        content: searchResponse
+                    });
+                } else if (toolCall.function.name === 'web_scrape') {
+                    const args = JSON.parse(toolCall.function.arguments);
+                    const scrapeResponse = await performWebScrape(args);
+                    
+                    messages.push({
+                        tool_call_id: toolCall.id,
+                        role: "tool",
+                        name: toolCall.function.name,
+                        content: scrapeResponse
+                    });
+                }
+                // Ignore other function calls
             }
-        }
 
-        completion = await azureInstance.chat.completions.create({
-            model: modelName,
-            messages,
-            seed: options.seed,
-            response_format: options.jsonMode ? { type: 'json_object' } : undefined,
-            tools: [searchToolDefinition, scrapeToolDefinition],
-            tool_choice: "auto",
-            max_tokens: 4096,
-        });
-        responseMessage = completion.choices[0].message;
+            completion = await azureInstance.chat.completions.create({
+                model: modelName,
+                messages,
+                seed: options.seed,
+                response_format: options.jsonMode ? { type: 'json_object' } : undefined,
+                tools,
+                tool_choice: toolChoice,
+                max_tokens: 4096,
+            });
+        }
     }
+    
     return completion;
 }
 

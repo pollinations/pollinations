@@ -16,7 +16,7 @@ import generateTextSearch from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
-import { getHandler } from './modelHandlers.js';
+import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';

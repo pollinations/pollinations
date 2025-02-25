@@ -253,3 +253,21 @@ export function findModelByName(modelName) {
     return availableModels.find(model => model.name === modelName) || 
            availableModels.find(model => model.name === 'openai'); // Default to openai
 }
+
+/**
+ * Get a handler function for a specific model
+ * @param {string} modelName - The name of the model
+ * @returns {Function} - The handler function for the model, or the default handler if not found
+ */
+export function getHandler(modelName) {
+    const model = findModelByName(modelName);
+    return model.handler;
+}
+
+// For backward compatibility
+export const modelHandlers = {};
+availableModels.forEach(model => {
+    if (model.handler) {
+        modelHandlers[model.name] = model.handler;
+    }
+});

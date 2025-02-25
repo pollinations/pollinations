@@ -1,8 +1,8 @@
 import test from 'ava';
-import { getHandler, modelHandlers } from '../modelHandlers.js';
+import { getHandler, modelHandlers } from '../availableModels.js';
 
 /**
- * Test suite for the modelHandlers module
+ * Test suite for the model handlers
  */
 
 /**

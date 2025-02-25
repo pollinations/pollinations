@@ -68,6 +68,30 @@ export function ensureSystemMessage(messages, options, defaultSystemPrompt = 'Yo
 export function normalizeOptions(options = {}, defaults = {}) {
   const normalized = { ...defaults, ...options };
   
+  // Handle streaming option - ensure it's properly normalized to a boolean
+  if (normalized.stream !== undefined) {
+    // Convert string 'true' to boolean true
+    if (normalized.stream === 'true' || normalized.stream === '1' || normalized.stream === 'yes') {
+      normalized.stream = true;
+      log('Normalized stream option from string "%s" to boolean true', options.stream);
+    } else if (normalized.stream === 'false' || normalized.stream === '0' || normalized.stream === 'no') {
+      normalized.stream = false;
+      log('Normalized stream option from string "%s" to boolean false', options.stream);
+    } else {
+      normalized.stream = Boolean(normalized.stream);
+      log('Normalized stream option from "%s" to boolean %s', options.stream, normalized.stream);
+    }
+  } else {
+    normalized.stream = false;
+    log('Stream option not provided, defaulting to false');
+  }
+
+  // Log the normalized stream option for debugging
+  if (normalized.stream) {
+    log('Streaming mode enabled, original value: %s, normalized: %s', 
+      options.stream, normalized.stream);
+  }
+  
   // Handle special cases for common options
   if (normalized.temperature !== undefined) {
     // Ensure temperature is within valid range (0-2)

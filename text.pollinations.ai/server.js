@@ -5,17 +5,10 @@ import crypto from 'crypto';
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
-import wrapModelWithContext from './wrapModelWithContext.js';
-import surSystemPrompt from './personas/sur.js';
-import unityPrompt from './personas/unity.js';
-import midijourneyPrompt from './personas/midijourney.js';
-import rtistPrompt from './personas/rtist.js';
 import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
 import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
-import { generateText } from './generateTextOpenai.js';
-import evilPrompt from './personas/evil.js';
 import generateTextOptiLLM from './generateTextOptiLLM.js';
 import { generateTextGemini } from './generateTextGemini.js';
 import generateTextSearch from './generateTextSearch.js';
@@ -23,6 +16,7 @@ import generateTextSearch from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
+import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
@@ -144,21 +138,6 @@ app.use(cors());
 app.get('/', (req, res) => {
     res.redirect('https://sur.pollinations.ai');
 });
-
-
-// Create custom instances of Sur backed by Claude, Mistral, and Command-R
-const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
-const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway,"mistral");
-const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateText,"openai-large");
-// const surCommandR = wrapModelWithContext(surSystemPrompt, generateTextCommandR);
-// Create custom instance of Unity backed by Mistral Large
-const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
-// Create custom instance of Midijourney
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
-// Create custom instance of Rtist
-const rtist = wrapModelWithContext(rtistPrompt, generateText);
-// Create custom instance of Evil backed by Command-R
-const evilCommandR = wrapModelWithContext(evilPrompt,  generateTextScaleway, "mistral");
 
 app.set('trust proxy', true);
 
@@ -538,38 +517,10 @@ async function generateTextBasedOnModel(messages, options) {
     log('Using model:', model);
 
     try {
-        
-        const modelHandlers = {
-            'deepseek': () => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
-            'deepseek-reasoner': () => generateDeepseek(messages, { ...options, model: 'deepseek-reasoner' }),
-            'mistral': () => generateTextScaleway(messages, options),
-            'qwen-coder': () => generateTextScaleway(messages, options),
-            'llama': () => generateTextCloudflare(messages, { ...options, model: 'llama' }),
-            'llamalight': () => generateTextCloudflare(messages, options),
-            'llamaguard': () => generateTextCloudflare(messages, options),
-            'llama-scaleway': () => generateTextScaleway(messages, {...options, model: 'llama'}),
-            'deepseek-r1': () => generateTextCloudflare(messages, options),
-            'gemini': () => generateTextGemini(messages, options),
-            'gemini-thinking': () => generateTextGemini(messages, options),
-            'sur': () => surOpenai(messages, options),
-            'sur-mistral': () => surMistral(messages, options),
-            'unity': () => unityMistralLarge(messages, options),
-            'midijourney': () => midijourney(messages, options),
-            'rtist': () => rtist(messages, options),
-            'searchgpt': () => generateTextSearch(messages, options),
-            'evil': () => evilCommandR(messages, options),
-            // 'roblox': () => generateTextRoblox(messages, options),
-            'openai': () => generateText(messages, options),
-            'openai-large': () => generateText(messages, options),
-            'openai-reasoning': () => generateText(messages, options),
-            'claude-hybridspace': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-haiku-20241022"}),
-            'hypnosis-tracy': () => hypnosisTracy(messages, options),
-            // 'claude-email': () => generateTextOpenRouter (messages, {...options, model: "anthropic/claude-3.5-sonnet"}),    
-            'hormoz': () => generateTextModal(messages, options),
-        };
-
-        const handler = modelHandlers[model] || (() => generateText(messages, options));
-        const response = await handler();
+        // Get the handler function for the specified model
+        const handler = getHandler(model);
+        // Call the handler with the messages and options
+        const response = await handler(messages, options);
         
         return response;
     } catch (error) {

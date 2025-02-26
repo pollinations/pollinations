@@ -200,7 +200,11 @@ async function handleRequest(req, res, requestData) {
         // Check if completion contains an error
         if (completion.error) {
             errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
-            if (!requestData.stream) throw new Error(JSON.stringify(completion.error));
+            
+            // Return proper error response for both streaming and non-streaming
+            const errorMsg = typeof completion.error === 'string' ? completion.error : JSON.stringify(completion.error);
+            await sendErrorResponse(res, req, new Error(errorMsg), requestData, completion.error.status || 500);
+            return;
         }
         
         // Process referral links if there's content in the response
@@ -284,6 +288,14 @@ async function handleRequest(req, res, requestData) {
         if (requestData.stream) {
             log('Error in streaming mode:', error.message);
             errorLog('Error stack:', error.stack);
+            
+            // Check if this is a known API error and return it as an error response
+            if (error.message && (error.message.includes("API error") || error.message.includes("Bad Request"))) {
+                log('Returning API error as error response in streaming mode');
+                await sendErrorResponse(res, req, error, requestData, error.code || 500);
+                return;
+            }
+            
             sendAsOpenAIStream(res, { error: error.message, choices: [{ message: { content: error.message } }] }, req);
             return;
         }
@@ -362,7 +374,16 @@ export function sendOpenAIResponse(res, completion) {
 export function sendContentResponse(res, completion) {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    res.send(completion.choices[0].message.content);
+    
+    // Only handle OpenAI-style responses (with choices array)
+    if (completion.choices && completion.choices[0] && completion.choices[0].message) {
+        res.send(completion.choices[0].message.content);
+    }
+    // Fallback for any other response structure
+    else {
+        errorLog('Unrecognized completion format:', JSON.stringify(completion));
+        res.send('Response format not recognized');
+    }
 }
 
 // Common function to handle request data
@@ -417,16 +438,33 @@ export function getReferrer(req, data) {
 // Helper function to process requests with queueing and caching logic
 export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
+
+    // Special handling for Cloudflare with seed parameter - direct error response without even trying
+    if (requestData.model === 'llama' && requestData.seed !== null && requestData.seed !== undefined && requestData.stream) {
+        errorLog('Cloudflare with seed parameter in streaming mode - direct error response');
+        return res.status(400).json({
+            error: 'Cloudflare API error: Bad Request - seed parameter is not supported for Cloudflare in streaming mode',
+            status: 400,
+            details: 'Cloudflare does not accept seed parameter for streaming requests'
+        });
+    }
+
     
     // Check for banned phrases first
     try {
         await checkBannedPhrases(requestData.messages, ip);
     } catch (error) {
         if (requestData.stream) {
-            // For streaming requests, send error as a stream
+            // For streaming requests with security errors, return as proper error responses
             log('Banned phrases error in streaming mode:', error);
-            sendAsOpenAIStream(res, { error: error.message, choices: [{ message: { content: error.message } }] }, req);
-            return;
+            
+            // For security and API errors, always return as error response, even in streaming mode
+            if (error.message && (
+                error.message.includes("banned phrase") || 
+                error.message.includes("API error") || 
+                error.message.includes("Bad Request"))) {
+                return sendErrorResponse(res, req, error, requestData, 403);
+            }
         } else {
             return sendErrorResponse(res, req, error, requestData, 403);
         }
@@ -608,23 +646,8 @@ if (completion) {
     
     // Handle error responses in streaming mode
     if (completion.error) {
-        log('Error in streaming mode:', JSON.stringify(completion.error));
-        errorLog('Streaming error details:', JSON.stringify(completion.error, null, 2));
-        
-        // Send the error as a streaming event
-        res.write(`data: ${JSON.stringify({ 
-            choices: [{ 
-                delta: { content: completion.error.message || 'An error occurred' }, 
-                finish_reason: "stop", 
-                index: 0 
-            }],
-            error: completion.error
-        })}\n\n`);
-        
-        // Send the [DONE] message for OpenAI compatibility
-        log('Sending [DONE] message after error');
-        res.write('data: [DONE]\n\n');
-        res.end();
+        errorLog('Error detected in streaming request, this should not happen, errors should be handled before reaching here');
+        // Just return, as the error should have been handled already
         return;
     }
     
@@ -1079,16 +1102,12 @@ async function generateTextBasedOnModel(messages, options) {
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
+            // Just return an error object - do not stream the error
             return {
                 error: {
                     message: error.message || 'An error occurred during text generation',
-                    code: error.code || 500,
-                    metadata: {
-                        provider_name: 'unknown'
-                    }
+                    status: error.code || 500
                 },
-                stream: true,
-                choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }]
             };
         }
         

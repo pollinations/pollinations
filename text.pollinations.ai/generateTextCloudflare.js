@@ -27,13 +27,13 @@ const DEFAULT_OPTIONS = {
 };
 
 /**
- * Generates text using Cloudflare's AI API
+ * Generates text using Cloudflare's AI API with OpenAI-compatible endpoints
  * @param {Array} messages - Array of message objects
  * @param {Object} options - Options for text generation
  * @returns {Object} - OpenAI-compatible response
  */
 export const generateTextCloudflare = createOpenAICompatibleClient({
-    endpoint: (modelName) => `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/run/${modelName}`,
+    endpoint: (modelName) => `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1/chat/completions`,
     authHeaderName: 'Authorization',
     authHeaderValue: () => {
         if (!process.env.CLOUDFLARE_AUTH_TOKEN) {
@@ -44,52 +44,5 @@ export const generateTextCloudflare = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'Cloudflare',
-    
-    // Custom response formatter for Cloudflare's unique response format (for non-streaming responses)
-    formatResponse: (data, requestId, startTime, modelName, options) => {
-        // If this is a streaming response with responseStream, return it as-is
-        if (data && data.stream === true && data.responseStream) {
-            // Add additional metadata to the streaming response
-            return {
-                ...data,
-                id: `cloudflare-${requestId}`,
-                created: Math.floor(startTime / 1000),
-                model: modelName,
-                isSSE: data.isSSE || false,
-                // Keep the existing responseStream and other properties
-            };
-        }
-        
-        // Handle error responses
-        if (data && data.error) {
-            return {
-                ...data,
-                id: `cloudflare-${requestId}`,
-                created: Math.floor(startTime / 1000),
-                model: modelName
-            };
-        }
-        
-        // Handle normal responses
-        return {
-            choices: [{
-                message: {
-                    role: 'assistant',
-                    content: data?.result?.response || 'No response from Cloudflare'
-                },
-                finish_reason: 'stop',
-                index: 0
-            }],
-            id: `cloudflare-${requestId}`,
-            object: 'chat.completion',
-            model: modelName,
-            created: Math.floor(startTime / 1000),
-            usage: data?.result?.usage || {
-                prompt_tokens: 0,
-                completion_tokens: 0,
-                total_tokens: 0
-            }
-        };
-    }
+    providerName: 'Cloudflare'
 });

@@ -1,0 +1,7 @@
+- tests are in test/
+- always check @package.json on how to run tests and project defaults
+- when something is failing first add logs or clarifying questions to the user before rushing to an implementation
+- the main server code is in server.js
+- we should be a thin proxy. there should be no unnecessary logic to verify return types or add metadata to normalize the APIs. keep it simple, stupid!
+- external API integrations should use compatible endpoints that match the expected response format in the codebase
+- to run specific tests, use: `npm run test:pattern "test/[pattern]*.test.js"`

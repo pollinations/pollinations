@@ -266,7 +266,7 @@ test('Function calling with OpenRouter', async (t) => {
       maxTokens: 1024
     });
     
-    console.log('OpenRouter response:', JSON.stringify(result, null, 2));
+    // console.log('OpenRouter response:', JSON.stringify(result, null, 2));
     
     // Basic validation
     t.truthy(result, 'Response should not be null or undefined');

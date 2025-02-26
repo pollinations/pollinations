@@ -188,6 +188,56 @@ export function cleanUndefined(obj) {
 }
 
 /**
+ * Removes undefined and null values from an object
+ * @param {Object} obj - Object to clean
+ * @returns {Object} - Object without undefined or null values
+ */
+export function cleanNullAndUndefined(obj) {
+  log(`Cleaning null and undefined values from object keys: ${Object.keys(obj).join(', ')}`);
+  
+  // Handle non-objects and null/undefined
+  if (obj === null || obj === undefined) {
+    log('Input is null or undefined, returning as is');
+    return obj;
+  }
+  
+  if (typeof obj !== 'object' || Array.isArray(obj)) {
+    log(`Input is not an object (type: ${typeof obj}, isArray: ${Array.isArray(obj)}), returning as is`);
+    return obj;
+  }
+  
+  const cleaned = { ...obj };
+  
+  // Track removed properties for logging
+  const removedProps = [];
+  
+  Object.keys(cleaned).forEach(key => {
+    if (cleaned[key] === undefined || cleaned[key] === null) {
+      removedProps.push(`${key}: ${cleaned[key] === null ? 'null' : 'undefined'}`);
+      log(`Removing property ${key} with ${cleaned[key] === null ? 'null' : 'undefined'} value`);
+      delete cleaned[key];
+    } else if (typeof cleaned[key] === 'object' && cleaned[key] !== null && !Array.isArray(cleaned[key])) {
+      // Recursively clean nested objects
+      log(`Recursively cleaning nested object at key: ${key}`);
+      const cleanedNestedObj = cleanNullAndUndefined(cleaned[key]);
+      
+      // If the cleaned nested object has no properties, remove it entirely
+      if (cleanedNestedObj && Object.keys(cleanedNestedObj).length === 0) {
+        removedProps.push(`${key}: (empty object after cleaning)`);
+        log(`Removing empty object at key: ${key} after cleaning`);
+        delete cleaned[key];
+      } else {
+        cleaned[key] = cleanedNestedObj;
+      }
+    }
+  });
+  
+  log(`Removed properties: ${removedProps.length > 0 ? removedProps.join(', ') : 'none'}`);
+  log(`Cleaned object now has keys: ${Object.keys(cleaned).join(', ')}`);
+  return cleaned;
+}
+
+/**
  * Creates a standardized error response
  * @param {Error} error - Error object
  * @param {string} providerName - Provider name

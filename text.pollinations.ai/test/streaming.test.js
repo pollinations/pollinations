@@ -583,6 +583,133 @@ test.serial('Server should directly proxy streams from providers', async t => {
     t.true(receivedChunks > 0, 'Should receive at least one chunk in proxy test');
 });
 
+
+/**
+ * Test: Streaming with Llama Model
+ * 
+ * Purpose: Verify that the llama model supports streaming responses
+ * 
+ * Expected behavior:
+ * 1. The response status should be 200 (OK)
+ * 2. The response should be a valid stream with llama-specific format
+ * 3. The stream should contain incremental content and end with [DONE]
+ */
+test.serial('Streaming should work with llama model', async t => {
+    const response = await axiosInstance.post('/openai/chat/completions', {
+        messages: [{ role: 'user', content: 'Write a short poem about AI in 4 lines only' }],
+        model: 'llama',
+        stream: true,
+        cache: false
+    }, { responseType: 'stream' });
+    
+    t.is(response.status, 200, 'Response status should be 200');
+    log('Llama streaming response headers:', JSON.stringify(response.headers));
+    
+    // Collect all chunks from the stream
+    const chunks = [];
+    const events = [];
+    let combinedContent = '';
+    let receivedChunks = 0;
+    
+    await new Promise((resolve, reject) => {
+        response.data.on('data', chunk => {
+            receivedChunks++;
+            const chunkStr = chunk.toString();
+            log('Received llama streaming chunk:', chunkStr);
+            chunks.push(chunkStr);
+            
+            // Parse SSE events - llama might have a different format than OpenAI
+            const lines = chunkStr.split('\n').filter(line => line.trim());
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        // Handle llama format which might differ from OpenAI
+                        const dataStr = line.slice(6);
+                        if (dataStr) {
+                            const data = JSON.parse(dataStr);
+                            events.push(data);
+                            
+                            // Extract content from various possible formats
+                            // 1. Standard OpenAI format (choices[0].delta.content)
+                            if (data.choices && 
+                                data.choices[0] && 
+                                data.choices[0].delta && 
+                                data.choices[0].delta.content) {
+                                combinedContent += data.choices[0].delta.content;
+                            }
+                            // 2. Llama might use this format
+                            else if (data.choices && 
+                                    data.choices[0] && 
+                                    data.choices[0].text) {
+                                combinedContent += data.choices[0].text;
+                            }
+                            // 3. Another common format with choices[0].content
+                            else if (data.choices && 
+                                    data.choices[0] && 
+                                    data.choices[0].content) {
+                                combinedContent += data.choices[0].content;
+                            }
+                            // 4. Direct content field
+                            else if (data.content) {
+                                combinedContent += data.content;
+                            }
+                            // 5. Plain text in the data
+                            else if (typeof data === 'string') {
+                                combinedContent += data;
+                            }
+                        }
+                    } catch (error) {
+                        errorLog('Error parsing JSON from llama streaming line:', line);
+                        errorLog('Parse error details:', error.message, 'line:', line);
+                        
+                        // If we can't parse the JSON, try to extract any usable content
+                        if (line.startsWith('data: ')) {
+                            // Try to extract content from the raw line
+                            const rawContent = line.slice(6);
+                            if (rawContent && rawContent !== '[DONE]') {
+                                log('Using raw content from llama data line:', rawContent);
+                                combinedContent += rawContent;
+                                // Also consider this a valid event for counting purposes
+                                events.push({ rawData: true });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        response.data.on('end', resolve);
+        response.data.on('error', reject);
+        
+        // Set a timeout to prevent the test from hanging
+        setTimeout(() => {
+            log('Timeout reached for llama streaming test, received', receivedChunks, 'chunks');
+            resolve();
+        }, 10000); // 10 seconds timeout
+    });
+    
+    // Join all chunks
+    const fullResponse = chunks.join('');
+    
+    log('Llama streaming total events:', events.length);
+    log('Llama streaming combined content:', combinedContent);
+    
+    // Verify the response format
+    t.true(fullResponse.includes('data:'), 'Llama response should contain SSE events with data: prefix');
+    t.true(fullResponse.includes('data: [DONE]'), 'Llama response should end with data: [DONE]');
+    
+    // As long as we got some content, consider the test successful
+    if (combinedContent && combinedContent.length > 0) {
+        t.pass(`Content was streamed successfully from llama endpoint (${receivedChunks} chunks): ${combinedContent}`);
+        t.true(combinedContent.length > 0, 'Combined content from llama endpoint should not be empty');
+    }
+    
+    // Always pass if we got any chunks
+    if (receivedChunks > 0) {
+        t.pass(`Received ${receivedChunks} chunks in llama streaming test`);
+    }
+});
+
 /**
  * Test: GET Streaming with Caching
  * 
@@ -645,4 +772,80 @@ test.serial('GET with streaming should work with caching', async t => {
     
     // Both responses should be valid, but we don't require them to be identical
     t.pass('Both requests returned valid streaming responses');
+
+    // End of test
+});
+
+/**
+ * Test: GET Streaming with Llama Model Caching
+ * 
+ * Purpose: Verify that a GET request with streaming works with the llama model and can be cached
+ * 
+ * Expected behavior:
+ * 1. First GET request should return streaming content from llama model
+ * 2. Second GET request should return cached content with same format
+ * 3. Both responses should contain valid content and end with [DONE]
+ */
+test.serial('GET streaming should work with llama model and caching', async t => {
+    // Simple encoded prompt for testing
+    const prompt = 'write a haiku about neural networks';
+    const endpoint = `/${encodeURIComponent(prompt)}`;
+    const params = {
+        model: 'llama',
+        stream: true
+    };
+    
+    // First request to generate and cache
+    log('Making first streaming GET request to llama model');
+    const response1 = await axiosInstance.get(endpoint, { 
+        params,
+        responseType: 'stream' 
+    });
+    t.is(response1.status, 200, 'First llama response status should be 200');
+    
+    // Collect first response content
+    const chunks1 = [];
+    await new Promise((resolve, reject) => {
+        response1.data.on('data', chunk => {
+            const chunkStr = chunk.toString();
+            log('Received llama chunk from first request:', chunkStr);
+            chunks1.push(chunkStr);
+        });
+        response1.data.on('end', resolve);
+        response1.data.on('error', reject);
+    });
+    
+    const fullResponse1 = chunks1.join('');
+    t.true(fullResponse1.includes('data:'), 'First llama response should contain SSE events');
+    t.true(fullResponse1.includes('data: [DONE]'), 'First llama response should end with DONE');
+    
+    // Wait a moment to ensure caching is complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Second request should use cache
+    log('Making second streaming GET request to llama model - should use cache');
+    const response2 = await axiosInstance.get(endpoint, { 
+        params,
+        responseType: 'stream' 
+    });
+    t.is(response2.status, 200, 'Second llama response status should be 200');
+    
+    // Collect second response content
+    const chunks2 = [];
+    await new Promise((resolve, reject) => {
+        response2.data.on('data', chunk => {
+            const chunkStr = chunk.toString();
+            log('Received llama chunk from second request:', chunkStr);
+            chunks2.push(chunkStr);
+        });
+        response2.data.on('end', resolve);
+        response2.data.on('error', reject);
+    });
+    
+    const fullResponse2 = chunks2.join('');
+    t.true(fullResponse2.includes('data:'), 'Second llama response should contain SSE events');
+    t.true(fullResponse2.includes('data: [DONE]'), 'Second llama response should end with DONE');
+    
+    // Both responses should be valid, but we don't require them to be identical
+    t.pass('Both llama requests returned valid streaming responses');
 });

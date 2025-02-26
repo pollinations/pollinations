@@ -1,7 +1,8 @@
 import fetch from 'node-fetch';
 import debug from 'debug';
 import {
-    validateAndNormalizeMessages,
+    validateAndNormalizeMessages, 
+    cleanNullAndUndefined,
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
@@ -33,7 +34,8 @@ export function createOpenAICompatibleClient(config) {
         defaultOptions = {},
         providerName = 'unknown',
         formatResponse = null,
-        additionalHeaders = {}
+        additionalHeaders = {},
+        transformRequest = null
     } = config;
 
     const log = debug(`pollinations:${providerName.toLowerCase()}`);
@@ -83,8 +85,45 @@ export function createOpenAICompatibleClient(config) {
                 tool_choice: normalizedOptions.tool_choice
             };
 
-            // Clean undefined values
-            const cleanedRequestBody = cleanUndefined(requestBody);
+            // Clean undefined and null values
+            const cleanedRequestBody = cleanNullAndUndefined(requestBody);
+            log(`[${requestId}] Cleaned request body (removed null and undefined values):`, 
+                JSON.stringify(cleanedRequestBody, null, 2));
+
+            // Apply custom request transformation if provided
+            const finalRequestBody = transformRequest
+                ? transformRequest(cleanedRequestBody)
+                : cleanedRequestBody;
+            
+            // Double-check for any null values that might have been reintroduced
+            if (providerName === 'Cloudflare') {
+                // For Cloudflare, we need to be extra careful about null values
+                log(`[${requestId}] Double-checking for null values in Cloudflare request`);
+                
+                // Remove any null values that might have been reintroduced
+                Object.keys(finalRequestBody).forEach(key => {
+                    if (finalRequestBody[key] === null) {
+                        log(`[${requestId}] Removing null value for key ${key} in final Cloudflare request`);
+                        delete finalRequestBody[key];
+                    }
+                });
+                
+                // Also check for null values in nested objects
+                if (finalRequestBody.response_format && typeof finalRequestBody.response_format === 'object') {
+                    Object.keys(finalRequestBody.response_format).forEach(key => {
+                        if (finalRequestBody.response_format[key] === null) {
+                            log(`[${requestId}] Removing null value for key ${key} in response_format`);
+                            delete finalRequestBody.response_format[key];
+                        }
+                    });
+                    
+                    // If response_format is empty after cleaning, remove it
+                    if (Object.keys(finalRequestBody.response_format).length === 0) {
+                        log(`[${requestId}] Removing empty response_format object`);
+                        delete finalRequestBody.response_format;
+                    }
+                }
+            }
 
             log(`[${requestId}] Sending request to ${providerName} API`, {
                 timestamp: new Date().toISOString(),
@@ -92,6 +131,8 @@ export function createOpenAICompatibleClient(config) {
                 maxTokens: cleanedRequestBody.max_tokens,
                 temperature: cleanedRequestBody.temperature
             });
+            
+            log(`[${requestId}] Final request body:`, JSON.stringify(finalRequestBody, null, 2));
 
             // Determine the endpoint URL
             const endpointUrl = typeof endpoint === 'function' 
@@ -105,51 +146,34 @@ export function createOpenAICompatibleClient(config) {
                 ...additionalHeaders
             };
 
+            log(`[${requestId}] Request headers:`, headers);
+
             // Make API request
             const response = await fetch(endpointUrl, {
                 method: "POST",
                 headers,
-                body: JSON.stringify(cleanedRequestBody)
+                body: JSON.stringify(finalRequestBody)
             });
 
             // Handle streaming response
             if (normalizedOptions.stream) {
                 log(`[${requestId}] Streaming response from ${providerName} API, status: ${response.status}, statusText: ${response.statusText}`);
                 const responseHeaders = Object.fromEntries([...response.headers.entries()]);
-                log(`[${requestId}] Streaming response headers:`, responseHeaders);
                 
                 // Check if the response is successful for streaming
                 if (!response.ok) {
                     const errorText = await response.text();
-                    errorLog(`[${requestId}] ${providerName} API error in streaming mode`, {
-                        timestamp: new Date().toISOString(),
-                        status: response.status,
-                        statusText: response.statusText,
-                        error: errorText
-                    });
-                    log(`[${requestId}] Error response in streaming mode: ${errorText}`);
+                    errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
                     
-                    // Return an error response that can be streamed
-                    return {
-                        id: `${providerName.toLowerCase()}-${requestId}`,
-                        object: 'chat.completion.chunk',
-                        created: Math.floor(startTime / 1000),
-                        model: modelName,
-                        stream: true,
-                        responseStream: null, // No stream for error
-                        providerName,
-                        choices: [{ delta: { content: `${providerName} API error: ${response.status} ${response.statusText}` }, finish_reason: "stop", index: 0 }],
-                        error: { 
-                            message: `${providerName} API error: ${response.status} ${response.statusText}`,
-                            status: response.status,
-                            details: errorText
-                        }
-                    };
+                    // Throw an error instead of returning a structured error object
+                    // This ensures the error is handled properly by the error handling flow
+                    throw new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
                 }
                 
                 log(`[${requestId}] Creating streaming response object for ${providerName}`);
                 
                 // Check if the response is SSE (text/event-stream)
+                log(`[${requestId}] Streaming response headers:`, responseHeaders);
                 const isSSE = responseHeaders['content-type']?.includes('text/event-stream');
                 log(`[${requestId}] Response is SSE: ${isSSE}`);
                 
@@ -213,6 +237,8 @@ export function createOpenAICompatibleClient(config) {
             // Default response formatting
             // Ensure the response has all expected fields
             if (!data.id) {
+                log(`[${requestId}] Adding missing id field to response`);
+                
                 data.id = `${providerName.toLowerCase()}-${requestId}`;
             }
             
@@ -227,6 +253,8 @@ export function createOpenAICompatibleClient(config) {
                     total_tokens: 0
                 };
             }
+
+            log(`[${requestId}] Final response:`, JSON.stringify(data, null, 2));
 
             return data;
         } catch (error) {

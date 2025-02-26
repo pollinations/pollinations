@@ -703,7 +703,27 @@ if (completion) {
                                 // Convert the value to a string if it's a buffer
                                 const chunk = typeof value === 'string' ? value : new TextDecoder().decode(value);
                                 log('Proxying ReadableStream chunk:', chunk.substring(0, 100) + (chunk.length > 100 ? '...' : ''));
-                                res.write(chunk);
+                                
+                                // Check if the chunk is already formatted as SSE
+                                if (chunk.trim().startsWith('data:')) {
+                                    res.write(chunk);
+                                } else {
+                                    // Format as SSE if it's not already
+                                    // Try to parse as JSON first
+                                    try {
+                                        const jsonData = JSON.parse(chunk);
+                                        res.write(`data: ${JSON.stringify(jsonData)}\n\n`);
+                                    } catch (e) {
+                                        // If not valid JSON, just wrap it in an SSE format
+                                        res.write(`data: ${JSON.stringify({ 
+                                            choices: [{ 
+                                                delta: { content: chunk }, 
+                                                finish_reason: null, 
+                                                index: 0 
+                                            }] 
+                                        })}\n\n`);
+                                    }
+                                }
                             }
                             log('Reader completed, sending [DONE]');
                             res.write('data: [DONE]\n\n');
@@ -918,7 +938,7 @@ async function replayCachedStream(res, cachedCompletion) {
         // Send content in chunks - using EXACT OpenAI format with delta.content
         for (let i = 0; i < content.length; i += chunkSize) {
             const chunk = content.substring(i, i + chunkSize);
-            // Use the exact format the test is looking for (delta.content)
+            // Use the same streaming simulation as for regular responses
             res.write(`data: ${JSON.stringify({ 
                 id: `chatcmpl-${Date.now()}`,
                 object: 'chat.completion.chunk',

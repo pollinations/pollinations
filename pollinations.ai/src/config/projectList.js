@@ -102,6 +102,13 @@ export const projects = {
   ],
   creativeApps: [
     {
+      name: "🆕 Musify - AI Enhanced Music Streaming",
+      url: "https://musify-sd.vercel.app/",
+      description: "Musify is your AI-powered music buddy, making your jam sessions smarter and more fun. It is powered by pollinations api, it offers a slick and intuitive music experience with features like AI Music Assistant, Voice Commands, AI Playlist Creator, and Responsive Design.",
+      author: "@Sugamdeol",
+      submissionDate: "2025-02-27",
+    },
+    {
       name: "🆕 image1gen",
       url: "https://image1gen.streamlit.app/",
       description: "Website to easily create images via pollinations.ai API.",

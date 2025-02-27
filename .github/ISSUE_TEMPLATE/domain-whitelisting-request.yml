@@ -1,0 +1,52 @@
+name: Domain Whitelisting Request
+description: Request to whitelist your domain for enhanced API access and reduced rate limits
+title: "[Domain Whitelisting Request]"
+labels: ["enhancement", "domain-whitelisting"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please provide the following details to request whitelisting of your domain for our API:
+        
+  - type: input
+    id: project-name
+    attributes:
+      label: Project Name
+      description: What is the name of your project?
+      placeholder: "e.g., AI Art Gallery"
+    validations:
+      required: true
+
+  - type: textarea
+    id: project-description
+    attributes:
+      label: Project Description
+      description: Briefly describe your project and how it uses our API
+      placeholder: "Describe what your project does and how it integrates with our API..."
+    validations:
+      required: true
+
+  - type: input
+    id: referrer
+    attributes:
+      label: Referrer URL or Project Name
+      description: If your project is a WebApp, provide the referrer URL; if not, supply the project name
+      placeholder: "https://example.com or Project Name"
+    validations:
+      required: true
+
+  - type: input
+    id: contact-email
+    attributes:
+      label: Contact Email
+      description: Provide a valid email address for further communication
+      placeholder: "your-email@example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: additional-contact
+    attributes:
+      label: Additional Contact Details
+      description: (Optional) Any other information to help us reach you
+      placeholder: "e.g., @username or https://profile.example.com"

@@ -163,46 +163,24 @@ Example message format with image:
 https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=true&model=mistral&system=You%20are%20a%20helpful%20AI%20assistant
 ```
 
-## Rate Limits and Usage Guidelines
+## Rate Limits
 
 ### Image Generation Service
 
-The image generation service implements the following rate limits:
-
-- **Per-IP Queue**: Each IP address has a dedicated queue with:
+- **Per-IP Queue**: 
   - Concurrency: 1 request at a time
   - Interval: 5000ms between requests
-- **Queue Size Limit**: Maximum of 10 requests per IP in the queue
-  - Requests beyond this limit will receive a "queue full" error
-- **Content Violation Policy**:
-  - System tracks content violations per IP
-  - After 5 violations, the IP is temporarily blocked
-  - Blocked IPs receive a 403 Forbidden response
 
 ### Text Generation Service
 
-The text generation service implements these rate limits:
-
-- **Per-IP Queue**: Each IP address has a dedicated queue with:
+- **Per-IP Queue**: 
   - Concurrency: 1 request at a time
   - Interval: 3000ms between requests
-- **Content Filtering**:
-  - System maintains a list of banned phrases
-  - IPs that attempt to use banned content are blocked
-  - Blocked IPs receive a 403 Forbidden response
-- **Special Cases**:
-  - Whitelisted domains (including pollinations.ai subdomains) may bypass certain rate limits
-  - Requests from image.pollinations.ai and certain other trusted sources get priority queue access
 
-### Best Practices
+### Referrer Whitelisting
 
-To ensure the best experience when using our APIs:
-
-1. Implement proper error handling for rate limit responses
-2. Add appropriate retry logic with exponential backoff
-3. Cache responses when possible to avoid redundant requests
-4. Set the `private` flag for sensitive or personal content
-5. Use appropriate model parameters to optimize response times
+Projects can request to have their referrer whitelisted to bypass standard rate limits for enhanced API access. Whitelisted domains (including pollinations.ai subdomains) may receive priority queue access and reduced restrictions.  
+[Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
 
 ## Code Examples
 
@@ -234,10 +212,7 @@ def analyze_image(image_url):
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": image_url}
-                    }
+                    {"type": "image_url", "image_url": {"url": image_url}}
                 ]
             }
         ],

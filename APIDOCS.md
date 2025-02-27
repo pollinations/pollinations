@@ -5,7 +5,8 @@
 ### Image Generation API (Default model: 'flux')
 
 Generate Image: `GET https://image.pollinations.ai/prompt/{prompt}`
-- Params: prompt*, model, seed, width, height, nologo, private, enhance, safe
+
+- Params: prompt\*, model, seed, width, height, nologo, private, enhance, safe
 - Return: Image file
 
 List Models: `GET https://image.pollinations.ai/models`
@@ -13,22 +14,40 @@ List Models: `GET https://image.pollinations.ai/models`
 ### Text Generation API (Default model: 'openai')
 
 Generate (GET): `GET https://text.pollinations.ai/{prompt}`
-- Params: prompt*, model, seed, json, system, private
+
+- Params: prompt\*, model, seed, json, system, private
 - Return: Generated text
 
 Generate (POST): `POST https://text.pollinations.ai/`
-- Body: messages*, model, seed, jsonMode
+
+- Body: messages\*, model, seed, jsonMode
 - Return: Generated text
 
 OpenAI Compatible: `POST https://text.pollinations.ai/openai`
+
 - Body: Follows OpenAI ChatGPT API format
 - Return: OpenAI-style response
 
 List Models: `GET https://text.pollinations.ai/models`
 
+## API Update: Referrer Parameter & Logo Visibility
+Starting **March 7th, 2025**:
+
+- **Images** will show the Pollinations.AI logo
+- **Text** responses will include a link to pollinations.ai
+
+**To remove the logo/link**: Include a referrer parameter in your API requests
+
+- **Web apps**: No change needed - browsers already send referrer information
+- **Bots & backend apps**: You'll need to add this parameter to disable the logo/link
+
+**Good practice:** Set the referrer value to your app’s domain (e.g., myapp.com)
+
 ## Feed Endpoints
-- Image Feed: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
-- Example:
+
+- **Image Feed**: GET https://image.pollinations.ai/feed (SSE stream of user-generated images).
+
+  - Example:
     data: {
     "width":1024,
     "height":1024,
@@ -39,8 +58,8 @@ List Models: `GET https://text.pollinations.ai/models`
     ...
     }
 
-- Text Feed: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
-- Example:
+- **Text Feed**: GET https://text.pollinations.ai/feed (SSE stream of user-generated text)
+  - Example:
     data: {
     "response": "Cherry Blossom Pink represents the beautiful spring in Tachikawa",
     "model": "openai",
@@ -48,19 +67,22 @@ List Models: `GET https://text.pollinations.ai/models`
     ...
     }
 
-*\* required parameter*
+_\* required parameter_
 
 ### React Hooks (`npm install @pollinations/react`)
 
 usePollinationsText(prompt, options)
+
 - Options: seed, model, systemPrompt
 - Return: string | null
 
 usePollinationsImage(prompt, options)
+
 - Options: width, height, model, seed, nologo, enhance
 - Return: string | null
 
 usePollinationsChat(initialMessages, options)
+
 - Options: seed, jsonMode, model
 - Return: { sendUserMessage: (message) => void, messages: Array<{role, content}> }
 
@@ -71,10 +93,12 @@ Docs: https://pollinations.ai/react-hooks
 ### Image Generation API
 
 #### Generate Image
+
 `GET https://image.pollinations.ai/prompt/{prompt}`
 
 **Parameters:**
-- prompt* (required): Text description of the image you want to generate. Should be URL-encoded.
+
+- prompt\* (required): Text description of the image you want to generate. Should be URL-encoded.
 - model: Model to use for generation. See https://image.pollinations.ai/models for available models.
 - seed: Seed for reproducible results.
 - width: Width of the generated image. Default: 1024
@@ -95,10 +119,12 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 ### Text Generation API
 
 #### Generate (GET)
+
 `GET https://text.pollinations.ai/{prompt}`
 
 **Parameters:**
-- prompt* (required): Text prompt for the AI to respond to. Should be URL-encoded.
+
+- prompt\* (required): Text prompt for the AI to respond to. Should be URL-encoded.
 - model: Model to use for text generation. Options: 'openai', 'mistral'. See https://text.pollinations.ai/models for available models.
 - seed: Seed for reproducible results.
 - json: Set to 'true' to receive response in JSON format.
@@ -108,26 +134,30 @@ https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean
 **Return:** Generated text
 
 #### Generate (POST)
+
 `POST https://text.pollinations.ai/`
 
 **Request Body:**
+
 ```json
 {
   "messages": [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "What is artificial intelligence?"}
+    { "role": "system", "content": "You are a helpful assistant." },
+    { "role": "user", "content": "What is artificial intelligence?" }
   ],
   "model": "openai",
   "seed": 42,
-  "jsonMode": true,  // Optional: Forces the response to be valid JSON
-  "private": true    // Optional: Prevents response from appearing in public feed
+  "jsonMode": true, // Optional: Forces the response to be valid JSON
+  "private": true // Optional: Prevents response from appearing in public feed
 }
 ```
 
 **Return:** Generated text
 
 #### Vision Capabilities
+
 The following models support analyzing images through our API:
+
 - `openai`
 - `openai-large`
 - `claude-hybridspace`
@@ -137,13 +167,14 @@ You can pass images either as URLs or base64-encoded data in the messages. See t
 Note: While we offer other models like Gemini, they currently do not support multimodal (image) inputs.
 
 Example message format with image:
+
 ```json
 {
   "messages": [
     {
       "role": "user",
       "content": [
-        {"type": "text", "text": "What's in this image?"},
+        { "type": "text", "text": "What's in this image?" },
         {
           "type": "image_url",
           "image_url": {
@@ -212,21 +243,21 @@ print(result['choices'][0]['message']['content'])
 ### JavaScript (Text Generation)
 
 ```javascript
-const fetch = require('node-fetch');
+const fetch = require("node-fetch");
 
 async function generateText() {
-  const response = await fetch('https://text.pollinations.ai/', {
-    method: 'POST',
+  const response = await fetch("https://text.pollinations.ai/", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: 'What is artificial intelligence?' }
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: "What is artificial intelligence?" },
       ],
       seed: 42,
-      model: 'mistral'
+      model: "mistral",
     }),
   });
 
@@ -240,7 +271,10 @@ generateText();
 ### HTML (Image Embedding)
 
 ```html
-<img src="https://image.pollinations.ai/prompt/Modern%20minimalist%20logo" alt="AI-generated logo">
+<img
+  src="https://image.pollinations.ai/prompt/Modern%20minimalist%20logo"
+  alt="AI-generated logo"
+/>
 ```
 
 ## Integration Examples

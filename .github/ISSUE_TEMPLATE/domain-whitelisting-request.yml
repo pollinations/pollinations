@@ -1,7 +1,7 @@
-name: Domain Whitelisting Request
+name: Whitelisting Request
 description: Request to whitelist your domain for enhanced API access and reduced rate limits
-title: "[Domain Whitelisting Request]"
-labels: ["enhancement", "domain-whitelisting"]
+title: "[Whitelisting Request]"
+labels: ["text.pollinations.ai", "image.pollinations.ai"]
 body:
   - type: markdown
     attributes:
@@ -29,7 +29,7 @@ body:
   - type: input
     id: referrer
     attributes:
-      label: Referrer URL or Project Name
+      label: Referrer (URL or Project Name)
       description: If your project is a WebApp, provide the referrer URL; if not, supply the project name
       placeholder: "https://example.com or Project Name"
     validations:

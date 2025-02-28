@@ -12,6 +12,7 @@ import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
 import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
+import { getRequestData, getReferrer } from './requestUtils.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -288,9 +289,9 @@ async function handleRequest(req, res, requestData) {
 }
 
 // Function to check if delay should be bypassed
-export function shouldBypassDelay(req) {
-    const requestData = getRequestData(req);
-    return requestData.isRobloxReferrer;
+function shouldBypassDelay(req) {
+    const referrer = getReferrer(req, req.body || {});
+    return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
 }
 
 // Helper function for consistent error responses
@@ -350,7 +351,7 @@ export function sendOpenAIResponse(res, completion) {
     // Otherwise, format as OpenAI response
     const response = {
         id: completion.id || generatePollinationsId(),
-        object: 'chat.completion',
+        object: "chat.completion",
         created: completion.created || Date.now(),
         model: completion.model,
         choices: completion.choices,
@@ -375,54 +376,6 @@ export function sendContentResponse(res, completion) {
     }
 }
 
-// Common function to handle request data
-export function getRequestData(req) {
-    const query = req.query || {};
-    const body = req.body || {};
-    const data = { ...query, ...body };
-
-    const jsonMode = data.jsonMode || 
-                    (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
-                    (typeof data.json === 'boolean' && data.json === true) ||
-                    data.response_format?.type === 'json_object';
-                    
-    const seed = data.seed ? parseInt(data.seed, 10) : null;
-    const model = data.model || 'openai';
-    const systemPrompt = data.system ? data.system : null;
-    const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const isPrivate = req.path?.startsWith('/openai') ? true :
-                     data.private === true || 
-                     (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
-
-    const referrer = getReferrer(req, data);
-    const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-    const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
-    const stream = data.stream || false; 
-
-    const messages = data.messages || [{ role: 'user', content: req.params[0] }];
-    if (systemPrompt) {
-        messages.unshift({ role: 'system', content: systemPrompt });
-    }
-
-    return {
-        messages,
-        jsonMode,
-        seed,
-        model,
-        temperature,
-        isImagePollinationsReferrer,
-        isRobloxReferrer,
-        referrer,
-        stream,
-        isPrivate
-    };
-}
-
-// Helper function to get referrer from request
-export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || data.referrer || req.headers['http-referer'] || 'unknown';
-    return referer;
-}
 
 // Helper function to process requests with queueing and caching logic
 export async function processRequest(req, res, requestData) {

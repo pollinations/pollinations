@@ -5,27 +5,14 @@ import crypto from 'crypto';
 import debug from 'debug';
 import { promises as fs } from 'fs';
 import path from 'path';
-import rateLimit from 'express-rate-limit';
 import PQueue from 'p-queue';
-import sleep from 'await-sleep';
 import { availableModels } from './availableModels.js';
-import generateTextOptiLLM from './generateTextOptiLLM.js';
-import { generateTextGemini } from './generateTextGemini.js';
-import generateTextSearch from './generateTextSearch.js';
-
-import { generateTextOpenRouter } from './generateTextOpenRouter.js';
-import { generateDeepseek } from './generateDeepseek.js';
-import { generateTextScaleway } from './generateTextScaleway.js';
 import { getHandler } from './availableModels.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { setupFeedEndpoint, sendToFeedListeners } from './feed.js';
 import { getFromCache, setInCache, createHashKey } from './cache.js';
-import generateTextClaude from './generateTextClaude.js';
-import { generateTextCloudflare } from './generateTextCloudflare.js';
-import { generateTextModal } from './generateTextModal.js';
-import { processReferralLinks } from './referralLinks.js';
 import { processNSFWReferralLinks } from './nsfwReferralLinks.js';
-import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
+import { getRequestData, getReferrer } from './requestUtils.js';
 
 const BANNED_PHRASES = [
     "600-800 words"
@@ -188,7 +175,6 @@ async function handleRequest(req, res, requestData) {
                 providerName: completion.providerName,
                 hasResponseStream: !!completion.responseStream,
                 hasError: !!completion.error,
-                isSSE: !!completion.isSSE
             });
         } else {
             log("Completion: %O", completion);
@@ -202,8 +188,18 @@ async function handleRequest(req, res, requestData) {
             errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
             
             // Return proper error response for both streaming and non-streaming
-            const errorMsg = typeof completion.error === 'string' ? completion.error : JSON.stringify(completion.error);
-            await sendErrorResponse(res, req, new Error(errorMsg), requestData, completion.error.status || 500);
+            const errorObj = typeof completion.error === 'string' 
+                ? { message: completion.error } 
+                : completion.error;
+                
+            const error = new Error(errorObj.message || 'An error occurred');
+            
+            // Add the details if they exist
+            if (errorObj.details) {
+                error.response = { data: errorObj.details };
+            }
+            
+            await sendErrorResponse(res, req, error, requestData, errorObj.status || 500);
             return;
         }
         
@@ -232,19 +228,9 @@ async function handleRequest(req, res, requestData) {
 
         const cacheKey = createHashKey(requestData);
         
-        // Prepare a modified version for caching if it's a streaming response
+        // Only cache non-streaming responses
         if (completion.stream) {
-            log('Preparing streaming response for caching');
-            // Create a cacheable version without the stream object
-            const cacheableCompletion = {
-                ...completion,
-                stream: true,
-                // Remove the stream object which can't be cached
-                responseStream: null,
-                // Flag to indicate this was a cached stream
-                cachedStream: true
-            };
-            setInCache(cacheKey, cacheableCompletion);
+            log('Skipping cache for streaming response');
         } else {
             setInCache(cacheKey, completion);
         }
@@ -289,14 +275,8 @@ async function handleRequest(req, res, requestData) {
             log('Error in streaming mode:', error.message);
             errorLog('Error stack:', error.stack);
             
-            // Check if this is a known API error and return it as an error response
-            if (error.message && (error.message.includes("API error") || error.message.includes("Bad Request"))) {
-                log('Returning API error as error response in streaming mode');
-                await sendErrorResponse(res, req, error, requestData, error.code || 500);
-                return;
-            }
-            
-            sendAsOpenAIStream(res, { error: error.message, choices: [{ message: { content: error.message } }] }, req);
+            // Simply pass through the error using sendErrorResponse
+            await sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
             return;
         }
         
@@ -309,9 +289,9 @@ async function handleRequest(req, res, requestData) {
 }
 
 // Function to check if delay should be bypassed
-export function shouldBypassDelay(req) {
-    const requestData = getRequestData(req);
-    return requestData.isRobloxReferrer;
+function shouldBypassDelay(req) {
+    const referrer = getReferrer(req, req.body || {});
+    return WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
 }
 
 // Helper function for consistent error responses
@@ -321,8 +301,18 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
         status: statusCode
     };
 
+    // Include detailed error information if available
     if (error.response?.data) {
-        errorResponse.details = error.response.data;
+        try {
+            // Try to parse the data as JSON first
+            const parsedData = typeof error.response.data === 'string' 
+                ? JSON.parse(error.response.data) 
+                : error.response.data;
+            errorResponse.details = parsedData;
+        } catch (e) {
+            // If parsing fails, use the raw data
+            errorResponse.details = error.response.data;
+        }
     }
 
     errorLog('Error occurred: %O', errorResponse);
@@ -361,7 +351,7 @@ export function sendOpenAIResponse(res, completion) {
     // Otherwise, format as OpenAI response
     const response = {
         id: completion.id || generatePollinationsId(),
-        object: 'chat.completion',
+        object: "chat.completion",
         created: completion.created || Date.now(),
         model: completion.model,
         choices: completion.choices,
@@ -386,87 +376,26 @@ export function sendContentResponse(res, completion) {
     }
 }
 
-// Common function to handle request data
-export function getRequestData(req) {
-    const query = req.query || {};
-    const body = req.body || {};
-    const data = { ...query, ...body };
-
-    const jsonMode = data.jsonMode || 
-                    (typeof data.json === 'string' && data.json.toLowerCase() === 'true') ||
-                    (typeof data.json === 'boolean' && data.json === true) ||
-                    data.response_format?.type === 'json_object';
-                    
-    const seed = data.seed ? parseInt(data.seed, 10) : null;
-    const model = data.model || 'openai';
-    const systemPrompt = data.system ? data.system : null;
-    const temperature = data.temperature ? parseFloat(data.temperature) : undefined;
-    const isPrivate = req.path?.startsWith('/openai') ? true :
-                     data.private === true || 
-                     (typeof data.private === 'string' && data.private.toLowerCase() === 'true');
-
-    const referrer = getReferrer(req, data);
-    const isImagePollinationsReferrer = WHITELISTED_DOMAINS.some(domain => referrer.toLowerCase().includes(domain));
-    const isRobloxReferrer = referrer.toLowerCase().includes('roblox') || referrer.toLowerCase().includes('gacha11211');
-    const stream = data.stream || false; 
-
-    const messages = data.messages || [{ role: 'user', content: req.params[0] }];
-    if (systemPrompt) {
-        messages.unshift({ role: 'system', content: systemPrompt });
-    }
-
-    return {
-        messages,
-        jsonMode,
-        seed,
-        model,
-        temperature,
-        isImagePollinationsReferrer,
-        isRobloxReferrer,
-        referrer,
-        stream,
-        isPrivate
-    };
-}
-
-// Helper function to get referrer from request
-export function getReferrer(req, data) {
-    const referer = req.headers.referer || req.headers.referrer || data.referrer || req.headers['http-referer'] || 'unknown';
-    return referer;
-}
 
 // Helper function to process requests with queueing and caching logic
 export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
 
-    // Special handling for Cloudflare with seed parameter - direct error response without even trying
-    if (requestData.model === 'llama' && requestData.seed !== null && requestData.seed !== undefined && requestData.stream) {
-        errorLog('Cloudflare with seed parameter in streaming mode - direct error response');
-        return res.status(400).json({
-            error: 'Cloudflare API error: Bad Request - seed parameter is not supported for Cloudflare in streaming mode',
-            status: 400,
-            details: 'Cloudflare does not accept seed parameter for streaming requests'
-        });
-    }
-
-    
     // Check for banned phrases first
     try {
         await checkBannedPhrases(requestData.messages, ip);
     } catch (error) {
-        if (requestData.stream) {
-            // For streaming requests with security errors, return as proper error responses
-            log('Banned phrases error in streaming mode:', error);
-            
-            // For security and API errors, always return as error response, even in streaming mode
-            if (error.message && (
-                error.message.includes("banned phrase") || 
-                error.message.includes("API error") || 
-                error.message.includes("Bad Request"))) {
-                return sendErrorResponse(res, req, error, requestData, 403);
-            }
-        } else {
+        // Only block for actual banned phrases, not API errors
+        if (error.message && error.message.includes("banned phrase")) {
             return sendErrorResponse(res, req, error, requestData, 403);
+        }
+        
+        // For API errors in streaming mode, pass them through
+        if (requestData.stream) {
+            log('API error in streaming mode:', error);
+            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+        } else {
+            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
         }
     }
 
@@ -474,11 +403,13 @@ export async function processRequest(req, res, requestData) {
 
     // Check cache first
     const cachedResponse = getFromCache(cacheKey);
-    if (cachedResponse) {
+    // Skip cache for streaming requests
+    if (cachedResponse && !requestData.stream) {
         log('Cache hit for key:', cacheKey);
+        log('Using cached response');
+        
         log('Cached response properties:', {
             hasStream: cachedResponse.stream,
-            isCachedStream: !!cachedResponse.cachedStream,
             hasChoices: !!cachedResponse.choices,
             hasError: !!cachedResponse.error,
             hasResponseStream: !!cachedResponse.responseStream
@@ -487,16 +418,13 @@ export async function processRequest(req, res, requestData) {
         // Extract token usage data from cached response
         const cachedTokenUsage = cachedResponse.usage || {};
         
-        // Track cache hit in analytics with token usage
-        const analyticsEvent = cachedResponse.cachedStream ? 'textCachedStream' : 'textCached';
-        log('Cache hit type: %s, stream flag: %s, cachedStream flag: %s',
-            analyticsEvent, requestData.stream, cachedResponse.cachedStream);
-        await sendToAnalytics(req, analyticsEvent, {
+        // Track cache hit in analytics
+        await sendToAnalytics(req, 'textCached', {
             ...requestData,
             success: true,
             cached: true,
             responseLength: cachedResponse?.choices?.[0]?.message?.content?.length,
-            streamMode: requestData.stream,
+            streamMode: false,
             plainTextMode: requestData.plaintTextResponse,
             cacheKey: cacheKey,
             ...cachedTokenUsage
@@ -505,37 +433,11 @@ export async function processRequest(req, res, requestData) {
         if (requestData.plaintTextResponse) {
             sendContentResponse(res, cachedResponse);
         } else {
-            if (requestData.stream) {
-                try {
-                    log('Cached streaming response detected');
-                    
-                    // If this was a streaming response, we need to use our special replay mechanism
-                    // regardless of whether it was originally marked as cachedStream
-                    if (cachedResponse.stream) {
-                        // Mark it as a cached stream for handling
-                        cachedResponse.cachedStream = true;
-                        
-                        // First try our dedicated replay function which works with both GET and POST
-                        const replaySuccess = await replayCachedStream(res, cachedResponse);
-                        if (replaySuccess) {
-                            log('Successfully replayed cached stream');
-                            return;
-                        }
-                    }
-                    
-                    // If we get here, fall back to the regular streaming function
-                    sendAsOpenAIStream(res, cachedResponse, req);
-                } catch (error) {
-                    errorLog('Error processing cached streaming response: %s', error.message);
-                    // Fallback to generating a new response
-                    await handleRequest(req, res, requestData);
-                }
-            }
-            else {
-                sendOpenAIResponse(res, cachedResponse);
-            }
+            sendOpenAIResponse(res, cachedResponse);
         }
         return;
+    } else if (requestData.stream && cachedResponse) {
+        log('Skipping cache for streaming request');
     }
     
     if (isIPBlocked(ip)) {
@@ -637,10 +539,8 @@ if (completion) {
     });
 }
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-    // Don't set Cache-Control to no-cache as this may interfere with our own caching
-    // res.setHeader('Cache-Control', 'no-cache');
-
-    log('Headers set for streaming response');
+    // Set standard SSE headers
+    res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
     
@@ -651,432 +551,46 @@ if (completion) {
         return;
     }
     
-    // Check if this is a cached streaming response
-    if (completion.stream && completion.cachedStream) {
-        log('Handling cached streaming response');
+    // Handle streaming response from the API
+    const responseStream = completion.responseStream;
+    log('Got streaming response from API, provider:', completion.providerName);
+    
+    // If we have a responseStream, try to proxy it
+    if (responseStream) {
+        log('Attempting to proxy stream to client');
         
-        // For cached streams, we need to simulate the streaming from the cached content
-        // rather than trying to use the original stream which no longer exists
-        if (completion.choices && completion.choices[0] && completion.choices[0].message) {
-            const content = completion.choices[0].message.content || '';
-            // Use the same streaming simulation as for regular responses
-            simulateStreamFromContent(res, content);
-            return;
-        } else {
-            // If the cached response doesn't have the expected structure, handle it gracefully
-            log('Cached streaming response missing expected content structure');
-            res.write(`data: ${JSON.stringify({ 
-                choices: [{ 
-                    delta: { content: 'Cached streaming response could not be processed properly.' }, 
-                    finish_reason: "stop", 
-                    index: 0 
-                }] 
-            })}\n\n`);
-            res.write('data: [DONE]\n\n');
-            res.end();
+        // For Node.js Readable streams
+        if (responseStream.pipe) {
+            log('Using pipe for Node.js Readable stream');
+            
+            // Directly pipe the stream to the client - true thin proxy approach
+            log('Directly piping SSE stream to client');
+            responseStream.pipe(res);
+            
+            // Handle client disconnect
+            if (req) req.on('close', () => {
+                log('Client disconnected');
+                if (responseStream.destroy) {
+                    responseStream.destroy();
+                }
+            });
+            
             return;
         }
     }
     
-    // Check if this is a streaming response from the API
-    else if (completion.stream && completion.responseStream) {
-        // Handle streaming response from the API
-        const responseStream = completion.responseStream;
-        log('Got streaming response from API, provider:', completion.providerName, 'isSSE:', completion.isSSE);
-        
-        // If we have a responseStream, try to proxy it
-        if (responseStream) {
-            log('Attempting to proxy stream to client');
-            
-            // For ReadableStream from fetch API
-            if (responseStream.pipeTo) {
-                log('Using pipeTo for ReadableStream');
-                try {
-                    const reader = responseStream.getReader();
-                    
-                    const pump = async () => {
-                        try {
-                            while (true) {
-                                const { done, value } = await reader.read();
-                                if (done) break;
-                                
-                                // Convert the value to a string if it's a buffer
-                                const chunk = typeof value === 'string' ? value : new TextDecoder().decode(value);
-                                log('Proxying ReadableStream chunk:', chunk.substring(0, 100) + (chunk.length > 100 ? '...' : ''));
-                                
-                                // Check if the chunk is already formatted as SSE
-                                if (chunk.trim().startsWith('data:')) {
-                                    res.write(chunk);
-                                } else {
-                                    // Format as SSE if it's not already
-                                    // Try to parse as JSON first
-                                    try {
-                                        const jsonData = JSON.parse(chunk);
-                                        res.write(`data: ${JSON.stringify(jsonData)}\n\n`);
-                                    } catch (e) {
-                                        // If not valid JSON, just wrap it in an SSE format
-                                        res.write(`data: ${JSON.stringify({ 
-                                            choices: [{ 
-                                                delta: { content: chunk }, 
-                                                finish_reason: null, 
-                                                index: 0 
-                                            }] 
-                                        })}\n\n`);
-                                    }
-                                }
-                            }
-                            log('Reader completed, sending [DONE]');
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        } catch (error) {
-                            errorLog('Error reading from stream:', error);
-                             // Send error as a streaming event
-                             res.write(`data: ${JSON.stringify({ 
-                                 choices: [{ 
-                                     delta: { content: `Error reading from stream: ${error.message}` }, 
-                                     finish_reason: "stop", 
-                                     index: 0 
-                                 }] 
-                             })}\n\n`);
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        }
-                    };
-                    
-                    pump();
-                    
-                    // Handle client disconnect
-                    if (req) req.on('close', () => {
-                        log('Client disconnected');
-                        reader.cancel('Client disconnected');
-                    });
-                } catch (error) {
-                    errorLog('Error setting up ReadableStream reader:', error);
-                    res.write(`data: ${JSON.stringify({ 
-                        choices: [{ 
-                            delta: { content: 'Error setting up stream reader.' }, 
-                            finish_reason: "stop", 
-                            index: 0 
-                        }] 
-                    })}\n\n`);
-                    res.write('data: [DONE]\n\n');
-                    res.end();
-                }
-                
-                // Handle client disconnect
-                if (req) req.on('close', () => {
-                    log('Client disconnected');
-                });
-                
-                return;
-            }
-            
-            // For Node.js Readable streams
-            if (responseStream.pipe) {
-                log('Using pipe for Node.js Readable stream');
-                
-                // If it's an SSE stream, we can pipe it directly
-                if (completion.isSSE) {
-                    log('Directly piping SSE stream to client');
-                    responseStream.pipe(res, { end: false });
-                } else {
-                    // For non-SSE streams, we need to transform the data
-                    log('Transforming non-SSE stream to SSE format');
-                    responseStream.on('data', (chunk) => {
-                        const data = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
-                        log('Received data chunk from stream:', data.substring(0, 100) + (data.length > 100 ? '...' : ''));
-                        
-                        // Format as SSE
-                        res.write(`data: ${JSON.stringify({ 
-                            choices: [{ 
-                                delta: { content: data }, 
-                                finish_reason: null, 
-                                index: 0 
-                            }] 
-                        })}\n\n`);
-                    });
-                }
-                
-                responseStream.on('end', () => {
-                    log('Stream ended, sending [DONE] message');
-                    res.write('data: [DONE]\n\n');
-                    res.end();
-                });
-                
-                responseStream.on('error', (error) => {
-                    errorLog('Stream error:', error);
-                    // Send error as a streaming event
-                    res.write(`data: ${JSON.stringify({ 
-                        choices: [{ 
-                            delta: { content: `Stream error: ${error.message}` }, 
-                            finish_reason: "stop", 
-                            index: 0 
-                        }] 
-                    })}\n\n`);
-                    res.write('data: [DONE]\n\n');
-                    res.end();
-                });
-                
-                // Handle client disconnect
-                if (req) req.on('close', () => {
-                    log('Client disconnected');
-                    if (responseStream.destroy) {
-                        responseStream.destroy();
-                    }
-                });
-                
-                return;
-            }
-            
-            // Fallback for other types of streams
-            log('Using manual handling for unknown stream type');
-            try {
-                // Check if it's an AsyncIterable (like from OpenAI SDK)
-                if (responseStream[Symbol.asyncIterator]) {
-                    log('Using AsyncIterable for stream');
-                    (async () => {
-                        try {
-                            for await (const chunk of responseStream) {
-                                log('Received chunk from AsyncIterable:', 
-                                    typeof chunk === 'string' 
-                                        ? chunk.substring(0, 100) + (chunk.length > 100 ? '...' : '')
-                                        : JSON.stringify(chunk).substring(0, 100) + '...');
-                                
-                                // Handle different chunk formats
-                                if (typeof chunk === 'string') {
-                                    // If it's already formatted as SSE, send it directly
-                                    if (chunk.startsWith('data:')) {
-                                        log('Sending pre-formatted SSE chunk');
-                                        res.write(chunk);
-                                    } else {
-                                        // Otherwise, format it as SSE
-                                        log('Formatting string chunk as SSE');
-                                        res.write(`data: ${JSON.stringify({ 
-                                            choices: [{ 
-                                                delta: { content: chunk }, 
-                                                finish_reason: null, 
-                                                index: 0 
-                                            }] 
-                                        })}\n\n`);
-                                    }
-                                } else if (chunk.choices) {
-                                    // Format as SSE if it's an object
-                                    log('Formatting object chunk with choices as SSE');
-                                    res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-                                } else {
-                                    // For any other object format
-                                    log('Formatting generic object chunk as SSE');
-                                    res.write(`data: ${JSON.stringify({ 
-                                        choices: [{ 
-                                            delta: { content: JSON.stringify(chunk) }, 
-                                            finish_reason: null, 
-                                            index: 0 
-                                        }] 
-                                    })}\n\n`);
-                                }
-                            }
-                            log('AsyncIterable completed, sending [DONE]');
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        } catch (error) {
-                            errorLog('Error in AsyncIterable:', error);
-// Helper function to replay a cached streaming response
-async function replayCachedStream(res, cachedCompletion) {
-    log('Replaying cached streaming response');
-    
-    try {
-        // Set the streaming headers
-        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
-        res.setHeader('Connection', 'keep-alive');
-        res.flushHeaders();
-        
-        // Extract content from the cached completion
-        let content = '';
-        
-        // Try all possible locations for content
-        if (cachedCompletion.choices && 
-            cachedCompletion.choices[0] && 
-            cachedCompletion.choices[0].message && 
-            cachedCompletion.choices[0].message.content) {
-            // Standard format with content in message
-            content = cachedCompletion.choices[0].message.content;
-        } else if (cachedCompletion.content) {
-            // Direct content property
-            content = cachedCompletion.content;
-        } else if (typeof cachedCompletion === 'string') {
-            // Plain string content
-            content = cachedCompletion;
-        } else {
-            // Try to extract content from JSON
-            try {
-                content = JSON.stringify(cachedCompletion);
-            } catch (e) {
-                content = 'Unable to extract content from cached response';
-            }
-        }
-        
-        // Ensure we have some content
-        if (!content) {
-            content = 'This content was retrieved from cache';
-        }
-        
-        log('Extracted content for replay, length: %d, preview: %s', 
-            content.length, content.substring(0, 50));
-        
-        // Send the initial delta with role - IMPORTANT for test compatibility
-        res.write(`data: ${JSON.stringify({ 
-            choices: [{ 
-                delta: { role: "assistant" }, 
-                finish_reason: null, 
-                index: 0 
-            }] 
-        })}\n\n`);
-        
-        // Use a smaller chunk size to create multiple events (important for test)
-        const chunkSize = 5; // Character per chunk - smaller size to ensure multiple chunks
-        
-        // Send content in chunks - using EXACT OpenAI format with delta.content
-        for (let i = 0; i < content.length; i += chunkSize) {
-            const chunk = content.substring(i, i + chunkSize);
-            // Use the same streaming simulation as for regular responses
-            res.write(`data: ${JSON.stringify({ 
-                id: `chatcmpl-${Date.now()}`,
-                object: 'chat.completion.chunk',
-                created: Math.floor(Date.now() / 1000),
-                model: 'cached-model',
-                choices: [{ 
-                    delta: { content: chunk }, 
-                    finish_reason: null, 
-                    index: 0 
-                }] 
-            })}\n\n`);
-            
-            // Small delay to simulate real streaming
-            // In production you'd remove this
-            if (process.env.NODE_ENV === 'test') {
-                // Very small delay in test to ensure proper chunking
-                await new Promise(r => setTimeout(r, 1));
-            }
-        }
-        
-        // Send the finish reason in the final chunk
-        res.write(`data: ${JSON.stringify({ 
-            id: `chatcmpl-${Date.now()}`,
-            object: 'chat.completion.chunk',
-            created: Math.floor(Date.now() / 1000),
-            model: 'cached-model',
-            choices: [{ 
-                delta: {}, 
-                finish_reason: "stop", 
-                index: 0 
-            }] 
-        })}\n\n`);
-        
-        res.write('data: [DONE]\n\n');  // Add the [DONE] message for OpenAI compatibility
-        log('Completed replaying cached stream with content length: %d', content.length);
-        res.end();
-        return true;
-    } catch (error) {
-        errorLog('Error replaying cached stream: %s', error.message);
-        errorLog('Error stack: %s', error.stack);
-        return false;
-    }
-}
-
-                            // Send error as a streaming event
-                            res.write(`data: ${JSON.stringify({ 
-                                choices: [{ 
-                                    delta: { content: `Error in stream: ${error.message}` }, 
-                                    finish_reason: "stop", 
-                                    index: 0 
-                                }] 
-                            })}\n\n`);
-                            res.write('data: [DONE]\n\n');
-                            res.end();
-                        }
-                    })();
-                    return;
-                }
-            } catch (error) {
-                errorLog('Error handling stream:', error);
-            }
-        }
-        
-        // If we get here, we couldn't handle the stream properly
-        log('Could not handle stream properly, falling back to default response. Stream type:', 
-            typeof responseStream, 'Stream available:', !!responseStream);
-        res.write(`data: ${JSON.stringify({ 
-            choices: [{ 
-                delta: { content: 'Streaming response could not be processed.' }, 
-                finish_reason: "stop", 
-                index: 0 
-            }] 
-        })}\n\n`);
-        res.write('data: [DONE]\n\n');
-        res.end();
-    } else {
-        // Fallback to the old behavior for non-streaming responses or errors
-        // Break the content into smaller chunks to simulate streaming
-        const content = completion.choices?.[0]?.message?.content || '';
-        simulateStreamFromContent(res, content);
-    }
-}
-
-// Helper function to simulate streaming from a content string
-function simulateStreamFromContent(res, content) {
-    try {
-        // Ensure content is a string
-        if (typeof content !== 'string') {
-            log('Warning: Non-string content provided to simulateStreamFromContent: %s', typeof content);
-            content = content ? content.toString() : '';
-        }
-        log('Simulating stream from content of length %d', content.length);
-        const chunkSize = 20; // Characters per chunk
-
-        // Send the initial delta with role
-        res.write(`data: ${JSON.stringify({ 
-            choices: [{ 
-                delta: { role: "assistant" }, 
-                finish_reason: null, 
-                index: 0 
-            }] 
-        })}\n\n`);
-
-        // Send content in chunks
-        for (let i = 0; i < content.length; i += chunkSize) {
-            const chunk = content.substring(i, i + chunkSize);
-            res.write(`data: ${JSON.stringify({ 
-                choices: [{ 
-                    delta: { content: chunk }, 
-                    finish_reason: null, 
-                    index: 0 
-                }] 
-            })}\n\n`);
-            
-            // Small delay to simulate real streaming (not needed in production)
-            // In a real implementation, you might want to remove this
-            if (process.env.NODE_ENV === 'test') {
-                // No delay in test mode
-            }
-        }
-
-        // Send the finish reason in the final chunk
-        res.write(`data: ${JSON.stringify({ 
-            choices: [{ 
-                delta: {}, 
-                finish_reason: "stop", 
-                index: 0 
-            }] 
-        })}\n\n`);
-
-        res.write('data: [DONE]\n\n');  // Add the [DONE] message for OpenAI compatibility
-        log('Completed simulating stream from content');
-        res.end();
-    } catch (error) {
-        log('Error simulating stream: %s', error.message);
-        res.write('data: [DONE]\n\n');
-        res.end();
-    }
+    // If we get here, we couldn't handle the stream properly
+    log('Could not handle stream properly, falling back to default response. Stream type:', 
+        typeof responseStream, 'Stream available:', !!responseStream);
+    res.write(`data: ${JSON.stringify({ 
+        choices: [{ 
+            delta: { content: 'Streaming response could not be processed.' }, 
+            finish_reason: "stop", 
+            index: 0 
+        }] 
+    })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
 }
 
 async function generateTextBasedOnModel(messages, options) {
@@ -1104,16 +618,7 @@ async function generateTextBasedOnModel(messages, options) {
         
         // Log streaming response details
         if (options.stream && response) {
-            log('Received streaming response from handler:', 
-                JSON.stringify({
-                    id: response.id,
-                    model: response.model,
-                    stream: response.stream,
-                    providerName: response.providerName,
-                    hasResponseStream: !!response.responseStream,
-                    isSSE: !!response.isSSE
-                })
-            );
+            log('Received streaming response from handler:', response);
         }
         
         return response;
@@ -1122,11 +627,27 @@ async function generateTextBasedOnModel(messages, options) {
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Just return an error object - do not stream the error
+            // Create a detailed error response
+            let errorDetails = null;
+            
+            if (error.response?.data) {
+                try {
+                    // Try to parse the data as JSON
+                    errorDetails = typeof error.response.data === 'string' 
+                        ? JSON.parse(error.response.data) 
+                        : error.response.data;
+                } catch (e) {
+                    // If parsing fails, use the raw data
+                    errorDetails = error.response.data;
+                }
+            }
+            
+            // Return an error object with detailed information
             return {
                 error: {
                     message: error.message || 'An error occurred during text generation',
-                    status: error.code || 500
+                    status: error.code || 500,
+                    details: errorDetails
                 },
             };
         }

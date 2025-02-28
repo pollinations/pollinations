@@ -6,7 +6,6 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    createErrorResponse,
     normalizeOptions
 } from './textGenerationUtils.js';
 
@@ -68,8 +67,8 @@ export function createOpenAICompatibleClient(config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
             
-            // Ensure system message is present
-            const defaultSystemPrompt = systemPrompts[modelKey] || systemPrompts[Object.keys(systemPrompts)[0]];
+            // Ensure system message is present if the model supports it
+            const defaultSystemPrompt = systemPrompts[modelKey] || null;
             const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
             
             // Build request body
@@ -95,7 +94,7 @@ export function createOpenAICompatibleClient(config) {
                 ? transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
             
-            // Double-check for any null values that might have been reintroduced
+            // Doe-check for any null values that might have been reintroduced
             if (providerName === 'Cloudflare') {
                 // For Cloudflare, we need to be extra careful about null values
                 log(`[${requestId}] Double-checking for null values in Cloudflare request`);
@@ -143,8 +142,14 @@ export function createOpenAICompatibleClient(config) {
             const headers = {
                 [authHeaderName]: authHeaderValue(),
                 "Content-Type": "application/json",
-                ...additionalHeaders
+                ...additionalHeaders,
+                ...(finalRequestBody._additionalHeaders || {})
             };
+            
+            // Remove the _additionalHeaders property from the request body as it's not part of the API
+            if (finalRequestBody._additionalHeaders) {
+                delete finalRequestBody._additionalHeaders;
+            }
 
             log(`[${requestId}] Request headers:`, headers);
 
@@ -165,17 +170,20 @@ export function createOpenAICompatibleClient(config) {
                     const errorText = await response.text();
                     errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
                     
-                    // Throw an error instead of returning a structured error object
-                    // This ensures the error is handled properly by the error handling flow
-                    throw new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                    // Create an error with detailed information from the provider
+                    const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                    error.response = { 
+                        data: errorText, 
+                        status: response.status,
+                        details: errorText // Add the detailed error message
+                    };
+                    throw error;
                 }
                 
                 log(`[${requestId}] Creating streaming response object for ${providerName}`);
                 
                 // Check if the response is SSE (text/event-stream)
                 log(`[${requestId}] Streaming response headers:`, responseHeaders);
-                const isSSE = responseHeaders['content-type']?.includes('text/event-stream');
-                log(`[${requestId}] Response is SSE: ${isSSE}`);
                 
                 return {
                     id: `${providerName.toLowerCase()}-${requestId}`,
@@ -185,7 +193,6 @@ export function createOpenAICompatibleClient(config) {
                     stream: true,
                     responseStream: response.body, // This is the raw stream that will be proxied
                     providerName,
-                    isSSE,
                     choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
                     error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
                 };
@@ -209,10 +216,10 @@ export function createOpenAICompatibleClient(config) {
                     
                 });
                 
-                return createErrorResponse(
-                    new Error(`${providerName} API error: ${response.status} ${response.statusText} - ${errorText}`),
-                    providerName
-                );
+                // Simply throw the error with the original response
+                const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                error.response = { data: errorText, status: response.status };
+                throw error;
             }
 
             // Parse response
@@ -266,7 +273,8 @@ export function createOpenAICompatibleClient(config) {
                 completionTimeMs: Date.now() - startTime
             });
             
-            return createErrorResponse(error, providerName);
+            // Simply throw the error
+            throw error;
         }
     };
 }

@@ -37,26 +37,29 @@ export function validateAndNormalizeMessages(messages) {
  * @returns {Array} - Messages array with system message
  */
 export function ensureSystemMessage(messages, options, defaultSystemPrompt = 'You are a helpful assistant.') {
-  if (!messages.some(message => message.role === 'system')) {
-    const systemContent = options.jsonMode
-      ? 'Respond in simple JSON format'
-      : defaultSystemPrompt;
-    
-    return [{ role: 'system', content: systemContent }, ...messages];
-  } else if (options.jsonMode) {
-    // If jsonMode is true and there's already a system message, ensure it mentions JSON
-    return messages.map(message => {
-      if (message.role === 'system' && !message.content.toLowerCase().includes('json')) {
-        return {
-          ...message,
-          content: `${message.content} Respond with JSON.`
-        };
-      }
-      return message;
-    });
+  // If there's already a system message, or if defaultSystemPrompt is null/undefined, don't add one
+  if (messages.some(message => message.role === 'system') || defaultSystemPrompt === null || defaultSystemPrompt === undefined) {
+    // Still handle jsonMode for existing system messages
+    if (options.jsonMode) {
+      return messages.map(message => {
+        if (message.role === 'system' && !message.content.toLowerCase().includes('json')) {
+          return {
+            ...message,
+            content: `${message.content} Respond with JSON.`
+          };
+        }
+        return message;
+      });
+    }
+    return messages;
   }
   
-  return messages;
+  // Add a system message with appropriate content
+  const systemContent = options.jsonMode
+    ? 'Respond in simple JSON format'
+    : defaultSystemPrompt;
+  
+  return [{ role: 'system', content: systemContent }, ...messages];
 }
 
 /**

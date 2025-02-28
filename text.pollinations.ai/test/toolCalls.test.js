@@ -2,7 +2,7 @@ import test from 'ava';
 import dotenv from 'dotenv';
 
 // Import the OpenAI client directly to test function calling
-import { generateText as generateTextOpenAI } from '../generateTextOpenai.js';
+import { generateTextPortkey } from '../generateTextPortkey.js';
 import { generateTextOpenRouter } from '../generateTextOpenRouter.js';
 
 dotenv.config();
@@ -71,10 +71,7 @@ async function verifyToolCall(t, client, messages, options, expectedFunctionName
   try {
     // For OpenAI client, we need to pass the performSearch flag as the third argument
     const response = await client(messages, options, performSearch);
-    
-    // Log the response for debugging
-    console.log('API Response:', JSON.stringify(response, null, 2));
-    
+        
     // Basic response validation
     t.truthy(response, 'Response should not be null or undefined');
     
@@ -157,7 +154,7 @@ test('Basic function calling with OpenAI', async (t) => {
 
   await verifyToolCall(
     t,
-    generateTextOpenAI,
+    generateTextPortkey,
     messages,
     {
       model: 'openai',
@@ -192,7 +189,7 @@ test('Tool choice options with OpenAI', async (t) => {
 
   await verifyToolCall(
     t,
-    generateTextOpenAI,
+    generateTextPortkey,
     messagesForNone,
     {
       model: 'openai',
@@ -219,7 +216,7 @@ test('Tool choice options with OpenAI', async (t) => {
 
   await verifyToolCall(
     t,
-    generateTextOpenAI,
+    generateTextPortkey,
     messagesForSpecific,
     {
       model: 'openai',

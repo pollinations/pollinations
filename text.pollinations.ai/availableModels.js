@@ -1,5 +1,4 @@
 // Import all handler functions
-import { generateText } from './generateTextOpenai.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextCloudflare } from './generateTextCloudflare.js';
@@ -7,6 +6,7 @@ import { generateTextGemini } from './generateTextGemini.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateTextModal } from './generateTextModal.js';
+import { generateTextPortkey } from './generateTextPortkey.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 
 // Import persona prompts
@@ -18,23 +18,24 @@ import evilPrompt from './personas/evil.js';
 import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
 
 // Create wrapped models
-const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
+const surOpenai = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "openai");
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway, "mistral");
-const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateText, "openai-large");
+const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateTextPortkey, "openai-large");
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
-const rtist = wrapModelWithContext(rtistPrompt, generateText);
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextPortkey, "openai-large");
+const rtist = wrapModelWithContext(rtistPrompt, generateTextPortkey, "openai-large");
 const evilCommandR = wrapModelWithContext(evilPrompt, generateTextScaleway, "mistral");
 
 // Define model handlers
 const handlers = {
-    openai: (messages, options) => generateText(messages, options),
+    openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextScaleway(messages, options),
     cloudflare: (messages, options) => generateTextCloudflare(messages, options),
     gemini: (messages, options) => generateTextGemini(messages, options),
     openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
     modal: (messages, options) => generateTextModal(messages, options),
+    portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
 export const availableModels = [
@@ -45,7 +46,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o-mini',
         baseModel: true,
         vision: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'})
     },
     {
         name: 'openai-large',
@@ -54,7 +55,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o',
         baseModel: true,
         vision: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-large'})
     },
     {
         name: 'openai-reasoning',
@@ -63,7 +64,7 @@ export const availableModels = [
         description: 'OpenAI o1-mini',
         baseModel: true,
         reasoning: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-reasoning'})
     },
     {
         name: 'qwen-coder',

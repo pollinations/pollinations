@@ -81,7 +81,6 @@ const MODEL_MAPPING = {
 const SYSTEM_PROMPTS = {
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
-    'openai-reasoning': 'You are a helpful, knowledgeable assistant.',
 };
 
 // Default options

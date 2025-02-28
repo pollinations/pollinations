@@ -66,7 +66,7 @@ availableModels.forEach(model => {
             });
             
             // Check if this is a model that might be unavailable (like Gemini, Claude, etc.)
-            const potentiallyUnavailableModels = ['gemini', 'gemini-thinking', 'claude-hybridspace', 'deepseek', 'deepseek-reasoner'];
+            const potentiallyUnavailableModels = ['gemini', 'gemini-thinking', 'claude-hybridspace', 'deepseek', 'deepseek-reasoner', 'llama'];
             
             if (potentiallyUnavailableModels.includes(model.name) && response.status === 500) {
                 // Skip the test for models that are known to be potentially unavailable

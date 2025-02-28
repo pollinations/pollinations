@@ -67,8 +67,8 @@ export function createOpenAICompatibleClient(config) {
             // Validate and normalize messages
             const validatedMessages = validateAndNormalizeMessages(messages);
             
-            // Ensure system message is present
-            const defaultSystemPrompt = systemPrompts[modelKey] || systemPrompts[Object.keys(systemPrompts)[0]];
+            // Ensure system message is present if the model supports it
+            const defaultSystemPrompt = systemPrompts[modelKey] || null;
             const messagesWithSystem = ensureSystemMessage(validatedMessages, normalizedOptions, defaultSystemPrompt);
             
             // Build request body
@@ -170,9 +170,13 @@ export function createOpenAICompatibleClient(config) {
                     const errorText = await response.text();
                     errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
                     
-                    // Simply throw the error with the original response
+                    // Create an error with detailed information from the provider
                     const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
-                    error.response = { data: errorText, status: response.status };
+                    error.response = { 
+                        data: errorText, 
+                        status: response.status,
+                        details: errorText // Add the detailed error message
+                    };
                     throw error;
                 }
                 

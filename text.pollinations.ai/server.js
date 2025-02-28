@@ -187,8 +187,18 @@ async function handleRequest(req, res, requestData) {
             errorLog('Completion error details: %s', JSON.stringify(completion.error, null, 2));
             
             // Return proper error response for both streaming and non-streaming
-            const errorMsg = typeof completion.error === 'string' ? completion.error : JSON.stringify(completion.error);
-            await sendErrorResponse(res, req, new Error(errorMsg), requestData, completion.error.status || 500);
+            const errorObj = typeof completion.error === 'string' 
+                ? { message: completion.error } 
+                : completion.error;
+                
+            const error = new Error(errorObj.message || 'An error occurred');
+            
+            // Add the details if they exist
+            if (errorObj.details) {
+                error.response = { data: errorObj.details };
+            }
+            
+            await sendErrorResponse(res, req, error, requestData, errorObj.status || 500);
             return;
         }
         
@@ -290,8 +300,18 @@ export async function sendErrorResponse(res, req, error, requestData, statusCode
         status: statusCode
     };
 
+    // Include detailed error information if available
     if (error.response?.data) {
-        errorResponse.details = error.response.data;
+        try {
+            // Try to parse the data as JSON first
+            const parsedData = typeof error.response.data === 'string' 
+                ? JSON.parse(error.response.data) 
+                : error.response.data;
+            errorResponse.details = parsedData;
+        } catch (e) {
+            // If parsing fails, use the raw data
+            errorResponse.details = error.response.data;
+        }
     }
 
     errorLog('Error occurred: %O', errorResponse);
@@ -654,11 +674,27 @@ async function generateTextBasedOnModel(messages, options) {
         
         // For streaming errors, return a special error response that can be streamed
         if (options.stream) {
-            // Just return an error object - do not stream the error
+            // Create a detailed error response
+            let errorDetails = null;
+            
+            if (error.response?.data) {
+                try {
+                    // Try to parse the data as JSON
+                    errorDetails = typeof error.response.data === 'string' 
+                        ? JSON.parse(error.response.data) 
+                        : error.response.data;
+                } catch (e) {
+                    // If parsing fails, use the raw data
+                    errorDetails = error.response.data;
+                }
+            }
+            
+            // Return an error object with detailed information
             return {
                 error: {
                     message: error.message || 'An error occurred during text generation',
-                    status: error.code || 500
+                    status: error.code || 500,
+                    details: errorDetails
                 },
             };
         }

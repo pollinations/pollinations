@@ -30,18 +30,17 @@ OpenAI Compatible: `POST https://text.pollinations.ai/openai`
 
 List Models: `GET https://text.pollinations.ai/models`
 
-## API Update: Referrer Parameter & Logo Visibility
+## API Update: Usage Guidelines
 Starting **March 7th, 2025**:
 
-- **Images** will show the Pollinations.AI logo
+- **Image** responses will show the Pollinations.AI logo
 - **Text** responses will include a link to pollinations.ai
 
-**To remove the logo/link**: Include a referrer parameter in your API requests
+**To eliminate the logo or link**: Add a referrer parameter to your API requests.
 
-- **Web apps**: No change needed - browsers already send referrer information
-- **Bots & backend apps**: You'll need to add this parameter to disable the logo/link
+- **Web apps**: No change needed - browsers already send referrer information (URL)
+- **Bots & backend apps**: You'll need to add this parameter to disable the logo/link - Please use the app name for the referrer value.
 
-**Good practice:** Set the referrer value to your app’s domain (e.g., myapp.com)
 
 ## Feed Endpoints
 

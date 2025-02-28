@@ -71,10 +71,7 @@ async function verifyToolCall(t, client, messages, options, expectedFunctionName
   try {
     // For OpenAI client, we need to pass the performSearch flag as the third argument
     const response = await client(messages, options, performSearch);
-    
-    // Log the response for debugging
-    console.log('API Response:', JSON.stringify(response, null, 2));
-    
+        
     // Basic response validation
     t.truthy(response, 'Response should not be null or undefined');
     

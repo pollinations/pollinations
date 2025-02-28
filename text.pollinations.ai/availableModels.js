@@ -243,43 +243,6 @@ export const availableModels = [
         baseModel: true,
         handler: (messages, options) => generateTextScaleway(messages, {...options, model: 'llama'})
     }
-    ,
-    {
-        name: 'portkey-gpt4',
-        type: 'chat',
-        censored: true,
-        description: 'GPT-4 via local Portkey gateway',
-        baseModel: true,
-        provider: 'portkey',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gpt-4'})
-    },
-    {
-        name: 'portkey-claude',
-        type: 'chat',
-        censored: true,
-        description: 'Claude 3 Opus via local Portkey gateway',
-        baseModel: true,
-        provider: 'portkey',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'claude-3-opus'})
-    },
-    {
-        name: 'portkey-llama',
-        type: 'chat',
-        censored: false,
-        description: 'Llama 3 70B via local Portkey gateway',
-        baseModel: true,
-        provider: 'portkey',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-3-70b'})
-    },
-    {
-        name: 'portkey-mistral',
-        type: 'chat',
-        censored: false,
-        description: 'Mistral Large via local Portkey gateway',
-        baseModel: true,
-        provider: 'portkey',
-        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral-large'})
-    }
 ];
 
 /**

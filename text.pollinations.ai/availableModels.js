@@ -7,6 +7,7 @@ import { generateTextGemini } from './generateTextGemini.js';
 import { generateTextSearch } from './generateTextSearch.js';
 import { generateTextOpenRouter } from './generateTextOpenRouter.js';
 import { generateTextModal } from './generateTextModal.js';
+import { generateTextPortkey } from './generateTextPortkey.js';
 import wrapModelWithContext from './wrapModelWithContext.js';
 
 // Import persona prompts
@@ -28,13 +29,14 @@ const evilCommandR = wrapModelWithContext(evilPrompt, generateTextScaleway, "mis
 
 // Define model handlers
 const handlers = {
-    openai: (messages, options) => generateText(messages, options),
+    openai: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'}),
     deepseek: (messages, options) => generateDeepseek(messages, {...options, model: 'deepseek-chat'}),
     mistral: (messages, options) => generateTextScaleway(messages, options),
     cloudflare: (messages, options) => generateTextCloudflare(messages, options),
     gemini: (messages, options) => generateTextGemini(messages, options),
     openRouter: (messages, options, model) => generateTextOpenRouter(messages, {...options, model}),
     modal: (messages, options) => generateTextModal(messages, options),
+    portkey: (messages, options, model) => generateTextPortkey(messages, {...options, model})
 };
 
 export const availableModels = [
@@ -45,7 +47,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o-mini',
         baseModel: true,
         vision: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai'})
     },
     {
         name: 'openai-large',
@@ -54,7 +56,7 @@ export const availableModels = [
         description: 'OpenAI GPT-4o',
         baseModel: true,
         vision: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-large'})
     },
     {
         name: 'openai-reasoning',
@@ -63,7 +65,7 @@ export const availableModels = [
         description: 'OpenAI o1-mini',
         baseModel: true,
         reasoning: true,
-        handler: handlers.openai
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'openai-reasoning'})
     },
     {
         name: 'qwen-coder',
@@ -241,6 +243,43 @@ export const availableModels = [
         description: 'Llama (Scaleway)',
         baseModel: true,
         handler: (messages, options) => generateTextScaleway(messages, {...options, model: 'llama'})
+    }
+    ,
+    {
+        name: 'portkey-gpt4',
+        type: 'chat',
+        censored: true,
+        description: 'GPT-4 via local Portkey gateway',
+        baseModel: true,
+        provider: 'portkey',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'gpt-4'})
+    },
+    {
+        name: 'portkey-claude',
+        type: 'chat',
+        censored: true,
+        description: 'Claude 3 Opus via local Portkey gateway',
+        baseModel: true,
+        provider: 'portkey',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'claude-3-opus'})
+    },
+    {
+        name: 'portkey-llama',
+        type: 'chat',
+        censored: false,
+        description: 'Llama 3 70B via local Portkey gateway',
+        baseModel: true,
+        provider: 'portkey',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'llama-3-70b'})
+    },
+    {
+        name: 'portkey-mistral',
+        type: 'chat',
+        censored: false,
+        description: 'Mistral Large via local Portkey gateway',
+        baseModel: true,
+        provider: 'portkey',
+        handler: (messages, options) => generateTextPortkey(messages, {...options, model: 'mistral-large'})
     }
 ];
 

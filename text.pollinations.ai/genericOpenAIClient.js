@@ -95,7 +95,7 @@ export function createOpenAICompatibleClient(config) {
                 ? transformRequest(cleanedRequestBody)
                 : cleanedRequestBody;
             
-            // Double-check for any null values that might have been reintroduced
+            // Doe-check for any null values that might have been reintroduced
             if (providerName === 'Cloudflare') {
                 // For Cloudflare, we need to be extra careful about null values
                 log(`[${requestId}] Double-checking for null values in Cloudflare request`);
@@ -143,8 +143,14 @@ export function createOpenAICompatibleClient(config) {
             const headers = {
                 [authHeaderName]: authHeaderValue(),
                 "Content-Type": "application/json",
-                ...additionalHeaders
+                ...additionalHeaders,
+                ...(finalRequestBody._additionalHeaders || {})
             };
+            
+            // Remove the _additionalHeaders property from the request body as it's not part of the API
+            if (finalRequestBody._additionalHeaders) {
+                delete finalRequestBody._additionalHeaders;
+            }
 
             log(`[${requestId}] Request headers:`, headers);
 
@@ -174,8 +180,6 @@ export function createOpenAICompatibleClient(config) {
                 
                 // Check if the response is SSE (text/event-stream)
                 log(`[${requestId}] Streaming response headers:`, responseHeaders);
-                const isSSE = responseHeaders['content-type']?.includes('text/event-stream');
-                log(`[${requestId}] Response is SSE: ${isSSE}`);
                 
                 return {
                     id: `${providerName.toLowerCase()}-${requestId}`,
@@ -185,7 +189,6 @@ export function createOpenAICompatibleClient(config) {
                     stream: true,
                     responseStream: response.body, // This is the raw stream that will be proxied
                     providerName,
-                    isSSE,
                     choices: [{ delta: { content: '' }, finish_reason: null, index: 0 }],
                     error: !response.ok ? { message: `${providerName} API error: ${response.status} ${response.statusText}` } : undefined
                 };

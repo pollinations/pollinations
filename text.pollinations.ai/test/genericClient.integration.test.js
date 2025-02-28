@@ -119,8 +119,8 @@ test.serial('should support custom response formatting', async t => {
  * Purpose: Verify that the generic client correctly handles errors.
  * 
  * Expected behavior:
- * 1. The client should handle API errors gracefully
- * 2. The client should return a standardized error response
+ * 1. The client should throw an error when authentication fails
+ * 2. The error should contain information about the failure
  */
 test.serial('should handle errors gracefully', async t => {
     // Create a client with an invalid API key
@@ -135,13 +135,16 @@ test.serial('should handle errors gracefully', async t => {
     });
 
     const messages = [{ role: 'user', content: 'Hello, how are you?' }];
-    const response = await client(messages);
     
-    // Log the error response for debugging
-    console.log('Error response:', JSON.stringify(response, null, 2));
+    // Expect an error to be thrown
+    const error = await t.throwsAsync(async () => {
+        await client(messages);
+    });
     
-    // Verify error response format
-    t.truthy(response.error, 'Response should have error field');
-    // Check that the error message exists without checking the specific type
-    t.truthy(response.error.message, 'Error should have message');
+    // Log the error for debugging
+    console.log('Error:', error.message);
+    
+    // Verify error contains useful information
+    t.truthy(error.message, 'Error should have a message');
+    t.true(error.message.includes('AzureOpenAI'), 'Error should mention the provider');
 });

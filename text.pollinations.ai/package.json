@@ -6,8 +6,9 @@
   "scripts": {
     "test": "NODE_ENV=test ava --verbose test/**/*.test.js",
     "test:unit": "NODE_ENV=test ava --verbose test/*.test.js",
-    "test:file": "DEBUG=polliations:* NODE_ENV=test ava --verbose",
-    "test:pattern": "NODE_ENV=test ava --verbose",
+    "test:file": "NODE_ENV=test ava",
+    "test:file:verbose": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
+    "test:pattern": "DEBUG=pollinations:* NODE_ENV=test ava --verbose",
     "coverage": "NODE_ENV=test c8 --reporter=text --reporter=html ava --verbose test/server.test.js test/generateText.test.js",
     "start": "node startServer.js"
   },

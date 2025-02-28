@@ -211,4 +211,3 @@ To provide the function result back to the model:
 
 - Not all models support function calling. Check the model's documentation to see if it supports this feature.
 - The client does not execute functions automatically. You need to handle function execution and provide the results back to the model.
-- The search functionality in `generateTextOpenai.js` is an example of how to handle function calls and provide results back to the model.

@@ -1,4 +1,4 @@
-import { generateText } from './generateTextOpenai.js';
+import { generateTextPortkey } from './generateTextPortkey.js';
 import debug from 'debug';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { getRequestData } from './server.js';
@@ -138,7 +138,7 @@ export async function processReferralLinks(content, req) {
     try {
         log('Sending content to OpenAI for referral link insertion');
         // Generate the modified content using OpenAI
-        const response = await generateText(messages, { model: 'openai' });
+        const response = await generateTextPortkey(messages, { model: 'openai' });
         const processedContent = response.choices[0].message.content;
         
         // Extract topics and text from the referral links

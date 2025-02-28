@@ -1,4 +1,4 @@
-import { generateText } from './generateTextOpenai.js';
+import { generateTextPortkey } from './generateTextPortkey.js';
 import { searchToolDefinition } from './tools/searchTool.js';
 import { scrapeToolDefinition } from './tools/scrapeTool.js';
 import { performWebSearch } from './tools/searchTool.js';
@@ -47,7 +47,7 @@ export async function generateTextSearch(messages, options = {}) {
             };
             
             // Pass the properly configured request to generateText for streaming
-            return await generateText(updatedMessages, searchOptions);
+            return await generateTextPortkey(updatedMessages, searchOptions);
         }
         
         // Set the system message for search if not already present
@@ -71,7 +71,7 @@ export async function generateTextSearch(messages, options = {}) {
         };
         
         // Call the vanilla OpenAI function
-        let completion = await generateText(messages, searchOptions);
+        let completion = await generateTextPortkey(messages, searchOptions);
         
         // Process any search tool calls (only for non-streaming responses)
         if (completion.choices && 
@@ -160,7 +160,7 @@ async function processSearchToolCalls(completion, messages, options) {
             // Don't include tools in the follow-up call to ensure we get content
             // This prevents an infinite loop of tool calls
             
-            return await generateText(updatedMessages, followUpOptions);
+            return await generateTextPortkey(updatedMessages, followUpOptions);
         }
         
         // If no search or scrape calls, return the original completion

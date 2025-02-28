@@ -1,4 +1,4 @@
-import { generateText } from './generateTextOpenai.js';
+import { generateTextPortkey } from './generateTextPortkey.js';
 import debug from 'debug';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { getRequestData } from './server.js';
@@ -214,7 +214,7 @@ export async function processNSFWReferralLinks(data, req) {
       log('Sending conversation to OpenAI for NSFW referral analysis');
       
       // Get link selection from OpenAI
-      const response = await generateText(messages, { model: 'openai' });
+      const response = await generateTextPortkey(messages, { model: 'openai' });
       if (!response?.choices?.[0]?.message?.content) {
         throw new Error('Invalid response format from OpenAI');
       }

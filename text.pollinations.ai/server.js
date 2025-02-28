@@ -414,17 +414,6 @@ export function getReferrer(req, data) {
 export async function processRequest(req, res, requestData) {
     const ip = getIp(req);
 
-    // Special handling for Cloudflare with seed parameter - direct error response without even trying
-    if (requestData.model === 'llama' && requestData.seed !== null && requestData.seed !== undefined && requestData.stream) {
-        errorLog('Cloudflare with seed parameter in streaming mode - direct error response');
-        return res.status(400).json({
-            error: 'Cloudflare API error: Bad Request - seed parameter is not supported for Cloudflare in streaming mode',
-            status: 400,
-            details: 'Cloudflare does not accept seed parameter for streaming requests'
-        });
-    }
-
-    
     // Check for banned phrases first
     try {
         await checkBannedPhrases(requestData.messages, ip);

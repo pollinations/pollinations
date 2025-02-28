@@ -27,6 +27,16 @@ const DEFAULT_OPTIONS = {
 };
 
 /**
+ * Custom request transformer for Cloudflare
+ * Removes the seed parameter which is not supported by Cloudflare
+ */
+function transformCloudflareRequest(requestBody) {
+    // Create a new object without the seed property
+    const { seed, ...restOfBody } = requestBody;
+    return restOfBody;
+}
+
+/**
  * Generates text using Cloudflare's AI API with OpenAI-compatible endpoints
  * @param {Array} messages - Array of message objects
  * @param {Object} options - Options for text generation
@@ -44,5 +54,6 @@ export const generateTextCloudflare = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'Cloudflare'
+    providerName: 'Cloudflare',
+    transformRequest: transformCloudflareRequest
 });

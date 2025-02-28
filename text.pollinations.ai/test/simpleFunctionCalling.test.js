@@ -2,7 +2,7 @@ import test from 'ava';
 import dotenv from 'dotenv';
 
 // Import the OpenAI client directly to test function calling
-import { generateText } from '../generateTextOpenai.js';
+import { generateTextPortkey } from '../generateTextPortkey.js';
 
 dotenv.config();
 
@@ -63,7 +63,7 @@ test('Basic function calling with OpenAI', async (t) => {
     // Call OpenAI with function calling enabled and required tool choice
     // Note: performSearch is false, so we're in proxy mode
     console.log('Calling OpenAI with function calling enabled and required tool choice...');
-    const response = await generateText(messages, {
+    const response = await generateTextPortkey(messages, {
       model: 'openai', // This will map to gpt-4o-mini (faster)
       tools: [weatherTool],
       tool_choice: "required", // Force the model to use a function

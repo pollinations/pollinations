@@ -150,8 +150,8 @@ function countMessageCharacters(messages) {
  * Generates text using a local Portkey gateway with Azure OpenAI models
  */
 export const generateTextPortkey = createOpenAICompatibleClient({
-    // Local Portkey gateway endpoint - matches the OpenAI API structure
-    endpoint: () => 'http://localhost:8787/v1/chat/completions',
+    // Use Portkey API Gateway URL from .env with fallback to localhost
+    endpoint: () => `${process.env.PORTKEY_GATEWAY_URL || 'http://localhost:8787'}/v1/chat/completions`,
     
     // Auth header configuration
     authHeaderName: 'Authorization',
@@ -178,29 +178,7 @@ export const generateTextPortkey = createOpenAICompatibleClient({
             
             log('Processing request for model:', modelName, 'with config:', JSON.stringify(modelConfig, null, 2));
     
-            // Validate Azure configuration
-            if (!modelConfig.baseUrl || !modelConfig.apiKey || !modelConfig.deploymentName) {
-                const missingParams = [];
-                if (!modelConfig.baseUrl) missingParams.push('Azure OpenAI endpoint URL');
-                if (!modelConfig.apiKey) missingParams.push('Azure OpenAI API key');
-                if (!modelConfig.deploymentName) missingParams.push('Azure OpenAI deployment name');
-                
-                const errorMessage = `Azure OpenAI configuration is incomplete: ${missingParams.join(', ')} not configured`;
-                errorLog(errorMessage);
-                
-                // Instead of throwing an error, use OpenAI directly as a fallback
-                log('Falling back to OpenAI API');
-                requestBody.headers = {
-                    ...requestBody.headers,
-                    'x-portkey-provider': 'openai',
-                    'x-portkey-openai-api-key': process.env.OPENAI_API_KEY || ''
-                };
-                
-                return {
-                    ...requestBody,
-                    model: 'gpt-3.5-turbo' // Use a standard OpenAI model as fallback
-                };
-            }
+            // Removed validation logic for missing parameters - let backend handle errors
             
             // Check character limit
             const MAX_CHARS = 512000;

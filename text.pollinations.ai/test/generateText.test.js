@@ -1,5 +1,5 @@
 import test from 'ava';
-import { generateText as generateTextOpenai } from '../generateTextOpenai.js';
+import { generateTextPortkey as generateTextOpenai } from '../generateTextPortkey.js';
 import { generateTextScaleway } from '../generateTextScaleway.js';
 import { generateDeepseek } from '../generateDeepseek.js';
 

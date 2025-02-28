@@ -1,5 +1,4 @@
 // Import all handler functions
-import { generateText } from './generateTextOpenai.js';
 import { generateTextScaleway } from './generateTextScaleway.js';
 import { generateDeepseek } from './generateDeepseek.js';
 import { generateTextCloudflare } from './generateTextCloudflare.js';
@@ -19,12 +18,12 @@ import evilPrompt from './personas/evil.js';
 import hypnosisTracyPrompt from './personas/hypnosisTracy.js';
 
 // Create wrapped models
-const surOpenai = wrapModelWithContext(surSystemPrompt, generateText);
+const surOpenai = wrapModelWithContext(surSystemPrompt, generateTextPortkey, "openai");
 const surMistral = wrapModelWithContext(surSystemPrompt, generateTextScaleway, "mistral");
-const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateText, "openai-large");
+const hypnosisTracy = wrapModelWithContext(hypnosisTracyPrompt, generateTextPortkey, "openai-large");
 const unityMistralLarge = wrapModelWithContext(unityPrompt, generateTextScaleway, "mistral");
-const midijourney = wrapModelWithContext(midijourneyPrompt, generateText);
-const rtist = wrapModelWithContext(rtistPrompt, generateText);
+const midijourney = wrapModelWithContext(midijourneyPrompt, generateTextPortkey, "openai-large");
+const rtist = wrapModelWithContext(rtistPrompt, generateTextPortkey, "openai-large");
 const evilCommandR = wrapModelWithContext(evilPrompt, generateTextScaleway, "mistral");
 
 // Define model handlers

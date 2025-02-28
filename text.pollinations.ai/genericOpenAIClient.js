@@ -6,7 +6,6 @@ import {
     ensureSystemMessage,
     generateRequestId,
     cleanUndefined,
-    createErrorResponse,
     normalizeOptions
 } from './textGenerationUtils.js';
 
@@ -171,9 +170,10 @@ export function createOpenAICompatibleClient(config) {
                     const errorText = await response.text();
                     errorLog(`[${requestId}] ${providerName} API error in streaming mode: ${response.status} ${response.statusText}, error: ${errorText}`);
                     
-                    // Throw an error instead of returning a structured error object
-                    // This ensures the error is handled properly by the error handling flow
-                    throw new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                    // Simply throw the error with the original response
+                    const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                    error.response = { data: errorText, status: response.status };
+                    throw error;
                 }
                 
                 log(`[${requestId}] Creating streaming response object for ${providerName}`);
@@ -212,10 +212,10 @@ export function createOpenAICompatibleClient(config) {
                     
                 });
                 
-                return createErrorResponse(
-                    new Error(`${providerName} API error: ${response.status} ${response.statusText} - ${errorText}`),
-                    providerName
-                );
+                // Simply throw the error with the original response
+                const error = new Error(`${providerName} API error: ${response.status} ${response.statusText}`);
+                error.response = { data: errorText, status: response.status };
+                throw error;
             }
 
             // Parse response
@@ -269,7 +269,8 @@ export function createOpenAICompatibleClient(config) {
                 completionTimeMs: Date.now() - startTime
             });
             
-            return createErrorResponse(error, providerName);
+            // Simply throw the error
+            throw error;
         }
     };
 }

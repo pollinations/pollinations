@@ -264,14 +264,8 @@ async function handleRequest(req, res, requestData) {
             log('Error in streaming mode:', error.message);
             errorLog('Error stack:', error.stack);
             
-            // Check if this is a known API error and return it as an error response
-            if (error.message && (error.message.includes("API error") || error.message.includes("Bad Request"))) {
-                log('Returning API error as error response in streaming mode');
-                await sendErrorResponse(res, req, error, requestData, error.code || 500);
-                return;
-            }
-            
-            sendAsOpenAIStream(res, { error: error.message, choices: [{ message: { content: error.message } }] }, req);
+            // Simply pass through the error using sendErrorResponse
+            await sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
             return;
         }
         
@@ -418,19 +412,17 @@ export async function processRequest(req, res, requestData) {
     try {
         await checkBannedPhrases(requestData.messages, ip);
     } catch (error) {
-        if (requestData.stream) {
-            // For streaming requests with security errors, return as proper error responses
-            log('Banned phrases error in streaming mode:', error);
-            
-            // For security and API errors, always return as error response, even in streaming mode
-            if (error.message && (
-                error.message.includes("banned phrase") || 
-                error.message.includes("API error") || 
-                error.message.includes("Bad Request"))) {
-                return sendErrorResponse(res, req, error, requestData, 403);
-            }
-        } else {
+        // Only block for actual banned phrases, not API errors
+        if (error.message && error.message.includes("banned phrase")) {
             return sendErrorResponse(res, req, error, requestData, 403);
+        }
+        
+        // For API errors in streaming mode, pass them through
+        if (requestData.stream) {
+            log('API error in streaming mode:', error);
+            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
+        } else {
+            return sendErrorResponse(res, req, error, requestData, error.status || error.code || 500);
         }
     }
 

@@ -3,6 +3,7 @@ import http from 'http';
 import { parse } from 'url';
 import PQueue from 'p-queue';
 import { registerFeedListener, sendToFeedListeners } from './feedListeners.js';
+import { handleMcpSSE, handleMcpMessage } from './mcpServer.js';
 import { sendToAnalytics } from './sendToAnalytics.js';
 import { createAndReturnImageCached } from './createAndReturnImages.js';
 import { makeParamsSafe } from './makeParamsSafe.js';
@@ -342,6 +343,30 @@ const server = http.createServer((req, res) => {
   if (pathname === '/.well-known/acme-challenge/w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('w7JbAPtwFN_ntyNHudgKYyaZ7qiesTl4LgFa4fBr1DuEL_Hyd4O3hdIviSop1S3G.r54qAqCZSs4xyyeamMffaxyR1FWYVb5OvwUh8EcrhpI');
+    return;
+  }
+
+  // Handle MCP endpoints
+  if (pathname === '/mcp/sse') {
+    handleMcpSSE(req, res);
+    return;
+  }
+
+  if (pathname === '/mcp/messages') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      try {
+        const message = JSON.parse(body);
+        handleMcpMessage(message, res);
+      } catch (error) {
+        logError('Failed to parse MCP message:', error);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON message' }));
+      }
+    });
     return;
   }
 

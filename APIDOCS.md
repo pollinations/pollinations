@@ -163,6 +163,25 @@ Example message format with image:
 https://text.pollinations.ai/What%20is%20artificial%20intelligence?seed=42&json=true&model=mistral&system=You%20are%20a%20helpful%20AI%20assistant
 ```
 
+## Rate Limits
+
+### Image Generation Service
+
+- **Per-IP Queue**: 
+  - Concurrency: 1 request at a time
+  - Interval: 5000ms between requests
+
+### Text Generation Service
+
+- **Per-IP Queue**: 
+  - Concurrency: 1 request at a time
+  - Interval: 3000ms between requests
+
+### Referrer Whitelisting
+
+Projects can request to have their referrer whitelisted to bypass standard rate limits for enhanced API access. Whitelisted domains (including pollinations.ai subdomains) may receive priority queue access and reduced restrictions.  
+[Submit a Domain Whitelisting Request](https://github.com/pollinations/pollinations/issues/new?template=project-submission.yml)
+
 ## Code Examples
 
 ### Python (Image Generation)
@@ -193,10 +212,7 @@ def analyze_image(image_url):
                 "role": "user",
                 "content": [
                     {"type": "text", "text": "What's in this image?"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": image_url}
-                    }
+                    {"type": "image_url", "image_url": {"url": image_url}}
                 ]
             }
         ],

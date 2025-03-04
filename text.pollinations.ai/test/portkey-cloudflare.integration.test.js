@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import { generateTextPortkey } from '../generateTextPortkey.js';
 import debug from 'debug';
 
-const log = debug('pollinations:test:portkey-azure-proxy');
-const errorLog = debug('pollinations:test:portkey-azure-proxy:error');
+const log = debug('pollinations:test:portkey-cloudflare');
+const errorLog = debug('pollinations:test:portkey-cloudflare:error');
 
 dotenv.config();
 
@@ -20,49 +20,17 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 /**
- * Test: Azure Configuration Extraction
+ * Test: Basic Text Generation with Llama 3.3 70B
  * 
- * Purpose: Verify that the helper functions correctly extract Azure configuration from endpoints
- * 
- * Expected behavior:
- * 1. The functions should extract the correct values from the endpoints
- */
-test('should extract Azure configuration correctly', async t => {
-    // Import the helper functions directly from the module
-    const { extractBaseUrl, extractResourceName, extractDeploymentName, extractApiVersion, portkeyConfig } = await import('../generateTextPortkey.js');
-    
-    // Test extraction functions with sample endpoint
-    const sampleEndpoint = "https://pollinations.openai.azure.com/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview";
-    
-    t.is(extractBaseUrl(sampleEndpoint), "https://pollinations.openai.azure.com");
-    t.is(extractResourceName(sampleEndpoint), "pollinations");
-    t.is(extractDeploymentName(sampleEndpoint), "gpt-4o-mini");
-    t.is(extractApiVersion(sampleEndpoint), "2024-08-01-preview");
-    
-    // Check that portkeyConfig has been populated with Azure models
-    t.true(typeof portkeyConfig === 'object');
-    
-    // Filter for Azure models
-    const azureModels = Object.entries(portkeyConfig).filter(([_, config]) => config.provider === 'azure-openai');
-    
-    // Check that we have the expected Azure models
-    t.true(azureModels.some(([model]) => model === 'gpt-4o-mini'));
-    t.true(azureModels.some(([model]) => model === 'gpt-4o'));
-    t.true(azureModels.some(([model]) => model === 'o1-mini'));
-});
-
-/**
- * Test: Basic Text Generation with gpt-4o-mini
- * 
- * Purpose: Verify that the Portkey Azure proxy can generate text with gpt-4o-mini
+ * Purpose: Verify that the Portkey Cloudflare integration can generate text with Llama 3.3 70B
  * 
  * Expected behavior:
  * 1. The response should match OpenAI format
  * 2. The response should contain meaningful text
  */
-test.serial('should generate text with openai model (gpt-4o-mini)', async t => {
+test.serial('should generate text with Llama 3.3 70B model', async t => {
     const messages = [{ role: 'user', content: 'Hello, how are you?' }];
-    const options = { model: 'openai', temperature: 0.7 };
+    const options = { model: 'llama', temperature: 0.7 };
 
     try {
         const response = await generateTextPortkey(messages, options);
@@ -74,7 +42,7 @@ test.serial('should generate text with openai model (gpt-4o-mini)', async t => {
             t.is(response.choices[0].message.role, 'assistant', 'Response role should be assistant');
             
             // Log the response for debugging
-            log('Response from openai (gpt-4o-mini):', response.choices[0].message.content);
+            log('Response from Llama 3.3 70B:', response.choices[0].message.content);
             log('Response metadata:', {
                 model: response.model,
                 usage: response.usage
@@ -85,22 +53,22 @@ test.serial('should generate text with openai model (gpt-4o-mini)', async t => {
         }
     } catch (error) {
         // If there's an exception, skip the test
-        t.pass('Skipping test due to exception: ' + error.message);
+        t.fail('Test failed due to exception: ' + error.message);
     }
 });
 
 /**
- * Test: Text Generation with openai-large (gpt-4o)
+ * Test: Text Generation with Llama 3.1 8B (light model)
  * 
- * Purpose: Verify that the Portkey Azure proxy can generate text with gpt-4o
+ * Purpose: Verify that the Portkey Cloudflare integration can generate text with Llama 3.1 8B
  * 
  * Expected behavior:
  * 1. The response should match OpenAI format
  * 2. The response should contain meaningful text
  */
-test.serial('should generate text with openai-large model (gpt-4o)', async t => {
+test.serial('should generate text with Llama 3.1 8B (light) model', async t => {
     const messages = [{ role: 'user', content: 'Explain quantum computing in simple terms.' }];
-    const options = { model: 'openai-large', temperature: 0.7 };
+    const options = { model: 'llamalight', temperature: 0.7 };
 
     try {
         const response = await generateTextPortkey(messages, options);
@@ -112,7 +80,7 @@ test.serial('should generate text with openai-large model (gpt-4o)', async t => 
             t.is(response.choices[0].message.role, 'assistant', 'Response role should be assistant');
             
             // Log the response for debugging
-            log('Response from openai-large (gpt-4o):', response.choices[0].message.content);
+            log('Response from Llama 3.1 8B:', response.choices[0].message.content);
             log('Response metadata:', {
                 model: response.model,
                 usage: response.usage
@@ -123,22 +91,22 @@ test.serial('should generate text with openai-large model (gpt-4o)', async t => 
         }
     } catch (error) {
         // If there's an exception, skip the test
-        t.pass('Skipping test due to exception: ' + error.message);
+        t.fail('Test failed due to exception: ' + error.message);
     }
 });
 
 /**
- * Test: Text Generation with openai-reasoning (o1-mini)
+ * Test: Text Generation with DeepSeek R1 (reasoning model)
  * 
- * Purpose: Verify that the Portkey Azure proxy can generate text with o1-mini
+ * Purpose: Verify that the Portkey Cloudflare integration can generate text with DeepSeek R1
  * 
  * Expected behavior:
  * 1. The response should match OpenAI format
  * 2. The response should contain meaningful text
  */
-test.serial('should generate text with openai-reasoning model (o1-mini)', async t => {
+test.serial('should generate text with DeepSeek R1 model', async t => {
     const messages = [{ role: 'user', content: 'What is 15 + 27?' }];
-    const options = { model: 'openai-reasoning', temperature: 0.7 };
+    const options = { model: 'deepseek-r1', temperature: 0.7 };
 
     try {
         const response = await generateTextPortkey(messages, options);
@@ -150,7 +118,7 @@ test.serial('should generate text with openai-reasoning model (o1-mini)', async 
             t.is(response.choices[0].message.role, 'assistant', 'Response role should be assistant');
             
             // Log the response for debugging
-            log('Response from openai-reasoning (o1-mini):', response.choices[0].message.content);
+            log('Response from DeepSeek R1:', response.choices[0].message.content);
             log('Response metadata:', {
                 model: response.model,
                 usage: response.usage
@@ -161,23 +129,25 @@ test.serial('should generate text with openai-reasoning model (o1-mini)', async 
         }
     } catch (error) {
         // If there's an exception, skip the test
-        t.pass('Skipping test due to exception: ' + error.message);
+        t.fail('Test failed due to exception: ' + error.message);
     }
 });
 
 /**
- * Test: JSON Mode
+ * Test: Content Moderation with Llamaguard
  * 
- * Purpose: Verify that JSON mode returns properly formatted JSON
+ * Purpose: Verify that the Portkey Cloudflare integration can use Llamaguard for content moderation
  * 
  * Expected behavior:
- * 1. The response should be valid JSON
+ * 1. The response should match OpenAI format
+ * 2. The response should contain moderation analysis
  */
-test.serial('should handle JSON mode correctly', async t => {
+test.serial('should perform content moderation with Llamaguard', async t => {
     const messages = [
-        { role: 'user', content: 'Generate a JSON object with name, age, and hobbies fields.' }
+        { role: 'system', content: 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.' },
+        { role: 'user', content: 'I want to learn about history.' }
     ];
-    const options = { model: 'openai', jsonMode: true };
+    const options = { model: 'llamaguard' };
 
     try {
         const response = await generateTextPortkey(messages, options);
@@ -186,30 +156,59 @@ test.serial('should handle JSON mode correctly', async t => {
         if (response.choices && response.choices[0] && response.choices[0].message) {
             const content = response.choices[0].message.content;
             t.is(typeof content, 'string', 'Response should be a string');
+            t.true(content.length > 0, 'Response should not be empty');
             
-            // Try to parse as JSON
-            try {
-                const parsed = JSON.parse(content);
-                t.true(typeof parsed === 'object', 'Parsed content should be an object');
-                t.true(parsed !== null, 'Parsed content should not be null');
-                
-                // Log the parsed JSON for debugging
-                log('Parsed JSON response:', parsed);
-            } catch (e) {
-                // If JSON parsing fails but we're in JSON mode, that's a test failure
-                // unless the API returned an error
-                if (response.error) {
-                    t.pass('Skipping JSON parsing test due to API error');
-                } else {
-                    t.fail(`Response in JSON mode is not valid JSON: ${e.message}`);
-                }
-            }
+            // Log the response for debugging
+            log('Response from Llamaguard:', content);
+            log('Response metadata:', {
+                model: response.model,
+                usage: response.usage
+            });
         } else if (response.error) {
             // If API returns an error, skip the test
             t.pass('Skipping test due to API error: ' + response.error.message);
         }
     } catch (error) {
         // If there's an exception, skip the test
-        t.pass('Skipping test due to exception: ' + error.message);
+        t.fail('Test failed due to exception: ' + error.message);
+    }
+});
+
+/**
+ * Test: Seed Parameter Handling
+ * 
+ * Purpose: Verify that the seed parameter is properly removed for Cloudflare models
+ * 
+ * Expected behavior:
+ * 1. The request should succeed even with a seed parameter
+ */
+test.serial('should handle seed parameter correctly for Cloudflare models', async t => {
+    const messages = [{ role: 'user', content: 'Tell me a short story.' }];
+    const options = { model: 'llama', temperature: 0.7, seed: 42 };
+
+    try {
+        const response = await generateTextPortkey(messages, options);
+        
+        // If API is available and returns a valid response
+        if (response.choices && response.choices[0] && response.choices[0].message) {
+            t.is(typeof response.choices[0].message.content, 'string', 'Response should be a string');
+            t.true(response.choices[0].message.content.length > 0, 'Response should not be empty');
+            
+            // Log the response for debugging
+            log('Response with seed parameter:', response.choices[0].message.content.substring(0, 100) + '...');
+            log('Response metadata:', {
+                model: response.model,
+                usage: response.usage
+            });
+            
+            // Test passes if we get here without an error
+            t.pass('Successfully handled seed parameter for Cloudflare model');
+        } else if (response.error) {
+            // If API returns an error, skip the test
+            t.pass('Skipping test due to API error: ' + response.error.message);
+        }
+    } catch (error) {
+        // If there's an exception, skip the test
+        t.fail('Test failed due to exception: ' + error.message);
     }
 });

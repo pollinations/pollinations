@@ -251,6 +251,7 @@ Pollinations.AI is used in various projects, including:
 
 | Tutorial | Description | Creator | Links |
 |----------|-------------|---------|-------|
+| 🆕 Chinese DeepSeek Tutorial | A tutorial showing how to make DeepSeek AI support image generation by leveraging Pollinations.ai's API | isinry | [Forum Post](https://linux.do/t/topic/447840/235), [Profile](https://linux.do/u/isinry) |
 | Artistic Styles Book | An interactive book showcasing 90+ artistic styles | Juan Gmo. Rivera | [HTML](https://proyectodescartes.org/iCartesiLibri/materiales_didacticos/Libro_Estilos/index.html), [PDF](https://proyectodescartes.org/iCartesiLibri/PDF/Libro_Estilos.pdf) |
 | Proyecto Descartes | Educational initiative integrating Pollinations AI into STEM | Juan Gmo. Rivera | [Website](https://proyectodescartes.org/revista/Numeros/Revista_8_2024/index.html) |
 | Tutorial | An in-depth Portuguese tutorial on using Pollinations AI | Janderson de Sales | [Website](https://guiadehospedagem.com.br/pollinations-ai/) |

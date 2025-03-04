@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0.0",
+  "name": "Pollinations.AI",
+  "description": "An open-source gen AI platform providing free text and image generation APIs with no signups or API keys required.",
+  "url": "https://pollinations.ai",
+  "logo": "https://pollinations.ai/favicon-32x32.png",
+  "contact": {
+    "discord": "https://discord.gg/k9F7SyTgqn",
+    "github": "https://github.com/pollinations/pollinations"
+  },
+  "context": {
+    "purpose": "Pollinations.AI provides free and open-source AI services for text and image generation without requiring API keys or authentication.",
+    "capabilities": [
+      "Text generation with various models including OpenAI, Mistral, Claude, and more",
+      "Image generation from text prompts",
+      "Multi-language support",
+      "Prompt enhancement",
+      "Content safety filtering"
+    ],
+    "api_documentation": "https://pollinations.ai/APIDOCS.md",
+    "related_resources": [
+      {
+        "name": "agents.json",
+        "url": "https://pollinations.ai/agents.json",
+        "description": "OpenAPI-based specification for AI agents to discover and use our APIs"
+      },
+      {
+        "name": "llms.txt",
+        "url": "https://pollinations.ai/llms.txt",
+        "description": "Guidance for Large Language Models interacting with Pollinations.AI"
+      }
+    ]
+  },
+  "services": [
+    {
+      "name": "Image Generation API",
+      "url": "https://image.pollinations.ai",
+      "description": "Generate images from text prompts",
+      "example": "https://image.pollinations.ai/prompt/A%20beautiful%20sunset%20over%20the%20ocean?width=1280&height=720&seed=42"
+    },
+    {
+      "name": "Text Generation API",
+      "url": "https://text.pollinations.ai",
+      "description": "Generate text from prompts using various LLM models",
+      "example": "https://text.pollinations.ai/What%20is%20artificial%20intelligence?model=mistral&seed=42"
+    }
+  ],
+  "models": {
+    "text": [
+      {
+        "id": "openai",
+        "name": "OpenAI GPT",
+        "description": "Default model for text generation"
+      },
+      {
+        "id": "mistral",
+        "name": "Mistral",
+        "description": "Open-source large language model"
+      },
+      {
+        "id": "claude",
+        "name": "Claude",
+        "description": "Anthropic's Claude model"
+      },
+      {
+        "id": "gemini",
+        "name": "Gemini",
+        "description": "Google's Gemini model"
+      }
+    ],
+    "image": [
+      {
+        "id": "flux",
+        "name": "FLUX",
+        "description": "Default model for image generation"
+      },
+      {
+        "id": "sdxl",
+        "name": "Stable Diffusion XL",
+        "description": "High-quality image generation model"
+      }
+    ]
+  },
+  "usage_guidelines": {
+    "authentication": "No authentication required. All endpoints are freely accessible.",
+    "rate_limits": "Best effort service, no explicit rate limits. Please be considerate with usage.",
+    "content_policies": "Please respect content policies and avoid generating harmful content.",
+    "attribution": "Consider adding attribution when using generated content: 'Generated using Pollinations.AI (https://pollinations.ai)'"
+  },
+  "last_updated": "2025-03-04"
+}

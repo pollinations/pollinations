@@ -72,15 +72,24 @@ export function extractApiVersion(endpoint) {
 // Model mapping for Portkey
 const MODEL_MAPPING = {
     // Azure OpenAI models
-    'openai': 'gpt-4o-mini',       // Maps to azureConfig['gpt-4o-mini']
-    'openai-large': 'gpt-4o',      // Maps to azureConfig['gpt-4o']
-    'openai-reasoning': 'o1-mini', // Maps to azureConfig['o1-mini']
+    'openai': 'gpt-4o-mini',       // Maps to portkeyConfig['gpt-4o-mini']
+    'openai-large': 'gpt-4o',      // Maps to portkeyConfig['gpt-4o']
+    'openai-reasoning': 'o1-mini', // Maps to portkeyConfig['o1-mini'],
+    // Cloudflare models
+    'llama': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    'llamalight': '@cf/meta/llama-3.1-8b-instruct',
+    'deepseek-r1': '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+    'llamaguard': '@hf/thebloke/llamaguard-7b-awq',
 };
 
 // Default system prompts for different models
 const SYSTEM_PROMPTS = {
     'openai': 'You are a helpful, knowledgeable assistant.',
     'openai-large': 'You are a helpful, knowledgeable assistant.',
+    'llama': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'llamalight': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'deepseek-r1': 'You are a helpful, respectful and honest assistant. Always answer as helpfully as possible, while being safe.',
+    'llamaguard': 'You are a content moderation assistant. Your task is to analyze the input and identify any harmful, unsafe, or inappropriate content.'
 };
 
 // Default options
@@ -97,35 +106,81 @@ const DEFAULT_OPTIONS = {
  * @returns {Object} - OpenAI-compatible response
  */
 
-// Configure Azure endpoints and API keys for each model
-export const azureConfig = {
+// Base configurations for different providers (without x-portkey- prefix)
+const baseAzureConfig = {
+    provider: 'azure-openai',
+    retry: '3',
+};
+
+// Unified flat Portkey configuration for all providers and models
+export const portkeyConfig = {
+    // Azure OpenAI model configurations
     'gpt-4o-mini': {
-        baseUrl: extractBaseUrl(process.env.AZURE_OPENAI_ENDPOINT),
-        resourceName: extractResourceName(process.env.AZURE_OPENAI_ENDPOINT),
-        deploymentName: extractDeploymentName(process.env.AZURE_OPENAI_ENDPOINT) || 'gpt-4o-mini',
-        apiKey: process.env.AZURE_OPENAI_API_KEY,
-        apiVersion: extractApiVersion(process.env.AZURE_OPENAI_ENDPOINT),
+        ...baseAzureConfig,
+        'azure-api-key': process.env.AZURE_OPENAI_API_KEY,
+        'azure-resource-name': extractResourceName(process.env.AZURE_OPENAI_ENDPOINT),
+        'azure-deployment-id': 'gpt-4o-mini',
+        'azure-api-version': extractApiVersion(process.env.AZURE_OPENAI_ENDPOINT),
+        'azure-model-name':  'gpt-4o-mini',
+        authKey: process.env.AZURE_OPENAI_API_KEY, // For Authorization header
     },
     'gpt-4o': {
-        baseUrl: extractBaseUrl(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
-        resourceName: extractResourceName(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
-        deploymentName: extractDeploymentName(process.env.AZURE_OPENAI_LARGE_ENDPOINT) || 'gpt-4o',
-        apiKey: process.env.AZURE_OPENAI_LARGE_API_KEY,
-        apiVersion: extractApiVersion(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
+        ...baseAzureConfig,
+        'azure-api-key': process.env.AZURE_OPENAI_LARGE_API_KEY,
+        'azure-resource-name': extractResourceName(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
+        'azure-deployment-id': 'gpt-4o',
+        'azure-api-version': extractApiVersion(process.env.AZURE_OPENAI_LARGE_ENDPOINT),
+        'azure-model-name': 'gpt-4o',
+        authKey: process.env.AZURE_OPENAI_LARGE_API_KEY, // For Authorization header
     },
     'o1-mini': {
-        baseUrl: extractBaseUrl(process.env.AZURE_O1MINI_ENDPOINT),
-        resourceName: extractResourceName(process.env.AZURE_O1MINI_ENDPOINT),
-        deploymentName: extractDeploymentName(process.env.AZURE_O1MINI_ENDPOINT) || 'o1-mini',
-        apiKey: process.env.AZURE_O1MINI_API_KEY,
-        apiVersion: extractApiVersion(process.env.AZURE_O1MINI_ENDPOINT),
+        ...baseAzureConfig,
+        'azure-api-key': process.env.AZURE_O1MINI_API_KEY,
+        'azure-resource-name': extractResourceName(process.env.AZURE_O1MINI_ENDPOINT),
+        'azure-deployment-id': extractDeploymentName(process.env.AZURE_O1MINI_ENDPOINT) || 'o1-mini',
+        'azure-api-version': extractApiVersion(process.env.AZURE_O1MINI_ENDPOINT),
+        'azure-model-name': extractDeploymentName(process.env.AZURE_O1MINI_ENDPOINT) || 'o1-mini',
+        authKey: process.env.AZURE_O1MINI_API_KEY, // For Authorization header
     },
+    // Cloudflare model configurations
+    '@cf/meta/llama-3.3-70b-instruct-fp8-fast': { 
+        provider: 'openai',
+        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+        authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+    },
+    // Add other Cloudflare models directly
+    '@cf/meta/llama-3.1-8b-instruct': {
+        provider: 'openai',
+        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+        authKey: process.env.CLOUDFLARE_AUTH_TOKEN,
+    },
+    '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b': {
+        provider: 'openai',
+        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+        authKey: process.env.CLOUDFLARE_AUTH_TOKEN
+    },
+    '@hf/thebloke/llamaguard-7b-awq': {
+        provider: 'openai',
+        'custom-host': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}/ai/v1`,
+        authKey: process.env.CLOUDFLARE_AUTH_TOKEN
+    }
 };
 
 // Log the configuration
 log('Azure configuration:');
-for (const [model, config] of Object.entries(azureConfig)) {
+const azureModels = Object.entries(portkeyConfig).filter(([_, config]) => config.provider === 'azure-openai');
+for (const [model, config] of azureModels) {
     log(`Model ${model}:`, JSON.stringify(config, null, 2));
+}
+
+log('Cloudflare configuration:');
+const cloudflareModels = Object.entries(portkeyConfig).filter(([_, config]) => config.provider === 'openai');
+for (const [model, config] of cloudflareModels) {
+    log(`Model ${model}:`, JSON.stringify({
+        ...config,
+        'cloudflare-account-id': config['cloudflare-account-id'] ? '***' : undefined,
+        'cloudflare-auth-token': config['cloudflare-auth-token'] ? '***' : undefined
+    }, null, 2));
 }
 
 function countMessageCharacters(messages) {
@@ -165,20 +220,9 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     // Transform request to add Azure-specific headers based on the model
     transformRequest: (requestBody) => {
         try {
-            // Get the model name from the request
+            // Get the model name from the request (already mapped by genericOpenAIClient)
             const modelName = requestBody.model; // This is already mapped by genericOpenAIClient
-            // Find the correct Azure configuration for this model
-            const modelConfig = azureConfig[modelName];
-            
-            if (!modelConfig) {
-                errorLog(`No Azure configuration found for model: ${modelName}`);
-                throw new Error(`No Azure configuration found for model: ${modelName}. Available configs: ${Object.keys(azureConfig).join(', ')}`);
-            }
-            
-            log('Processing request for model:', modelName, 'with config:', JSON.stringify(modelConfig, null, 2));
-    
-            // Removed validation logic for missing parameters - let backend handle errors
-            
+
             // Check character limit
             const MAX_CHARS = 512000;
             const totalChars = countMessageCharacters(requestBody.messages);
@@ -188,20 +232,33 @@ export const generateTextPortkey = createOpenAICompatibleClient({
                 throw new Error(`Input text exceeds maximum length of ${MAX_CHARS} characters (current: ${totalChars})`);
             }
 
+            // Get the model configuration object
+            const config = portkeyConfig[modelName];
+
+            if (!config) {
+                errorLog(`No configuration found for model: ${modelName}`);
+                throw new Error(`No configuration found for model: ${modelName}. Available configs: ${Object.keys(portkeyConfig).join(', ')}`);
+            }
+
+            log('Processing request for model:', modelName, 'with provider:', config.provider);
+
+            // Generate headers by prefixing config properties with 'x-portkey-'
+            const additionalHeaders = {};
+            for (const [key, value] of Object.entries(config)) {
+                // Skip special properties that aren't headers
+                if (key === 'removeSeed' || key === 'authKey') continue;
+                
+                additionalHeaders[`x-portkey-${key}`] = value;
+            }
+
+            // Add Authorization header if needed
+            if (config.authKey) {
+                additionalHeaders['Authorization'] = `Bearer ${config.authKey}`;
+            }
+            
             // Set the headers as a property on the request object that will be used by genericOpenAIClient
-            // to set the actual HTTP headers
-            requestBody._additionalHeaders = {
-                'x-portkey-provider': 'azure-openai',
-                'x-portkey-retry': '3',
-                'x-portkey-azure-api-key': modelConfig.apiKey,
-                'x-portkey-azure-resource-name': modelConfig.resourceName,
-                'x-portkey-azure-deployment-id': modelConfig.deploymentName,
-                'x-portkey-azure-api-version': modelConfig.apiVersion || '2024-08-01-preview',
-                'x-portkey-azure-model-name': modelConfig.deploymentName,
-                // Add Authorization header for proper Azure OpenAI authentication
-                'Authorization': `Bearer ${modelConfig.apiKey}`
-            };
-            log('Added Azure-specific headers:', JSON.stringify(requestBody._additionalHeaders, null, 2));
+            requestBody._additionalHeaders = additionalHeaders;
+            log('Added provider-specific headers:', JSON.stringify(requestBody._additionalHeaders, null, 2));
             
             return requestBody;
         } catch (error) {
@@ -214,5 +271,5 @@ export const generateTextPortkey = createOpenAICompatibleClient({
     modelMapping: MODEL_MAPPING,
     systemPrompts: SYSTEM_PROMPTS,
     defaultOptions: DEFAULT_OPTIONS,
-    providerName: 'Azure OpenAI via Portkey'
+    providerName: 'Portkey Gateway'
 });
